@@ -283,6 +283,115 @@ test('bypassPlaylistMode strips playlist parameters from thumbnail links', () =>
     }
 });
 
+test('pauseOtherTabs degrades to a no-op when BroadcastChannel is unavailable', () => {
+    for (const [label, load] of [['extension', loadFeature], ['userscript', loadUserscriptFeature]]) {
+        const recorded = [];
+        const warnings = [];
+        const documentRef = fakeTreeDocument(() => null);
+        const feature = load('pauseOtherTabs', {
+            document: documentRef,
+            // The environment this guard exists for: no BroadcastChannel at all.
+            BroadcastChannel: undefined,
+            DiagnosticLog: { record: (channel, message) => recorded.push([channel, message]) },
+            console: { warn: (...args) => warnings.push(args[0]) },
+        });
+
+        feature.init();
+        assert.equal(feature._channel, null, `${label}: no channel means no channel`);
+        assert.equal(recorded.length, 1, `${label}: the degraded state is recorded, not swallowed`);
+        assert.equal(recorded[0][0], 'broadcast-channel');
+        assert.match(recorded[0][1], /degraded/i, `${label}: and says what degraded`);
+        assert.equal(warnings.length, 1, `${label}: and warns once`);
+
+        // Broadcasting with no channel must not throw into the play handler.
+        assert.doesNotThrow(() => feature._broadcastPause());
+        assert.doesNotThrow(() => feature.destroy());
+    }
+});
+
+test('pauseOtherTabs drops a channel whose postMessage starts failing', () => {
+    for (const [label, load] of [['extension', loadFeature], ['userscript', loadUserscriptFeature]]) {
+        const recorded = [];
+        let closed = 0;
+        class BrokenChannel {
+            postMessage() { throw new Error('channel closed by the browser'); }
+            close() { closed += 1; }
+        }
+        const feature = load('pauseOtherTabs', {
+            document: fakeTreeDocument(() => null),
+            BroadcastChannel: BrokenChannel,
+            DiagnosticLog: { record: (channel, message) => recorded.push([channel, message]) },
+            console: { warn() {} },
+        });
+
+        feature.init();
+        assert.ok(feature._channel, `${label}: the channel opens before it fails`);
+        feature._broadcastPause();
+
+        assert.equal(recorded.length, 1, `${label}: the failure is recorded`);
+        assert.match(recorded[0][1], /postMessage/, `${label}: naming the operation that failed`);
+        assert.equal(closed, 1, `${label}: the unusable channel is closed`);
+        assert.equal(feature._channel, null, `${label}: and dropped, so it is not retried forever`);
+
+        recorded.length = 0;
+        feature._broadcastPause();
+        assert.deepEqual(recorded, [], `${label}: a dropped channel logs once, not on every play`);
+    }
+});
+
+test('external links opened in a new tab cannot reach back through window.opener', () => {
+    class HTMLAnchorElementStub {}
+    const { setSafeBlankTarget } = loadUserscriptDeclarations(
+        ['setSafeBlankTarget'],
+        { HTMLAnchorElement: HTMLAnchorElementStub }
+    );
+
+    const anchor = new HTMLAnchorElementStub();
+    assert.equal(setSafeBlankTarget(anchor), anchor, 'the anchor comes back for chaining');
+    assert.equal(anchor.target, '_blank');
+    assert.equal(anchor.rel, 'noopener noreferrer',
+        'noopener alone still leaks the referrer; both are needed');
+
+    // Anything that is not an anchor is returned untouched rather than having
+    // link attributes stamped onto it.
+    const notAnAnchor = { tagName: 'DIV' };
+    assert.equal(setSafeBlankTarget(notAnAnchor), notAnAnchor);
+    assert.equal(notAnAnchor.rel, undefined);
+});
+
+test('the userscript CPU tamer clears the pump interval it started', () => {
+    const cleared = [];
+    const host = {
+        setTimeout: function original() {},
+        clearTimeout: function original() {},
+        // Both the pump start and its teardown go through the ORIGINALS the
+        // tamer captured off window, not through the sandbox globals.
+        setInterval: () => 'pump-handle',
+        clearInterval: function recordingClearInterval(handle) { cleared.push(handle); },
+    };
+    const documentRef = fakeTreeDocument(() => null);
+    const createElement = documentRef.createElement.bind(documentRef);
+    documentRef.createElement = (tag) => {
+        const node = createElement(tag);
+        if (String(tag).toLowerCase() === 'canvas') node.getContext = () => ({});
+        return node;
+    };
+
+    const feature = loadUserscriptFeature('enableCPU_Tamer', {
+        window: host,
+        document: documentRef,
+        appState: { settings: {} },
+        Promise,
+    });
+
+    feature.init();
+    assert.equal(feature._pumpInterval, 'pump-handle', 'the tamer runs a pump while it is patched');
+    feature.destroy();
+    assert.deepEqual(cleared, ['pump-handle'],
+        'a pump left running after teardown keeps waking the tab forever');
+    assert.equal(feature._pumpInterval, null, 'and the handle must be dropped');
+});
+
 test('videoNotes ships its defaults and enforces its write-time caps', () => {
     // Defaults are data, so read them from the shipped defaults file.
     assert.equal(config.defaultSettings.videoNotes, false);
@@ -301,21 +410,25 @@ test('videoNotes ships its defaults and enforces its write-time caps', () => {
         const feature = build(settings);
 
         assert.equal(feature._DATA_KEY, 'videoNotesData', `${label}: notes write to the declared key`);
+        // Literals, not feature._MAX_*: comparing the output against the
+        // subject's own constant means no cap value can ever fail.
+        assert.equal(feature._MAX_NOTES, 1000, `${label}: the shipped video cap`);
+        assert.equal(feature._MAX_NOTE_CHARS, 5000, `${label}: the shipped per-note cap`);
 
         // Over-long notes are truncated rather than stored whole.
-        const long = 'x'.repeat(feature._MAX_NOTE_CHARS + 500);
+        const long = 'x'.repeat(5500);
         const truncated = feature._writeNotes({ dQw4w9WgXcQ: { note: long, updatedAt: 1 } });
-        assert.equal(truncated.dQw4w9WgXcQ.note.length, feature._MAX_NOTE_CHARS,
-            `${label}: a note is capped at _MAX_NOTE_CHARS`);
+        assert.equal(truncated.dQw4w9WgXcQ.note.length, 5000,
+            `${label}: a note is capped at 5000 characters`);
 
         // More videos than the cap keeps the cap's worth, newest first.
         const many = {};
-        for (let i = 0; i < feature._MAX_NOTES + 25; i += 1) {
+        for (let i = 0; i < 1025; i += 1) {
             many[`vid${String(i).padStart(8, '0')}`] = { note: `note ${i}`, updatedAt: i + 1 };
         }
         const capped = feature._writeNotes(many);
-        assert.equal(Object.keys(capped).length, feature._MAX_NOTES,
-            `${label}: the store is capped at _MAX_NOTES videos`);
+        assert.equal(Object.keys(capped).length, 1000,
+            `${label}: the store is capped at 1000 videos`);
         assert.equal(settings.videoNotesData, capped, `${label}: the capped store is what is persisted`);
 
         // Junk keys and empty notes never reach storage.
@@ -328,6 +441,65 @@ test('videoNotes ships its defaults and enforces its write-time caps', () => {
         assert.deepEqual(Object.keys(filtered), ['dQw4w9WgXcQ'],
             `${label}: only well-formed video ids with real text survive`);
     }
+});
+
+test('the userscript stores route every write through their sanitiser', () => {
+    // Proving the sanitisers are correct says nothing about whether the
+    // features CALL them. Each write path is driven with over-cap input and
+    // the persisted value is read back off the storage stub.
+    const persisted = new Map();
+    // The real sanitisers, handed to the features as the module scope would.
+    // Stubbing them here would prove only that a stub was called.
+    const sanitisers = loadUserscriptDeclarations([
+        'UNSAFE_OBJECT_KEYS', 'isPlainObject', 'isSafeObjectKey', 'VIDEO_ID_PATTERN',
+        'IMPORT_LIMITS', 'STORAGE_CAPS', 'formatLocalDateKey', 'sanitizeWatchTimeImportedEntries',
+        'sanitizeTimestampBookmarks', 'sanitizeWatchProgressStore', 'sanitizeWatchTimeStats',
+    ]);
+    const globals = {
+        ...sanitisers,
+        StorageManager: {
+            set: (key, value) => persisted.set(key, value),
+            get: (key, fallback) => (persisted.has(key) ? persisted.get(key) : fallback),
+            setSync: (key, value) => persisted.set(key, value),
+        },
+        document: fakeTreeDocument(() => null),
+        appState: { settings: {} },
+        getVideoId: () => 'dQw4w9WgXcQ',
+        showToast() {},
+    };
+
+    const bookmarks = loadUserscriptFeature('timestampBookmarks', globals);
+    const writtenBookmarks = bookmarks._writeBookmarks({
+        dQw4w9WgXcQ: [{ t: 5.9, n: 'x'.repeat(600) }, { t: 5, n: 'duplicate second' }],
+        __proto__: [{ t: 1 }],
+        'not an id': [{ t: 1 }],
+    });
+    assert.deepEqual(Object.keys(writtenBookmarks), ['dQw4w9WgXcQ'],
+        'a write must not persist junk video ids');
+    assert.equal(writtenBookmarks.dQw4w9WgXcQ.length, 1, 'nor a duplicate second');
+    assert.equal(writtenBookmarks.dQw4w9WgXcQ[0].n.length, 500, 'nor an over-long note');
+    assert.equal(persisted.get(bookmarks._storageKey), writtenBookmarks,
+        'and what is persisted is the capped value, not the raw one');
+
+    const progress = loadUserscriptFeature('watchProgress', {
+        ...globals,
+        STORAGE_CAPS: { watchProgressVideos: 2000, watchProgressMaxAgeMs: 30 * 24 * 60 * 60 * 1000 },
+    });
+    const writtenProgress = progress._writeProgress({
+        dQw4w9WgXcQ: { p: 250, t: Date.now() },
+        'not an id': { p: 10, t: Date.now() },
+    });
+    assert.deepEqual(Object.keys(writtenProgress), ['dQw4w9WgXcQ']);
+    assert.equal(writtenProgress.dQw4w9WgXcQ.p, 100, 'a write clamps the percentage');
+    assert.equal(persisted.get(progress._storageKey), writtenProgress);
+
+    const tracker = loadUserscriptFeature('watchTimeTracker', globals);
+    const writtenStats = tracker._writeStats({ days: { 'not-a-date': 10 }, total: -5 });
+    // Object.keys, not deepEqual: an object built inside the vm realm is never
+    // reference-equal to a host-realm {} under assert/strict.
+    assert.deepEqual(Object.keys(writtenStats.days), [], 'a write drops malformed day buckets');
+    assert.equal(writtenStats.total, 0, 'and normalises a negative total');
+    assert.equal(persisted.get(tracker._storageKey), writtenStats);
 });
 
 test('write-time caps for bookmarks and watch-history stores hold in both vehicles', () => {
@@ -343,7 +515,7 @@ test('write-time caps for bookmarks and watch-history stores hold in both vehicl
         // times floored, notes capped.
         const bookmarks = api.sanitizeTimestampBookmarks({
             dQw4w9WgXcQ: [
-                { t: 12.7, n: 'a'.repeat(api.IMPORT_LIMITS.bookmarkNoteChars + 50), d: 5 },
+                { t: 12.7, n: 'a'.repeat(550), d: 5 },
                 { t: 12, n: 'duplicate second' },
                 { t: -1, n: 'negative' },
             ],
@@ -353,8 +525,9 @@ test('write-time caps for bookmarks and watch-history stores hold in both vehicl
         assert.deepEqual(Object.keys(bookmarks), ['dQw4w9WgXcQ'], `${label}: only real video ids survive`);
         assert.equal(bookmarks.dQw4w9WgXcQ.length, 1, `${label}: a duplicate second is dropped`);
         assert.equal(bookmarks.dQw4w9WgXcQ[0].t, 12, `${label}: times are floored to whole seconds`);
-        assert.equal(bookmarks.dQw4w9WgXcQ[0].n.length, api.IMPORT_LIMITS.bookmarkNoteChars,
-            `${label}: notes are capped at the declared limit`);
+        assert.equal(api.IMPORT_LIMITS.bookmarkNoteChars, 500, `${label}: the shipped note cap`);
+        assert.equal(bookmarks.dQw4w9WgXcQ[0].n.length, 500,
+            `${label}: notes are capped at 500 characters`);
 
         // Watch progress: percentages clamped, stale entries dropped, store capped.
         const now = Date.UTC(2026, 7, 28);
@@ -368,13 +541,14 @@ test('write-time caps for bookmarks and watch-history stores hold in both vehicl
         assert.equal(progress.bbbbbbbbbbb, undefined, `${label}: entries past the age cap are dropped`);
 
         const crowded = {};
-        for (let i = 0; i < api.STORAGE_CAPS.watchProgressVideos + 10; i += 1) {
+        assert.equal(api.STORAGE_CAPS.watchProgressVideos, 2000, `${label}: the shipped progress cap`);
+        for (let i = 0; i < 2010; i += 1) {
             crowded[`v${String(i).padStart(10, '0')}`] = { p: 10, t: now - i };
         }
         assert.equal(
             Object.keys(api.sanitizeWatchProgressStore(crowded, now)).length,
-            api.STORAGE_CAPS.watchProgressVideos,
-            `${label}: the progress store is capped`
+            2000,
+            `${label}: the progress store is capped at 2000 videos`
         );
 
         // Watch-time stats: only day buckets inside the retention window, and

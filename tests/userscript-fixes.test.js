@@ -8,11 +8,14 @@
 // single-flight probe guard is driven by concurrent callers, and the Innertube
 // failover is called and its rejection observed.
 //
-// Four assertions stay textual on purpose. "The artifact must not contain X"
-// (a deleted installer path, an `irm | iex` command, a poison API-key literal)
-// has no executable form — absence is the whole claim — and `@match`,
-// `@updateURL`, `@namespace` and `@description` are metadata the userscript
-// manager parses out of the header comment, so the header IS the contract.
+// Nine assertions stay textual, in two groups. "The artifact must not contain
+// X" (a deleted installer path, an `irm | iex` command, a poison API-key
+// literal) has no executable form, because absence is the whole claim. And
+// `@match`, `@updateURL`, `@downloadURL`, `@namespace` and `@description` are
+// metadata the userscript MANAGER parses out of the header comment, so the
+// header itself is the contract. Nothing else here is a scan: an earlier pass
+// pinned the install-prompt copy by scanning the file, which matched a comment
+// above the code and two tooltips 15k lines away.
 //
 // Findings covered:
 //  1. MediaDL install flow pointed at the deleted Install-YTYT.ps1 (HTTP 404).
@@ -28,7 +31,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
 
-const { loadUserscriptDeclarations } = require('./helpers/monolith');
+const { loadUserscriptDeclarations, fakeTreeDocument, collectFakeTree } = require('./helpers/monolith');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const readRepoFile = (name) => fs.readFileSync(path.join(REPO_ROOT, name), 'utf8');
@@ -149,12 +152,49 @@ test('the MediaDL install flow resolves a floating AstraDownloader release asset
     assert.ok(url.pathname.endsWith(`/${MediaDLManager.INSTALLER_FILE_NAME}`),
         'the download URL must end in the file name the prompt names');
 
-    // The prompt copy is what the user acts on, so assert the strings the
-    // install path actually renders.
-    assert.match(userscriptSource, /Download Astra Downloader \(\.exe\)/,
-        'install prompt must offer a "Download Astra Downloader (.exe)" action');
-    assert.match(userscriptSource, /open the file to install/,
-        'install prompt copy must direct the user to open the downloaded exe');
+});
+
+test('the install prompt renders the download action and says what to do with it', () => {
+    // Scanning the source for these strings matched a comment above the code
+    // and unrelated tooltips 15k lines away, so the prompt is built for real
+    // and read out of the tree it produced.
+    const documentRef = fakeTreeDocument(() => null);
+    documentRef.getElementById = () => null;
+    const toasts = [];
+    const downloads = [];
+
+    const { MediaDLManager } = loadUserscriptDeclarations(
+        ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
+        {
+            document: documentRef,
+            fetch: () => new Promise(() => {}),
+            AbortController,
+            setTimeout: () => 0,
+            clearTimeout() {},
+            GM_xmlhttpRequest() {},
+            showToast: (message) => toasts.push(message),
+            triggerDownload: async (url, name) => { downloads.push([url, name]); },
+            openExternalWindow: (url) => downloads.push(['window', url]),
+        }
+    );
+
+    MediaDLManager.showInstallPrompt('install');
+    const prompt = documentRef.body.children.find((node) => node.id === 'ytkit-mediadl-install-prompt');
+    assert.ok(prompt, 'the prompt must mount');
+
+    // The prompt wires its buttons with .onclick, not addEventListener.
+    const downloadButton = collectFakeTree(prompt, '*').find((node) =>
+        typeof node.onclick === 'function'
+        && String(node.textContent || '').includes('Download Astra Downloader (.exe)'));
+    assert.ok(downloadButton, 'the prompt must offer a "Download Astra Downloader (.exe)" action');
+
+    downloadButton.onclick({ preventDefault() {} });
+    assert.deepEqual(downloads, [[MediaDLManager.INSTALLER_URL, MediaDLManager.INSTALLER_FILE_NAME]],
+        'clicking it downloads the release asset the manager names');
+    assert.match(String(downloadButton.textContent || ''), /open the file to install/,
+        'the button then tells the user what to do with the file');
+    assert.equal(toasts.length, 1);
+    assert.match(toasts[0], /open the file to install/, 'and so does the toast beside it');
 });
 
 // ── 2. @description must not claim features the userscript does not ship ──
@@ -169,10 +209,30 @@ test('YTKit.user.js @description does not claim SponsorBlock', () => {
 
 // ── 3. Innertube transcript method: no placeholder API key ──
 
-test('the Innertube transcript method fails over instead of sending a placeholder key', async () => {
+test('the userscript Innertube method fails over instead of sending a placeholder key', async () => {
     assert.doesNotMatch(userscriptSource, /REDACTED_GOOGLE_API_KEY/,
         'the poison literal guaranteed a 400 from youtubei/v1/player');
 
+    // The userscript carries its own copy, so testing the extension's module
+    // says nothing about the artifact this file is named for.
+    let requests = 0;
+    const { LegacyTranscriptService } = loadUserscriptDeclarations(['LegacyTranscriptService'], {
+        fetch: async () => { requests += 1; return { ok: true, json: async () => ({}) }; },
+        document: { querySelector: () => null, querySelectorAll: () => [] },
+        window: {},
+        DebugManager: { log() {} },
+    });
+
+    LegacyTranscriptService._getInnertubeApiKey = () => null;
+    await assert.rejects(
+        () => LegacyTranscriptService._method2_InnertubeAPI('dQw4w9WgXcQ'),
+        /Innertube API key unavailable/,
+        'a missing key must fail over so _getCaptionTracks tries the next method'
+    );
+    assert.equal(requests, 0, 'and must not spend a request finding out');
+});
+
+test('the extension Innertube method refuses a missing or malformed key', async () => {
     const core = loadCoreModule(path.join('extension', 'core', 'transcript-service.js'));
     let requests = 0;
     const service = core.createTranscriptService({

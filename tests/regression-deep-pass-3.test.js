@@ -9,9 +9,11 @@
 // an init, and the popup's profile gate and status banner are executed against
 // a fake DOM.
 //
-// One pin remains and says why: the popup's pagehide teardown is wired inside
-// the boot path, which cannot be reached without booting the whole popup.
-// `npm run smoke:a11y` boots it for real; this file guards the wiring.
+// Two pins remain and say why. The popup's pagehide teardown is wired inside
+// the boot path, which cannot be reached without booting the whole popup —
+// `npm run smoke:a11y` boots it for real, and this file guards the wiring. And
+// the transcript render path is pinned by ABSENCE: calling _fmtTimestamp proves
+// the helper, not that the render path stopped formatting minutes inline.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -223,6 +225,12 @@ test('the transcript timestamp grows an hours field past one hour', () => {
     assert.equal(viewer._fmtTimestamp(3760), '1:02:40');
     assert.equal(viewer._fmtTimestamp(7325), '2:02:05');
     assert.equal(viewer._fmtTimestamp(-5), '0:00', 'a negative offset must not render a negative clock');
+
+    // Absence, so a scan is the only form: proving the helper is correct says
+    // nothing about whether the render path still formats inline. The old
+    // hour-less expression is what produced 62:40 for a 1h02m cue.
+    assert.doesNotMatch(sources.ytkit, /const mins = Math\.floor\(startSec \/ 60\)/,
+        'the render path must call _fmtTimestamp, not format minutes inline');
 });
 
 test('the userscript CPU tamer only restores timers it actually replaced', () => {
