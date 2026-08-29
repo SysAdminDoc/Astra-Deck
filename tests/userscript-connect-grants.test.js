@@ -39,10 +39,37 @@ test('the companion is reached by literal IP, and that grant is present', () => 
     assert.ok(connectHosts().includes('127.0.0.1'), 'the companion grant must remain');
 });
 
-test('every @connect host has a real GM request site behind it', () => {
-    // Hosts reached through the manager itself (@require/@updateURL/@icon) or
-    // through plain CORS-governed fetch() are NOT @connect-governed and must
-    // not appear in the list.
+// The runtime a userscript manager actually loads: the core library, then the
+// main artifact.
+const runtime = fs.readFileSync(path.join(repoRoot, 'YTKit-core.user.js'), 'utf8')
+    + '\n' + source;
+
+/** Every host the bundle names as a request origin or endpoint. */
+function requestedHosts() {
+    const hosts = new Set();
+    for (const m of runtime.matchAll(/https?:\/\/([A-Za-z0-9.-]+|\d+\.\d+\.\d+\.\d+)(?::\d+)?/g)) {
+        hosts.add(m[1]);
+    }
+    return hosts;
+}
+
+test('every @connect host has a request site behind it', () => {
+    // Checking against a hand-written list of hosts that are NOT governed only
+    // catches the three names someone thought of. A grant added for a host the
+    // bundle never contacts is unearned privilege the user is asked to approve
+    // on install, so ask the bundle instead.
+    const hosts = requestedHosts();
+    assert.ok(hosts.size >= 10, `expected the bundle to name its endpoints, found ${hosts.size}`);
+
+    const unearned = connectHosts().filter((host) => !hosts.has(host));
+    assert.deepEqual(unearned, [],
+        'these are granted on install but nothing in the bundle requests them: ' + unearned.join(', '));
+});
+
+test('no @connect grant covers a host reached by the manager or by plain fetch', () => {
+    // @require/@updateURL/@icon go through the manager, and plain fetch() is
+    // governed by CORS. A grant for either is privilege with no request it
+    // could ever authorize.
     const notGoverned = ['raw.githubusercontent.com', 'returnyoutubedislikeapi.com', 'localhost'];
     for (const host of connectHosts()) {
         assert.ok(!notGoverned.includes(host),
