@@ -24,7 +24,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
-const { loadDeclarations, fakeNode } = require('./helpers/monolith');
+const { loadDeclarations, fakeNode, fakeTreeDocument } = require('./helpers/monolith');
 
 const repoRoot = path.join(__dirname, '..');
 
@@ -252,12 +252,76 @@ test('the cleanup closure removes both listeners and collapses aria-expanded', (
     assert.equal(anchor.getAttribute('aria-expanded'), 'false', 'cleanup collapses the anchor again');
 });
 
-test('the download popup keeps the same two guards', () => {
-    // Cross-file regression pin: both guards originated in the download popup.
-    // Its own geometry is exercised in tests/download-ui-geometry.test.js; this
-    // assertion exists so removing them THERE cannot silently let the speed
-    // popup drift back.
-    const dl = fs.readFileSync(path.join(repoRoot, 'extension/features/download-ui/index.js'), 'utf8');
-    assert.match(dl, /if \(!popup\.isConnected\) return;/);
-    assert.match(dl, /popup\.style\.maxHeight = heightCap \+ 'px';/);
+test('the download popup carries the same two guards, in its own geometry', () => {
+    // Both guards originated in the download popup. Rather than scan its source
+    // — the shape this whole file moved away from — open the real popup in a
+    // short viewport and read the same two properties back off it.
+    const { createDownloadUIFeature } = require('../extension/features/download-ui');
+    const documentRef = fakeTreeDocument(() => null);
+    const createElement = documentRef.createElement.bind(documentRef);
+    documentRef.createElement = (tag) => {
+        const node = createElement(tag);
+        node.offsetWidth = POPUP_WIDTH;
+        node.offsetHeight = POPUP_HEIGHT;
+        node.getBoundingClientRect = () => ({ top: 0, bottom: POPUP_HEIGHT, left: 0, right: POPUP_WIDTH, width: POPUP_WIDTH, height: POPUP_HEIGHT });
+        node.replaceChildren = () => { node.children.length = 0; };
+        node.scrollIntoView = () => {};
+        return node;
+    };
+    documentRef.getElementById = () => null;
+
+    const timers = [];
+    globalThis.document = documentRef;
+    globalThis.window = {
+        location: { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        innerWidth: 1280,
+        innerHeight: 200,
+        addEventListener() {}, removeEventListener() {},
+        getComputedStyle: () => ({ getPropertyValue: () => '' }),
+    };
+    // The download popup caps its height on the ANCHORED branch, where CSS
+    // anchor positioning pins it to the trigger but does not keep it on screen.
+    globalThis.CSS = { supports: () => true };
+
+    const feature = createDownloadUIFeature({
+        getVideoId: () => 'dQw4w9WgXcQ',
+        isWatchPagePath: () => true,
+        supportsPopover: () => false,
+        setTimeoutFn: (fn, delay) => { timers.push({ fn, delay }); return timers.length; },
+        clearTimeoutFn: () => {},
+        setIntervalFn: () => 0,
+        clearIntervalFn: () => {},
+    });
+    feature.downloadFormatEstimates.probe = async () => ({ status: 'error', error: 'stubbed' });
+
+    // The anchored branch also requires the trigger to be the download
+    // button the CSS anchor is declared on.
+    const anchor = fakeNode({ tag: 'button', attributes: { class: 'ytkit-po-dl' } });
+    anchor.getBoundingClientRect = () => ({ top: 100, bottom: 124, left: 400, width: 40 });
+    anchor.focus = () => {};
+    // The arm window uses the ambient setTimeout, not the injected one.
+    const realSetTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = (fn, delay) => { timers.push({ fn, delay }); return timers.length; };
+    try {
+        feature.showDownloadPopup(anchor);
+    } finally {
+        globalThis.setTimeout = realSetTimeout;
+    }
+
+    const popup = documentRef.body.children[documentRef.body.children.length - 1];
+    // 200px viewport, trigger at 100-124: neither side holds the panel, so the
+    // floor becomes the cap — the same arithmetic the speed popup adopted.
+    assert.ok(pixels(popup.style.maxHeight) > 0, 'the download popup caps its height too');
+    assert.ok(pixels(popup.style.maxHeight) <= 200, 'and the cap fits the viewport it measured');
+
+    // And the same deferred-listener guard: the arm timer must not attach to a
+    // popup that has already closed.
+    const armed = timers.find((entry) => entry.delay === 50);
+    assert.ok(armed, 'the download popup arms its listeners on the same 50ms timer');
+    const attached = [];
+    documentRef.addEventListener = (type) => attached.push(type);
+    popup.isConnected = false;
+    armed.fn();
+    assert.deepEqual(attached, [],
+        'attaching to a closed popup leaks both capture-phase listeners for the page lifetime');
 });
