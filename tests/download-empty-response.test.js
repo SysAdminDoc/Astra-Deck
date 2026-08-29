@@ -133,4 +133,14 @@ test('a real download id still starts progress rather than reporting failure', a
         [],
         'the guard must not reject the normal case'
     );
+
+    // Proving only that nothing failed would still pass if the success branch
+    // did nothing at all: the user would click download, see no error, and get
+    // no progress either.
+    const panel = session.documentRef.body.children.find((node) =>
+        String(node.className).includes('ytkit-dl-progress'));
+    assert.ok(panel, 'a started download has to show its progress');
+    assert.equal(panel.id, 'ytkit-dl-progress-job-42',
+        'the panel is keyed by job id so two downloads do not share one bar');
+    assert.ok(panel.getAttribute('aria-label'), 'and the group is named for screen readers');
 });

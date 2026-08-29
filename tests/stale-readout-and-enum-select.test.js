@@ -32,10 +32,13 @@ const repoRoot = path.join(__dirname, '..');
 
 /** A player whose `.ytp-time-display` survives navigation, as YouTube's does. */
 function player({ duration = 600, currentTime = 60 } = {}) {
-    const timeDisplay = fakeNode({ tag: 'div', attributes: { class: 'ytp-time-display' } });
-    timeDisplay.querySelector = (selector) => (String(selector).includes('ytkit-remaining-time')
-        ? timeDisplay.children.find((node) => String(node.className).includes('ytkit-remaining-time')) || null
-        : null);
+    const newTimeDisplay = () => {
+        const node = fakeNode({ tag: 'div', attributes: { class: 'ytp-time-display' } });
+        node.querySelector = (selector) => (String(selector).includes('ytkit-remaining-time')
+            ? node.children.find((child) => String(child.className).includes('ytkit-remaining-time')) || null
+            : null);
+        return node;
+    };
     const video = fakeNode({ tag: 'video' });
     video.duration = duration;
     video.currentTime = currentTime;
@@ -52,24 +55,37 @@ function player({ duration = 600, currentTime = 60 } = {}) {
         return null;
     });
 
+    // `timeDisplay` is reassigned by rebuildPlayer, so every lookup goes
+    // through the current one.
+    let timeDisplay = newTimeDisplay();
     const readouts = () => timeDisplay.children
         .filter((node) => String(node.className).includes('ytkit-remaining-time'));
+
+    const navigateRules = new Map();
 
     return {
         timeDisplay,
         video,
         documentRef,
         readouts,
+        navigateRules,
+        // YouTube replaced the player. The previous display and the span in it
+        // are detached from the page but still connected to each other.
+        rebuildPlayer: () => { timeDisplay = newTimeDisplay(); },
         globals: {
             document: documentRef,
             appState: { settings: {} },
             getMainVideoElement: () => video,
             getFeatureById: () => null,
             injectStyle: () => ({ remove() {} }),
-            addNavigateRule: () => {},
-            removeNavigateRule: () => {},
+            addNavigateRule: (id, rule) => navigateRules.set(id, rule),
+            removeNavigateRule: (id) => navigateRules.delete(id),
             setTimeout: () => 1,
             clearTimeout: () => {},
+            // The userscript copy polls on an interval where the extension
+            // rides timeupdate; both are driven through _update() here.
+            setInterval: () => 1,
+            clearInterval: () => {},
         },
     };
 }
@@ -114,6 +130,35 @@ for (const [label, load] of [['extension', loadFeature], ['userscript', loadUser
         feature._update();
         assert.equal(feature._el, existing, 'the reference must move to the live span');
         assert.equal(page.readouts().length, 1);
+    });
+
+    test(`${label}: the readout re-adopts after navigation and releases its rule on teardown`, () => {
+        const page = player();
+        const feature = load('remainingTimeDisplay', page.globals);
+        feature.init();
+        feature._update();
+
+        const rule = page.navigateRules.get('remainTime');
+        assert.ok(rule, 'the time display survives SPA navigation, so the readout has to look again');
+        assert.equal(page.readouts().length, 1);
+
+        // A navigation that rebuilds the player. The old span is still
+        // `isConnected` — it just hangs off a time display nobody can see any
+        // more — so the adopt-on-update path has no way to tell it is stale.
+        // Dropping the reference in the navigate rule is what does.
+        const orphan = page.readouts()[0];
+        page.rebuildPlayer();
+        rule();
+        feature._update();
+
+        assert.notEqual(feature._el, orphan,
+            'writing the new time into the old player updates a readout nobody is looking at');
+        assert.equal(page.readouts().length, 1, 'and the new display gets exactly one readout');
+        assert.ok(page.readouts()[0].textContent, 'which is filled in');
+
+        feature.destroy();
+        assert.equal(page.navigateRules.has('remainTime'), false,
+            'a rule left behind keeps rebuilding a readout for a feature that is off');
     });
 
     test(`${label}: teardown sweeps every readout, not just the tracked one`, () => {
@@ -183,4 +228,10 @@ test('the unrecognized label is a real locale key with a live substitution', () 
     // shipped that way for exactly one commit — long enough for the live smoke
     // to catch it and for check-i18n.js to grow a gate for it.
     assert.doesNotMatch(messages.settingValueUnrecognized.message, /\$[A-Za-z0-9_]+\$/);
+
+    // Run the substitution the popup runs. A token that survives into the
+    // message but is never replaced prints the literal "{value}" at the user.
+    const rendered = messages.settingValueUnrecognized.message.replace('{value}', 'legacy-mode');
+    assert.match(rendered, /legacy-mode/, 'the offending value is what the user needs to see');
+    assert.doesNotMatch(rendered, /\{value\}/, 'and no placeholder may survive into the label');
 });
