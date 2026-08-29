@@ -10,14 +10,19 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
-const { loadFeature, fakeNode, fakeTreeDocument } = require('../helpers/monolith');
+const {
+    loadFeature,
+    fakeNode,
+    fakeTreeDocument,
+    selectorMatches,
+} = require('../helpers/monolith');
 
 const repoRoot = path.join(__dirname, '..', '..');
 
 // ── autoExitFullscreen ──────────────────────────────────────────────────────
 
 /** A watch page with a video, optional fullscreen, and an optional up-next. */
-function watchPage({ fullscreen = true, playlist = null, queue = null } = {}) {
+function watchPage({ fullscreen = true, playlist = null, queue = null, panelHidden = false } = {}) {
     const scratch = fakeTreeDocument(() => null);
     const video = scratch.createElement('video');
     const exits = [];
@@ -41,10 +46,17 @@ function watchPage({ fullscreen = true, playlist = null, queue = null } = {}) {
             (String(selector) === 'ytd-playlist-panel-video-renderer' ? items : []);
     }
 
-    const documentRef = fakeTreeDocument((selector) => {
-        if (String(selector).includes('playlist-panel-renderer')) return panel;
-        return null;
-    });
+    // What the panel IS, matched against the selector the feature passes.
+    // Substring routing answered `ytd-playlist-panel-renderer-NO-SUCH-TAG`
+    // just as happily, and it also hid the `:not([hidden])` guard: a panel
+    // YouTube has collapsed must not count as an up-next.
+    const panelIs = {
+        tag: 'ytd-playlist-panel-renderer',
+        id: 'playlist',
+        attrs: panelHidden ? { hidden: '' } : {},
+    };
+    const documentRef = fakeTreeDocument((selector) =>
+        (panel && selectorMatches(selector, panelIs) ? panel : null));
     documentRef.fullscreenElement = fullscreen ? fakeNode({ tag: 'div' }) : null;
     documentRef.exitFullscreen = () => exits.push(Date.now());
 
@@ -96,6 +108,18 @@ test('fullscreen is kept when a playlist has another entry to play', () => {
     assert.equal(lastPlaylist.exits.length, 1, 'the end of a playlist is still the end');
 });
 
+test('a collapsed playlist panel is not an up-next', () => {
+    // YouTube leaves the panel in the DOM and marks it hidden when there is no
+    // playlist to show. Reading its items anyway keeps the user in fullscreen
+    // at the end of a standalone video, staring at a black screen.
+    const page = watchPage({ playlist: [false, true, false], panelHidden: true });
+    const feature = loadFeature('autoExitFullscreen', page.globals);
+    feature.init();
+    endVideo(page);
+    assert.equal(page.exits.length, 1,
+        'a hidden panel advances nothing, so fullscreen has to end with the video');
+});
+
 test('fullscreen is kept when the persistent queue has something waiting', () => {
     const page = watchPage({ queue: [{ id: 'next' }] });
     const feature = loadFeature('autoExitFullscreen', page.globals);
@@ -133,8 +157,11 @@ function erroringPlayer({ error = true, videoId = 'dQw4w9WgXcQ', stored = null, 
     video.currentTime = 0;
     video.playbackRate = 1;
 
+    // The error screen the recovery watches for. Routed on what it is, so a
+    // selector narrowed to something YouTube never renders stops resolving.
+    const errorIs = { tag: 'div', className: 'ytp-error', ancestors: [{ id: 'movie_player' }] };
     const documentRef = fakeTreeDocument((selector) =>
-        (String(selector).includes('ytp-error') && error ? fakeNode({ tag: 'div' }) : null));
+        (error && selectorMatches(selector, errorIs) ? fakeNode({ tag: 'div' }) : null));
 
     return {
         session,

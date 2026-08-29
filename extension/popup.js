@@ -3264,7 +3264,7 @@ async function copyExternalApiHealthReport() {
             activeTab: safeTabUrl
         });
         setStatus(await copyTextToClipboard(payload)
-            ? t('externalHealthCopyDone', 'Copied.')
+            ? t('externalHealthCopyDone', 'Copied. Paste it into a GitHub issue.')
             : t('externalHealthCopyFail', 'Could not copy.'));
     } catch (_) {
         setStatus(t('externalHealthCopyFail', 'Could not copy.'));
@@ -5211,7 +5211,7 @@ if (healthCopyBtn) {
             await navigator.clipboard.writeText(healthCopyPayload);
             showStatus(t('statusDiagCopied', 'Diagnostic copied to clipboard.'), 'ok', 2400);
         } catch (_) {
-            showStatus(t('statusClipboardUnavailable', 'Clipboard unavailable. Check the browser console for details.'), 'error', 3600);
+            showStatus(t('statusClipboardUnavailable', 'Copying isn’t available here. Select the text and copy it yourself instead.'), 'error', 3600);
             console.error('[Astra Deck popup] health-copy payload:\n' + healthCopyPayload);
         }
     });

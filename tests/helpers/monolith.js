@@ -14,6 +14,104 @@ const { sources } = require('./source');
 // the array end — never by `)`, which belongs to a factory-built neighbour.
 const FEATURE_CLOSE = /\n {8}\}(?=,|\s*\]|\s*$|\n)/g;
 
+// ── selector matching ───────────────────────────────────────────────────────
+//
+// Fake documents used to answer `document.querySelector(x)` by testing
+// `String(x).includes('some-token')`. That accepts any SUPERSTRING of the real
+// selector, so a production selector could be extended into one that matches
+// nothing on YouTube and the fixture would still hand back the node. Five
+// selectors were provably in that state: the planned-livestream metadata and
+// button lists, the playlist panel, the player error screen, and both Shorts
+// video lookups.
+//
+// This is a small selector engine covering the shapes the monolith actually
+// uses: tag names, #id, .class, [attr], [attr="value"], :not([attr]), and
+// descendant combinators. A fixture node declares what it IS; the selector
+// either matches it or does not.
+
+/** Parse one compound like `ytd-x#id.cls[attr="v"]:not([hidden])`. */
+function parseCompound(text) {
+    const compound = { tag: null, id: null, classes: [], attrs: [], absent: [] };
+    const token = /(^[A-Za-z][\w-]*)|#([\w-]+)|\.([\w-]+)|:not\(\[([\w-]+)\]\)|\[([\w-]+)(?:([~^$*|]?=)"([^"]*)")?\]/g;
+    let consumed = 0;
+    for (let match = token.exec(text); match; match = token.exec(text)) {
+        if (match.index !== consumed) return null;
+        consumed = token.lastIndex;
+        if (match[1]) compound.tag = match[1].toLowerCase();
+        else if (match[2]) compound.id = match[2];
+        else if (match[3]) compound.classes.push(match[3]);
+        else if (match[4]) compound.absent.push(match[4]);
+        else compound.attrs.push({ name: match[5], op: match[6] || null, value: match[7] });
+    }
+    // Anything the grammar above does not cover (a pseudo-class, `>`, `~`)
+    // must not silently degrade into "matches everything".
+    return consumed === text.length ? compound : null;
+}
+
+function compoundMatches(compound, node) {
+    if (!node) return false;
+    const tag = String(node.tag || node.tagName || '').toLowerCase();
+    const classes = String(node.className || '').split(/\s+/).filter(Boolean);
+    const attrs = node.attrs || {};
+    if (compound.tag && compound.tag !== tag) return false;
+    if (compound.id && compound.id !== (node.id ?? attrs.id)) return false;
+    if (!compound.classes.every((name) => classes.includes(name))) return false;
+    for (const name of compound.absent) {
+        if (Object.prototype.hasOwnProperty.call(attrs, name)) return false;
+    }
+    for (const { name, op, value } of compound.attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, name)) return false;
+        if (!op) continue;
+        const actual = String(attrs[name] ?? '');
+        if (op === '=' && actual !== value) return false;
+        if (op === '*=' && !actual.includes(value)) return false;
+        if (op === '^=' && !actual.startsWith(value)) return false;
+        if (op === '$=' && !actual.endsWith(value)) return false;
+    }
+    return true;
+}
+
+/**
+ * Does `selectorText` (a comma-separated selector list) match `node`?
+ *
+ * `node` is a plain descriptor: `{ tag, id, className, attrs, ancestors }`,
+ * where `ancestors` runs outermost-first. Descendant combinators are matched
+ * right to left against that chain, so `ytd-reel-video-renderer[is-active]
+ * video` and `#shorts-player video` stay distinguishable — which is the whole
+ * point for the Shorts fixtures.
+ */
+function selectorMatches(selectorText, node) {
+    const chain = [...(node.ancestors || []), node];
+    return String(selectorText).split(',').some((one) => {
+        const compounds = one.trim().split(/\s+/).filter(Boolean).map(parseCompound);
+        if (!compounds.length || compounds.some((compound) => compound === null)) return false;
+        // The rightmost compound must match the node itself; the rest must
+        // appear in order somewhere above it.
+        if (!compoundMatches(compounds[compounds.length - 1], node)) return false;
+        let at = chain.length - 1;
+        for (let i = compounds.length - 2; i >= 0; i -= 1) {
+            at -= 1;
+            while (at >= 0 && !compoundMatches(compounds[i], chain[at])) at -= 1;
+            if (at < 0) return false;
+        }
+        return true;
+    });
+}
+
+/**
+ * Build a resolver for `fakeTreeDocument` from a list of
+ * `[descriptor, value]` pairs. The first descriptor the selector actually
+ * matches wins, and a selector that matches nothing returns null — which is
+ * what a real document does, and what a substring router never did.
+ */
+function selectorRouter(entries, { many = () => false } = {}) {
+    return (selector) => {
+        const hits = entries.filter(([descriptor]) => selectorMatches(selector, descriptor));
+        if (many(selector)) return hits.map(([, value]) => value);
+        return hits.length ? hits[0][1] : null;
+    };
+}
+
 /**
  * Slice one feature object literal out of the monolith. Brace counting would
  * have to survive template literals and regex literals, so instead the slice
@@ -898,6 +996,8 @@ function fakeTreeDocument(resolve = () => null) {
 module.exports = {
     featureSource,
     featureSourceFrom,
+    selectorMatches,
+    selectorRouter,
     fallbackFeatureSource,
     declarationSourceFrom,
     loadDeclarations,

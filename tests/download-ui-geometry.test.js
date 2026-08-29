@@ -235,6 +235,7 @@ test('the Stream Links close button closes only its own panel', () => {
     const panelFeature = feature.downloadStreamLinksPanel;
     const history = feature.downloadHistoryPanel;
     const tokenBefore = history._requestToken;
+    const ownKeysBefore = new Set(Object.keys(panelFeature));
 
     panelFeature._renderPanel();
     const panel = panelFeature._panel;
@@ -247,6 +248,18 @@ test('the Stream Links close button closes only its own panel', () => {
 
     assert.equal(panelFeature._panel, null, 'the close button closes the panel');
     assert.equal(panel.isConnected, false, 'and takes the node out of the document');
+    // The copied handler would run with `this` bound to Stream Links, so it
+    // would create `downloadStreamLinksPanel._requestToken` and leave the
+    // History panel's own counter untouched. Watching the History counter
+    // therefore could not fail; watch this panel's shape instead.
+    const grown = Object.keys(panelFeature).filter((key) => !ownKeysBefore.has(key));
+    assert.deepEqual(grown, [],
+        'Stream Links has no async request token and no search timer; growing one means '
+        + 'the History handler was copied in, and with it the state it cancels');
+    assert.equal(panelFeature._requestToken, undefined,
+        'a request token on this panel is the copied handler, not a feature');
+    assert.equal(panelFeature._searchTimer, undefined,
+        'and neither is a debounce timer for a panel with no search box');
     assert.equal(history._requestToken, tokenBefore,
-        'closing Stream Links must not cancel a History search in flight');
+        'the History panel is left alone either way');
 });
