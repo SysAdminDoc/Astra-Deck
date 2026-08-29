@@ -170,7 +170,9 @@ function loadFeatureFromSource(source, id, extraGlobals = {}) {
  * brace counting would have to survive template literals and regex literals.
  */
 function declarationSourceFrom(source, name) {
-    for (const indent of ['    ', '        ']) {
+    // Column 0 first: popup.js and the side panel declare at the top level,
+    // the monolith and the userscript nest theirs one or two levels in.
+    for (const indent of ['', '    ', '        ']) {
         for (const keyword of ['function', 'async function', 'const', 'let']) {
             const needle = `\n${indent}${keyword} ${name}`;
             const start = source.indexOf(needle);
