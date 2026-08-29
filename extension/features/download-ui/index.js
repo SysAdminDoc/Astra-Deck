@@ -65,6 +65,23 @@
         return seconds <= 86400 ? Math.round(seconds * 1000) / 1000 : null;
     }
 
+    // The inverse of the parser above, in the shape the placeholders promise
+    // (`0:00`, `1:02:03`). Sub-second precision is kept only when it is there,
+    // because a handle dragged to 12.000 should read `0:12`, not `0:12.0`.
+    function formatSectionTimestamp(seconds) {
+        const total = Math.max(0, Number(seconds) || 0);
+        const whole = Math.floor(total);
+        const fraction = Math.round((total - whole) * 10) / 10;
+        const hours = Math.floor(whole / 3600);
+        const minutes = Math.floor((whole % 3600) / 60);
+        const rest = whole % 60;
+        const pad = (value) => String(value).padStart(2, '0');
+        const clock = hours > 0
+            ? `${hours}:${pad(minutes)}:${pad(rest)}`
+            : `${minutes}:${pad(rest)}`;
+        return fraction > 0 ? `${clock}${String(fraction).slice(1)}` : clock;
+    }
+
     const FORMAT_ESTIMATE_QUALITY_VALUES = Object.freeze([
         'best', '2160', '1440', '1080', '720', '480'
     ]);
@@ -486,6 +503,7 @@
             BRAND = {},
             t = (_key, fallback) => fallback,
             getPlayerResponseGlobal = () => null,
+            getMainVideoElement = () => null,
             supportsPopover = () => false,
             createCloseWatcher = () => null,
             destroyCloseWatcher = () => {},
@@ -495,6 +513,237 @@
             clearIntervalFn = clearInterval,
             nativeTokenRequestTimeoutMs = NATIVE_TOKEN_REQUEST_TIMEOUT_MS,
         } = deps;
+
+        // How long the video is, for scaling the clip track. The player response is
+        // authoritative and present before the media element has metadata; the
+        // element is the fallback for a page where the response has not landed.
+        function readClipDuration() {
+            const details = getPlayerResponseGlobal()?.videoDetails;
+            const declared = Number(details?.lengthSeconds);
+            if (Number.isFinite(declared) && declared > 0) return declared;
+            const media = getMainVideoElement();
+            const measured = Number(media?.duration);
+            return Number.isFinite(measured) && measured > 0 ? measured : 0;
+        }
+
+        // Minimum a clip can be, matching what normalizeSectionInput accepts.
+        const CLIP_MIN_LENGTH_SECONDS = 0.1;
+
+        /**
+         * The clip track: a scaled bar with a start and an end handle.
+         *
+         * The handles and the two text inputs are two views of one range. Dragging
+         * writes the inputs, typing moves the handles, and only the inputs are ever
+         * read when the download is sent — so the range the user sees is the range
+         * that ships, and the existing validation stays the single gate.
+         *
+         * Both handles are real focusable sliders rather than drag-only targets.
+         * Pointer-only trimming would put the feature out of reach of anyone not
+         * using a mouse, and the repo ships no keyboard shortcuts to compensate.
+         */
+        function buildClipTimeline({ duration, labelId, startInput, endInput }) {
+            const clamp = (value) => Math.min(duration, Math.max(0, value));
+            const track = document.createElement('div');
+            track.className = 'ytkit-dl-popup__clip-track';
+
+            const selection = document.createElement('div');
+            selection.className = 'ytkit-dl-popup__clip-selection';
+            track.appendChild(selection);
+
+            const playhead = document.createElement('div');
+            playhead.className = 'ytkit-dl-popup__clip-playhead';
+            playhead.setAttribute('aria-hidden', 'true');
+            playhead.hidden = true;
+            track.appendChild(playhead);
+
+            const makeHandle = (which, label) => {
+                const handle = document.createElement('div');
+                handle.className = `ytkit-dl-popup__clip-handle ytkit-dl-popup__clip-handle--${which}`;
+                handle.dataset.handle = which;
+                handle.tabIndex = 0;
+                handle.setAttribute('role', 'slider');
+                handle.setAttribute('aria-label', label);
+                handle.setAttribute('aria-valuemin', '0');
+                handle.setAttribute('aria-valuemax', String(Math.round(duration)));
+                track.appendChild(handle);
+                return handle;
+            };
+            const startHandle = makeHandle('start', t('dlPopupClipStartAria', 'Clip start timestamp'));
+            const endHandle = makeHandle('end', t('dlPopupClipEndAria', 'Clip end timestamp'));
+
+            // The range lives here, in seconds. `null` means "not set", which is
+            // what an empty input means and what makes the whole clip optional.
+            let startSeconds = null;
+            let endSeconds = null;
+
+            const effective = () => ({
+                start: startSeconds === null ? 0 : startSeconds,
+                end: endSeconds === null ? duration : endSeconds
+            });
+
+            function paint() {
+                const { start, end } = effective();
+                const left = (start / duration) * 100;
+                const right = (end / duration) * 100;
+                selection.style.left = `${left}%`;
+                selection.style.width = `${Math.max(0, right - left)}%`;
+                startHandle.style.left = `${left}%`;
+                endHandle.style.left = `${right}%`;
+                const marked = startSeconds !== null || endSeconds !== null;
+                track.dataset.clipSet = marked ? '1' : '';
+                for (const [handle, value] of [[startHandle, start], [endHandle, end]]) {
+                    handle.setAttribute('aria-valuenow', String(Math.round(value)));
+                    handle.setAttribute('aria-valuetext', formatSectionTimestamp(value));
+                }
+            }
+
+            // Writing the inputs is what makes the handles real: the send path reads
+            // them, not this. `input` is dispatched so the existing validity reset
+            // runs exactly as it does when a person types.
+            function writeInputs() {
+                startInput.value = startSeconds === null ? '' : formatSectionTimestamp(startSeconds);
+                endInput.value = endSeconds === null ? '' : formatSectionTimestamp(endSeconds);
+                for (const input of [startInput, endInput]) {
+                    input.setCustomValidity('');
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+
+            function setRange(nextStart, nextEnd, { write = true, moved = null } = {}) {
+                startSeconds = nextStart === null ? null : clamp(nextStart);
+                endSeconds = nextEnd === null ? null : clamp(nextEnd);
+                // A drag or a key that would invert the range pins the handle
+                // that MOVED against the one that did not, rather than swapping
+                // them — which is what every editor does, and what keeps the
+                // text fields readable mid-drag. Deciding from the values alone
+                // picks the wrong one and drags the stationary handle along, so
+                // `moved` is not optional decoration here.
+                //
+                // Typing passes no `moved` and is left exactly as entered: the
+                // existing validator is what tells the user an inverted range is
+                // not a clip, and moving their text under them would be worse.
+                if (moved && startSeconds !== null && endSeconds !== null
+                    && endSeconds - startSeconds < CLIP_MIN_LENGTH_SECONDS) {
+                    if (moved === 'end') {
+                        endSeconds = Math.min(duration, startSeconds + CLIP_MIN_LENGTH_SECONDS);
+                        // Only when there is no room left at the end of the
+                        // video does the other handle give way.
+                        if (endSeconds - startSeconds < CLIP_MIN_LENGTH_SECONDS) {
+                            startSeconds = Math.max(0, endSeconds - CLIP_MIN_LENGTH_SECONDS);
+                        }
+                    } else {
+                        startSeconds = Math.max(0, endSeconds - CLIP_MIN_LENGTH_SECONDS);
+                        if (endSeconds - startSeconds < CLIP_MIN_LENGTH_SECONDS) {
+                            endSeconds = Math.min(duration, startSeconds + CLIP_MIN_LENGTH_SECONDS);
+                        }
+                    }
+                }
+                if (write) writeInputs();
+                paint();
+            }
+
+            // Typing is the other direction. Only a pair that parses moves the
+            // handles; a half-typed timestamp leaves them where they were rather
+            // than jumping around under the user's hands.
+            function readInputs() {
+                const parsedStart = startInput.value.trim() ? parseSectionTimestampInput(startInput.value) : null;
+                const parsedEnd = endInput.value.trim() ? parseSectionTimestampInput(endInput.value) : null;
+                if (startInput.value.trim() && parsedStart === null) return;
+                if (endInput.value.trim() && parsedEnd === null) return;
+                setRange(parsedStart, parsedEnd, { write: false });
+            }
+            startInput.addEventListener('input', readInputs);
+            endInput.addEventListener('input', readInputs);
+
+            const secondsFromClientX = (clientX) => {
+                const rect = track.getBoundingClientRect();
+                if (!rect || !rect.width) return 0;
+                const ratio = (clientX - rect.left) / rect.width;
+                return clamp(ratio * duration);
+            };
+
+            // Moving either handle materialises BOTH ends. `normalizeSectionInput`
+            // refuses a half-filled range ("Enter both clip times"), so a drag
+            // that wrote only the handle it moved would draw a clip the popup
+            // then rejects on send.
+            function moveHandle(which, seconds) {
+                const { start, end } = effective();
+                if (which === 'start') {
+                    setRange(seconds, endSeconds === null ? end : endSeconds, { moved: 'start' });
+                } else {
+                    setRange(startSeconds === null ? start : startSeconds, seconds, { moved: 'end' });
+                }
+            }
+
+            let dragging = null;
+            const onPointerMove = (event) => {
+                if (!dragging) return;
+                moveHandle(dragging, secondsFromClientX(event.clientX));
+            };
+            const endDrag = () => {
+                dragging = null;
+                track.dataset.dragging = '';
+            };
+
+            for (const handle of [startHandle, endHandle]) {
+                handle.addEventListener('pointerdown', (event) => {
+                    dragging = handle.dataset.handle;
+                    track.dataset.dragging = '1';
+                    handle.focus();
+                    if (typeof handle.setPointerCapture === 'function' && event.pointerId !== undefined) {
+                        try { handle.setPointerCapture(event.pointerId); } catch (e) { void e; }
+                    }
+                    event.preventDefault();
+                });
+                handle.addEventListener('pointermove', onPointerMove);
+                handle.addEventListener('pointerup', endDrag);
+                handle.addEventListener('pointercancel', endDrag);
+
+                handle.addEventListener('keydown', (event) => {
+                    const which = handle.dataset.handle;
+                    const { start, end } = effective();
+                    const current = which === 'start' ? start : end;
+                    const step = event.shiftKey ? 10 : 1;
+                    let next = null;
+                    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = current - step;
+                    else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = current + step;
+                    else if (event.key === 'Home') next = 0;
+                    else if (event.key === 'End') next = duration;
+                    if (next === null) return;
+                    event.preventDefault();
+                    moveHandle(which, clamp(next));
+                });
+            }
+
+            // Clicking the bare track moves whichever handle is nearer, so a rough
+            // range takes one click per end rather than a drag from zero.
+            track.addEventListener('pointerdown', (event) => {
+                if (event.target !== track && event.target !== selection) return;
+                const seconds = secondsFromClientX(event.clientX);
+                const { start, end } = effective();
+                moveHandle(Math.abs(seconds - start) <= Math.abs(seconds - end) ? 'start' : 'end', seconds);
+            });
+
+            // The playhead is a read-only marker of where the user is watching, so
+            // "clip from here" is a glance rather than a calculation.
+            const media = getMainVideoElement();
+            if (media && typeof media.addEventListener === 'function') {
+                const syncPlayhead = () => {
+                    const at = Number(media.currentTime);
+                    if (!Number.isFinite(at) || duration <= 0) return;
+                    playhead.hidden = false;
+                    playhead.style.left = `${(clamp(at) / duration) * 100}%`;
+                };
+                media.addEventListener('timeupdate', syncPlayhead);
+                syncPlayhead();
+            }
+
+            track.setAttribute('role', 'group');
+            if (labelId) track.setAttribute('aria-labelledby', labelId);
+            readInputs();
+            paint();
+            return track;
+        }
 
         // Failure copy: name one of the localized causes in
         // extension/core/failure-copy.js and the next action it implies. The
@@ -2455,6 +2704,20 @@
             clipWrap.appendChild(clipStartInput);
             clipWrap.appendChild(clipSeparator);
             clipWrap.appendChild(clipEndInput);
+
+            // The track goes above the inputs: it is the control, and the
+            // inputs are the precise fallback for it. With no duration there
+            // is nothing to scale against, so the row stays exactly as it was.
+            const clipDuration = readClipDuration();
+            if (clipDuration > 0) {
+                clipRow.appendChild(buildClipTimeline({
+                    duration: clipDuration,
+                    labelId: clipLabel.id,
+                    startInput: clipStartInput,
+                    endInput: clipEndInput
+                }));
+            }
+
             clipRow.appendChild(clipWrap);
             const clipHint = document.createElement('span');
             clipHint.className = 'ytkit-dl-popup__clip-hint';

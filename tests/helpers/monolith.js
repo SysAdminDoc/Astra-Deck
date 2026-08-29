@@ -977,7 +977,15 @@ function fakeDocument(resolve) {
     return {
         body: fakeNode({ tag: 'body' }),
         documentElement: fakeNode({ tag: 'html' }),
-        createElement: (tag) => fakeNode({ tag }),
+        // A freshly created form control carries `value === ''` in a browser,
+        // not `undefined`. Code that reads `input.value.trim()` is correct
+        // against a real element and threw against this one, which made the
+        // fixture the thing that was wrong.
+        createElement: (tag) => {
+            const node = fakeNode({ tag });
+            if (/^(input|textarea|select|option)$/i.test(String(tag))) node.value = '';
+            return node;
+        },
         createTextNode: (text) => fakeNode({ tag: '#text', text }),
         querySelector(selector) { return this.querySelectorAll(selector)[0] || null; },
         querySelectorAll(selector) {
@@ -1017,6 +1025,17 @@ function fakeTreeDocument(resolve = () => null) {
         listeners,
         createElement(tag) {
             const node = fakeNode({ tag });
+            // A freshly created form control carries `value === ''` in a
+            // browser, not `undefined`. Code reading `input.value.trim()` is
+            // correct against a real element and threw against this one.
+            if (/^(input|textarea|select|option)$/i.test(String(tag))) {
+                node.value = '';
+                // Constraint validation is part of what a form control IS, and
+                // the download popup calls it on every keystroke.
+                node.validationMessage = '';
+                node.setCustomValidity = (message) => { node.validationMessage = String(message ?? ''); };
+                node.checkValidity = () => node.validationMessage === '';
+            }
             node.listeners = new Map();
             node.addEventListener = (type, handler) => {
                 if (!node.listeners.has(type)) node.listeners.set(type, new Set());

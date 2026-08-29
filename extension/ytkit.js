@@ -1902,6 +1902,7 @@ const STORAGE_KEYS = Object.freeze({
             getVideoId: () => getVideoId(),
             showToast: (...args) => showToast(...args),
             getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+        getMainVideoElement,
             isDomTranscriptForVideo: (videoId, panel) => {
                 try {
                     return Array.from(document.querySelectorAll('ytd-watch-flexy')).some((flexy) => {
@@ -49184,6 +49185,84 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             align-items: center;
             gap: 6px;
             min-height: 28px;
+        }
+
+        .ytkit-dl-popup__clip-track {
+            position: relative;
+            height: 26px;
+            margin: 2px 0 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(6,9,13,0.7);
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .ytkit-dl-popup__clip-selection {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: rgba(255,107,74,0.18);
+            border-inline: 1px solid rgba(255,107,74,0.55);
+            pointer-events: none;
+        }
+
+        .ytkit-dl-popup__clip-track[data-clip-set=""] .ytkit-dl-popup__clip-selection {
+            background: rgba(255,255,255,0.06);
+            border-inline-color: rgba(255,255,255,0.18);
+        }
+
+        .ytkit-dl-popup__clip-playhead {
+            position: absolute;
+            top: -2px;
+            bottom: -2px;
+            width: 2px;
+            margin-inline-start: -1px;
+            background: rgba(255,255,255,0.85);
+            pointer-events: none;
+        }
+
+        .ytkit-dl-popup__clip-handle {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 12px;
+            margin-inline-start: -6px;
+            border-radius: 4px;
+            border: 1px solid rgba(6,9,13,0.85);
+            background: var(--ytkit-accent, #a78bfa);
+            cursor: ew-resize;
+            outline: none;
+        }
+
+        .ytkit-dl-popup__clip-handle:focus-visible {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.85);
+        }
+
+        .ytkit-dl-popup__clip-track[data-dragging="1"] {
+            cursor: ew-resize;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ytkit-dl-popup__clip-handle,
+            .ytkit-dl-popup__clip-selection {
+                transition: none !important;
+            }
+        }
+
+        @media (forced-colors: active) {
+            .ytkit-dl-popup__clip-track,
+            .ytkit-dl-popup__clip-handle {
+                border-color: ButtonBorder;
+            }
+
+            .ytkit-dl-popup__clip-handle {
+                background: ButtonText;
+            }
+
+            .ytkit-dl-popup__clip-playhead {
+                background: Highlight;
+            }
         }
 
         .ytkit-dl-popup__clip-wrap {
