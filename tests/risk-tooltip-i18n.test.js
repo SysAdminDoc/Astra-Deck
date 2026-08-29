@@ -16,30 +16,78 @@ const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
 const popupSource = fs.readFileSync(path.join(repoRoot, 'extension/popup.js'), 'utf8');
-const schemaSource = fs.readFileSync(path.join(repoRoot, 'extension/core/settings-schema.js'), 'utf8');
 const enMessages = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension/_locales/en/messages.json'), 'utf8'));
 
-function riskVocabulary() {
-    const match = /const RISKS = Object\.freeze\(\[([^\]]+)\]\)/.exec(schemaSource);
-    assert.ok(match, 'the schema must declare the risk vocabulary');
-    return match[1].split(',').map(part => part.trim().replace(/^'|'$/g, '')).filter(Boolean);
+// The real risk vocabulary, from the module that owns it.
+const { RISKS } = require('../extension/core/settings-schema.js');
+
+/**
+ * The tooltip statement out of popup.js, run for one risk band.
+ *
+ * Recomputing `risk.replace(/-/g, '_')` in the test would prove only that the
+ * TEST can normalize a hyphen — production could switch to stripping the
+ * hyphen, or drop the normalization again, and the test would still pass
+ * because it never asked production what key it looks up. So the statement
+ * itself is lifted out, and `t` records the key it is handed.
+ */
+function tooltipFor(risk) {
+    const at = popupSource.indexOf('const riskKeySuffix =');
+    assert.ok(at > 0, 'the tooltip statement must exist');
+    const close = popupSource.indexOf("span.setAttribute('aria-label', span.title);", at);
+    assert.ok(close > at, 'and end where the accessible name is set');
+    const body = popupSource.slice(at, close);
+
+    const asked = [];
+    const span = { title: null };
+    new Function('entry', 'span', 't', body)(
+        { risk },
+        span,
+        (key, fallback) => { asked.push(key); return fallback; },
+    );
+    return { key: asked[0], title: span.title };
 }
 
-test('the dynamic tooltip key is normalized before lookup', () => {
-    assert.match(popupSource, /replace\(\/-\/g, '_'\)/,
-        'a hyphenated risk band can never be a chrome.i18n message name');
-    assert.match(popupSource, /t\('toggleRiskTooltip_' \+ riskKeySuffix/);
+test('the key the tooltip looks up is legal for every band in the vocabulary', () => {
+    assert.ok(RISKS.length >= 5, `expected the full risk vocabulary, saw ${RISKS.join(',')}`);
+    for (const risk of RISKS) {
+        const { key } = tooltipFor(risk);
+        assert.match(key, /^toggleRiskTooltip_[A-Za-z0-9_]+$/,
+            `${risk} builds "${key}", which chrome.i18n can never resolve`);
+    }
+    // The two that were broken, named so a regression says which.
+    assert.equal(tooltipFor('local-companion').key, 'toggleRiskTooltip_local_companion');
+    assert.equal(tooltipFor('store-risk').key, 'toggleRiskTooltip_store_risk');
 });
 
-test('every risk band in the vocabulary resolves to a real key after normalization', () => {
-    const risks = riskVocabulary();
-    assert.ok(risks.length >= 5, `expected the full risk vocabulary, saw ${risks.join(',')}`);
-    for (const risk of risks) {
+test('every risk band in the vocabulary resolves to a real key with real copy', () => {
+    for (const risk of RISKS) {
         if (risk === 'safe') continue; // safe carries no badge and no tooltip
-        const key = 'toggleRiskTooltip_' + risk.replace(/-/g, '_');
+        const { key } = tooltipFor(risk);
         assert.ok(Object.prototype.hasOwnProperty.call(enMessages, key),
             `${risk} has no resolvable tooltip key (looked for ${key})`);
         assert.ok(String(enMessages[key].message || '').trim(), `${key} must carry copy`);
+    }
+});
+
+test('an unlocalized band still says something, and never renders "undefined"', () => {
+    // A band added to the schema before its copy lands must degrade to a
+    // readable line rather than to a blank or a literal "undefined".
+    const { title } = tooltipFor('some-new-band');
+    assert.ok(String(title || '').trim(), 'the tooltip must not be empty');
+    assert.doesNotMatch(String(title), /undefined/);
+    assert.match(String(title), /some-new-band/, 'and should name the band it could not describe');
+
+    for (const risk of RISKS) {
+        if (risk === 'safe') continue; // carries no badge, so no tooltip renders
+        const { title } = tooltipFor(risk);
+        assert.ok(String(title || '').trim(), `${risk} must have an inline English tooltip`);
+        assert.doesNotMatch(String(title), /undefined/);
+        // The generic line is the safety net for a band nobody has written
+        // copy for yet. A band that IS in the vocabulary has to describe what
+        // it means, or the badge tells the user nothing they did not already
+        // see on the badge itself.
+        assert.doesNotMatch(String(title), /^Risk band: /,
+            `${risk} is in the shipped vocabulary and needs copy of its own`);
     }
 });
 

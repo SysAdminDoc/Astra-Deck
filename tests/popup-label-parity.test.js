@@ -28,6 +28,40 @@ function rowBuilder() {
     return popupJs.slice(at, end);
 }
 
+// ── the humaniser, run over the whole schema ────────────────────────────────
+
+const { humanizeSettingKey, SETTINGS_SCHEMA } = require('../extension/core/settings-schema.js');
+
+test('the humaniser turns every storage key in the schema into something readable', () => {
+    // The source assertions below prove the row USES one name everywhere.
+    // They cannot tell whether that name is readable — a humaniser that
+    // returned its argument unchanged would satisfy every one of them and put
+    // "customProgressBarColor" back on screen.
+    assert.ok(SETTINGS_SCHEMA.length > 400, `expected the full schema, saw ${SETTINGS_SCHEMA.length}`);
+
+    const unchanged = [];
+    for (const entry of SETTINGS_SCHEMA) {
+        const label = humanizeSettingKey(entry.key);
+        assert.ok(String(label || '').trim(), `${entry.key} humanises to nothing`);
+        assert.doesNotMatch(label, /_/, `${entry.key} keeps an underscore in "${label}"`);
+        if (label === entry.key) unchanged.push(entry.key);
+    }
+    // A key that is already one lowercase word legitimately survives; a
+    // camelCase key must not.
+    for (const key of unchanged) {
+        assert.match(key, /^[a-z]+$/,
+            `"${key}" reached the screen as the raw storage key`);
+    }
+});
+
+test('the humaniser splits camelCase and keeps the initialisms readable', () => {
+    assert.equal(humanizeSettingKey('customProgressBarColor'), 'Custom progress bar color');
+    assert.equal(humanizeSettingKey('aiSummaryApiKey'), 'AI summary API key',
+        'AI and API are read as words, not spelled out letter by letter');
+    assert.equal(humanizeSettingKey('uiFontSize'), 'UI font size');
+    assert.equal(humanizeSettingKey(''), '', 'and an empty key is not decorated into something');
+});
+
 test('the row resolves one visible name and renders it', () => {
     const body = rowBuilder();
     assert.match(body, /const visibleLabel = overrideLabel\s*\|\|\s*\(typeof humanizer === 'function' \? humanizer\(entry\.key\) : entry\.key\);/,
@@ -37,6 +71,12 @@ test('the row resolves one visible name and renders it', () => {
 });
 
 test('every name the row speaks is the name it shows', () => {
+    // Exhaustive over one function's source, and deliberately so: the claim is
+    // that NO call site in the row uses anything but `visibleLabel`, which is a
+    // statement about all of them. buildSchemaOverviewKeyRow needs the popup's
+    // live optional-host state, risk vocabulary and surface chips to run, and
+    // `npm run smoke:a11y` renders the real thing; these keep the row from
+    // being unwound in between.
     const body = rowBuilder();
 
     assert.match(body, /\.replace\('\{key\}', visibleLabel\)/,
