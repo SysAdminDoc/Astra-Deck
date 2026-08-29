@@ -10,6 +10,12 @@
 // Alongside it: three YTKitCore aliases nothing consumed, and a CSS class with
 // no creation site.
 //
+// Most of this file asserts ABSENCE, which has no executable form: the subject
+// is code that must not exist. What CAN be executed is executed — the aliases
+// are checked against the surface the modules actually publish, and the
+// section table is run against real feature ids — and the absence claims scan
+// the shipped artifacts.
+//
 // One claim in the same audit finding did NOT survive verification and the
 // symbols stay — see the last test.
 
@@ -17,6 +23,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const vm = require('node:vm');
 
 const repoRoot = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(repoRoot, p), 'utf8');
@@ -25,6 +32,18 @@ const settingsPanel = read('extension/features/settings-panel/index.js');
 const monolith = read('extension/ytkit.js');
 const sidepanelCss = read('extension/sidepanel.css');
 const sidepanelJs = read('extension/sidepanel.js');
+
+/** Evaluate a core module and hand back the surface it publishes on YTKitCore. */
+function coreSurface(relativePath) {
+    const context = {
+        console, URL, URLSearchParams, AbortController,
+        setTimeout, clearTimeout, structuredClone,
+    };
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(read(relativePath), context, { filename: relativePath });
+    return context.globalThis.YTKitCore || {};
+}
 
 // ── (a) the registry that registered nothing ──────────────────────────────
 
@@ -62,22 +81,25 @@ test('the guard that makes those listeners safe is still in place', () => {
 
 // ── (b) aliases with no consumers ─────────────────────────────────────────
 
-test('the three dead YTKitCore aliases are gone, and their functions are not', () => {
+test('the published core surface carries no dead alias, and keeps the live one', () => {
+    // Read what the modules PUBLISH rather than what their files say: an alias
+    // assigned through a loop or a spread would not match a source scan.
     const cases = [
-        ['extension/core/data-flow.js', 'findDataFlowCoverageGaps', 'function findCoverageGaps'],
+        ['extension/core/data-flow.js', 'findDataFlowCoverageGaps', 'createDataFlow'],
         ['extension/core/settings-sync.js', 'settingsSync', 'createSettingsSyncController'],
-        ['extension/core/browser-api.js', 'resolveBrowserNamespace', 'function resolveBrowserNamespace']
+        ['extension/core/browser-api.js', 'resolveBrowserNamespace', 'createBrowserApi'],
     ];
-    for (const [file, alias, keep] of cases) {
-        const source = read(file);
-        assert.doesNotMatch(source, new RegExp(`core\\.${alias}\\s*=`),
-            `${file} still exports the dead ${alias} alias`);
-        assert.match(source, new RegExp(keep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    for (const [file, deadAlias, liveExport] of cases) {
+        const surface = coreSurface(file);
+        assert.equal(surface[deadAlias], undefined,
+            `${file} still publishes the dead ${deadAlias} alias`);
+        assert.equal(typeof surface[liveExport], 'function',
             `${file}: the live implementation must stay`);
     }
 });
 
 test('nothing in the tree reaches for the removed aliases', () => {
+    // Exhaustive by nature: a caller anywhere would have made the alias live.
     const roots = ['extension', 'scripts'];
     const offenders = [];
     const walk = (dir) => {
@@ -114,17 +136,30 @@ test('the Theme section still matches its two foundation features', () => {
     // regex is tested against feature.id, not a schema key, and both are live
     // feature ids in group Theme. Deleting them would have moved both features
     // out of Foundation into the catch-all Surfaces section.
-    const visualSystem = read('extension/core/settings-visual-system.js');
-    const foundation = visualSystem.match(/fallback: 'Foundation', match: \/\^\(([^)]*)\)\$\//);
+    //
+    // Run the table's own regex against the real ids rather than reading the
+    // alternation out of the source: the section a feature lands in is the
+    // claim, and a rewritten-but-equivalent regex must still pass.
+    const { SETTINGS_CATEGORY_SECTIONS } = require('../extension/core/settings-visual-system.js');
+    const theme = SETTINGS_CATEGORY_SECTIONS?.Theme || SETTINGS_CATEGORY_SECTIONS?.theme;
+    assert.ok(Array.isArray(theme), 'the Theme category must still have a section table');
+    const foundation = theme.find((section) => section.fallback === 'Foundation');
     assert.ok(foundation, 'the Theme > Foundation section must still exist');
-    const alternates = foundation[1].split('|');
 
     for (const id of ['uiStyleManager', 'colorThemeManager']) {
-        assert.ok(alternates.includes(id),
-            `${id} must stay in the Foundation section: it is a live feature id`);
+        assert.equal(foundation.match.test(id), true,
+            `${id} must land in Foundation: it is a live feature id`);
         assert.match(monolith, new RegExp(`id: '${id}',[\\s\\S]{0,200}?group: 'Theme'`),
             `${id} must still be a Theme feature, or the alternate really is dead`);
     }
+
+    // A feature that belongs elsewhere must NOT be swept into Foundation, or
+    // the section is a catch-all and the assertions above mean nothing.
+    for (const id of ['nyanCatProgressBar', 'blueLightFilter']) {
+        assert.equal(foundation.match.test(id), false,
+            `${id} is not a Theme foundation control`);
+    }
+
     // And the regex really is applied to feature ids, which is the whole point.
     assert.match(settingsPanel, /section\.match\.test\(feature\.id\)/,
         'the section table matches feature ids, not schema keys');

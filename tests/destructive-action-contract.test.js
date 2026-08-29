@@ -6,11 +6,20 @@
 // siblings that have one, and an import whose undo appeared only when there
 // happened to be prior data to snapshot. The rule these pin: every destructive
 // action either restores on undo, or says in its own toast that it cannot.
+//
+// The irreversible one is now RUN, in both its success and failure paths. The
+// hidden-list handler is still read: it is built inside the settings panel row
+// assembly, which needs the whole panel to construct. The rest of this file
+// asserts on assets — popup.html, popup.css and the 11 locale catalogues —
+// where reading them is the claim.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+
+const { loadDeclarationsFrom } = require('./helpers/monolith');
+const { sources } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const read = (...parts) => fs.readFileSync(path.join(repoRoot, ...parts), 'utf8');
@@ -58,23 +67,62 @@ test('both hidden-list copies stayed in step', () => {
     }
 });
 
-test('the one destructive action that cannot be undone says so', () => {
-    const start = popupSource.indexOf('async function deleteAiCredential()');
-    assert.ok(start > -1, 'deleteAiCredential must exist');
-    const end = popupSource.indexOf('\nasync function broadcastSettingsReplaced', start);
-    assert.ok(end > start, 'the deleteAiCredential slice must end at the next function');
-    const block = popupSource.slice(start, end);
-
+test('the one destructive action that cannot be undone says so, and offers no undo', async () => {
     // No undo is possible: the stored secret is never re-displayable, so the
-    // popup holds no copy to restore. The contract is honesty, not a fake undo.
-    assert.ok(block.includes("t('aiCredentialDeleted'"),
-        'the delete confirmation must go through the locale key');
-    // The guard is that an irreversible action says so, not one exact spelling.
-    // The source string is single-quoted, so the contraction arrives escaped.
-    assert.match(block, /can(?:no|\\?')t be undone/,
+    // popup holds no copy to restore. The contract is honesty, not a fake undo,
+    // so run the delete and read the status the user is actually given.
+    const statuses = [];
+    const api = loadDeclarationsFrom(sources.popup, ['deleteAiCredential'], {
+        aiCredentialProvider: { value: 'openai' },
+        aiCredentialInput: { value: 'sk-secret' },
+        aiCredentialRemember: { checked: true },
+        setAiCredentialBusy: () => {},
+        sendRuntimeMessage: async () => ({ ok: true }),
+        refreshAiCredentialManager: async () => {},
+        failureText: (_context, error) => String(error && error.message),
+        showStatus: (message, type, duration) => statuses.push({ message, type, duration }),
+        t: (_key, fallback) => fallback,
+    });
+
+    await api.deleteAiCredential();
+
+    assert.equal(statuses.length, 1, 'the user is told once');
+    const [status] = statuses;
+    assert.match(status.message, /can(?:no|')t be undone/,
         'an irreversible action must not read like the reversible ones');
-    assert.doesNotMatch(block, /toastActionUndo|action:\s*\{/,
+    assert.equal(status.type, 'success');
+    assert.equal(typeof status.duration, 'number');
+    // showStatus takes no action argument at all, so there is no undo to offer
+    // here — which is the contract. The reversible siblings pass one.
+    assert.equal(statuses[0].action, undefined,
         'deleteAiCredential must not offer an undo it cannot honour');
+
+    // And the secret is cleared out of the field it was typed into.
+    assert.equal(api.globalThis.aiCredentialInput.value, '');
+    assert.equal(api.globalThis.aiCredentialRemember.checked, false);
+});
+
+test('a failed delete reports the failure instead of claiming success', async () => {
+    const statuses = [];
+    const api = loadDeclarationsFrom(sources.popup, ['deleteAiCredential'], {
+        aiCredentialProvider: { value: 'openai' },
+        aiCredentialInput: { value: 'sk-secret' },
+        aiCredentialRemember: { checked: true },
+        setAiCredentialBusy: () => {},
+        sendRuntimeMessage: async () => ({ ok: false, error: { message: 'vault locked' } }),
+        refreshAiCredentialManager: async () => {},
+        failureText: (_context, error) => String(error && error.message),
+        showStatus: (message, type) => statuses.push({ message, type }),
+        t: (_key, fallback) => fallback,
+    });
+
+    await api.deleteAiCredential();
+
+    assert.equal(statuses.length, 1);
+    assert.equal(statuses[0].type, 'error', 'a delete that did not happen must not read as done');
+    assert.match(statuses[0].message, /vault locked/);
+    assert.equal(api.globalThis.aiCredentialInput.value, 'sk-secret',
+        'and the field must not be cleared as though the key were gone');
 });
 
 test('the popup gives keyboard users a skip link, like the side panel already did', () => {

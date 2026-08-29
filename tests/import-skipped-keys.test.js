@@ -5,68 +5,123 @@
 // returned all the way up to the popup — and then discarded. The user saw
 // only aggregate before/after counts, which cannot answer the one question
 // that matters: did the setting I cared about survive?
+//
+// This was 22 pins on the plumbing. It now runs the import: a payload carrying
+// unknown keys goes through the real validate/merge/report chain and the
+// status the user would read is captured.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
+const { loadDeclarationsFrom } = require('./helpers/monolith');
+const { sources } = require('./helpers/source');
+
 const repoRoot = path.join(__dirname, '..');
-const popupSource = fs.readFileSync(path.join(repoRoot, 'extension/popup.js'), 'utf8');
 const policySource = fs.readFileSync(path.join(repoRoot, 'extension/core/policy-profile.js'), 'utf8');
 const enMessages = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension/_locales/en/messages.json'), 'utf8'));
 
+const IMPORT_CHAIN = [
+    'lastImportSkippedKeys',
+    'reportImportSkippedKeys',
+    'takeLastImportSkippedKeys',
+    'validateSettingsForBackupImport',
+];
+
+/**
+ * The real import chain, wired to a policy that drops the keys named in
+ * `unknown`. Returns the statuses and warnings a user would end up with.
+ */
+function importChain({ unknown = [] } = {}) {
+    const statuses = [];
+    const warnings = [];
+    const api = loadDeclarationsFrom(sources.popup, IMPORT_CHAIN, {
+        ensurePolicyProfile: () => ({
+            validateSettingsSnapshot: (settings) => {
+                const kept = { ...settings };
+                for (const key of unknown) delete kept[key];
+                return { ok: true, settings: kept, skippedKeys: unknown.slice() };
+            },
+        }),
+        sanitizeSettingsObject: (settings) => settings,
+        formatSchemaValidationError: (label) => label,
+        showStatus: (message, type, duration) => statuses.push({ message, type, duration }),
+        console: { warn: (...args) => warnings.push(args.join(' ')) },
+        tCount: (count, _key, one, other) => (count === 1 ? one : other),
+    });
+    return { api, statuses, warnings };
+}
+
 test('the validator still reports which keys it dropped', () => {
+    // The producer half lives in a module the popup only consumes; its own
+    // behaviour is covered with the policy profile.
     assert.match(policySource, /skippedKeys/,
         'the producer side of this contract must exist for the popup to consume it');
 });
 
-test('the popup captures skippedKeys instead of discarding them', () => {
-    const start = popupSource.indexOf('function validateSettingsForBackupImport');
-    assert.ok(start > 0);
-    const body = popupSource.slice(start, start + 1600);
-    assert.match(body, /validation\.skippedKeys/,
+test('the popup captures the keys the validator dropped', () => {
+    const chain = importChain({ unknown: ['brandNewToggle', 'anotherNewOne'] });
+    chain.api.validateSettingsForBackupImport({ hideSidebar: true, brandNewToggle: 1, anotherNewOne: 2 });
+
+    assert.deepEqual(Array.from(chain.api.takeLastImportSkippedKeys()), ['brandNewToggle', 'anotherNewOne'],
         'the popup must read the skipped keys the validator returns');
-    assert.match(body, /lastImportSkippedKeys = validation\.skippedKeys\.slice\(\)/);
 });
 
-test('a merge that skipped keys reports them', () => {
-    const start = popupSource.indexOf('function mergeImportedSettingsWithDefaults');
-    assert.ok(start > 0);
-    const body = popupSource.slice(start, start + 1200);
-    assert.match(body, /takeLastImportSkippedKeys\(\)/);
-    assert.match(body, /reportImportSkippedKeys\(skipped\)/);
+test('the skipped list is emptied by the take, and by the next import', () => {
+    // Array.from throughout: an array built inside the vm realm is never
+    // reference-equal to a host-realm one under assert/strict.
+    const chain = importChain({ unknown: ['brandNewToggle'] });
+    chain.api.validateSettingsForBackupImport({ brandNewToggle: 1 });
+    assert.deepEqual(Array.from(chain.api.takeLastImportSkippedKeys()), ['brandNewToggle']);
+    assert.deepEqual(Array.from(chain.api.takeLastImportSkippedKeys()), [],
+        'taking the list must empty it, or one import reports twice');
+
+    // A second import that skips nothing must not inherit the first one's list.
+    const carried = importChain({ unknown: ['first'] });
+    carried.api.validateSettingsForBackupImport({ first: 1 });
+    carried.api.globalThis.ensurePolicyProfile = () => ({
+        validateSettingsSnapshot: (settings) => ({ ok: true, settings, skippedKeys: [] }),
+    });
+    carried.api.validateSettingsForBackupImport({ hideSidebar: true });
+    assert.deepEqual(Array.from(carried.api.takeLastImportSkippedKeys()), [],
+        'an import that skipped nothing must not report the previous one keys');
 });
 
-test('the report names the keys, not just a count', () => {
-    const start = popupSource.indexOf('function reportImportSkippedKeys');
-    assert.ok(start > 0, 'the reporter must exist');
-    const body = popupSource.slice(start, start + 900);
-    assert.match(body, /keys\.slice\(0, MAX_NAMED\)\.join\(', '\)/,
-        'the whole point is naming the dropped settings');
-    assert.match(body, /\{keys\}/, 'the locale template must receive the names');
-    assert.match(body, /\{count\}/);
-    assert.match(body, /showStatus\(/);
+test('the status names the dropped settings rather than counting them', () => {
+    const chain = importChain();
+    chain.api.reportImportSkippedKeys(['brandNewToggle', 'anotherNewOne']);
+
+    assert.equal(chain.statuses.length, 1, 'the user is told once');
+    const [status] = chain.statuses;
+    assert.match(status.message, /brandNewToggle/, 'the whole point is naming the dropped settings');
+    assert.match(status.message, /anotherNewOne/);
+    assert.match(status.message, /^2 settings/, 'and counting them, in the plural form');
+    assert.ok(['info', 'success', 'error', 'ok'].includes(status.type),
+        `${status.type} is not a status type showStatus renders`);
+    assert.ok(status.duration >= 6000,
+        `a list of setting names needs more than ${status.duration}ms on screen`);
+    assert.equal(chain.warnings.length, 1, 'and the full list reaches the console for support');
+    assert.match(chain.warnings[0], /brandNewToggle, anotherNewOne/);
 });
 
-test('the status is held long enough to read a list of names', () => {
-    const start = popupSource.indexOf('function reportImportSkippedKeys');
-    const body = popupSource.slice(start, start + 900);
-    const match = /showStatus\(message, '[a-z]+', (\d+)\)/.exec(body);
-    assert.ok(match, 'the reporter must call showStatus with an explicit duration');
-    assert.ok(Number(match[1]) >= 6000,
-        `a list of setting names needs more than ${match[1]}ms on screen`);
+test('a single skipped key reads in the singular', () => {
+    const chain = importChain();
+    chain.api.reportImportSkippedKeys(['brandNewToggle']);
+    assert.match(chain.statuses[0].message, /^1 setting /,
+        'Chrome i18n has no plural support, so the call site chooses the form');
 });
 
-test('the reporter reads a real status type', () => {
-    const start = popupSource.indexOf('function reportImportSkippedKeys');
-    const body = popupSource.slice(start, start + 900);
-    const match = /showStatus\(message, '([a-z]+)'/.exec(body);
-    assert.ok(match);
-    // showStatus normalizes 'ok' to 'success'; anything outside this set would
-    // render an unstyled banner class.
-    assert.ok(['info', 'success', 'error', 'ok'].includes(match[1]),
-        `${match[1]} is not a status type showStatus renders`);
+test('a long list is truncated with a count of the rest, not silently cut', () => {
+    const keys = Array.from({ length: 10 }, (_, index) => `key${index}`);
+    const chain = importChain();
+    chain.api.reportImportSkippedKeys(keys);
+
+    const [status] = chain.statuses;
+    assert.match(status.message, /key0, key1, key2, key3, key4, key5/, 'the first six are named');
+    assert.doesNotMatch(status.message, /key6/, 'the rest are not');
+    assert.match(status.message, /\(\+4 more\)/, 'and the user is told how many were left out');
+    assert.match(chain.warnings[0], /key9/, 'while the console still carries all of them');
 });
 
 test('the template exists in EN and carries both tokens', () => {
@@ -80,14 +135,4 @@ test('the template exists in EN and carries both tokens', () => {
         assert.match(entry.message, /\{count\}/);
         assert.match(entry.message, /\{keys\}/);
     }
-});
-
-test('the skipped list is cleared between imports', () => {
-    const start = popupSource.indexOf('function validateSettingsForBackupImport');
-    const body = popupSource.slice(start, start + 400);
-    assert.match(body, /lastImportSkippedKeys = \[\];/,
-        'a second import must not inherit the first import\'s skipped keys');
-    const take = popupSource.indexOf('function takeLastImportSkippedKeys');
-    assert.ok(take > 0);
-    assert.match(popupSource.slice(take, take + 250), /lastImportSkippedKeys = \[\]/);
 });
