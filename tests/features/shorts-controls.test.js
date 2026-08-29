@@ -10,28 +10,47 @@ const assert = require('node:assert/strict');
 
 const { loadFeature, fakeTreeDocument } = require('../helpers/monolith');
 
-/** A Shorts page with one active reel. */
-function shortsPage({ pathname = '/shorts/abc12345678', settings = {} } = {}) {
+/**
+ * A Shorts page. The reel carousel keeps several `<video>` elements mounted
+ * and only one carries `is-active`, so the fixture answers the two selectors
+ * separately: a fixture that returned the same node for any selector
+ * containing "video" would let the active-reel targeting be deleted without a
+ * single test noticing.
+ */
+function shortsPage({ pathname = '/shorts/abc12345678', settings = {}, activeReel = true } = {}) {
     // Built through the tree document so they record listeners the way a real
     // node does; a bare fakeNode swallows addEventListener.
     const scratch = fakeTreeDocument(() => null);
-    const video = scratch.createElement('video');
-    video.playbackRate = 1;
-    video.loop = true;
+    const newVideo = () => {
+        const node = scratch.createElement('video');
+        node.playbackRate = 1;
+        node.loop = true;
+        return node;
+    };
+    // The reel that is on screen, and the neighbour the carousel keeps mounted
+    // under #shorts-player. Driving the wrong one changes a Short the user
+    // cannot see.
+    const video = newVideo();
+    const offscreenVideo = newVideo();
     const nextButton = scratch.createElement('button');
     const documentRef = fakeTreeDocument((selector) => {
-        if (String(selector).includes('video')) return video;
-        if (String(selector).includes('navigation-button-down')) return nextButton;
+        const text = String(selector);
+        if (text.includes('navigation-button-down')) return nextButton;
+        if (text.includes('ytd-reel-video-renderer[is-active]')) return activeReel ? video : null;
+        if (text.includes('#shorts-player')) return offscreenVideo;
         return null;
     });
     const timers = [];
     const rates = [];
+    const navigateRules = new Map();
     return {
         video,
+        offscreenVideo,
         nextButton,
         documentRef,
         timers,
         rates,
+        navigateRules,
         globals: {
             document: documentRef,
             location: { pathname },
@@ -40,8 +59,8 @@ function shortsPage({ pathname = '/shorts/abc12345678', settings = {} } = {}) {
             clearTimeout: () => {},
             addMutationRule: () => {},
             removeMutationRule: () => {},
-            addNavigateRule: () => {},
-            removeNavigateRule: () => {},
+            addNavigateRule: (id, rule) => navigateRules.set(id, rule),
+            removeNavigateRule: (id) => navigateRules.delete(id),
             injectStyle: () => ({ remove() {} }),
             registerCornerStackElement: () => () => {},
             setProgrammaticPlaybackRate: (target, rate) => { rates.push(rate); target.playbackRate = rate; },
@@ -127,4 +146,64 @@ test('auto-advance leaves a watch page alone and detaches on teardown', () => {
     feature.destroy();
     page.video.listeners.get('ended')?.forEach((handler) => handler());
     assert.equal(page.nextButton.clicked, 0, 'a torn-down feature must not still be advancing reels');
+});
+
+test('the chip cycles the whole published step list, in order', () => {
+    // The description promises 0.5x-2x. Proving only that 1.5 steps to 2 and 2
+    // wraps to 0.5 leaves every step between them free to disappear.
+    const page = shortsPage({ settings: { persistentSpeed: true, persistentSpeedValue: 0.5 } });
+    const feature = loadFeature('shortsSpeedControl', page.globals);
+    feature._apply();
+
+    const seen = [page.video.playbackRate];
+    for (let i = 0; i < 8 && !(seen.length > 1 && seen[seen.length - 1] === seen[0]); i += 1) {
+        feature._cycle();
+        seen.push(page.video.playbackRate);
+    }
+    assert.equal(seen[seen.length - 1], seen[0], 'the cycle must return to where it started');
+    assert.deepEqual(seen.slice(0, -1), [0.5, 0.75, 1, 1.25, 1.5, 2],
+        'every advertised step is reachable by clicking the chip');
+});
+
+test('the chip drives the reel that is on screen, not a neighbour the carousel kept mounted', () => {
+    const page = shortsPage({ settings: { persistentSpeed: true, persistentSpeedValue: 1.5 } });
+    const feature = loadFeature('shortsSpeedControl', page.globals);
+    feature._apply();
+
+    assert.equal(page.video.playbackRate, 1.5, 'the active reel is the one that changes speed');
+    assert.equal(page.offscreenVideo.playbackRate, 1,
+        'a mounted-but-offscreen Short must keep its own rate');
+});
+
+test('the chip falls back to the player video when no reel is marked active', () => {
+    const page = shortsPage({ activeReel: false, settings: { persistentSpeed: true, persistentSpeedValue: 1.5 } });
+    const feature = loadFeature('shortsSpeedControl', page.globals);
+    feature._apply();
+    assert.equal(page.offscreenVideo.playbackRate, 1.5,
+        'the fallback selector is what keeps the chip working mid-transition');
+});
+
+test('auto-advance rides the active reel and re-attaches on navigation', () => {
+    const page = shortsPage();
+    const feature = loadFeature('shortsAutoAdvance', page.globals);
+    feature.init();
+
+    assert.equal(page.video.loop, false, 'the reel on screen is unlooped');
+    assert.equal(page.offscreenVideo.loop, true, 'a neighbour reel is left alone');
+    assert.ok(page.navigateRules.has('shortsAutoAdvance'),
+        'Shorts are an SPA route; without a navigate rule the handler stays on the first reel');
+
+    // The navigate rule schedules the re-attach rather than doing it inline.
+    page.navigateRules.get('shortsAutoAdvance')();
+    const scheduled = page.timers[page.timers.length - 1];
+    assert.ok(scheduled && scheduled.delay > 0, 'the re-attach is deferred, not immediate');
+});
+
+test('auto-advance releases its navigate rule on teardown', () => {
+    const page = shortsPage();
+    const feature = loadFeature('shortsAutoAdvance', page.globals);
+    feature.init();
+    feature.destroy();
+    assert.equal(page.navigateRules.has('shortsAutoAdvance'), false,
+        'a rule left registered keeps firing after the feature is switched off');
 });
