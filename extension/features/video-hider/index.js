@@ -27,6 +27,58 @@
     // classifier. The channel pattern is kept narrow for the same reason.
     const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
     const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
+    // YouTube discloses altered or synthetic content in the player response
+    // itself. That beats reading the title: a correctly disclosed video whose
+    // title says nothing was invisible to the pattern above, and an ordinary
+    // video titled "How AI generated my logo" matched it.
+    //
+    // Four spellings, because the payload has used different ones across the
+    // rollout and the signal is worth nothing if the key moved.
+    const SYNTHETIC_DISCLOSURE_KEYS = Object.freeze([
+        'generativeAi', 'generatedWithAi', 'alteredOrSynthetic', 'madeWithAi'
+    ]);
+
+    // Walks the payload for a disclosure key. Deliberately NOT
+    // JSON.stringify + regex: that allocates a copy of a payload measured in
+    // megabytes on every card, and it matches the key NAME wherever it appears
+    // as a string value, so a video whose description mentioned "madeWithAi"
+    // would read as disclosed.
+    //
+    // Bounded on node count and depth. A payload that exhausts the budget
+    // returns null, which falls through to the text heuristic rather than
+    // claiming the video is clean.
+    function findSyntheticDisclosure(payload, { maxNodes = 5000, maxDepth = 14 } = {}) {
+        if (!payload || typeof payload !== 'object') return null;
+        const disclosureKeys = new Set(SYNTHETIC_DISCLOSURE_KEYS);
+        const seen = new Set();
+        const queue = [[payload, 0]];
+        let budget = maxNodes;
+        while (queue.length) {
+            const [node, depth] = queue.shift();
+            if (budget-- <= 0) return null;
+            if (depth > maxDepth || seen.has(node)) continue;
+            seen.add(node);
+            if (Array.isArray(node)) {
+                for (const item of node) {
+                    if (item && typeof item === 'object') queue.push([item, depth + 1]);
+                }
+                continue;
+            }
+            for (const [key, value] of Object.entries(node)) {
+                // The key has to be present AND affirmative. A payload
+                // carrying `alteredOrSynthetic: false` is YouTube reporting
+                // that the creator declared it is not, which must never hide
+                // anything.
+                if (disclosureKeys.has(key) && value !== false && value !== null
+                    && value !== undefined && value !== '' && value !== 0) {
+                    return key;
+                }
+                if (value && typeof value === 'object') queue.push([value, depth + 1]);
+            }
+        }
+        return null;
+    }
+
     const FILTER_REASON_MESSAGES = Object.freeze({
         manual: ['videoHiderReasonManual', 'your saved hidden list'],
         blockedChannel: ['videoHiderReasonBlockedChannel', 'a blocked channel rule'],
@@ -41,6 +93,7 @@
         autoDubbed: ['videoHiderReasonAutoDubbed', 'the auto-dubbed filter'],
         lowView: ['videoHiderReasonLowView', 'the low-view filter'],
         'synthetic-narration': ['videoHiderReasonSyntheticNarration', 'the synthetic-narration marker filter'],
+        'synthetic-disclosed': ['videoHiderReasonSyntheticDisclosed', "YouTube's own altered-or-synthetic disclosure"],
         'low-signal': ['videoHiderReasonLowSignal', 'the low-signal view/age filter'],
         'upload-cadence': ['videoHiderReasonUploadCadence', 'the upload-cadence filter'],
         watchedRatio: ['videoHiderReasonWatchedRatio', 'the watched-ratio filter'],
@@ -1639,6 +1692,20 @@
                 return Number.isFinite(value) && unitDays ? Math.max(0, Math.round(value * unitDays)) : null;
             },
 
+            // The loaded player response describes ONE video: the one the
+            // page is playing. Reading it for a feed card would answer with a
+            // different video's disclosure, so the id has to match before any
+            // of it counts. When it does not, this returns null and the text
+            // heuristic decides, exactly as before.
+            _readSyntheticDisclosure(element) {
+                const response = getPlayerResponseGlobal();
+                const details = response?.videoDetails;
+                if (!details) return null;
+                const cardId = element?.dataset?.ytkitVideoId || this._extractVideoId(element);
+                if (!cardId || String(details.videoId || '') !== String(cardId)) return null;
+                return findSyntheticDisclosure(response);
+            },
+
             _extractVideoMetadata(element) {
                 const title = this._extractTitle(element);
                 const descriptionText = this._extractDescriptionText(element);
@@ -1676,6 +1743,10 @@
                     ageDays: this._extractPredicateAgeDays(rowsText),
                     syntheticNarration: SYNTHETIC_NARRATION_PATTERN.test(heuristicText)
                         || SYNTHETIC_CHANNEL_PATTERN.test(heuristicText),
+                    // The key that fired, or null. Kept separate from the
+                    // heuristic so the hide reason can say which signal it was,
+                    // and so a disclosure never quietly reads as a text match.
+                    syntheticDisclosure: this._readSyntheticDisclosure(element),
                     uploadCadencePerDay: extractUploadCadencePerDay(`${metadataText} ${descriptionText} ${channelText}`),
                     isLive: hasLiveMarker
                         || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
@@ -1713,8 +1784,22 @@
                     const threshold = Math.max(0, Number(appState.settings.hideVideosLowViewThreshold) || 0);
                     if (threshold > 0 && metadata.views !== null && metadata.views < threshold) return { hide: true, reason: 'low-view' };
                 }
-                if (appState.settings.hideVideosSyntheticNarrationFilter === true && metadata.syntheticNarration) {
-                    return { hide: true, reason: 'synthetic-narration' };
+                if (appState.settings.hideVideosSyntheticNarrationFilter === true) {
+                    // YouTube's own disclosure first; the title patterns stay
+                    // as the fallback for everything it does not cover.
+                    if (metadata.syntheticDisclosure) {
+                        return {
+                            hide: true,
+                            reason: 'synthetic-disclosed',
+                            disclosureKey: metadata.syntheticDisclosure
+                        };
+                    }
+                    if (metadata.syntheticNarration) {
+                        // Shape unchanged: the reason string is already the
+                        // report of which signal fired, and the disclosed
+                        // branch is the only one with a key to name.
+                        return { hide: true, reason: 'synthetic-narration' };
+                    }
                 }
                 if (appState.settings.hideVideosLowSignalFilter === true) {
                     const minViews = Math.max(0, Number(appState.settings.hideVideosLowSignalMinViews) || 0);
@@ -2197,6 +2282,7 @@
                     descriptionText: metadata?.descriptionText || '',
                     channelText: metadata?.channelText || '',
                     syntheticNarration: !!metadata?.syntheticNarration,
+                    syntheticDisclosure: metadata?.syntheticDisclosure || null,
                     uploadCadencePerDay: metadata?.uploadCadencePerDay ?? null,
                     durationSec: this._extractDuration(element) || 0,
                     viewCount: metadata?.views || 0,
@@ -2301,7 +2387,7 @@
             // feed when a rule over-matches. Deliberate choices are exempt:
             // manual hides, blocked channels, marked-watched, and allowlist
             // mode, where hiding everything unlisted is the entire point.
-            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'low-signal', 'upload-cadence']),
+            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'synthetic-disclosed', 'low-signal', 'upload-cadence']),
             _MAX_RULE_HIDDEN_RATIO: 0.25,
             _RATIO_GUARD_MIN_CARDS: 8,
             _lastRuleHideGuard: null,

@@ -7737,6 +7737,9 @@
   "videoHiderReasonSyntheticNarration": {
     "message": "the synthetic-narration marker filter"
   },
+  "videoHiderReasonSyntheticDisclosed": {
+    "message": "YouTube의 변경 또는 합성 콘텐츠 고지"
+  },
   "videoHiderReasonUpcoming": {
     "message": "예정된 공개 필터"
   },

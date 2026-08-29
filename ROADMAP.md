@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Convert the 14 zero-behavior test files to executed assertions
-  Why: 40.4% of all assertions pin source text, and 14 files carry no behavioral coverage at all, against a helper that documents a real bug shipping past a source pin that matched the broken code exactly.
-  Evidence: measured 5,086/12,602 source-shape assertions; 100%-source files led by `tests/userscript-parity.test.js` (55/55), `tests/userscript-fixes.test.js` (40), `tests/regression-deep-pass-3.test.js` (19), `tests/features/link-hygiene.test.js` (17), `tests/speed-popup-placement.test.js` (17), `tests/feature-module-resilience.test.js` (16), `tests/download-popup-navigation.test.js` (13); rationale at `tests/helpers/monolith.js:3-7`.
-  Touches: the 14 named files, `tests/helpers/monolith.js`, `tests/helpers/source.js`.
-  Acceptance: each converted file loads its subject through `tests/helpers/monolith.js` or `require` and asserts observable output; every converted assertion is validated by reverting the code under test and confirming the test goes red.
-  Complexity: L
-
 - [ ] P2 — Detect altered or synthetic content from the InnerTube payload instead of title text
   Why: the current synthetic filter is a title and description regex that misses correctly disclosed videos and false-positives on ordinary titles, while YouTube's own disclosure travels in the player response.
   Evidence: `extension/features/video-hider/index.js:28` (`SYNTHETIC_NARRATION_PATTERN` is text-only; the module reads `playerResponse` once); the technique is demonstrated in https://github.com/code-charity/youtube/pull/4275, which tests `generativeAi|generatedWithAi|alteredOrSynthetic|madeWithAi` against the player response. The 2026-08-23 pass rejected this only for lack of a stable DOM selector, which the payload path does not need.

@@ -7737,6 +7737,9 @@
   "videoHiderReasonSyntheticNarration": {
     "message": "the synthetic-narration marker filter"
   },
+  "videoHiderReasonSyntheticDisclosed": {
+    "message": "YouTube 自带的经改动或合成内容标示"
+  },
   "videoHiderReasonUpcoming": {
     "message": "即将首播过滤器"
   },

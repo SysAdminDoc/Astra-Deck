@@ -19452,6 +19452,41 @@ if (typeof globalThis !== "undefined") {
     // "AI detector": a false positive is more harmful than leaving a card
     const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
     const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
+    // video titled "How AI generated my logo" matched it.
+    const SYNTHETIC_DISCLOSURE_KEYS = Object.freeze([
+        'generativeAi', 'generatedWithAi', 'alteredOrSynthetic', 'madeWithAi'
+    ]);
+
+    // as a string value, so a video whose description mentioned "madeWithAi"
+    function findSyntheticDisclosure(payload, { maxNodes = 5000, maxDepth = 14 } = {}) {
+        if (!payload || typeof payload !== 'object') return null;
+        const disclosureKeys = new Set(SYNTHETIC_DISCLOSURE_KEYS);
+        const seen = new Set();
+        const queue = [[payload, 0]];
+        let budget = maxNodes;
+        while (queue.length) {
+            const [node, depth] = queue.shift();
+            if (budget-- <= 0) return null;
+            if (depth > maxDepth || seen.has(node)) continue;
+            seen.add(node);
+            if (Array.isArray(node)) {
+                for (const item of node) {
+                    if (item && typeof item === 'object') queue.push([item, depth + 1]);
+                }
+                continue;
+            }
+            for (const [key, value] of Object.entries(node)) {
+                // carrying `alteredOrSynthetic: false` is YouTube reporting
+                if (disclosureKeys.has(key) && value !== false && value !== null
+                    && value !== undefined && value !== '' && value !== 0) {
+                    return key;
+                }
+                if (value && typeof value === 'object') queue.push([value, depth + 1]);
+            }
+        }
+        return null;
+    }
+
     const FILTER_REASON_MESSAGES = Object.freeze({
         manual: ['videoHiderReasonManual', 'your saved hidden list'],
         blockedChannel: ['videoHiderReasonBlockedChannel', 'a blocked channel rule'],
@@ -19466,6 +19501,7 @@ if (typeof globalThis !== "undefined") {
         autoDubbed: ['videoHiderReasonAutoDubbed', 'the auto-dubbed filter'],
         lowView: ['videoHiderReasonLowView', 'the low-view filter'],
         'synthetic-narration': ['videoHiderReasonSyntheticNarration', 'the synthetic-narration marker filter'],
+        'synthetic-disclosed': ['videoHiderReasonSyntheticDisclosed', "YouTube's own altered-or-synthetic disclosure"],
         'low-signal': ['videoHiderReasonLowSignal', 'the low-signal view/age filter'],
         'upload-cadence': ['videoHiderReasonUploadCadence', 'the upload-cadence filter'],
         watchedRatio: ['videoHiderReasonWatchedRatio', 'the watched-ratio filter'],
@@ -21021,6 +21057,16 @@ if (typeof globalThis !== "undefined") {
                 return Number.isFinite(value) && unitDays ? Math.max(0, Math.round(value * unitDays)) : null;
             },
 
+            // different video's disclosure, so the id has to match before any
+            _readSyntheticDisclosure(element) {
+                const response = getPlayerResponseGlobal();
+                const details = response?.videoDetails;
+                if (!details) return null;
+                const cardId = element?.dataset?.ytkitVideoId || this._extractVideoId(element);
+                if (!cardId || String(details.videoId || '') !== String(cardId)) return null;
+                return findSyntheticDisclosure(response);
+            },
+
             _extractVideoMetadata(element) {
                 const title = this._extractTitle(element);
                 const descriptionText = this._extractDescriptionText(element);
@@ -21050,6 +21096,7 @@ if (typeof globalThis !== "undefined") {
                     ageDays: this._extractPredicateAgeDays(rowsText),
                     syntheticNarration: SYNTHETIC_NARRATION_PATTERN.test(heuristicText)
                         || SYNTHETIC_CHANNEL_PATTERN.test(heuristicText),
+                    syntheticDisclosure: this._readSyntheticDisclosure(element),
                     uploadCadencePerDay: extractUploadCadencePerDay(`${metadataText} ${descriptionText} ${channelText}`),
                     isLive: hasLiveMarker
                         || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
@@ -21081,8 +21128,18 @@ if (typeof globalThis !== "undefined") {
                     const threshold = Math.max(0, Number(appState.settings.hideVideosLowViewThreshold) || 0);
                     if (threshold > 0 && metadata.views !== null && metadata.views < threshold) return { hide: true, reason: 'low-view' };
                 }
-                if (appState.settings.hideVideosSyntheticNarrationFilter === true && metadata.syntheticNarration) {
-                    return { hide: true, reason: 'synthetic-narration' };
+                if (appState.settings.hideVideosSyntheticNarrationFilter === true) {
+                    // YouTube's own disclosure first; the title patterns stay
+                    if (metadata.syntheticDisclosure) {
+                        return {
+                            hide: true,
+                            reason: 'synthetic-disclosed',
+                            disclosureKey: metadata.syntheticDisclosure
+                        };
+                    }
+                    if (metadata.syntheticNarration) {
+                        return { hide: true, reason: 'synthetic-narration' };
+                    }
                 }
                 if (appState.settings.hideVideosLowSignalFilter === true) {
                     const minViews = Math.max(0, Number(appState.settings.hideVideosLowSignalMinViews) || 0);
@@ -21527,6 +21584,7 @@ if (typeof globalThis !== "undefined") {
                     descriptionText: metadata?.descriptionText || '',
                     channelText: metadata?.channelText || '',
                     syntheticNarration: !!metadata?.syntheticNarration,
+                    syntheticDisclosure: metadata?.syntheticDisclosure || null,
                     uploadCadencePerDay: metadata?.uploadCadencePerDay ?? null,
                     durationSec: this._extractDuration(element) || 0,
                     viewCount: metadata?.views || 0,
@@ -21614,7 +21672,7 @@ if (typeof globalThis !== "undefined") {
                     DebugManager.log('VideoHider', `Budgeted scan ${this._lastScanDiagnostics.label}: ${this._lastScanDiagnostics.processed}/${this._lastScanDiagnostics.total} cards in ${this._lastScanDiagnostics.chunks} chunks (${this._lastScanDiagnostics.durationMs}ms)`);
                 }
             },
-            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'low-signal', 'upload-cadence']),
+            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'synthetic-disclosed', 'low-signal', 'upload-cadence']),
             _MAX_RULE_HIDDEN_RATIO: 0.25,
             _RATIO_GUARD_MIN_CARDS: 8,
             _lastRuleHideGuard: null,
