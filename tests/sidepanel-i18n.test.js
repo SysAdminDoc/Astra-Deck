@@ -10,6 +10,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { loadDeclarationsFrom, fakeTreeDocument } = require('./helpers/monolith');
+
 const repoRoot = path.join(__dirname, '..');
 const sidepanelJs = fs.readFileSync(path.join(repoRoot, 'extension', 'sidepanel.js'), 'utf8');
 const sidepanelCss = fs.readFileSync(path.join(repoRoot, 'extension', 'sidepanel.css'), 'utf8');
@@ -20,23 +22,179 @@ const enMessages = JSON.parse(fs.readFileSync(
     path.join(repoRoot, 'extension', '_locales', 'en', 'messages.json'), 'utf8'
 ));
 
-test('sidepanel.js defines the popup i18n helper surface', () => {
-    assert.match(sidepanelJs, /function t\(key, fallback\)/,
-        'sidepanel must define t(key, fallback)');
-    assert.match(sidepanelJs, /function applyI18n\(root = document\)/,
-        'sidepanel must define applyI18n for data-i18n markup');
-    assert.match(sidepanelJs, /async function initI18n\(\)/,
-        'sidepanel must resolve the manual locale override before rendering');
-    assert.match(sidepanelJs, /_localeOverride/,
-        'sidepanel must honour the popup language-dropdown override key');
-    assert.match(sidepanelJs, /function applyDocumentLanguage\(\)/,
-        'sidepanel must sync <html lang>/<html dir> to the resolved locale');
-    assert.match(sidepanelJs, /RTL_LOCALES = new Set\(\['ar', 'he', 'fa', 'ur'\]\)/,
-        'sidepanel must mirror the popup RTL locale set');
-    assert.match(sidepanelJs, /RTL_LOCALES\.has\(base\) \? 'rtl' : 'ltr'/,
-        'sidepanel must flip document.dir for RTL locales');
+// ── the i18n machinery, run ─────────────────────────────────────────────────
+//
+// These were eight regex reads of sidepanel.js. Every one of them is a
+// behaviour: whether t() prefers the override map, whether applyI18n fills an
+// attribute as well as text, whether a hostile stored locale is refused,
+// whether <html dir> actually flips. The functions are plain declarations, so
+// they are lifted out and driven.
+
+const I18N_CHAIN = ['BUNDLED_LOCALES', 'BUNDLED_LOCALE_SET', 'isValidLocaleTag', 'RTL_LOCALES', 'I18N', 't', 'applyI18n'];
+
+/** The sidepanel i18n helpers over a fake document and a fake extension API. */
+function i18nUnder({ uiLanguage = 'en', getMessage = () => '', override = null, map = null } = {}) {
+    const documentRef = fakeTreeDocument(() => null);
+    const api = loadDeclarationsFrom(sidepanelJs, I18N_CHAIN, {
+        document: documentRef,
+        ext: { i18n: { getUILanguage: () => uiLanguage, getMessage } },
+    });
+    api.I18N.override = override;
+    api.I18N.map = map;
+    return { api, documentRef };
+}
+
+test('t() prefers the loaded override, then the browser catalogue, then the inline English', () => {
+    const loaded = i18nUnder({ map: { spTitle: 'من اللوحة' }, getMessage: () => 'from browser' }).api;
+    assert.equal(loaded.t('spTitle', 'Dashboard'), 'من اللوحة',
+        'a manually chosen locale must win over the browser UI language');
+    assert.equal(loaded.t('spOther', 'Dashboard'), 'from browser',
+        'a key the override does not carry falls through to the browser catalogue');
+
+    const bare = i18nUnder({ getMessage: () => '' }).api;
+    assert.equal(bare.t('spTitle', 'Dashboard'), 'Dashboard',
+        'and with no catalogue at all the inline English is what the user reads');
+    assert.equal(bare.t('spTitle'), 'spTitle', 'a key with no fallback reads as itself, not as undefined');
+
+    // An empty string from either source is not a translation.
+    const empty = i18nUnder({ map: { spTitle: '' }, getMessage: () => '' }).api;
+    assert.equal(empty.t('spTitle', 'Dashboard'), 'Dashboard');
+});
+
+test('t() survives a catalogue that throws rather than leaving the surface blank', () => {
+    const angry = i18nUnder({ getMessage: () => { throw new Error('no i18n here'); } }).api;
+    assert.equal(angry.t('spTitle', 'Dashboard'), 'Dashboard',
+        'i18n is best-effort; a throwing host must not take the dashboard down');
+});
+
+test('applyI18n fills text and the three localizable attributes', () => {
+    const { api, documentRef } = i18nUnder({
+        map: {
+            spTitle: 'Tableau de bord',
+            spSearchPlaceholder: 'Rechercher',
+            spCloseAria: 'Fermer',
+            spHelpTitle: 'Aide',
+        },
+    });
+
+    const heading = documentRef.createElement('h1');
+    heading.setAttribute('data-i18n', 'spTitle');
+    heading.textContent = 'Dashboard';
+
+    const search = documentRef.createElement('input');
+    search.setAttribute('data-i18n-attr-placeholder', 'spSearchPlaceholder');
+    search.setAttribute('placeholder', 'Search');
+
+    const close = documentRef.createElement('button');
+    close.setAttribute('data-i18n-attr-aria-label', 'spCloseAria');
+    close.setAttribute('aria-label', 'Close');
+
+    const help = documentRef.createElement('span');
+    help.setAttribute('data-i18n-attr-title', 'spHelpTitle');
+    help.setAttribute('title', 'Help');
+
+    const untranslated = documentRef.createElement('p');
+    untranslated.setAttribute('data-i18n', 'spNoSuchKey');
+    untranslated.textContent = 'Still English';
+
+    const nodes = [heading, search, close, help, untranslated];
+    const root = {
+        querySelectorAll: (selector) =>
+            nodes.filter((node) => node.getAttribute(String(selector).slice(1, -1)) !== null
+                && node.getAttribute(String(selector).slice(1, -1)) !== undefined),
+    };
+
+    api.applyI18n(root);
+
+    assert.equal(heading.textContent, 'Tableau de bord', 'text content is translated');
+    assert.equal(search.getAttribute('placeholder'), 'Rechercher', 'so is a placeholder');
+    assert.equal(close.getAttribute('aria-label'), 'Fermer', 'and an accessible name');
+    assert.equal(help.getAttribute('title'), 'Aide', 'and a tooltip');
+    assert.equal(untranslated.textContent, 'Still English',
+        'a key with no translation keeps the inline English rather than blanking');
+});
+
+test('the document language and direction follow the resolved locale', () => {
+    const chain = [...I18N_CHAIN, 'applyDocumentLanguage'];
+    const run = ({ uiLanguage, override }) => {
+        const documentRef = fakeTreeDocument(() => null);
+        documentRef.documentElement = {};
+        const api = loadDeclarationsFrom(sidepanelJs, chain, {
+            document: documentRef,
+            ext: { i18n: { getUILanguage: () => uiLanguage, getMessage: () => '' } },
+        });
+        api.I18N.override = override;
+        api.applyDocumentLanguage();
+        return documentRef.documentElement;
+    };
+
+    for (const locale of ['ar', 'he', 'fa', 'ur']) {
+        assert.equal(run({ uiLanguage: locale }).dir, 'rtl', `${locale} reads right to left`);
+    }
+    for (const locale of ['en', 'de', 'ja', 'pt_BR']) {
+        assert.equal(run({ uiLanguage: locale }).dir, 'ltr', `${locale} does not`);
+    }
+
+    // A regional Arabic tag is still Arabic, and the tag itself is BCP-47.
+    const regional = run({ uiLanguage: 'ar_EG' });
+    assert.equal(regional.dir, 'rtl', 'the base subtag is what decides direction');
+    assert.equal(regional.lang, 'ar-EG', 'and <html lang> must be a BCP-47 tag, not a Chrome locale id');
+
+    // The manual override outranks the browser UI language.
+    assert.equal(run({ uiLanguage: 'en', override: 'ar' }).dir, 'rtl',
+        'choosing Arabic in the dropdown must flip the dashboard, whatever the browser is set to');
+});
+
+test('a stored locale override is loaded, and a hostile one is refused', async () => {
+    const chain = [...I18N_CHAIN, 'initI18n'];
+    const run = async (stored, { fetchImpl } = {}) => {
+        const fetched = [];
+        const api = loadDeclarationsFrom(sidepanelJs, chain, {
+            document: fakeTreeDocument(() => null),
+            ext: {
+                i18n: { getUILanguage: () => 'en', getMessage: () => '' },
+                storage: { local: { get: async () => ({ _localeOverride: stored }) } },
+                runtime: { getURL: (relative) => `chrome-extension://x/${relative}` },
+            },
+            fetch: fetchImpl || (async (url) => {
+                fetched.push(url);
+                return { ok: true, json: async () => ({ spTitle: { message: 'Tableau de bord' } }) };
+            }),
+        });
+        await api.initI18n();
+        return { api, fetched };
+    };
+
+    const loaded = await run('fr');
+    assert.equal(loaded.api.I18N.ready, true);
+    assert.equal(loaded.api.I18N.override, 'fr');
+    assert.equal(loaded.api.t('spTitle', 'Dashboard'), 'Tableau de bord',
+        'the chosen catalogue has to actually reach t()');
+    assert.deepEqual(loaded.fetched, ['chrome-extension://x/_locales/fr/messages.json']);
+
+    for (const hostile of ['../../../etc/passwd', 'fr/../../x', 'zz', 'x'.repeat(40), '<script>', 'auto', '']) {
+        const refused = await run(hostile);
+        assert.equal(refused.fetched.length, 0, `${JSON.stringify(hostile)} must not be fetched`);
+        assert.equal(refused.api.I18N.override, null, 'and must not become the active locale');
+        assert.equal(refused.api.I18N.ready, true,
+            'a refused override must still let the dashboard render');
+    }
+
+    // A catalogue that will not load leaves the surface on the browser locale
+    // rather than half-applied.
+    const missing = await run('fr', { fetchImpl: async () => ({ ok: false }) });
+    assert.equal(missing.api.I18N.override, null);
+    assert.equal(missing.api.I18N.ready, true);
+
+    const broken = await run('fr', { fetchImpl: async () => { throw new Error('offline'); } });
+    assert.equal(broken.api.I18N.ready, true, 'even a throwing fetch must not hang the render');
+});
+
+test('the first render waits for the locale to resolve', () => {
+    // Ordering between initI18n and the first refresh, at module top level.
+    // There is no way to observe it without booting the whole side panel.
     assert.match(sidepanelJs, /initI18n\(\)\.then\(/,
-        'i18n must initialize before the first refresh render');
+        'rendering before the override resolves paints English and then repaints');
 });
 
 test('sidepanel quick settings route labels and descriptions through locale keys', () => {
