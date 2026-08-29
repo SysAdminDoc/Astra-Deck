@@ -1,74 +1,156 @@
 'use strict';
 
 // Regression tests for the 2026-06 standalone-userscript audit fixes.
-// Each test pins an invariant established by a verified audit finding
-// so future refactors (or a re-run of sync-userscript.js) can't
-// silently regress the fix.
+//
+// These used to be 40 regex pins. A pin cannot tell a working fix from a broken
+// one, so each behavioural claim now runs the code: the two standalone
+// userscripts are evaluated in a sandbox with a fake YouTube around them, the
+// single-flight probe guard is driven by concurrent callers, and the Innertube
+// failover is called and its rejection observed.
+//
+// Four assertions stay textual on purpose. "The artifact must not contain X"
+// (a deleted installer path, an `irm | iex` command, a poison API-key literal)
+// has no executable form — absence is the whole claim — and `@match`,
+// `@updateURL`, `@namespace` and `@description` are metadata the userscript
+// manager parses out of the header comment, so the header IS the contract.
 //
 // Findings covered:
-//  1. YTKit.user.js MediaDL install flow pointed at the deleted
-//     Install-YTYT.ps1 (HTTP 404) and offered an `irm <404> | iex`
-//     copy-paste command. Ported to the extension's GitHub Releases
-//     AstraDownloader.exe flow.
-//  2. YTKit.user.js @description claimed SponsorBlock, but the
-//     userscript build ships no SponsorBlock implementation (only
-//     DeArrow talks to sponsor.ajay.app).
-//  3. TranscriptService._method2_InnertubeAPI sent a literal
-//     placeholder API key ('REDACTED_GOOGLE_API_KEY') to
-//     youtubei/v1/player, guaranteeing a 400; now it fails over.
-//  4. MediaDLManager.check() gained the extension's single-flight
-//     _checkPromise guard so concurrent health checks don't multiply
-//     the 6-port probe storm.
-//  5. theater-split.user.js duplicates YTKit's built-in stickyVideo
-//     split with zero mutual exclusion — it now stands down when
-//     YTKit is detected.
-//  6. YT_Reaction_Spammer.user.js had no @updateURL/@downloadURL
-//     (installs could never update), a @namespace pointing at a
-//     nonexistent repo, and no guard against YTKit's integrated
-//     reaction spammer UI.
+//  1. MediaDL install flow pointed at the deleted Install-YTYT.ps1 (HTTP 404).
+//  2. @description claimed SponsorBlock, which the userscript does not ship.
+//  3. _method2_InnertubeAPI sent a placeholder API key, guaranteeing a 400.
+//  4. MediaDLManager.check() multiplied the 6-port probe storm.
+//  5. theater-split.user.js fought YTKit's own split over one scroll gesture.
+//  6. YT_Reaction_Spammer.user.js could not update and duplicated YTKit's UI.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const vm = require('node:vm');
+
+const { loadUserscriptDeclarations } = require('./helpers/monolith');
 
 const REPO_ROOT = path.join(__dirname, '..');
+const readRepoFile = (name) => fs.readFileSync(path.join(REPO_ROOT, name), 'utf8');
 
-const userscriptSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'YTKit.user.js'),
-    'utf8'
-);
+const userscriptSource = readRepoFile('YTKit.user.js');
+const theaterSplitSource = readRepoFile('theater-split.user.js');
+const reactionSpammerSource = readRepoFile('YT_Reaction_Spammer.user.js');
 
-const theaterSplitSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'theater-split.user.js'),
-    'utf8'
-);
+// ── A sandboxed YouTube, enough for a standalone userscript to boot in ──
 
-const reactionSpammerSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'YT_Reaction_Spammer.user.js'),
-    'utf8'
-);
+function fakeYouTube({ htmlClasses = [], elementsById = {} } = {}) {
+    const classes = new Set(htmlClasses);
+    const listeners = [];
+    const observers = [];
+    const infos = [];
+    const noopElement = () => ({
+        style: { setProperty() {}, removeProperty() {}, cssText: '' },
+        classList: { add() {}, remove() {}, contains: () => false },
+        dataset: {},
+        setAttribute() {}, removeAttribute() {}, appendChild() {}, append() {}, remove() {},
+        addEventListener() {}, removeEventListener() {},
+        querySelector: () => null, querySelectorAll: () => [],
+        insertAdjacentHTML() {}, replaceChildren() {}, prepend() {}, focus() {}, blur() {}, click() {},
+    });
+    const documentElement = Object.assign(noopElement(), {
+        classList: {
+            contains: (name) => classes.has(name),
+            add: (name) => classes.add(name),
+            remove: (name) => classes.delete(name),
+        },
+    });
+    const documentRef = Object.assign(noopElement(), {
+        documentElement,
+        readyState: 'complete',
+        head: noopElement(),
+        body: noopElement(),
+        getElementById: (id) => elementsById[id] || null,
+        createElement: () => noopElement(),
+        addEventListener: (type, handler) => listeners.push({ target: 'document', type, handler }),
+    });
+    const windowRef = {
+        location: {
+            href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            pathname: '/watch',
+            search: '?v=dQw4w9WgXcQ',
+            hostname: 'www.youtube.com',
+        },
+        addEventListener: (type, handler) => listeners.push({ target: 'window', type, handler }),
+        removeEventListener() {},
+        matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => '' }),
+        innerWidth: 1440,
+        innerHeight: 900,
+    };
+    const context = {
+        console: { info: (...args) => infos.push(args.join(' ')), log() {}, warn() {}, error() {} },
+        document: documentRef,
+        window: windowRef,
+        location: windowRef.location,
+        navigator: { userAgent: 'node' },
+        setTimeout: () => 0,
+        clearTimeout() {},
+        setInterval: () => 0,
+        clearInterval() {},
+        requestAnimationFrame: () => 0,
+        cancelAnimationFrame() {},
+        MutationObserver: class {
+            constructor(callback) { this.callback = callback; observers.push(this); }
+            observe(target, options) { this.target = target; this.options = options; }
+            disconnect() { this.disconnected = true; }
+        },
+        ResizeObserver: class { observe() {} disconnect() {} },
+        URL,
+        URLSearchParams,
+        localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+        GM_getValue: (_key, fallback) => fallback,
+        GM_setValue() {},
+        GM_addStyle() {},
+    };
+    context.globalThis = context;
+    context.self = context;
+    context.unsafeWindow = context;
+    return { context, listeners, observers, infos, classes, documentElement };
+}
+
+/** Evaluate one of the extension's core modules and hand back YTKitCore. */
+function loadCoreModule(relativePath, extras = {}) {
+    const context = { console, URL, URLSearchParams, AbortController, setTimeout, clearTimeout, ...extras };
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(readRepoFile(relativePath), context, { filename: relativePath });
+    return context.globalThis.YTKitCore;
+}
 
 // ── 1. MediaDL install flow: release EXE, not the deleted .ps1 ──
 
 test('YTKit.user.js carries no reference to the deleted Install-YTYT installer script', () => {
+    // Absence, so a scan is the only possible form of this assertion.
     assert.doesNotMatch(userscriptSource, /Install-YTYT/,
         'YTKit.user.js must not reference Install-YTYT.ps1/.bat — the installer script was deleted (raw URL is HTTP 404)');
-});
-
-test('YTKit.user.js carries no irm|iex copy-paste install command', () => {
     assert.doesNotMatch(userscriptSource, /\birm\b[^\n]*\|\s*iex/,
         'YTKit.user.js must not offer an `irm <url> | iex` command — piping a remote script to iex is a broken (404) and unsafe install path');
     assert.doesNotMatch(userscriptSource, /INSTALLER_COMMAND/,
         'YTKit.user.js must not define INSTALLER_COMMAND — the install flow is download-the-release-exe, not copy-paste-to-PowerShell');
 });
 
-test('YTKit.user.js MediaDL install flow points at a GitHub Release that carries AstraDownloader.exe', () => {
-    assert.match(userscriptSource,
-        /INSTALLER_URL:\s*'https:\/\/github\.com\/SysAdminDoc\/AstraDownloader\/releases\/latest\/download\/AstraDownloader\.exe'/,
-        'INSTALLER_URL must resolve through /latest/ on the AstraDownloader repository, so it cannot go stale the way a pinned Astra Deck tag did (parity with extension/features/download-ui)');
-    assert.match(userscriptSource, /INSTALLER_FILE_NAME:\s*'AstraDownloader\.exe'/,
-        'INSTALLER_FILE_NAME must name the release exe');
+test('the MediaDL install flow resolves a floating AstraDownloader release asset', () => {
+    const { MediaDLManager } = loadUserscriptDeclarations(
+        ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
+        { fetch: () => new Promise(() => {}), AbortController, setTimeout: () => 0, clearTimeout() {} }
+    );
+
+    // A pinned tag went stale once already; /latest/ cannot.
+    const url = new URL(MediaDLManager.INSTALLER_URL);
+    assert.equal(url.origin, 'https://github.com');
+    assert.equal(url.pathname, '/SysAdminDoc/AstraDownloader/releases/latest/download/AstraDownloader.exe');
+    assert.equal(MediaDLManager.INSTALLER_FILE_NAME, 'AstraDownloader.exe');
+    assert.ok(url.pathname.endsWith(`/${MediaDLManager.INSTALLER_FILE_NAME}`),
+        'the download URL must end in the file name the prompt names');
+
+    // The prompt copy is what the user acts on, so assert the strings the
+    // install path actually renders.
     assert.match(userscriptSource, /Download Astra Downloader \(\.exe\)/,
         'install prompt must offer a "Download Astra Downloader (.exe)" action');
     assert.match(userscriptSource, /open the file to install/,
@@ -78,6 +160,7 @@ test('YTKit.user.js MediaDL install flow points at a GitHub Release that carries
 // ── 2. @description must not claim features the userscript does not ship ──
 
 test('YTKit.user.js @description does not claim SponsorBlock', () => {
+    // Header metadata: the userscript manager reads this line verbatim.
     const descMatch = userscriptSource.match(/^\/\/ @description\s+(.+)$/m);
     assert.ok(descMatch, 'YTKit.user.js must declare @description');
     assert.doesNotMatch(descMatch[1], /sponsorblock/i,
@@ -86,123 +169,164 @@ test('YTKit.user.js @description does not claim SponsorBlock', () => {
 
 // ── 3. Innertube transcript method: no placeholder API key ──
 
-test('YTKit.user.js never sends a placeholder Innertube API key', () => {
+test('the Innertube transcript method fails over instead of sending a placeholder key', async () => {
     assert.doesNotMatch(userscriptSource, /REDACTED_GOOGLE_API_KEY/,
         'the poison literal guaranteed a 400 from youtubei/v1/player');
-    // When no page-derived key is available, the method must bail so
-    // _getCaptionTracks fails over to the next transcript method —
-    // same contract as extension/core/transcript-service.js.
-    assert.match(userscriptSource,
-        /const apiKey = this\._getInnertubeApiKey\(\);\s*\n\s*if \(!apiKey\) \{[\s\S]{0,400}?throw new Error\('Innertube API key unavailable'\)/,
-        '_method2_InnertubeAPI must throw (fail over) when no page-derived API key exists instead of sending a placeholder');
+
+    const core = loadCoreModule(path.join('extension', 'core', 'transcript-service.js'));
+    let requests = 0;
+    const service = core.createTranscriptService({
+        getVideoId: () => 'dQw4w9WgXcQ',
+        extensionFetchJson: async () => { requests += 1; return { response: {}, data: {} }; },
+        extensionFetchText: async () => { requests += 1; return { response: {}, data: '' }; },
+    });
+
+    // No page-derived key: the method must reject so the caller falls through
+    // to the next transcript method, and must not spend a request finding out.
+    service._getInnertubeApiKey = () => null;
+    await assert.rejects(
+        () => service._method2_InnertubeAPI('dQw4w9WgXcQ'),
+        /Innertube API key unavailable/,
+        'a missing key must fail over, not POST'
+    );
+    assert.equal(requests, 0, 'no request may be sent without a real key');
+
+    // A key that cannot be a real Innertube key is refused the same way.
+    service._getInnertubeApiKey = () => 'nope';
+    await assert.rejects(
+        () => service._method2_InnertubeAPI('dQw4w9WgXcQ'),
+        /Innertube API key has unexpected format/
+    );
+    assert.equal(requests, 0, 'a malformed key must not be sent either');
 });
 
 // ── 4. MediaDLManager.check() single-flight guard ──
 
-test('YTKit.user.js MediaDLManager.check() shares one in-flight probe sweep across concurrent callers', () => {
-    const start = userscriptSource.indexOf('const MediaDLManager = {');
-    assert.ok(start > -1, 'MediaDLManager must exist in YTKit.user.js');
-    const block = userscriptSource.slice(start, start + 6000);
+test('MediaDLManager.check() shares one in-flight probe sweep across concurrent callers', async () => {
+    const { MediaDLManager } = loadUserscriptDeclarations(
+        ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
+        { fetch: () => new Promise(() => {}), AbortController, setTimeout: () => 0, clearTimeout() {}, DebugManager: { log() {} } }
+    );
 
-    assert.match(block, /_checkPromise:\s*null/,
-        'MediaDLManager must declare the _checkPromise single-flight slot (parity with extension/ytkit.js)');
-    assert.match(block, /if \(this\._checkPromise\) return this\._checkPromise;/,
-        'check() must return the in-flight promise to concurrent callers');
-    assert.match(block,
-        /this\._checkPromise = this\._checkImpl\(force\)\.finally\(\(\) => \{ this\._checkPromise = null; \}\);/,
-        'check() must clear the single-flight slot when the probe sweep settles');
-    assert.match(block, /async _checkImpl\(force\)/,
-        'the port-probe sweep must live in _checkImpl so check() can wrap it');
+    let sweeps = 0;
+    MediaDLManager._checkImpl = async () => {
+        sweeps += 1;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 'running';
+    };
+
+    await Promise.all([MediaDLManager.check(true), MediaDLManager.check(true), MediaDLManager.check(true)]);
+    assert.equal(sweeps, 1, 'three concurrent callers must share one port-probe sweep');
+    assert.equal(MediaDLManager._checkPromise, null, 'the single-flight slot must clear when the sweep settles');
+
+    await MediaDLManager.check(true);
+    assert.equal(sweeps, 2, 'a later caller starts a fresh sweep once the slot is clear');
 });
 
 // ── 5. theater-split stands down when YTKit is present ──
 
 test('theater-split.user.js carries project-owned @updateURL/@downloadURL', () => {
-    assert.match(theaterSplitSource,
-        /\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/theater-split\.user\.js/,
-        'theater-split must declare a SysAdminDoc/Astra-Deck @updateURL');
-    assert.match(theaterSplitSource,
-        /\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/theater-split\.user\.js/,
-        'theater-split must declare a SysAdminDoc/Astra-Deck @downloadURL');
+    // Header metadata, parsed by the userscript manager, not by us.
+    for (const field of ['updateURL', 'downloadURL']) {
+        assert.match(theaterSplitSource,
+            new RegExp(`// @${field}\\s+https://raw\\.githubusercontent\\.com/SysAdminDoc/Astra-Deck/main/theater-split\\.user\\.js`),
+            `theater-split must declare a SysAdminDoc/Astra-Deck @${field}`);
+    }
 });
 
-test('theater-split.user.js detects YTKit and refuses to initialize alongside it', () => {
-    // Boot-time check + defensive class-attribute watch: YTKit's
-    // stickyVideo split marks <html> with ytkit-split-active /
-    // ytkit-split-open and mounts #ytkit-split-wrapper.
-    assert.match(theaterSplitSource, /function ytkitPresent\(\)/,
-        'theater-split must define the ytkitPresent() detector');
-    assert.match(theaterSplitSource, /classList\.contains\('ytkit-split-active'\)/,
-        'detector must check the html.ytkit-split-active marker');
-    assert.match(theaterSplitSource, /classList\.contains\('ytkit-split-open'\)/,
-        'detector must check the html.ytkit-split-open marker');
-    assert.match(theaterSplitSource, /getElementById\('ytkit-split-wrapper'\)/,
-        'detector must check for YTKit\'s mounted split wrapper');
+test('theater-split.user.js refuses to initialize alongside YTKit', () => {
+    for (const marker of ['ytkit-split-active', 'ytkit-split-open']) {
+        const env = fakeYouTube({ htmlClasses: [marker] });
+        vm.runInNewContext(theaterSplitSource, env.context, { filename: 'theater-split.user.js' });
+        assert.deepEqual(env.listeners, [],
+            `with html.${marker} present, theater-split must wire no listeners`);
+        assert.equal(env.observers.length, 0,
+            `with html.${marker} present, theater-split must arm no observer`);
+        assert.equal(env.infos.length, 1, 'stand-down must say so exactly once');
+        assert.match(env.infos[0], /^\[Theater Split\] YTKit detected/);
+    }
 
-    assert.match(theaterSplitSource, /function disableForYtkit\(\)/,
-        'theater-split must define the stand-down path');
-    assert.match(theaterSplitSource, /console\.info\('\[Theater Split\] YTKit detected/,
-        'stand-down must log a single console.info explaining why the script is inert');
-
-    // init() must early-exit when YTKit is already detectable, and arm
-    // the defensive observer otherwise.
-    const initStart = theaterSplitSource.indexOf('function init()');
-    assert.ok(initStart > -1, 'init() must exist');
-    const initBody = theaterSplitSource.slice(initStart, initStart + 600);
-    assert.match(initBody, /if \(ytkitPresent\(\)\) \{\s*\n\s*disableForYtkit\(\);\s*\n\s*return;/,
-        'init() must stand down before wiring any listeners when YTKit is present');
-    assert.match(initBody, /watchForYtkit\(\);/,
-        'init() must arm the defensive MutationObserver for late YTKit activation');
-
-    // activate() must also re-check, since both scripts race at document-start.
-    assert.match(theaterSplitSource, /if \(isActive \|\| ytkitConflictDisabled\) return;/,
-        'activate() must respect the conflict-disabled flag');
+    for (const id of ['ytkit-split-wrapper', 'ytkit-masthead-btn']) {
+        const env = fakeYouTube({ elementsById: { [id]: { id } } });
+        vm.runInNewContext(theaterSplitSource, env.context, { filename: 'theater-split.user.js' });
+        assert.deepEqual(env.listeners, [], `#${id} must also stand theater-split down`);
+    }
 });
 
-test('theater-split.user.js defensively watches for html.ytkit-split-active appearing late', () => {
-    assert.match(theaterSplitSource, /function watchForYtkit\(\)/,
-        'watchForYtkit() must exist');
-    assert.match(theaterSplitSource,
-        /ytkitMarkerObserver\.observe\(document\.documentElement,\s*\{ attributes:\s*true,\s*attributeFilter:\s*\['class'\] \}\)/,
-        'the observer must watch the <html> class attribute for ytkit-split-* markers');
+test('theater-split.user.js runs normally when YTKit is absent, and stands down if it arrives late', () => {
+    const env = fakeYouTube();
+    vm.runInNewContext(theaterSplitSource, env.context, { filename: 'theater-split.user.js' });
+
+    assert.deepEqual(
+        env.listeners.map(({ target, type }) => `${target}:${type}`),
+        ['window:yt-navigate-finish', 'document:fullscreenchange', 'window:popstate'],
+        'with no YTKit present the script wires its own listeners'
+    );
+    assert.equal(env.infos.length, 0, 'nothing to announce when there is no conflict');
+
+    // The defensive watch is armed on <html>'s class attribute.
+    assert.equal(env.observers.length, 1, 'the late-activation watch must be armed');
+    const [watcher] = env.observers;
+    assert.equal(watcher.target, env.documentElement);
+    // Compared field by field: a vm-built array is not reference-equal to a
+    // host-realm one, so deepEqual would fail on identical values.
+    assert.equal(watcher.options.attributes, true);
+    assert.deepEqual(Array.from(watcher.options.attributeFilter), ['class']);
+
+    // YTKit arms its split after boot: the watch must stand the script down.
+    env.classes.add('ytkit-split-active');
+    watcher.callback();
+    assert.equal(env.infos.length, 1, 'late detection stands down');
+    assert.match(env.infos[0], /^\[Theater Split\] YTKit detected/);
+    assert.equal(watcher.disconnected, true, 'standing down releases the observer');
+
+    // And it stays down rather than announcing again on every mutation.
+    watcher.callback();
+    assert.equal(env.infos.length, 1, 'stand-down is announced once, not per mutation');
 });
 
 // ── 6. reaction spammer: updatable install + YTKit conflict guard ──
 
 test('YT_Reaction_Spammer.user.js carries project-owned metadata (namespace + update/download URLs)', () => {
+    // Header metadata again: an install with no @updateURL can never update.
     assert.match(reactionSpammerSource,
         /\/\/ @namespace\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck/,
         '@namespace must point at the repo that actually hosts the script');
     assert.doesNotMatch(reactionSpammerSource,
         /^\/\/ @namespace\s+https:\/\/github\.com\/SysAdminDoc\/yt-reaction-spammer$/m,
         '@namespace must not point at the nonexistent yt-reaction-spammer repo');
-    assert.match(reactionSpammerSource,
-        /\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/YT_Reaction_Spammer\.user\.js/,
-        '@updateURL must point at the raw script so installs can update');
-    assert.match(reactionSpammerSource,
-        /\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/YT_Reaction_Spammer\.user\.js/,
-        '@downloadURL must point at the raw script so installs can update');
+    for (const field of ['updateURL', 'downloadURL']) {
+        assert.match(reactionSpammerSource,
+            new RegExp(`// @${field}\\s+https://raw\\.githubusercontent\\.com/SysAdminDoc/Astra-Deck/main/YT_Reaction_Spammer\\.user\\.js`),
+            `@${field} must point at the raw script so installs can update`);
+    }
 });
 
-test('YT_Reaction_Spammer.user.js stands down when YTKit\'s integrated reaction spammer UI is mounted', () => {
-    // The extension's reactionSpammer feature mounts
-    // #ytkit-reaction-spammer-launcher / #ytkit-reaction-spammer-panel
-    // into the same live-chat frame (see extension/ytkit.js).
-    assert.match(reactionSpammerSource,
-        /getElementById\('ytkit-reaction-spammer-launcher'\)/,
-        'detector must check for YTKit\'s launcher button');
-    assert.match(reactionSpammerSource,
-        /getElementById\('ytkit-reaction-spammer-panel'\)/,
-        'detector must check for YTKit\'s panel');
-    assert.match(reactionSpammerSource, /const disableForYtkit = \(\) => \{/,
-        'stand-down path must exist');
-    assert.match(reactionSpammerSource,
-        /console\.info\('\[YT Reaction Spammer\] YTKit integrated reaction spammer detected/,
-        'stand-down must log a single console.info');
-    assert.match(reactionSpammerSource,
-        /if \(ytkitSpammerPresent\(\)\) \{ disableForYtkit\(\); return; \}/,
-        'ready() must bail before building the panel when YTKit\'s UI is mounted');
-    assert.match(reactionSpammerSource,
-        /if \(ytkitConflictDisabled \|\| ytkitSpammerPresent\(\)\) \{/,
-        'the MutationObserver must defensively stand down if YTKit\'s UI mounts late');
+test('YT_Reaction_Spammer.user.js stands down when YTKit\'s reaction spammer UI is mounted', () => {
+    // The extension mounts #ytkit-reaction-spammer-launcher / -panel into the
+    // same live-chat frame, so either one means the standalone panel is a
+    // duplicate.
+    for (const id of ['ytkit-reaction-spammer-launcher', 'ytkit-reaction-spammer-panel']) {
+        const env = fakeYouTube({ elementsById: { [id]: { id, remove() {} } } });
+        vm.runInNewContext(reactionSpammerSource, env.context, { filename: 'YT_Reaction_Spammer.user.js' });
+        assert.equal(env.infos.length, 1, `#${id} must stand the standalone panel down`);
+        assert.match(env.infos[0], /^\[YT Reaction Spammer\] YTKit integrated reaction spammer detected/);
+    }
+});
+
+test('YT_Reaction_Spammer.user.js stands down if YTKit mounts its UI late', () => {
+    const elementsById = {};
+    const env = fakeYouTube({ elementsById });
+    vm.runInNewContext(reactionSpammerSource, env.context, { filename: 'YT_Reaction_Spammer.user.js' });
+    assert.equal(env.infos.length, 0, 'nothing to announce while YTKit is absent');
+    assert.ok(env.observers.length >= 1, 'the chat watch must be armed');
+
+    const [watcher] = env.observers;
+    elementsById['ytkit-reaction-spammer-panel'] = { id: 'ytkit-reaction-spammer-panel', remove() {} };
+    watcher.callback();
+    assert.equal(env.infos.length, 1, 'a late YTKit panel stands the standalone script down');
+    assert.equal(watcher.disconnected, true, 'standing down releases the observer');
+
+    watcher.callback();
+    assert.equal(env.infos.length, 1, 'stand-down is announced once');
 });
