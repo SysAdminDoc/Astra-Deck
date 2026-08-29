@@ -7737,6 +7737,9 @@
   "videoHiderReasonSyntheticNarration": {
     "message": "the synthetic-narration marker filter"
   },
+  "videoHiderReasonSyntheticDisclosed": {
+    "message": "إفصاح YouTube عن المحتوى المعدَّل أو المُصطنع"
+  },
   "videoHiderReasonUpcoming": {
     "message": "مرشح العرض الأول القادم"
   },
