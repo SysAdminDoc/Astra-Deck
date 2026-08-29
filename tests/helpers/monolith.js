@@ -21,9 +21,25 @@ const FEATURE_CLOSE = /\n {8}\}(?=,|\s*\]|\s*$|\n)/g;
  * before it — which is this feature's own.
  */
 function featureSourceFrom(source, id) {
-    const needle = `\n        {\n            id: '${id}'`;
-    const start = source.indexOf(needle);
-    assert.ok(start > 0, `feature '${id}' must exist in ytkit.js`);
+    const marker = `\n            id: '${id}'`;
+    // Walk BACK to the literal's own opening brace rather than requiring `id:`
+    // to be its first line: several features carry a comment block above the
+    // id explaining why they default on, and those were unreachable. Only
+    // comments and blank lines may sit between — otherwise this is a factory's
+    // `return {` (the core library builds videoNotes that way) rather than an
+    // entry in the features array.
+    let start = -1;
+    for (let markerAt = source.indexOf(marker); markerAt > 0; markerAt = source.indexOf(marker, markerAt + 1)) {
+        const open = source.lastIndexOf('\n        {\n', markerAt);
+        if (open < 0) continue;
+        const between = source.slice(open + '\n        {\n'.length, markerAt);
+        if (between.split('\n').every((line) => line.trim() === '' || line.trim().startsWith('//'))) {
+            start = open;
+            break;
+        }
+    }
+    assert.ok(start > 0, `feature '${id}' must open at the features-array indent`);
+    const needle = source.slice(start, source.indexOf(marker, start) + marker.length);
     const nextId = source.indexOf("\n            id: '", start + needle.length);
     assert.ok(nextId > start, `feature '${id}' must be followed by another feature`);
     const region = source.slice(start + 1, nextId);
