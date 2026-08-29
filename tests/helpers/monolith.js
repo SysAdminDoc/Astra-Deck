@@ -28,17 +28,26 @@ function featureSourceFrom(source, id) {
     // comments and blank lines may sit between — otherwise this is a factory's
     // `return {` (the core library builds videoNotes that way) rather than an
     // entry in the features array.
-    let start = -1;
+    // Every opening that satisfies the rule, not the first. `sources.userscript`
+    // is YTKit-core.user.js followed by YTKit.user.js and nine ids live in
+    // both, so "first match wins" would quietly test one copy and leave the
+    // other unread. Today the core copies are all factory-fallback shapes the
+    // rule rejects, which is why this has never picked wrong -- but that is a
+    // property of how they happen to be written, so make the day it changes an
+    // error instead of a silent swap.
+    const opens = [];
     for (let markerAt = source.indexOf(marker); markerAt > 0; markerAt = source.indexOf(marker, markerAt + 1)) {
         const open = source.lastIndexOf('\n        {\n', markerAt);
         if (open < 0) continue;
         const between = source.slice(open + '\n        {\n'.length, markerAt);
         if (between.split('\n').every((line) => line.trim() === '' || line.trim().startsWith('//'))) {
-            start = open;
-            break;
+            opens.push(open);
         }
     }
-    assert.ok(start > 0, `feature '${id}' must open at the features-array indent`);
+    assert.ok(opens.length > 0, `feature '${id}' must open at the features-array indent`);
+    assert.equal(opens.length, 1,
+        `feature '${id}' has ${opens.length} array entries in this source; name the copy you mean`);
+    const start = opens[0];
     const needle = source.slice(start, source.indexOf(marker, start) + marker.length);
     const nextId = source.indexOf("\n            id: '", start + needle.length);
     assert.ok(nextId > start, `feature '${id}' must be followed by another feature`);
