@@ -44,12 +44,34 @@ test('the companion is reached by literal IP, and that grant is present', () => 
 const runtime = fs.readFileSync(path.join(repoRoot, 'YTKit-core.user.js'), 'utf8')
     + '\n' + source;
 
-/** Every host the bundle names as a request origin or endpoint. */
+/**
+ * Every host the bundle names as a request origin or endpoint, in code.
+ *
+ * Scanning the whole file swept in `@match`, `@namespace`, `@homepageURL`,
+ * comments and CSS, so `www.youtube.com` — reached only by plain CORS fetch —
+ * counted as a request site and an unearned grant for it passed.
+ */
 function requestedHosts() {
+    const body = runtime.replace(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==/g, '')
+        // Line comments and block comments describe; they do not request.
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .split('\n')
+        .map((line) => line.replace(/(^|[^:])\/\/.*$/, '$1'))
+        .join('\n');
+
     const hosts = new Set();
-    for (const m of runtime.matchAll(/https?:\/\/([A-Za-z0-9.-]+|\d+\.\d+\.\d+\.\d+)(?::\d+)?/g)) {
+    // Only origins that appear inside a string literal, which is what a
+    // request URL is.
+    for (const m of body.matchAll(/['"`]https?:\/\/([A-Za-z0-9.-]+|\d+\.\d+\.\d+\.\d+)(?::\d+)?/g)) {
         hosts.add(m[1]);
     }
+    return hosts;
+}
+
+/** Hosts the bundle reaches with plain fetch(), which @connect does not govern. */
+function fetchOnlyHosts() {
+    const hosts = new Set();
+    for (const m of runtime.matchAll(/fetch\(\s*['"`]https?:\/\/([A-Za-z0-9.-]+)/g)) hosts.add(m[1]);
     return hosts;
 }
 
@@ -64,6 +86,13 @@ test('every @connect host has a request site behind it', () => {
     const unearned = connectHosts().filter((host) => !hosts.has(host));
     assert.deepEqual(unearned, [],
         'these are granted on install but nothing in the bundle requests them: ' + unearned.join(', '));
+
+    // And the other direction: a host the bundle only ever reaches with plain
+    // fetch() is governed by CORS, not by @connect, so a grant for it is
+    // privilege with no request behind it.
+    const fetchOnly = connectHosts().filter((host) => fetchOnlyHosts().has(host));
+    assert.deepEqual(fetchOnly, [],
+        'these are reached by fetch(), which @connect does not govern: ' + fetchOnly.join(', '));
 });
 
 test('no @connect grant covers a host reached by the manager or by plain fetch', () => {

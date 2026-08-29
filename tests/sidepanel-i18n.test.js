@@ -114,6 +114,23 @@ test('applyI18n fills text and the three localizable attributes', () => {
         'a key with no translation keeps the inline English rather than blanking');
 });
 
+test('applyI18n called with no argument walks the document', () => {
+    // sidepanel.js calls `applyI18n()` bare on every render, so the default
+    // parameter is load-bearing: without it the call throws on
+    // `undefined.querySelectorAll` and the whole panel stops rendering.
+    const { api, documentRef } = i18nUnder({ map: { spTitle: 'Tableau de bord' } });
+
+    const heading = documentRef.createElement('h1');
+    heading.setAttribute('data-i18n', 'spTitle');
+    heading.textContent = 'Dashboard';
+    const nodes = [heading];
+    documentRef.querySelectorAll = (selector) =>
+        nodes.filter((node) => node.getAttribute(String(selector).slice(1, -1)) != null);
+
+    assert.doesNotThrow(() => api.applyI18n(), 'the bare call is the one the panel makes');
+    assert.equal(heading.textContent, 'Tableau de bord', 'and it has to reach the document');
+});
+
 test('the document language and direction follow the resolved locale', () => {
     const chain = [...I18N_CHAIN, 'applyDocumentLanguage'];
     const run = ({ uiLanguage, override }) => {

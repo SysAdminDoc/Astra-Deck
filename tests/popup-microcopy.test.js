@@ -42,35 +42,81 @@ const LOCALES = ['ar', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN
  * literals joined only by whitespace and `+`, stopping at anything else.
  */
 function collectFallbacks(source) {
-    const literal = /'((?:[^'\\]|\\.)*)'/y;
-    const decode = (raw) => raw
-        .replace(/\\n/g, '\n')
-        .replace(/\\t/g, '\t')
-        .replace(/\\'/g, "'")
-        .replace(/\\\\/g, '\\');
+    // All three literal forms. Reading only single quotes silently dropped
+    // seven keys, and a scanner that sees fewer keys reports fewer drifts —
+    // which is the failure mode this whole check exists to prevent. The
+    // `size > 200` floor had 43 keys of slack, so it could never notice.
+    const LITERALS = [
+        /'((?:[^'\\]|\\.)*)'/y,
+        /"((?:[^"\\]|\\.)*)"/y,
+        /`((?:[^`\\$]|\\.|\$(?!\{))*)`/y,
+    ];
+    // One pass. Chaining replaces and unescaping the backslash LAST turned
+    // `\\n` (a literal backslash then n) into a newline.
+    const ESCAPES = { n: '\n', t: '\t', r: '\r', b: '\b', f: '\f', v: '\v', 0: '\0' };
+    const decode = (raw) => raw.replace(/\\(.)/gs, (_whole, ch) =>
+        (Object.prototype.hasOwnProperty.call(ESCAPES, ch) ? ESCAPES[ch] : ch));
+
+    const readLiteral = (at) => {
+        for (const pattern of LITERALS) {
+            pattern.lastIndex = at;
+            const piece = pattern.exec(source);
+            if (piece && piece.index === at) return { text: decode(piece[1]), end: pattern.lastIndex };
+        }
+        return null;
+    };
 
     const byKey = new Map();
-    for (const call of source.matchAll(/\bt\('([A-Za-z0-9_]+)',/g)) {
+    for (const call of source.matchAll(/\bt\(\s*['"]([A-Za-z0-9_]+)['"]\s*,/g)) {
         let at = call.index + call[0].length;
         const parts = [];
+        let computed = false;
         for (;;) {
             while (at < source.length && /\s/.test(source[at])) at += 1;
-            if (source[at] !== "'") break;
-            literal.lastIndex = at;
-            const piece = literal.exec(source);
-            if (!piece) break;
-            parts.push(decode(piece[1]));
-            at = literal.lastIndex;
-            const rest = at;
+            const piece = readLiteral(at);
+            if (!piece) { computed = parts.length > 0; break; }
+            parts.push(piece.text);
+            at = piece.end;
+            const afterLiteral = at;
             while (at < source.length && /\s/.test(source[at])) at += 1;
-            if (source[at] !== '+') { at = rest; break; }
+            if (source[at] !== '+') { at = afterLiteral; break; }
             at += 1;
         }
-        if (!parts.length) continue;
+        // `'literal' + someVariable` is not a fallback this scan can read.
+        // Recording the first half would compare a truncated string against
+        // the message and report a drift that is not one; recording nothing
+        // at all is what the coverage assertion below then catches.
+        if (computed || !parts.length) continue;
         if (!byKey.has(call[1])) byKey.set(call[1], []);
         byKey.get(call[1]).push(parts.join(''));
     }
     return byKey;
+}
+
+/**
+ * Every key that LOOKS like a t() call with a literal key, however its
+ * fallback is written. The comma matters: `t('toggleRiskTooltip_' + suffix,
+ * ...)` builds its key at runtime, so the quoted part is a prefix, not a key.
+ */
+function calledKeys(source) {
+    return new Set([...source.matchAll(/\bt\(\s*['"]([A-Za-z0-9_]+)['"]\s*,/g)].map((m) => m[1]));
+}
+
+/**
+ * Keys whose fallback is a template literal that interpolates a real value.
+ *
+ * These are not drift and must not be compared for equality: the fallback
+ * builds the sentence directly (`${count} surfaces tracked`) while the message
+ * carries a `{count}` token the call site fills in with `.replace()`. Detected
+ * by shape rather than listed by name, so an ordinary fallback can never be
+ * waved through by being added to a list.
+ */
+function interpolatingKeys(source) {
+    const keys = new Set();
+    for (const call of source.matchAll(/\bt\(\s*['"]([A-Za-z0-9_]+)['"]\s*,\s*`((?:[^`\\]|\\.)*)`/g)) {
+        if (call[2].includes('${')) keys.add(call[1]);
+    }
+    return keys;
 }
 
 const POPUP_FALLBACKS = collectFallbacks(popupJs);
@@ -202,8 +248,30 @@ test('every popup fallback says what the shipped message says', () => {
     // Two were already wrong when this became exhaustive: a "Copied." that
     // dropped the instruction telling the user what to do next, and a clipboard
     // failure that sent them to the browser console.
-    assert.ok(POPUP_FALLBACKS.size > 200,
-        `expected the popup to localize most of its copy, saw ${POPUP_FALLBACKS.size} keys`);
+    // Coverage first. A scanner that quietly skips a call site reports no
+    // drift for it, and a floor with slack in it can never notice: seven keys
+    // went unread behind `size > 200` because their fallbacks were written
+    // with double quotes or a template literal.
+    const called = calledKeys(popupJs);
+    assert.ok(called.size > 200, `expected the popup to localize most of its copy, saw ${called.size}`);
+
+    const interpolating = interpolatingKeys(popupJs);
+    const unread = [...called]
+        .filter((key) => !POPUP_FALLBACKS.has(key) && !interpolating.has(key))
+        .sort();
+    assert.deepEqual(unread, [],
+        'these t() call sites carry a fallback this scan cannot read, so nothing checks them: '
+        + unread.join(', '));
+
+    // The interpolating ones are still checked, just for the right thing: the
+    // message they stand in for has to carry a substitution token, or the
+    // call site's .replace() fills nothing and the user reads a raw sentence
+    // with no number in it.
+    for (const key of interpolating) {
+        assert.ok(enMessages[key], `${key} interpolates but has no message behind it`);
+        assert.match(enMessages[key].message, /\{[a-zA-Z]+\}/,
+            `${key} builds its fallback from values, so its message needs a token to fill`);
+    }
 
     const drifted = [];
     const unknown = [];

@@ -207,6 +207,12 @@ test('a legacy backup carrying the store inside settings is extracted, not dropp
     assert.equal(Object.hasOwn(emptied.settings, 'aiSummaryArtifactsData'), false);
     assert.equal(emptyWrites.size, 0);
 
+    // Being able to move the store is worth nothing if nothing calls it. The
+    // load path does, and that call site is a one-liner buried in the settings
+    // manager's boot sequence, so it is pinned rather than run.
+    assert.match(ytkit, /const extraction = this\._extractLegacyArtifacts\(savedSettings\);/,
+        'an extractor nothing calls on load leaves every legacy store to be sanitized away');
+
     // The import and export paths read and write the same field. Both sit
     // inside routines that need the whole storage stack to reach.
     assert.match(ytkit, /importedData\.settings\?\.aiSummaryArtifactsData/,
@@ -438,4 +444,35 @@ test('the userscript keeps isolated BYOK custody while sharing validated artifac
     const userscript = read('YTKit.user.js');
     assert.match(userscript, /saveSettings: \(settings\) => settingsManager\.save\(settings\)/);
     assert.match(userscript, /aiSummaryArtifactsData:\s*\{\}/);
+});
+
+test('saving an artifact writes it to the summaries key, not the settings bag', () => {
+    // `_writeArtifacts` is the other half of the routing: the extractor moves
+    // the legacy store in, this is what puts every later summary somewhere the
+    // settings broadcast does not carry. It sanitizes through the shared
+    // service and then has to actually persist.
+    const at = ytkit.indexOf('\n            _writeArtifacts(next) {');
+    assert.ok(at > 0, 'the writer must be a real method');
+    const close = ytkit.indexOf('\n            },', at);
+    assert.ok(close > at, 'and close at its own indent');
+    const body = ytkit.slice(at + 13, close + 14);
+
+    const written = new Map();
+    const StorageManager = {
+        get: (key, fallback) => (written.has(key) ? written.get(key) : fallback),
+        setSync: (key, value) => { written.set(key, value); return { ok: true }; },
+    };
+    const holder = new Function(
+        'STORAGE_KEYS', 'StorageManager', 'globalThis',
+        'return { ' + body + ' };'
+    )(storageKeys(), StorageManager, { YTKitCore: { aiSummaryArtifacts: artifacts } });
+
+    const artifact = sampleArtifact();
+    holder._writeArtifacts(artifacts.mergeArtifact({}, artifact));
+
+    assert.deepEqual(Array.from(written.keys()), ['ytkit-ai-summaries'],
+        'a summary that is sanitized but never written is a summary the user loses');
+    const stored = written.get('ytkit-ai-summaries');
+    assert.ok(stored && Object.keys(stored).length === 1, 'and the artifact has to be in it');
+    assert.equal(Object.keys(stored)[0], artifact.artifactId);
 });
