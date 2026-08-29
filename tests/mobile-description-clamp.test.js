@@ -6,28 +6,29 @@
 // line painted outside it, sheared horizontally behind the select control with
 // no ellipsis. A clamp without overflow: hidden is not a clamp.
 //
-// The rendered smoke is the real proof (it reproduces the shear and names each
-// offending description); this pins the CSS contract so the fight cannot be
-// reintroduced, and pins the smoke check that would catch it if it were.
+// The CSS assertions now read the stylesheet the module PRODUCES, and the
+// viewport list comes from the smoke's exported STATES, so neither can drift
+// from what ships. Two assertions stay scans and say why: they describe checks
+// inside a CLI script that exports no function to call.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
-const repoRoot = path.join(__dirname, '..');
-const visualSystem = fs.readFileSync(
-    path.join(repoRoot, 'extension', 'core', 'settings-visual-system.js'), 'utf8');
-const smoke = fs.readFileSync(
-    path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
+const { SETTINGS_VISUAL_SYSTEM_CSS } = require('../extension/core/settings-visual-system.js');
+const { STATES } = require('../scripts/smoke-settings-overlay.js');
 
-function descriptionRules() {
-    // Every rule whose selector list ends at .ytkit-feature-desc, with its body.
-    return [...visualSystem.matchAll(/#ytkit-settings-panel[^{}]*\.ytkit-feature-desc\s*\{([^}]*)\}/g)]
-        .map((m) => m[1]);
+const repoRoot = path.join(__dirname, '..');
+const smoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
+
+/** Every rule in the shipped stylesheet whose selector ends at the description. */
+function descriptionRules(css = SETTINGS_VISUAL_SYSTEM_CSS) {
+    return [...String(css).matchAll(/#ytkit-settings-panel[^{}]*\.ytkit-feature-desc\s*\{([^}]*)\}/g)]
+        .map((match) => match[1]);
 }
 
-test('no description rule clamps lines', () => {
+test('the shipped stylesheet clamps no description', () => {
     const rules = descriptionRules();
     assert.ok(rules.length >= 3, `expected the description rules, found ${rules.length}`);
     for (const body of rules) {
@@ -39,28 +40,43 @@ test('no description rule clamps lines', () => {
 });
 
 test('the rule that wins on overflow still wants descriptions to wrap', () => {
-    // If this ever flips back to hidden, a clamp becomes viable again and the
-    // assertion above should be revisited rather than worked around.
+    // Later rule, same specificity: this one decides the box model. If it ever
+    // flips back to hidden, a clamp becomes viable again and the assertion
+    // above should be revisited rather than worked around.
     const rules = descriptionRules();
     const last = rules[rules.length - 1];
-    assert.match(last, /overflow:\s*visible/,
-        'the last rule decides the box model for every width');
+    assert.match(last, /overflow:\s*visible/, 'the last rule decides the box model for every width');
     assert.match(last, /white-space:\s*normal/);
 });
 
-test('the mobile lane still narrows the type without re-boxing it', () => {
-    const at = visualSystem.indexOf('@media (max-width: 560px)');
+test('the mobile lane narrows the type without re-boxing it', () => {
+    const at = SETTINGS_VISUAL_SYSTEM_CSS.indexOf('@media (max-width: 560px)');
     assert.ok(at > 0, 'the mobile lane must still exist');
-    const lane = visualSystem.slice(at, visualSystem.indexOf('@media', at + 10));
+    const lane = SETTINGS_VISUAL_SYSTEM_CSS.slice(at, SETTINGS_VISUAL_SYSTEM_CSS.indexOf('@media', at + 10));
     const rule = lane.match(/\.ytkit-feature-desc\s*\{([^}]*)\}/);
     assert.ok(rule, 'the mobile lane must still style descriptions');
     assert.match(rule[1], /font-size:\s*13px/);
     assert.match(rule[1], /display:\s*block/,
         'block, so nothing re-boxes the element on the way to the later rule');
+    assert.doesNotMatch(rule[1], /-webkit-line-clamp/, 'and the lane that introduced the clamp stays clear of it');
+});
+
+test('both mobile states are narrow enough to enter the lane', () => {
+    // Read from the smoke's own STATES rather than from its source: a state
+    // renamed or widened there has to fail here.
+    const mobile = STATES.filter((state) => state.name.startsWith('mobile-'));
+    assert.equal(mobile.length, 2, 'both mobile states must still be rendered');
+    for (const state of mobile) {
+        assert.ok(state.width <= 560,
+            `${state.name} is ${state.width}px, which never enters the max-width: 560px lane`);
+    }
 });
 
 test('the rendered smoke checks description overflow on mobile states', () => {
-    // The pre-existing "readable primary controls" assertion never looked at
+    // A scan, because the check lives inside the smoke's page-evaluated string
+    // and the script exports no function to call. The rendered smoke is the
+    // real proof; this guards the check from being removed silently. The
+    // pre-existing "readable primary controls" assertion never looked at
     // descriptions, which is why a sheared line shipped through it.
     assert.match(smoke, /window\.innerWidth <= 560/, 'the mobile branch must still exist');
     assert.match(smoke, /panel\.querySelectorAll\('\.ytkit-feature-desc'\)/,
@@ -71,13 +87,4 @@ test('the rendered smoke checks description overflow on mobile states', () => {
         'the failure must distinguish a clean clip from content escaping the box');
     assert.match(smoke, /overflows its box by/,
         'the failure must quantify the overflow so it is actionable');
-});
-
-test('both mobile states run the check', () => {
-    const states = [...smoke.matchAll(/\{ name: '(mobile-[a-z]+)', width: (\d+)/g)];
-    assert.equal(states.length, 2, 'both mobile states must still be rendered');
-    for (const [, , width] of states) {
-        assert.ok(Number(width) <= 560,
-            'a mobile state wider than the lane would never enter the branch');
-    }
 });
