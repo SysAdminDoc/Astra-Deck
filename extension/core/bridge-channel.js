@@ -104,6 +104,7 @@
             || (opts.documentRef || root.document || {}).documentElement;
         var token = opts.token || randomToken(opts.crypto);
         var stringify = opts.stringify || JSON.stringify;
+        var parse = opts.parse || JSON.parse;
         var dispatch = opts.dispatchEvent
             || (opts.documentRef || root.document || {}).dispatchEvent;
         var eventTarget = opts.eventTarget || opts.documentRef || root.document;
@@ -113,7 +114,27 @@
         // over whatever the DOM currently holds would bless a page script's
         // forged attribute on the next legitimate write.
         var state = Object.create(null);
+
+        // Continue the counter the last writer reached rather than restarting
+        // at 1. An extension update can re-evaluate the isolated world while
+        // the MAIN-world bridge stays alive: a fresh writer starting at 1
+        // publishes payload after payload that the reader rejects as stale,
+        // and every one of those state changes is silently lost until the new
+        // counter overtakes the old. Read what is already on the page and
+        // carry on from there — the payload is not trusted for its VALUES
+        // here, only for how far the numbering got, and a page script inflating
+        // it can at worst make the reader skip ahead, never roll it back.
         var counter = 0;
+        if (element && typeof element.getAttribute === 'function') {
+            try {
+                var existing = parse(element.getAttribute(STATE_ATTR) || 'null');
+                if (existing && typeof existing.n === 'number' && isFinite(existing.n)) {
+                    counter = Math.max(0, Math.floor(existing.n));
+                }
+            } catch (error) {
+                void error;
+            }
+        }
 
         function publish() {
             if (!element || typeof element.setAttribute !== 'function') return null;
@@ -154,7 +175,16 @@
                 var target = eventTarget;
                 var send = dispatch || (target && target.dispatchEvent);
                 if (typeof send !== 'function' || !target) return false;
+                // `bubbles: true` is not decoration. This dispatches on
+                // `document` and every listener in the MAIN world is on
+                // `window` in the bubble phase, so a non-bubbling event
+                // reaches none of them — the whole navigate half of the
+                // channel was silently dead in a browser until this was
+                // added, and no fixture caught it because the fixtures
+                // dispatched straight at the listeners.
                 send.call(target, new CustomEventRef(NAVIGATE_EVENT, {
+                    bubbles: true,
+                    composed: true,
                     detail: { token: token, reason: String(reason || 'navigate') }
                 }));
                 return true;

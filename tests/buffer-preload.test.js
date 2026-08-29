@@ -113,25 +113,25 @@ function bootstrapBufferBridge(options = {}) {
     context.HTMLVideoElement.prototype = { canPlayType() { return 'probably'; } };
     context.addEventListener = (type, callback) => addListener(windowListeners, type, callback);
     context.removeEventListener = () => {};
-    context.dispatchEvent = (event) => {
-        emit(windowListeners, event.type, event);
-        // The sealed navigate carries its reason in the detail; the old page
-        // events carried it in the type.
-        const taskEvent = event.detail && event.detail.reason
-            ? event.detail.reason
-            : event.type === 'yt-navigate-finish'
-                ? 'navigate'
-                : event.type === 'yt-page-data-updated' ? 'page-data' : event.type;
+    // The player task manager is its own collaborator: it watches navigation
+    // and fires the tasks the bridge registered with it. Keeping it separate
+    // from event delivery matters, because the navigate event now travels the
+    // path a browser would take it (document, then window if it bubbles) and
+    // the harness must not quietly stand in for that.
+    const fireTasks = (taskEvent) => {
         for (const task of schedules.values()) {
             if (task.settings.events.includes(taskEvent)) {
-                task.callback({
-                    id: 'event',
-                    reason: taskEvent,
-                    video: currentVideo,
-                    player
-                });
+                task.callback({ id: 'event', reason: taskEvent, video: currentVideo, player });
             }
         }
+    };
+
+    context.dispatchEvent = (event) => {
+        emit(windowListeners, event.type, event);
+        const taskEvent = event.type === 'yt-navigate-finish'
+            ? 'navigate'
+            : event.type === 'yt-page-data-updated' ? 'page-data' : event.type;
+        fireTasks(taskEvent);
         return true;
     };
     context.window = context;
@@ -142,7 +142,8 @@ function bootstrapBufferBridge(options = {}) {
     // Seed the token before the bridge builds its reader. `channel` rather
     // than `bridge`, because the harness already returns something by that
     // name to the tests.
-    const channel = installBridgeChannel(documentElement, context.YTKitCore);
+    const channel = installBridgeChannel(documentElement, context.YTKitCore,
+        { windowListeners, documentListeners });
 
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
 
@@ -164,7 +165,11 @@ function bootstrapBufferBridge(options = {}) {
         },
         navigate(video) {
             currentVideo = video;
-            context.dispatchEvent(channel.navigate());
+            // Both halves of a real navigation: the sealed event the bridge
+            // listens for, and the player task manager firing its own tasks.
+            const delivered = channel.navigate();
+            fireTasks('navigate');
+            return delivered;
         }
     };
 }
@@ -214,4 +219,35 @@ test('buffer preload reapplies once for the next VOD after SPA navigation', () =
     bridge.navigate({ duration: 240 });
 
     assert.deepEqual(bridge.calls, [20, 20]);
+});
+
+test('an unchanged status is not rewritten on every retry', () => {
+    // `-status` and `-reason` are outputs: the bridge writes them for the
+    // isolated world to read. It reads them back only to avoid rewriting an
+    // unchanged value, and that read has to use the attribute — routing it
+    // through the sealed channel (which nothing publishes these into) made
+    // the guard always true, so the retry ladder rewrote the attribute six
+    // times per video and woke both worlds' observers for nothing.
+    const writes = [];
+    const bridge = bootstrapBufferBridge();
+    const element = bridge.documentElement;
+    const nativeSet = element.setAttribute.bind(element);
+    element.setAttribute = (name, value) => {
+        // Only the two OUTPUTS. `-preload` is the input the harness publishes,
+        // and republishing that is the test driving the feature, not the
+        // feature rewriting itself.
+        if (name === 'data-ytkit-buffer-status' || name === 'data-ytkit-buffer-reason') {
+            writes.push(`${name}=${value}`);
+        }
+        return nativeSet(name, value);
+    };
+
+    bridge.setEnabled(true);
+    const afterFirst = writes.length;
+    assert.ok(afterFirst > 0, 'the first apply has to publish its status');
+
+    // Same state again. Nothing about it changed, so nothing should be written.
+    bridge.setEnabled(true);
+    assert.deepEqual(writes.slice(afterFirst), [],
+        'an unchanged status must not be written again');
 });

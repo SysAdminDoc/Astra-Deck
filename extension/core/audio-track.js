@@ -156,18 +156,31 @@
         return !!leftId && leftId === rightId;
     }
 
-    function readPreference(documentRef) {
-        const root = documentRef?.documentElement;
-        if (!root?.getAttribute) return null;
-        if (root.getAttribute(ATTRS.original) === 'on') {
+    // This module runs in the MAIN world, which shares a realm and a DOM with
+    // YouTube's own scripts. Reading these three preferences straight off
+    // `<html>` meant one `setAttribute` from any page script could pick the
+    // audio track the player switched to. They come from the sealed channel
+    // now, the same as every other bridge input; `read` is injectable so a
+    // test can drive it without a whole channel.
+    function bridgeRead(documentRef, name) {
+        const reader = core.mainBridgeReader;
+        if (reader && typeof reader.get === 'function') return reader.get(name);
+        // No channel means no trusted input. Failing closed is the point: the
+        // feature stays off rather than run on whatever the page put there.
+        void documentRef;
+        return null;
+    }
+
+    function readPreference(documentRef, read = bridgeRead) {
+        if (read(documentRef, ATTRS.original) === 'on') {
             return { mode: 'original', language: '', preferDescriptive: false };
         }
-        const language = normalizeLanguageTag(root.getAttribute(ATTRS.language));
+        const language = normalizeLanguageTag(read(documentRef, ATTRS.language));
         if (!language) return null;
         return {
             mode: 'language',
             language,
-            preferDescriptive: root.getAttribute(ATTRS.descriptive) === 'on'
+            preferDescriptive: read(documentRef, ATTRS.descriptive) === 'on'
         };
     }
 

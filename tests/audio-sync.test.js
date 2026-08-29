@@ -246,7 +246,8 @@ function bootstrapAudioBridge() {
 
     // The bridge reads only what the isolated world sealed. Seed the token
     // and hand the harness a publisher before ytkit-main.js runs.
-    const bridge = installBridgeChannel(documentElement, context.YTKitCore);
+    const bridge = installBridgeChannel(documentElement, context.YTKitCore,
+        { windowListeners, documentListeners });
 
     vm.createContext(context);
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
@@ -279,7 +280,7 @@ function bootstrapAudioBridge() {
         },
         navigateTo(video) {
             currentVideo = video;
-            context.dispatchEvent(bridge.navigate());
+            bridge.navigate();
             while (pendingTimers.length) pendingTimers.shift()();
         }
     };

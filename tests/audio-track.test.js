@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const audio = require('../extension/core/audio-track');
+const { installBridgeChannel } = require('./helpers/main-bridge');
 
 function makeDocument(attributes = {}) {
     const values = new Map(Object.entries(attributes));
@@ -22,8 +23,39 @@ function makeDocument(attributes = {}) {
     };
 }
 
+/**
+ * Seed the preferences the way the isolated world does.
+ *
+ * This module runs in the MAIN world, where it shares a DOM with YouTube's own
+ * scripts, so it stopped reading these three off `<html>`: one `setAttribute`
+ * from any page script could pick the audio track the player switched to. It
+ * reads the sealed channel now, and so does this fixture — writing the plain
+ * attribute is what a page script does, and it must not work.
+ */
+function sealPreferences(document, attributes) {
+    const channel = installBridgeChannel(document.documentElement, {});
+    for (const [name, value] of Object.entries(attributes)) channel.publish(name, value);
+
+    const reader = channel.core.createBridgeReader({
+        documentElement: document.documentElement,
+        token: channel.token
+    });
+    reader.sync();
+
+    const previous = globalThis.YTKitCore.mainBridgeReader;
+    globalThis.YTKitCore.mainBridgeReader = reader;
+    return {
+        channel,
+        reader,
+        restore() { globalThis.YTKitCore.mainBridgeReader = previous; },
+        /** What a page script can do, and what must not reach the module. */
+        forge(name, value) { channel.forge(name, value); }
+    };
+}
+
 function makeBridgeFixture(attributes, tracks, current = null) {
-    const document = makeDocument(attributes);
+    const document = makeDocument();
+    const sealed = sealPreferences(document, attributes);
     const calls = [];
     let scheduled = null;
     const player = {
@@ -45,6 +77,8 @@ function makeBridgeFixture(attributes, tracks, current = null) {
         bridge,
         calls,
         player,
+        document,
+        sealed,
         get scheduled() { return scheduled; }
     };
 }
@@ -148,4 +182,112 @@ test('MAIN audio bridge prefers descriptive audio, leaves no-match playback unch
     originalFixture.bridge.sync('attribute');
     originalFixture.scheduled.callback({ reason: 'navigate', player: originalFixture.player });
     assert.deepEqual(originalFixture.calls, [original]);
+});
+
+test('a page script cannot choose the audio track by writing the attribute', () => {
+    // This module runs in the MAIN world, so `document.documentElement` is the
+    // same object YouTube's scripts hold. Until the sealed channel it read
+    // these three preferences straight off it, and one setAttribute from
+    // anything on the page switched the user's audio track.
+    const german = { id: 't-de', languageCode: 'de', displayName: 'Deutsch' };
+    const english = { id: 't-en', languageCode: 'en', displayName: 'English' };
+
+    // A real preference is sealed, so the task is scheduled and running. The
+    // user has chosen English and is already on it.
+    const fixture = makeBridgeFixture(
+        { [audio.ATTRS.language]: 'en' }, [english, german], english);
+
+    try {
+        assert.equal(fixture.bridge.sync('init'), true, 'the sealed preference is live');
+        fixture.sealed.forge(audio.ATTRS.language, 'de');
+        fixture.scheduled.callback({ reason: 'navigate', player: fixture.player });
+
+        assert.deepEqual(fixture.calls, [],
+            'an attribute the page can write must not reach setAudioTrack');
+        assert.equal(fixture.player.getAudioTrack(), english, 'the track is unchanged');
+
+        // The control: the same value, sealed, does switch it. Without this
+        // the test above would pass against a bridge that refused everything.
+        fixture.sealed.channel.publish(audio.ATTRS.language, 'de');
+        fixture.sealed.reader.sync();
+        fixture.scheduled.callback({ reason: 'navigate', player: fixture.player });
+        assert.deepEqual(fixture.calls, [german],
+            'so the refusal above is of the forgery, not of every change');
+    } finally {
+        fixture.sealed.restore();
+    }
+});
+
+test('a forced original-audio flag is not something the page can set either', () => {
+    const original = { id: 't-orig', languageCode: 'en', displayName: 'Original', audioIsDefault: true };
+    const dubbed = { id: 't-de', languageCode: 'de', displayName: 'Deutsch' };
+    const fixture = makeBridgeFixture(
+        { [audio.ATTRS.language]: 'de' }, [original, dubbed], dubbed);
+
+    try {
+        assert.equal(fixture.bridge.sync('init'), true);
+        fixture.sealed.forge(audio.ATTRS.original, 'on');
+        fixture.scheduled.callback({ reason: 'navigate', player: fixture.player });
+        assert.deepEqual(fixture.calls, [],
+            'the page does not get to force playback back to the original track');
+    } finally {
+        fixture.sealed.restore();
+    }
+});
+
+test('with nothing sealed there is no preference, whatever the attribute says', () => {
+    // The sharper case. Preferring the sealed value is easy; the fallback
+    // that matters is what happens when the sealed state holds nothing for
+    // this key. Reading the attribute then is the same hole in slower motion.
+    const english = { id: 't-en', languageCode: 'en', displayName: 'English' };
+    const german = { id: 't-de', languageCode: 'de', displayName: 'Deutsch' };
+    const fixture = makeBridgeFixture({}, [english, german], english);
+
+    try {
+        fixture.sealed.forge(audio.ATTRS.language, 'de');
+        fixture.sealed.forge(audio.ATTRS.original, 'on');
+        fixture.sealed.forge(audio.ATTRS.descriptive, 'on');
+
+        assert.equal(fixture.bridge.readPreference(), null,
+            'an unsealed attribute is not a preference, however empty the sealed state is');
+        assert.equal(fixture.bridge.sync('forged'), false,
+            'and nothing is scheduled off it');
+        assert.deepEqual(fixture.calls, []);
+    } finally {
+        fixture.sealed.restore();
+    }
+});
+
+test('a MAIN world with no channel reads no preference at all', () => {
+    // The other half of the fallback: not "the sealed state is empty" but
+    // "there is no sealed state to consult". A load order that lost the
+    // channel, or a host that never had one, must leave this feature off
+    // rather than quietly reading whatever the page put on <html>.
+    const values = new Map([
+        [audio.ATTRS.language, 'de'],
+        [audio.ATTRS.original, 'on'],
+        [audio.ATTRS.descriptive, 'on'],
+    ]);
+    const document = {
+        documentElement: {
+            getAttribute: (name) => (values.has(name) ? values.get(name) : null),
+            setAttribute: (name, value) => values.set(name, String(value)),
+            removeAttribute: (name) => values.delete(name),
+        },
+    };
+
+    const previous = globalThis.YTKitCore.mainBridgeReader;
+    globalThis.YTKitCore.mainBridgeReader = null;
+    try {
+        const bridge = audio.createAudioTrackBridge({
+            document,
+            taskManager: { schedule() {}, cancel() {} },
+            getPlayer: () => null,
+        });
+        assert.equal(bridge.readPreference(), null,
+            'no channel means no trusted input, and failing closed is the point');
+        assert.equal(bridge.sync('init'), false, 'and nothing is scheduled off it');
+    } finally {
+        globalThis.YTKitCore.mainBridgeReader = previous;
+    }
 });

@@ -32837,8 +32837,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .replace(/_/g, '-')
                     .toLowerCase();
                 publishBridgeAttribute('data-ytkit-audio-language', target);
-                document.documentElement.setAttribute(
-                    'data-ytkit-audio-description',
+                publishBridgeAttribute('data-ytkit-audio-description',
                     getSetting('preferDescriptiveAudio', false) ? 'on' : 'off'
                 );
             },
