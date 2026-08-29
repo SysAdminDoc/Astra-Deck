@@ -299,6 +299,18 @@ function loadFeatureFromSource(source, id, extraGlobals = {}) {
             }
         },
         appState: { settings: {} },
+        // Bridge writes. The real pair writes the plain attribute for CSS and
+        // seals a copy for the MAIN-world bridge; here the attribute write is
+        // what a feature test can observe, so model that and leave the seal to
+        // tests/bridge-channel.test.js.
+        publishBridgeAttribute(name, value) {
+            sandbox.document?.documentElement?.setAttribute?.(name, String(value));
+            return null;
+        },
+        clearBridgeAttribute(name) {
+            sandbox.document?.documentElement?.removeAttribute?.(name);
+            return null;
+        },
         addMutationRule() {},
         removeMutationRule() {},
         addNavigateRule() {},

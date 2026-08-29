@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { installBridgeChannel } = require('./helpers/main-bridge');
 
 const source = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
@@ -243,36 +244,42 @@ function bootstrapAudioBridge() {
     context.self = context;
     context.globalThis = context;
 
+    // The bridge reads only what the isolated world sealed. Seed the token
+    // and hand the harness a publisher before ytkit-main.js runs.
+    const bridge = installBridgeChannel(documentElement, context.YTKitCore);
+
     vm.createContext(context);
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
 
     return {
         context,
         audioContexts,
+        bridge,
+        documentElement,
         setOffset(value) {
-            documentElement.setAttribute('data-ytkit-audio-sync-offset', String(value));
+            bridge.publish('data-ytkit-audio-sync-offset', String(value));
         },
         setAutoGain(enabled) {
-            if (enabled) documentElement.setAttribute('data-ytkit-audio-auto-gain', '1');
-            else documentElement.removeAttribute('data-ytkit-audio-auto-gain');
+            if (enabled) bridge.publish('data-ytkit-audio-auto-gain', '1');
+            else bridge.clear('data-ytkit-audio-auto-gain');
         },
         setHighPass(enabled) {
-            if (enabled) documentElement.setAttribute('data-ytkit-audio-high-pass', '1');
-            else documentElement.removeAttribute('data-ytkit-audio-high-pass');
+            if (enabled) bridge.publish('data-ytkit-audio-high-pass', '1');
+            else bridge.clear('data-ytkit-audio-high-pass');
         },
         setEq(enabled) {
-            if (enabled) documentElement.setAttribute('data-ytkit-audio-eq', '1');
-            else documentElement.removeAttribute('data-ytkit-audio-eq');
+            if (enabled) bridge.publish('data-ytkit-audio-eq', '1');
+            else bridge.clear('data-ytkit-audio-eq');
         },
         setEqBand(band, value) {
-            documentElement.setAttribute(`data-ytkit-audio-eq-${band}`, String(value));
+            bridge.publish(`data-ytkit-audio-eq-${band}`, String(value));
         },
         tickAutoGain() {
             for (const callback of intervalCallbacks.values()) callback();
         },
         navigateTo(video) {
             currentVideo = video;
-            context.dispatchEvent({ type: 'yt-navigate-finish' });
+            context.dispatchEvent(bridge.navigate());
             while (pendingTimers.length) pendingTimers.shift()();
         }
     };

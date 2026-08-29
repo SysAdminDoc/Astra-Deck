@@ -183,6 +183,11 @@
         const href = (typeof location !== 'undefined') ? location.href : '';
         const urlChanged = href !== lastNavHref;
         lastNavHref = href;
+        // The MAIN-world bridge no longer listens to `yt-navigate-finish`:
+        // YouTube's copy and a page script's forgery are the same object to a
+        // listener. This is the one it does listen to, and only this side can
+        // seal it.
+        core.notifyBridgeNavigate?.(urlChanged ? 'navigate' : 'page-data');
         if (urlChanged || pendingMutationRouteReset) {
             resetMutationRuleHealthForRoute();
             // Hidden-card counts are per navigation: "42 cards hidden" only

@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { installBridgeChannel } = require('./helpers/main-bridge');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');
@@ -26,7 +27,9 @@ function bootstrapBridge({ decodingInfo, codec = 'auto', hasMediaCapabilities = 
     const attributes = new Map();
     const attributeListeners = [];
     const observers = [];
-    if (codec) attributes.set('data-ytkit-codec', codec);
+    // Seeded through the sealed channel below, not straight into the
+    // attribute map: the bridge reads the sealed copy now.
+    const initialCodec = codec;
 
     const documentElement = {
         getAttribute: (name) => (attributes.has(name) ? attributes.get(name) : null),
@@ -97,13 +100,22 @@ function bootstrapBridge({ decodingInfo, codec = 'auto', hasMediaCapabilities = 
 
     vm.createContext(context);
     vm.runInContext(injectionGuardSource, context, { filename: 'extension/core/injection-guard.js' });
+    // Seed the token before the bridge builds its reader: it takes the token
+    // out of the DOM as it starts, the way it does at document_start.
+    const channel = installBridgeChannel(documentElement, context.YTKitCore);
+    if (initialCodec) channel.publish('data-ytkit-codec', initialCodec);
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
 
     return {
         context,
         observerCount: () => observers.length,
         activeObserverCount: () => observers.filter((observer) => observer.active).length,
-        setCodec: (value) => documentElement.setAttribute('data-ytkit-codec', value),
+        channel,
+        documentElement,
+        // What the isolated world does.
+        setCodec: (value) => channel.publish('data-ytkit-codec', value),
+        // What a page script can do: the attribute, with nothing behind it.
+        forgeCodec: (value) => channel.forge('data-ytkit-codec', value),
         canPlayType: (type) => context.HTMLVideoElement.prototype.canPlayType.call({}, type),
         isPatched: () => context.HTMLVideoElement.prototype.canPlayType !== originalCanPlayType
 };

@@ -23,7 +23,7 @@ test('project facts are collected from the shipped source surfaces', () => {
     // The runtime graph includes the semantic zero-ad fallback beside the
     // selector-backed document-start shell layer. core/feed-prefilter.js is
     // also counted because the normal-page runtime loads its isolated module.
-    assert.equal(facts.runtimeModules, 116);
+    assert.equal(facts.runtimeModules, 117);
     assert.equal(facts.featureModules.length, 27);
     assert.equal(facts.featureIds.length, 303);
     assert.equal(facts.selectorPackFiles.length, 33);

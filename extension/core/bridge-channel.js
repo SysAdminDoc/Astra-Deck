@@ -256,8 +256,61 @@
         };
     }
 
+    // ── the isolated world's one writer ───────────────────────────────────
+    //
+    // Built on first use, because the token is generated at document_start and
+    // most callers run at document_idle. Everything on the isolated side goes
+    // through this, so there is exactly one thing sealing state and exactly
+    // one thing to reason about.
+    var _writer = null;
+    function getBridgeWriter() {
+        if (_writer) return _writer;
+        var token = root[TOKEN_GLOBAL];
+        if (typeof token !== 'string' || !token) return null;
+        _writer = createBridgeWriter({ token: token });
+        return _writer;
+    }
+
+    /**
+     * Publish a bridge value.
+     *
+     * The plain attribute is still written: some of these drive CSS
+     * (`html[data-ytkit-audio-only]`), and the isolated world reads a few of
+     * its own back. What changed is that the MAIN-world bridge no longer
+     * believes the attribute — it reads the sealed copy this also writes, so a
+     * page script overwriting the attribute changes what the page looks like
+     * and nothing about what the bridge does.
+     */
+    function publishBridgeAttribute(name, value) {
+        var element = root.document && root.document.documentElement;
+        if (element && typeof element.setAttribute === 'function') {
+            element.setAttribute(name, String(value));
+        }
+        var writer = getBridgeWriter();
+        return writer ? writer.set(name, value) : null;
+    }
+
+    function clearBridgeAttribute(name) {
+        var element = root.document && root.document.documentElement;
+        if (element && typeof element.removeAttribute === 'function') {
+            element.removeAttribute(name);
+        }
+        var writer = getBridgeWriter();
+        return writer ? writer.clear(name) : null;
+    }
+
+    /** Tell the bridge the page navigated, in a way only this side can say. */
+    function notifyBridgeNavigate(reason) {
+        var writer = getBridgeWriter();
+        return writer ? writer.notifyNavigate(reason) : false;
+    }
+
     core.createBridgeWriter = createBridgeWriter;
     core.createBridgeReader = createBridgeReader;
+    core.getBridgeWriter = getBridgeWriter;
+    core.publishBridgeAttribute = publishBridgeAttribute;
+    core.clearBridgeAttribute = clearBridgeAttribute;
+    core.notifyBridgeNavigate = notifyBridgeNavigate;
     core.bridgeChannel = {
         TOKEN_ATTR: TOKEN_ATTR,
         STATE_ATTR: STATE_ATTR,
@@ -272,6 +325,10 @@
         module.exports = {
             createBridgeWriter: createBridgeWriter,
             createBridgeReader: createBridgeReader,
+            getBridgeWriter: getBridgeWriter,
+            publishBridgeAttribute: publishBridgeAttribute,
+            clearBridgeAttribute: clearBridgeAttribute,
+            notifyBridgeNavigate: notifyBridgeNavigate,
             bridgeChannel: core.bridgeChannel
         };
     }

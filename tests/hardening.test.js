@@ -367,8 +367,8 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
     assert.deepEqual(
         mainEntry.js,
-        ['core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'ytkit-main.js'],
-        'resource unlock, player, and audio helpers must load before ytkit-main.js in MAIN world'
+        ['core/bridge-channel.js', 'core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'ytkit-main.js'],
+        'the sealed channel, then resource unlock, player and audio helpers, all before ytkit-main.js'
     );
 
     const playerCore = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'player.js'), 'utf8');
@@ -4997,9 +4997,15 @@ test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered h
         path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
         'utf8'
     );
-    const observerInstantiations = (ytkitMainSource.match(/new MutationObserver\(/g) || []).length;
+    // `_NATIVE.MutationObserver`, not the global: a page script can replace
+    // `window.MutationObserver` before the bridge builds its observer, and
+    // then it sees every attribute the bridge watches. The reference is taken
+    // at document_start, before any page script exists.
+    const observerInstantiations = (ytkitMainSource.match(/new _NATIVE\.MutationObserver\(/g) || []).length;
     assert.equal(observerInstantiations, 1,
         `ytkit-main.js should instantiate exactly one MutationObserver after consolidation; found ${observerInstantiations}`);
+    assert.doesNotMatch(ytkitMainSource, /new MutationObserver\(/,
+        'the bridge must not reach for the global, which the page can replace');
 
     // All three feature handlers must be registered with the shared observer.
     const registrations = (ytkitMainSource.match(/_obsRegister\(/g) || []).length;
@@ -5270,8 +5276,8 @@ test('qualityProfileMatrix publishes data-ytkit-quality-context on every context
     const start = ytkitSource.indexOf("id: 'qualityProfileMatrix'");
     assert.ok(start > -1, 'qualityProfileMatrix must exist');
     const block = ytkitSource.slice(start, start + 8000);
-    assert.match(block, /document\.documentElement\.setAttribute\('data-ytkit-quality-context'/,
-        'must write the context to <html data-ytkit-quality-context>');
+    assert.match(block, /publishBridgeAttribute\('data-ytkit-quality-context'/,
+        'must publish the context through the sealed channel, which writes the attribute too');
     assert.match(block, /data-ytkit-quality-target/,
         'must publish the resolved quality target too');
     assert.match(block, /fullscreenchange/,
@@ -5287,10 +5293,13 @@ test('qualityProfileMatrix destroy() removes both data attributes', () => {
     const block = ytkitSource.slice(start, start + 8000);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
-    assert.match(destroyBlock, /removeAttribute\('data-ytkit-quality-context'\)/,
-        'destroy() must remove data-ytkit-quality-context');
-    assert.match(destroyBlock, /removeAttribute\('data-ytkit-quality-target'\)/,
-        'destroy() must remove data-ytkit-quality-target');
+    // Withdrawing a value has to go through the channel too. Removing only
+    // the attribute would leave the bridge acting on the last sealed value
+    // forever, because the attribute is not what it reads.
+    assert.match(destroyBlock, /clearBridgeAttribute\('data-ytkit-quality-context'\)/,
+        'destroy() must withdraw data-ytkit-quality-context from the sealed state');
+    assert.match(destroyBlock, /clearBridgeAttribute\('data-ytkit-quality-target'\)/,
+        'destroy() must withdraw data-ytkit-quality-target from the sealed state');
     assert.match(destroyBlock, /document\.removeEventListener\('fullscreenchange'/,
         'destroy() must remove the fullscreenchange listener');
 });

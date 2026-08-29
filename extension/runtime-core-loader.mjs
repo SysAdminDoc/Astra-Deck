@@ -8,6 +8,7 @@ export const FOUNDATION_MODULES = Object.freeze(
     [
         "core/browser-api.js",
         "core/injection-guard.js",
+        "core/bridge-channel.js",
         "core/env.js",
         "core/storage.js",
         "core/styles.js",

@@ -48,12 +48,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 119 | `true` on every entry |
-| `store-safe` | firefox | A | 119 | omitted |
-| `chromium-store` | chromium | B | 118 | `true` on every entry |
-| `chromium-store` | firefox | B | 118 | omitted |
-| `github-full` | chromium | A | 119 | `true` on every entry |
-| `github-full` | firefox | A | 119 | omitted |
+| `store-safe` | chromium | A | 120 | `true` on every entry |
+| `store-safe` | firefox | A | 120 | omitted |
+| `chromium-store` | chromium | B | 119 | `true` on every entry |
+| `chromium-store` | firefox | B | 119 | omitted |
+| `github-full` | chromium | A | 120 | `true` on every entry |
+| `github-full` | firefox | A | 120 | omitted |
 
 #### Resource set A
 
@@ -81,6 +81,7 @@ Entry 2 resource paths:
 - `runtime-core-loader.mjs`
 - `core/browser-api.js`
 - `core/injection-guard.js`
+- `core/bridge-channel.js`
 - `core/env.js`
 - `core/storage.js`
 - `core/styles.js`
@@ -222,6 +223,7 @@ Entry 2 resource paths:
 - `runtime-core-loader.mjs`
 - `core/browser-api.js`
 - `core/injection-guard.js`
+- `core/bridge-channel.js`
 - `core/env.js`
 - `core/storage.js`
 - `core/styles.js`
