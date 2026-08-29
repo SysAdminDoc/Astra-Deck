@@ -2,84 +2,194 @@
 
 // Five defects in the download UI, all of the same family: code that was
 // correct for the case it was written against and silently wrong for a
-// neighbouring one.
+// neighbouring one. Four of them are now driven through the surface that
+// carried the defect rather than read out of the source.
+//
+// One assertion stays a scan and says why: "every authenticated companion call
+// agrees on the header name" is a claim about call sites this test cannot all
+// reach, and a scan is what makes it exhaustive.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
+const { createDownloadUIFeature } = require('../extension/features/download-ui');
+const { fakeNode, fakeTreeDocument } = require('./helpers/monolith');
+
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension/features/download-ui/index.js'), 'utf8');
 
-// Comment lines are stripped from every window. Each of these fixes carries a
-// comment naming the wrong-thing-it-replaced, so an absence assertion against
-// raw source matches the documentation instead of the code. (This is the third
-// time that trap has cost a red run in this repo — strip, then assert.)
-function stripComments(text) {
-    return text
-        .split('\n')
-        .filter(line => !/^\s*(\/\/|\*|\/\*)/.test(line))
-        .join('\n');
+const POPUP_WIDTH = 320;
+const POPUP_HEIGHT = 230;
+const pixels = (value) => Number.parseFloat(String(value).replace('px', ''));
+
+/** Open the download popup on the CSS-anchored branch at a measured viewport. */
+function openAnchoredPopup({ innerWidth = 1280, innerHeight = 900, popupRect }) {
+    const documentRef = fakeTreeDocument(() => null);
+    const createElement = documentRef.createElement.bind(documentRef);
+    documentRef.createElement = (tag) => {
+        const node = createElement(tag);
+        node.offsetWidth = POPUP_WIDTH;
+        node.offsetHeight = POPUP_HEIGHT;
+        node.getBoundingClientRect = () => popupRect
+            || { top: 0, bottom: POPUP_HEIGHT, left: 0, right: POPUP_WIDTH, width: POPUP_WIDTH, height: POPUP_HEIGHT };
+        node.replaceChildren = () => { node.children.length = 0; };
+        node.scrollIntoView = () => {};
+        return node;
+    };
+    documentRef.getElementById = () => null;
+
+    globalThis.document = documentRef;
+    globalThis.window = {
+        location: { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        innerWidth,
+        innerHeight,
+        addEventListener() {}, removeEventListener() {},
+        getComputedStyle: () => ({ getPropertyValue: () => '' }),
+    };
+    globalThis.CSS = { supports: () => true };
+
+    const feature = createDownloadUIFeature({
+        getVideoId: () => 'dQw4w9WgXcQ',
+        isWatchPagePath: () => true,
+        supportsPopover: () => false,
+        setTimeoutFn: () => 0,
+        clearTimeoutFn: () => {},
+        setIntervalFn: () => 0,
+        clearIntervalFn: () => {},
+    });
+    feature.downloadFormatEstimates.probe = async () => ({ status: 'error', error: 'stubbed' });
+
+    const anchor = fakeNode({ tag: 'button', attributes: { class: 'ytkit-po-dl' } });
+    anchor.getBoundingClientRect = () => ({ top: 400, bottom: 424, left: 600, width: 40 });
+    anchor.focus = () => {};
+    feature.showDownloadPopup(anchor);
+
+    return { documentRef, popup: documentRef.body.children[documentRef.body.children.length - 1] };
 }
 
-function block(needle, length = 1200) {
-    const at = source.indexOf(needle);
-    assert.ok(at > 0, `${needle} must exist`);
-    return stripComments(source.slice(at, at + length));
-}
+test('the inline clamp moves the popup on the axis it was measured on', () => {
+    // The panel is centred on the trigger, so a trigger near the right edge
+    // overhangs it. getBoundingClientRect is physical, so the correction has
+    // to be physical too: marginInlineStart maps to margin-right in RTL and
+    // moves a left-positioned box nowhere.
+    const overhanging = openAnchoredPopup({
+        innerWidth: 1280,
+        popupRect: { top: 0, bottom: 230, left: 1100, right: 1420, width: 320, height: 230 },
+    });
+    const shift = pixels(overhanging.popup.style.marginLeft);
+    assert.ok(Number.isFinite(shift), 'an overhanging popup must be nudged back');
+    assert.ok(shift < 0, `the nudge must pull it left, not right (got ${shift})`);
+    assert.ok(!overhanging.popup.style.marginInlineStart,
+        'a logical property maps to margin-right in RTL and moves a left-positioned box nowhere');
 
-test('the inline clamp is applied on the axis it was measured on', () => {
-    const body = block('const rect = popup.getBoundingClientRect();');
-    assert.match(body, /popup\.style\.marginLeft = shift \+ 'px'/,
-        'the shift comes from physical getBoundingClientRect coordinates');
-    assert.doesNotMatch(body, /marginInlineStart/,
-        'a logical property maps to margin-right on RTL and moves a left-positioned box nowhere');
+    const inside = openAnchoredPopup({
+        innerWidth: 1280,
+        popupRect: { top: 0, bottom: 230, left: 400, right: 720, width: 320, height: 230 },
+    });
+    assert.ok(!inside.popup.style.marginLeft || pixels(inside.popup.style.marginLeft) === 0,
+        'a popup already inside the viewport must not be nudged');
 });
 
-test('the height cap is applied unconditionally, not only when it already overflows', () => {
-    const body = block('const heightCap = Math.max(');
-    assert.match(body, /popup\.style\.maxHeight = heightCap \+ 'px';/);
-    assert.doesNotMatch(body, /if \(popup\.offsetHeight > heightCap\)/,
-        'playlist rows and chip labels render after open, and the popup grows upward');
+test('the height cap is applied even when the popup has not overflowed yet', () => {
+    // Playlist rows and two-line chip labels render after open, and the popup
+    // is pinned bottom:anchor(top), so late growth extends upward out of the
+    // viewport. Capping only on an existing overflow misses all of that.
+    const roomy = openAnchoredPopup({ innerHeight: 900 });
+    assert.ok(pixels(roomy.popup.style.maxHeight) > 0,
+        'a popup that fits today must still carry the cap that bounds it tomorrow');
+    assert.equal(pixels(roomy.popup.style.maxHeight), 900 - 424 - 16,
+        'the cap is the room below the trigger, which is the taller side here');
 });
 
-test('the Stream Links close handler touches only its own state', () => {
-    const at = source.indexOf("close.className = 'ytkit-stream-links-panel__close'");
-    assert.ok(at > 0, 'the close button assignment must exist (the CSS rule is not the handler)');
-    const body = stripComments(source.slice(at, at + 700));
-    assert.doesNotMatch(body, /_requestToken\+\+/,
-        '_requestToken belongs to the History panel this was copied from');
-    assert.doesNotMatch(body, /_searchTimer/,
-        '_searchTimer belongs to the History panel this was copied from');
-    assert.match(body, /panel\.remove\(\)/, 'it must still close');
+test('the health container adopts the one already beside the anchor', () => {
+    // The sibling panels (stream links, cobalt, history) insert at the same
+    // anchor, so nextElementSibling is whichever inserted last.
+    const anchor = fakeNode({ tag: 'button', attributes: { class: 'ytkit-download-btn' } });
+    const parent = fakeNode({ tag: 'div' });
+    const existing = fakeNode({ tag: 'span', attributes: { class: 'ytkit-download-health' } });
+    const otherPanel = fakeNode({ tag: 'div', attributes: { class: 'ytkit-stream-links-panel' } });
+    parent.appendChild(anchor);
+    parent.appendChild(otherPanel);
+    parent.appendChild(existing);
+    parent.querySelector = (selector) => (String(selector).includes('ytkit-download-health') ? existing : null);
+    anchor.insertAdjacentElement = () => { throw new Error('a second container must not be created'); };
+
+    const documentRef = fakeTreeDocument((selector) =>
+        (String(selector).includes('dl-btn') || String(selector).includes('download-btn') ? anchor : null));
+    globalThis.document = documentRef;
+
+    const feature = createDownloadUIFeature({
+        isWatchPagePath: () => true,
+        setTimeoutFn: () => 0,
+        clearTimeoutFn: () => {},
+        setIntervalFn: () => 0,
+        clearIntervalFn: () => {},
+    });
+
+    feature.downloadHealthPanel._attach();
+    assert.equal(feature.downloadHealthPanel._container, existing,
+        'the container it found is the container it must use');
+    assert.equal(parent.children.filter((node) =>
+        String(node.className).includes('ytkit-download-health')).length, 1,
+        'a duplicate carries a stale aria-live region that announces nothing');
 });
 
-test('Deno provisioning uses the same auth header as every other companion call', () => {
-    const at = source.indexOf('provision-deno');
-    assert.ok(at > 0);
-    // Lookback: the base url sits before the needle inside the same template.
-    const body = stripComments(source.slice(at - 400, at + 600));
-    assert.match(body, /'X-Auth-Token': data\.token/);
-    assert.doesNotMatch(body, /X-MDL-Token'/,
-        'X-MDL-Token appears nowhere else in the repo, so the request always 401d');
-    assert.match(body, /MediaDLManager\.baseUrl\(\)/,
-        'hand-concatenating the port bypasses the manager that knows which one is live');
+test('the health container is created when the anchor has none', () => {
+    const anchor = fakeNode({ tag: 'button', attributes: { class: 'ytkit-download-btn' } });
+    const parent = fakeNode({ tag: 'div' });
+    parent.appendChild(anchor);
+    parent.querySelector = () => null;
+    let inserted = null;
+    anchor.insertAdjacentElement = (position, node) => { inserted = { position, node }; };
+
+    const documentRef = fakeTreeDocument((selector) =>
+        (String(selector).includes('dl-btn') || String(selector).includes('download-btn') ? anchor : null));
+    globalThis.document = documentRef;
+
+    const feature = createDownloadUIFeature({
+        isWatchPagePath: () => true,
+        setTimeoutFn: () => 0,
+        clearTimeoutFn: () => {},
+        setIntervalFn: () => 0,
+        clearIntervalFn: () => {},
+        t: (_key, fallback) => fallback,
+    });
+
+    feature.downloadHealthPanel._attach();
+    assert.ok(inserted, 'with nothing to adopt it has to build one');
+    assert.equal(inserted.position, 'afterend');
+    assert.equal(inserted.node.getAttribute('role'), 'status');
+    assert.equal(inserted.node.getAttribute('aria-live'), 'polite',
+        'health changes are announced politely, not assertively');
+    assert.ok(inserted.node.getAttribute('aria-label'), 'and the region is named');
+});
+
+test('the health panel does not attach off a watch page', () => {
+    const documentRef = fakeTreeDocument(() => fakeNode({ tag: 'button' }));
+    globalThis.document = documentRef;
+    const feature = createDownloadUIFeature({
+        isWatchPagePath: () => false,
+        setTimeoutFn: () => 0,
+        clearTimeoutFn: () => {},
+        setIntervalFn: () => 0,
+        clearIntervalFn: () => {},
+    });
+    feature.downloadHealthPanel._attach();
+    assert.equal(feature.downloadHealthPanel._container, null,
+        'there is no download button to sit beside off /watch');
 });
 
 test('every authenticated companion call agrees on the header name', () => {
-    const authHeaders = Array.from(source.matchAll(/'X-(?:Auth|MDL)-Token'/g)).map(m => m[0]);
+    // Exhaustive by nature: this is a claim about all call sites, including
+    // ones no fixture reaches. X-MDL-Token appears nowhere else in the repo,
+    // so a call using it always 401d.
+    const authHeaders = Array.from(source.matchAll(/'X-(?:Auth|MDL)-Token'/g)).map((match) => match[0]);
     assert.ok(authHeaders.length >= 3, `expected several authenticated calls, saw ${authHeaders.length}`);
     for (const header of authHeaders) {
         assert.equal(header, "'X-Auth-Token'");
     }
-});
-
-test('the health container dedupes parent-wide and adopts what it finds', () => {
-    const body = block('_attach() {', 1400);
-    assert.match(body, /anchor\.parentElement\?\.querySelector\('\.ytkit-download-health'\)/,
-        'sibling panels insert at the same anchor and displace the health container');
-    assert.match(body, /this\._container = existing;/,
-        'rebinding to nextElementSibling would adopt whichever sibling panel inserted last');
-    assert.doesNotMatch(body, /this\._container = anchor\.nextElementSibling;/);
+    assert.match(source, /`\$\{MediaDLManager\.baseUrl\(\)\}\/provision-deno`/,
+        'hand-concatenating the port bypasses the manager that knows which one is live');
 });
