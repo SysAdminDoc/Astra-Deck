@@ -76,6 +76,22 @@ test('an attribute value containing a space is not torn in half', () => {
     check('[style*="display: none"]', { tag: 'div', attrs: { style: 'display: block;' } }, false);
 });
 
+test('a comma inside an attribute value does not split the selector list', () => {
+    // The same bug as the whitespace one, one level up: `split(',')` tears
+    // `[aria-label="Share, copy link"]` in half, neither half parses, and the
+    // whole selector silently reads as "matches nothing".
+    const share = { tag: 'button', attrs: { 'aria-label': 'Share, copy link' } };
+    check('button[aria-label="Share, copy link"]', share, true, 'the comma belongs to the value');
+    check('button[aria-label="Other, thing"]', share, false, 'and it still has to match');
+    check('[data-x="a,b"]', { tag: 'div', attrs: { 'data-x': 'a,b' } }, true);
+    check('[data-x="a,b"]', { tag: 'div', attrs: { 'data-x': 'a' } }, false);
+
+    // A real list still splits, including a stray empty branch.
+    check('a, button', share, true, 'the second branch');
+    check('a, , button', share, true, 'an empty branch is skipped, not fatal');
+    check('a, span', share, false);
+});
+
 test('a descriptor may spell class and id either way', () => {
     check('.alpha', { tag: 'div', attrs: { class: 'alpha beta' } }, true, 'attrs.class');
     check('.alpha', { tag: 'div', className: 'alpha beta' }, true, 'or className');

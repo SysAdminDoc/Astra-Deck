@@ -280,3 +280,41 @@ test('the writer seals what it was told, not what the DOM currently says', () =>
     assert.equal(reader.get('data-ytkit-quality'), null,
         'and the forged attribute is not adopted along with it');
 });
+
+test('a second writer continues the numbering instead of restarting it', () => {
+    // An extension update can re-evaluate the isolated world while the
+    // MAIN-world bridge stays alive. A fresh writer restarting at 1 publishes
+    // payload after payload the reader rejects as stale, and every one of
+    // those state changes is silently lost until the new counter overtakes
+    // the old — in a long session that is hundreds of writes.
+    const { element, writer, reader } = pair();
+    for (let i = 0; i < 5; i += 1) writer.set('data-ytkit-codec', `pass-${i}`);
+    reader.sync();
+    assert.equal(reader.get('data-ytkit-codec'), 'pass-4');
+
+    // The isolated world comes back with the same token, as bridge-token.js
+    // guarantees, and builds a new writer over the page that is already there.
+    const second = createBridgeWriter({ documentElement: element, token: writer.token });
+    second.set('data-ytkit-codec', 'after-reinjection');
+
+    assert.equal(reader.sync(), true, 'the very first write after a re-injection must land');
+    assert.equal(reader.get('data-ytkit-codec'), 'after-reinjection');
+});
+
+test('a page script inflating the counter cannot roll state back', () => {
+    // The counter is read back from an untrusted attribute, so it is worth
+    // being precise about what that buys an attacker: they can make the
+    // numbering skip ahead, which costs nothing, and they still cannot make
+    // the reader accept a payload they did not seal.
+    const { element, writer, reader } = pair();
+    writer.set('data-ytkit-resource-unlock', 'on');
+    reader.sync();
+
+    element.setAttribute(bridgeChannel.STATE_ATTR, JSON.stringify({ n: 1e6, v: {} }));
+    const third = createBridgeWriter({ documentElement: element, token: writer.token });
+    third.set('data-ytkit-resource-unlock', 'on');
+
+    assert.equal(reader.sync(), true, 'a legitimate write still lands');
+    assert.equal(reader.get('data-ytkit-resource-unlock'), 'on',
+        'and the forged payload in between was never state');
+});

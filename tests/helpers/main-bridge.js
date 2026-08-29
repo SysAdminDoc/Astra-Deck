@@ -28,7 +28,7 @@ const {
  * @param {object} documentElement the fake `<html>` the harness already built
  * @param {object} core the `YTKitCore` object going into the vm context
  */
-function installBridgeChannel(documentElement, core = {}) {
+function installBridgeChannel(documentElement, core = {}, listeners = {}) {
     const token = bridgeChannel.randomToken();
     documentElement.setAttribute(bridgeChannel.TOKEN_ATTR, token);
 
@@ -36,7 +36,49 @@ function installBridgeChannel(documentElement, core = {}) {
     core.createBridgeWriter = createBridgeWriter;
     core.bridgeChannel = bridgeChannel;
 
-    const writer = createBridgeWriter({ documentElement, token });
+    // The navigate event is built by the REAL writer, captured here rather
+    // than hand-rolled, so whatever production sets on it — `bubbles` above
+    // all — is what the harness delivers.
+    let captured = null;
+    class CapturingEvent {
+        constructor(type, init = {}) {
+            this.type = type;
+            this.bubbles = Boolean(init.bubbles);
+            this.composed = Boolean(init.composed);
+            this.detail = init.detail;
+        }
+    }
+
+    const writer = createBridgeWriter({
+        documentElement,
+        token,
+        CustomEvent: CapturingEvent,
+        eventTarget: { dispatchEvent: (event) => { captured = event; return true; } },
+    });
+
+    /**
+     * Deliver an event the way the DOM does.
+     *
+     * This matters more than it looks. The writer dispatches on `document`
+     * and every MAIN-world listener is on `window` in the bubble phase, so an
+     * event without `bubbles: true` reaches none of them. The first version of
+     * this channel shipped exactly that way, and no fixture noticed because
+     * the fixtures handed the event straight to the listeners. Model the
+     * propagation and the flag becomes load-bearing.
+     */
+    const deliver = (event) => {
+        if (!event) return false;
+        const documentListeners = listeners.documentListeners;
+        const windowListeners = listeners.windowListeners;
+        for (const callback of (documentListeners && documentListeners.get(event.type)) || []) {
+            callback(event);
+        }
+        if (!event.bubbles) return false;
+        for (const callback of (windowListeners && windowListeners.get(event.type)) || []) {
+            callback(event);
+        }
+        return true;
+    };
 
     return {
         core,
@@ -56,19 +98,32 @@ function installBridgeChannel(documentElement, core = {}) {
         forge(name, value) {
             documentElement.setAttribute(name, String(value));
         },
-        /** A navigate the bridge will believe. */
+        /**
+         * Send a navigate the bridge will believe, through the real writer and
+         * along the path a browser would take it.
+         */
         navigate(reason = 'navigate') {
-            return {
-                type: bridgeChannel.NAVIGATE_EVENT,
-                detail: { token, reason },
-            };
+            captured = null;
+            writer.notifyNavigate(reason);
+            return deliver(captured);
         },
-        /** One it will not. */
+        /** The same journey, with a token the bridge never issued. */
         forgedNavigate(reason = 'navigate') {
-            return {
-                type: bridgeChannel.NAVIGATE_EVENT,
-                detail: { token: bridgeChannel.randomToken(), reason },
-            };
+            captured = null;
+            createBridgeWriter({
+                documentElement,
+                token: bridgeChannel.randomToken(),
+                CustomEvent: CapturingEvent,
+                eventTarget: { dispatchEvent: (event) => { captured = event; return true; } },
+            }).notifyNavigate(reason);
+            return deliver(captured);
+        },
+        /** A page script naming the event itself, with no detail at all. */
+        forgedRawNavigate(reason = 'navigate') {
+            return deliver(new CapturingEvent(bridgeChannel.NAVIGATE_EVENT, {
+                bubbles: true,
+                detail: { reason },
+            }));
         },
     };
 }

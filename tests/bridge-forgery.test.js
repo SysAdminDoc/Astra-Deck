@@ -100,7 +100,8 @@ function mainWorld({ codec = 'auto' } = {}) {
     vm.createContext(context);
     vm.runInContext(guardSource, context, { filename: 'extension/core/injection-guard.js' });
 
-    const channel = installBridgeChannel(documentElement, context.YTKitCore);
+    const channel = installBridgeChannel(documentElement, context.YTKitCore,
+        { windowListeners, documentListeners });
     // `codec: null` leaves the sealed state genuinely empty, which is the case
     // that catches a bridge falling back to the attribute when it finds
     // nothing sealed.
@@ -241,4 +242,46 @@ test('the natives are captured before anything else in the bridge runs', () => {
     assert.ok(nativeAt > 0 && observerAt > 0 && readerAt > 0, 'all three must exist');
     assert.ok(nativeAt < readerAt, 'the reader parses with a captured JSON.parse');
     assert.ok(nativeAt < observerAt, 'and the observer is the captured constructor');
+});
+
+test('the bridge publishes its reader for the other MAIN-world modules', () => {
+    // `core/audio-track.js` runs in the same world and reads three of these
+    // preferences. It has no channel of its own, so it borrows this one; if
+    // the bridge stops publishing it, that module quietly goes back to
+    // reading `<html>` where any page script can write.
+    const world = mainWorld({ codec: 'h264' });
+    const reader = world.context.YTKitCore.mainBridgeReader;
+
+    assert.ok(reader, 'the reader has to be reachable from YTKitCore');
+    assert.equal(typeof reader.get, 'function');
+    assert.equal(reader.get('data-ytkit-codec'), 'h264',
+        'and it has to be the live one, not an empty stand-in');
+
+    world.channel.forge('data-ytkit-audio-language', 'de');
+    assert.equal(reader.get('data-ytkit-audio-language'), null,
+        'a forged attribute is not readable through it either');
+});
+
+test('every bridge input is read through the channel, not off the document', () => {
+    // Behavioural coverage reaches two of these (the codec pair). The claim
+    // is about all twenty-one, and reverting any one of the other nineteen to
+    // `document.documentElement.getAttribute(...)` hands that feature back to
+    // the page with nothing going red. An exhaustive source sweep is what
+    // makes the set complete; the codec tests above are what prove the
+    // mechanism works.
+    const reads = [...mainSource.matchAll(/_bridgeGet\(([^)]+)\)/g)].map((m) => m[1].trim());
+    assert.ok(reads.length >= 19,
+        `expected the bridge's inputs to go through the channel, saw ${reads.length}`);
+
+    assert.doesNotMatch(mainSource, /document\.documentElement\.getAttribute\(/,
+        'a read straight off the document is an input the page can write');
+
+    // The two OUTPUT attributes are the deliberate exception: the bridge
+    // writes them, so it reads them back through the captured native to
+    // dedupe. They must not be read through the channel, which never carries
+    // them, and they must not be read through the live global either.
+    const nativeReads = [...mainSource.matchAll(/_NATIVE\.getAttribute\(([^)]+)\)/g)]
+        .map((m) => m[1].trim());
+    assert.deepEqual(nativeReads.sort(), ['REASON_ATTR', 'STATUS_ATTR'],
+        'only the bridge\'s own outputs may be read back off the attribute');
 });

@@ -60,6 +60,13 @@
         })
         : null;
 
+    // Other MAIN-world modules need the same sealed view. `core/audio-track.js`
+    // read three of these attributes straight off `<html>`, which left one
+    // `setAttribute` from a page script able to choose the audio track.
+    if (globalThis.YTKitCore && _bridgeReader) {
+        globalThis.YTKitCore.mainBridgeReader = _bridgeReader;
+    }
+
     /** The isolated world's value for `name`, or null. */
     function _bridgeGet(name) {
         return _bridgeReader ? _bridgeReader.get(name) : null;
@@ -960,11 +967,16 @@
     function writeStatus(status, reason) {
         var nextStatus = String(status || 'off');
         var nextReason = reason ? String(reason).slice(0, 240) : '';
-        if (_bridgeGet(STATUS_ATTR) !== nextStatus) {
+        // Read back with the captured native, not the sealed channel: this is
+        // an attribute the bridge WRITES. Nothing publishes it into the sealed
+        // map, so a sealed read is always null and the dedupe below is dead —
+        // which is what happened, and every retry rewrote the attribute and
+        // woke both worlds' observers for nothing.
+        if (_NATIVE.getAttribute(STATUS_ATTR) !== nextStatus) {
             document.documentElement.setAttribute(STATUS_ATTR, nextStatus);
         }
         if (nextReason) {
-            if (_bridgeGet(REASON_ATTR) !== nextReason) {
+            if (_NATIVE.getAttribute(REASON_ATTR) !== nextReason) {
                 document.documentElement.setAttribute(REASON_ATTR, nextReason);
             }
         } else {

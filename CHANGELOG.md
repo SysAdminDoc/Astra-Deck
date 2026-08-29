@@ -23,6 +23,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection, and no data was exposed. Nothing about how you use the extension
   changes.
 
+- Audio track selection was reading its preferences off the page as well, so a
+  page script could switch which audio track the player used. It reads the same
+  sealed channel as everything else now.
+
 ### Changed
 
 - The synthetic-content filter now reads YouTube's own altered-or-synthetic

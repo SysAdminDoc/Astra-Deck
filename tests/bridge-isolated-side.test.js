@@ -161,3 +161,77 @@ test('the helpers still write the attribute when there is no channel at all', ()
     assert.doesNotThrow(() => built.clearBridgeAttribute('data-ytkit-audio-only'));
     assert.equal(documentElement.getAttribute('data-ytkit-audio-only'), null);
 });
+
+// ── the isolated world announcing a navigation ─────────────────────────────
+
+const navigationSource = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'core', 'navigation.js'), 'utf8');
+
+/** `runNavigateRules`, lifted out of core/navigation.js with its collaborators. */
+function navigateRunner({ href = 'https://www.youtube.com/watch?v=one' } = {}) {
+    const at = navigationSource.indexOf('    function runNavigateRules() {');
+    assert.ok(at > 0, 'core/navigation.js must define runNavigateRules');
+    const close = navigationSource.indexOf('\n    }\n', at);
+    assert.ok(close > at);
+    const body = navigationSource.slice(at + 4, close + 6);
+
+    const announced = [];
+    const scope = {
+        location: { href },
+        lastNavHref: null,
+        pendingMutationRouteReset: false,
+        core: {
+            notifyBridgeNavigate: (reason) => { announced.push(reason); return true; },
+            resetHideAttribution: () => {},
+        },
+        resetMutationRuleHealthForRoute: () => {},
+        _executeNavigateRules: () => {},
+        window: { matchMedia: () => ({ matches: true }) },
+        document: {},
+    };
+
+    const run = new Function(
+        'location', 'core', 'resetMutationRuleHealthForRoute', '_executeNavigateRules', 'window', 'document',
+        `let lastNavHref = null; let pendingMutationRouteReset = false;
+         ${body}
+         return function (nextHref) { location.href = nextHref; return runNavigateRules(); };`
+    )(scope.location, scope.core, scope.resetMutationRuleHealthForRoute,
+        scope._executeNavigateRules, scope.window, scope.document);
+
+    return { run, announced };
+}
+
+test('every navigation is announced to the bridge, and says which kind it was', () => {
+    // The bridge stopped listening to YouTube's own navigate events, so this
+    // call is the only thing that tells it the page moved. Without it the
+    // quality reset, the buffer re-apply, the codec re-check and the audio
+    // graph reconnect all stop happening, and nothing looks broken until a
+    // user notices a setting no longer applies after the first video.
+    const { run, announced } = navigateRunner();
+
+    run('https://www.youtube.com/watch?v=two');
+    assert.deepEqual(announced, ['navigate'], 'a real URL change is a navigation');
+
+    // Same URL: YouTube fires this as the feed appends during infinite scroll.
+    run('https://www.youtube.com/watch?v=two');
+    assert.deepEqual(announced, ['navigate', 'page-data'],
+        'and a same-URL update is the lighter signal, not silence');
+});
+
+test('no bridge attribute is written straight onto the document anywhere', () => {
+    // Exhaustive by nature, and it has already failed once: the sweep that
+    // routed 54 writes through the channel was single-line, so a call
+    // written across two lines kept writing the raw attribute. A write that
+    // skips the seal is a value the bridge never sees change.
+    const raw = [...ytkitSource.matchAll(
+        /document\.documentElement\.(?:set|remove)Attribute\(\s*\n?\s*'(data-ytkit-[a-z0-9-]+)'/g)]
+        .map((match) => match[1]);
+    assert.deepEqual(raw, [],
+        'these bypass the sealed channel: ' + raw.join(', '));
+
+    // And the helpers really are the only door, so the count is worth having.
+    const published = (ytkitSource.match(/publishBridgeAttribute\('data-ytkit-/g) || []).length;
+    const cleared = (ytkitSource.match(/clearBridgeAttribute\('data-ytkit-/g) || []).length;
+    assert.ok(published + cleared >= 50,
+        `expected the bridge writes to go through the helpers, saw ${published + cleared}`);
+});

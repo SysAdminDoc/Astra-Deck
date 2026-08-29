@@ -131,9 +131,36 @@ function compoundMatches(compound, node) {
  * video` and `#shorts-player video` stay distinguishable — which is the whole
  * point for the Shorts fixtures.
  */
+/**
+ * Split a selector LIST on its top-level commas.
+ *
+ * `split(',')` is the same bug `splitCompounds` was fixed for one level down:
+ * an attribute value may contain a comma (`[aria-label="Share, copy link"]`),
+ * and splitting inside the quotes leaves two fragments that each fail to parse
+ * — so the whole selector silently reads as "matches nothing", which is the
+ * failure mode a fixture can least afford.
+ */
+function splitSelectorList(selectorText) {
+    const parts = [];
+    let current = '';
+    let quote = null;
+    for (const character of String(selectorText)) {
+        if (quote) {
+            current += character;
+            if (character === quote) quote = null;
+            continue;
+        }
+        if (character === '"' || character === "'") { quote = character; current += character; continue; }
+        if (character === ',') { parts.push(current); current = ''; continue; }
+        current += character;
+    }
+    parts.push(current);
+    return parts;
+}
+
 function selectorMatches(selectorText, node) {
     const chain = [...(node.ancestors || []), node];
-    return String(selectorText).split(',').some((one) => {
+    return splitSelectorList(selectorText).some((one) => {
         const pieces = splitCompounds(one);
         if (!pieces || !pieces.length) return false;
         const compounds = pieces.map(parseCompound);
