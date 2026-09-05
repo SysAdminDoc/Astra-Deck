@@ -47,6 +47,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and hides from the new signal are reported separately so you can tell which
   one fired. The filter is still off unless you turn it on.
 
+### Changed
+
+- Release preparation now measures what the extension costs while you are not
+  touching the page. The steady-state lane existed but nothing ever ran it, so a
+  feature whose teardown left a listener or an interval behind could ship
+  unnoticed. `release:prepare` now runs it against the recorded budget, and runs
+  a self-test that plants a deliberate leak and requires the budget to catch it,
+  so the check cannot quietly become decorative. Idle CPU budgets are scaled by
+  the same machine-load probe the startup budgets already use; the byte and
+  count budgets are not, because machine load does not change them.
+
 ### Fixed
 
 - The Stream Links, Recent Downloads and Cobalt fallback buttons could not find
@@ -56,6 +67,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   catalogue was unavailable: the "Copied." confirmation lost the line telling
   you where to paste, and a clipboard failure sent you to the browser console
   instead of suggesting you select the text yourself.
+
+- The idle heap measurement in the startup benchmark reported allocation rather
+  than retention. It read the heap without collecting first, so the number it
+  produced depended on whether a garbage collection happened to land inside the
+  ten-second window. On a busy machine it reported 6.85 MB per minute of idle
+  "growth" twice in a row, reproducible to within 0.04%, for code that actually
+  retains about 220 KB per minute. The sampler now collects before each reading,
+  and disables the heap profiler again straight after, because leaving it on
+  charged its own cost to the idle CPU figure the same lane reports.
 
 
 ## [4.88.4] (2026-08-28)

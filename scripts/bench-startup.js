@@ -279,6 +279,7 @@ function parseArgs(argv) {
         iterations: DEFAULT_ITERATIONS,
         steadyState: false,
         steadyStateMs: STEADY_STATE_MS,
+        selfTestLeak: false,
         timeoutMs: DEFAULT_TIMEOUT_MS,
         updateBaseline: false,
     };
@@ -296,6 +297,10 @@ function parseArgs(argv) {
             opts.updateBaseline = true;
         } else if (arg === '--allow-synthetic') {
             opts.allowSynthetic = true;
+        } else if (arg === '--self-test-leak') {
+            opts.selfTestLeak = true;
+            opts.steadyState = true;
+            opts.check = true;
         } else if (arg === '--steady-state') {
             opts.steadyState = true;
         } else if (arg === '--steady-state-ms') {
@@ -385,16 +390,28 @@ function summarizeSteadyState(samples) {
     return summary;
 }
 
-function checkSteadyState(summary, baseline) {
+// Two of these five keys are CPU time and scale with machine load exactly like
+// the startup timings do; the other three are counts and bytes and do not. The
+// startup lane has always widened timing budgets by the load probe and left
+// size budgets alone (see checkAgainstBaseline) — this applies the same policy
+// here, so a busy box cannot manufacture an idle-CPU regression while a real
+// leak, measured in retained bytes, is still judged against the flat budget.
+const STEADY_STATE_TIMING_KEYS = new Set(['idleScriptMsPerMin', 'idleTaskMsPerMin']);
+
+function checkSteadyState(summary, baseline, loadFactor = null) {
     const budget = baseline?.steadyStateBudget;
     if (!summary || !budget) return [];
+    const timingScale = Number.isFinite(loadFactor) && loadFactor > 1 ? loadFactor : 1;
     const failures = [];
     for (const key of STEADY_STATE_KEYS) {
-        const limit = Number(budget[key]);
-        if (!Number.isFinite(limit)) continue;
+        const rawLimit = Number(budget[key]);
+        if (!Number.isFinite(rawLimit)) continue;
+        const scale = STEADY_STATE_TIMING_KEYS.has(key) ? timingScale : 1;
+        const limit = rawLimit * scale;
         const observed = Number(summary[key]) || 0;
         if (observed > limit) {
-            failures.push(`idle ${key} ${observed.toFixed(2)} exceeds budget ${limit.toFixed(2)} (per minute, default feature set)`);
+            const scaleNote = scale > 1 ? ` (budget ${rawLimit.toFixed(2)} widened x${scale.toFixed(2)} for machine load)` : '';
+            failures.push(`idle ${key} ${observed.toFixed(2)} exceeds budget ${limit.toFixed(2)}${scaleNote} (per minute, default feature set)`);
         }
     }
     return failures;
@@ -645,7 +662,28 @@ function injectSyntheticBenchmarkScripts(html, surface) {
         );
 }
 
-function prepareFixtureDetails(stageDir, surface = CAPTURED_SURFACES[0], { forceSynthetic = false } = {}) {
+// A gate nobody has watched fail is a gate nobody knows works. This plants the
+// exact defect the steady-state lane exists to catch — a listener the teardown
+// never removes, holding a growing retained set — so `--self-test-leak` can
+// prove the check goes red before it is trusted to keep a release green.
+const LEAK_SELF_TEST_DRIVER = `'use strict';
+(() => {
+    // Deliberate, self-test only. A handler registered on an object that is
+    // never released, appending to a closure-held array on a short interval:
+    // retained heap, so it survives the forced collection the sampler takes.
+    const retained = [];
+    const handler = () => {
+        for (let i = 0; i < 400; i += 1) {
+            retained.push({ at: Date.now(), pad: new Array(64).fill('astra-deck-steady-state-self-test') });
+        }
+    };
+    globalThis.__ytkitSteadyStateSelfTestRetained = retained;
+    globalThis.addEventListener('ytkit-steady-state-self-test', handler);
+    setInterval(() => globalThis.dispatchEvent(new Event('ytkit-steady-state-self-test')), 50);
+})();
+`;
+
+function prepareFixtureDetails(stageDir, surface = CAPTURED_SURFACES[0], { forceSynthetic = false, plantLeak = false } = {}) {
     const runtimeSettings = JSON.parse(fs.readFileSync(
         path.join(REPO_ROOT, 'extension', 'default-settings.json'),
         'utf8'
@@ -671,6 +709,13 @@ function prepareFixtureDetails(stageDir, surface = CAPTURED_SURFACES[0], { force
             console.warn(`[bench-startup] missing ${path.relative(REPO_ROOT, surface.mhtmlPath).replace(/\\/g, '/')}; using the deterministic synthetic fixture`);
         }
         html = injectSyntheticBenchmarkScripts(html, surface);
+    }
+    if (plantLeak) {
+        fs.writeFileSync(path.join(stageDir, 'steady-state-leak-self-test.js'), LEAK_SELF_TEST_DRIVER, 'utf8');
+        html = html.replace(
+            '    <script src="a11y-fixture-driver.js"></script>',
+            '    <script src="steady-state-leak-self-test.js"></script>\n    <script src="a11y-fixture-driver.js"></script>'
+        );
     }
     fs.writeFileSync(fixturePath, html, 'utf8');
     return { fixturePath, fixtureMode };
@@ -729,7 +774,27 @@ async function waitForDevtoolsUrl(browser, timeoutMs) {
     });
 }
 
-async function readHeapBytes(client) {
+// Retained heap, not allocated heap. `Runtime.getHeapUsage` reports whatever is
+// live at the instant it is read, so a window in which no GC happened to run
+// reports the raw allocation rate and a window in which one did reports far
+// less. Measured 2026-09-05 on a busy box: two back-to-back runs both reported
+// 6.85 MB/min of idle "growth" — reproducible to 0.04%, and entirely garbage
+// that had not been collected yet. The 2026-08-18 reference recorded 364-386
+// KB/min on a quiet machine for the same code. Neither number was a leak
+// measurement, which is why this lane could never be gated on. Collecting first
+// makes the delta mean retention, which is the thing worth failing a build over.
+async function readHeapBytes(client, { collectFirst = false } = {}) {
+    if (collectFirst) {
+        // Best effort: the domain is not always available, and a missing GC must
+        // degrade to the old reading rather than fail the run.
+        // Enable, collect, disable. Leaving the domain enabled across the idle
+        // window costs real ScriptDuration — it took idleScriptMsPerMin from ~52
+        // to ~803 in one measured run — and this lane exists to attribute idle
+        // CPU to the extension, so the instrument must not be in the sample.
+        await client.send('HeapProfiler.enable').catch(() => {});
+        await client.send('HeapProfiler.collectGarbage').catch(() => {});
+        await client.send('HeapProfiler.disable').catch(() => {});
+    }
     const usage = await client.send('Runtime.getHeapUsage').catch(() => null);
     if (Number.isFinite(Number(usage?.usedSize))) return Number(usage.usedSize);
     const pageHeap = await client.evaluate('performance.memory?.usedJSHeapSize ?? null').catch(() => null);
@@ -802,13 +867,13 @@ async function readPerformanceMetrics(client) {
 // ScriptDuration/TaskDuration are real CPU seconds and cost nothing to read.
 async function runSteadyStateSession(client, durationMs) {
     await client.send('Performance.enable', {}).catch(() => {});
-    const heapStartBytes = await readHeapBytes(client);
+    const heapStartBytes = await readHeapBytes(client, { collectFirst: true });
     const before = await readPerformanceMetrics(client);
     const startedAt = Date.now();
     await new Promise((resolve) => setTimeout(resolve, durationMs));
     const elapsedMs = Date.now() - startedAt;
     const after = await readPerformanceMetrics(client);
-    const heapEndBytes = await readHeapBytes(client);
+    const heapEndBytes = await readHeapBytes(client, { collectFirst: true });
 
     const minutes = Math.max(elapsedMs, 1) / 60000;
     const delta = (name) => Math.max(0, (after[name] || 0) - (before[name] || 0));
@@ -923,12 +988,12 @@ async function runIteration(browserPath, fixturePath, timeoutMs, options = {}) {
     }
 }
 
-async function runBenchmark(options, browserPath, { forceSynthetic = false } = {}) {
+async function runBenchmark(options, browserPath, { forceSynthetic = false, plantLeak = false } = {}) {
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-startup-bench-stage-'));
     try {
         const samples = [];
         for (const surface of CAPTURED_SURFACES) {
-            const prepared = prepareFixtureDetails(stageDir, surface, { forceSynthetic });
+            const prepared = prepareFixtureDetails(stageDir, surface, { forceSynthetic, plantLeak });
             const fixturePath = prepared.fixturePath;
             for (let index = 0; index < options.iterations; index += 1) {
                 const sample = await runIteration(browserPath, fixturePath, options.timeoutMs, {
@@ -967,6 +1032,29 @@ async function main(argv = process.argv.slice(2)) {
     const browserPath = findBrowser(options.browser);
     if (!browserPath) {
         throw new Error('no Chromium-family browser found; set CHROME_PATH/EDGE_PATH or pass --browser');
+    }
+    if (options.selfTestLeak) {
+        // Prove the gate can fail. Runs the real steady-state lane against a
+        // fixture carrying a listener the teardown never removes, and succeeds
+        // only when the heap budget catches it. A pass here means the check is
+        // still wired to something; a "did not detect" means it is decorative.
+        const planted = await runBenchmark(options, browserPath, { plantLeak: true });
+        const baseline = readBaseline();
+        const idle = summarizeSteadyState(planted.samples);
+        if (!idle) throw new Error('self-test collected no steady-state sample');
+        console.log(`[bench-startup] self-test idle idleHeapGrowthBytesPerMin: ${idle.idleHeapGrowthBytesPerMin.toFixed(2)}`);
+        const heapFailures = checkSteadyState(idle, baseline, null)
+            .filter((line) => line.includes('idleHeapGrowthBytesPerMin'));
+        if (!heapFailures.length) {
+            console.error('[bench-startup] SELF-TEST FAILED — a planted retained-heap leak did not trip the steady-state budget.');
+            console.error(`[bench-startup] observed ${idle.idleHeapGrowthBytesPerMin.toFixed(2)} bytes/min against budget `
+                + `${Number(baseline?.steadyStateBudget?.idleHeapGrowthBytesPerMin).toFixed(2)}.`);
+            process.exitCode = 1;
+            return;
+        }
+        console.log('[bench-startup] SELF-TEST PASSED — the planted leak tripped the budget:');
+        for (const line of heapFailures) console.log(`[bench-startup]   ${line}`);
+        return;
     }
     const result = await runBenchmark(options, browserPath);
     console.log(`[bench-startup] fixture mode: ${result.fixtureMode}`);
@@ -1060,7 +1148,7 @@ async function main(argv = process.argv.slice(2)) {
     }
 
     const failures = checkAgainstBaseline(result.metrics, comparisonBaseline, loadFactor);
-    failures.push(...checkSteadyState(idle, baseline));
+    failures.push(...checkSteadyState(idle, baseline, loadFactor));
     if (failures.length) {
         // Both statistics, always: a reader can tell load from regression at a
         // glance only if the spread is visible next to the compared number.
