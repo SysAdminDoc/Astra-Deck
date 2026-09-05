@@ -104,17 +104,3 @@ Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`
   `check:userscript-drift`, `check:userscript-symbols` and `check:userscript-size` pass,
   and `check:startup:captured` shows no regression against the recorded budget.
   Complexity: L
-
-- [ ] P3 — Map the second commit identity with `.mailmap`
-  Why: the public contributor list shows two people for one maintainer, which
-  misrepresents authorship on a repo whose own rules are strict about contributor
-  identity.
-  Evidence: `git log --format='%an <%ae>'` returns 1,044 `SysAdminDoc`, 506
-  `Matthew Parker`, 142 `Matt Parker` (all `matt_parker@outlook.com`) and 17
-  `Matthew <snafumatthew@gmail.com>`; the GitHub contributors API lists that last
-  identity separately with 17 commits dated 2026-06-08.
-  Touches: new `.mailmap`.
-  Acceptance: `git shortlog -sne` collapses to one identity, and the file records that
-  GitHub's own contributor list is computed from commit metadata and will not change
-  without a history rewrite, so that rewrite stays a separate deliberate decision.
-  Complexity: S

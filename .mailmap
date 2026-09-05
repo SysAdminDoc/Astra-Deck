@@ -1,0 +1,15 @@
+# One person, four spellings.
+#
+# `git log` showed SysAdminDoc, Matthew Parker, Matt Parker and Matthew as four
+# separate contributors, and GitHub listed the last of them separately because
+# it was authored from a second account. This maps them onto one identity for
+# every git tool that honours .mailmap: shortlog, blame, log --author.
+#
+# GitHub's own contributor list is computed from raw commit metadata and does
+# NOT read this file. Collapsing it there needs a history rewrite with
+# git-filter-repo and a force push, which stays a separate deliberate decision.
+
+SysAdminDoc <matt_parker@outlook.com> <matt_parker@outlook.com>
+SysAdminDoc <matt_parker@outlook.com> Matthew Parker <matt_parker@outlook.com>
+SysAdminDoc <matt_parker@outlook.com> Matt Parker <matt_parker@outlook.com>
+SysAdminDoc <matt_parker@outlook.com> Matthew <snafumatthew@gmail.com>
