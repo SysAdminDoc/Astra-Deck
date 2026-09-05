@@ -33,15 +33,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Acceptance: the language picker states each locale's translated percentage, `CATEGORY_META` resolves through `t()` for all 18 categories, and the coverage report is the single source for the number shown.
   Complexity: M
 
-- [ ] P2 — Let the remote selector asset carry canary rules
-  Why: only 9 of 33 packs declare a canary and the hot-update path cannot add one, so a newly broken surface stays undetectable until a release ships.
-  Evidence: `grep -l "canary:" extension/core/selector-packs/*.js` returns 9 of 33; `extension/core/selectors.js:418-421` replaces `SurfaceSelectorMap`/`SurfaceSelectors` and never touches `SurfacePackRegistry`.
-  Touches: `extension/core/selectors.js`, `extension/core/selector-health.js`, `scripts/build-selector-asset.js`, `selector-packs.json`, `tests/selector-health.test.js`.
-  Acceptance: the asset schema accepts a `canary` block per surface, applying an asset installs those rules into the registry, the same digest verification and rollback apply, and a malformed canary block is rejected without disturbing shipped packs.
-  Complexity: M
-
-Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`.
-
 - [ ] P2 — Prove OS media controls survive the Web Audio graph
   Why: Astra routes YouTube's `<video>` through a Web Audio graph whenever any of six
   audio features is on, and has no Media Session code at all, so hardware media keys and

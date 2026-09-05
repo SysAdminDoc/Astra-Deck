@@ -21,6 +21,22 @@
       "lastVerified": "2026-05-19",
       "highChurn": false,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "home",
+          "watch",
+          "search",
+          "channel",
+          "subscriptions",
+          "playlist",
+          "shorts",
+          "history",
+          "library"
+        ],
+        "featureIds": [
+          "uiStyleManager"
+        ]
+      },
       "notes": "Primary SPA shell. Mount observers here only until target containers exist."
     },
     "channelProfile": {
@@ -47,6 +63,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Alias for profile."
     },
     "commentComposer": {
@@ -67,6 +84,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Prefer structural lookup below ytd-comments."
     },
     "comments": {
@@ -137,6 +155,7 @@
       "lastVerified": "2026-06-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Keep old and new comment shapes during A/B transition. Threaded reply sub-thread containers added Jun 2026."
     },
     "engagementPanels": {
@@ -190,6 +209,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Chapters, transcript, AI summary, and clips live here."
     },
     "feed": {
@@ -209,6 +229,15 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "home"
+        ],
+        "featureIds": [
+          "hideVideosFromHome",
+          "deArrow"
+        ]
+      },
       "notes": "Process added nodes only; filter chips can recycle grid content without route events."
     },
     "feedCard": {
@@ -232,6 +261,21 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "home",
+          "search",
+          "subscriptions",
+          "channel",
+          "playlist",
+          "history",
+          "library"
+        ],
+        "featureIds": [
+          "hideVideosFromHome",
+          "deArrow"
+        ]
+      },
       "notes": "New lockup view-model appears in current captures."
     },
     "feedExperimentChips": {
@@ -252,6 +296,7 @@
       "lastVerified": "2026-06-29",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Category chips and prompt-generated feed pivots recycle cards without route events."
     },
     "feedPlayables": {
@@ -273,6 +318,7 @@
       "lastVerified": "2026-06-29",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Playables and mini-game shelves are capture-backed separately from organic video feed cards."
     },
     "feedPrompt": {
@@ -294,6 +340,7 @@
       "lastVerified": "2026-06-29",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Prompt, survey, and identity-nudge feed inserts are tracked as their own high-churn surface."
     },
     "feedSponsored": {
@@ -315,6 +362,7 @@
       "lastVerified": "2026-06-29",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Sponsored-card and ad-feedback shells are tracked separately from organic feedCard selectors."
     },
     "leftNav": {
@@ -337,6 +385,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Subscriptions capture has full guide; home often has mini guide."
     },
     "liveChat": {
@@ -356,6 +405,7 @@
       "lastVerified": "2026-06-04",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Live chat iframe document surface verified from a popout chat MHTML capture."
     },
     "liveChatFrame": {
@@ -376,6 +426,7 @@
       "lastVerified": "2026-06-04",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Watch-page live chat frame verified by rendered DOM probe; iframe internals are capture-backed by LiveChat.mhtml."
     },
     "liveChatPlaceholder": {
@@ -395,6 +446,7 @@
       "lastVerified": "2026-06-04",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Placeholder canary verified by rendered watch-page DOM probe; iframe internals are capture-backed by LiveChat.mhtml."
     },
     "mainVideo": {
@@ -415,6 +467,17 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "watch",
+          "shorts",
+          "embed"
+        ],
+        "featureIds": [
+          "stickyVideo",
+          "sponsorBlock"
+        ]
+      },
       "notes": "Main media element; should stay scoped to the current player."
     },
     "masthead": {
@@ -448,6 +511,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": false,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Alias for nav so feature code can use either term."
     },
     "media": {
@@ -472,6 +536,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": false,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Generic media resolver; prefer feature-specific roots."
     },
     "modals": {
@@ -493,6 +558,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Native YouTube popups and dialogs."
     },
     "nav": {
@@ -526,6 +592,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": false,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Top navigation and masthead actions."
     },
     "notifications": {
@@ -567,6 +634,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Wait for popup menu root before sorting or transforming notifications."
     },
     "player": {
@@ -587,6 +655,18 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "watch",
+          "shorts",
+          "embed"
+        ],
+        "featureIds": [
+          "stickyVideo",
+          "sponsorBlock",
+          "floatingLogoOnWatch"
+        ]
+      },
       "notes": "Use window.movie_player only from the MAIN-world bridge."
     },
     "playerChrome": {
@@ -612,6 +692,7 @@
       "lastVerified": "2026-06-04",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Player redesign transition surface; 2026-06-04 stopped-loading Chrome Stable capture confirmed Delhi shell, overflow panel, and time-wrapper selectors. Action-pill/action-container remain fallback watchlist entries until captured."
     },
     "playerSettings": {
@@ -634,6 +715,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Avoid forced menu opening where MAIN APIs exist."
     },
     "profile": {
@@ -660,6 +742,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Resolve channel ID or handle from links, not visible text."
     },
     "relatedSidebar": {
@@ -679,6 +762,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Related and compact cards change often; resolve section root first."
     },
     "search": {
@@ -701,6 +785,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Prefer roles and labels where present; avoid raw wrapper classes."
     },
     "searchResults": {
@@ -720,6 +805,15 @@
       "lastVerified": "2026-07-14",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "search"
+        ],
+        "featureIds": [
+          "hideVideosFromHome",
+          "deArrow"
+        ]
+      },
       "notes": "Scope result hygiene to the search page; preserve filters, spelling corrections, and no-results renderers."
     },
     "settingsOverlay": {
@@ -740,6 +834,7 @@
       "lastVerified": "2026-07-09",
       "highChurn": false,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Astra-owned UI must remain scoped and removable."
     },
     "shortsShelf": {
@@ -772,6 +867,15 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "shorts"
+        ],
+        "featureIds": [
+          "removeAllShorts",
+          "returnDislike"
+        ]
+      },
       "notes": "URL path is more stable than shelf wrapper names; action.dislike targets the current Shorts reel action bar."
     },
     "sidebar": {
@@ -791,6 +895,7 @@
       "lastVerified": "2026-05-19",
       "highChurn": false,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Watch sidebar container for related, chat, and secondary panels."
     },
     "subscriptions": {
@@ -810,6 +915,16 @@
       "lastVerified": "2026-07-14",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "subscriptions"
+        ],
+        "featureIds": [
+          "subscriptionGroups",
+          "hideVideosFromHome",
+          "deArrow"
+        ]
+      },
       "notes": "New lockup-view-model cards and classic video renderers are both supported; never replace native card semantics or actions."
     },
     "thumbnail": {
@@ -834,6 +949,7 @@
       "lastVerified": "2026-06-05",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Resolve from nearest card root before querying document-wide."
     },
     "transcriptPanel": {
@@ -853,6 +969,7 @@
       "lastVerified": "2026-07-14",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": null,
       "notes": "Legacy searchable transcript and PAmodern_transcript_view rollout shapes."
     },
     "watch": {
@@ -1016,8 +1133,19 @@
       "lastVerified": "2026-05-19",
       "highChurn": true,
       "needsFreshCapture": false,
+      "canary": {
+        "routes": [
+          "watch"
+        ],
+        "featureIds": [
+          "stickyVideo",
+          "deArrow",
+          "returnDislike",
+          "commentSearch"
+        ]
+      },
       "notes": "Route state is best read from ytd-watch-flexy[video-id]."
     }
   },
-  "digest": "sha256:8891c9ed614112b4728def550536e08e1e90ed3b6e6568b568ae153ec0e823a7"
+  "digest": "sha256:a0a6040c9afada04e336677c5cbb2c567c2c3b2e82fc72a2d0b69f2820207c15"
 }

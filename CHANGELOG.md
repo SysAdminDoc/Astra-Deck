@@ -49,6 +49,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- A rule update can now start watching a surface that has newly broken, not just
+  repair one that is already known about. Astra keeps a small set of canary
+  rules that notice when a part of the page has stopped resolving, but only nine
+  of thirty-three rule packs had one, and a hot update could not add any: it
+  replaced the selectors and left the canaries alone. It can add them now,
+  through the same signature check and rollback. A malformed canary is refused
+  outright and the shipped rules are left exactly as they were, and an update
+  that says nothing about a surface puts that surface back to what the build
+  shipped rather than leaving an old rule behind.
+
 - The README now says that Astra can put the old YouTube layout and the old
   player back. It has been able to do that for a long time through three
   settings, and the README described neither, which is a strange thing to hide
