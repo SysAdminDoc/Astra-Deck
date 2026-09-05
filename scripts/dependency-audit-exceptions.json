@@ -60,6 +60,15 @@
       "range": "^1.10.0",
       "reason": "Transitive development dependency; the pin holds the floor above the command-injection advisory.",
       "lastCheckedOn": "2026-08-21"
+    },
+    {
+      "package": "fast-uri",
+      "range": "^3.1.6",
+      "reason": "Four high advisories landed against fast-uri 3.0.0-3.1.5, all host-confusion or SSRF through URL normalisation. It reaches this tree only as web-ext -> addons-linter -> ajv, so nothing it parses is user input, but the pin costs nothing and npm reported a non-breaking fix. The 4.x line is a major bump ajv does not ask for.",
+      "answersAdvisory": "GHSA-f65p-4m7j-42xc",
+      "advisoryUrl": "https://github.com/advisories/GHSA-f65p-4m7j-42xc",
+      "lastCheckedOn": "2026-09-05",
+      "recheckBecause": "Four separate normalisation bypasses shipped against the same parser inside one minor line, so 3.1.6 holding today is not evidence the class is closed."
     }
   ]
 }
