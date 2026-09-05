@@ -317,6 +317,50 @@ test('the idle lane gates CPU, layout churn and heap growth per minute', () => {
     assert.match(benchmark.checkSteadyState(thrash, baseline)[0], /idleLayoutsPerMin/);
 });
 
+test('machine load widens the idle CPU budgets and nothing else', () => {
+    const baseline = {
+        steadyStateBudget: {
+            idleScriptMsPerMin: 60,
+            idleTaskMsPerMin: 200,
+            idleLayoutsPerMin: 30,
+            idleStyleRecalcsPerMin: 30,
+            idleHeapGrowthBytesPerMin: 1500000
+        }
+    };
+    // Every metric sits at exactly double its flat budget, so with a load factor
+    // of 2 the two CPU keys must pass and the three that do not move with load
+    // must still fail. Without the split this test cannot distinguish "scaled
+    // the right two" from "scaled all five" or "scaled none".
+    const doubled = {
+        idleScriptMsPerMin: 120,
+        idleTaskMsPerMin: 400,
+        idleLayoutsPerMin: 60,
+        idleStyleRecalcsPerMin: 60,
+        idleHeapGrowthBytesPerMin: 3000000
+    };
+
+    const scaled = benchmark.checkSteadyState(doubled, baseline, 2);
+    assert.deepEqual(
+        scaled.map((line) => line.split(' ')[1]).sort(),
+        ['idleHeapGrowthBytesPerMin', 'idleLayoutsPerMin', 'idleStyleRecalcsPerMin'],
+        'load may widen CPU time budgets; it must never widen a count or a byte budget'
+    );
+
+    // The same numbers on an idle box fail on all five.
+    assert.equal(benchmark.checkSteadyState(doubled, baseline, 1).length, 5);
+    assert.equal(benchmark.checkSteadyState(doubled, baseline, null).length, 5,
+        'no load reading means no widening');
+    assert.equal(benchmark.checkSteadyState(doubled, baseline, 0.5).length, 5,
+        'a machine reading FASTER than the reference must not tighten or widen anything');
+
+    // The widening is reported, so a passing run on a busy box is not silent.
+    const overCpu = { ...doubled, idleLayoutsPerMin: 6, idleStyleRecalcsPerMin: 6, idleHeapGrowthBytesPerMin: 1 };
+    assert.deepEqual(benchmark.checkSteadyState(overCpu, baseline, 2), []);
+    const justOver = { ...overCpu, idleTaskMsPerMin: 401 };
+    assert.match(benchmark.checkSteadyState(justOver, baseline, 2)[0],
+        /idleTaskMsPerMin 401\.00 exceeds budget 400\.00 \(budget 200\.00 widened x2\.00 for machine load\)/);
+});
+
 test('the idle lane reports the worst surface, and is skipped when not collected', () => {
     // Idle metrics are collected once per surface, so there is no minimum to
     // take — the worst surface is the honest number to gate on.

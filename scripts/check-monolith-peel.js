@@ -14,7 +14,7 @@
 // The measure is feature IDs, not lines or brace shapes. A feature counts as
 // peeled when its id is declared by a module under `extension/features/`;
 // ytkit.js keeps a descriptor stub for peeled features (subscription-groups is
-// nine lines at ytkit.js:35479), so the stub's id still appears in the monolith
+// nine lines in the monolith), so the stub's id still appears in ytkit.js
 // and an id-in-ytkit count alone would never fall. The remainder is therefore
 // the ids ytkit.js declares that NO module declares.
 //
@@ -49,16 +49,41 @@ function featureModulePaths() {
         .sort();
 }
 
+// A module counts a feature as peeled only if it looks like an implementation.
+//
+// Without this the ratchet has an obvious way past it: leave the feature
+// implemented inline in ytkit.js and drop a one-line module that declares
+// nothing but `id: 'thing'`. The id then appears on both sides, the remainder
+// falls, and the gate reports progress for work nobody did.
+//
+// The test is structural rather than a line count: a real module declares at
+// least one function AND either exports for the test suite or registers itself
+// on globalThis.YTKitFeatures. All 19 id-declaring modules in the tree satisfy
+// it; a bare descriptor satisfies neither half.
+function looksLikeImplementation(source) {
+    const hasFunction = source.includes('function ') || source.includes('function(');
+    const isReachable = /module\.exports/.test(source) || /globalThis\.YTKitFeatures/.test(source);
+    return hasFunction && isReachable;
+}
+
 function measure() {
     const monolithIds = declaredIds(MONOLITH_PATH);
     const modulePaths = featureModulePaths();
     const moduleIds = new Set();
+    const descriptorOnlyModules = [];
     for (const modulePath of modulePaths) {
-        for (const id of declaredIds(modulePath)) moduleIds.add(id);
+        const ids = declaredIds(modulePath);
+        if (!ids.size) continue;
+        if (!looksLikeImplementation(fs.readFileSync(modulePath, 'utf8'))) {
+            descriptorOnlyModules.push(path.relative(REPO_ROOT, modulePath).split(path.sep).join('/'));
+            continue;
+        }
+        for (const id of ids) moduleIds.add(id);
     }
     const inlineOnly = [...monolithIds].filter((id) => !moduleIds.has(id)).sort();
     return {
         inlineOnly,
+        descriptorOnlyModules,
         monolithIdCount: monolithIds.size,
         moduleIdCount: moduleIds.size,
         featureModuleCount: modulePaths.length,
@@ -88,7 +113,19 @@ function writeBaseline(current, reason) {
 
 function main(argv) {
     const record = argv.includes('--record');
+    const acceptGrowth = argv.includes('--accept-growth');
+    if (acceptGrowth && !record) {
+        console.error('[monolith-peel] --accept-growth only means anything with --record.');
+        return 1;
+    }
     const current = measure();
+
+    if (current.descriptorOnlyModules.length) {
+        console.error('[monolith-peel] FAIL — these modules declare a feature id but implement nothing, '
+            + 'so they would count a feature as peeled that is still inline:');
+        for (const modulePath of current.descriptorOnlyModules) console.error(`[monolith-peel]   ${modulePath}`);
+        return 1;
+    }
 
     console.log(`[monolith-peel] ${current.featureModuleCount} peeled feature module(s) declaring `
         + `${current.moduleIdCount} feature id(s)`);
@@ -116,13 +153,20 @@ function main(argv) {
         console.log(`[monolith-peel] peeled since ${baseline.recordedAt}: ${peeled.join(', ')}`);
     }
 
-    if (added.length) {
+    if (added.length && !acceptGrowth) {
         console.error(`[monolith-peel] FAIL — the monolith grew by ${added.length} feature id(s) since `
             + `${baseline.recordedAt}: ${added.join(', ')}`);
         console.error('[monolith-peel] A feature landing inline is a deliberate act, the same way removing a gate is.');
-        console.error('[monolith-peel] Peel it into extension/features/<name>/index.js, or re-record the baseline');
-        console.error('[monolith-peel] in the SAME commit with: node scripts/check-monolith-peel.js --record');
+        console.error('[monolith-peel] Peel it into extension/features/<name>/index.js, or accept it in the SAME');
+        console.error('[monolith-peel] commit with: node scripts/check-monolith-peel.js --record --accept-growth');
         return 1;
+    }
+
+    if (added.length && acceptGrowth) {
+        // Deliberate and loud. Plain --record must never be able to raise the
+        // ratchet, or the gate quietly records whatever it is handed; the
+        // operator has to say the growth is intended.
+        console.warn(`[monolith-peel] accepting ${added.length} new inline feature id(s): ${added.join(', ')}`);
     }
 
     if (record) {

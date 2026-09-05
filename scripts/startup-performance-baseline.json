@@ -75,8 +75,8 @@
     }
   },
   "steadyStateBudget": {
-    "recordedAt": "2026-08-18",
-    "reason": "Idle cost of the DEFAULT feature set on a captured watch/feed page, held open and untouched, measured via CDP Performance.getMetrics (real CPU seconds, no page instrumentation). Observed across runs: script 18.6-27.0 ms/min, task 84.7-88.7 ms/min, 6 layouts and 6 style recalcs per minute, heap +364-386 KB/min. Budgets are ~2x observed: the point is to catch a runaway interval or a layout-thrash loop, not to police jitter. Tighten as the numbers settle.",
+    "recordedAt": "2026-09-05",
+    "reason": "Idle cost of the DEFAULT feature set on a captured watch/feed page, held open and untouched, measured via CDP Performance.getMetrics (real CPU seconds, no page instrumentation). Observed on the 2026-08-18 reference: script 18.6-27.0 ms/min, task 84.7-88.7 ms/min, 6 layouts and 6 style recalcs per minute. Budgets are ~2x observed: the point is to catch a runaway interval or a layout-thrash loop, not to police jitter. Tighten as the numbers settle. NOTE on idleHeapGrowthBytesPerMin: until 2026-09-05 this metric read the heap without collecting first, so it measured allocation minus whatever GC happened to land inside the ten-second window rather than retention. The 364-386 KB/min recorded here on 2026-08-18 was that older quantity; a busy box reported 6.85 MB/min twice in a row for the same code. The sampler now forces a collection before each reading and the same tree measures 218-238 KB/min of RETAINED growth. The 1500000 budget is deliberately left where it is: it is a runaway-leak ceiling, the self-test proves it catches one at 153 MB/min, and tightening it to ~2x the new observation is a separate decision that should be taken against a quiet-machine reference rather than these numbers.",
     "idleScriptMsPerMin": 60,
     "idleTaskMsPerMin": 200,
     "idleLayoutsPerMin": 30,

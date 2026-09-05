@@ -68,26 +68,6 @@ Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`
   `docs/platform-api-adoption.md` with its date either way.
   Complexity: M
 
-- [ ] P2 — Name the resolved player variant in feature health and diagnostics
-  Why: YouTube's 2026 refresh varies by account and device rather than rolling out
-  uniformly, so one selector pack is not correct for every user, and with zero filed
-  issues the diagnostics bundle is this project's only intake — it currently cannot say
-  which player the reporter is looking at.
-  Evidence: `extension/core/selector-packs/playerChrome.js:41` records a single
-  2026-06-04 capture confirming the Delhi shell and leaves action-pill selectors on a
-  fallback watchlist; `extension/core/feature-health.js:108` already records `lastTier`,
-  so the tier half of this is done and the variant half is not; `classicLayoutProfile`
-  (`extension/core/settings-schema.js:785`) describes what the user asked for, not what
-  the page is.
-  Touches: `extension/core/selectors.js`, `extension/core/selector-health.js`,
-  `extension/core/feature-health.js`, `extension/popup.js`,
-  `tests/selector-health.test.js`.
-  Acceptance: the diagnostics bundle names the detected player variant and lists the
-  surfaces that resolved on a non-primary variant; an unrecognised page reports
-  `unknown` and changes no behaviour; the detection adds no new document-wide queries
-  outside `findSurfaceElement`.
-  Complexity: M
-
 - [ ] P2 — Add a channel-page landing-tab setting
   Why: landing on a channel's Home tab buries the thing most people opened the channel
   for, and it is a live competitor request with no equivalent key in the schema.

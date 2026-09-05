@@ -30,6 +30,27 @@
             '.ytp-action-pill',
             '.ytp-actions-container'
         ]),
+        // The two rollouts this surface has to serve at once. Every selector
+        // here already appears in the chains above; this only names which
+        // rollout each one belongs to, so a diagnostics bundle can say which
+        // player the reporter is actually looking at rather than leaving the
+        // maintainer to guess from a version number that is the same either way.
+        primaryVariant: 'classic',
+        variants: Object.freeze({
+            classic: Object.freeze([
+                '.ytp-chrome-bottom',
+                '.ytp-right-controls',
+                '.ytp-progress-bar',
+                '.ytp-progress-bar-padding'
+            ]),
+            delhi: Object.freeze([
+                '.ytp-delhi-modern .ytp-chrome-bottom',
+                '.ytp-delhi-modern',
+                '.ytp-overflow-panel',
+                '.ytp-action-pill',
+                '.ytp-actions-container'
+            ])
+        }),
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
             'Worldwide Societal Collapse... - YouTube.mhtml',
