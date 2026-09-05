@@ -118,12 +118,16 @@ test('every row says which surface owns the setting', () => {
 
 test('a setting owned by another surface can be opened there', () => {
     assert.match(popupSource, /chip\.dataset\.surfaceOpen = 'panel'/);
-    assert.match(popupSource, /async function openSettingsSurfaceForKey\(\)/);
+    // The opener takes the key now. It used to open the panel and drop it, so
+    // the chip landed users on whatever category was last shown; the parameter
+    // is the fix, not incidental drift, and tests/settings-overlay-filters.js
+    // covers where the key goes from here.
+    assert.match(popupSource, /async function openSettingsSurfaceForKey\(settingKey = ''\)/);
     // Reuses the ack-aware open path rather than a second copy of it: that
     // helper distinguishes "no receiver" from "receiver busy", and a naive
     // version opened a duplicate YouTube tab.
-    const opener = popupSource.slice(popupSource.indexOf('async function openSettingsSurfaceForKey()'));
-    assert.match(opener.slice(0, 700), /sendPanelOpenMessage\(tab\.id\)/);
+    const opener = popupSource.slice(popupSource.indexOf("async function openSettingsSurfaceForKey(settingKey = '')"));
+    assert.match(opener.slice(0, 700), /sendPanelOpenMessage\(tab\.id, key\)/);
     // The chip must not also toggle the row it sits in.
-    assert.match(popupSource, /event\.stopPropagation\(\);\s*\n\s*void openSettingsSurfaceForKey\(\)/);
+    assert.match(popupSource, /event\.stopPropagation\(\);\s*\n\s*void openSettingsSurfaceForKey\(entry\.key\)/);
 });

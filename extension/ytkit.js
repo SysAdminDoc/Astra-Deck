@@ -6894,7 +6894,14 @@ const STORAGE_KEYS = Object.freeze({
 
                 if (message.type === PANEL_MESSAGE_TYPES.open) {
                     setSettingsPanelOpen(true);
-                    sendResponse?.({ ok: true, open: true });
+                    // Open first, then ask. The panel may already exist, in
+                    // which case setSettingsPanelOpen builds nothing and the
+                    // request would have nowhere to land. The key is shape
+                    // checked on this side too; it crosses a process boundary.
+                    const focused = message.settingKey
+                        ? !!getSettingsPanelRuntime()?.requestSettingFocus?.(message.settingKey)
+                        : false;
+                    sendResponse?.({ ok: true, open: true, focused });
                     return false;
                 }
                 if (message.type === PANEL_MESSAGE_TYPES.close) {

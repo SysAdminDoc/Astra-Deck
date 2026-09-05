@@ -26497,6 +26497,139 @@ if (typeof globalThis !== "undefined") {
         let _panelUIListenersAttached = false;
         let _panelSearchUpdater = null;
         let _panelCloseWatcher = null;
+        // "Changed from defaults" filtering. The popup has had a diff view for a
+        // while; the overlay owns every setting and had no way to answer "what
+        // did I actually change", which is the question people ask before they
+        let _changedOnly = false;
+
+        function settingDiffersFromDefault(key) {
+            if (!key) return false;
+            const current = appState?.settings?.[key];
+            const shipped = settingsManager?.defaults?.[key];
+            if (current === shipped) return false;
+            try {
+                return JSON.stringify(current) !== JSON.stringify(shipped);
+            } catch (_) {
+                return true;
+            }
+        }
+
+        function cardDiffersFromDefault(card) {
+            return settingDiffersFromDefault(card?.dataset?.settingKey);
+        }
+
+        function countChangedCards(doc) {
+            return Array.from(doc.querySelectorAll('.ytkit-feature-card'))
+                .filter((card) => cardDiffersFromDefault(card)).length;
+        }
+
+        // "customProgressBarColor" for a row that reads "Custom progress bar
+        // colour". The reset button's own tooltip already uses the visible name,
+        function settingDisplayName(featureId, key) {
+            const card = Array.from(document.querySelectorAll('.ytkit-feature-card'))
+                .find((entry) => entry.dataset.featureId === featureId
+                    || entry.dataset.settingKey === key);
+            const nameEl = card?.querySelector('.ytkit-feature-name');
+            const visible = (nameEl?._originalText || nameEl?.textContent || '').trim();
+            return visible || key;
+        }
+
+        function resetSingleSetting(featureId, settingKey) {
+            const key = settingKey || featureId;
+            const shipped = settingsManager?.defaults?.[key];
+            if (shipped === undefined) return false;
+            const previous = appState.settings[key];
+
+            const apply = (value, reason) => {
+                appState.settings[key] = value;
+                const feature = typeof getFeatureById === 'function' ? getFeatureById(featureId) : null;
+                if (!feature) return;
+                try { destroyFeatureLifecycle(feature, reason); } catch (error) {
+                    DebugManager?.log?.('Reset', `Destroy failed for "${featureId}": ${error.message}`);
+                }
+                if (value) {
+                    try { initFeatureLifecycle(feature, reason); } catch (error) {
+                        DebugManager?.log?.('Reset', `Init failed for "${featureId}": ${error.message}`);
+                    }
+                }
+            };
+
+            apply(shipped, 'single-reset');
+            settingsManager.save(appState.settings);
+            refreshChangedFilterView();
+
+            showToast(
+                t('settingsSingleResetToastTpl', '“{name}” reset to default')
+                    .replace('{name}', settingDisplayName(featureId, key)),
+                '#f97316',
+                {
+                    duration: 5,
+                    action: {
+                        text: t('toastActionUndo', 'Undo'),
+                        onClick: () => {
+                            apply(previous, 'single-reset-undo');
+                            settingsManager.save(appState.settings);
+                            refreshChangedFilterView();
+                        }
+                    }
+                }
+            );
+            return true;
+        }
+
+        // the popup and the failure copy could say "turn on X" and not link to
+        // it. The key is matched against the card's own data attribute rather
+        const DEEP_LINK_PREFIX = '#ytkit-setting=';
+        const SETTING_KEY_SHAPE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+        // popup's "in-page panel" chip already opened the overlay and threw the
+        let _requestedSettingKey = '';
+
+        function deepLinkedSettingKey(hash) {
+            const raw = String(hash || '');
+            if (!raw.startsWith(DEEP_LINK_PREFIX)) return '';
+            let key = raw.slice(DEEP_LINK_PREFIX.length);
+            try { key = decodeURIComponent(key); } catch (_) {
+            }
+            return SETTING_KEY_SHAPE.test(key) ? key : '';
+        }
+
+        function requestSettingFocus(key) {
+            const clean = String(key || '');
+            if (!SETTING_KEY_SHAPE.test(clean)) return false;
+            _requestedSettingKey = clean;
+            const panel = document.getElementById('ytkit-settings-panel');
+            if (panel) openPanelToDeepLinkedSetting(panel);
+            return true;
+        }
+
+        function openPanelToDeepLinkedSetting(panel) {
+            const key = _requestedSettingKey || deepLinkedSettingKey(globalThis.location?.hash);
+            _requestedSettingKey = '';
+            if (!key) return false;
+            panel.querySelectorAll('.ytkit-deep-linked')
+                .forEach((stale) => stale.classList.remove('ytkit-deep-linked'));
+            const card = Array.from(panel.querySelectorAll('.ytkit-feature-card'))
+                .find((entry) => entry.dataset.settingKey === key || entry.dataset.featureId === key);
+            if (!card) return false;
+
+            const pane = card.closest('.ytkit-pane');
+            const navBtn = pane && panel.querySelector(`.ytkit-nav-btn[data-tab="${CSS.escape(pane.id.replace('ytkit-pane-', ''))}"]`);
+            if (navBtn) navBtn.click();
+
+            card.classList.add('ytkit-deep-linked');
+            card.scrollIntoView?.({ block: 'center' });
+            const focusable = card.querySelector('input, select, textarea, button');
+            (focusable || card).focus?.({ preventScroll: true });
+            return true;
+        }
+
+        // "changed" list, and the controls repaint from the new value.
+        function refreshChangedFilterView() {
+            const activeSearch = document.getElementById('ytkit-search');
+            if (typeof _panelSearchUpdater === 'function') {
+                _panelSearchUpdater(activeSearch?.value || '', { preserveScroll: true });
+            }
+        }
 
 function isSettingsPanelOpen() {
         return !!document.body?.classList.contains(PANEL_OPEN_CLASS);
@@ -26830,6 +26963,26 @@ function buildSettingsPanel() {
         searchClearBtn.appendChild(ICONS.close());
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
+        // "Changed" toggle. A real button with aria-pressed rather than a
+        const changedBtn = document.createElement('button');
+        changedBtn.type = 'button';
+        changedBtn.className = 'ytkit-search-changed';
+        changedBtn.id = 'ytkit-search-changed';
+        changedBtn.textContent = t('settingsChangedFilter', 'Changed');
+        changedBtn.title = t('settingsChangedFilterTitle', 'Show only settings you have changed from their defaults');
+        // Paint from the live state, not from 'off'. _changedOnly outlives the
+        changedBtn.setAttribute('aria-pressed', _changedOnly ? 'true' : 'false');
+        changedBtn.classList.toggle('is-active', _changedOnly);
+        changedBtn.addEventListener('click', () => {
+            _changedOnly = !_changedOnly;
+            changedBtn.setAttribute('aria-pressed', _changedOnly ? 'true' : 'false');
+            changedBtn.classList.toggle('is-active', _changedOnly);
+            const activeSearch = document.getElementById('ytkit-search');
+            if (typeof _panelSearchUpdater === 'function') {
+                _panelSearchUpdater(activeSearch?.value || '', { preserveScroll: true });
+            }
+        });
+        searchActions.appendChild(changedBtn);
         searchActions.appendChild(searchClearBtn);
         appendSettingsSearchStatus(document, searchActions, t);
         searchContainer.appendChild(searchActions);
@@ -26887,6 +27040,59 @@ function buildSettingsPanel() {
             #ytkit-settings-panel .ytkit-nav-reorder-btn:disabled {
                 opacity: 0.45;
                 cursor: default;
+            }
+            /* The changed filter and the per-card reset. Both carry an explicit
+               light lane: the surface system repaints these surfaces white, and
+               check-light-theme-lane fails a surface that paints text with no
+               light rule. */
+            #ytkit-settings-panel .ytkit-search-changed {
+                min-height: 26px;
+                padding: 0 10px;
+                border-radius: 8px;
+                border: 1px solid var(--ytkit-premium-border, rgba(255,255,255,0.16));
+                background: var(--ytkit-premium-raised, rgba(255,255,255,0.06));
+                color: var(--ytkit-premium-text, #e8ecf4);
+                font: 600 11px/1 Inter, system-ui, sans-serif;
+                letter-spacing: .02em;
+                cursor: pointer;
+            }
+            #ytkit-settings-panel .ytkit-search-changed.is-active {
+                background: color-mix(in srgb, var(--ytkit-accent, #a78bfa) 22%, transparent);
+                border-color: var(--ytkit-accent, #a78bfa);
+                color: var(--ytkit-premium-text, #fff);
+            }
+            html:not([dark]) #ytkit-settings-panel .ytkit-search-changed {
+                border-color: rgba(15,23,42,0.18);
+                background: rgba(15,23,42,0.04);
+                color: #0f172a;
+            }
+            html:not([dark]) #ytkit-settings-panel .ytkit-search-changed.is-active {
+                color: #0f172a;
+            }
+            #ytkit-settings-panel .ytkit-card-reset {
+                display: none;
+                position: absolute;
+                top: 8px;
+                inset-inline-end: 8px;
+                min-height: 22px;
+                padding: 0 8px;
+                border-radius: 6px;
+                border: 1px solid var(--ytkit-premium-border, rgba(255,255,255,0.16));
+                background: var(--ytkit-premium-raised, rgba(255,255,255,0.06));
+                color: var(--ytkit-premium-text, #e8ecf4);
+                font: 600 10px/1 Inter, system-ui, sans-serif;
+                cursor: pointer;
+            }
+            #ytkit-settings-panel .ytkit-feature-card[data-changed="1"] { position: relative; }
+            #ytkit-settings-panel .ytkit-feature-card[data-changed="1"] .ytkit-card-reset { display: inline-flex; align-items: center; }
+            html:not([dark]) #ytkit-settings-panel .ytkit-card-reset {
+                border-color: rgba(15,23,42,0.18);
+                background: rgba(15,23,42,0.04);
+                color: #0f172a;
+            }
+            #ytkit-settings-panel .ytkit-feature-card.ytkit-deep-linked {
+                outline: 2px solid var(--ytkit-accent, #a78bfa);
+                outline-offset: 2px;
             }
             #ytkit-settings-panel .ytkit-nav-reorder-btn:focus-visible {
                 box-shadow: var(--ytkit-premium-focus, 0 0 0 2px #0f0f0f, 0 0 0 4px #7c3aed);
@@ -29332,6 +29538,18 @@ function buildSettingsPanel() {
         document.body.appendChild(overlay);
         document.body.appendChild(panel);
 
+        panel.addEventListener('click', (event) => {
+            const trigger = event.target?.closest?.('.ytkit-card-reset');
+            if (!trigger) return;
+            const card = trigger.closest('.ytkit-feature-card');
+            if (!card) return;
+            event.preventDefault();
+            event.stopPropagation();
+            resetSingleSetting(card.dataset.featureId, card.dataset.settingKey);
+        });
+
+        openPanelToDeepLinkedSetting(panel);
+
         syncPanelCategorySelection(panel.querySelector('.ytkit-nav-btn.active') || panel.querySelector('.ytkit-nav-btn'));
 
         if (panel.dir === 'rtl') {
@@ -29379,6 +29597,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
         card.setAttribute('role', 'group');
         card.setAttribute('aria-label', featureName);
         if (accentColor) card.style.setProperty('--cat-color', accentColor);
+
 
         const _cardIsEnabled = f._arrayKey
             ? (appState.settings[f._arrayKey] || []).includes(f._arrayValue)
@@ -29623,11 +29842,28 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             card.appendChild(switchDiv);
         }
 
+        // added and removed as values move; `updateAllToggleStates` maintains
+        if (f.type !== 'info') {
+            const resetBtn = document.createElement('button');
+            resetBtn.type = 'button';
+            resetBtn.className = 'ytkit-card-reset';
+            resetBtn.textContent = t('settingsCardReset', 'Reset');
+            resetBtn.title = t('settingsCardResetTitleTpl', 'Reset “{name}” to its default')
+                .replace('{name}', featureName);
+            resetBtn.setAttribute('aria-label', resetBtn.title);
+            card.appendChild(resetBtn);
+        }
+
         return card;
     }
 
 function updateAllToggleStates() {
         globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
+        // The changed marker drives both the per-card reset button's visibility
+        // and the "Changed" filter, so it is refreshed wherever controls are.
+        document.querySelectorAll('.ytkit-feature-card').forEach((card) => {
+            card.dataset.changed = cardDiffersFromDefault(card) ? '1' : '';
+        });
         document.querySelectorAll('.ytkit-toggle-all-cb').forEach(cb => {
             const catId = cb.dataset.category;
             const pane = document.getElementById(`ytkit-pane-${catId}`);
@@ -29950,6 +30186,41 @@ function attachUIEventListeners() {
             allPanes.forEach(pane => pane.classList.remove('ytkit-search-active', 'ytkit-search-empty-pane'));
             allNavBtns.forEach(btn => btn.classList.remove('ytkit-search-empty-nav'));
 
+            if (!query && _changedOnly) {
+                let changedCount = 0;
+                allCards.forEach((card) => {
+                    const keep = cardDiffersFromDefault(card);
+                    card.style.display = keep ? '' : 'none';
+                    if (keep) {
+                        changedCount += 1;
+                        card.dataset.searchMatched = 'true';
+                    }
+                });
+                allPanes.forEach((pane) => {
+                    pane.classList.add('ytkit-search-active');
+                    pane.setAttribute('aria-hidden', 'false');
+                });
+                doc.querySelectorAll('.ytkit-sub-features').forEach((sub) => {
+                    const visible = Array.from(sub.querySelectorAll('.ytkit-feature-card'))
+                        .some((card) => card.style.display !== 'none');
+                    sub.style.display = visible ? '' : 'none';
+                    setSubFeatureAvailability(sub, !!appState.settings[sub.dataset.parentId]);
+                });
+                doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
+                    const visible = Array.from(section.querySelectorAll('.ytkit-feature-card'))
+                        .some((card) => card.style.display !== 'none');
+                    section.style.display = visible ? '' : 'none';
+                });
+                const searchMetaEl = doc.getElementById('ytkit-search-count');
+                if (searchMetaEl) {
+                    searchMetaEl.textContent = changedCount > 0
+                        ? t('settingsChangedCountTpl', '{count} changed').replace('{count}', String(changedCount))
+                        : t('settingsChangedNone', 'Nothing changed');
+                }
+                updateAllToggleStates();
+                return;
+            }
+
             if (!query) {
                 doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
                     sub.style.display = '';
@@ -29999,7 +30270,7 @@ function attachUIEventListeners() {
                 const name = (nameEl?._originalText || nameEl?.textContent || '').toLowerCase();
                 const desc = (descEl?._originalText || descEl?.textContent || '').toLowerCase();
                 const haystack = card.dataset.searchText || `${name} ${desc}`;
-                const matches = haystack.includes(query);
+                const matches = haystack.includes(query) && (!_changedOnly || cardDiffersFromDefault(card));
                 card.style.display = matches ? '' : 'none';
                 if (matches) {
                     matchCount++;
@@ -30396,6 +30667,7 @@ function attachUIEventListeners() {
         return {
             isSettingsPanelOpen,
             setSettingsPanelOpen,
+            requestSettingFocus,
             toggleSettingsPanel,
             countEnabledToggleFeatures,
             buildSettingsPanel,
