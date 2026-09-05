@@ -26,20 +26,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Acceptance: the overlay offers a "changed from defaults" filter with a count, a per-setting reset with the existing undo toast, and opens directly to a named setting from a URL fragment that the popup and failure copy can link to.
   Complexity: M
 
-- [ ] P2 — Add a channel-page landing-tab setting
-  Why: landing on a channel's Home tab buries the thing most people opened the channel
-  for, and it is a live competitor request with no equivalent key in the schema.
-  Evidence: Control Panel for YouTube issue #329 (2026-08-28); grepping
-  `key: "channel...` in `extension/core/settings-schema.js` returns only
-  `channelAgeDisplay` and `channelSubCount`.
-  Touches: `extension/core/settings-schema.js`, `extension/default-settings.json`,
-  `extension/ytkit.js`, `extension/_locales/en/messages.json`, `tests/`.
-  Acceptance: a string enum setting defaulting to YouTube's own behaviour redirects a
-  channel-page navigation to the chosen tab once per navigation, leaves deep links to a
-  specific tab untouched, does nothing when the chosen tab is absent for that channel,
-  and passes `check:settings` schema parity.
-  Complexity: S
-
 - [ ] P2 — Add an open-thumbnail-at-full-size action
   Why: the download path already resolves the highest-resolution thumbnail URL, so
   viewing one costs almost nothing on top, and it is a live competitor request.

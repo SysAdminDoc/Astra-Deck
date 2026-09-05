@@ -5,6 +5,7 @@
 // reference uses canonical feature descriptions wherever they exist and falls
 // back to these source-audited explanations for the remaining entries.
 const PURPOSE_OVERRIDES = Object.freeze({
+    channelLandingTab: 'Which channel tab "Channels to Videos Tab" opens. Applies only while that feature is on, and falls back to Videos when the channel does not carry the chosen tab.',
     selectorAutoRefresh: 'Checks once a day for an updated page-matching rule set, through the same signed fetch, digest verification and rollback the manual Refresh button uses. Off by default, and no request is made while it is off.',
     uiStyle: 'Selects the global corner treatment: square applies Astra\'s squaring rules, while rounded preserves rounded surfaces.',
     colorTheme: 'Applies a built-in dark-mode color palette across YouTube; none leaves the native palette unchanged.',

@@ -462,6 +462,7 @@
     "autoSubtitlesWhenMuted",
     "bufferPreload",
     "bufferPreloadSeconds",
+    "channelLandingTab",
     "classicPlayerChrome",
     "cleanUiPreset",
     "commentDuplicateCollapse",
