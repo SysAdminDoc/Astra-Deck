@@ -31,6 +31,15 @@
             lastVerified: entry.lastVerified || null,
             highChurn: !!entry.highChurn,
             needsFreshCapture: !!entry.needsFreshCapture,
+            // Carried onto the public entry so the generated asset can round
+            // trip it. Without this the asset omitted every shipped canary and
+            // applying one would have silently deleted the nine that exist.
+            canary: entry.canary
+                ? Object.freeze({
+                    routes: Object.freeze([...(entry.canary.routes || [])]),
+                    featureIds: Object.freeze([...(entry.canary.featureIds || [])])
+                })
+                : null,
             notes: entry.notes || ''
         });
     }
@@ -285,6 +294,11 @@
     const SELECTOR_ASSET_MAX_SELECTORS_PER_CHAIN = 32;
     const SELECTOR_ASSET_MAX_SELECTOR_CHARS = 512;
     const SELECTOR_ASSET_MAX_TOTAL_SELECTORS = 4096;
+    // A canary block names routes to watch and features to blame. Both are
+    // short identifier lists, so the bounds are tight on purpose: this arrives
+    // from a remote document and only ever feeds lookups, never selectors.
+    const SELECTOR_ASSET_MAX_CANARY_ROUTES = 24;
+    const SELECTOR_ASSET_MAX_CANARY_FEATURE_IDS = 24;
     const SELECTOR_ASSET_VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
     const UNSAFE_ASSET_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
@@ -327,6 +341,21 @@
             throw new Error(`${label} contains an invalid selector`);
         }
         return selectors;
+    }
+
+    // Route names and feature ids, not selectors. Anything that is not a plain
+    // short identifier is rejected rather than trimmed, because a canary that
+    // silently watches the wrong route reports health it never checked.
+    function normalizeAssetIdentifierList(value, label, maxEntries) {
+        if (value == null) return [];
+        if (!Array.isArray(value)) throw new Error(`${label} must be an array`);
+        if (value.length > maxEntries) throw new Error(`${label} has too many entries`);
+        return value.map((item) => {
+            if (typeof item !== 'string') throw new Error(`${label} contains a non-string entry`);
+            const trimmed = item.trim();
+            if (!/^[A-Za-z0-9._-]{1,64}$/.test(trimmed)) throw new Error(`${label} contains an invalid entry`);
+            return trimmed;
+        });
     }
 
     function normalizeSelectorAssetEntry(value, surface, total) {
@@ -377,6 +406,23 @@
             }
         }
 
+        // Only 9 of 33 shipped packs declare a canary, and until now the
+        // hot-update path could not add one: applySelectorAsset replaced
+        // SurfaceSelectorMap and never touched SurfacePackRegistry, which is
+        // where getCriticalSelectorCanaryRules reads from. So a hotfix could
+        // repair a broken surface but could not add detection for one that had
+        // newly broken, which is the case that matters most.
+        let canary = null;
+        if (value.canary != null) {
+            if (typeof value.canary !== 'object' || Array.isArray(value.canary)) {
+                throw new Error(`${surface}.canary is malformed`);
+            }
+            const routes = normalizeAssetIdentifierList(value.canary.routes, `${surface}.canary.routes`, SELECTOR_ASSET_MAX_CANARY_ROUTES);
+            const featureIds = normalizeAssetIdentifierList(value.canary.featureIds, `${surface}.canary.featureIds`, SELECTOR_ASSET_MAX_CANARY_FEATURE_IDS);
+            if (!routes.length) throw new Error(`${surface}.canary.routes is empty`);
+            canary = { routes, featureIds };
+        }
+
         const evidence = Array.isArray(value.captureEvidence)
             ? value.captureEvidence.filter((item) => typeof item === 'string').slice(0, 16).map((item) => item.slice(0, 240))
             : [];
@@ -385,6 +431,7 @@
             stable,
             fallback,
             hooks,
+            canary,
             captureEvidence: evidence,
             lastVerified,
             highChurn: value.highChurn === true,
@@ -457,6 +504,42 @@
         return { map, selectors };
     }
 
+    // The canaries the packs shipped with, captured before any asset can touch
+    // them, so a rollback or a reset restores exactly what the build declared
+    // rather than whatever the last asset happened to install.
+    const SHIPPED_SURFACE_CANARIES = (() => {
+        const snapshot = new Map();
+        const registry = core.SurfacePackRegistry;
+        if (registry instanceof Map) {
+            for (const [surface, pack] of registry.entries()) snapshot.set(surface, pack?.canary || null);
+        }
+        return snapshot;
+    })();
+
+    // Applying a canary means replacing the registry entry, because packs are
+    // frozen. Surfaces the asset does not mention are put back to what they
+    // shipped with, so an asset cannot leave a stale canary behind.
+    function installAssetCanaries(packs) {
+        const registry = core.SurfacePackRegistry;
+        if (!(registry instanceof Map)) return 0;
+        let installed = 0;
+        for (const [surface, shippedCanary] of SHIPPED_SURFACE_CANARIES.entries()) {
+            const pack = registry.get(surface);
+            if (!pack) continue;
+            const assetCanary = packs && Object.prototype.hasOwnProperty.call(packs, surface)
+                ? packs[surface]?.canary || null
+                : null;
+            const nextCanary = assetCanary || shippedCanary || null;
+            if (assetCanary) installed += 1;
+            if (pack.canary === nextCanary) continue;
+            const nextPack = { ...pack };
+            if (nextCanary) nextPack.canary = nextCanary;
+            else delete nextPack.canary;
+            registry.set(surface, Object.freeze(nextPack));
+        }
+        return installed;
+    }
+
     let selectorAssetState = {
         source: 'shipped',
         status: 'offline-default',
@@ -488,6 +571,9 @@
             SurfaceSelectors = next.selectors;
             core.SurfaceSelectorMap = SurfaceSelectorMap;
             core.SurfaceSelectors = SurfaceSelectors;
+            // After the digest check, so a malformed or unverified asset throws
+            // before the registry is touched at all.
+            installAssetCanaries(normalized.packs);
             selectorAssetState = {
                 source: options.source === 'stored' ? 'stored' : 'remote',
                 status: 'active',
@@ -520,6 +606,7 @@
         SurfaceSelectors = SHIPPED_SURFACE_SELECTORS;
         core.SurfaceSelectorMap = SurfaceSelectorMap;
         core.SurfaceSelectors = SurfaceSelectors;
+        installAssetCanaries(null);
         selectorAssetState = {
             ...selectorAssetState,
             source: 'shipped',
@@ -1159,6 +1246,7 @@
         getSelectorAttributionSnapshot,
         selectorTier,
         resolveSurfaceVariant,
+        installAssetCanaries,
         getSelectorHealthSnapshot,
         resetSelectorAttribution,
         withSelectorAttribution,
