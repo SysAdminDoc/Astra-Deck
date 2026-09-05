@@ -1214,8 +1214,13 @@ return response;
                         // object would otherwise be cached and stop the walk.
                         // The keys have to be objects, not merely present: a
                         // `{"header":"not a payload"}` passed a name-only guard.
+                        // `frameworkUpdates` belongs in this list: it is where
+                        // the most-replayed curve lives, and a bucket that
+                        // delivers the curve without `contents` would otherwise
+                        // be rejected here and leave the heatmap fallback as
+                        // dead as it was before the accessor existed.
                         const looksLikePayload = candidate
-                            && ['contents', 'header', 'responseContext']
+                            && ['contents', 'header', 'responseContext', 'frameworkUpdates']
                                 .some((key) => candidate[key] && typeof candidate[key] === 'object');
                         if (looksLikePayload) {
                             this._idCache = candidate;
