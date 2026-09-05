@@ -46,3 +46,198 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Touches: `extension/core/selectors.js`, `extension/core/selector-health.js`, `scripts/build-selector-asset.js`, `selector-packs.json`, `tests/selector-health.test.js`.
   Acceptance: the asset schema accepts a `canary` block per surface, applying an asset installs those rules into the registry, the same digest verification and rollback apply, and a malformed canary block is rejected without disturbing shipped packs.
   Complexity: M
+
+Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`.
+
+- [ ] P1 — Retire the inert panel stylesheets from `ytkit.js`
+  Why: `docs/architecture.md:157` §9 states the legacy panel sheets are overridden by
+  `core/settings-visual-system.js` for almost every selector, that editing them changes
+  nothing visible, and that panel CSS cannot be reasoned about by reading. Seven of the
+  last 200 commits are light-theme and surface repair (`84b95890`, `9f9ae66f`,
+  `9ed81851`, `42ad587a`, `b5a4950d`, `89660ce7`, `749f4eea`).
+  Evidence: `injectPanelStyles()` spans `extension/ytkit.js:43790-45199` (1,410 lines);
+  `scripts/probe-panel-colors.js:101-147` already reports, per surface, the computed
+  value and the sheet index that supplied it. Distinct from the blocked item
+  "Establish one canonical implementation per extracted extension feature", which owns
+  the duplicate `buildSettingsPanel()` DOM builder and needs a live Tampermonkey session;
+  this half is verifiable headlessly. `PALETTE_CSS` at `ytkit.js:43680` is eager and
+  load-bearing and must not be touched.
+  Touches: `extension/ytkit.js`, `extension/core/settings-visual-system.js`,
+  `scripts/probe-panel-colors.js`, `tests/settings-visual-system.test.js`,
+  `tests/ytkit-token-definitions.test.js`.
+  Acceptance: `npm run probe:panel-colors` reports no surface whose winning carrier is a
+  legacy sheet, every declaration that did win has been ported into
+  `settings-visual-system.js`, the legacy sheets are deleted, the reported stylesheet
+  count drops, and `audit:contrast`, `audit:light-theme`, `smoke:light-surfaces` and
+  `smoke:theme-controls` all pass unchanged in both themes.
+  Complexity: L
+
+- [ ] P1 — Run the steady-state benchmark as a gate
+  Why: the long-session leak lane is fully built and nothing invokes it, so a feature
+  whose `destroy()` leaks listeners or observers ships undetected.
+  Evidence: `scripts/bench-startup.js` implements `STEADY_STATE_MS`, `STEADY_STATE_KEYS`,
+  a `steadyStateBudget` baseline and `--check`; `package.json:96` exposes
+  `check:steady-state`; it appears in neither `scripts/run-checks.js:22-59` (37 gates)
+  nor `release:prepare` (`package.json:16`). `extension/` carries 659
+  `addEventListener` against 217 `removeEventListener`, and 22 `new MutationObserver`
+  against 50 `.disconnect()`, while `docs/architecture.md:157` §4 requires `destroy()`
+  to unwind all of it.
+  Touches: `package.json`, `scripts/run-checks.js`, `scripts/bench-startup.js`.
+  Acceptance: the steady-state check runs inside `release:prepare` against a recorded
+  budget, `MIN_GATES` is raised in the same commit if it joins the gate list, and a
+  deliberately planted listener that `destroy()` fails to remove turns the check red.
+  Complexity: S
+
+- [ ] P1 — Ratchet the monolith peel with a tracked remainder
+  Why: peeling is an active migration with no finish line and no gate, so the monolith
+  can grow between releases without anything saying so, while every other invariant in
+  the repo has a ratchet.
+  Evidence: `extension/ytkit.js` is 52,320 lines and its feature array
+  (`:7218-38820`) holds roughly 334 inline feature entries against 27 peeled modules
+  totalling 32,778 lines (counted by matching bare object literals at the array's
+  indentation plus `cssFeature(` calls in that range, which the gate must replace with
+  its own exact measure); `scripts/check-userscript-drift.js:11` only registers newly peeled
+  features and says nothing about the remainder. Existing ratchet idioms to copy:
+  `MIN_GATES = 37` (`scripts/run-checks.js:64`),
+  `scripts/generate-shipped-identity-baseline.js`, the light-theme lane baseline.
+  Touches: new `scripts/check-monolith-peel.js`, `scripts/run-checks.js`,
+  `package.json`, a committed baseline JSON beside the other baselines, `tests/`.
+  Acceptance: the gate prints the current inline-feature-literal count and the peeled
+  count, fails when the inline count rises above the recorded baseline, passes and
+  rewrites the baseline under `--record` when it falls, and `MIN_GATES` is raised in the
+  same commit.
+  Complexity: M
+
+- [ ] P2 — Prove OS media controls survive the Web Audio graph
+  Why: Astra routes YouTube's `<video>` through a Web Audio graph whenever any of six
+  audio features is on, and has no Media Session code at all, so hardware media keys and
+  the OS media panel are an untested casualty of a feature most users leave enabled.
+  Evidence: `extension/ytkit-main.js:1549` calls `createMediaElementSource(video)` for
+  mono-to-stereo, `volumeBoost`, normalization, auto-gain, high-pass and sync offset;
+  `grep -ri "mediaSession|media key|SMTC"` returns zero hits across `extension/`,
+  `docs/`, `ROADMAP.md` and `Roadmap_Blocked.md`; SponsorBlock issue #2543 (2026-09-01)
+  reports exactly this failure class in a YouTube extension on Firefox.
+  Touches: `extension/ytkit-main.js`, `extension/core/player.js`, a new probe under
+  `scripts/`, `tests/`.
+  Acceptance: a headless probe asserts that `navigator.mediaSession.metadata` and the
+  play/pause/seek action handlers are still populated after the audio graph attaches and
+  after it is torn down; if the graph is found to clear them, the MAIN world restores
+  metadata and handlers from the player state; the manual result of pressing a media key
+  with `volumeBoost` on and off, in Chrome and Firefox, is recorded in
+  `docs/platform-api-adoption.md` with its date either way.
+  Complexity: M
+
+- [ ] P2 — Name the resolved player variant in feature health and diagnostics
+  Why: YouTube's 2026 refresh varies by account and device rather than rolling out
+  uniformly, so one selector pack is not correct for every user, and with zero filed
+  issues the diagnostics bundle is this project's only intake — it currently cannot say
+  which player the reporter is looking at.
+  Evidence: `extension/core/selector-packs/playerChrome.js:41` records a single
+  2026-06-04 capture confirming the Delhi shell and leaves action-pill selectors on a
+  fallback watchlist; `extension/core/feature-health.js:108` already records `lastTier`,
+  so the tier half of this is done and the variant half is not; `classicLayoutProfile`
+  (`extension/core/settings-schema.js:785`) describes what the user asked for, not what
+  the page is.
+  Touches: `extension/core/selectors.js`, `extension/core/selector-health.js`,
+  `extension/core/feature-health.js`, `extension/popup.js`,
+  `tests/selector-health.test.js`.
+  Acceptance: the diagnostics bundle names the detected player variant and lists the
+  surfaces that resolved on a non-primary variant; an unrecognised page reports
+  `unknown` and changes no behaviour; the detection adds no new document-wide queries
+  outside `findSurfaceElement`.
+  Complexity: M
+
+- [ ] P2 — Give `video-notes` and `digital-wellbeing` behavioural tests of their own
+  Why: they are the only peeled modules with no dedicated test file, so roughly a
+  thousand lines of shipped feature code is covered only by cross-cutting gates that
+  cannot tell a working feature from a broken one — the exact debt the last ~45 commits
+  were spent repaying elsewhere.
+  Evidence: `extension/features/video-notes/index.js` (408 lines) and
+  `extension/features/digital-wellbeing/index.js` (606 lines) appear in `tests/` only
+  through `hardening.test.js`, `i18n-ratchet.test.js`, the light-theme lane and
+  `tests/features/next-monolith-peel.test.js`; `element-zapper` by contrast has three
+  dedicated files.
+  Touches: new `tests/features/video-notes.test.js` and
+  `tests/features/digital-wellbeing.test.js`.
+  Acceptance: each file loads the module through the same helper the other feature tests
+  use, drives `init()` and `destroy()` against a fixture DOM, asserts the feature's
+  primary observable behaviour and its full teardown, and breaking the corresponding
+  production function turns the new tests red.
+  Complexity: M
+
+- [ ] P2 — Add a channel-page landing-tab setting
+  Why: landing on a channel's Home tab buries the thing most people opened the channel
+  for, and it is a live competitor request with no equivalent key in the schema.
+  Evidence: Control Panel for YouTube issue #329 (2026-08-28); grepping
+  `key: "channel...` in `extension/core/settings-schema.js` returns only
+  `channelAgeDisplay` and `channelSubCount`.
+  Touches: `extension/core/settings-schema.js`, `extension/default-settings.json`,
+  `extension/ytkit.js`, `extension/_locales/en/messages.json`, `tests/`.
+  Acceptance: a string enum setting defaulting to YouTube's own behaviour redirects a
+  channel-page navigation to the chosen tab once per navigation, leaves deep links to a
+  specific tab untouched, does nothing when the chosen tab is absent for that channel,
+  and passes `check:settings` schema parity.
+  Complexity: S
+
+- [ ] P2 — Add an open-thumbnail-at-full-size action
+  Why: the download path already resolves the highest-resolution thumbnail URL, so
+  viewing one costs almost nothing on top, and it is a live competitor request.
+  Evidence: Control Panel for YouTube issue #328 (2026-08-26); the schema has
+  `downloadThumbnail` but no view action, alongside `thumbnailPreviewSize` and
+  `thumbnailQualityUpgrade`.
+  Touches: `extension/core/settings-schema.js`, `extension/default-settings.json`,
+  `extension/ytkit.js`, `extension/_locales/en/messages.json`, `tests/`.
+  Acceptance: the action reuses the existing thumbnail-resolution code rather than a
+  second resolver, opens the full-resolution image in a new tab, is a visible control
+  rather than a keyboard shortcut per the project convention, and falls back to the next
+  available resolution when `maxresdefault` is missing.
+  Complexity: S
+
+- [ ] P2 — Say in the README that Astra restores the classic layout and the pre-Delhi player
+  Why: undoing YouTube's redesign is the most-asked-for thing in the 2026 ecosystem and
+  Astra's implementation is better than what third-party guides currently recommend, but
+  the README never mentions it, and it also never states that Astra gives away the two
+  things competitors charge for.
+  Evidence: `extension/core/settings-schema.js:785` ships `classicLayoutProfile` with
+  `modern`, `classic-2020` and `classic-2016`; `extension/ytkit.js:38424` is a CSS-only
+  one-toggle pre-Delhi player restoration; the README description at `README.md:15`
+  lists neither. Third-party 2026 coverage reports no official rollback exists and
+  positions competitors mainly as the fix for the new player UI. PocketTube paywalls
+  nested subscription groups and Glasp meters summaries at three a day; Astra's
+  equivalents are free and BYO-key.
+  Touches: `README.md`.
+  Acceptance: the top-of-file description names the classic layout profiles and the
+  pre-Delhi player restoration, a short comparison states which paid features Astra
+  gives away, the prose carries no em dashes or other LLM tells per the project's
+  writing rule, and `npm run check:project-facts` still passes.
+  Complexity: S
+
+- [ ] P3 — Split `features/sticky-video/index.js`
+  Why: at 6,217 lines a peeled module has become its own monolith with a single test
+  file, which is the worst code-to-test ratio in the tree and leaves the next peel with
+  nowhere clean to attach.
+  Evidence: `wc -l extension/features/sticky-video/index.js` is 6,217 against a 27-module
+  total of 32,778; the module carries at least four separable concerns (mini player,
+  Document PiP pop-out at `extension/ytkit.js:18359`, scroll behaviour, wheel gestures).
+  Touches: `extension/features/sticky-video/`, `extension/runtime-bootstrap.js`,
+  `scripts/generate-runtime-bootstrap.js`, `sync-userscript.js`,
+  `scripts/check-userscript-drift.js`, `tests/features/`.
+  Acceptance: the module is split along those concerns with each part registered in the
+  runtime bootstrap and the userscript bundle list, each part has its own test file,
+  `check:userscript-drift`, `check:userscript-symbols` and `check:userscript-size` pass,
+  and `check:startup:captured` shows no regression against the recorded budget.
+  Complexity: L
+
+- [ ] P3 — Map the second commit identity with `.mailmap`
+  Why: the public contributor list shows two people for one maintainer, which
+  misrepresents authorship on a repo whose own rules are strict about contributor
+  identity.
+  Evidence: `git log --format='%an <%ae>'` returns 1,044 `SysAdminDoc`, 506
+  `Matthew Parker`, 142 `Matt Parker` (all `matt_parker@outlook.com`) and 17
+  `Matthew <snafumatthew@gmail.com>`; the GitHub contributors API lists that last
+  identity separately with 17 commits dated 2026-06-08.
+  Touches: new `.mailmap`.
+  Acceptance: `git shortlog -sne` collapses to one identity, and the file records that
+  GitHub's own contributor list is computed from commit metadata and will not change
+  without a history rewrite, so that rewrite stays a separate deliberate decision.
+  Complexity: S
