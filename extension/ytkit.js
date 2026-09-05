@@ -1087,12 +1087,6 @@ return response;
     // YouTube surfaces silently fall back to English for the whole page.
     await _loadLocaleOverride();
     await hydrateStoredSelectorAsset();
-    // Opt-in, default off, and after hydration so a scheduled refresh replaces
-    // a known-good stored asset rather than racing it.
-    maybeAutoRefreshSelectorAsset().catch(() => {
-        // reason: an automatic refresh must never block or break page boot;
-        // the shipped packs and any stored asset are already active.
-    });
 
     // Bridge to page context for reading ytInitialPlayerResponse from DOM
     const _rw = {
@@ -45338,6 +45332,16 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             registrySize: getFeatureHealthSnapshot?.()?.length || 0
         });
         appState.settings = settingsManager.load();
+        // Opt-in scheduled selector refresh. It has to sit AFTER this line, not
+        // beside hydrateStoredSelectorAsset() where it started: `appState` is
+        // declared with `let` further down the same IIFE body, so calling this
+        // during early boot threw a TDZ ReferenceError synchronously, and the
+        // .catch() attached to it swallowed the throw. The feature was dead and
+        // silent. Reading a setting means running after the settings are read.
+        maybeAutoRefreshSelectorAsset().catch(() => {
+            // reason: an automatic refresh must never block or break page boot;
+            // the shipped packs and any stored asset are already active.
+        });
         appState.currentPage = getCurrentPage();
         reportStoragePreloadFailure();
         cleanupRetiredCommentUi();

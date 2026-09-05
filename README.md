@@ -12,7 +12,11 @@
 </p>
 
 <p align="center">
-  A desktop YouTube toolkit for Chrome and Firefox with 200+ controls. It covers ad request filtering, SponsorBlock, DeArrow, video and channel filters, downloads, transcript search, local or BYO-key AI summaries, subscription groups, Theater Split, themes, and 11 extension locales. The userscript keeps the same core tools without bundling the locale catalogues.
+  A desktop YouTube toolkit for Chrome and Firefox with 200+ controls. It can put the old
+  layout and the old player back, and it also covers ad request filtering, SponsorBlock,
+  DeArrow, video and channel filters, downloads, transcript search, local or BYO-key AI
+  summaries, subscription groups, Theater Split, themes, and 11 extension locales. The
+  userscript keeps the same core tools without bundling the locale catalogues.
 </p>
 
 <!-- BEGIN GENERATED PROJECT FACTS -->
@@ -137,6 +141,33 @@ improve downloader reliability after Astra Downloader itself is running; they
 are not browser extension install steps.
 
 ## Features
+
+### Undo YouTube's redesign
+
+YouTube has no setting that gives you the old player or the old page back. Astra has three,
+and they are CSS only, so nothing is rebuilt and nothing is left behind when you turn them off.
+
+| What you want back | Setting |
+|---|---|
+| The pre-2025 page: tighter spacing, smaller masthead, older watch-page proportions | [`classicLayoutProfile`](#setting-classicLayoutProfile), set to `classic-2020` or `classic-2016` |
+| The old player controls: opaque square buttons, the classic progress bar, the original time display | [`classicPlayerChrome`](#setting-classicPlayerChrome) |
+| The new player's overflow panel and pill actions hidden, with a tighter progress bar | [`newPlayerUiRestore`](#setting-newPlayerUiRestore) |
+
+A caveat worth stating plainly. These work by restyling what YouTube ships, so they last only
+as long as YouTube keeps shipping something to restyle. If it removes the underlying markup,
+they stop, and no extension can prevent that.
+
+### What other tools charge for
+
+Two things in this space are usually paid, and Astra gives both away.
+
+| | Elsewhere | Astra |
+|---|---|---|
+| Nested subscription groups, feed sorting, unlimited mark-as-watched | PocketTube, $3.99/mo | Built in, no account |
+| AI video summaries | Glasp meters free users at 3 a day; NoteGPT and Harpa meter tokens | Bring your own key, or run a local model through Ollama. No metering, because Astra never sees the request |
+
+There is no Astra account, no server, and no telemetry. Summaries go straight from your
+browser to whichever provider you configured, or to your own machine.
 
 ### Core
 

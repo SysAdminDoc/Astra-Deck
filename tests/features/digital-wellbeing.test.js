@@ -15,6 +15,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { createDigitalWellbeingFeature } = require('../../extension/features/digital-wellbeing');
+const { fakeTreeDocument } = require('../helpers/monolith');
 
 function stubEnvironment(t, { hasVideo = true, paused = false, hidden = false, pathname = '/watch' } = {}) {
     const documentListeners = new Map();
@@ -226,4 +227,125 @@ test('counted seconds are flushed to storage on pagehide rather than lost', (t) 
     assert.equal(feature._pendingSeconds, 0, 'the pending seconds are merged, not dropped');
     assert.equal(settings.dwWatchTimeToday?.seconds, 7,
         'the counted seconds land in the daily ledger rather than being dropped with the page');
+});
+
+
+// The reminder itself.
+//
+// Everything above measures the counter. An adversarial review pointed out that
+// the counter is not the feature: pushing the break threshold out of reach
+// disables the entire user-visible purpose of Digital Wellbeing and every test
+// stayed green, because the lightweight stub above cannot build an overlay.
+// These use the real fake-DOM helper so the overlay path is reachable.
+
+function overlayEnvironment(t, { paused = false, pathname = '/watch' } = {}) {
+    const documentRef = fakeTreeDocument(() => null);
+    const video = { paused, pause() { this.paused = true; }, play() { this.paused = false; } };
+    const realQuerySelector = documentRef.querySelector.bind(documentRef);
+    documentRef.querySelector = (selector) => (selector === 'video' ? video : realQuerySelector(selector));
+    documentRef.hidden = false;
+    documentRef.visibilityState = 'visible';
+
+    const windowListeners = new Map();
+    const windowRef = {
+        addEventListener: (type, handler) => {
+            if (!windowListeners.has(type)) windowListeners.set(type, new Set());
+            windowListeners.get(type).add(handler);
+        },
+        removeEventListener: (type, handler) => windowListeners.get(type)?.delete(handler)
+    };
+
+    const previous = {
+        document: global.document,
+        window: global.window,
+        location: globalThis.location,
+        requestAnimationFrame: global.requestAnimationFrame,
+        cancelAnimationFrame: global.cancelAnimationFrame
+    };
+    global.document = documentRef;
+    global.window = windowRef;
+    // The overlay focuses its button on the next frame. Without this the whole
+    // reminder path throws ReferenceError and the feature looks like it simply
+    // never fired, which is how it stayed untested.
+    global.requestAnimationFrame = (fn) => { fn(0); return 1; };
+    global.cancelAnimationFrame = () => {};
+    Object.defineProperty(globalThis, 'location', { value: { pathname }, configurable: true, writable: true });
+    const restore = () => {
+        global.document = previous.document;
+        global.window = previous.window;
+        global.requestAnimationFrame = previous.requestAnimationFrame;
+        global.cancelAnimationFrame = previous.cancelAnimationFrame;
+        Object.defineProperty(globalThis, 'location', { value: previous.location, configurable: true, writable: true });
+    };
+    t.after(restore);
+    return { documentRef, video, restore };
+}
+
+test('the break reminder appears once the session passes the configured interval', (t) => {
+    const env = overlayEnvironment(t, { paused: false });
+    const { feature } = build({ settings: { dwBreakIntervalMin: 1 } });
+
+    // One minute configured, so sixty counted seconds past the session baseline
+    // must trigger it. _sessionStart of 0 means "not yet anchored" to this
+    // module, so the baseline here is a real second rather than zero.
+    feature._sessionStart = 1;
+    feature._pendingSeconds = 59;
+    feature._tick();
+
+    assert.equal(feature._overlay, null, 'nothing one tick short of the interval');
+
+    feature._tick();
+
+    assert.ok(feature._overlay, 'the reminder is the feature, not a nice-to-have');
+    assert.equal(feature._overlay.dataset.kind, 'break');
+    assert.equal(env.video.paused, true, 'a break reminder pauses playback');
+
+    feature._clearOverlay();
+});
+
+test('a break interval of zero never interrupts', (t) => {
+    overlayEnvironment(t, { paused: false });
+    const { feature } = build({ settings: { dwBreakIntervalMin: 0 } });
+
+    feature._sessionStart = 1;
+    feature._pendingSeconds = 100000;
+    feature._tick();
+
+    assert.equal(feature._overlay, null, 'off means off, however long the session ran');
+});
+
+test('the shorts ledger accrues separately from the all-video ledger', (t) => {
+    overlayEnvironment(t, { paused: false, pathname: '/shorts/abc123' });
+    const { feature } = build();
+
+    feature._pendingSeconds = 0;
+    feature._pendingShortsSeconds = 0;
+    feature._tick();
+
+    assert.equal(feature._pendingSeconds, 1, 'shorts time counts toward the overall day too');
+    assert.equal(feature._pendingShortsSeconds, 1, 'and toward the separate shorts budget');
+});
+
+test('a new local day starts the persisted counter from zero', (t) => {
+    overlayEnvironment(t);
+    const settings = { dwWatchTimeToday: { date: '2001-01-01', seconds: 9999 } };
+    const { feature } = build({ settings });
+
+    // A stored bucket from another day must not be carried into today, or the
+    // daily cap fires immediately every morning.
+    assert.equal(feature._persistedToday().seconds, 0);
+    assert.notEqual(feature._persistedToday().date, '2001-01-01');
+});
+
+test('destroy flushes counted seconds rather than dropping them', (t) => {
+    overlayEnvironment(t);
+    const settings = {};
+    const { feature } = build({ settings });
+
+    feature.init();
+    feature._pendingSeconds = 11;
+    feature.destroy();
+
+    assert.equal(settings.dwWatchTimeToday?.seconds, 11,
+        'closing the tab must not lose the time already counted');
 });
