@@ -47,6 +47,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and hides from the new signal are reported separately so you can tell which
   one fired. The filter is still off unless you turn it on.
 
+### Added
+
+- Astra can now check for updated page-matching rules on its own, once a day,
+  instead of only when you press Refresh. That matters because the refresh
+  existed to fix an install YouTube had broken, and it only ever helped people
+  who had already worked out that was the problem. It is off by default and
+  makes no request at all while it is off, it uses the same signature check and
+  rollback the button uses, and the popup says when it last looked and when it
+  last found something new. A check that fails is still recorded, so a bad
+  network does not mean a request on every page you open.
+
 ### Changed
 
 - A bug report now says which YouTube player the reporter is actually looking

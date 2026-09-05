@@ -71,6 +71,9 @@
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
+  "aiSummaryByoFallbackNotice": {
+    "message": "代わりに、設定済みの BYO キーのプロバイダーを使用します。"
+  },
   "aiSummaryCalling": {
     "message": "AIプロバイダーを呼び出しています…"
   },
@@ -137,20 +140,65 @@
   "aiSummaryTitle": {
     "message": "AI要約"
   },
-  "aiSummaryByoFallbackNotice": {
-    "message": "代わりに、設定済みの BYO キーのプロバイダーを使用します。"
-  },
   "aiSummaryTldr": {
     "message": "要点"
   },
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "altFrontendOpenAriaTpl": {
+    "message": "{host} で外部として開く"
+  },
   "altFrontendOpenBtn": {
     "message": "外部で開く"
   },
-  "altFrontendOpenAriaTpl": {
-    "message": "{host} で外部として開く"
+  "antiAdblockEvidenceTpl": {
+    "message": "セレクター: {selector} · 再生: {state}"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Astra の広告ブロックを 15 分間一時停止"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astra の広告ブロックは {time} まで一時停止します。"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "再生中"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "ブロック中"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "停止中"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "不明"
+  },
+  "antiAdblockReloadHint": {
+    "message": "この YouTube タブを再読み込みして、再生をやり直してください。"
+  },
+  "antiAdblockResumeAction": {
+    "message": "Astra の広告ブロックを再開"
+  },
+  "antiAdblockResumed": {
+    "message": "Astra の広告ブロックを再開しました。"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astra の広告ブロックは一時停止中です。"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube に広告ブロッカーの警告が表示されましたが、この動画は再生を続けています。"
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube に広告ブロッカーの警告が表示され、再生がブロックされているようです。"
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube に広告ブロッカーの警告が表示され、再生が停止しています。"
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube に広告ブロッカーの警告が表示されました。Astra は再生状態をまだ確認できません。"
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube 再生チェック"
   },
   "astraContextMenuAria": {
     "message": "Astra actions"
@@ -163,6 +211,66 @@
   },
   "audioOnlyUnavailable": {
     "message": "音声のみは利用できません"
+  },
+  "bisectAbort": {
+    "message": "中止して元に戻す"
+  },
+  "bisectAborted": {
+    "message": "絞り込みを中止しました。機能は元に戻っています。"
+  },
+  "bisectCopy": {
+    "message": "結果をコピー"
+  },
+  "bisectCopyDone": {
+    "message": "結果をコピーしました。どこにも送信していません。"
+  },
+  "bisectCopyFail": {
+    "message": "結果をコピーできませんでした。"
+  },
+  "bisectCulpritTpl": {
+    "message": "原因は {feature} です。"
+  },
+  "bisectExpired": {
+    "message": "未完了の絞り込みが期限切れになりました。機能は元に戻っています。"
+  },
+  "bisectFailed": {
+    "message": "絞り込みを続行できませんでした。設定を確認してください。"
+  },
+  "bisectIntro": {
+    "message": "機能を半分ずつオフにして戻すことで、291 個の機能を約 10 回の再読み込みで 1 つに絞り込めます。設定は終了時、中止時、そして放置した場合も自動的に元へ戻ります。"
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
+  },
+  "bisectNo": {
+    "message": "直った"
+  },
+  "bisectNoCulprit": {
+    "message": "単一の機能が原因ではありません。Astra Deck の外側か、複数の機能の組み合わせが原因です。"
+  },
+  "bisectNothingEnabled": {
+    "message": "オンになっている機能がないため、調べる対象がありません。"
+  },
+  "bisectRestoreFailed": {
+    "message": "設定を元に戻せませんでした。設定を開いて確認してください。"
+  },
+  "bisectStart": {
+    "message": "絞り込みを開始"
+  },
+  "bisectStartFailed": {
+    "message": "開始できません。このブラウザー プロファイルでは絞り込みセッションを保存できません。"
+  },
+  "bisectStarted": {
+    "message": "YouTube を再読み込みしてから、下で答えてください。"
+  },
+  "bisectStepTpl": {
+    "message": "ステップ {step} / 約 {total}。YouTube を再読み込みしてから答えてください。問題はまだ起きますか？"
+  },
+  "bisectTitle": {
+    "message": "問題を起こしている機能を見つける"
+  },
+  "bisectYes": {
+    "message": "まだ起きる"
   },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
@@ -288,6 +396,72 @@
   },
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
+  },
+  "commentSearchActiveHint": {
+    "message": "YouTube がコメント一覧を読み込んでいる間も検索は有効です。"
+  },
+  "commentSearchAria": {
+    "message": "コメントを検索"
+  },
+  "commentSearchClearAria": {
+    "message": "コメント検索を消去"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} 件の一致"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} 件の一致"
+  },
+  "commentSearchCountThread": {
+    "message": "{count} 件のスレッド"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} 件のスレッド"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "短いフレーズ、投稿者名を試すか、フィルターを解除してすべてのスレッドを戻してください。"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "一致するコメントなし"
+  },
+  "commentSearchEscapeHint": {
+    "message": "Esc キーでいつでも消去できます。新しいコメントも自動で件数に加わります。"
+  },
+  "commentSearchEyebrow": {
+    "message": "コメント内を検索"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "コメントナビゲーターの「次へ」または「前へ」で一致項目間を移動できます。"
+  },
+  "commentSearchNoMatches": {
+    "message": "一致なし"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "「{query}」に一致するコメントスレッドはありません。"
+  },
+  "commentSearchPlaceholder": {
+    "message": "投稿者、フレーズ、トピックを検索…"
+  },
+  "commentSearchReadyThread": {
+    "message": "検索できるコメントスレッドは {count} 件です。投稿者、フレーズ、トピックを検索できます。"
+  },
+  "commentSearchReadyThreads": {
+    "message": "検索できるコメントスレッドは {count} 件です。投稿者、フレーズ、トピックを検索できます。"
+  },
+  "commentSearchShorterHint": {
+    "message": "短いフレーズ、投稿者名を試すか、フィルターを解除してください。"
+  },
+  "commentSearchShowingMatches": {
+    "message": "「{query}」に一致するコメントスレッドを {total} 件中 {visible} 件表示しています。"
+  },
+  "commentSearchSyncHint": {
+    "message": "新しいコメントが届くと、検索バーも自動で更新されます。"
+  },
+  "commentSearchWaiting": {
+    "message": "コメントの読み込みを待っています…"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "「{query}」のコメントを読み込んでいます…"
   },
   "commentTranslateAction": {
     "message": "翻訳"
@@ -499,6 +673,9 @@
   "dlFormatVideoWeb": {
     "message": "Web 向けに最適化"
   },
+  "dlHealthApiTooNew": {
+    "message": "この拡張機能より新しい"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -637,6 +814,12 @@
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
   },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader は動作していますが、この Astra Deck は受け付けられる API より古い API を使っています{versions}。拡張機能を更新してから、もう一度「確認」を選んでください。"
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": "（少なくとも API {minimum} が必要です）"
+  },
   "dlInstallCheckAgain": {
     "message": "Check again"
   },
@@ -681,6 +864,9 @@
   },
   "dlInstallLocalDownloads": {
     "message": "Local downloads"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
   },
   "dlInstallNoResponse": {
     "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
@@ -1238,17 +1424,20 @@
   "featureHealthNote": {
     "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
   },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "{selector} で YouTube の警告を検出。再生状態: {state}"
+  },
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "YouTube {version} が {surface} を変更しました"
   },
-  "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
-  },
   "featureHealthReasonSelectorFallbackTpl": {
     "message": "ページ要素「{surface}」は予備ルールにしか一致しませんでした"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
   },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
@@ -1276,6 +1465,27 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureReportChangedTpl": {
+    "message": "既定値から変更された設定 ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "機能リストをコピー"
+  },
+  "featureReportCopyDone": {
+    "message": "機能リストをコピーしました。どこにも送信していません。"
+  },
+  "featureReportCopyFail": {
+    "message": "機能リストをコピーできませんでした。"
+  },
+  "featureReportCopyTitle": {
+    "message": "設定の名前だけをコピーします。値は決してコピーせず、どこにも送信しません。"
+  },
+  "featureReportNoneChanged": {
+    "message": "なし"
+  },
+  "featureReportPrivacyNote": {
+    "message": "名前のみで、値は含みません。どこにも送信されていません。クリップボードにあるので、貼り付けるかどうかはあなたが決めます。"
   },
   "featureScheduleDaysTpl": {
     "message": "Active {window} on {days}"
@@ -1661,6 +1871,12 @@
   "feature_chatHide_menu_name": {
     "message": "チャットメニュー (...)"
   },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "「低速モードがオンです」の通知やメンバー限定の同様の通知を非表示にします"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "モード通知"
+  },
   "feature_chatHide_polls_desc": {
     "message": "ライブチャットの投票を非表示"
   },
@@ -1811,72 +2027,6 @@
   "feature_commentSearch_name": {
     "message": "コメント検索"
   },
-  "commentSearchCountThread": {
-    "message": "{count} 件のスレッド"
-  },
-  "commentSearchCountThreads": {
-    "message": "{count} 件のスレッド"
-  },
-  "commentSearchCountMatch": {
-    "message": "{count} 件の一致"
-  },
-  "commentSearchCountMatches": {
-    "message": "{count} 件の一致"
-  },
-  "commentSearchNoMatches": {
-    "message": "一致なし"
-  },
-  "commentSearchWaiting": {
-    "message": "コメントの読み込みを待っています…"
-  },
-  "commentSearchSyncHint": {
-    "message": "新しいコメントが届くと、検索バーも自動で更新されます。"
-  },
-  "commentSearchReadyThread": {
-    "message": "検索できるコメントスレッドは {count} 件です。投稿者、フレーズ、トピックを検索できます。"
-  },
-  "commentSearchReadyThreads": {
-    "message": "検索できるコメントスレッドは {count} 件です。投稿者、フレーズ、トピックを検索できます。"
-  },
-  "commentSearchEscapeHint": {
-    "message": "Esc キーでいつでも消去できます。新しいコメントも自動で件数に加わります。"
-  },
-  "commentSearchShowingMatches": {
-    "message": "「{query}」に一致するコメントスレッドを {total} 件中 {visible} 件表示しています。"
-  },
-  "commentSearchNavigatorHint": {
-    "message": "コメントナビゲーターの「次へ」または「前へ」で一致項目間を移動できます。"
-  },
-  "commentSearchWaitingForQuery": {
-    "message": "「{query}」のコメントを読み込んでいます…"
-  },
-  "commentSearchActiveHint": {
-    "message": "YouTube がコメント一覧を読み込んでいる間も検索は有効です。"
-  },
-  "commentSearchNoThreadsForQuery": {
-    "message": "「{query}」に一致するコメントスレッドはありません。"
-  },
-  "commentSearchShorterHint": {
-    "message": "短いフレーズ、投稿者名を試すか、フィルターを解除してください。"
-  },
-  "commentSearchEyebrow": {
-    "message": "コメント内を検索"
-  },
-  "commentSearchPlaceholder": {
-    "message": "投稿者、フレーズ、トピックを検索…"
-  },
-  "commentSearchAria": {
-    "message": "コメントを検索"
-  },
-  "commentSearchClearAria": {
-    "message": "コメント検索を消去"
-  },
-  "commentSearchEmptyTitle": {
-    "message": "一致するコメントなし"
-  },
-  "commentSearchEmptyCopy": {
-    "message": "短いフレーズ、投稿者名を試すか、フィルターを解除してすべてのスレッドを戻してください。"
-  },
   "feature_commentTranslateTarget_desc": {
     "message": "コメントの翻訳先言語。自動はブラウザの言語に従います。"
   },
@@ -1924,6 +2074,12 @@
   },
   "feature_creatorCommentHighlight_name": {
     "message": "クリエイターコメントのハイライト"
+  },
+  "feature_customCssCode_desc": {
+    "message": "カスタム CSS の有効時に適用する CSS"
+  },
+  "feature_customCssCode_name": {
+    "message": "カスタム CSS ルール"
   },
   "feature_customCssInjection_desc": {
     "message": "YouTube ページに独自のカスタム CSS ルールを注入"
@@ -3461,6 +3617,12 @@
   "feature_searchWhileWatching_name": {
     "message": "視聴しながら検索"
   },
+  "feature_selectionColor_desc": {
+    "message": "カスタムテキスト選択の有効時に使う強調色を選択"
+  },
+  "feature_selectionColor_name": {
+    "message": "選択範囲の色"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "ライブのセレクタードリフト信号を確認し、フィクスチャ更新用の JSON ヘルスレポートをエクスポート。"
   },
@@ -3638,6 +3800,48 @@
   "feature_styledFilterChips_name": {
     "message": "スタイル付きフィルターチップ"
   },
+  "feature_subStyleBgColor_desc": {
+    "message": "字幕テキストの背景色を選択"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "字幕背景の色"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "字幕テキストの背景の不透明度を設定"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "字幕背景の不透明度"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "字幕をプレーヤーの下端から上へ移動"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "字幕の下端オフセット"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "字幕の文字色を選択"
+  },
+  "feature_subStyleColor_name": {
+    "message": "字幕テキストの色"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "字幕に使う書体を選択"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "字幕のフォント"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "字幕テキストを 50% から 300% まで拡大縮小"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "字幕のフォントサイズ"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "明るい映像でも字幕を読みやすくする暗い影を追加"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "字幕テキストの影"
+  },
   "feature_subscriptionGroups_desc": {
     "message": "PocketTube クラスのローカルグループで登録チャンネルフィードを整理。名前付きグループを作成し、チャンネルをドラッグ、日付/長さ/未視聴/前回訪問からの新着でソート。グループデータは subscriptionGroupData にローカル保存。エクスポートでバックアップ。"
   },
@@ -3710,6 +3914,12 @@
   "feature_timestampBookmarks_name": {
     "message": "タイムスタンプブックマーク"
   },
+  "feature_titleCaseMode_desc": {
+    "message": "タイトル変換の有効時に使う大文字・小文字を選択"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "タイトルの大文字・小文字スタイル"
+  },
   "feature_titleCaseTransform_desc": {
     "message": "YouTube の大文字煽りタイトルを好みの大小文字スタイルでオーバーライド"
   },
@@ -3728,17 +3938,17 @@
   "feature_tokenThemeBridge_name": {
     "message": "ネイティブトークンテーマブリッジ"
   },
-  "feature_transcriptQaLane_desc": {
-    "message": "質問をデバイス内で処理するか、既存の権限、プライバシー、リクエスト上限を適用して設定済みプロバイダーを使用します。"
-  },
-  "feature_transcriptQaLane_name": {
-    "message": "文字起こし Q&A プロバイダー"
-  },
   "feature_transcriptAiHandoff_desc": {
     "message": "文字起こしをコピーして、選択した AI ツールを要約プロンプト付きで開くプレーヤーボタンを追加"
   },
   "feature_transcriptAiHandoff_name": {
     "message": "文字起こし → AI ワンクリック連携"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "質問をデバイス内で処理するか、既存の権限、プライバシー、リクエスト上限を適用して設定済みプロバイダーを使用します。"
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "文字起こし Q&A プロバイダー"
   },
   "feature_transcriptViewer_desc": {
     "message": "Read, jump, and export captions"
@@ -4085,9 +4295,6 @@
   "filterListStatusReady": {
     "message": "購読中のフィルターリストはありません。"
   },
-  "filterListStatusStateReadFail": {
-    "message": "フィルターリストの状態を読み取れませんでした。拡張機能を再読み込みしてから、ポップアップを開き直してください。"
-  },
   "filterListStatusRefreshFail": {
     "message": "リストを更新できませんでした。アドレスを確認してからもう一度お試しください。"
   },
@@ -4102,6 +4309,9 @@
   },
   "filterListStatusStalePausedTpl": {
     "message": "{host} のキャッシュ済みルールは一時停止中です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListStatusStateReadFail": {
+    "message": "フィルターリストの状態を読み取れませんでした。拡張機能を再読み込みしてから、ポップアップを開き直してください。"
   },
   "filterListStopFailed": {
     "message": "フィルターリストの購読を停止できませんでした。"
@@ -4940,6 +5150,9 @@
   "schemaOverviewEyebrow": {
     "message": "設定の概要"
   },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "「{term}」に一致する設定はありません。機能名、カテゴリ、watch や feed のようなページ、boolean のようなコントロールの種類を試してください。"
+  },
   "schemaOverviewToolsAria": {
     "message": "設定変更ツール"
   },
@@ -4948,6 +5161,18 @@
   },
   "schemaResetTitleTpl": {
     "message": "{key} を既定値にリセット（{value}）"
+  },
+  "schemaSurfaceHere": {
+    "message": "ここ"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "この設定はポップアップで変更できます。"
+  },
+  "schemaSurfacePanel": {
+    "message": "ページ内パネル"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "この設定は YouTube 上の Astra Deck パネルで編集します。押すと開きます。"
   },
   "screenshotCaptureFailed": {
     "message": "スクリーンショットの取得に失敗しました"
@@ -4990,6 +5215,15 @@
   },
   "searchWatchTitle": {
     "message": "再生を止めずに検索"
+  },
+  "selectorAutoRefreshCheckedTpl": {
+    "message": "auto-checked {age}"
+  },
+  "selectorAutoRefreshNeverChecked": {
+    "message": "auto-refresh on, no check yet"
+  },
+  "selectorAutoRefreshUpdatedTpl": {
+    "message": "last update {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "現在のビルド"
@@ -5054,6 +5288,12 @@
   "selectorHealthYouTubeBuildTpl": {
     "message": "YouTube バージョン {version}"
   },
+  "serviceOutageDismiss": {
+    "message": "閉じる"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} が応答していません。原因はそのサービス側で、Astra Deck ではありません。"
+  },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"
   },
@@ -5099,6 +5339,12 @@
   "settingsDlDownloadTitle": {
     "message": "Astra Downloader のセットアップファイルをダウンロードし、ダウンロードで表示"
   },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
+  },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
   },
@@ -5143,6 +5389,12 @@
   },
   "settingsFeatureClearAriaTpl": {
     "message": "{featureName} を消去"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "一時停止中: YouTube の変更により、このバージョンの Astra Deck ではこの機能が動作しません。設定はそのままで、修正が届くと再び動作します。"
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "課題 #{issue}"
   },
   "settingsFooterSaved": {
     "message": "保存済み"
@@ -5668,6 +5920,12 @@
   "spRowSaveFailedTpl": {
     "message": "{name}。保存に失敗しました。ダッシュボードを更新してください。"
   },
+  "spRowStateRetry": {
+    "message": "再試行"
+  },
+  "spRowStateSaving": {
+    "message": "保存中"
+  },
   "spScopeTpl": {
     "message": "適用範囲: {scope}"
   },
@@ -5721,12 +5979,6 @@
   },
   "spSelectorTotalTpl": {
     "message": "サーフェス {count}"
-  },
-  "spRowStateRetry": {
-    "message": "再試行"
-  },
-  "spRowStateSaving": {
-    "message": "保存中"
   },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
@@ -5980,14 +6232,6 @@
   "statusBackupImportedUndo": {
     "message": "バックアップをインポートしました。「インポートを取り消す」をクリックすると以前の状態に戻せます。取り消しポイントは 7 日間有効で、ブラウザーを閉じても失われません。"
   },
-  "statusImportBackupWrittenTpl": {
-    "message": "以前のデータは先に {file} に保存されました。",
-    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
-  },
-  "statusImportBackupFileFailed": {
-    "message": "Astra Deck は以前のデータのバックアップファイルを先に保存できませんでした。「インポートを取り消す」が唯一の復元手段です。",
-    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
-  },
   "statusClipboardUnavailable": {
     "message": "ここではコピーを利用できません。テキストを選択してご自身でコピーしてください。"
   },
@@ -6017,6 +6261,14 @@
   },
   "statusExportFail": {
     "message": "エクスポート失敗"
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck は以前のデータのバックアップファイルを先に保存できませんでした。「インポートを取り消す」が唯一の復元手段です。",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "以前のデータは先に {file} に保存されました。",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
   },
   "statusImportFail": {
     "message": "インポート失敗"
@@ -6363,6 +6615,21 @@
   "subscriptionGroupChipTpl": {
     "message": "{prefix}{name}（{count}）{tags}"
   },
+  "subscriptionGroupDelete": {
+    "message": "削除"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "グループ {group} を削除"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "「{group}」とその {count} チャンネルを削除しますか？登録チャンネルには影響しません。"
+  },
+  "subscriptionGroupDeleted": {
+    "message": "グループを削除しました"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "「{group}」とその {count} 件のチャンネルを削除しました。登録チャンネルには影響しません。"
+  },
   "subscriptionGroupDialogTitle": {
     "message": "このグループに名前を付ける"
   },
@@ -6380,6 +6647,24 @@
   },
   "subscriptionGroupPlayingTpl": {
     "message": "{group} の {count} 本の動画を再生中{truncated}"
+  },
+  "subscriptionGroupRename": {
+    "message": "名前を変更"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "グループ {group} の名前を変更"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "このグループの新しい名前"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "グループの名前を変更しました"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "そのグループ名は再び使われているため、復元しませんでした。"
+  },
+  "subscriptionGroupRestored": {
+    "message": "グループを復元しました"
   },
   "subscriptionGroupsEmptyCopy": {
     "message": "「+ グループ」を選択して最初のグループを作成します。"
@@ -6512,6 +6797,9 @@
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
+  },
+  "subscriptionMembersCapped": {
+    "message": "グループは 1000 チャンネルで一杯です。まず 1 つ削除してください。"
   },
   "subscriptionMembersCloseAria": {
     "message": "Close the channel membership editor"
@@ -6741,6 +7029,12 @@
   "subtitleDownloadFailed": {
     "message": "字幕のダウンロードに失敗しました"
   },
+  "switchLabelOff": {
+    "message": "オフ"
+  },
+  "switchLabelOn": {
+    "message": "オン"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "{time} にブックマークしました"
   },
@@ -6867,6 +7161,9 @@
   "toastDlStopped": {
     "message": "Astra Downloader が停止しました。再起動中…"
   },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck はこのブラウザー プロファイルに保存できません。最近の変更が失われる可能性があります。"
+  },
   "toggleRiskTooltip_api": {
     "message": "Talks to an external API server"
   },
@@ -6878,12 +7175,6 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity. GitHub-full only."
-  },
-  "switchLabelOff": {
-    "message": "オフ"
-  },
-  "switchLabelOn": {
-    "message": "オン"
   },
   "toggleStateOff": {
     "message": "無効"
@@ -7209,6 +7500,12 @@
   "uiFontSystem": {
     "message": "システム UI"
   },
+  "ui_commentLikeBadge": {
+    "message": "高評価"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}。高評価 {count} 件"
+  },
   "ui_rydCachedTitleHoursTpl": {
     "message": "Return YouTube Dislike の低評価数（{hours}時間前のキャッシュ）。"
   },
@@ -7254,9 +7551,6 @@
   "undo": {
     "message": "取り消す"
   },
-  "unknown": {
-    "message": "不明"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
@@ -7268,6 +7562,9 @@
   },
   "undoResetBtn": {
     "message": "リセットを元に戻す"
+  },
+  "unknown": {
+    "message": "不明"
   },
   "updateCompanionAria": {
     "message": "Update Astra Downloader companion"
@@ -7692,11 +7989,11 @@
   "videoHiderReasonBlockedChannel": {
     "message": "ブロックしたチャンネルのルール"
   },
-  "videoHiderReasonChannelNotAllowed": {
-    "message": "チャンネル許可リスト"
-  },
   "videoHiderReasonBlockedChannelNamedTpl": {
     "message": "ブロックしたチャンネルのルール ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "チャンネル許可リスト"
   },
   "videoHiderReasonChannelNotAllowedNamedTpl": {
     "message": "許可したチャンネル一覧 ({channel})"
@@ -7734,11 +8031,11 @@
   "videoHiderReasonPredicate": {
     "message": "高度なローカルルール"
   },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonSyntheticDisclosed": {
     "message": "YouTube による改変・合成コンテンツの開示"
+  },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
   },
   "videoHiderReasonUpcoming": {
     "message": "近日公開フィルター"
@@ -8443,12 +8740,6 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
-  "zapRuleToggleAriaTpl": {
-    "message": "{selector} のルールを適用"
-  },
-  "zapRuleRemoveAriaTpl": {
-    "message": "{selector} のルールを削除"
-  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
@@ -8458,292 +8749,10 @@
   "zapRuleRemove": {
     "message": "Remove"
   },
-  "ui_commentLikeBadge": {
-    "message": "高評価"
-  },
-  "ui_commentLikeBadgeCountAriaTpl": {
-    "message": "{label}。高評価 {count} 件"
-  },
-  "feature_chatHide_modeNotices_name": {
-    "message": "モード通知"
-  },
-  "feature_chatHide_modeNotices_desc": {
-    "message": "「低速モードがオンです」の通知やメンバー限定の同様の通知を非表示にします"
-  },
-  "toastStorageWriteFailed": {
-    "message": "Astra Deck はこのブラウザー プロファイルに保存できません。最近の変更が失われる可能性があります。"
-  },
-  "subscriptionMembersCapped": {
-    "message": "グループは 1000 チャンネルで一杯です。まず 1 つ削除してください。"
-  },
-  "subscriptionGroupRename": {
-    "message": "名前を変更"
-  },
-  "subscriptionGroupRenameAriaTpl": {
-    "message": "グループ {group} の名前を変更"
-  },
-  "subscriptionGroupRenamePrompt": {
-    "message": "このグループの新しい名前"
-  },
-  "subscriptionGroupRenamed": {
-    "message": "グループの名前を変更しました"
-  },
-  "subscriptionGroupDelete": {
-    "message": "削除"
-  },
-  "subscriptionGroupDeleteAriaTpl": {
-    "message": "グループ {group} を削除"
-  },
-  "subscriptionGroupDeleteConfirmTpl": {
-    "message": "「{group}」とその {count} チャンネルを削除しますか？登録チャンネルには影響しません。"
-  },
-  "subscriptionGroupDeleted": {
-    "message": "グループを削除しました"
-  },
-  "settingsFeatureKnownBroken": {
-    "message": "一時停止中: YouTube の変更により、このバージョンの Astra Deck ではこの機能が動作しません。設定はそのままで、修正が届くと再び動作します。"
-  },
-  "settingsFeatureKnownBrokenIssueTpl": {
-    "message": "課題 #{issue}"
-  },
-  "featureReportChangedTpl": {
-    "message": "既定値から変更された設定 ({count}):"
-  },
-  "featureReportCopy": {
-    "message": "機能リストをコピー"
-  },
-  "featureReportCopyDone": {
-    "message": "機能リストをコピーしました。どこにも送信していません。"
-  },
-  "featureReportCopyFail": {
-    "message": "機能リストをコピーできませんでした。"
-  },
-  "featureReportCopyTitle": {
-    "message": "設定の名前だけをコピーします。値は決してコピーせず、どこにも送信しません。"
-  },
-  "featureReportNoneChanged": {
-    "message": "なし"
-  },
-  "featureReportPrivacyNote": {
-    "message": "名前のみで、値は含みません。どこにも送信されていません。クリップボードにあるので、貼り付けるかどうかはあなたが決めます。"
-  },
-  "bisectAbort": {
-    "message": "中止して元に戻す"
-  },
-  "bisectAborted": {
-    "message": "絞り込みを中止しました。機能は元に戻っています。"
-  },
-  "bisectCopy": {
-    "message": "結果をコピー"
-  },
-  "bisectCopyDone": {
-    "message": "結果をコピーしました。どこにも送信していません。"
-  },
-  "bisectCopyFail": {
-    "message": "結果をコピーできませんでした。"
-  },
-  "bisectCulpritTpl": {
-    "message": "原因は {feature} です。"
-  },
-  "bisectExpired": {
-    "message": "未完了の絞り込みが期限切れになりました。機能は元に戻っています。"
-  },
-  "bisectIntro": {
-    "message": "機能を半分ずつオフにして戻すことで、291 個の機能を約 10 回の再読み込みで 1 つに絞り込めます。設定は終了時、中止時、そして放置した場合も自動的に元へ戻ります。"
-  },
-  "bisectIntroCountUnknown": {
-    "message": "your features"
-  },
-  "bisectNo": {
-    "message": "直った"
-  },
-  "bisectNoCulprit": {
-    "message": "単一の機能が原因ではありません。Astra Deck の外側か、複数の機能の組み合わせが原因です。"
-  },
-  "bisectNothingEnabled": {
-    "message": "オンになっている機能がないため、調べる対象がありません。"
-  },
-  "bisectStart": {
-    "message": "絞り込みを開始"
-  },
-  "bisectStarted": {
-    "message": "YouTube を再読み込みしてから、下で答えてください。"
-  },
-  "bisectStepTpl": {
-    "message": "ステップ {step} / 約 {total}。YouTube を再読み込みしてから答えてください。問題はまだ起きますか？"
-  },
-  "bisectTitle": {
-    "message": "問題を起こしている機能を見つける"
-  },
-  "bisectYes": {
-    "message": "まだ起きる"
-  },
-  "serviceOutageDismiss": {
-    "message": "閉じる"
-  },
-  "serviceOutageTpl": {
-    "message": "{service} が応答していません。原因はそのサービス側で、Astra Deck ではありません。"
-  },
-  "bisectFailed": {
-    "message": "絞り込みを続行できませんでした。設定を確認してください。"
-  },
-  "bisectRestoreFailed": {
-    "message": "設定を元に戻せませんでした。設定を開いて確認してください。"
-  },
-  "bisectStartFailed": {
-    "message": "開始できません。このブラウザー プロファイルでは絞り込みセッションを保存できません。"
-  },
-  "schemaOverviewNoMatchesTpl": {
-    "message": "「{term}」に一致する設定はありません。機能名、カテゴリ、watch や feed のようなページ、boolean のようなコントロールの種類を試してください。"
-  },
-  "schemaSurfaceHere": {
-    "message": "ここ"
-  },
-  "schemaSurfaceHereTitle": {
-    "message": "この設定はポップアップで変更できます。"
-  },
-  "schemaSurfacePanel": {
-    "message": "ページ内パネル"
-  },
-  "schemaSurfacePanelTitle": {
-    "message": "この設定は YouTube 上の Astra Deck パネルで編集します。押すと開きます。"
-  },
-  "dlHealthApiTooNew": {
-    "message": "この拡張機能より新しい"
-  },
-  "dlInstallApiMismatchTpl": {
-    "message": "Astra Downloader は動作していますが、この Astra Deck は受け付けられる API より古い API を使っています{versions}。拡張機能を更新してから、もう一度「確認」を選んでください。"
-  },
-  "dlInstallApiVersionsTpl": {
-    "message": "（少なくとも API {minimum} が必要です）"
-  },
-  "subscriptionGroupDeletedTpl": {
-    "message": "「{group}」とその {count} 件のチャンネルを削除しました。登録チャンネルには影響しません。"
-  },
-  "subscriptionGroupRestoreConflict": {
-    "message": "そのグループ名は再び使われているため、復元しませんでした。"
-  },
-  "subscriptionGroupRestored": {
-    "message": "グループを復元しました"
-  },
-  "antiAdblockTitle": {
-    "message": "YouTube 再生チェック"
-  },
-  "antiAdblockPlaybackAdvancing": {
-    "message": "再生中"
-  },
-  "antiAdblockPlaybackStalled": {
-    "message": "停止中"
-  },
-  "antiAdblockPlaybackBlocked": {
-    "message": "ブロック中"
-  },
-  "antiAdblockPlaybackUnknown": {
-    "message": "不明"
-  },
-  "antiAdblockStateAdvancing": {
-    "message": "YouTube に広告ブロッカーの警告が表示されましたが、この動画は再生を続けています。"
-  },
-  "antiAdblockStateStalled": {
-    "message": "YouTube に広告ブロッカーの警告が表示され、再生が停止しています。"
-  },
-  "antiAdblockStateBlocked": {
-    "message": "YouTube に広告ブロッカーの警告が表示され、再生がブロックされているようです。"
-  },
-  "antiAdblockStateUnknown": {
-    "message": "YouTube に広告ブロッカーの警告が表示されました。Astra は再生状態をまだ確認できません。"
-  },
-  "antiAdblockEvidenceTpl": {
-    "message": "セレクター: {selector} · 再生: {state}"
-  },
-  "antiAdblockRulesPaused": {
-    "message": "Astra の広告ブロックは一時停止中です。"
-  },
-  "antiAdblockPausedUntilTpl": {
-    "message": "Astra の広告ブロックは {time} まで一時停止します。"
-  },
-  "antiAdblockReloadHint": {
-    "message": "この YouTube タブを再読み込みして、再生をやり直してください。"
-  },
-  "antiAdblockResumeAction": {
-    "message": "Astra の広告ブロックを再開"
-  },
-  "antiAdblockPauseAction": {
-    "message": "Astra の広告ブロックを 15 分間一時停止"
-  },
-  "antiAdblockResumed": {
-    "message": "Astra の広告ブロックを再開しました。"
-  },
-  "featureHealthReasonAntiAdblockTpl": {
-    "message": "{selector} で YouTube の警告を検出。再生状態: {state}"
-  },
-  "feature_customCssCode_name": {
-    "message": "カスタム CSS ルール"
-  },
-  "feature_customCssCode_desc": {
-    "message": "カスタム CSS の有効時に適用する CSS"
-  },
-  "feature_subStyleFontSize_name": {
-    "message": "字幕のフォントサイズ"
-  },
-  "feature_subStyleFontSize_desc": {
-    "message": "字幕テキストを 50% から 300% まで拡大縮小"
-  },
-  "feature_subStyleFontFamily_name": {
-    "message": "字幕のフォント"
-  },
-  "feature_subStyleFontFamily_desc": {
-    "message": "字幕に使う書体を選択"
-  },
-  "feature_subStyleColor_name": {
-    "message": "字幕テキストの色"
-  },
-  "feature_subStyleColor_desc": {
-    "message": "字幕の文字色を選択"
-  },
-  "feature_subStyleBgOpacity_name": {
-    "message": "字幕背景の不透明度"
-  },
-  "feature_subStyleBgOpacity_desc": {
-    "message": "字幕テキストの背景の不透明度を設定"
-  },
-  "feature_subStyleBgColor_name": {
-    "message": "字幕背景の色"
-  },
-  "feature_subStyleBgColor_desc": {
-    "message": "字幕テキストの背景色を選択"
-  },
-  "feature_subStyleBottomOffset_name": {
-    "message": "字幕の下端オフセット"
-  },
-  "feature_subStyleBottomOffset_desc": {
-    "message": "字幕をプレーヤーの下端から上へ移動"
-  },
-  "feature_subStyleTextShadow_name": {
-    "message": "字幕テキストの影"
-  },
-  "feature_subStyleTextShadow_desc": {
-    "message": "明るい映像でも字幕を読みやすくする暗い影を追加"
-  },
-  "feature_titleCaseMode_name": {
-    "message": "タイトルの大文字・小文字スタイル"
-  },
-  "feature_titleCaseMode_desc": {
-    "message": "タイトル変換の有効時に使う大文字・小文字を選択"
-  },
-  "feature_selectionColor_name": {
-    "message": "選択範囲の色"
-  },
-  "feature_selectionColor_desc": {
-    "message": "カスタムテキスト選択の有効時に使う強調色を選択"
-  },
-  "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
-  },
-  "settingsDlGetSetup": {
-    "message": "Get setup file"
-  },
-  "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+  "zapRuleRemoveAriaTpl": {
+    "message": "{selector} のルールを削除"
+  },
+  "zapRuleToggleAriaTpl": {
+    "message": "{selector} のルールを適用"
   }
 }

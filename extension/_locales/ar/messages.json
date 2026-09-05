@@ -71,6 +71,9 @@
   "aiSummaryButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (إدارة بيانات الاعتماد من نافذة شريط أدوات Astra Deck)"
   },
+  "aiSummaryByoFallbackNotice": {
+    "message": "بدلاً من ذلك يتم استخدام مزوّدك المُعدّ بمفتاحك الخاص."
+  },
   "aiSummaryCalling": {
     "message": "جارٍ الاتصال بموفر الذكاء الاصطناعي…"
   },
@@ -137,20 +140,65 @@
   "aiSummaryTitle": {
     "message": "ملخص بالذكاء الاصطناعي"
   },
-  "aiSummaryByoFallbackNotice": {
-    "message": "بدلاً من ذلك يتم استخدام مزوّدك المُعدّ بمفتاحك الخاص."
-  },
   "aiSummaryTldr": {
     "message": "الخلاصة"
   },
   "aiSummaryUserscriptButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (انقر بزر الماوس الأيمن لإدارة بيانات اعتماد الموفر)"
   },
+  "altFrontendOpenAriaTpl": {
+    "message": "فتح خارجيًا على {host}"
+  },
   "altFrontendOpenBtn": {
     "message": "فتح خارجيًا"
   },
-  "altFrontendOpenAriaTpl": {
-    "message": "فتح خارجيًا على {host}"
+  "antiAdblockEvidenceTpl": {
+    "message": "المحدد: {selector} · التشغيل: {state}"
+  },
+  "antiAdblockPauseAction": {
+    "message": "إيقاف حظر الإعلانات في Astra لمدة 15 دقيقة"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "تم إيقاف حظر الإعلانات في Astra حتى {time}."
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "يتقدم"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "محظور"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "متوقف"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "غير معروف"
+  },
+  "antiAdblockReloadHint": {
+    "message": "أعد تحميل علامة تبويب YouTube هذه لتجربة التشغيل مجددًا."
+  },
+  "antiAdblockResumeAction": {
+    "message": "استئناف حظر الإعلانات في Astra"
+  },
+  "antiAdblockResumed": {
+    "message": "تم استئناف حظر الإعلانات في Astra."
+  },
+  "antiAdblockRulesPaused": {
+    "message": "تم إيقاف حظر الإعلانات في Astra مؤقتًا."
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، لكن هذا الفيديو لا يزال قيد التشغيل."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، ويبدو أن التشغيل محظور."
+  },
+  "antiAdblockStateStalled": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، وتوقف التشغيل."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات. لا يستطيع Astra تأكيد حالة التشغيل بعد."
+  },
+  "antiAdblockTitle": {
+    "message": "فحص تشغيل YouTube"
   },
   "astraContextMenuAria": {
     "message": "Astra actions"
@@ -163,6 +211,66 @@
   },
   "audioOnlyUnavailable": {
     "message": "وضع الصوت فقط غير متاح"
+  },
+  "bisectAbort": {
+    "message": "إيقاف واستعادة"
+  },
+  "bisectAborted": {
+    "message": "تم إيقاف البحث الثنائي. عادت ميزاتك للعمل."
+  },
+  "bisectCopy": {
+    "message": "نسخ النتيجة"
+  },
+  "bisectCopyDone": {
+    "message": "تم نسخ النتيجة. لم يُرسل أي شيء إلى أي جهة."
+  },
+  "bisectCopyFail": {
+    "message": "تعذّر نسخ النتيجة."
+  },
+  "bisectCulpritTpl": {
+    "message": "إنها {feature}."
+  },
+  "bisectExpired": {
+    "message": "انتهت صلاحية بحث ثنائي غير مكتمل. عادت ميزاتك للعمل."
+  },
+  "bisectFailed": {
+    "message": "تعذّر متابعة البحث الثنائي. تحقّق من الإعدادات."
+  },
+  "bisectIntro": {
+    "message": "يُطفئ ميزاتك ويعيد تشغيلها على شكل أنصاف حتى تتمكن من تضييق 291 ميزة إلى ميزة واحدة خلال نحو عشر عمليات إعادة تحميل. تُستعاد إعداداتك عند الانتهاء، وعند إيقاف العملية، وتلقائيًا إذا ابتعدت."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
+  },
+  "bisectNo": {
+    "message": "اختفت"
+  },
+  "bisectNoCulprit": {
+    "message": "لا توجد ميزة واحدة مسؤولة. السبب شيء خارج Astra Deck، أو مزيج من الميزات."
+  },
+  "bisectNothingEnabled": {
+    "message": "لا توجد ميزات مفعّلة، لذا لا يوجد ما يمكن البحث فيه."
+  },
+  "bisectRestoreFailed": {
+    "message": "تعذّرت استعادة إعداداتك. افتح الإعدادات وتحقّق منها."
+  },
+  "bisectStart": {
+    "message": "بدء البحث الثنائي"
+  },
+  "bisectStartFailed": {
+    "message": "تعذّر البدء: لن يحفظ ملف المتصفح هذا جلسة البحث الثنائي."
+  },
+  "bisectStarted": {
+    "message": "أعد تحميل YouTube ثم أجب أدناه."
+  },
+  "bisectStepTpl": {
+    "message": "الخطوة {step} من نحو {total}. أعد تحميل YouTube ثم أجب: هل ما زالت المشكلة تحدث؟"
+  },
+  "bisectTitle": {
+    "message": "ابحث عن الميزة التي تسببت في المشكلة"
+  },
+  "bisectYes": {
+    "message": "ما زالت تحدث"
   },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
@@ -288,6 +396,72 @@
   },
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
+  },
+  "commentSearchActiveHint": {
+    "message": "يبقى البحث نشطًا أثناء تحميل YouTube لقائمة التعليقات."
+  },
+  "commentSearchAria": {
+    "message": "البحث في التعليقات"
+  },
+  "commentSearchClearAria": {
+    "message": "مسح البحث في التعليقات"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} تطابق"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} تطابقات"
+  },
+  "commentSearchCountThread": {
+    "message": "{count} سلسلة تعليقات"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} من سلاسل التعليقات"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "جرّب عبارة أقصر أو اسم منشئ محتوى أو امسح عامل التصفية لإظهار كل السلاسل مجددًا."
+  },
+  "commentSearchEmptyTitle": {
+    "message": "لا توجد تعليقات مطابقة"
+  },
+  "commentSearchEscapeHint": {
+    "message": "اضغط على Esc للمسح في أي وقت. تُحتسب التعليقات الجديدة تلقائيًا."
+  },
+  "commentSearchEyebrow": {
+    "message": "البحث في التعليقات"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "استخدم التالي أو السابق في متصفح التعليقات للتنقل بين التطابقات."
+  },
+  "commentSearchNoMatches": {
+    "message": "لا توجد تطابقات"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "لا توجد سلاسل تعليقات تطابق «{query}»."
+  },
+  "commentSearchPlaceholder": {
+    "message": "ابحث عن منشئي المحتوى أو العبارات أو الموضوعات…"
+  },
+  "commentSearchReadyThread": {
+    "message": "هناك سلسلة تعليقات واحدة جاهزة للبحث. ابحث عن منشئي المحتوى أو العبارات أو الموضوعات."
+  },
+  "commentSearchReadyThreads": {
+    "message": "هناك {count} من سلاسل التعليقات جاهزة للبحث. ابحث عن منشئي المحتوى أو العبارات أو الموضوعات."
+  },
+  "commentSearchShorterHint": {
+    "message": "جرّب عبارة أقصر أو اسم منشئ محتوى أو امسح عامل التصفية."
+  },
+  "commentSearchShowingMatches": {
+    "message": "يتم عرض {visible} من أصل {total} من سلاسل التعليقات للبحث «{query}»."
+  },
+  "commentSearchSyncHint": {
+    "message": "سيظل شريط البحث متزامنًا مع وصول المزيد من التعليقات."
+  },
+  "commentSearchWaiting": {
+    "message": "في انتظار تحميل التعليقات…"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "في انتظار تحميل التعليقات للبحث «{query}»…"
   },
   "commentTranslateAction": {
     "message": "ترجمة"
@@ -499,6 +673,9 @@
   "dlFormatVideoWeb": {
     "message": "مُحسّن للويب"
   },
+  "dlHealthApiTooNew": {
+    "message": "أحدث من هذه الإضافة"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -637,6 +814,12 @@
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
   },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader يعمل، لكن نسخة Astra Deck هذه تتحدث بواجهة برمجية أقدم مما يقبله{versions}. حدّث الإضافة ثم اختر «تحقق مجددًا»."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (يحتاج إلى الواجهة {minimum} على الأقل)"
+  },
   "dlInstallCheckAgain": {
     "message": "Check again"
   },
@@ -681,6 +864,9 @@
   },
   "dlInstallLocalDownloads": {
     "message": "Local downloads"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
   },
   "dlInstallNoResponse": {
     "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
@@ -1238,17 +1424,20 @@
   "featureHealthNote": {
     "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
   },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "تحذير YouTube عبر {selector}؛ التشغيل {state}"
+  },
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "غيّر إصدار YouTube {version} ‏{surface}"
   },
-  "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
-  },
   "featureHealthReasonSelectorFallbackTpl": {
     "message": "عنصر الصفحة “{surface}” طابق قاعدة احتياطية فقط"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
   },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
@@ -1276,6 +1465,27 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureReportChangedTpl": {
+    "message": "الإعدادات المختلفة عن الافتراضية ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "نسخ قائمة الميزات"
+  },
+  "featureReportCopyDone": {
+    "message": "تم نسخ قائمة الميزات. لم يُرسل أي شيء إلى أي جهة."
+  },
+  "featureReportCopyFail": {
+    "message": "تعذّر نسخ قائمة الميزات."
+  },
+  "featureReportCopyTitle": {
+    "message": "ينسخ أسماء الإعدادات فقط، وليس قيمها أبدًا. ولا يُرسل أي شيء إلى أي جهة."
+  },
+  "featureReportNoneChanged": {
+    "message": "لا شيء"
+  },
+  "featureReportPrivacyNote": {
+    "message": "الأسماء فقط، بدون قيم. لم يُرسل أي شيء إلى أي جهة. هذا موجود في حافظتك وأنت من يقرر أين تلصقه."
   },
   "featureScheduleDaysTpl": {
     "message": "Active {window} on {days}"
@@ -1661,6 +1871,12 @@
   "feature_chatHide_menu_name": {
     "message": "قائمة الدردشة (...)"
   },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "إخفاء إشعار «الوضع البطيء قيد التشغيل» وما يشبهه من إشعارات الأعضاء فقط"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "إشعارات الوضع"
+  },
   "feature_chatHide_polls_desc": {
     "message": "إخفاء الاستطلاعات في الدردشة المباشرة"
   },
@@ -1811,72 +2027,6 @@
   "feature_commentSearch_name": {
     "message": "البحث في التعليقات"
   },
-  "commentSearchCountThread": {
-    "message": "{count} سلسلة تعليقات"
-  },
-  "commentSearchCountThreads": {
-    "message": "{count} من سلاسل التعليقات"
-  },
-  "commentSearchCountMatch": {
-    "message": "{count} تطابق"
-  },
-  "commentSearchCountMatches": {
-    "message": "{count} تطابقات"
-  },
-  "commentSearchNoMatches": {
-    "message": "لا توجد تطابقات"
-  },
-  "commentSearchWaiting": {
-    "message": "في انتظار تحميل التعليقات…"
-  },
-  "commentSearchSyncHint": {
-    "message": "سيظل شريط البحث متزامنًا مع وصول المزيد من التعليقات."
-  },
-  "commentSearchReadyThread": {
-    "message": "هناك سلسلة تعليقات واحدة جاهزة للبحث. ابحث عن منشئي المحتوى أو العبارات أو الموضوعات."
-  },
-  "commentSearchReadyThreads": {
-    "message": "هناك {count} من سلاسل التعليقات جاهزة للبحث. ابحث عن منشئي المحتوى أو العبارات أو الموضوعات."
-  },
-  "commentSearchEscapeHint": {
-    "message": "اضغط على Esc للمسح في أي وقت. تُحتسب التعليقات الجديدة تلقائيًا."
-  },
-  "commentSearchShowingMatches": {
-    "message": "يتم عرض {visible} من أصل {total} من سلاسل التعليقات للبحث «{query}»."
-  },
-  "commentSearchNavigatorHint": {
-    "message": "استخدم التالي أو السابق في متصفح التعليقات للتنقل بين التطابقات."
-  },
-  "commentSearchWaitingForQuery": {
-    "message": "في انتظار تحميل التعليقات للبحث «{query}»…"
-  },
-  "commentSearchActiveHint": {
-    "message": "يبقى البحث نشطًا أثناء تحميل YouTube لقائمة التعليقات."
-  },
-  "commentSearchNoThreadsForQuery": {
-    "message": "لا توجد سلاسل تعليقات تطابق «{query}»."
-  },
-  "commentSearchShorterHint": {
-    "message": "جرّب عبارة أقصر أو اسم منشئ محتوى أو امسح عامل التصفية."
-  },
-  "commentSearchEyebrow": {
-    "message": "البحث في التعليقات"
-  },
-  "commentSearchPlaceholder": {
-    "message": "ابحث عن منشئي المحتوى أو العبارات أو الموضوعات…"
-  },
-  "commentSearchAria": {
-    "message": "البحث في التعليقات"
-  },
-  "commentSearchClearAria": {
-    "message": "مسح البحث في التعليقات"
-  },
-  "commentSearchEmptyTitle": {
-    "message": "لا توجد تعليقات مطابقة"
-  },
-  "commentSearchEmptyCopy": {
-    "message": "جرّب عبارة أقصر أو اسم منشئ محتوى أو امسح عامل التصفية لإظهار كل السلاسل مجددًا."
-  },
   "feature_commentTranslateTarget_desc": {
     "message": "اللغة التي تُترجم إليها التعليقات. يتبع الوضع التلقائي لغة المتصفح."
   },
@@ -1924,6 +2074,12 @@
   },
   "feature_creatorCommentHighlight_name": {
     "message": "تمييز تعليقات المنشئ"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS يُطبّق عند تمكين CSS المخصّص"
+  },
+  "feature_customCssCode_name": {
+    "message": "قواعد CSS مخصّصة"
   },
   "feature_customCssInjection_desc": {
     "message": "حقن قواعد CSS مخصصة خاصة بك في صفحات YouTube"
@@ -3461,6 +3617,12 @@
   "feature_searchWhileWatching_name": {
     "message": "البحث أثناء المشاهدة"
   },
+  "feature_selectionColor_desc": {
+    "message": "اختر لون التمييز المستخدم عند تمكين تحديد النص المخصّص"
+  },
+  "feature_selectionColor_name": {
+    "message": "لون التحديد"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "مراجعة إشارات انحراف المحدِّدات الحية وتصدير تقرير صحة JSON لتحديث التركيبات."
   },
@@ -3638,6 +3800,48 @@
   "feature_styledFilterChips_name": {
     "message": "شرائح فلتر مُنسّقة"
   },
+  "feature_subStyleBgColor_desc": {
+    "message": "اختر اللون خلف نص التسميات التوضيحية"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "لون خلفية التسميات التوضيحية"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "اضبط شفافية الخلفية خلف نص التسميات التوضيحية"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "شفافية خلفية التسميات التوضيحية"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "حرّك التسميات التوضيحية إلى أعلى من الحافة السفلية للمشغّل"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "إزاحة التسميات التوضيحية عن الأسفل"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "اختر لون مقدمة التسميات التوضيحية"
+  },
+  "feature_subStyleColor_name": {
+    "message": "لون نص التسميات التوضيحية"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "اختر نوع الخط المستخدم للتسميات التوضيحية"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "عائلة خط التسميات التوضيحية"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "تغيير حجم نص التسميات التوضيحية من 50% إلى 300%"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "حجم خط التسميات التوضيحية"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "أضف ظلًا داكنًا لتبقى التسميات التوضيحية مقروءة فوق الفيديو الساطع"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "ظل نص التسميات التوضيحية"
+  },
   "feature_subscriptionGroups_desc": {
     "message": "مجموعات محلية بمستوى PocketTube لخلاصة الاشتراكات. أنشئ مجموعات مسمّاة، اسحب القنوات إليها، رتّب حسب التاريخ/المدة/غير المشاهد/الجديد منذ آخر زيارة. بيانات المجموعات في subscriptionGroupData (محلي فقط)؛ استخدم التصدير لنسخها احتياطياً."
   },
@@ -3710,6 +3914,12 @@
   "feature_timestampBookmarks_name": {
     "message": "إشارات الطوابع الزمنية"
   },
+  "feature_titleCaseMode_desc": {
+    "message": "اختر حالة الأحرف المستخدمة عند تمكين تحويل العنوان"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "نمط حالة أحرف العنوان"
+  },
   "feature_titleCaseTransform_desc": {
     "message": "تجاوز عناوين YouTube المكتوبة بحروف كبيرة المضلِّلة بنمط كتابة من اختيارك"
   },
@@ -3728,17 +3938,17 @@
   "feature_tokenThemeBridge_name": {
     "message": "جسر سمة الرموز الأصلية"
   },
-  "feature_transcriptQaLane_desc": {
-    "message": "احتفظ بالأسئلة على الجهاز أو استخدم المزود المهيأ مع ضوابط الأذونات والخصوصية وحدود الطلبات الحالية."
-  },
-  "feature_transcriptQaLane_name": {
-    "message": "مزود أسئلة وأجوبة النص"
-  },
   "feature_transcriptAiHandoff_desc": {
     "message": "يضيف زراً في المشغّل ينسخ النص ويفتح أداة الذكاء الاصطناعي المختارة مع مطالبة تلخيص معبأة مسبقاً"
   },
   "feature_transcriptAiHandoff_name": {
     "message": "تسليم النص للذكاء الاصطناعي بنقرة واحدة"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "احتفظ بالأسئلة على الجهاز أو استخدم المزود المهيأ مع ضوابط الأذونات والخصوصية وحدود الطلبات الحالية."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "مزود أسئلة وأجوبة النص"
   },
   "feature_transcriptViewer_desc": {
     "message": "يضيف لوحة نص قابلة للنقر في الشريط الجانبي مع تنقل بالطوابع الزمنية وتصدير (txt/srt/الحافظة/مطالبة LLM)"
@@ -4085,9 +4295,6 @@
   "filterListStatusReady": {
     "message": "لا يتم اتباع أي قائمة تصفية."
   },
-  "filterListStatusStateReadFail": {
-    "message": "تعذّرت قراءة حالة قائمة التصفية. أعد تحميل الإضافة ثم افتح النافذة المنبثقة مرة أخرى."
-  },
   "filterListStatusRefreshFail": {
     "message": "تعذّر تحديث القائمة. تحقق من العنوان ثم أعد المحاولة."
   },
@@ -4102,6 +4309,9 @@
   },
   "filterListStatusStalePausedTpl": {
     "message": "قواعد {host} المخزنة مؤقتًا متوقفة مؤقتًا؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListStatusStateReadFail": {
+    "message": "تعذّرت قراءة حالة قائمة التصفية. أعد تحميل الإضافة ثم افتح النافذة المنبثقة مرة أخرى."
   },
   "filterListStopFailed": {
     "message": "تعذر إيقاف متابعة قائمة عوامل التصفية."
@@ -4940,6 +5150,9 @@
   "schemaOverviewEyebrow": {
     "message": "نظرة عامة على الإعدادات"
   },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "لا يوجد إعداد يطابق «{term}». جرّب اسم ميزة أو فئة أو صفحة مثل watch أو feed أو نوع عنصر تحكم مثل boolean."
+  },
   "schemaOverviewToolsAria": {
     "message": "أدوات مقارنة الإعدادات"
   },
@@ -4948,6 +5161,18 @@
   },
   "schemaResetTitleTpl": {
     "message": "إعادة ضبط {key} إلى الإعداد الافتراضي ({value})"
+  },
+  "schemaSurfaceHere": {
+    "message": "هنا"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "يمكن تغيير هذا الإعداد من النافذة المنبثقة."
+  },
+  "schemaSurfacePanel": {
+    "message": "اللوحة داخل الصفحة"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "يُحرَّر هذا الإعداد في لوحة Astra Deck على YouTube. اضغط للفتح."
   },
   "screenshotCaptureFailed": {
     "message": "تعذّر التقاط الصورة"
@@ -4990,6 +5215,15 @@
   },
   "searchWatchTitle": {
     "message": "البحث دون إيقاف التشغيل"
+  },
+  "selectorAutoRefreshCheckedTpl": {
+    "message": "auto-checked {age}"
+  },
+  "selectorAutoRefreshNeverChecked": {
+    "message": "auto-refresh on, no check yet"
+  },
+  "selectorAutoRefreshUpdatedTpl": {
+    "message": "last update {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "الإصدار الحالي"
@@ -5054,6 +5288,12 @@
   "selectorHealthYouTubeBuildTpl": {
     "message": "إصدار YouTube {version}"
   },
+  "serviceOutageDismiss": {
+    "message": "إغلاق"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} لا يستجيب. المشكلة في الخدمة نفسها وليست في Astra Deck."
+  },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"
   },
@@ -5099,6 +5339,12 @@
   "settingsDlDownloadTitle": {
     "message": "تنزيل ملف تثبيت Astra Downloader وإظهاره في التنزيلات"
   },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
+  },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
   },
@@ -5143,6 +5389,12 @@
   },
   "settingsFeatureClearAriaTpl": {
     "message": "مسح {featureName}"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "موقوفة مؤقتًا: أدى تغيير في YouTube إلى تعطل هذه الميزة في هذا الإصدار من Astra Deck. إعدادك لم يتغير وستعمل الميزة مجددًا عند صدور إصلاح."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "المشكلة رقم {issue}"
   },
   "settingsFooterSaved": {
     "message": "تم الحفظ"
@@ -5668,6 +5920,12 @@
   "spRowSaveFailedTpl": {
     "message": "{name}. فشل الحفظ. جرّب تحديث لوحة المعلومات."
   },
+  "spRowStateRetry": {
+    "message": "إعادة المحاولة"
+  },
+  "spRowStateSaving": {
+    "message": "جارٍ الحفظ"
+  },
   "spScopeTpl": {
     "message": "النطاق: {scope}"
   },
@@ -5721,12 +5979,6 @@
   },
   "spSelectorTotalTpl": {
     "message": "{count} سطح"
-  },
-  "spRowStateRetry": {
-    "message": "إعادة المحاولة"
-  },
-  "spRowStateSaving": {
-    "message": "جارٍ الحفظ"
   },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
@@ -5980,14 +6232,6 @@
   "statusBackupImportedUndo": {
     "message": "تم استيراد النسخة الاحتياطية. انقر على «تراجع عن الاستيراد» لاستعادة الحالة السابقة. تبقى نقطة التراجع صالحة 7 أيام وتظل متاحة بعد إغلاق المتصفح."
   },
-  "statusImportBackupWrittenTpl": {
-    "message": "تم حفظ بياناتك السابقة في {file} أولاً.",
-    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
-  },
-  "statusImportBackupFileFailed": {
-    "message": "تعذّر على Astra Deck حفظ ملف نسخة احتياطية من بياناتك السابقة أولاً، لذا «تراجع عن الاستيراد» هو السبيل الوحيد للعودة.",
-    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
-  },
   "statusClipboardUnavailable": {
     "message": "النسخ غير متاح هنا. حدّد النص وانسخه بنفسك بدلاً من ذلك."
   },
@@ -6017,6 +6261,14 @@
   },
   "statusExportFail": {
     "message": "فشل التصدير"
+  },
+  "statusImportBackupFileFailed": {
+    "message": "تعذّر على Astra Deck حفظ ملف نسخة احتياطية من بياناتك السابقة أولاً، لذا «تراجع عن الاستيراد» هو السبيل الوحيد للعودة.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "تم حفظ بياناتك السابقة في {file} أولاً.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
   },
   "statusImportFail": {
     "message": "فشل الاستيراد"
@@ -6363,6 +6615,21 @@
   "subscriptionGroupChipTpl": {
     "message": "{prefix}{name} ({count}){tags}"
   },
+  "subscriptionGroupDelete": {
+    "message": "حذف"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "حذف المجموعة {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "حذف «{group}» وقنواتها البالغ عددها {count}؟ لن تتأثر اشتراكاتك."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "تم حذف المجموعة"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "تم حذف «{group}» و{count} قناة فيها. اشتراكاتك لم تتأثر."
+  },
   "subscriptionGroupDialogTitle": {
     "message": "تسمية هذه المجموعة"
   },
@@ -6380,6 +6647,24 @@
   },
   "subscriptionGroupPlayingTpl": {
     "message": "تشغيل {count} من الفيديوهات من {group}{truncated}"
+  },
+  "subscriptionGroupRename": {
+    "message": "إعادة تسمية"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "إعادة تسمية المجموعة {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "اسم جديد لهذه المجموعة"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "تمت إعادة تسمية المجموعة"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "اسم المجموعة هذا قيد الاستخدام مجددًا، لذا لم تتم الاستعادة."
+  },
+  "subscriptionGroupRestored": {
+    "message": "تمت استعادة المجموعة"
   },
   "subscriptionGroupsEmptyCopy": {
     "message": "اختر + مجموعة لإنشاء مجموعتك الأولى."
@@ -6512,6 +6797,9 @@
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
+  },
+  "subscriptionMembersCapped": {
+    "message": "المجموعة ممتلئة بـ 1000 قناة. أزل واحدة أولاً."
   },
   "subscriptionMembersCloseAria": {
     "message": "Close the channel membership editor"
@@ -6741,6 +7029,12 @@
   "subtitleDownloadFailed": {
     "message": "تعذّر تنزيل الترجمة"
   },
+  "switchLabelOff": {
+    "message": "إيقاف"
+  },
+  "switchLabelOn": {
+    "message": "تشغيل"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "تم وضع إشارة عند {time}"
   },
@@ -6867,6 +7161,9 @@
   "toastDlStopped": {
     "message": "توقف Astra Downloader. جارٍ إعادة تشغيله…"
   },
+  "toastStorageWriteFailed": {
+    "message": "تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة."
+  },
   "toggleRiskTooltip_api": {
     "message": "Talks to an external API server"
   },
@@ -6878,12 +7175,6 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity. GitHub-full only."
-  },
-  "switchLabelOff": {
-    "message": "إيقاف"
-  },
-  "switchLabelOn": {
-    "message": "تشغيل"
   },
   "toggleStateOff": {
     "message": "معطَّل"
@@ -7209,6 +7500,12 @@
   "uiFontSystem": {
     "message": "واجهة النظام"
   },
+  "ui_commentLikeBadge": {
+    "message": "إعجاب"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. {count} إعجاب"
+  },
   "ui_rydCachedTitleHoursTpl": {
     "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (منذ {hours} ساعة)."
   },
@@ -7254,9 +7551,6 @@
   "undo": {
     "message": "تراجع"
   },
-  "unknown": {
-    "message": "غير معروف"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
@@ -7268,6 +7562,9 @@
   },
   "undoResetBtn": {
     "message": "تراجع عن إعادة التعيين"
+  },
+  "unknown": {
+    "message": "غير معروف"
   },
   "updateCompanionAria": {
     "message": "Update Astra Downloader companion"
@@ -7692,11 +7989,11 @@
   "videoHiderReasonBlockedChannel": {
     "message": "قاعدة قناة محظورة"
   },
-  "videoHiderReasonChannelNotAllowed": {
-    "message": "قائمة القنوات المسموح بها لديك"
-  },
   "videoHiderReasonBlockedChannelNamedTpl": {
     "message": "قاعدة قناة محظورة ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "قائمة القنوات المسموح بها لديك"
   },
   "videoHiderReasonChannelNotAllowedNamedTpl": {
     "message": "قائمة القنوات المسموح بها ({channel})"
@@ -7734,11 +8031,11 @@
   "videoHiderReasonPredicate": {
     "message": "قاعدتك المحلية المتقدمة"
   },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonSyntheticDisclosed": {
     "message": "إفصاح YouTube عن المحتوى المعدَّل أو المُصطنع"
+  },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
   },
   "videoHiderReasonUpcoming": {
     "message": "مرشح العرض الأول القادم"
@@ -8443,12 +8740,6 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
-  "zapRuleToggleAriaTpl": {
-    "message": "تطبيق القاعدة الخاصة بـ {selector}"
-  },
-  "zapRuleRemoveAriaTpl": {
-    "message": "إزالة القاعدة الخاصة بـ {selector}"
-  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
@@ -8458,292 +8749,10 @@
   "zapRuleRemove": {
     "message": "Remove"
   },
-  "ui_commentLikeBadge": {
-    "message": "إعجاب"
-  },
-  "ui_commentLikeBadgeCountAriaTpl": {
-    "message": "{label}. {count} إعجاب"
-  },
-  "feature_chatHide_modeNotices_name": {
-    "message": "إشعارات الوضع"
-  },
-  "feature_chatHide_modeNotices_desc": {
-    "message": "إخفاء إشعار «الوضع البطيء قيد التشغيل» وما يشبهه من إشعارات الأعضاء فقط"
-  },
-  "toastStorageWriteFailed": {
-    "message": "تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة."
-  },
-  "subscriptionMembersCapped": {
-    "message": "المجموعة ممتلئة بـ 1000 قناة. أزل واحدة أولاً."
-  },
-  "subscriptionGroupRename": {
-    "message": "إعادة تسمية"
-  },
-  "subscriptionGroupRenameAriaTpl": {
-    "message": "إعادة تسمية المجموعة {group}"
-  },
-  "subscriptionGroupRenamePrompt": {
-    "message": "اسم جديد لهذه المجموعة"
-  },
-  "subscriptionGroupRenamed": {
-    "message": "تمت إعادة تسمية المجموعة"
-  },
-  "subscriptionGroupDelete": {
-    "message": "حذف"
-  },
-  "subscriptionGroupDeleteAriaTpl": {
-    "message": "حذف المجموعة {group}"
-  },
-  "subscriptionGroupDeleteConfirmTpl": {
-    "message": "حذف «{group}» وقنواتها البالغ عددها {count}؟ لن تتأثر اشتراكاتك."
-  },
-  "subscriptionGroupDeleted": {
-    "message": "تم حذف المجموعة"
-  },
-  "settingsFeatureKnownBroken": {
-    "message": "موقوفة مؤقتًا: أدى تغيير في YouTube إلى تعطل هذه الميزة في هذا الإصدار من Astra Deck. إعدادك لم يتغير وستعمل الميزة مجددًا عند صدور إصلاح."
-  },
-  "settingsFeatureKnownBrokenIssueTpl": {
-    "message": "المشكلة رقم {issue}"
-  },
-  "featureReportChangedTpl": {
-    "message": "الإعدادات المختلفة عن الافتراضية ({count}):"
-  },
-  "featureReportCopy": {
-    "message": "نسخ قائمة الميزات"
-  },
-  "featureReportCopyDone": {
-    "message": "تم نسخ قائمة الميزات. لم يُرسل أي شيء إلى أي جهة."
-  },
-  "featureReportCopyFail": {
-    "message": "تعذّر نسخ قائمة الميزات."
-  },
-  "featureReportCopyTitle": {
-    "message": "ينسخ أسماء الإعدادات فقط، وليس قيمها أبدًا. ولا يُرسل أي شيء إلى أي جهة."
-  },
-  "featureReportNoneChanged": {
-    "message": "لا شيء"
-  },
-  "featureReportPrivacyNote": {
-    "message": "الأسماء فقط، بدون قيم. لم يُرسل أي شيء إلى أي جهة. هذا موجود في حافظتك وأنت من يقرر أين تلصقه."
-  },
-  "bisectAbort": {
-    "message": "إيقاف واستعادة"
-  },
-  "bisectAborted": {
-    "message": "تم إيقاف البحث الثنائي. عادت ميزاتك للعمل."
-  },
-  "bisectCopy": {
-    "message": "نسخ النتيجة"
-  },
-  "bisectCopyDone": {
-    "message": "تم نسخ النتيجة. لم يُرسل أي شيء إلى أي جهة."
-  },
-  "bisectCopyFail": {
-    "message": "تعذّر نسخ النتيجة."
-  },
-  "bisectCulpritTpl": {
-    "message": "إنها {feature}."
-  },
-  "bisectExpired": {
-    "message": "انتهت صلاحية بحث ثنائي غير مكتمل. عادت ميزاتك للعمل."
-  },
-  "bisectIntro": {
-    "message": "يُطفئ ميزاتك ويعيد تشغيلها على شكل أنصاف حتى تتمكن من تضييق 291 ميزة إلى ميزة واحدة خلال نحو عشر عمليات إعادة تحميل. تُستعاد إعداداتك عند الانتهاء، وعند إيقاف العملية، وتلقائيًا إذا ابتعدت."
-  },
-  "bisectIntroCountUnknown": {
-    "message": "your features"
-  },
-  "bisectNo": {
-    "message": "اختفت"
-  },
-  "bisectNoCulprit": {
-    "message": "لا توجد ميزة واحدة مسؤولة. السبب شيء خارج Astra Deck، أو مزيج من الميزات."
-  },
-  "bisectNothingEnabled": {
-    "message": "لا توجد ميزات مفعّلة، لذا لا يوجد ما يمكن البحث فيه."
-  },
-  "bisectStart": {
-    "message": "بدء البحث الثنائي"
-  },
-  "bisectStarted": {
-    "message": "أعد تحميل YouTube ثم أجب أدناه."
-  },
-  "bisectStepTpl": {
-    "message": "الخطوة {step} من نحو {total}. أعد تحميل YouTube ثم أجب: هل ما زالت المشكلة تحدث؟"
-  },
-  "bisectTitle": {
-    "message": "ابحث عن الميزة التي تسببت في المشكلة"
-  },
-  "bisectYes": {
-    "message": "ما زالت تحدث"
-  },
-  "serviceOutageDismiss": {
-    "message": "إغلاق"
-  },
-  "serviceOutageTpl": {
-    "message": "{service} لا يستجيب. المشكلة في الخدمة نفسها وليست في Astra Deck."
-  },
-  "bisectFailed": {
-    "message": "تعذّر متابعة البحث الثنائي. تحقّق من الإعدادات."
-  },
-  "bisectRestoreFailed": {
-    "message": "تعذّرت استعادة إعداداتك. افتح الإعدادات وتحقّق منها."
-  },
-  "bisectStartFailed": {
-    "message": "تعذّر البدء: لن يحفظ ملف المتصفح هذا جلسة البحث الثنائي."
-  },
-  "schemaOverviewNoMatchesTpl": {
-    "message": "لا يوجد إعداد يطابق «{term}». جرّب اسم ميزة أو فئة أو صفحة مثل watch أو feed أو نوع عنصر تحكم مثل boolean."
-  },
-  "schemaSurfaceHere": {
-    "message": "هنا"
-  },
-  "schemaSurfaceHereTitle": {
-    "message": "يمكن تغيير هذا الإعداد من النافذة المنبثقة."
-  },
-  "schemaSurfacePanel": {
-    "message": "اللوحة داخل الصفحة"
-  },
-  "schemaSurfacePanelTitle": {
-    "message": "يُحرَّر هذا الإعداد في لوحة Astra Deck على YouTube. اضغط للفتح."
-  },
-  "dlHealthApiTooNew": {
-    "message": "أحدث من هذه الإضافة"
-  },
-  "dlInstallApiMismatchTpl": {
-    "message": "Astra Downloader يعمل، لكن نسخة Astra Deck هذه تتحدث بواجهة برمجية أقدم مما يقبله{versions}. حدّث الإضافة ثم اختر «تحقق مجددًا»."
-  },
-  "dlInstallApiVersionsTpl": {
-    "message": " (يحتاج إلى الواجهة {minimum} على الأقل)"
-  },
-  "subscriptionGroupDeletedTpl": {
-    "message": "تم حذف «{group}» و{count} قناة فيها. اشتراكاتك لم تتأثر."
-  },
-  "subscriptionGroupRestoreConflict": {
-    "message": "اسم المجموعة هذا قيد الاستخدام مجددًا، لذا لم تتم الاستعادة."
-  },
-  "subscriptionGroupRestored": {
-    "message": "تمت استعادة المجموعة"
-  },
-  "antiAdblockTitle": {
-    "message": "فحص تشغيل YouTube"
-  },
-  "antiAdblockPlaybackAdvancing": {
-    "message": "يتقدم"
-  },
-  "antiAdblockPlaybackStalled": {
-    "message": "متوقف"
-  },
-  "antiAdblockPlaybackBlocked": {
-    "message": "محظور"
-  },
-  "antiAdblockPlaybackUnknown": {
-    "message": "غير معروف"
-  },
-  "antiAdblockStateAdvancing": {
-    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، لكن هذا الفيديو لا يزال قيد التشغيل."
-  },
-  "antiAdblockStateStalled": {
-    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، وتوقف التشغيل."
-  },
-  "antiAdblockStateBlocked": {
-    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، ويبدو أن التشغيل محظور."
-  },
-  "antiAdblockStateUnknown": {
-    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات. لا يستطيع Astra تأكيد حالة التشغيل بعد."
-  },
-  "antiAdblockEvidenceTpl": {
-    "message": "المحدد: {selector} · التشغيل: {state}"
-  },
-  "antiAdblockRulesPaused": {
-    "message": "تم إيقاف حظر الإعلانات في Astra مؤقتًا."
-  },
-  "antiAdblockPausedUntilTpl": {
-    "message": "تم إيقاف حظر الإعلانات في Astra حتى {time}."
-  },
-  "antiAdblockReloadHint": {
-    "message": "أعد تحميل علامة تبويب YouTube هذه لتجربة التشغيل مجددًا."
-  },
-  "antiAdblockResumeAction": {
-    "message": "استئناف حظر الإعلانات في Astra"
-  },
-  "antiAdblockPauseAction": {
-    "message": "إيقاف حظر الإعلانات في Astra لمدة 15 دقيقة"
-  },
-  "antiAdblockResumed": {
-    "message": "تم استئناف حظر الإعلانات في Astra."
-  },
-  "featureHealthReasonAntiAdblockTpl": {
-    "message": "تحذير YouTube عبر {selector}؛ التشغيل {state}"
-  },
-  "feature_customCssCode_name": {
-    "message": "قواعد CSS مخصّصة"
-  },
-  "feature_customCssCode_desc": {
-    "message": "CSS يُطبّق عند تمكين CSS المخصّص"
-  },
-  "feature_subStyleFontSize_name": {
-    "message": "حجم خط التسميات التوضيحية"
-  },
-  "feature_subStyleFontSize_desc": {
-    "message": "تغيير حجم نص التسميات التوضيحية من 50% إلى 300%"
-  },
-  "feature_subStyleFontFamily_name": {
-    "message": "عائلة خط التسميات التوضيحية"
-  },
-  "feature_subStyleFontFamily_desc": {
-    "message": "اختر نوع الخط المستخدم للتسميات التوضيحية"
-  },
-  "feature_subStyleColor_name": {
-    "message": "لون نص التسميات التوضيحية"
-  },
-  "feature_subStyleColor_desc": {
-    "message": "اختر لون مقدمة التسميات التوضيحية"
-  },
-  "feature_subStyleBgOpacity_name": {
-    "message": "شفافية خلفية التسميات التوضيحية"
-  },
-  "feature_subStyleBgOpacity_desc": {
-    "message": "اضبط شفافية الخلفية خلف نص التسميات التوضيحية"
-  },
-  "feature_subStyleBgColor_name": {
-    "message": "لون خلفية التسميات التوضيحية"
-  },
-  "feature_subStyleBgColor_desc": {
-    "message": "اختر اللون خلف نص التسميات التوضيحية"
-  },
-  "feature_subStyleBottomOffset_name": {
-    "message": "إزاحة التسميات التوضيحية عن الأسفل"
-  },
-  "feature_subStyleBottomOffset_desc": {
-    "message": "حرّك التسميات التوضيحية إلى أعلى من الحافة السفلية للمشغّل"
-  },
-  "feature_subStyleTextShadow_name": {
-    "message": "ظل نص التسميات التوضيحية"
-  },
-  "feature_subStyleTextShadow_desc": {
-    "message": "أضف ظلًا داكنًا لتبقى التسميات التوضيحية مقروءة فوق الفيديو الساطع"
-  },
-  "feature_titleCaseMode_name": {
-    "message": "نمط حالة أحرف العنوان"
-  },
-  "feature_titleCaseMode_desc": {
-    "message": "اختر حالة الأحرف المستخدمة عند تمكين تحويل العنوان"
-  },
-  "feature_selectionColor_name": {
-    "message": "لون التحديد"
-  },
-  "feature_selectionColor_desc": {
-    "message": "اختر لون التمييز المستخدم عند تمكين تحديد النص المخصّص"
-  },
-  "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
-  },
-  "settingsDlGetSetup": {
-    "message": "Get setup file"
-  },
-  "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+  "zapRuleRemoveAriaTpl": {
+    "message": "إزالة القاعدة الخاصة بـ {selector}"
+  },
+  "zapRuleToggleAriaTpl": {
+    "message": "تطبيق القاعدة الخاصة بـ {selector}"
   }
 }

@@ -5771,11 +5771,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (468 → 467).
     // The remote known-breakage feed adds its own default-on toggle (476 -> 477).
     // The Transcript Q&A provider lane adds one explicit local/remote choice (478).
-    // Six DeArrow surface masks add explicit request boundaries (484).
+    // Six DeArrow surface masks add explicit request boundaries (484), plus
+    // the opt-in scheduled selector refresh (485).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 484,
-        'SETTINGS_SCHEMA must cover all 484 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 485,
+        'SETTINGS_SCHEMA must cover all 485 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

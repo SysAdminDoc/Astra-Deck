@@ -2422,6 +2422,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     Object.freeze({ key: "diagnosticLog", category: "dev-diagnostics", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "featureDisableFeed", category: "dev-diagnostics", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.84.0" }),
+    Object.freeze({ key: "selectorAutoRefresh", category: "dev-diagnostics", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.89.0" }),
     Object.freeze({ key: "_errors", category: "dev-diagnostics", type: "array", defaultValue: [], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
 
     Object.freeze({ key: "storageQuotaLRU", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

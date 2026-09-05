@@ -71,6 +71,9 @@
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
+  "aiSummaryByoFallbackNotice": {
+    "message": "대신 설정한 BYO 키 공급자를 사용합니다."
+  },
   "aiSummaryCalling": {
     "message": "AI 제공업체를 호출하는 중…"
   },
@@ -137,20 +140,65 @@
   "aiSummaryTitle": {
     "message": "AI 요약"
   },
-  "aiSummaryByoFallbackNotice": {
-    "message": "대신 설정한 BYO 키 공급자를 사용합니다."
-  },
   "aiSummaryTldr": {
     "message": "요약"
   },
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "altFrontendOpenAriaTpl": {
+    "message": "{host}에서 외부로 열기"
+  },
   "altFrontendOpenBtn": {
     "message": "외부에서 열기"
   },
-  "altFrontendOpenAriaTpl": {
-    "message": "{host}에서 외부로 열기"
+  "antiAdblockEvidenceTpl": {
+    "message": "선택자: {selector} · 재생: {state}"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Astra 광고 차단을 15분 동안 일시 중지"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astra 광고 차단이 {time}까지 일시 중지됩니다."
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "재생 중"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "차단됨"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "멈춤"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "알 수 없음"
+  },
+  "antiAdblockReloadHint": {
+    "message": "이 YouTube 탭을 새로고침하여 재생을 다시 시도하세요."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Astra 광고 차단 다시 시작"
+  },
+  "antiAdblockResumed": {
+    "message": "Astra 광고 차단을 다시 시작했습니다."
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astra 광고 차단이 일시 중지되었습니다."
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube에서 광고 차단 경고를 표시했지만 이 동영상은 계속 재생 중입니다."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube에서 광고 차단 경고를 표시했고 재생이 차단된 것으로 보입니다."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube에서 광고 차단 경고를 표시했고 재생이 멈췄습니다."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube에서 광고 차단 경고를 표시했습니다. Astra가 아직 재생 상태를 확인할 수 없습니다."
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube 재생 확인"
   },
   "astraContextMenuAria": {
     "message": "Astra actions"
@@ -163,6 +211,66 @@
   },
   "audioOnlyUnavailable": {
     "message": "오디오 전용을 사용할 수 없음"
+  },
+  "bisectAbort": {
+    "message": "중단하고 복원"
+  },
+  "bisectAborted": {
+    "message": "이진 탐색을 중단했습니다. 기능이 다시 켜졌습니다."
+  },
+  "bisectCopy": {
+    "message": "결과 복사"
+  },
+  "bisectCopyDone": {
+    "message": "결과를 복사했습니다. 어디에도 전송되지 않았습니다."
+  },
+  "bisectCopyFail": {
+    "message": "결과를 복사하지 못했습니다."
+  },
+  "bisectCulpritTpl": {
+    "message": "{feature} 때문입니다."
+  },
+  "bisectExpired": {
+    "message": "완료되지 않은 이진 탐색이 만료되었습니다. 기능이 다시 켜졌습니다."
+  },
+  "bisectFailed": {
+    "message": "이진 탐색을 계속할 수 없습니다. 설정을 확인해 주세요."
+  },
+  "bisectIntro": {
+    "message": "기능을 절반씩 껐다 켜서 291개를 약 10번의 새로고침으로 하나까지 좁힙니다. 설정은 완료할 때, 중단할 때, 그리고 그냥 자리를 떠도 자동으로 복원됩니다."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
+  },
+  "bisectNo": {
+    "message": "사라짐"
+  },
+  "bisectNoCulprit": {
+    "message": "단일 기능이 원인이 아닙니다. Astra Deck 바깥의 무언가이거나 여러 기능의 조합입니다."
+  },
+  "bisectNothingEnabled": {
+    "message": "켜져 있는 기능이 없어 검색할 대상이 없습니다."
+  },
+  "bisectRestoreFailed": {
+    "message": "설정을 되돌리지 못했습니다. 설정을 열어 확인해 주세요."
+  },
+  "bisectStart": {
+    "message": "이진 탐색 시작"
+  },
+  "bisectStartFailed": {
+    "message": "시작할 수 없습니다. 이 브라우저 프로필은 이진 탐색 세션을 저장하지 못합니다."
+  },
+  "bisectStarted": {
+    "message": "YouTube를 새로고침한 뒤 아래에서 답해 주세요."
+  },
+  "bisectStepTpl": {
+    "message": "{total}단계 중 {step}단계. YouTube를 새로고침한 뒤 답해 주세요. 문제가 아직 발생하나요?"
+  },
+  "bisectTitle": {
+    "message": "문제를 일으킨 기능 찾기"
+  },
+  "bisectYes": {
+    "message": "아직 발생함"
   },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
@@ -288,6 +396,72 @@
   },
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
+  },
+  "commentSearchActiveHint": {
+    "message": "YouTube가 댓글 목록을 불러오는 동안에도 검색은 유지됩니다."
+  },
+  "commentSearchAria": {
+    "message": "댓글 검색"
+  },
+  "commentSearchClearAria": {
+    "message": "댓글 검색 지우기"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count}개 일치"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count}개 일치"
+  },
+  "commentSearchCountThread": {
+    "message": "{count}개 스레드"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count}개 스레드"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "더 짧은 문구나 작성자 이름을 시도하거나 필터를 지워 모든 스레드를 다시 표시하세요."
+  },
+  "commentSearchEmptyTitle": {
+    "message": "일치하는 댓글 없음"
+  },
+  "commentSearchEscapeHint": {
+    "message": "언제든 Esc를 눌러 지울 수 있습니다. 새 댓글도 자동으로 집계됩니다."
+  },
+  "commentSearchEyebrow": {
+    "message": "댓글에서 찾기"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "댓글 탐색기의 다음 또는 이전을 사용해 일치 항목 사이를 이동하세요."
+  },
+  "commentSearchNoMatches": {
+    "message": "일치 항목 없음"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "“{query}”와 일치하는 댓글 스레드가 없습니다."
+  },
+  "commentSearchPlaceholder": {
+    "message": "작성자, 문구 또는 주제 검색…"
+  },
+  "commentSearchReadyThread": {
+    "message": "검색할 수 있는 댓글 스레드가 {count}개 있습니다. 작성자, 문구 또는 주제를 검색하세요."
+  },
+  "commentSearchReadyThreads": {
+    "message": "검색할 수 있는 댓글 스레드가 {count}개 있습니다. 작성자, 문구 또는 주제를 검색하세요."
+  },
+  "commentSearchShorterHint": {
+    "message": "더 짧은 문구나 작성자 이름을 시도하거나 필터를 지우세요."
+  },
+  "commentSearchShowingMatches": {
+    "message": "“{query}”에 대한 댓글 스레드 {total}개 중 {visible}개를 표시합니다."
+  },
+  "commentSearchSyncHint": {
+    "message": "새 댓글이 들어오면 검색창도 자동으로 동기화됩니다."
+  },
+  "commentSearchWaiting": {
+    "message": "댓글을 불러오는 중입니다…"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "“{query}”에 대한 댓글을 불러오는 중입니다…"
   },
   "commentTranslateAction": {
     "message": "번역"
@@ -499,6 +673,9 @@
   "dlFormatVideoWeb": {
     "message": "웹 최적화"
   },
+  "dlHealthApiTooNew": {
+    "message": "이 확장 프로그램보다 최신"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -637,6 +814,12 @@
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
   },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader는 실행 중이지만, 이 Astra Deck은 허용되는 것보다 오래된 API를 사용합니다{versions}. 확장 프로그램을 업데이트한 뒤 다시 확인을 선택해 주세요."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (최소 API {minimum}이(가) 필요합니다)"
+  },
   "dlInstallCheckAgain": {
     "message": "Check again"
   },
@@ -681,6 +864,9 @@
   },
   "dlInstallLocalDownloads": {
     "message": "Local downloads"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
   },
   "dlInstallNoResponse": {
     "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
@@ -1238,17 +1424,20 @@
   "featureHealthNote": {
     "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
   },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "{selector}에서 YouTube 경고 감지; 재생 {state}"
+  },
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "YouTube {version} 변경: {surface}"
   },
-  "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
-  },
   "featureHealthReasonSelectorFallbackTpl": {
     "message": "페이지 요소 “{surface}”이(가) 예비 규칙에만 일치했습니다"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
   },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
@@ -1276,6 +1465,27 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureReportChangedTpl": {
+    "message": "기본값과 다른 설정 ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "기능 목록 복사"
+  },
+  "featureReportCopyDone": {
+    "message": "기능 목록을 복사했습니다. 어디에도 전송되지 않았습니다."
+  },
+  "featureReportCopyFail": {
+    "message": "기능 목록을 복사하지 못했습니다."
+  },
+  "featureReportCopyTitle": {
+    "message": "설정 이름만 복사하며 값은 절대 복사하지 않습니다. 아무 곳에도 전송되지 않습니다."
+  },
+  "featureReportNoneChanged": {
+    "message": "없음"
+  },
+  "featureReportPrivacyNote": {
+    "message": "이름만 있고 값은 없습니다. 어디에도 전송되지 않았습니다. 클립보드에 있으며 붙여넣을지는 사용자가 결정합니다."
   },
   "featureScheduleDaysTpl": {
     "message": "Active {window} on {days}"
@@ -1661,6 +1871,12 @@
   "feature_chatHide_menu_name": {
     "message": "채팅 메뉴 (...)"
   },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "“느린 모드가 켜짐” 알림과 멤버 전용 알림을 숨깁니다"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "모드 알림"
+  },
   "feature_chatHide_polls_desc": {
     "message": "실시간 채팅에서 투표 숨기기"
   },
@@ -1811,72 +2027,6 @@
   "feature_commentSearch_name": {
     "message": "댓글 검색"
   },
-  "commentSearchCountThread": {
-    "message": "{count}개 스레드"
-  },
-  "commentSearchCountThreads": {
-    "message": "{count}개 스레드"
-  },
-  "commentSearchCountMatch": {
-    "message": "{count}개 일치"
-  },
-  "commentSearchCountMatches": {
-    "message": "{count}개 일치"
-  },
-  "commentSearchNoMatches": {
-    "message": "일치 항목 없음"
-  },
-  "commentSearchWaiting": {
-    "message": "댓글을 불러오는 중입니다…"
-  },
-  "commentSearchSyncHint": {
-    "message": "새 댓글이 들어오면 검색창도 자동으로 동기화됩니다."
-  },
-  "commentSearchReadyThread": {
-    "message": "검색할 수 있는 댓글 스레드가 {count}개 있습니다. 작성자, 문구 또는 주제를 검색하세요."
-  },
-  "commentSearchReadyThreads": {
-    "message": "검색할 수 있는 댓글 스레드가 {count}개 있습니다. 작성자, 문구 또는 주제를 검색하세요."
-  },
-  "commentSearchEscapeHint": {
-    "message": "언제든 Esc를 눌러 지울 수 있습니다. 새 댓글도 자동으로 집계됩니다."
-  },
-  "commentSearchShowingMatches": {
-    "message": "“{query}”에 대한 댓글 스레드 {total}개 중 {visible}개를 표시합니다."
-  },
-  "commentSearchNavigatorHint": {
-    "message": "댓글 탐색기의 다음 또는 이전을 사용해 일치 항목 사이를 이동하세요."
-  },
-  "commentSearchWaitingForQuery": {
-    "message": "“{query}”에 대한 댓글을 불러오는 중입니다…"
-  },
-  "commentSearchActiveHint": {
-    "message": "YouTube가 댓글 목록을 불러오는 동안에도 검색은 유지됩니다."
-  },
-  "commentSearchNoThreadsForQuery": {
-    "message": "“{query}”와 일치하는 댓글 스레드가 없습니다."
-  },
-  "commentSearchShorterHint": {
-    "message": "더 짧은 문구나 작성자 이름을 시도하거나 필터를 지우세요."
-  },
-  "commentSearchEyebrow": {
-    "message": "댓글에서 찾기"
-  },
-  "commentSearchPlaceholder": {
-    "message": "작성자, 문구 또는 주제 검색…"
-  },
-  "commentSearchAria": {
-    "message": "댓글 검색"
-  },
-  "commentSearchClearAria": {
-    "message": "댓글 검색 지우기"
-  },
-  "commentSearchEmptyTitle": {
-    "message": "일치하는 댓글 없음"
-  },
-  "commentSearchEmptyCopy": {
-    "message": "더 짧은 문구나 작성자 이름을 시도하거나 필터를 지워 모든 스레드를 다시 표시하세요."
-  },
   "feature_commentTranslateTarget_desc": {
     "message": "댓글을 번역할 언어입니다. 자동은 브라우저 언어를 따릅니다."
   },
@@ -1924,6 +2074,12 @@
   },
   "feature_creatorCommentHighlight_name": {
     "message": "크리에이터 댓글 강조"
+  },
+  "feature_customCssCode_desc": {
+    "message": "사용자 지정 CSS가 활성화된 동안 적용할 CSS"
+  },
+  "feature_customCssCode_name": {
+    "message": "사용자 지정 CSS 규칙"
   },
   "feature_customCssInjection_desc": {
     "message": "YouTube 페이지에 사용자 정의 CSS 규칙 삽입"
@@ -3461,6 +3617,12 @@
   "feature_searchWhileWatching_name": {
     "message": "시청하며 검색"
   },
+  "feature_selectionColor_desc": {
+    "message": "사용자 지정 텍스트 선택이 활성화된 동안 사용할 강조 색상 선택"
+  },
+  "feature_selectionColor_name": {
+    "message": "선택 색상"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "실시간 셀렉터 드리프트 신호를 확인하고 픽스처 갱신을 위한 JSON 상태 보고서를 내보냅니다."
   },
@@ -3638,6 +3800,48 @@
   "feature_styledFilterChips_name": {
     "message": "스타일 필터 칩"
   },
+  "feature_subStyleBgColor_desc": {
+    "message": "자막 텍스트 뒤의 색상 선택"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "자막 배경 색상"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "자막 텍스트 뒤 배경의 불투명도 설정"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "자막 배경 불투명도"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "자막을 플레이어 아래쪽 가장자리에서 위로 이동"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "자막 아래쪽 간격"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "자막 전경색 선택"
+  },
+  "feature_subStyleColor_name": {
+    "message": "자막 텍스트 색상"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "자막에 사용할 서체 선택"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "자막 글꼴"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "자막 텍스트를 50%에서 300%까지 조절"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "자막 글꼴 크기"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "밝은 영상에서도 자막을 읽기 쉽도록 어두운 그림자 추가"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "자막 텍스트 그림자"
+  },
   "feature_subscriptionGroups_desc": {
     "message": "구독 피드를 위한 PocketTube급 로컬 그룹. 이름이 있는 그룹을 만들고, 채널을 드래그하여 추가하고, 날짜/길이/미시청/마지막 방문 이후 새 항목으로 정렬합니다. 그룹 데이터는 subscriptionGroupData에 로컬 저장됩니다. 내보내기로 백업하세요."
   },
@@ -3710,6 +3914,12 @@
   "feature_timestampBookmarks_name": {
     "message": "타임스탬프 북마크"
   },
+  "feature_titleCaseMode_desc": {
+    "message": "제목 변환이 활성화된 동안 사용할 대소문자 방식 선택"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "제목 대소문자 스타일"
+  },
   "feature_titleCaseTransform_desc": {
     "message": "YouTube의 어그로 대문자 제목을 원하는 대소문자 스타일로 변경"
   },
@@ -3728,17 +3938,17 @@
   "feature_tokenThemeBridge_name": {
     "message": "네이티브 토큰 테마 브릿지"
   },
-  "feature_transcriptQaLane_desc": {
-    "message": "질문을 기기에서 처리하거나 기존 권한, 개인정보 보호, 요청 한도 제어를 적용해 구성된 제공자를 사용합니다."
-  },
-  "feature_transcriptQaLane_name": {
-    "message": "대본 Q&A 제공자"
-  },
   "feature_transcriptAiHandoff_desc": {
     "message": "대본을 복사하고 요약 프롬프트가 미리 채워진 상태로 선택한 AI 도구를 여는 플레이어 버튼을 추가합니다"
   },
   "feature_transcriptAiHandoff_name": {
     "message": "대본 → AI 원클릭 전달"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "질문을 기기에서 처리하거나 기존 권한, 개인정보 보호, 요청 한도 제어를 적용해 구성된 제공자를 사용합니다."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "대본 Q&A 제공자"
   },
   "feature_transcriptViewer_desc": {
     "message": "Read, jump, and export captions"
@@ -4085,9 +4295,6 @@
   "filterListStatusReady": {
     "message": "구독 중인 필터 목록이 없습니다."
   },
-  "filterListStatusStateReadFail": {
-    "message": "필터 목록 상태를 읽지 못했습니다. 확장 프로그램을 다시 로드한 후 팝업을 다시 여세요."
-  },
   "filterListStatusRefreshFail": {
     "message": "목록을 새로 고칠 수 없습니다. 주소를 확인한 후 다시 시도하세요."
   },
@@ -4102,6 +4309,9 @@
   },
   "filterListStatusStalePausedTpl": {
     "message": "캐시된 {host} 규칙이 일시 중지되었습니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListStatusStateReadFail": {
+    "message": "필터 목록 상태를 읽지 못했습니다. 확장 프로그램을 다시 로드한 후 팝업을 다시 여세요."
   },
   "filterListStopFailed": {
     "message": "필터 목록 구독을 중지할 수 없습니다."
@@ -4940,6 +5150,9 @@
   "schemaOverviewEyebrow": {
     "message": "설정 개요"
   },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "“{term}”과(와) 일치하는 설정이 없습니다. 기능 이름, 카테고리, watch나 feed 같은 페이지, boolean 같은 컨트롤 종류를 시도해 보세요."
+  },
   "schemaOverviewToolsAria": {
     "message": "설정 변경 도구"
   },
@@ -4948,6 +5161,18 @@
   },
   "schemaResetTitleTpl": {
     "message": "{key}을(를) 기본값으로 재설정({value})"
+  },
+  "schemaSurfaceHere": {
+    "message": "여기"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "이 설정은 팝업에서 바꿀 수 있습니다."
+  },
+  "schemaSurfacePanel": {
+    "message": "페이지 내 패널"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "이 설정은 YouTube의 Astra Deck 패널에서 편집합니다. 눌러서 엽니다."
   },
   "screenshotCaptureFailed": {
     "message": "스크린샷 캡처에 실패했습니다"
@@ -4990,6 +5215,15 @@
   },
   "searchWatchTitle": {
     "message": "재생을 멈추지 않고 검색"
+  },
+  "selectorAutoRefreshCheckedTpl": {
+    "message": "auto-checked {age}"
+  },
+  "selectorAutoRefreshNeverChecked": {
+    "message": "auto-refresh on, no check yet"
+  },
+  "selectorAutoRefreshUpdatedTpl": {
+    "message": "last update {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "현재 빌드"
@@ -5054,6 +5288,12 @@
   "selectorHealthYouTubeBuildTpl": {
     "message": "YouTube 버전 {version}"
   },
+  "serviceOutageDismiss": {
+    "message": "닫기"
+  },
+  "serviceOutageTpl": {
+    "message": "{service}이(가) 응답하지 않습니다. Astra Deck이 아니라 해당 서비스의 문제입니다."
+  },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"
   },
@@ -5099,6 +5339,12 @@
   "settingsDlDownloadTitle": {
     "message": "Astra Downloader 설치 파일을 다운로드하고 다운로드에서 표시"
   },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
+  },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
   },
@@ -5143,6 +5389,12 @@
   },
   "settingsFeatureClearAriaTpl": {
     "message": "{featureName} 지우기"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "일시 중지됨: YouTube 변경으로 이 버전의 Astra Deck에서 이 기능이 작동하지 않습니다. 설정은 그대로이며 수정이 배포되면 다시 작동합니다."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "이슈 #{issue}"
   },
   "settingsFooterSaved": {
     "message": "저장됨"
@@ -5668,6 +5920,12 @@
   "spRowSaveFailedTpl": {
     "message": "{name}. 저장에 실패했습니다. 대시보드를 새로고침해 보세요."
   },
+  "spRowStateRetry": {
+    "message": "다시 시도"
+  },
+  "spRowStateSaving": {
+    "message": "저장 중"
+  },
   "spScopeTpl": {
     "message": "적용 범위: {scope}"
   },
@@ -5721,12 +5979,6 @@
   },
   "spSelectorTotalTpl": {
     "message": "표면 {count}개"
-  },
-  "spRowStateRetry": {
-    "message": "다시 시도"
-  },
-  "spRowStateSaving": {
-    "message": "저장 중"
   },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
@@ -5980,14 +6232,6 @@
   "statusBackupImportedUndo": {
     "message": "백업을 가져왔습니다. ‘가져오기 실행 취소’를 클릭하면 이전 상태로 복원됩니다. 실행 취소 지점은 7일 동안 유지되며 브라우저를 닫아도 사라지지 않습니다."
   },
-  "statusImportBackupWrittenTpl": {
-    "message": "이전 데이터는 먼저 {file}에 저장되었습니다.",
-    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
-  },
-  "statusImportBackupFileFailed": {
-    "message": "Astra Deck이 이전 데이터의 백업 파일을 먼저 저장하지 못했으므로 ‘가져오기 실행 취소’가 유일한 복구 방법입니다.",
-    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
-  },
   "statusClipboardUnavailable": {
     "message": "여기서는 복사를 사용할 수 없습니다. 텍스트를 선택해 직접 복사하세요."
   },
@@ -6017,6 +6261,14 @@
   },
   "statusExportFail": {
     "message": "내보내기 실패"
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck이 이전 데이터의 백업 파일을 먼저 저장하지 못했으므로 ‘가져오기 실행 취소’가 유일한 복구 방법입니다.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "이전 데이터는 먼저 {file}에 저장되었습니다.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
   },
   "statusImportFail": {
     "message": "가져오기 실패"
@@ -6363,6 +6615,21 @@
   "subscriptionGroupChipTpl": {
     "message": "{prefix}{name} ({count}){tags}"
   },
+  "subscriptionGroupDelete": {
+    "message": "삭제"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "{group} 그룹 삭제"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "“{group}”와 해당 채널 {count}개를 삭제할까요? 구독은 영향을 받지 않습니다."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "그룹을 삭제했습니다"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "“{group}”과(와) 여기에 속한 채널 {count}개를 삭제했습니다. 구독에는 영향이 없습니다."
+  },
   "subscriptionGroupDialogTitle": {
     "message": "이 그룹 이름 지정"
   },
@@ -6380,6 +6647,24 @@
   },
   "subscriptionGroupPlayingTpl": {
     "message": "{group}에서 동영상 {count}개 재생 중{truncated}"
+  },
+  "subscriptionGroupRename": {
+    "message": "이름 변경"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "{group} 그룹 이름 변경"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "이 그룹의 새 이름"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "그룹 이름을 변경했습니다"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "해당 그룹 이름이 다시 사용 중이라 복원하지 않았습니다."
+  },
+  "subscriptionGroupRestored": {
+    "message": "그룹을 복원했습니다"
   },
   "subscriptionGroupsEmptyCopy": {
     "message": "+ 그룹을 선택해 첫 그룹을 만드세요."
@@ -6512,6 +6797,9 @@
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
+  },
+  "subscriptionMembersCapped": {
+    "message": "그룹이 1000개 채널로 가득 찼습니다. 먼저 하나를 제거하세요."
   },
   "subscriptionMembersCloseAria": {
     "message": "Close the channel membership editor"
@@ -6741,6 +7029,12 @@
   "subtitleDownloadFailed": {
     "message": "자막 다운로드에 실패했습니다"
   },
+  "switchLabelOff": {
+    "message": "꺼짐"
+  },
+  "switchLabelOn": {
+    "message": "켜짐"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "{time}에 북마크함"
   },
@@ -6867,6 +7161,9 @@
   "toastDlStopped": {
     "message": "Astra Downloader가 중지되었습니다. 다시 시작 중…"
   },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck이 이 브라우저 프로필에 저장할 수 없습니다. 새 변경사항이 손실될 수 있습니다."
+  },
   "toggleRiskTooltip_api": {
     "message": "Talks to an external API server"
   },
@@ -6878,12 +7175,6 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity. GitHub-full only."
-  },
-  "switchLabelOff": {
-    "message": "꺼짐"
-  },
-  "switchLabelOn": {
-    "message": "켜짐"
   },
   "toggleStateOff": {
     "message": "비활성화됨"
@@ -7209,6 +7500,12 @@
   "uiFontSystem": {
     "message": "시스템 UI"
   },
+  "ui_commentLikeBadge": {
+    "message": "좋아요"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. 좋아요 {count}개"
+  },
   "ui_rydCachedTitleHoursTpl": {
     "message": "Return YouTube Dislike 싫어요 수 캐시됨({hours}시간 전)."
   },
@@ -7254,9 +7551,6 @@
   "undo": {
     "message": "실행 취소"
   },
-  "unknown": {
-    "message": "알 수 없음"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
@@ -7268,6 +7562,9 @@
   },
   "undoResetBtn": {
     "message": "재설정 취소"
+  },
+  "unknown": {
+    "message": "알 수 없음"
   },
   "updateCompanionAria": {
     "message": "Update Astra Downloader companion"
@@ -7692,11 +7989,11 @@
   "videoHiderReasonBlockedChannel": {
     "message": "차단된 채널 규칙"
   },
-  "videoHiderReasonChannelNotAllowed": {
-    "message": "채널 허용 목록"
-  },
   "videoHiderReasonBlockedChannelNamedTpl": {
     "message": "차단된 채널 규칙 ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "채널 허용 목록"
   },
   "videoHiderReasonChannelNotAllowedNamedTpl": {
     "message": "허용된 채널 목록 ({channel})"
@@ -7734,11 +8031,11 @@
   "videoHiderReasonPredicate": {
     "message": "고급 로컬 규칙"
   },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonSyntheticDisclosed": {
     "message": "YouTube의 변경 또는 합성 콘텐츠 고지"
+  },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
   },
   "videoHiderReasonUpcoming": {
     "message": "예정된 공개 필터"
@@ -8443,12 +8740,6 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
-  "zapRuleToggleAriaTpl": {
-    "message": "{selector} 규칙 적용"
-  },
-  "zapRuleRemoveAriaTpl": {
-    "message": "{selector} 규칙 제거"
-  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
@@ -8458,292 +8749,10 @@
   "zapRuleRemove": {
     "message": "Remove"
   },
-  "ui_commentLikeBadge": {
-    "message": "좋아요"
-  },
-  "ui_commentLikeBadgeCountAriaTpl": {
-    "message": "{label}. 좋아요 {count}개"
-  },
-  "feature_chatHide_modeNotices_name": {
-    "message": "모드 알림"
-  },
-  "feature_chatHide_modeNotices_desc": {
-    "message": "“느린 모드가 켜짐” 알림과 멤버 전용 알림을 숨깁니다"
-  },
-  "toastStorageWriteFailed": {
-    "message": "Astra Deck이 이 브라우저 프로필에 저장할 수 없습니다. 새 변경사항이 손실될 수 있습니다."
-  },
-  "subscriptionMembersCapped": {
-    "message": "그룹이 1000개 채널로 가득 찼습니다. 먼저 하나를 제거하세요."
-  },
-  "subscriptionGroupRename": {
-    "message": "이름 변경"
-  },
-  "subscriptionGroupRenameAriaTpl": {
-    "message": "{group} 그룹 이름 변경"
-  },
-  "subscriptionGroupRenamePrompt": {
-    "message": "이 그룹의 새 이름"
-  },
-  "subscriptionGroupRenamed": {
-    "message": "그룹 이름을 변경했습니다"
-  },
-  "subscriptionGroupDelete": {
-    "message": "삭제"
-  },
-  "subscriptionGroupDeleteAriaTpl": {
-    "message": "{group} 그룹 삭제"
-  },
-  "subscriptionGroupDeleteConfirmTpl": {
-    "message": "“{group}”와 해당 채널 {count}개를 삭제할까요? 구독은 영향을 받지 않습니다."
-  },
-  "subscriptionGroupDeleted": {
-    "message": "그룹을 삭제했습니다"
-  },
-  "settingsFeatureKnownBroken": {
-    "message": "일시 중지됨: YouTube 변경으로 이 버전의 Astra Deck에서 이 기능이 작동하지 않습니다. 설정은 그대로이며 수정이 배포되면 다시 작동합니다."
-  },
-  "settingsFeatureKnownBrokenIssueTpl": {
-    "message": "이슈 #{issue}"
-  },
-  "featureReportChangedTpl": {
-    "message": "기본값과 다른 설정 ({count}):"
-  },
-  "featureReportCopy": {
-    "message": "기능 목록 복사"
-  },
-  "featureReportCopyDone": {
-    "message": "기능 목록을 복사했습니다. 어디에도 전송되지 않았습니다."
-  },
-  "featureReportCopyFail": {
-    "message": "기능 목록을 복사하지 못했습니다."
-  },
-  "featureReportCopyTitle": {
-    "message": "설정 이름만 복사하며 값은 절대 복사하지 않습니다. 아무 곳에도 전송되지 않습니다."
-  },
-  "featureReportNoneChanged": {
-    "message": "없음"
-  },
-  "featureReportPrivacyNote": {
-    "message": "이름만 있고 값은 없습니다. 어디에도 전송되지 않았습니다. 클립보드에 있으며 붙여넣을지는 사용자가 결정합니다."
-  },
-  "bisectAbort": {
-    "message": "중단하고 복원"
-  },
-  "bisectAborted": {
-    "message": "이진 탐색을 중단했습니다. 기능이 다시 켜졌습니다."
-  },
-  "bisectCopy": {
-    "message": "결과 복사"
-  },
-  "bisectCopyDone": {
-    "message": "결과를 복사했습니다. 어디에도 전송되지 않았습니다."
-  },
-  "bisectCopyFail": {
-    "message": "결과를 복사하지 못했습니다."
-  },
-  "bisectCulpritTpl": {
-    "message": "{feature} 때문입니다."
-  },
-  "bisectExpired": {
-    "message": "완료되지 않은 이진 탐색이 만료되었습니다. 기능이 다시 켜졌습니다."
-  },
-  "bisectIntro": {
-    "message": "기능을 절반씩 껐다 켜서 291개를 약 10번의 새로고침으로 하나까지 좁힙니다. 설정은 완료할 때, 중단할 때, 그리고 그냥 자리를 떠도 자동으로 복원됩니다."
-  },
-  "bisectIntroCountUnknown": {
-    "message": "your features"
-  },
-  "bisectNo": {
-    "message": "사라짐"
-  },
-  "bisectNoCulprit": {
-    "message": "단일 기능이 원인이 아닙니다. Astra Deck 바깥의 무언가이거나 여러 기능의 조합입니다."
-  },
-  "bisectNothingEnabled": {
-    "message": "켜져 있는 기능이 없어 검색할 대상이 없습니다."
-  },
-  "bisectStart": {
-    "message": "이진 탐색 시작"
-  },
-  "bisectStarted": {
-    "message": "YouTube를 새로고침한 뒤 아래에서 답해 주세요."
-  },
-  "bisectStepTpl": {
-    "message": "{total}단계 중 {step}단계. YouTube를 새로고침한 뒤 답해 주세요. 문제가 아직 발생하나요?"
-  },
-  "bisectTitle": {
-    "message": "문제를 일으킨 기능 찾기"
-  },
-  "bisectYes": {
-    "message": "아직 발생함"
-  },
-  "serviceOutageDismiss": {
-    "message": "닫기"
-  },
-  "serviceOutageTpl": {
-    "message": "{service}이(가) 응답하지 않습니다. Astra Deck이 아니라 해당 서비스의 문제입니다."
-  },
-  "bisectFailed": {
-    "message": "이진 탐색을 계속할 수 없습니다. 설정을 확인해 주세요."
-  },
-  "bisectRestoreFailed": {
-    "message": "설정을 되돌리지 못했습니다. 설정을 열어 확인해 주세요."
-  },
-  "bisectStartFailed": {
-    "message": "시작할 수 없습니다. 이 브라우저 프로필은 이진 탐색 세션을 저장하지 못합니다."
-  },
-  "schemaOverviewNoMatchesTpl": {
-    "message": "“{term}”과(와) 일치하는 설정이 없습니다. 기능 이름, 카테고리, watch나 feed 같은 페이지, boolean 같은 컨트롤 종류를 시도해 보세요."
-  },
-  "schemaSurfaceHere": {
-    "message": "여기"
-  },
-  "schemaSurfaceHereTitle": {
-    "message": "이 설정은 팝업에서 바꿀 수 있습니다."
-  },
-  "schemaSurfacePanel": {
-    "message": "페이지 내 패널"
-  },
-  "schemaSurfacePanelTitle": {
-    "message": "이 설정은 YouTube의 Astra Deck 패널에서 편집합니다. 눌러서 엽니다."
-  },
-  "dlHealthApiTooNew": {
-    "message": "이 확장 프로그램보다 최신"
-  },
-  "dlInstallApiMismatchTpl": {
-    "message": "Astra Downloader는 실행 중이지만, 이 Astra Deck은 허용되는 것보다 오래된 API를 사용합니다{versions}. 확장 프로그램을 업데이트한 뒤 다시 확인을 선택해 주세요."
-  },
-  "dlInstallApiVersionsTpl": {
-    "message": " (최소 API {minimum}이(가) 필요합니다)"
-  },
-  "subscriptionGroupDeletedTpl": {
-    "message": "“{group}”과(와) 여기에 속한 채널 {count}개를 삭제했습니다. 구독에는 영향이 없습니다."
-  },
-  "subscriptionGroupRestoreConflict": {
-    "message": "해당 그룹 이름이 다시 사용 중이라 복원하지 않았습니다."
-  },
-  "subscriptionGroupRestored": {
-    "message": "그룹을 복원했습니다"
-  },
-  "antiAdblockTitle": {
-    "message": "YouTube 재생 확인"
-  },
-  "antiAdblockPlaybackAdvancing": {
-    "message": "재생 중"
-  },
-  "antiAdblockPlaybackStalled": {
-    "message": "멈춤"
-  },
-  "antiAdblockPlaybackBlocked": {
-    "message": "차단됨"
-  },
-  "antiAdblockPlaybackUnknown": {
-    "message": "알 수 없음"
-  },
-  "antiAdblockStateAdvancing": {
-    "message": "YouTube에서 광고 차단 경고를 표시했지만 이 동영상은 계속 재생 중입니다."
-  },
-  "antiAdblockStateStalled": {
-    "message": "YouTube에서 광고 차단 경고를 표시했고 재생이 멈췄습니다."
-  },
-  "antiAdblockStateBlocked": {
-    "message": "YouTube에서 광고 차단 경고를 표시했고 재생이 차단된 것으로 보입니다."
-  },
-  "antiAdblockStateUnknown": {
-    "message": "YouTube에서 광고 차단 경고를 표시했습니다. Astra가 아직 재생 상태를 확인할 수 없습니다."
-  },
-  "antiAdblockEvidenceTpl": {
-    "message": "선택자: {selector} · 재생: {state}"
-  },
-  "antiAdblockRulesPaused": {
-    "message": "Astra 광고 차단이 일시 중지되었습니다."
-  },
-  "antiAdblockPausedUntilTpl": {
-    "message": "Astra 광고 차단이 {time}까지 일시 중지됩니다."
-  },
-  "antiAdblockReloadHint": {
-    "message": "이 YouTube 탭을 새로고침하여 재생을 다시 시도하세요."
-  },
-  "antiAdblockResumeAction": {
-    "message": "Astra 광고 차단 다시 시작"
-  },
-  "antiAdblockPauseAction": {
-    "message": "Astra 광고 차단을 15분 동안 일시 중지"
-  },
-  "antiAdblockResumed": {
-    "message": "Astra 광고 차단을 다시 시작했습니다."
-  },
-  "featureHealthReasonAntiAdblockTpl": {
-    "message": "{selector}에서 YouTube 경고 감지; 재생 {state}"
-  },
-  "feature_customCssCode_name": {
-    "message": "사용자 지정 CSS 규칙"
-  },
-  "feature_customCssCode_desc": {
-    "message": "사용자 지정 CSS가 활성화된 동안 적용할 CSS"
-  },
-  "feature_subStyleFontSize_name": {
-    "message": "자막 글꼴 크기"
-  },
-  "feature_subStyleFontSize_desc": {
-    "message": "자막 텍스트를 50%에서 300%까지 조절"
-  },
-  "feature_subStyleFontFamily_name": {
-    "message": "자막 글꼴"
-  },
-  "feature_subStyleFontFamily_desc": {
-    "message": "자막에 사용할 서체 선택"
-  },
-  "feature_subStyleColor_name": {
-    "message": "자막 텍스트 색상"
-  },
-  "feature_subStyleColor_desc": {
-    "message": "자막 전경색 선택"
-  },
-  "feature_subStyleBgOpacity_name": {
-    "message": "자막 배경 불투명도"
-  },
-  "feature_subStyleBgOpacity_desc": {
-    "message": "자막 텍스트 뒤 배경의 불투명도 설정"
-  },
-  "feature_subStyleBgColor_name": {
-    "message": "자막 배경 색상"
-  },
-  "feature_subStyleBgColor_desc": {
-    "message": "자막 텍스트 뒤의 색상 선택"
-  },
-  "feature_subStyleBottomOffset_name": {
-    "message": "자막 아래쪽 간격"
-  },
-  "feature_subStyleBottomOffset_desc": {
-    "message": "자막을 플레이어 아래쪽 가장자리에서 위로 이동"
-  },
-  "feature_subStyleTextShadow_name": {
-    "message": "자막 텍스트 그림자"
-  },
-  "feature_subStyleTextShadow_desc": {
-    "message": "밝은 영상에서도 자막을 읽기 쉽도록 어두운 그림자 추가"
-  },
-  "feature_titleCaseMode_name": {
-    "message": "제목 대소문자 스타일"
-  },
-  "feature_titleCaseMode_desc": {
-    "message": "제목 변환이 활성화된 동안 사용할 대소문자 방식 선택"
-  },
-  "feature_selectionColor_name": {
-    "message": "선택 색상"
-  },
-  "feature_selectionColor_desc": {
-    "message": "사용자 지정 텍스트 선택이 활성화된 동안 사용할 강조 색상 선택"
-  },
-  "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
-  },
-  "settingsDlGetSetup": {
-    "message": "Get setup file"
-  },
-  "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+  "zapRuleRemoveAriaTpl": {
+    "message": "{selector} 규칙 제거"
+  },
+  "zapRuleToggleAriaTpl": {
+    "message": "{selector} 규칙 적용"
   }
 }

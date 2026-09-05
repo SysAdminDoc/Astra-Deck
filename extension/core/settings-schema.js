@@ -831,6 +831,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // for the site. Turning this off keeps every feature running exactly as
     // configured and stops the feed being fetched at all.
     Object.freeze({ key: "featureDisableFeed", category: "dev-diagnostics", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.84.0" }),
+    Object.freeze({ key: "selectorAutoRefresh", category: "dev-diagnostics", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.89.0" }),
     Object.freeze({ key: "_errors", category: "dev-diagnostics", type: "array", defaultValue: [], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
 
     // ─── privacy-profiles ───

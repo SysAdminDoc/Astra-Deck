@@ -2807,7 +2807,23 @@ async function renderSelectorHealthDashboard() {
             // raw-error-copy: the raw text only decides whether a cause line is
             // shown at all; describeFailureCause supplies every rendered character.
             const assetCause = asset.lastError ? describeFailureCause(asset.lastError) : '';
-            selectorHealthAsset.textContent = [assetLabel, youtubeBuild, assetCause].filter(Boolean).join(' · ');
+            // The opt-in schedule, when it is on. "Checked" is the last
+            // attempt and "updated" the last one that changed anything, and
+            // they differ whenever the asset was already current.
+            const schedule = response.selectorAutoRefresh || {};
+            let scheduleLabel = '';
+            if (schedule.enabled) {
+                const checked = schedule.lastCheckedAt
+                    ? t('selectorAutoRefreshCheckedTpl', 'auto-checked {age}')
+                        .replace('{age}', formatFeatureHealthAge(schedule.lastCheckedAt, Date.now()))
+                    : t('selectorAutoRefreshNeverChecked', 'auto-refresh on, no check yet');
+                const updated = schedule.lastSuccessAt
+                    ? t('selectorAutoRefreshUpdatedTpl', 'last update {age}')
+                        .replace('{age}', formatFeatureHealthAge(schedule.lastSuccessAt, Date.now()))
+                    : '';
+                scheduleLabel = [checked, updated].filter(Boolean).join(', ');
+            }
+            selectorHealthAsset.textContent = [assetLabel, youtubeBuild, scheduleLabel, assetCause].filter(Boolean).join(' · ');
             selectorHealthAsset.dataset.state = response.criticalCanary?.status === 'degraded'
                 ? 'rollback'
                 : (asset.status || 'unknown');

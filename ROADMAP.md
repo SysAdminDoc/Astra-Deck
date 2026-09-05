@@ -33,13 +33,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Acceptance: the language picker states each locale's translated percentage, `CATEGORY_META` resolves through `t()` for all 18 categories, and the coverage report is the single source for the number shown.
   Complexity: M
 
-- [ ] P2 — Refresh selector packs on a schedule instead of only on a button press
-  Why: the hot-update path exists and is verified, but a user whose install broke must know to press Refresh, so the mechanism helps only users who already diagnosed the problem.
-  Evidence: `extension/background.js:990` fetches the asset with a SHA-256 check and rollback; the sole trigger is the popup control at `extension/ytkit.js:6914`; the `alarms` permission is already declared and used at `extension/background.js:305`.
-  Touches: `extension/background.js`, `extension/core/selectors.js`, `extension/core/settings-schema.js`, `extension/popup.html`.
-  Acceptance: an opt-in periodic refresh reuses the existing digest verification and rollback, respects the same 256 KB cap, records last-check and last-success times in the popup, and makes no request when disabled.
-  Complexity: M
-
 - [ ] P2 — Let the remote selector asset carry canary rules
   Why: only 9 of 33 packs declare a canary and the hot-update path cannot add one, so a newly broken surface stays undetectable until a release ships.
   Evidence: `grep -l "canary:" extension/core/selector-packs/*.js` returns 9 of 33; `extension/core/selectors.js:418-421` replaces `SurfaceSelectorMap`/`SurfaceSelectors` and never touches `SurfacePackRegistry`.
