@@ -565,6 +565,7 @@
   "redditComments": false,
   "diagnosticLog": false,
   "featureDisableFeed": true,
+  "selectorAutoRefresh": false,
   "_errors": [],
   "storageQuotaLRU": false,
   "apiRetryBackoff": true,

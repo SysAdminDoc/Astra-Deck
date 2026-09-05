@@ -71,6 +71,9 @@
   "aiSummaryButtonTitle": {
     "message": "AI 摘要（在 Astra Deck 工具栏弹窗中管理凭据）"
   },
+  "aiSummaryByoFallbackNotice": {
+    "message": "改用你配置的自带密钥提供方。"
+  },
   "aiSummaryCalling": {
     "message": "正在调用 AI 提供商…"
   },
@@ -137,20 +140,65 @@
   "aiSummaryTitle": {
     "message": "AI 摘要"
   },
-  "aiSummaryByoFallbackNotice": {
-    "message": "改用你配置的自带密钥提供方。"
-  },
   "aiSummaryTldr": {
     "message": "简要结论"
   },
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI 摘要（右键管理提供商凭据）"
   },
+  "altFrontendOpenAriaTpl": {
+    "message": "在 {host} 上于外部打开"
+  },
   "altFrontendOpenBtn": {
     "message": "在外部打开"
   },
-  "altFrontendOpenAriaTpl": {
-    "message": "在 {host} 上于外部打开"
+  "antiAdblockEvidenceTpl": {
+    "message": "选择器：{selector} · 播放：{state}"
+  },
+  "antiAdblockPauseAction": {
+    "message": "暂停 Astra 广告拦截 15 分钟"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astra 广告拦截已暂停至 {time}。"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "正在播放"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "已阻止"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "已停滞"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "未知"
+  },
+  "antiAdblockReloadHint": {
+    "message": "重新加载此 YouTube 标签页以重试播放。"
+  },
+  "antiAdblockResumeAction": {
+    "message": "恢复 Astra 广告拦截"
+  },
+  "antiAdblockResumed": {
+    "message": "Astra 广告拦截已恢复。"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astra 广告拦截已暂时暂停。"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube 显示了广告拦截警告，但此视频仍在播放。"
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube 显示了广告拦截警告，播放似乎已被阻止。"
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube 显示了广告拦截警告，播放已停滞。"
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube 显示了广告拦截警告。Astra 暂时无法确认播放状态。"
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube 播放检查"
   },
   "astraContextMenuAria": {
     "message": "Astra actions"
@@ -163,6 +211,66 @@
   },
   "audioOnlyUnavailable": {
     "message": "仅音频不可用"
+  },
+  "bisectAbort": {
+    "message": "停止并恢复"
+  },
+  "bisectAborted": {
+    "message": "已停止二分查找。你的功能已恢复。"
+  },
+  "bisectCopy": {
+    "message": "复制结果"
+  },
+  "bisectCopyDone": {
+    "message": "已复制结果。没有向任何地方发送内容。"
+  },
+  "bisectCopyFail": {
+    "message": "无法复制结果。"
+  },
+  "bisectCulpritTpl": {
+    "message": "是 {feature}。"
+  },
+  "bisectExpired": {
+    "message": "一次未完成的二分查找已过期。你的功能已恢复。"
+  },
+  "bisectFailed": {
+    "message": "二分查找无法继续。请检查设置。"
+  },
+  "bisectIntro": {
+    "message": "按一半一半地关闭并重新开启你的功能，让你在大约十次刷新内把 291 个功能缩小到一个。设置会在结束时、你停止时以及你离开后自动恢复。"
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
+  },
+  "bisectNo": {
+    "message": "不再发生"
+  },
+  "bisectNoCulprit": {
+    "message": "没有单个功能应对此负责。原因在 Astra Deck 之外，或者是多个功能的组合。"
+  },
+  "bisectNothingEnabled": {
+    "message": "没有开启任何功能，因此没有可查找的内容。"
+  },
+  "bisectRestoreFailed": {
+    "message": "无法恢复你的设置。请打开设置并检查。"
+  },
+  "bisectStart": {
+    "message": "开始二分查找"
+  },
+  "bisectStartFailed": {
+    "message": "无法开始：此浏览器配置文件不会保存二分查找会话。"
+  },
+  "bisectStarted": {
+    "message": "刷新 YouTube，然后在下面作答。"
+  },
+  "bisectStepTpl": {
+    "message": "第 {step} 步，共约 {total} 步。刷新 YouTube，然后回答：问题还会发生吗？"
+  },
+  "bisectTitle": {
+    "message": "找出把页面弄坏的功能"
+  },
+  "bisectYes": {
+    "message": "仍然会发生"
   },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
@@ -288,6 +396,72 @@
   },
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
+  },
+  "commentSearchActiveHint": {
+    "message": "YouTube 加载评论列表时，搜索会保持启用。"
+  },
+  "commentSearchAria": {
+    "message": "搜索评论"
+  },
+  "commentSearchClearAria": {
+    "message": "清除评论搜索"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} 个匹配项"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} 个匹配项"
+  },
+  "commentSearchCountThread": {
+    "message": "{count} 个讨论串"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} 个讨论串"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "请尝试更短的短语、创作者名称，或清除筛选条件以恢复所有讨论串。"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "没有匹配的评论"
+  },
+  "commentSearchEscapeHint": {
+    "message": "随时按 Esc 清除搜索。新评论会自动计入。"
+  },
+  "commentSearchEyebrow": {
+    "message": "在评论中查找"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "使用评论导航器中的“下一个”或“上一个”在匹配项之间跳转。"
+  },
+  "commentSearchNoMatches": {
+    "message": "没有匹配项"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "没有评论讨论串与“{query}”匹配。"
+  },
+  "commentSearchPlaceholder": {
+    "message": "搜索创作者、短语或主题…"
+  },
+  "commentSearchReadyThread": {
+    "message": "已有 {count} 个评论讨论串可供搜索。可搜索创作者、短语或主题。"
+  },
+  "commentSearchReadyThreads": {
+    "message": "已有 {count} 个评论讨论串可供搜索。可搜索创作者、短语或主题。"
+  },
+  "commentSearchShorterHint": {
+    "message": "请尝试更短的短语、创作者名称，或清除筛选条件。"
+  },
+  "commentSearchShowingMatches": {
+    "message": "正在显示“{query}”的 {total} 个评论讨论串中的 {visible} 个。"
+  },
+  "commentSearchSyncHint": {
+    "message": "更多评论出现时，搜索栏会自动保持同步。"
+  },
+  "commentSearchWaiting": {
+    "message": "正在等待评论加载…"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "正在等待加载“{query}”的评论…"
   },
   "commentTranslateAction": {
     "message": "翻译"
@@ -499,6 +673,9 @@
   "dlFormatVideoWeb": {
     "message": "针对 Web 优化"
   },
+  "dlHealthApiTooNew": {
+    "message": "比此扩展更新"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -637,6 +814,12 @@
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
   },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader 正在运行，但此 Astra Deck 使用的 API 比它接受的更旧{versions}。请更新扩展，然后再次选择“检查”。"
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": "（它至少需要 API {minimum}）"
+  },
   "dlInstallCheckAgain": {
     "message": "Check again"
   },
@@ -681,6 +864,9 @@
   },
   "dlInstallLocalDownloads": {
     "message": "Local downloads"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
   },
   "dlInstallNoResponse": {
     "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
@@ -1238,17 +1424,20 @@
   "featureHealthNote": {
     "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
   },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "通过 {selector} 检测到 YouTube 警告；播放状态为 {state}"
+  },
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "YouTube {version} 更改了 {surface}"
   },
-  "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
-  },
   "featureHealthReasonSelectorFallbackTpl": {
     "message": "页面元素“{surface}”仅匹配到备用规则"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
   },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
@@ -1276,6 +1465,27 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureReportChangedTpl": {
+    "message": "与默认值不同的设置（{count}）："
+  },
+  "featureReportCopy": {
+    "message": "复制功能列表"
+  },
+  "featureReportCopyDone": {
+    "message": "已复制功能列表。没有向任何地方发送内容。"
+  },
+  "featureReportCopyFail": {
+    "message": "无法复制功能列表。"
+  },
+  "featureReportCopyTitle": {
+    "message": "只复制设置名称，从不复制它们的值。不会向任何地方发送内容。"
+  },
+  "featureReportNoneChanged": {
+    "message": "无"
+  },
+  "featureReportPrivacyNote": {
+    "message": "只有名称，没有值。没有向任何地方发送内容。它在你的剪贴板里，是否粘贴由你决定。"
   },
   "featureScheduleDaysTpl": {
     "message": "Active {window} on {days}"
@@ -1661,6 +1871,12 @@
   "feature_chatHide_menu_name": {
     "message": "聊天菜单 (...)"
   },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "隐藏“慢速模式已开启”提示及其仅限会员的同类提示"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "模式提示"
+  },
   "feature_chatHide_polls_desc": {
     "message": "隐藏直播聊天中的投票"
   },
@@ -1811,72 +2027,6 @@
   "feature_commentSearch_name": {
     "message": "评论搜索"
   },
-  "commentSearchCountThread": {
-    "message": "{count} 个讨论串"
-  },
-  "commentSearchCountThreads": {
-    "message": "{count} 个讨论串"
-  },
-  "commentSearchCountMatch": {
-    "message": "{count} 个匹配项"
-  },
-  "commentSearchCountMatches": {
-    "message": "{count} 个匹配项"
-  },
-  "commentSearchNoMatches": {
-    "message": "没有匹配项"
-  },
-  "commentSearchWaiting": {
-    "message": "正在等待评论加载…"
-  },
-  "commentSearchSyncHint": {
-    "message": "更多评论出现时，搜索栏会自动保持同步。"
-  },
-  "commentSearchReadyThread": {
-    "message": "已有 {count} 个评论讨论串可供搜索。可搜索创作者、短语或主题。"
-  },
-  "commentSearchReadyThreads": {
-    "message": "已有 {count} 个评论讨论串可供搜索。可搜索创作者、短语或主题。"
-  },
-  "commentSearchEscapeHint": {
-    "message": "随时按 Esc 清除搜索。新评论会自动计入。"
-  },
-  "commentSearchShowingMatches": {
-    "message": "正在显示“{query}”的 {total} 个评论讨论串中的 {visible} 个。"
-  },
-  "commentSearchNavigatorHint": {
-    "message": "使用评论导航器中的“下一个”或“上一个”在匹配项之间跳转。"
-  },
-  "commentSearchWaitingForQuery": {
-    "message": "正在等待加载“{query}”的评论…"
-  },
-  "commentSearchActiveHint": {
-    "message": "YouTube 加载评论列表时，搜索会保持启用。"
-  },
-  "commentSearchNoThreadsForQuery": {
-    "message": "没有评论讨论串与“{query}”匹配。"
-  },
-  "commentSearchShorterHint": {
-    "message": "请尝试更短的短语、创作者名称，或清除筛选条件。"
-  },
-  "commentSearchEyebrow": {
-    "message": "在评论中查找"
-  },
-  "commentSearchPlaceholder": {
-    "message": "搜索创作者、短语或主题…"
-  },
-  "commentSearchAria": {
-    "message": "搜索评论"
-  },
-  "commentSearchClearAria": {
-    "message": "清除评论搜索"
-  },
-  "commentSearchEmptyTitle": {
-    "message": "没有匹配的评论"
-  },
-  "commentSearchEmptyCopy": {
-    "message": "请尝试更短的短语、创作者名称，或清除筛选条件以恢复所有讨论串。"
-  },
   "feature_commentTranslateTarget_desc": {
     "message": "将评论翻译成的语言。自动跟随浏览器语言。"
   },
@@ -1924,6 +2074,12 @@
   },
   "feature_creatorCommentHighlight_name": {
     "message": "高亮创作者评论"
+  },
+  "feature_customCssCode_desc": {
+    "message": "启用自定义 CSS 时应用的 CSS"
+  },
+  "feature_customCssCode_name": {
+    "message": "自定义 CSS 规则"
   },
   "feature_customCssInjection_desc": {
     "message": "将自定义 CSS 规则注入 YouTube 页面"
@@ -3461,6 +3617,12 @@
   "feature_searchWhileWatching_name": {
     "message": "边看边搜"
   },
+  "feature_selectionColor_desc": {
+    "message": "启用自定义文本选择时选择使用的突出显示颜色"
+  },
+  "feature_selectionColor_name": {
+    "message": "选择颜色"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "查看实时选择器漂移信号并导出 JSON 健康报告用于刷新固定数据。"
   },
@@ -3638,6 +3800,48 @@
   "feature_styledFilterChips_name": {
     "message": "样式化筛选标签"
   },
+  "feature_subStyleBgColor_desc": {
+    "message": "选择字幕文字后方的颜色"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "字幕背景颜色"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "设置字幕文字后方背景的不透明度"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "字幕背景不透明度"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "将字幕从播放器底边向上移动"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "字幕底部偏移"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "选择字幕前景色"
+  },
+  "feature_subStyleColor_name": {
+    "message": "字幕文字颜色"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "选择字幕使用的字体"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "字幕字体"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "将字幕文字缩放至 50% 到 300%"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "字幕字号"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "添加深色阴影，使字幕在明亮画面上仍清晰可读"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "字幕文字阴影"
+  },
   "feature_subscriptionGroups_desc": {
     "message": "PocketTube 级别的本地订阅分组。创建命名分组、拖入频道、按日期/时长/未观看/上次访问以来的新内容排序。分组数据存储在 subscriptionGroupData 中（仅本地）；使用导出进行备份。"
   },
@@ -3710,6 +3914,12 @@
   "feature_timestampBookmarks_name": {
     "message": "时间戳书签"
   },
+  "feature_titleCaseMode_desc": {
+    "message": "启用标题转换时选择使用的大小写"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "标题大小写样式"
+  },
   "feature_titleCaseTransform_desc": {
     "message": "用你选择的大小写样式覆盖 YouTube 的标题党全大写标题"
   },
@@ -3728,17 +3938,17 @@
   "feature_tokenThemeBridge_name": {
     "message": "原生令牌主题桥接"
   },
-  "feature_transcriptQaLane_desc": {
-    "message": "在设备上处理问题，或使用已配置提供商，并沿用现有的权限、隐私和请求限额控制。"
-  },
-  "feature_transcriptQaLane_name": {
-    "message": "转录问答提供商"
-  },
   "feature_transcriptAiHandoff_desc": {
     "message": "添加一个播放器按钮，复制字幕并打开你选择的 AI 工具，预填摘要提示"
   },
   "feature_transcriptAiHandoff_name": {
     "message": "字幕 → AI 一键交接"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "在设备上处理问题，或使用已配置提供商，并沿用现有的权限、隐私和请求限额控制。"
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "转录问答提供商"
   },
   "feature_transcriptViewer_desc": {
     "message": "在侧边栏添加可点击的字幕面板，支持时间戳导航和导出（txt/srt/剪贴板/LLM 提示）"
@@ -4085,9 +4295,6 @@
   "filterListStatusReady": {
     "message": "当前未订阅任何过滤列表。"
   },
-  "filterListStatusStateReadFail": {
-    "message": "无法读取过滤列表状态。请重新加载扩展程序，然后再次打开弹出窗口。"
-  },
   "filterListStatusRefreshFail": {
     "message": "无法刷新列表。请检查网址后重试。"
   },
@@ -4102,6 +4309,9 @@
   },
   "filterListStatusStalePausedTpl": {
     "message": "缓存的 {host} 规则已暂停；检查时间：{age}；{reason}。格式 v{version}；SHA-256 {hash}。"
+  },
+  "filterListStatusStateReadFail": {
+    "message": "无法读取过滤列表状态。请重新加载扩展程序，然后再次打开弹出窗口。"
   },
   "filterListStopFailed": {
     "message": "无法停止关注此过滤列表。"
@@ -4940,6 +5150,9 @@
   "schemaOverviewEyebrow": {
     "message": "设置概览"
   },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "没有设置匹配“{term}”。试试功能名称、分类、像 watch 或 feed 这样的页面，或者像 boolean 这样的控件类型。"
+  },
   "schemaOverviewToolsAria": {
     "message": "设置差异工具"
   },
@@ -4948,6 +5161,18 @@
   },
   "schemaResetTitleTpl": {
     "message": "将 {key} 重置为默认值（{value}）"
+  },
+  "schemaSurfaceHere": {
+    "message": "这里"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "此设置可以在弹出窗口中更改。"
+  },
+  "schemaSurfacePanel": {
+    "message": "页面内面板"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "此设置在 YouTube 上的 Astra Deck 面板中编辑。点击可打开。"
   },
   "screenshotCaptureFailed": {
     "message": "截图失败"
@@ -4990,6 +5215,15 @@
   },
   "searchWatchTitle": {
     "message": "搜索时不中断播放"
+  },
+  "selectorAutoRefreshCheckedTpl": {
+    "message": "auto-checked {age}"
+  },
+  "selectorAutoRefreshNeverChecked": {
+    "message": "auto-refresh on, no check yet"
+  },
+  "selectorAutoRefreshUpdatedTpl": {
+    "message": "last update {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "当前版本"
@@ -5054,6 +5288,12 @@
   "selectorHealthYouTubeBuildTpl": {
     "message": "YouTube 版本 {version}"
   },
+  "serviceOutageDismiss": {
+    "message": "关闭"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} 没有响应。问题出在该服务，不是 Astra Deck。"
+  },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"
   },
@@ -5099,6 +5339,12 @@
   "settingsDlDownloadTitle": {
     "message": "下载 Astra Downloader 安装文件并在下载内容中显示"
   },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
+  },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
   },
@@ -5143,6 +5389,12 @@
   },
   "settingsFeatureClearAriaTpl": {
     "message": "清除 {featureName}"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "已暂停：YouTube 的改动使该功能在此版本的 Astra Deck 中失效。你的设置未被更改，修复发布后会自动恢复。"
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "问题 #{issue}"
   },
   "settingsFooterSaved": {
     "message": "已保存"
@@ -5668,6 +5920,12 @@
   "spRowSaveFailedTpl": {
     "message": "{name}。保存失败。请尝试刷新仪表盘。"
   },
+  "spRowStateRetry": {
+    "message": "重试"
+  },
+  "spRowStateSaving": {
+    "message": "正在保存"
+  },
   "spScopeTpl": {
     "message": "范围：{scope}"
   },
@@ -5721,12 +5979,6 @@
   },
   "spSelectorTotalTpl": {
     "message": "{count} 个界面"
-  },
-  "spRowStateRetry": {
-    "message": "重试"
-  },
-  "spRowStateSaving": {
-    "message": "正在保存"
   },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
@@ -5980,14 +6232,6 @@
   "statusBackupImportedUndo": {
     "message": "已导入备份。点击“撤销导入”可恢复到先前状态。撤销点可保留 7 天，关闭浏览器后依然有效。"
   },
-  "statusImportBackupWrittenTpl": {
-    "message": "你之前的数据已先保存到 {file}。",
-    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
-  },
-  "statusImportBackupFileFailed": {
-    "message": "Astra Deck 未能先保存你之前数据的备份文件，因此“撤销导入”是唯一的回退方式。",
-    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
-  },
   "statusClipboardUnavailable": {
     "message": "此处无法复制。请选中文本并自行复制。"
   },
@@ -6017,6 +6261,14 @@
   },
   "statusExportFail": {
     "message": "导出失败"
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck 未能先保存你之前数据的备份文件，因此“撤销导入”是唯一的回退方式。",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "你之前的数据已先保存到 {file}。",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
   },
   "statusImportFail": {
     "message": "导入失败"
@@ -6363,6 +6615,21 @@
   "subscriptionGroupChipTpl": {
     "message": "{prefix}{name}（{count}）{tags}"
   },
+  "subscriptionGroupDelete": {
+    "message": "删除"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "删除分组 {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "删除“{group}”及其 {count} 个频道？不会影响你的订阅。"
+  },
+  "subscriptionGroupDeleted": {
+    "message": "分组已删除"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "已删除“{group}”及其中的 {count} 个频道。你的订阅不受影响。"
+  },
   "subscriptionGroupDialogTitle": {
     "message": "命名此组"
   },
@@ -6380,6 +6647,24 @@
   },
   "subscriptionGroupPlayingTpl": {
     "message": "正在播放 {group} 中的 {count} 个视频{truncated}"
+  },
+  "subscriptionGroupRename": {
+    "message": "重命名"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "重命名分组 {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "此分组的新名称"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "分组已重命名"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "该分组名称又被占用了，因此没有恢复。"
+  },
+  "subscriptionGroupRestored": {
+    "message": "已恢复分组"
   },
   "subscriptionGroupsEmptyCopy": {
     "message": "选择“+ 分组”来创建第一个分组。"
@@ -6512,6 +6797,9 @@
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
+  },
+  "subscriptionMembersCapped": {
+    "message": "分组已满 1000 个频道。请先移除一个。"
   },
   "subscriptionMembersCloseAria": {
     "message": "Close the channel membership editor"
@@ -6741,6 +7029,12 @@
   "subtitleDownloadFailed": {
     "message": "字幕下载失败"
   },
+  "switchLabelOff": {
+    "message": "关"
+  },
+  "switchLabelOn": {
+    "message": "开"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "已在 {time} 添加书签"
   },
@@ -6867,6 +7161,9 @@
   "toastDlStopped": {
     "message": "本地下载器已停止。正在重新启动…"
   },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。"
+  },
   "toggleRiskTooltip_api": {
     "message": "Talks to an external API server"
   },
@@ -6878,12 +7175,6 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity. GitHub-full only."
-  },
-  "switchLabelOff": {
-    "message": "关"
-  },
-  "switchLabelOn": {
-    "message": "开"
   },
   "toggleStateOff": {
     "message": "已禁用"
@@ -7209,6 +7500,12 @@
   "uiFontSystem": {
     "message": "系统界面"
   },
+  "ui_commentLikeBadge": {
+    "message": "赞"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}。{count} 个赞"
+  },
   "ui_rydCachedTitleHoursTpl": {
     "message": "Return YouTube Dislike 点踩数已缓存（{hours} 小时前）。"
   },
@@ -7254,9 +7551,6 @@
   "undo": {
     "message": "撤销"
   },
-  "unknown": {
-    "message": "未知"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
@@ -7268,6 +7562,9 @@
   },
   "undoResetBtn": {
     "message": "撤销重置"
+  },
+  "unknown": {
+    "message": "未知"
   },
   "updateCompanionAria": {
     "message": "Update Astra Downloader companion"
@@ -7692,11 +7989,11 @@
   "videoHiderReasonBlockedChannel": {
     "message": "已屏蔽频道规则"
   },
-  "videoHiderReasonChannelNotAllowed": {
-    "message": "你的频道允许列表"
-  },
   "videoHiderReasonBlockedChannelNamedTpl": {
     "message": "已屏蔽频道规则（{channel}）"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "你的频道允许列表"
   },
   "videoHiderReasonChannelNotAllowedNamedTpl": {
     "message": "你的频道白名单（{channel}）"
@@ -7734,11 +8031,11 @@
   "videoHiderReasonPredicate": {
     "message": "你的高级本地规则"
   },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonSyntheticDisclosed": {
     "message": "YouTube 自带的经改动或合成内容标示"
+  },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
   },
   "videoHiderReasonUpcoming": {
     "message": "即将首播过滤器"
@@ -8443,12 +8740,6 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
-  "zapRuleToggleAriaTpl": {
-    "message": "应用 {selector} 的规则"
-  },
-  "zapRuleRemoveAriaTpl": {
-    "message": "移除 {selector} 的规则"
-  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
@@ -8458,292 +8749,10 @@
   "zapRuleRemove": {
     "message": "Remove"
   },
-  "ui_commentLikeBadge": {
-    "message": "赞"
-  },
-  "ui_commentLikeBadgeCountAriaTpl": {
-    "message": "{label}。{count} 个赞"
-  },
-  "feature_chatHide_modeNotices_name": {
-    "message": "模式提示"
-  },
-  "feature_chatHide_modeNotices_desc": {
-    "message": "隐藏“慢速模式已开启”提示及其仅限会员的同类提示"
-  },
-  "toastStorageWriteFailed": {
-    "message": "Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。"
-  },
-  "subscriptionMembersCapped": {
-    "message": "分组已满 1000 个频道。请先移除一个。"
-  },
-  "subscriptionGroupRename": {
-    "message": "重命名"
-  },
-  "subscriptionGroupRenameAriaTpl": {
-    "message": "重命名分组 {group}"
-  },
-  "subscriptionGroupRenamePrompt": {
-    "message": "此分组的新名称"
-  },
-  "subscriptionGroupRenamed": {
-    "message": "分组已重命名"
-  },
-  "subscriptionGroupDelete": {
-    "message": "删除"
-  },
-  "subscriptionGroupDeleteAriaTpl": {
-    "message": "删除分组 {group}"
-  },
-  "subscriptionGroupDeleteConfirmTpl": {
-    "message": "删除“{group}”及其 {count} 个频道？不会影响你的订阅。"
-  },
-  "subscriptionGroupDeleted": {
-    "message": "分组已删除"
-  },
-  "settingsFeatureKnownBroken": {
-    "message": "已暂停：YouTube 的改动使该功能在此版本的 Astra Deck 中失效。你的设置未被更改，修复发布后会自动恢复。"
-  },
-  "settingsFeatureKnownBrokenIssueTpl": {
-    "message": "问题 #{issue}"
-  },
-  "featureReportChangedTpl": {
-    "message": "与默认值不同的设置（{count}）："
-  },
-  "featureReportCopy": {
-    "message": "复制功能列表"
-  },
-  "featureReportCopyDone": {
-    "message": "已复制功能列表。没有向任何地方发送内容。"
-  },
-  "featureReportCopyFail": {
-    "message": "无法复制功能列表。"
-  },
-  "featureReportCopyTitle": {
-    "message": "只复制设置名称，从不复制它们的值。不会向任何地方发送内容。"
-  },
-  "featureReportNoneChanged": {
-    "message": "无"
-  },
-  "featureReportPrivacyNote": {
-    "message": "只有名称，没有值。没有向任何地方发送内容。它在你的剪贴板里，是否粘贴由你决定。"
-  },
-  "bisectAbort": {
-    "message": "停止并恢复"
-  },
-  "bisectAborted": {
-    "message": "已停止二分查找。你的功能已恢复。"
-  },
-  "bisectCopy": {
-    "message": "复制结果"
-  },
-  "bisectCopyDone": {
-    "message": "已复制结果。没有向任何地方发送内容。"
-  },
-  "bisectCopyFail": {
-    "message": "无法复制结果。"
-  },
-  "bisectCulpritTpl": {
-    "message": "是 {feature}。"
-  },
-  "bisectExpired": {
-    "message": "一次未完成的二分查找已过期。你的功能已恢复。"
-  },
-  "bisectIntro": {
-    "message": "按一半一半地关闭并重新开启你的功能，让你在大约十次刷新内把 291 个功能缩小到一个。设置会在结束时、你停止时以及你离开后自动恢复。"
-  },
-  "bisectIntroCountUnknown": {
-    "message": "your features"
-  },
-  "bisectNo": {
-    "message": "不再发生"
-  },
-  "bisectNoCulprit": {
-    "message": "没有单个功能应对此负责。原因在 Astra Deck 之外，或者是多个功能的组合。"
-  },
-  "bisectNothingEnabled": {
-    "message": "没有开启任何功能，因此没有可查找的内容。"
-  },
-  "bisectStart": {
-    "message": "开始二分查找"
-  },
-  "bisectStarted": {
-    "message": "刷新 YouTube，然后在下面作答。"
-  },
-  "bisectStepTpl": {
-    "message": "第 {step} 步，共约 {total} 步。刷新 YouTube，然后回答：问题还会发生吗？"
-  },
-  "bisectTitle": {
-    "message": "找出把页面弄坏的功能"
-  },
-  "bisectYes": {
-    "message": "仍然会发生"
-  },
-  "serviceOutageDismiss": {
-    "message": "关闭"
-  },
-  "serviceOutageTpl": {
-    "message": "{service} 没有响应。问题出在该服务，不是 Astra Deck。"
-  },
-  "bisectFailed": {
-    "message": "二分查找无法继续。请检查设置。"
-  },
-  "bisectRestoreFailed": {
-    "message": "无法恢复你的设置。请打开设置并检查。"
-  },
-  "bisectStartFailed": {
-    "message": "无法开始：此浏览器配置文件不会保存二分查找会话。"
-  },
-  "schemaOverviewNoMatchesTpl": {
-    "message": "没有设置匹配“{term}”。试试功能名称、分类、像 watch 或 feed 这样的页面，或者像 boolean 这样的控件类型。"
-  },
-  "schemaSurfaceHere": {
-    "message": "这里"
-  },
-  "schemaSurfaceHereTitle": {
-    "message": "此设置可以在弹出窗口中更改。"
-  },
-  "schemaSurfacePanel": {
-    "message": "页面内面板"
-  },
-  "schemaSurfacePanelTitle": {
-    "message": "此设置在 YouTube 上的 Astra Deck 面板中编辑。点击可打开。"
-  },
-  "dlHealthApiTooNew": {
-    "message": "比此扩展更新"
-  },
-  "dlInstallApiMismatchTpl": {
-    "message": "Astra Downloader 正在运行，但此 Astra Deck 使用的 API 比它接受的更旧{versions}。请更新扩展，然后再次选择“检查”。"
-  },
-  "dlInstallApiVersionsTpl": {
-    "message": "（它至少需要 API {minimum}）"
-  },
-  "subscriptionGroupDeletedTpl": {
-    "message": "已删除“{group}”及其中的 {count} 个频道。你的订阅不受影响。"
-  },
-  "subscriptionGroupRestoreConflict": {
-    "message": "该分组名称又被占用了，因此没有恢复。"
-  },
-  "subscriptionGroupRestored": {
-    "message": "已恢复分组"
-  },
-  "antiAdblockTitle": {
-    "message": "YouTube 播放检查"
-  },
-  "antiAdblockPlaybackAdvancing": {
-    "message": "正在播放"
-  },
-  "antiAdblockPlaybackStalled": {
-    "message": "已停滞"
-  },
-  "antiAdblockPlaybackBlocked": {
-    "message": "已阻止"
-  },
-  "antiAdblockPlaybackUnknown": {
-    "message": "未知"
-  },
-  "antiAdblockStateAdvancing": {
-    "message": "YouTube 显示了广告拦截警告，但此视频仍在播放。"
-  },
-  "antiAdblockStateStalled": {
-    "message": "YouTube 显示了广告拦截警告，播放已停滞。"
-  },
-  "antiAdblockStateBlocked": {
-    "message": "YouTube 显示了广告拦截警告，播放似乎已被阻止。"
-  },
-  "antiAdblockStateUnknown": {
-    "message": "YouTube 显示了广告拦截警告。Astra 暂时无法确认播放状态。"
-  },
-  "antiAdblockEvidenceTpl": {
-    "message": "选择器：{selector} · 播放：{state}"
-  },
-  "antiAdblockRulesPaused": {
-    "message": "Astra 广告拦截已暂时暂停。"
-  },
-  "antiAdblockPausedUntilTpl": {
-    "message": "Astra 广告拦截已暂停至 {time}。"
-  },
-  "antiAdblockReloadHint": {
-    "message": "重新加载此 YouTube 标签页以重试播放。"
-  },
-  "antiAdblockResumeAction": {
-    "message": "恢复 Astra 广告拦截"
-  },
-  "antiAdblockPauseAction": {
-    "message": "暂停 Astra 广告拦截 15 分钟"
-  },
-  "antiAdblockResumed": {
-    "message": "Astra 广告拦截已恢复。"
-  },
-  "featureHealthReasonAntiAdblockTpl": {
-    "message": "通过 {selector} 检测到 YouTube 警告；播放状态为 {state}"
-  },
-  "feature_customCssCode_name": {
-    "message": "自定义 CSS 规则"
-  },
-  "feature_customCssCode_desc": {
-    "message": "启用自定义 CSS 时应用的 CSS"
-  },
-  "feature_subStyleFontSize_name": {
-    "message": "字幕字号"
-  },
-  "feature_subStyleFontSize_desc": {
-    "message": "将字幕文字缩放至 50% 到 300%"
-  },
-  "feature_subStyleFontFamily_name": {
-    "message": "字幕字体"
-  },
-  "feature_subStyleFontFamily_desc": {
-    "message": "选择字幕使用的字体"
-  },
-  "feature_subStyleColor_name": {
-    "message": "字幕文字颜色"
-  },
-  "feature_subStyleColor_desc": {
-    "message": "选择字幕前景色"
-  },
-  "feature_subStyleBgOpacity_name": {
-    "message": "字幕背景不透明度"
-  },
-  "feature_subStyleBgOpacity_desc": {
-    "message": "设置字幕文字后方背景的不透明度"
-  },
-  "feature_subStyleBgColor_name": {
-    "message": "字幕背景颜色"
-  },
-  "feature_subStyleBgColor_desc": {
-    "message": "选择字幕文字后方的颜色"
-  },
-  "feature_subStyleBottomOffset_name": {
-    "message": "字幕底部偏移"
-  },
-  "feature_subStyleBottomOffset_desc": {
-    "message": "将字幕从播放器底边向上移动"
-  },
-  "feature_subStyleTextShadow_name": {
-    "message": "字幕文字阴影"
-  },
-  "feature_subStyleTextShadow_desc": {
-    "message": "添加深色阴影，使字幕在明亮画面上仍清晰可读"
-  },
-  "feature_titleCaseMode_name": {
-    "message": "标题大小写样式"
-  },
-  "feature_titleCaseMode_desc": {
-    "message": "启用标题转换时选择使用的大小写"
-  },
-  "feature_selectionColor_name": {
-    "message": "选择颜色"
-  },
-  "feature_selectionColor_desc": {
-    "message": "启用自定义文本选择时选择使用的突出显示颜色"
-  },
-  "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
-  },
-  "settingsDlGetSetup": {
-    "message": "Get setup file"
-  },
-  "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+  "zapRuleRemoveAriaTpl": {
+    "message": "移除 {selector} 的规则"
+  },
+  "zapRuleToggleAriaTpl": {
+    "message": "应用 {selector} 的规则"
   }
 }

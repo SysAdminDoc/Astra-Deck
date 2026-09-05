@@ -880,6 +880,64 @@
     }
 
     const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
+    // Last time an automatic refresh was ATTEMPTED, and the last one that
+    // succeeded. Persisted rather than kept in the page, because the schedule
+    // and the popup readout both have to survive a navigation.
+    const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
+    const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+    function readSelectorAssetSchedule() {
+        const stored = storageReadJSON(SELECTOR_ASSET_SCHEDULE_KEY, null);
+        const lastCheckedAt = Number(stored?.lastCheckedAt);
+        const lastSuccessAt = Number(stored?.lastSuccessAt);
+        return {
+            lastCheckedAt: Number.isFinite(lastCheckedAt) && lastCheckedAt > 0 ? lastCheckedAt : null,
+            lastSuccessAt: Number.isFinite(lastSuccessAt) && lastSuccessAt > 0 ? lastSuccessAt : null,
+            lastError: typeof stored?.lastError === 'string' ? stored.lastError.slice(0, 180) : null
+        };
+    }
+
+    // Whether an automatic refresh is due right now.
+    //
+    // Deliberately NOT an alarm in the service worker. Applying an asset means
+    // validating it against the schema and rolling back on failure, and that
+    // runtime lives in the page; a worker alarm could only write the storage
+    // key the next page trusts at startup, which would be a second, unvalidated
+    // path into the selector map. Checking staleness when a page boots reuses
+    // the existing verified fetch, apply and rollback exactly as the button
+    // does, and a user who never opens YouTube needs no refresh anyway.
+    function selectorAutoRefreshDue(settings, schedule, now = Date.now()) {
+        if (!settings?.selectorAutoRefresh) return false;
+        const last = Number(schedule?.lastCheckedAt);
+        if (!Number.isFinite(last) || last <= 0) return true;
+        // A clock that moved backwards must not park the schedule in the future.
+        if (last > now) return true;
+        return (now - last) >= SELECTOR_AUTO_REFRESH_INTERVAL_MS;
+    }
+
+    async function maybeAutoRefreshSelectorAsset(now = Date.now()) {
+        const schedule = readSelectorAssetSchedule();
+        if (!selectorAutoRefreshDue(appState.settings, schedule, now)) return null;
+        let result = null;
+        try {
+            result = await refreshSelectorAsset();
+        } catch (error) {
+            result = { ok: false, error: String(error?.message || error) };
+        }
+        const next = {
+            lastCheckedAt: now,
+            lastSuccessAt: result?.ok ? now : schedule.lastSuccessAt,
+            lastError: result?.ok ? null : String(result?.error || 'Selector asset refresh failed.').slice(0, 180)
+        };
+        // The attempt is recorded even when it failed. Without that a broken
+        // network retries on every single page load, which is the opposite of
+        // what an opt-in background refresh is for.
+        try { await storageWriteJSON(SELECTOR_ASSET_SCHEDULE_KEY, next, { immediate: true }); } catch (_) {
+            // reason: the refresh already applied or rolled back; losing the
+            // timestamp only costs one extra attempt on the next page.
+        }
+        return result;
+    }
 
     async function hydrateStoredSelectorAsset() {
         const selectorCore = globalThis.YTKitCore || {};
@@ -1029,6 +1087,12 @@ return response;
     // YouTube surfaces silently fall back to English for the whole page.
     await _loadLocaleOverride();
     await hydrateStoredSelectorAsset();
+    // Opt-in, default off, and after hydration so a scheduled refresh replaces
+    // a known-good stored asset rather than racing it.
+    maybeAutoRefreshSelectorAsset().catch(() => {
+        // reason: an automatic refresh must never block or break page boot;
+        // the shipped packs and any stored asset are already active.
+    });
 
     // Bridge to page context for reading ytInitialPlayerResponse from DOM
     const _rw = {
@@ -4259,6 +4323,7 @@ const STORAGE_KEYS = Object.freeze({
             watchPageTabs: false,
             redditComments: false,
             featureDisableFeed: true,
+            selectorAutoRefresh: false,
             diagnosticLog: false,
             _errors: [],                     // { ts, ctx, msg }
             storageQuotaLRU: false,
@@ -6902,6 +6967,15 @@ const STORAGE_KEYS = Object.freeze({
                             ctxCounts,
                             mutationRules,
                             selectorAsset,
+                            // Last automatic check and last success, so the
+                            // popup can say whether the opt-in schedule is
+                            // actually running rather than only whether the
+                            // last button press worked.
+                            selectorAutoRefresh: {
+                                enabled: Boolean(appState.settings?.selectorAutoRefresh),
+                                intervalMs: SELECTOR_AUTO_REFRESH_INTERVAL_MS,
+                                ...readSelectorAssetSchedule()
+                            },
                             youtubeClientVersion,
                             criticalCanary
                         });

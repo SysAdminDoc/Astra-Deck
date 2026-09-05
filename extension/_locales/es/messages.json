@@ -71,6 +71,9 @@
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
+  "aiSummaryByoFallbackNotice": {
+    "message": "Se usará el proveedor con tu propia clave que configuraste."
+  },
   "aiSummaryCalling": {
     "message": "Llamando al proveedor de IA…"
   },
@@ -137,20 +140,65 @@
   "aiSummaryTitle": {
     "message": "Resumen con IA"
   },
-  "aiSummaryByoFallbackNotice": {
-    "message": "Se usará el proveedor con tu propia clave que configuraste."
-  },
   "aiSummaryTldr": {
     "message": "En resumen"
   },
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "altFrontendOpenAriaTpl": {
+    "message": "Abrir fuera en {host}"
+  },
   "altFrontendOpenBtn": {
     "message": "Abrir fuera"
   },
-  "altFrontendOpenAriaTpl": {
-    "message": "Abrir fuera en {host}"
+  "antiAdblockEvidenceTpl": {
+    "message": "Selector: {selector} · Reproducción: {state}"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Pausar el bloqueo de anuncios de Astra durante 15 minutos"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "El bloqueo de anuncios de Astra está pausado hasta las {time}."
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "avanzando"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "bloqueada"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "detenida"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "desconocida"
+  },
+  "antiAdblockReloadHint": {
+    "message": "Recarga esta pestaña de YouTube para volver a intentar la reproducción."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Reanudar el bloqueo de anuncios de Astra"
+  },
+  "antiAdblockResumed": {
+    "message": "Se reanudó el bloqueo de anuncios de Astra."
+  },
+  "antiAdblockRulesPaused": {
+    "message": "El bloqueo de anuncios de Astra está pausado temporalmente."
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios, pero el video sigue reproduciéndose."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios y la reproducción parece bloqueada."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios y la reproducción está detenida."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios. Astra aún no puede confirmar el estado de reproducción."
+  },
+  "antiAdblockTitle": {
+    "message": "Comprobación de reproducción de YouTube"
   },
   "astraContextMenuAria": {
     "message": "Astra actions"
@@ -163,6 +211,66 @@
   },
   "audioOnlyUnavailable": {
     "message": "Solo audio no disponible"
+  },
+  "bisectAbort": {
+    "message": "Detener y restaurar"
+  },
+  "bisectAborted": {
+    "message": "Búsqueda detenida. Tus funciones vuelven a estar activas."
+  },
+  "bisectCopy": {
+    "message": "Copiar resultado"
+  },
+  "bisectCopyDone": {
+    "message": "Resultado copiado. No se envió nada a ninguna parte."
+  },
+  "bisectCopyFail": {
+    "message": "No se pudo copiar el resultado."
+  },
+  "bisectCulpritTpl": {
+    "message": "Es {feature}."
+  },
+  "bisectExpired": {
+    "message": "Una búsqueda sin terminar ha caducado. Tus funciones vuelven a estar activas."
+  },
+  "bisectFailed": {
+    "message": "La búsqueda no pudo continuar. Revisa los ajustes."
+  },
+  "bisectIntro": {
+    "message": "Apaga y vuelve a encender tus funciones por mitades para que puedas reducir 291 de ellas a una en unas diez recargas. Tus ajustes se restauran al terminar, al detenerlo y automáticamente si te alejas."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
+  },
+  "bisectNo": {
+    "message": "Ya no pasa"
+  },
+  "bisectNoCulprit": {
+    "message": "Ninguna función por sí sola es responsable. Lo causa algo ajeno a Astra Deck, o una combinación de funciones."
+  },
+  "bisectNothingEnabled": {
+    "message": "No hay funciones activadas, así que no hay nada que buscar."
+  },
+  "bisectRestoreFailed": {
+    "message": "No se pudieron restaurar tus ajustes. Abre Ajustes y revísalos."
+  },
+  "bisectStart": {
+    "message": "Iniciar búsqueda"
+  },
+  "bisectStartFailed": {
+    "message": "No se pudo iniciar: este perfil del navegador no guardará la sesión de búsqueda."
+  },
+  "bisectStarted": {
+    "message": "Recarga YouTube y responde abajo."
+  },
+  "bisectStepTpl": {
+    "message": "Paso {step} de unos {total}. Recarga YouTube y responde: ¿el problema sigue ocurriendo?"
+  },
+  "bisectTitle": {
+    "message": "Encuentra la función que lo rompió"
+  },
+  "bisectYes": {
+    "message": "Sigue pasando"
   },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
@@ -288,6 +396,72 @@
   },
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
+  },
+  "commentSearchActiveHint": {
+    "message": "La búsqueda sigue activa mientras YouTube carga la lista de comentarios."
+  },
+  "commentSearchAria": {
+    "message": "Buscar comentarios"
+  },
+  "commentSearchClearAria": {
+    "message": "Borrar búsqueda de comentarios"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} coincidencia"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} coincidencias"
+  },
+  "commentSearchCountThread": {
+    "message": "{count} hilo"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} hilos"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Prueba una frase más corta, el nombre de un creador o borra el filtro para recuperar todos los hilos."
+  },
+  "commentSearchEmptyTitle": {
+    "message": "No hay comentarios coincidentes"
+  },
+  "commentSearchEscapeHint": {
+    "message": "Pulsa Esc para borrar cuando quieras. Los comentarios nuevos se siguen contando automáticamente."
+  },
+  "commentSearchEyebrow": {
+    "message": "Buscar en comentarios"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Usa Siguiente o Anterior en el navegador de comentarios para saltar entre coincidencias."
+  },
+  "commentSearchNoMatches": {
+    "message": "Sin coincidencias"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Ningún hilo de comentarios coincide con «{query}»."
+  },
+  "commentSearchPlaceholder": {
+    "message": "Buscar creadores, frases o temas…"
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} hilo de comentarios está listo para buscar. Busca creadores, frases o temas."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} hilos de comentarios están listos para buscar. Busca creadores, frases o temas."
+  },
+  "commentSearchShorterHint": {
+    "message": "Prueba una frase más corta, el nombre de un creador o borra el filtro."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Mostrando {visible} de {total} hilos de comentarios para «{query}»."
+  },
+  "commentSearchSyncHint": {
+    "message": "La barra de búsqueda se mantendrá al día a medida que lleguen más comentarios."
+  },
+  "commentSearchWaiting": {
+    "message": "Esperando a que se carguen los comentarios…"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Esperando a que se carguen comentarios para «{query}»…"
   },
   "commentTranslateAction": {
     "message": "Traducir"
@@ -499,6 +673,9 @@
   "dlFormatVideoWeb": {
     "message": "Optimizado para la web"
   },
+  "dlHealthApiTooNew": {
+    "message": "más reciente que esta extensión"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -637,6 +814,12 @@
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
   },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader está en marcha, pero este Astra Deck habla una API más antigua de la que acepta{versions}. Actualiza la extensión y vuelve a elegir Comprobar."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (necesita al menos la API {minimum})"
+  },
   "dlInstallCheckAgain": {
     "message": "Check again"
   },
@@ -681,6 +864,9 @@
   },
   "dlInstallLocalDownloads": {
     "message": "Local downloads"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
   },
   "dlInstallNoResponse": {
     "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
@@ -1238,17 +1424,20 @@
   "featureHealthNote": {
     "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
   },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "Advertencia de YouTube mediante {selector}; reproducción {state}"
+  },
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "YouTube {version} cambió {surface}"
   },
-  "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
-  },
   "featureHealthReasonSelectorFallbackTpl": {
     "message": "El elemento de la página “{surface}” solo coincidió con una regla de reserva"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
   },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
@@ -1276,6 +1465,27 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureReportChangedTpl": {
+    "message": "Ajustes distintos de sus valores predeterminados ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Copiar lista de funciones"
+  },
+  "featureReportCopyDone": {
+    "message": "Lista de funciones copiada. No se envió nada a ninguna parte."
+  },
+  "featureReportCopyFail": {
+    "message": "No se pudo copiar la lista de funciones."
+  },
+  "featureReportCopyTitle": {
+    "message": "Copia solo los nombres de los ajustes, nunca sus valores. No se envía nada a ninguna parte."
+  },
+  "featureReportNoneChanged": {
+    "message": "ninguno"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Solo nombres, sin valores. No se envió nada a ninguna parte. Está en tu portapapeles y tú decides si lo pegas."
   },
   "featureScheduleDaysTpl": {
     "message": "Active {window} on {days}"
@@ -1661,6 +1871,12 @@
   "feature_chatHide_menu_name": {
     "message": "Menú del chat (...)"
   },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "Oculta el aviso «el modo lento está activado» y sus equivalentes de solo miembros"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "Avisos de modo"
+  },
   "feature_chatHide_polls_desc": {
     "message": "Ocultar encuestas en el chat en vivo"
   },
@@ -1811,72 +2027,6 @@
   "feature_commentSearch_name": {
     "message": "Búsqueda de comentarios"
   },
-  "commentSearchCountThread": {
-    "message": "{count} hilo"
-  },
-  "commentSearchCountThreads": {
-    "message": "{count} hilos"
-  },
-  "commentSearchCountMatch": {
-    "message": "{count} coincidencia"
-  },
-  "commentSearchCountMatches": {
-    "message": "{count} coincidencias"
-  },
-  "commentSearchNoMatches": {
-    "message": "Sin coincidencias"
-  },
-  "commentSearchWaiting": {
-    "message": "Esperando a que se carguen los comentarios…"
-  },
-  "commentSearchSyncHint": {
-    "message": "La barra de búsqueda se mantendrá al día a medida que lleguen más comentarios."
-  },
-  "commentSearchReadyThread": {
-    "message": "{count} hilo de comentarios está listo para buscar. Busca creadores, frases o temas."
-  },
-  "commentSearchReadyThreads": {
-    "message": "{count} hilos de comentarios están listos para buscar. Busca creadores, frases o temas."
-  },
-  "commentSearchEscapeHint": {
-    "message": "Pulsa Esc para borrar cuando quieras. Los comentarios nuevos se siguen contando automáticamente."
-  },
-  "commentSearchShowingMatches": {
-    "message": "Mostrando {visible} de {total} hilos de comentarios para «{query}»."
-  },
-  "commentSearchNavigatorHint": {
-    "message": "Usa Siguiente o Anterior en el navegador de comentarios para saltar entre coincidencias."
-  },
-  "commentSearchWaitingForQuery": {
-    "message": "Esperando a que se carguen comentarios para «{query}»…"
-  },
-  "commentSearchActiveHint": {
-    "message": "La búsqueda sigue activa mientras YouTube carga la lista de comentarios."
-  },
-  "commentSearchNoThreadsForQuery": {
-    "message": "Ningún hilo de comentarios coincide con «{query}»."
-  },
-  "commentSearchShorterHint": {
-    "message": "Prueba una frase más corta, el nombre de un creador o borra el filtro."
-  },
-  "commentSearchEyebrow": {
-    "message": "Buscar en comentarios"
-  },
-  "commentSearchPlaceholder": {
-    "message": "Buscar creadores, frases o temas…"
-  },
-  "commentSearchAria": {
-    "message": "Buscar comentarios"
-  },
-  "commentSearchClearAria": {
-    "message": "Borrar búsqueda de comentarios"
-  },
-  "commentSearchEmptyTitle": {
-    "message": "No hay comentarios coincidentes"
-  },
-  "commentSearchEmptyCopy": {
-    "message": "Prueba una frase más corta, el nombre de un creador o borra el filtro para recuperar todos los hilos."
-  },
   "feature_commentTranslateTarget_desc": {
     "message": "Idioma al que traducir los comentarios. Automático sigue el idioma del navegador."
   },
@@ -1924,6 +2074,12 @@
   },
   "feature_creatorCommentHighlight_name": {
     "message": "Resaltar comentarios del creador"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS aplicado mientras el CSS personalizado está activado"
+  },
+  "feature_customCssCode_name": {
+    "message": "Reglas CSS personalizadas"
   },
   "feature_customCssInjection_desc": {
     "message": "Inyectar tus propias reglas CSS personalizadas en las páginas de YouTube"
@@ -3461,6 +3617,12 @@
   "feature_searchWhileWatching_name": {
     "message": "Buscar mientras miras"
   },
+  "feature_selectionColor_desc": {
+    "message": "Elige el color de resaltado usado mientras la selección de texto personalizada está activada"
+  },
+  "feature_selectionColor_name": {
+    "message": "Color de selección"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "Revisar señales de deriva de selectores en vivo y exportar un reporte de salud JSON para actualizaciones de fixtures."
   },
@@ -3638,6 +3800,48 @@
   "feature_styledFilterChips_name": {
     "message": "Chips de filtro estilizados"
   },
+  "feature_subStyleBgColor_desc": {
+    "message": "Elige el color detrás del texto de los subtítulos"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "Color de fondo de los subtítulos"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "Define la opacidad detrás del texto de los subtítulos"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "Opacidad del fondo de los subtítulos"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "Sube los subtítulos desde el borde inferior del reproductor"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "Desplazamiento inferior de los subtítulos"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "Elige el color de primer plano de los subtítulos"
+  },
+  "feature_subStyleColor_name": {
+    "message": "Color del texto de los subtítulos"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "Elige la tipografía usada en los subtítulos"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "Familia de fuente de los subtítulos"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "Escala el texto de los subtítulos del 50% al 300%"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "Tamaño de fuente de los subtítulos"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "Añade una sombra oscura para que los subtítulos sigan siendo legibles sobre videos claros"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "Sombra del texto de los subtítulos"
+  },
   "feature_subscriptionGroups_desc": {
     "message": "Grupos locales de nivel PocketTube para tu feed de suscripciones. Crea grupos con nombre, arrastra canales, ordena por fecha/duración/no vistos/nuevos desde la última visita. Los datos de grupos viven en subscriptionGroupData (solo local); usa Exportar para respaldarlo."
   },
@@ -3710,6 +3914,12 @@
   "feature_timestampBookmarks_name": {
     "message": "Marcadores de tiempo"
   },
+  "feature_titleCaseMode_desc": {
+    "message": "Elige el uso de mayúsculas mientras la transformación del título está activada"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "Estilo de mayúsculas del título"
+  },
   "feature_titleCaseTransform_desc": {
     "message": "Reemplazar los títulos en MAYÚSCULAS clickbait de YouTube con un estilo de capitalización de tu elección"
   },
@@ -3728,17 +3938,17 @@
   "feature_tokenThemeBridge_name": {
     "message": "Puente de tema con tokens nativos"
   },
-  "feature_transcriptQaLane_desc": {
-    "message": "Mantén las preguntas en el dispositivo o usa el proveedor configurado con sus controles actuales de permisos, privacidad y límite de solicitudes."
-  },
-  "feature_transcriptQaLane_name": {
-    "message": "Proveedor para preguntas sobre la transcripción"
-  },
   "feature_transcriptAiHandoff_desc": {
     "message": "Agrega un botón en el reproductor que copia la transcripción y abre tu herramienta AI elegida con un prompt de resumen prellenado"
   },
   "feature_transcriptAiHandoff_name": {
     "message": "Transcripción → AI con un clic"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Mantén las preguntas en el dispositivo o usa el proveedor configurado con sus controles actuales de permisos, privacidad y límite de solicitudes."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Proveedor para preguntas sobre la transcripción"
   },
   "feature_transcriptViewer_desc": {
     "message": "Read, jump, and export captions"
@@ -4085,9 +4295,6 @@
   "filterListStatusReady": {
     "message": "No se está siguiendo ninguna lista de filtros."
   },
-  "filterListStatusStateReadFail": {
-    "message": "No se pudo leer el estado de la lista de filtros. Vuelve a cargar la extensión y abre el popup de nuevo."
-  },
   "filterListStatusRefreshFail": {
     "message": "No se pudo actualizar la lista. Comprueba la dirección e inténtalo de nuevo."
   },
@@ -4102,6 +4309,9 @@
   },
   "filterListStatusStalePausedTpl": {
     "message": "Las reglas en caché de {host} están en pausa; comprobadas {age}; {reason}. Formato v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusStateReadFail": {
+    "message": "No se pudo leer el estado de la lista de filtros. Vuelve a cargar la extensión y abre el popup de nuevo."
   },
   "filterListStopFailed": {
     "message": "No se pudo dejar de seguir la lista de filtros."
@@ -4940,6 +5150,9 @@
   "schemaOverviewEyebrow": {
     "message": "Resumen de configuración"
   },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Ningún ajuste coincide con «{term}». Prueba con un nombre de función, una categoría, una página como watch o feed, o un tipo de control como boolean."
+  },
   "schemaOverviewToolsAria": {
     "message": "Herramientas de cambios de ajustes"
   },
@@ -4948,6 +5161,18 @@
   },
   "schemaResetTitleTpl": {
     "message": "Restablecer {key} al valor predeterminado ({value})"
+  },
+  "schemaSurfaceHere": {
+    "message": "aquí"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Este ajuste se puede cambiar en la ventana emergente."
+  },
+  "schemaSurfacePanel": {
+    "message": "panel en la página"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Este ajuste se edita en el panel de Astra Deck en YouTube. Lo abre."
   },
   "screenshotCaptureFailed": {
     "message": "Error al capturar la imagen"
@@ -4990,6 +5215,15 @@
   },
   "searchWatchTitle": {
     "message": "Buscar sin detener la reproducción"
+  },
+  "selectorAutoRefreshCheckedTpl": {
+    "message": "auto-checked {age}"
+  },
+  "selectorAutoRefreshNeverChecked": {
+    "message": "auto-refresh on, no check yet"
+  },
+  "selectorAutoRefreshUpdatedTpl": {
+    "message": "last update {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "versión actual"
@@ -5054,6 +5288,12 @@
   "selectorHealthYouTubeBuildTpl": {
     "message": "Versión de YouTube {version}"
   },
+  "serviceOutageDismiss": {
+    "message": "Descartar"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} no responde. Es el servicio, no Astra Deck."
+  },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"
   },
@@ -5099,6 +5339,12 @@
   "settingsDlDownloadTitle": {
     "message": "Descargar el instalador de Astra Downloader y mostrarlo en Descargas"
   },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
+  },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
   },
@@ -5143,6 +5389,12 @@
   },
   "settingsFeatureClearAriaTpl": {
     "message": "Borrar {featureName}"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "En pausa: un cambio de YouTube rompió esta función en esta versión de Astra Deck. Tu ajuste no se ha tocado y volverá a funcionar cuando llegue una corrección."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "Incidencia n.º {issue}"
   },
   "settingsFooterSaved": {
     "message": "Guardado"
@@ -5668,6 +5920,12 @@
   "spRowSaveFailedTpl": {
     "message": "{name}. Error al guardar. Prueba a actualizar el panel."
   },
+  "spRowStateRetry": {
+    "message": "Reintentar"
+  },
+  "spRowStateSaving": {
+    "message": "Guardando"
+  },
   "spScopeTpl": {
     "message": "Ámbito: {scope}"
   },
@@ -5721,12 +5979,6 @@
   },
   "spSelectorTotalTpl": {
     "message": "{count} superficies"
-  },
-  "spRowStateRetry": {
-    "message": "Reintentar"
-  },
-  "spRowStateSaving": {
-    "message": "Guardando"
   },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
@@ -5980,14 +6232,6 @@
   "statusBackupImportedUndo": {
     "message": "Copia de seguridad importada. Haz clic en «Deshacer importación» para restaurar el estado anterior. El punto de deshacer dura 7 días y sigue disponible aunque cierres el navegador."
   },
-  "statusImportBackupWrittenTpl": {
-    "message": "Tus datos anteriores se guardaron primero en {file}.",
-    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
-  },
-  "statusImportBackupFileFailed": {
-    "message": "Astra Deck no pudo guardar antes un archivo de copia de seguridad de tus datos anteriores, así que «Deshacer importación» es la única vuelta atrás.",
-    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
-  },
   "statusClipboardUnavailable": {
     "message": "Copiar no está disponible aquí. Selecciona el texto y cópialo tú mismo."
   },
@@ -6017,6 +6261,14 @@
   },
   "statusExportFail": {
     "message": "Error al exportar"
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck no pudo guardar antes un archivo de copia de seguridad de tus datos anteriores, así que «Deshacer importación» es la única vuelta atrás.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Tus datos anteriores se guardaron primero en {file}.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
   },
   "statusImportFail": {
     "message": "Error al importar"
@@ -6363,6 +6615,21 @@
   "subscriptionGroupChipTpl": {
     "message": "{prefix}{name} ({count}){tags}"
   },
+  "subscriptionGroupDelete": {
+    "message": "Eliminar"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "Eliminar el grupo {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "¿Eliminar «{group}» y sus {count} canales? Tus suscripciones no se verán afectadas."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "Grupo eliminado"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "Se eliminó «{group}» y sus {count} canales. Tus suscripciones no se ven afectadas."
+  },
   "subscriptionGroupDialogTitle": {
     "message": "Nombrar este grupo"
   },
@@ -6380,6 +6647,24 @@
   },
   "subscriptionGroupPlayingTpl": {
     "message": "Reproduciendo {count} videos de {group}{truncated}"
+  },
+  "subscriptionGroupRename": {
+    "message": "Cambiar nombre"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "Cambiar el nombre del grupo {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "Nuevo nombre para este grupo"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "Grupo renombrado"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "Ese nombre de grupo está en uso otra vez, así que no se restauró."
+  },
+  "subscriptionGroupRestored": {
+    "message": "Grupo restaurado"
   },
   "subscriptionGroupsEmptyCopy": {
     "message": "Elige + Grupo para crear tu primer grupo."
@@ -6512,6 +6797,9 @@
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
+  },
+  "subscriptionMembersCapped": {
+    "message": "El grupo está lleno con 1000 canales. Quita uno primero."
   },
   "subscriptionMembersCloseAria": {
     "message": "Close the channel membership editor"
@@ -6741,6 +7029,12 @@
   "subtitleDownloadFailed": {
     "message": "Error al descargar los subtítulos"
   },
+  "switchLabelOff": {
+    "message": "desactivado"
+  },
+  "switchLabelOn": {
+    "message": "activado"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Marcado en {time}"
   },
@@ -6867,6 +7161,9 @@
   "toastDlStopped": {
     "message": "Astra Downloader se detuvo. Iniciando de nuevo…"
   },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck no puede guardar en este perfil del navegador. Es posible que se pierdan los cambios recientes."
+  },
   "toggleRiskTooltip_api": {
     "message": "Talks to an external API server"
   },
@@ -6878,12 +7175,6 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity. GitHub-full only."
-  },
-  "switchLabelOff": {
-    "message": "desactivado"
-  },
-  "switchLabelOn": {
-    "message": "activado"
   },
   "toggleStateOff": {
     "message": "Desactivado"
@@ -7209,6 +7500,12 @@
   "uiFontSystem": {
     "message": "Interfaz del sistema"
   },
+  "ui_commentLikeBadge": {
+    "message": "Me gusta"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. {count} me gusta"
+  },
   "ui_rydCachedTitleHoursTpl": {
     "message": "Recuento de dislikes en caché de Return YouTube Dislike (hace {hours} h)."
   },
@@ -7254,9 +7551,6 @@
   "undo": {
     "message": "Deshacer"
   },
-  "unknown": {
-    "message": "Desconocido"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
@@ -7268,6 +7562,9 @@
   },
   "undoResetBtn": {
     "message": "Deshacer restablecimiento"
+  },
+  "unknown": {
+    "message": "Desconocido"
   },
   "updateCompanionAria": {
     "message": "Update Astra Downloader companion"
@@ -7692,11 +7989,11 @@
   "videoHiderReasonBlockedChannel": {
     "message": "una regla de canal bloqueado"
   },
-  "videoHiderReasonChannelNotAllowed": {
-    "message": "tu lista de canales permitidos"
-  },
   "videoHiderReasonBlockedChannelNamedTpl": {
     "message": "una regla de canal bloqueado ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "tu lista de canales permitidos"
   },
   "videoHiderReasonChannelNotAllowedNamedTpl": {
     "message": "tu lista de canales permitidos ({channel})"
@@ -7734,11 +8031,11 @@
   "videoHiderReasonPredicate": {
     "message": "tu regla local avanzada"
   },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonSyntheticDisclosed": {
     "message": "la declaración de YouTube sobre contenido alterado o sintético"
+  },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
   },
   "videoHiderReasonUpcoming": {
     "message": "el filtro de estrenos"
@@ -8443,12 +8740,6 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
-  "zapRuleToggleAriaTpl": {
-    "message": "Aplicar la regla de {selector}"
-  },
-  "zapRuleRemoveAriaTpl": {
-    "message": "Quitar la regla de {selector}"
-  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
@@ -8458,292 +8749,10 @@
   "zapRuleRemove": {
     "message": "Remove"
   },
-  "ui_commentLikeBadge": {
-    "message": "Me gusta"
-  },
-  "ui_commentLikeBadgeCountAriaTpl": {
-    "message": "{label}. {count} me gusta"
-  },
-  "feature_chatHide_modeNotices_name": {
-    "message": "Avisos de modo"
-  },
-  "feature_chatHide_modeNotices_desc": {
-    "message": "Oculta el aviso «el modo lento está activado» y sus equivalentes de solo miembros"
-  },
-  "toastStorageWriteFailed": {
-    "message": "Astra Deck no puede guardar en este perfil del navegador. Es posible que se pierdan los cambios recientes."
-  },
-  "subscriptionMembersCapped": {
-    "message": "El grupo está lleno con 1000 canales. Quita uno primero."
-  },
-  "subscriptionGroupRename": {
-    "message": "Cambiar nombre"
-  },
-  "subscriptionGroupRenameAriaTpl": {
-    "message": "Cambiar el nombre del grupo {group}"
-  },
-  "subscriptionGroupRenamePrompt": {
-    "message": "Nuevo nombre para este grupo"
-  },
-  "subscriptionGroupRenamed": {
-    "message": "Grupo renombrado"
-  },
-  "subscriptionGroupDelete": {
-    "message": "Eliminar"
-  },
-  "subscriptionGroupDeleteAriaTpl": {
-    "message": "Eliminar el grupo {group}"
-  },
-  "subscriptionGroupDeleteConfirmTpl": {
-    "message": "¿Eliminar «{group}» y sus {count} canales? Tus suscripciones no se verán afectadas."
-  },
-  "subscriptionGroupDeleted": {
-    "message": "Grupo eliminado"
-  },
-  "settingsFeatureKnownBroken": {
-    "message": "En pausa: un cambio de YouTube rompió esta función en esta versión de Astra Deck. Tu ajuste no se ha tocado y volverá a funcionar cuando llegue una corrección."
-  },
-  "settingsFeatureKnownBrokenIssueTpl": {
-    "message": "Incidencia n.º {issue}"
-  },
-  "featureReportChangedTpl": {
-    "message": "Ajustes distintos de sus valores predeterminados ({count}):"
-  },
-  "featureReportCopy": {
-    "message": "Copiar lista de funciones"
-  },
-  "featureReportCopyDone": {
-    "message": "Lista de funciones copiada. No se envió nada a ninguna parte."
-  },
-  "featureReportCopyFail": {
-    "message": "No se pudo copiar la lista de funciones."
-  },
-  "featureReportCopyTitle": {
-    "message": "Copia solo los nombres de los ajustes, nunca sus valores. No se envía nada a ninguna parte."
-  },
-  "featureReportNoneChanged": {
-    "message": "ninguno"
-  },
-  "featureReportPrivacyNote": {
-    "message": "Solo nombres, sin valores. No se envió nada a ninguna parte. Está en tu portapapeles y tú decides si lo pegas."
-  },
-  "bisectAbort": {
-    "message": "Detener y restaurar"
-  },
-  "bisectAborted": {
-    "message": "Búsqueda detenida. Tus funciones vuelven a estar activas."
-  },
-  "bisectCopy": {
-    "message": "Copiar resultado"
-  },
-  "bisectCopyDone": {
-    "message": "Resultado copiado. No se envió nada a ninguna parte."
-  },
-  "bisectCopyFail": {
-    "message": "No se pudo copiar el resultado."
-  },
-  "bisectCulpritTpl": {
-    "message": "Es {feature}."
-  },
-  "bisectExpired": {
-    "message": "Una búsqueda sin terminar ha caducado. Tus funciones vuelven a estar activas."
-  },
-  "bisectIntro": {
-    "message": "Apaga y vuelve a encender tus funciones por mitades para que puedas reducir 291 de ellas a una en unas diez recargas. Tus ajustes se restauran al terminar, al detenerlo y automáticamente si te alejas."
-  },
-  "bisectIntroCountUnknown": {
-    "message": "your features"
-  },
-  "bisectNo": {
-    "message": "Ya no pasa"
-  },
-  "bisectNoCulprit": {
-    "message": "Ninguna función por sí sola es responsable. Lo causa algo ajeno a Astra Deck, o una combinación de funciones."
-  },
-  "bisectNothingEnabled": {
-    "message": "No hay funciones activadas, así que no hay nada que buscar."
-  },
-  "bisectStart": {
-    "message": "Iniciar búsqueda"
-  },
-  "bisectStarted": {
-    "message": "Recarga YouTube y responde abajo."
-  },
-  "bisectStepTpl": {
-    "message": "Paso {step} de unos {total}. Recarga YouTube y responde: ¿el problema sigue ocurriendo?"
-  },
-  "bisectTitle": {
-    "message": "Encuentra la función que lo rompió"
-  },
-  "bisectYes": {
-    "message": "Sigue pasando"
-  },
-  "serviceOutageDismiss": {
-    "message": "Descartar"
-  },
-  "serviceOutageTpl": {
-    "message": "{service} no responde. Es el servicio, no Astra Deck."
-  },
-  "bisectFailed": {
-    "message": "La búsqueda no pudo continuar. Revisa los ajustes."
-  },
-  "bisectRestoreFailed": {
-    "message": "No se pudieron restaurar tus ajustes. Abre Ajustes y revísalos."
-  },
-  "bisectStartFailed": {
-    "message": "No se pudo iniciar: este perfil del navegador no guardará la sesión de búsqueda."
-  },
-  "schemaOverviewNoMatchesTpl": {
-    "message": "Ningún ajuste coincide con «{term}». Prueba con un nombre de función, una categoría, una página como watch o feed, o un tipo de control como boolean."
-  },
-  "schemaSurfaceHere": {
-    "message": "aquí"
-  },
-  "schemaSurfaceHereTitle": {
-    "message": "Este ajuste se puede cambiar en la ventana emergente."
-  },
-  "schemaSurfacePanel": {
-    "message": "panel en la página"
-  },
-  "schemaSurfacePanelTitle": {
-    "message": "Este ajuste se edita en el panel de Astra Deck en YouTube. Lo abre."
-  },
-  "dlHealthApiTooNew": {
-    "message": "más reciente que esta extensión"
-  },
-  "dlInstallApiMismatchTpl": {
-    "message": "Astra Downloader está en marcha, pero este Astra Deck habla una API más antigua de la que acepta{versions}. Actualiza la extensión y vuelve a elegir Comprobar."
-  },
-  "dlInstallApiVersionsTpl": {
-    "message": " (necesita al menos la API {minimum})"
-  },
-  "subscriptionGroupDeletedTpl": {
-    "message": "Se eliminó «{group}» y sus {count} canales. Tus suscripciones no se ven afectadas."
-  },
-  "subscriptionGroupRestoreConflict": {
-    "message": "Ese nombre de grupo está en uso otra vez, así que no se restauró."
-  },
-  "subscriptionGroupRestored": {
-    "message": "Grupo restaurado"
-  },
-  "antiAdblockTitle": {
-    "message": "Comprobación de reproducción de YouTube"
-  },
-  "antiAdblockPlaybackAdvancing": {
-    "message": "avanzando"
-  },
-  "antiAdblockPlaybackStalled": {
-    "message": "detenida"
-  },
-  "antiAdblockPlaybackBlocked": {
-    "message": "bloqueada"
-  },
-  "antiAdblockPlaybackUnknown": {
-    "message": "desconocida"
-  },
-  "antiAdblockStateAdvancing": {
-    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios, pero el video sigue reproduciéndose."
-  },
-  "antiAdblockStateStalled": {
-    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios y la reproducción está detenida."
-  },
-  "antiAdblockStateBlocked": {
-    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios y la reproducción parece bloqueada."
-  },
-  "antiAdblockStateUnknown": {
-    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios. Astra aún no puede confirmar el estado de reproducción."
-  },
-  "antiAdblockEvidenceTpl": {
-    "message": "Selector: {selector} · Reproducción: {state}"
-  },
-  "antiAdblockRulesPaused": {
-    "message": "El bloqueo de anuncios de Astra está pausado temporalmente."
-  },
-  "antiAdblockPausedUntilTpl": {
-    "message": "El bloqueo de anuncios de Astra está pausado hasta las {time}."
-  },
-  "antiAdblockReloadHint": {
-    "message": "Recarga esta pestaña de YouTube para volver a intentar la reproducción."
-  },
-  "antiAdblockResumeAction": {
-    "message": "Reanudar el bloqueo de anuncios de Astra"
-  },
-  "antiAdblockPauseAction": {
-    "message": "Pausar el bloqueo de anuncios de Astra durante 15 minutos"
-  },
-  "antiAdblockResumed": {
-    "message": "Se reanudó el bloqueo de anuncios de Astra."
-  },
-  "featureHealthReasonAntiAdblockTpl": {
-    "message": "Advertencia de YouTube mediante {selector}; reproducción {state}"
-  },
-  "feature_customCssCode_name": {
-    "message": "Reglas CSS personalizadas"
-  },
-  "feature_customCssCode_desc": {
-    "message": "CSS aplicado mientras el CSS personalizado está activado"
-  },
-  "feature_subStyleFontSize_name": {
-    "message": "Tamaño de fuente de los subtítulos"
-  },
-  "feature_subStyleFontSize_desc": {
-    "message": "Escala el texto de los subtítulos del 50% al 300%"
-  },
-  "feature_subStyleFontFamily_name": {
-    "message": "Familia de fuente de los subtítulos"
-  },
-  "feature_subStyleFontFamily_desc": {
-    "message": "Elige la tipografía usada en los subtítulos"
-  },
-  "feature_subStyleColor_name": {
-    "message": "Color del texto de los subtítulos"
-  },
-  "feature_subStyleColor_desc": {
-    "message": "Elige el color de primer plano de los subtítulos"
-  },
-  "feature_subStyleBgOpacity_name": {
-    "message": "Opacidad del fondo de los subtítulos"
-  },
-  "feature_subStyleBgOpacity_desc": {
-    "message": "Define la opacidad detrás del texto de los subtítulos"
-  },
-  "feature_subStyleBgColor_name": {
-    "message": "Color de fondo de los subtítulos"
-  },
-  "feature_subStyleBgColor_desc": {
-    "message": "Elige el color detrás del texto de los subtítulos"
-  },
-  "feature_subStyleBottomOffset_name": {
-    "message": "Desplazamiento inferior de los subtítulos"
-  },
-  "feature_subStyleBottomOffset_desc": {
-    "message": "Sube los subtítulos desde el borde inferior del reproductor"
-  },
-  "feature_subStyleTextShadow_name": {
-    "message": "Sombra del texto de los subtítulos"
-  },
-  "feature_subStyleTextShadow_desc": {
-    "message": "Añade una sombra oscura para que los subtítulos sigan siendo legibles sobre videos claros"
-  },
-  "feature_titleCaseMode_name": {
-    "message": "Estilo de mayúsculas del título"
-  },
-  "feature_titleCaseMode_desc": {
-    "message": "Elige el uso de mayúsculas mientras la transformación del título está activada"
-  },
-  "feature_selectionColor_name": {
-    "message": "Color de selección"
-  },
-  "feature_selectionColor_desc": {
-    "message": "Elige el color de resaltado usado mientras la selección de texto personalizada está activada"
-  },
-  "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
-  },
-  "settingsDlGetSetup": {
-    "message": "Get setup file"
-  },
-  "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+  "zapRuleRemoveAriaTpl": {
+    "message": "Quitar la regla de {selector}"
+  },
+  "zapRuleToggleAriaTpl": {
+    "message": "Aplicar la regla de {selector}"
   }
 }

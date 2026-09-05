@@ -71,6 +71,9 @@
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
+  "aiSummaryByoFallbackNotice": {
+    "message": "Вместо этого используется настроенный вами провайдер с собственным ключом."
+  },
   "aiSummaryCalling": {
     "message": "Обращение к ИИ-провайдеру…"
   },
@@ -137,20 +140,65 @@
   "aiSummaryTitle": {
     "message": "ИИ-сводка"
   },
-  "aiSummaryByoFallbackNotice": {
-    "message": "Вместо этого используется настроенный вами провайдер с собственным ключом."
-  },
   "aiSummaryTldr": {
     "message": "Кратко"
   },
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "altFrontendOpenAriaTpl": {
+    "message": "Открыть во внешнем сервисе на {host}"
+  },
   "altFrontendOpenBtn": {
     "message": "Открыть во внешнем сервисе"
   },
-  "altFrontendOpenAriaTpl": {
-    "message": "Открыть во внешнем сервисе на {host}"
+  "antiAdblockEvidenceTpl": {
+    "message": "Селектор: {selector} · Воспроизведение: {state}"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Приостановить блокировку рекламы Astra на 15 минут"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Блокировка рекламы Astra приостановлена до {time}."
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "идёт"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "заблокировано"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "зависло"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "неизвестно"
+  },
+  "antiAdblockReloadHint": {
+    "message": "Перезагрузите эту вкладку YouTube, чтобы повторить попытку воспроизведения."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Возобновить блокировку рекламы Astra"
+  },
+  "antiAdblockResumed": {
+    "message": "Блокировка рекламы Astra возобновлена."
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Блокировка рекламы Astra временно приостановлена."
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы, но видео продолжает воспроизводиться."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы. Похоже, воспроизведение заблокировано."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы, и воспроизведение зависло."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы. Astra пока не может подтвердить состояние воспроизведения."
+  },
+  "antiAdblockTitle": {
+    "message": "Проверка воспроизведения YouTube"
   },
   "astraContextMenuAria": {
     "message": "Astra actions"
@@ -163,6 +211,66 @@
   },
   "audioOnlyUnavailable": {
     "message": "Режим только звук недоступен"
+  },
+  "bisectAbort": {
+    "message": "Остановить и восстановить"
+  },
+  "bisectAborted": {
+    "message": "Поиск остановлен. Ваши функции снова включены."
+  },
+  "bisectCopy": {
+    "message": "Скопировать результат"
+  },
+  "bisectCopyDone": {
+    "message": "Результат скопирован. Ничего никуда не отправлено."
+  },
+  "bisectCopyFail": {
+    "message": "Не удалось скопировать результат."
+  },
+  "bisectCulpritTpl": {
+    "message": "Это {feature}."
+  },
+  "bisectExpired": {
+    "message": "Незавершённый поиск истёк. Ваши функции снова включены."
+  },
+  "bisectFailed": {
+    "message": "Поиск не смог продолжиться. Проверьте настройки."
+  },
+  "bisectIntro": {
+    "message": "Выключает и снова включает ваши функции половинами, чтобы вы сузили 291 функцию до одной примерно за десять перезагрузок. Настройки восстанавливаются по завершении, при остановке и автоматически, если вы отвлеклись."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
+  },
+  "bisectNo": {
+    "message": "Пропало"
+  },
+  "bisectNoCulprit": {
+    "message": "Ни одна отдельная функция не виновата. Причина вне Astra Deck или в сочетании функций."
+  },
+  "bisectNothingEnabled": {
+    "message": "Ни одна функция не включена, поэтому искать нечего."
+  },
+  "bisectRestoreFailed": {
+    "message": "Не удалось вернуть ваши настройки. Откройте настройки и проверьте их."
+  },
+  "bisectStart": {
+    "message": "Начать поиск"
+  },
+  "bisectStartFailed": {
+    "message": "Не удалось начать: этот профиль браузера не сохранит сессию поиска."
+  },
+  "bisectStarted": {
+    "message": "Перезагрузите YouTube и ответьте ниже."
+  },
+  "bisectStepTpl": {
+    "message": "Шаг {step} примерно из {total}. Перезагрузите YouTube и ответьте: проблема всё ещё возникает?"
+  },
+  "bisectTitle": {
+    "message": "Найдите функцию, которая всё сломала"
+  },
+  "bisectYes": {
+    "message": "Всё ещё происходит"
   },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
@@ -288,6 +396,72 @@
   },
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
+  },
+  "commentSearchActiveHint": {
+    "message": "Поиск остаётся активным, пока YouTube загружает список комментариев."
+  },
+  "commentSearchAria": {
+    "message": "Искать комментарии"
+  },
+  "commentSearchClearAria": {
+    "message": "Очистить поиск в комментариях"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} совпадение"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} совпадений"
+  },
+  "commentSearchCountThread": {
+    "message": "{count} ветка"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} веток"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Попробуйте более короткую фразу, имя автора или очистите фильтр, чтобы вернуть все ветки."
+  },
+  "commentSearchEmptyTitle": {
+    "message": "Нет подходящих комментариев"
+  },
+  "commentSearchEscapeHint": {
+    "message": "Нажмите Esc, чтобы очистить поиск. Новые комментарии учитываются автоматически."
+  },
+  "commentSearchEyebrow": {
+    "message": "Поиск в комментариях"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Используйте «Далее» или «Назад» в навигаторе комментариев для перехода между совпадениями."
+  },
+  "commentSearchNoMatches": {
+    "message": "Нет совпадений"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Нет веток комментариев по запросу «{query}»."
+  },
+  "commentSearchPlaceholder": {
+    "message": "Искать авторов, фразы или темы…"
+  },
+  "commentSearchReadyThread": {
+    "message": "Готова к поиску {count} ветка комментариев. Ищите авторов, фразы или темы."
+  },
+  "commentSearchReadyThreads": {
+    "message": "Готово к поиску веток комментариев: {count}. Ищите авторов, фразы или темы."
+  },
+  "commentSearchShorterHint": {
+    "message": "Попробуйте более короткую фразу, имя автора или очистите фильтр."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Показано веток комментариев: {visible} из {total} по запросу «{query}»."
+  },
+  "commentSearchSyncHint": {
+    "message": "Поисковая строка будет обновляться по мере появления новых комментариев."
+  },
+  "commentSearchWaiting": {
+    "message": "Ожидание загрузки комментариев…"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Ожидание загрузки комментариев по запросу «{query}»…"
   },
   "commentTranslateAction": {
     "message": "Перевести"
@@ -499,6 +673,9 @@
   "dlFormatVideoWeb": {
     "message": "Оптимизировано для веба"
   },
+  "dlHealthApiTooNew": {
+    "message": "новее этого расширения"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -637,6 +814,12 @@
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
   },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader работает, но этот Astra Deck использует более старый API, чем он принимает{versions}. Обновите расширение и снова выберите «Проверить»."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (нужен как минимум API {minimum})"
+  },
   "dlInstallCheckAgain": {
     "message": "Check again"
   },
@@ -681,6 +864,9 @@
   },
   "dlInstallLocalDownloads": {
     "message": "Local downloads"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
   },
   "dlInstallNoResponse": {
     "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
@@ -1238,17 +1424,20 @@
   "featureHealthNote": {
     "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
   },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "Предупреждение YouTube через {selector}; воспроизведение {state}"
+  },
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "YouTube {version} изменил элемент {surface}"
   },
-  "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
-  },
   "featureHealthReasonSelectorFallbackTpl": {
     "message": "Элемент страницы “{surface}” совпал только с резервным правилом"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
   },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
@@ -1276,6 +1465,27 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureReportChangedTpl": {
+    "message": "Настройки, отличающиеся от значений по умолчанию ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Скопировать список функций"
+  },
+  "featureReportCopyDone": {
+    "message": "Список функций скопирован. Ничего никуда не отправлено."
+  },
+  "featureReportCopyFail": {
+    "message": "Не удалось скопировать список функций."
+  },
+  "featureReportCopyTitle": {
+    "message": "Копирует только названия настроек, но никогда их значения. Ничего никуда не отправляется."
+  },
+  "featureReportNoneChanged": {
+    "message": "нет"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Только названия, без значений. Ничего никуда не отправлено. Это в вашем буфере обмена, и вы сами решаете, вставлять ли это."
   },
   "featureScheduleDaysTpl": {
     "message": "Active {window} on {days}"
@@ -1661,6 +1871,12 @@
   "feature_chatHide_menu_name": {
     "message": "Меню чата (...)"
   },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "Скрывать уведомление «медленный режим включён» и похожие уведомления для участников"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "Уведомления о режиме"
+  },
   "feature_chatHide_polls_desc": {
     "message": "Скрыть опросы в чате прямого эфира"
   },
@@ -1811,72 +2027,6 @@
   "feature_commentSearch_name": {
     "message": "Поиск в комментариях"
   },
-  "commentSearchCountThread": {
-    "message": "{count} ветка"
-  },
-  "commentSearchCountThreads": {
-    "message": "{count} веток"
-  },
-  "commentSearchCountMatch": {
-    "message": "{count} совпадение"
-  },
-  "commentSearchCountMatches": {
-    "message": "{count} совпадений"
-  },
-  "commentSearchNoMatches": {
-    "message": "Нет совпадений"
-  },
-  "commentSearchWaiting": {
-    "message": "Ожидание загрузки комментариев…"
-  },
-  "commentSearchSyncHint": {
-    "message": "Поисковая строка будет обновляться по мере появления новых комментариев."
-  },
-  "commentSearchReadyThread": {
-    "message": "Готова к поиску {count} ветка комментариев. Ищите авторов, фразы или темы."
-  },
-  "commentSearchReadyThreads": {
-    "message": "Готово к поиску веток комментариев: {count}. Ищите авторов, фразы или темы."
-  },
-  "commentSearchEscapeHint": {
-    "message": "Нажмите Esc, чтобы очистить поиск. Новые комментарии учитываются автоматически."
-  },
-  "commentSearchShowingMatches": {
-    "message": "Показано веток комментариев: {visible} из {total} по запросу «{query}»."
-  },
-  "commentSearchNavigatorHint": {
-    "message": "Используйте «Далее» или «Назад» в навигаторе комментариев для перехода между совпадениями."
-  },
-  "commentSearchWaitingForQuery": {
-    "message": "Ожидание загрузки комментариев по запросу «{query}»…"
-  },
-  "commentSearchActiveHint": {
-    "message": "Поиск остаётся активным, пока YouTube загружает список комментариев."
-  },
-  "commentSearchNoThreadsForQuery": {
-    "message": "Нет веток комментариев по запросу «{query}»."
-  },
-  "commentSearchShorterHint": {
-    "message": "Попробуйте более короткую фразу, имя автора или очистите фильтр."
-  },
-  "commentSearchEyebrow": {
-    "message": "Поиск в комментариях"
-  },
-  "commentSearchPlaceholder": {
-    "message": "Искать авторов, фразы или темы…"
-  },
-  "commentSearchAria": {
-    "message": "Искать комментарии"
-  },
-  "commentSearchClearAria": {
-    "message": "Очистить поиск в комментариях"
-  },
-  "commentSearchEmptyTitle": {
-    "message": "Нет подходящих комментариев"
-  },
-  "commentSearchEmptyCopy": {
-    "message": "Попробуйте более короткую фразу, имя автора или очистите фильтр, чтобы вернуть все ветки."
-  },
   "feature_commentTranslateTarget_desc": {
     "message": "Язык, на который переводить комментарии. «Автоматически» следует языку браузера."
   },
@@ -1924,6 +2074,12 @@
   },
   "feature_creatorCommentHighlight_name": {
     "message": "Подсветка комментариев автора"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS, применяемый при включённых пользовательских стилях"
+  },
+  "feature_customCssCode_name": {
+    "message": "Пользовательские правила CSS"
   },
   "feature_customCssInjection_desc": {
     "message": "Вставка собственных CSS-правил на страницы YouTube"
@@ -3461,6 +3617,12 @@
   "feature_searchWhileWatching_name": {
     "message": "Поиск во время просмотра"
   },
+  "feature_selectionColor_desc": {
+    "message": "Выберите цвет выделения при включённом пользовательском выборе текста"
+  },
+  "feature_selectionColor_name": {
+    "message": "Цвет выделения"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "Просмотр сигналов дрейфа селекторов в реальном времени и экспорт JSON-отчёта о состоянии для обновления фикстур."
   },
@@ -3638,6 +3800,48 @@
   "feature_styledFilterChips_name": {
     "message": "Стилизованные фильтры-чипы"
   },
+  "feature_subStyleBgColor_desc": {
+    "message": "Выберите цвет за текстом субтитров"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "Цвет фона субтитров"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "Задайте непрозрачность фона за текстом субтитров"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "Непрозрачность фона субтитров"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "Поднимите субтитры от нижнего края проигрывателя"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "Отступ субтитров снизу"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "Выберите цвет текста субтитров"
+  },
+  "feature_subStyleColor_name": {
+    "message": "Цвет текста субтитров"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "Выберите шрифт для субтитров"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "Гарнитура субтитров"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "Масштабировать текст субтитров от 50% до 300%"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "Размер шрифта субтитров"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "Добавьте тёмную тень, чтобы субтитры оставались читаемыми на светлом видео"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "Тень текста субтитров"
+  },
   "feature_subscriptionGroups_desc": {
     "message": "Локальные группы уровня PocketTube для ленты подписок. Создавайте именованные группы, перетаскивайте каналы, сортируйте по дате/длительности/непросмотренным/новым с последнего визита. Данные групп хранятся в subscriptionGroupData (только локально); используйте Экспорт для резервного копирования."
   },
@@ -3710,6 +3914,12 @@
   "feature_timestampBookmarks_name": {
     "message": "Закладки с таймкодами"
   },
+  "feature_titleCaseMode_desc": {
+    "message": "Выберите регистр при включённом преобразовании заголовка"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "Стиль регистра заголовка"
+  },
   "feature_titleCaseTransform_desc": {
     "message": "Заменить кликбейтные ЗАГЛАВНЫЕ заголовки YouTube на выбранный вами стиль регистра"
   },
@@ -3728,17 +3938,17 @@
   "feature_tokenThemeBridge_name": {
     "message": "Мост нативных токенов темы"
   },
-  "feature_transcriptQaLane_desc": {
-    "message": "Обрабатывайте вопросы на устройстве или используйте настроенного провайдера с действующими ограничениями разрешений, конфиденциальности и количества запросов."
-  },
-  "feature_transcriptQaLane_name": {
-    "message": "Провайдер вопросов по расшифровке"
-  },
   "feature_transcriptAiHandoff_desc": {
     "message": "Добавляет кнопку плеера, которая копирует транскрипт и открывает выбранный AI-инструмент с предзаполненным промптом для резюмирования"
   },
   "feature_transcriptAiHandoff_name": {
     "message": "Транскрипт → AI в один клик"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Обрабатывайте вопросы на устройстве или используйте настроенного провайдера с действующими ограничениями разрешений, конфиденциальности и количества запросов."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Провайдер вопросов по расшифровке"
   },
   "feature_transcriptViewer_desc": {
     "message": "Read, jump, and export captions"
@@ -4085,9 +4295,6 @@
   "filterListStatusReady": {
     "message": "Ни один список фильтров не используется."
   },
-  "filterListStatusStateReadFail": {
-    "message": "Не удалось прочитать состояние списка фильтров. Перезагрузите расширение и снова откройте всплывающее окно."
-  },
   "filterListStatusRefreshFail": {
     "message": "Не удалось обновить список. Проверьте адрес и повторите попытку."
   },
@@ -4102,6 +4309,9 @@
   },
   "filterListStatusStalePausedTpl": {
     "message": "Кэшированные правила из {host} приостановлены; проверено {age}; {reason}. Формат v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusStateReadFail": {
+    "message": "Не удалось прочитать состояние списка фильтров. Перезагрузите расширение и снова откройте всплывающее окно."
   },
   "filterListStopFailed": {
     "message": "Не удалось отменить подписку на список фильтров."
@@ -4940,6 +5150,9 @@
   "schemaOverviewEyebrow": {
     "message": "Обзор настроек"
   },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Ни одна настройка не совпадает с «{term}». Попробуйте имя функции, категорию, страницу вроде watch или feed либо тип элемента вроде boolean."
+  },
   "schemaOverviewToolsAria": {
     "message": "Инструменты сравнения настроек"
   },
@@ -4948,6 +5161,18 @@
   },
   "schemaResetTitleTpl": {
     "message": "Сбросить {key} к значению по умолчанию ({value})"
+  },
+  "schemaSurfaceHere": {
+    "message": "здесь"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Эту настройку можно изменить во всплывающем окне."
+  },
+  "schemaSurfacePanel": {
+    "message": "панель на странице"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Эта настройка редактируется на панели Astra Deck в YouTube. Открывает её."
   },
   "screenshotCaptureFailed": {
     "message": "Не удалось сделать снимок кадра"
@@ -4990,6 +5215,15 @@
   },
   "searchWatchTitle": {
     "message": "Поиск без остановки воспроизведения"
+  },
+  "selectorAutoRefreshCheckedTpl": {
+    "message": "auto-checked {age}"
+  },
+  "selectorAutoRefreshNeverChecked": {
+    "message": "auto-refresh on, no check yet"
+  },
+  "selectorAutoRefreshUpdatedTpl": {
+    "message": "last update {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "текущая версия"
@@ -5054,6 +5288,12 @@
   "selectorHealthYouTubeBuildTpl": {
     "message": "Версия YouTube {version}"
   },
+  "serviceOutageDismiss": {
+    "message": "Закрыть"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} не отвечает. Дело в самом сервисе, а не в Astra Deck."
+  },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"
   },
@@ -5099,6 +5339,12 @@
   "settingsDlDownloadTitle": {
     "message": "Скачать установщик Astra Downloader и показать его в Загрузках"
   },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
+  },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
   },
@@ -5143,6 +5389,12 @@
   },
   "settingsFeatureClearAriaTpl": {
     "message": "Очистить {featureName}"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "Приостановлено: изменение в YouTube сломало эту функцию в данной версии Astra Deck. Ваша настройка не изменена, функция заработает снова после выхода исправления."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "Задача №{issue}"
   },
   "settingsFooterSaved": {
     "message": "Сохранено"
@@ -5668,6 +5920,12 @@
   "spRowSaveFailedTpl": {
     "message": "{name}. Не удалось сохранить. Попробуйте обновить панель."
   },
+  "spRowStateRetry": {
+    "message": "Повторить"
+  },
+  "spRowStateSaving": {
+    "message": "Сохранение"
+  },
   "spScopeTpl": {
     "message": "Область: {scope}"
   },
@@ -5721,12 +5979,6 @@
   },
   "spSelectorTotalTpl": {
     "message": "Поверхностей: {count}"
-  },
-  "spRowStateRetry": {
-    "message": "Повторить"
-  },
-  "spRowStateSaving": {
-    "message": "Сохранение"
   },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
@@ -5980,14 +6232,6 @@
   "statusBackupImportedUndo": {
     "message": "Резервная копия импортирована. Нажмите «Отменить импорт», чтобы восстановить прежнее состояние. Точка отмены действует 7 дней и сохраняется после закрытия браузера."
   },
-  "statusImportBackupWrittenTpl": {
-    "message": "Ваши прежние данные сначала сохранены в {file}.",
-    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
-  },
-  "statusImportBackupFileFailed": {
-    "message": "Astra Deck не смог заранее сохранить файл резервной копии прежних данных, поэтому «Отменить импорт» — единственный путь назад.",
-    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
-  },
   "statusClipboardUnavailable": {
     "message": "Копирование здесь недоступно. Выделите текст и скопируйте его вручную."
   },
@@ -6017,6 +6261,14 @@
   },
   "statusExportFail": {
     "message": "Ошибка экспорта"
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck не смог заранее сохранить файл резервной копии прежних данных, поэтому «Отменить импорт» — единственный путь назад.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Ваши прежние данные сначала сохранены в {file}.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
   },
   "statusImportFail": {
     "message": "Ошибка импорта"
@@ -6363,6 +6615,21 @@
   "subscriptionGroupChipTpl": {
     "message": "{prefix}{name} ({count}){tags}"
   },
+  "subscriptionGroupDelete": {
+    "message": "Удалить"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "Удалить группу {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "Удалить «{group}» и её каналы ({count})? Подписки не затрагиваются."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "Группа удалена"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "«{group}» и его каналы ({count}) удалены. На ваши подписки это не влияет."
+  },
   "subscriptionGroupDialogTitle": {
     "message": "Назвать эту группу"
   },
@@ -6380,6 +6647,24 @@
   },
   "subscriptionGroupPlayingTpl": {
     "message": "Воспроизведение видео из {group}: {count}{truncated}"
+  },
+  "subscriptionGroupRename": {
+    "message": "Переименовать"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "Переименовать группу {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "Новое имя для этой группы"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "Группа переименована"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "Это имя группы снова занято, поэтому восстановление не выполнено."
+  },
+  "subscriptionGroupRestored": {
+    "message": "Группа восстановлена"
   },
   "subscriptionGroupsEmptyCopy": {
     "message": "Нажмите «+ Группа», чтобы создать первую группу."
@@ -6512,6 +6797,9 @@
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
+  },
+  "subscriptionMembersCapped": {
+    "message": "В группе уже 1000 каналов. Сначала удалите один."
   },
   "subscriptionMembersCloseAria": {
     "message": "Close the channel membership editor"
@@ -6741,6 +7029,12 @@
   "subtitleDownloadFailed": {
     "message": "Не удалось скачать субтитры"
   },
+  "switchLabelOff": {
+    "message": "выкл"
+  },
+  "switchLabelOn": {
+    "message": "вкл"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Закладка на {time} добавлена"
   },
@@ -6867,6 +7161,9 @@
   "toastDlStopped": {
     "message": "Astra Downloader остановлен. Запуск повторно…"
   },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck не может сохранить данные в этом профиле браузера. Недавние изменения могут быть потеряны."
+  },
   "toggleRiskTooltip_api": {
     "message": "Talks to an external API server"
   },
@@ -6878,12 +7175,6 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity. GitHub-full only."
-  },
-  "switchLabelOff": {
-    "message": "выкл"
-  },
-  "switchLabelOn": {
-    "message": "вкл"
   },
   "toggleStateOff": {
     "message": "Отключено"
@@ -7209,6 +7500,12 @@
   "uiFontSystem": {
     "message": "Системный интерфейс"
   },
+  "ui_commentLikeBadge": {
+    "message": "Нравится"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. Отметок «Нравится»: {count}"
+  },
   "ui_rydCachedTitleHoursTpl": {
     "message": "Кэшированное число дизлайков Return YouTube Dislike (возраст {hours} ч)."
   },
@@ -7254,9 +7551,6 @@
   "undo": {
     "message": "Отменить"
   },
-  "unknown": {
-    "message": "Неизвестно"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
@@ -7268,6 +7562,9 @@
   },
   "undoResetBtn": {
     "message": "Отменить сброс"
+  },
+  "unknown": {
+    "message": "Неизвестно"
   },
   "updateCompanionAria": {
     "message": "Update Astra Downloader companion"
@@ -7692,11 +7989,11 @@
   "videoHiderReasonBlockedChannel": {
     "message": "правило блокировки канала"
   },
-  "videoHiderReasonChannelNotAllowed": {
-    "message": "ваш список разрешённых каналов"
-  },
   "videoHiderReasonBlockedChannelNamedTpl": {
     "message": "правило заблокированного канала ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "ваш список разрешённых каналов"
   },
   "videoHiderReasonChannelNotAllowedNamedTpl": {
     "message": "ваш список разрешённых каналов ({channel})"
@@ -7734,11 +8031,11 @@
   "videoHiderReasonPredicate": {
     "message": "ваше расширенное локальное правило"
   },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonSyntheticDisclosed": {
     "message": "собственная пометка YouTube об изменённом или синтетическом содержании"
+  },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
   },
   "videoHiderReasonUpcoming": {
     "message": "фильтр предстоящих премьер"
@@ -8443,12 +8740,6 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
-  "zapRuleToggleAriaTpl": {
-    "message": "Применить правило для {selector}"
-  },
-  "zapRuleRemoveAriaTpl": {
-    "message": "Удалить правило для {selector}"
-  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
@@ -8458,292 +8749,10 @@
   "zapRuleRemove": {
     "message": "Remove"
   },
-  "ui_commentLikeBadge": {
-    "message": "Нравится"
-  },
-  "ui_commentLikeBadgeCountAriaTpl": {
-    "message": "{label}. Отметок «Нравится»: {count}"
-  },
-  "feature_chatHide_modeNotices_name": {
-    "message": "Уведомления о режиме"
-  },
-  "feature_chatHide_modeNotices_desc": {
-    "message": "Скрывать уведомление «медленный режим включён» и похожие уведомления для участников"
-  },
-  "toastStorageWriteFailed": {
-    "message": "Astra Deck не может сохранить данные в этом профиле браузера. Недавние изменения могут быть потеряны."
-  },
-  "subscriptionMembersCapped": {
-    "message": "В группе уже 1000 каналов. Сначала удалите один."
-  },
-  "subscriptionGroupRename": {
-    "message": "Переименовать"
-  },
-  "subscriptionGroupRenameAriaTpl": {
-    "message": "Переименовать группу {group}"
-  },
-  "subscriptionGroupRenamePrompt": {
-    "message": "Новое имя для этой группы"
-  },
-  "subscriptionGroupRenamed": {
-    "message": "Группа переименована"
-  },
-  "subscriptionGroupDelete": {
-    "message": "Удалить"
-  },
-  "subscriptionGroupDeleteAriaTpl": {
-    "message": "Удалить группу {group}"
-  },
-  "subscriptionGroupDeleteConfirmTpl": {
-    "message": "Удалить «{group}» и её каналы ({count})? Подписки не затрагиваются."
-  },
-  "subscriptionGroupDeleted": {
-    "message": "Группа удалена"
-  },
-  "settingsFeatureKnownBroken": {
-    "message": "Приостановлено: изменение в YouTube сломало эту функцию в данной версии Astra Deck. Ваша настройка не изменена, функция заработает снова после выхода исправления."
-  },
-  "settingsFeatureKnownBrokenIssueTpl": {
-    "message": "Задача №{issue}"
-  },
-  "featureReportChangedTpl": {
-    "message": "Настройки, отличающиеся от значений по умолчанию ({count}):"
-  },
-  "featureReportCopy": {
-    "message": "Скопировать список функций"
-  },
-  "featureReportCopyDone": {
-    "message": "Список функций скопирован. Ничего никуда не отправлено."
-  },
-  "featureReportCopyFail": {
-    "message": "Не удалось скопировать список функций."
-  },
-  "featureReportCopyTitle": {
-    "message": "Копирует только названия настроек, но никогда их значения. Ничего никуда не отправляется."
-  },
-  "featureReportNoneChanged": {
-    "message": "нет"
-  },
-  "featureReportPrivacyNote": {
-    "message": "Только названия, без значений. Ничего никуда не отправлено. Это в вашем буфере обмена, и вы сами решаете, вставлять ли это."
-  },
-  "bisectAbort": {
-    "message": "Остановить и восстановить"
-  },
-  "bisectAborted": {
-    "message": "Поиск остановлен. Ваши функции снова включены."
-  },
-  "bisectCopy": {
-    "message": "Скопировать результат"
-  },
-  "bisectCopyDone": {
-    "message": "Результат скопирован. Ничего никуда не отправлено."
-  },
-  "bisectCopyFail": {
-    "message": "Не удалось скопировать результат."
-  },
-  "bisectCulpritTpl": {
-    "message": "Это {feature}."
-  },
-  "bisectExpired": {
-    "message": "Незавершённый поиск истёк. Ваши функции снова включены."
-  },
-  "bisectIntro": {
-    "message": "Выключает и снова включает ваши функции половинами, чтобы вы сузили 291 функцию до одной примерно за десять перезагрузок. Настройки восстанавливаются по завершении, при остановке и автоматически, если вы отвлеклись."
-  },
-  "bisectIntroCountUnknown": {
-    "message": "your features"
-  },
-  "bisectNo": {
-    "message": "Пропало"
-  },
-  "bisectNoCulprit": {
-    "message": "Ни одна отдельная функция не виновата. Причина вне Astra Deck или в сочетании функций."
-  },
-  "bisectNothingEnabled": {
-    "message": "Ни одна функция не включена, поэтому искать нечего."
-  },
-  "bisectStart": {
-    "message": "Начать поиск"
-  },
-  "bisectStarted": {
-    "message": "Перезагрузите YouTube и ответьте ниже."
-  },
-  "bisectStepTpl": {
-    "message": "Шаг {step} примерно из {total}. Перезагрузите YouTube и ответьте: проблема всё ещё возникает?"
-  },
-  "bisectTitle": {
-    "message": "Найдите функцию, которая всё сломала"
-  },
-  "bisectYes": {
-    "message": "Всё ещё происходит"
-  },
-  "serviceOutageDismiss": {
-    "message": "Закрыть"
-  },
-  "serviceOutageTpl": {
-    "message": "{service} не отвечает. Дело в самом сервисе, а не в Astra Deck."
-  },
-  "bisectFailed": {
-    "message": "Поиск не смог продолжиться. Проверьте настройки."
-  },
-  "bisectRestoreFailed": {
-    "message": "Не удалось вернуть ваши настройки. Откройте настройки и проверьте их."
-  },
-  "bisectStartFailed": {
-    "message": "Не удалось начать: этот профиль браузера не сохранит сессию поиска."
-  },
-  "schemaOverviewNoMatchesTpl": {
-    "message": "Ни одна настройка не совпадает с «{term}». Попробуйте имя функции, категорию, страницу вроде watch или feed либо тип элемента вроде boolean."
-  },
-  "schemaSurfaceHere": {
-    "message": "здесь"
-  },
-  "schemaSurfaceHereTitle": {
-    "message": "Эту настройку можно изменить во всплывающем окне."
-  },
-  "schemaSurfacePanel": {
-    "message": "панель на странице"
-  },
-  "schemaSurfacePanelTitle": {
-    "message": "Эта настройка редактируется на панели Astra Deck в YouTube. Открывает её."
-  },
-  "dlHealthApiTooNew": {
-    "message": "новее этого расширения"
-  },
-  "dlInstallApiMismatchTpl": {
-    "message": "Astra Downloader работает, но этот Astra Deck использует более старый API, чем он принимает{versions}. Обновите расширение и снова выберите «Проверить»."
-  },
-  "dlInstallApiVersionsTpl": {
-    "message": " (нужен как минимум API {minimum})"
-  },
-  "subscriptionGroupDeletedTpl": {
-    "message": "«{group}» и его каналы ({count}) удалены. На ваши подписки это не влияет."
-  },
-  "subscriptionGroupRestoreConflict": {
-    "message": "Это имя группы снова занято, поэтому восстановление не выполнено."
-  },
-  "subscriptionGroupRestored": {
-    "message": "Группа восстановлена"
-  },
-  "antiAdblockTitle": {
-    "message": "Проверка воспроизведения YouTube"
-  },
-  "antiAdblockPlaybackAdvancing": {
-    "message": "идёт"
-  },
-  "antiAdblockPlaybackStalled": {
-    "message": "зависло"
-  },
-  "antiAdblockPlaybackBlocked": {
-    "message": "заблокировано"
-  },
-  "antiAdblockPlaybackUnknown": {
-    "message": "неизвестно"
-  },
-  "antiAdblockStateAdvancing": {
-    "message": "YouTube показал предупреждение о блокировщике рекламы, но видео продолжает воспроизводиться."
-  },
-  "antiAdblockStateStalled": {
-    "message": "YouTube показал предупреждение о блокировщике рекламы, и воспроизведение зависло."
-  },
-  "antiAdblockStateBlocked": {
-    "message": "YouTube показал предупреждение о блокировщике рекламы. Похоже, воспроизведение заблокировано."
-  },
-  "antiAdblockStateUnknown": {
-    "message": "YouTube показал предупреждение о блокировщике рекламы. Astra пока не может подтвердить состояние воспроизведения."
-  },
-  "antiAdblockEvidenceTpl": {
-    "message": "Селектор: {selector} · Воспроизведение: {state}"
-  },
-  "antiAdblockRulesPaused": {
-    "message": "Блокировка рекламы Astra временно приостановлена."
-  },
-  "antiAdblockPausedUntilTpl": {
-    "message": "Блокировка рекламы Astra приостановлена до {time}."
-  },
-  "antiAdblockReloadHint": {
-    "message": "Перезагрузите эту вкладку YouTube, чтобы повторить попытку воспроизведения."
-  },
-  "antiAdblockResumeAction": {
-    "message": "Возобновить блокировку рекламы Astra"
-  },
-  "antiAdblockPauseAction": {
-    "message": "Приостановить блокировку рекламы Astra на 15 минут"
-  },
-  "antiAdblockResumed": {
-    "message": "Блокировка рекламы Astra возобновлена."
-  },
-  "featureHealthReasonAntiAdblockTpl": {
-    "message": "Предупреждение YouTube через {selector}; воспроизведение {state}"
-  },
-  "feature_customCssCode_name": {
-    "message": "Пользовательские правила CSS"
-  },
-  "feature_customCssCode_desc": {
-    "message": "CSS, применяемый при включённых пользовательских стилях"
-  },
-  "feature_subStyleFontSize_name": {
-    "message": "Размер шрифта субтитров"
-  },
-  "feature_subStyleFontSize_desc": {
-    "message": "Масштабировать текст субтитров от 50% до 300%"
-  },
-  "feature_subStyleFontFamily_name": {
-    "message": "Гарнитура субтитров"
-  },
-  "feature_subStyleFontFamily_desc": {
-    "message": "Выберите шрифт для субтитров"
-  },
-  "feature_subStyleColor_name": {
-    "message": "Цвет текста субтитров"
-  },
-  "feature_subStyleColor_desc": {
-    "message": "Выберите цвет текста субтитров"
-  },
-  "feature_subStyleBgOpacity_name": {
-    "message": "Непрозрачность фона субтитров"
-  },
-  "feature_subStyleBgOpacity_desc": {
-    "message": "Задайте непрозрачность фона за текстом субтитров"
-  },
-  "feature_subStyleBgColor_name": {
-    "message": "Цвет фона субтитров"
-  },
-  "feature_subStyleBgColor_desc": {
-    "message": "Выберите цвет за текстом субтитров"
-  },
-  "feature_subStyleBottomOffset_name": {
-    "message": "Отступ субтитров снизу"
-  },
-  "feature_subStyleBottomOffset_desc": {
-    "message": "Поднимите субтитры от нижнего края проигрывателя"
-  },
-  "feature_subStyleTextShadow_name": {
-    "message": "Тень текста субтитров"
-  },
-  "feature_subStyleTextShadow_desc": {
-    "message": "Добавьте тёмную тень, чтобы субтитры оставались читаемыми на светлом видео"
-  },
-  "feature_titleCaseMode_name": {
-    "message": "Стиль регистра заголовка"
-  },
-  "feature_titleCaseMode_desc": {
-    "message": "Выберите регистр при включённом преобразовании заголовка"
-  },
-  "feature_selectionColor_name": {
-    "message": "Цвет выделения"
-  },
-  "feature_selectionColor_desc": {
-    "message": "Выберите цвет выделения при включённом пользовательском выборе текста"
-  },
-  "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
-  },
-  "settingsDlGetSetup": {
-    "message": "Get setup file"
-  },
-  "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+  "zapRuleRemoveAriaTpl": {
+    "message": "Удалить правило для {selector}"
+  },
+  "zapRuleToggleAriaTpl": {
+    "message": "Применить правило для {selector}"
   }
 }

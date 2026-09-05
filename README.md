@@ -23,7 +23,7 @@
 | Release | `v4.88.4` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `484` entries across `18` categories |
+| Settings schema | `485` entries across `18` categories |
 | Runtime graph | `117` modules, including `27` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
@@ -388,7 +388,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **479 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **480 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -1005,13 +1005,14 @@ This generated knowledgebase documents all **479 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Diagnostics</strong>: 3 settings</summary>
+<summary><strong>Diagnostics</strong>: 4 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-debugMode"></a><strong>Debug Mode</strong><br><code>debugMode</code> | Enable verbose diagnostic logging to the console | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-diagnosticLog"></a><strong>Diagnostic Error Log</strong><br><code>diagnosticLog</code> | Capture a rolling log of YTKit errors and export as JSON for bug reports | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-featureDisableFeed"></a><strong>Known-Breakage Notices</strong><br><code>featureDisableFeed</code> | Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one. | Default: On | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.84.0</code> |
+| <a id="setting-selectorAutoRefresh"></a><strong>Selector auto refresh</strong><br><code>selectorAutoRefresh</code> | Checks once a day for an updated page-matching rule set, through the same signed fetch, digest verification and rollback the manual Refresh button uses. Off by default, and no request is made while it is off. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.89.0</code> |
 
 </details>
 
