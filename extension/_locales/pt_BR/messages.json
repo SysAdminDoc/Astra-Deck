@@ -4598,6 +4598,21 @@
   "openFullSettings": {
     "message": "Abrir o espaço de trabalho"
   },
+  "openThumbnailChecking": {
+    "message": "Checking…"
+  },
+  "openThumbnailFailed": {
+    "message": "Could not open the thumbnail. Try again in a moment."
+  },
+  "openThumbnailLabel": {
+    "message": "Visualização"
+  },
+  "openThumbnailRetry": {
+    "message": "Retry"
+  },
+  "openThumbnailTitle": {
+    "message": "Open thumbnail at full size"
+  },
   "openYouTube": {
     "message": "Abrir YouTube"
   },

@@ -26,7 +26,7 @@ const CAPTURE = path.join(REPO_ROOT, 'mhtml', 'Channel.mhtml');
 
 function api(settings = {}, initialData = null) {
     return loadDeclarations(
-        ['channelLandingTabSuffix', 'listChannelTabSuffixes', 'channelHasTab', 'CHANNEL_TAB_SUFFIXES'],
+        ['channelLandingTabSuffix', 'listChannelTabSuffixes', 'channelBaseFromTabs', 'channelHasTab', 'CHANNEL_TAB_SUFFIXES'],
         { appState: { settings }, _rw: { ytInitialData: initialData } }
     );
 }
@@ -111,11 +111,17 @@ test('a channel is only sent to a tab the payload actually lists', () => {
     const initialData = capturedInitialData();
     const { channelHasTab } = api({}, initialData);
 
-    assert.equal(channelHasTab('/streams'), true, 'the captured channel has a Live tab');
-    assert.equal(channelHasTab('/podcasts'), true);
+    // The capture is the @YouTube channel, and the payload has to agree it is
+    // about that channel before its tab list is trusted at all.
+    assert.equal(channelHasTab('/streams', '/@YouTube'), true, 'the captured channel has a Live tab');
+    assert.equal(channelHasTab('/podcasts', '/@YouTube'), true);
     // Not offered by the setting, and not in the reported list either.
-    assert.equal(channelHasTab('/featured'), false);
-    assert.equal(channelHasTab('/membership'), false, 'a tab this channel does not carry');
+    assert.equal(channelHasTab('/featured', '/@YouTube'), false);
+    assert.equal(channelHasTab('/membership', '/@YouTube'), false, 'a tab this channel does not carry');
+    // A payload about someone else answers no, however complete it is.
+    assert.equal(channelHasTab('/streams', '/@SomeoneElse'), false,
+        'a stale payload from another channel must not decide for this one');
+    assert.equal(channelHasTab('/streams', ''), false, 'no channel means no answer');
 });
 
 test('an unreadable payload reports no tabs, so the redirect stays on Videos', () => {
@@ -124,8 +130,8 @@ test('an unreadable payload reports no tabs, so the redirect stays on Videos', (
     // "Do not know" must not be answered as "yes". The caller turns a false
     // here into /videos, which every channel has and which is exactly what this
     // feature did before the setting existed.
-    assert.equal(channelHasTab('/streams'), false);
-    assert.equal(channelHasTab('/videos'), false);
+    assert.equal(channelHasTab('/streams', '/@YouTube'), false);
+    assert.equal(channelHasTab('/videos', '/@YouTube'), false);
 });
 
 test('the setting is declared with exactly the tabs the runtime accepts', () => {
@@ -152,8 +158,7 @@ test('the setting is declared with exactly the tabs the runtime accepts', () => 
 // real feature: the helpers are loaded from the monolith and injected into the
 // feature's sandbox, so a mutation to either half fails here.
 
-function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube' } = {}) {
-    const helpers = api();
+function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube', payloadChannel = null } = {}) {
     const rules = new Map();
     const documentListeners = new Map();
     let href = `https://www.youtube.com${startPath}`;
@@ -165,11 +170,18 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube' } =
             return withoutOrigin.split(/[?#]/)[0];
         }
     };
+    // The payload names the channel it describes. Defaulting it to the channel
+    // in startPath models a fresh load; passing payloadChannel models the stale
+    // payload a soft navigation leaves behind.
+    const ownerMatch = /^(\/(?:@[^/?#]+|(?:c|user|channel)\/[^/?#]+))/.exec(startPath);
+    const owner = payloadChannel || (ownerMatch ? ownerMatch[1] : '/@YouTube');
     const initialData = tabs === null ? null : {
         contents: { twoColumnBrowseResultsRenderer: { tabs: tabs.map((suffix) => ({
-            tabRenderer: { endpoint: { commandMetadata: { webCommandMetadata: { url: `/@YouTube${suffix}` } } } }
+            tabRenderer: { endpoint: { commandMetadata: { webCommandMetadata: { url: `${owner}${suffix}` } } } }
         })) } }
     };
+
+    const helpers = api({}, initialData);
 
     const feature = loadFeature('redirectToVideosTab', {
         appState: { settings: { channelLandingTab: tab } },
@@ -182,10 +194,7 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube' } =
             removeEventListener: (type) => documentListeners.delete(type)
         },
         channelLandingTabSuffix: helpers.channelLandingTabSuffix,
-        channelHasTab: (suffix) => {
-            const available = helpers.listChannelTabSuffixes(initialData);
-            return Array.from(available).includes(suffix);
-        }
+        channelHasTab: (suffix, base) => helpers.channelHasTab(suffix, base)
     });
 
     feature.init();
@@ -282,4 +291,51 @@ test('a watch page cannot answer for a channel, and does not pretend to', () => 
     assert.equal(clickAnchor('https://www.youtube.com/@someoneElse'),
         'https://www.youtube.com/@someoneElse',
         'and a channel link from a watch page waits for the channel page to answer');
+});
+
+// The stale payload a soft navigation leaves behind.
+//
+// `_rw.ytInitialData` reads inline scripts, and those are written once at hard
+// load. After a YouTube SPA navigation the document still carries the previous
+// page's scripts, so the accessor keeps answering for the channel you came
+// from — and the navigate rule fires precisely on soft navigation. An
+// adversarial review drove this and watched Alpha's tab list send Beta to a
+// /streams tab Beta does not have.
+
+test('a payload left over from another channel does not decide for this one', () => {
+    // We have soft-navigated to Beta. The document still holds Alpha's payload,
+    // and Alpha has a Live tab.
+    const { landedOn } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos', '/streams'],
+        startPath: '/@Beta',
+        payloadChannel: '/@Alpha'
+    });
+
+    assert.equal(landedOn, '/@Beta/videos',
+        'Beta must not be sent to a tab only Alpha was known to have');
+});
+
+test('a fresh payload for this channel is still trusted', () => {
+    const { landedOn } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos', '/streams'],
+        startPath: '/@Beta',
+        payloadChannel: '/@Beta'
+    });
+
+    assert.equal(landedOn, '/@Beta/streams', 'the check must not block the case it exists to serve');
+});
+
+test('a payload carried over from a watch page decides nothing', () => {
+    // A watch page's ytInitialData has no channel tabs at all, so the base it
+    // reports is empty and cannot match any channel.
+    const { landedOn } = driveFeature({
+        tab: 'podcasts',
+        tabs: [],
+        startPath: '/@Beta',
+        payloadChannel: '/@Beta'
+    });
+
+    assert.equal(landedOn, '/@Beta/videos');
 });

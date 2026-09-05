@@ -651,8 +651,14 @@ async function capture(opts) {
         }
         // Before the DOM-token checks, because a snapshot that lost its inline
         // scripts still satisfies every one of those.
-        const inlineTokens = opts.inlineTokens || [];
-        if (inlineTokens.length) {
+        //
+        // Every surface gets checked. A profile that declared nothing used to
+        // skip this entirely, which left `embed` and `notifications` able to
+        // write a script-free snapshot and report success — the same silent
+        // downgrade this exists to stop. `ytcfg` is the floor: every YouTube
+        // page carries it, embeds included.
+        const inlineTokens = (opts.inlineTokens || []).length ? opts.inlineTokens : ['ytcfg'];
+        {
             const chosen = chooseCaptureData({
                 snapshot: data,
                 renderedHtml,
@@ -673,7 +679,11 @@ async function capture(opts) {
                 );
             }
             data = chosen.data;
-            captureMode = chosen.captureMode;
+            // Only when the decision actually swapped the data. Overwriting it
+            // unconditionally relabelled a `dom-mhtml-fallback` (written after a
+            // snapshot timeout) as `cdp-mhtml`, so the result claimed a CDP
+            // capture that never happened.
+            if (chosen.recovered) captureMode = chosen.captureMode;
         }
         for (const token of opts.requiredTokens) {
             if (!data.includes(token)) {

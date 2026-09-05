@@ -1268,13 +1268,39 @@ return response;
         return found;
     }
 
+    // Which channel the loaded payload is actually about, as the base its own
+    // tab URLs share ('/@YouTube', '/channel/UC...').
+    //
+    // Needed because the payload can be stale. `_rw.ytInitialData` reads inline
+    // scripts, and those are written once at hard load; after a YouTube SPA
+    // navigation the document still carries the PREVIOUS page's scripts, so the
+    // accessor keeps answering for the channel you came from. Asking the
+    // payload who it describes is the only way to know it describes you.
+    function channelBaseFromTabs(data) {
+        const tabs = data?.contents?.twoColumnBrowseResultsRenderer?.tabs;
+        if (!Array.isArray(tabs)) return '';
+        for (const entry of tabs) {
+            const url = entry?.tabRenderer?.endpoint?.commandMetadata?.webCommandMetadata?.url
+                || entry?.expandableTabRenderer?.endpoint?.commandMetadata?.webCommandMetadata?.url;
+            if (typeof url !== 'string') continue;
+            const cut = url.lastIndexOf('/');
+            if (cut > 0) return url.slice(0, cut);
+        }
+        return '';
+    }
+
     // Only ever asked about the channel whose payload is loaded. An unreadable
     // payload answers false, and the one caller turns that into /videos: the
     // tab every channel carries, and what this feature did before the setting
     // existed. "Do not know" and "not there" deliberately share an answer here
     // because they deserve the same safe landing.
-    function channelHasTab(suffix) {
-        return listChannelTabSuffixes(_rw.ytInitialData).includes(suffix);
+    function channelHasTab(suffix, channelBase) {
+        const data = _rw.ytInitialData;
+        // The payload has to be about the channel being asked about. Without
+        // this, a soft navigation from channel A to channel B answered with A's
+        // tab list, which is how B could be sent to a tab it does not have.
+        if (!channelBase || channelBaseFromTabs(data) !== channelBase) return false;
+        return listChannelTabSuffixes(data).includes(suffix);
     }
 
 
@@ -4420,6 +4446,7 @@ const STORAGE_KEYS = Object.freeze({
             watchPageTabs: false,
             redditComments: false,
             featureDisableFeed: true,
+            openThumbnailButton: false,
             channelLandingTab: "videos",
             selectorAutoRefresh: false,
             diagnosticLog: false,
@@ -10842,7 +10869,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // arrival, where the payload is finally about the right
                     // channel. One extra hop, and never a wrong tab.
                     if (!onThisChannel) return null;
-                    return channelHasTab(tab) ? base + tab : base + DEFAULT_TAB_HREF;
+                    // `base` is the channel in the URL being resolved, and the
+                    // payload is only trusted when it says it is about that same
+                    // channel. A stale one from a soft navigation answers no.
+                    return channelHasTab(tab, base) ? base + tab : base + DEFAULT_TAB_HREF;
                 };
                 const handleDirectNavigation = () => {
                     // We are on this channel, so its tab list is the loaded one.
@@ -25337,12 +25367,71 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 actions.appendChild(btn);
                 this._btn = btn;
+
+                if (appState.settings.openThumbnailButton) this._createOpenButton(actions, videoId);
+            },
+
+            // Viewing the thumbnail rather than saving it. Rides alongside the
+            // download button because it shares its resolver: the same
+            // maxresdefault-then-hqdefault probe, so a video without a max-res
+            // thumbnail opens the one it does have instead of a broken image.
+            _createOpenButton(actions, videoId) {
+                // No duplicate guard of its own: _create() already returns early
+                // when its own button is present, and this only runs from there.
+                const openBtn = document.createElement('button');
+                openBtn.type = 'button';
+                openBtn.className = 'ytkit-watch-action-btn ytkit-open-thumb-btn';
+                openBtn.title = t('openThumbnailTitle', 'Open thumbnail at full size');
+                openBtn.setAttribute('aria-label', t('openThumbnailTitle', 'Open thumbnail at full size'));
+                openBtn.dataset.state = 'idle';
+
+                const openIcon = document.createElement('span');
+                openIcon.className = 'ytkit-watch-action-btn__icon';
+                openIcon.setAttribute('aria-hidden', 'true');
+                const openSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                openSvg.setAttribute('viewBox', '0 0 24 24');
+                openSvg.setAttribute('width', '20');
+                openSvg.setAttribute('height', '20');
+                const openPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                openPath.setAttribute('d', 'M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7zM19 19H5V5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6z');
+                openPath.setAttribute('fill', 'currentColor');
+                openSvg.appendChild(openPath);
+                openIcon.appendChild(openSvg);
+
+                const openLabel = document.createElement('span');
+                openLabel.className = 'ytkit-watch-action-btn__label';
+                openLabel.textContent = t('openThumbnailLabel', 'View');
+
+                openBtn.appendChild(openIcon);
+                openBtn.appendChild(openLabel);
+
+                openBtn.addEventListener('click', async () => {
+                    if (openBtn.disabled) return;
+                    openBtn.disabled = true;
+                    try {
+                        this._setButtonFeedback(openLabel, openBtn, t('openThumbnailChecking', 'Checking…'), 'busy');
+                        const thumbUrl = await this._resolveThumbnailUrl(videoId);
+                        await openExternalUrl(thumbUrl);
+                        this._setButtonFeedback(openLabel, openBtn, t('openThumbnailLabel', 'View'), 'idle');
+                    } catch (e) {
+                        void e;
+                        this._setButtonFeedback(openLabel, openBtn, t('openThumbnailRetry', 'Retry'), 'error');
+                        showToast(t('openThumbnailFailed', 'Could not open the thumbnail. Try again in a moment.'), '#ef4444', { duration: 4 });
+                    } finally {
+                        openBtn.disabled = false;
+                    }
+                });
+
+                actions.appendChild(openBtn);
+                this._openBtn = openBtn;
             },
 
             init() {
                 addNavigateRule('downloadThumbnail', () => {
                     this._btn?.remove();
                     this._btn = null;
+                    this._openBtn?.remove();
+                    this._openBtn = null;
                     this._scheduleCreate(2000);
                 });
                 addMutationRule('downloadThumbnail', () => {
@@ -25360,7 +25449,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._feedbackTimer) clearTimeout(this._feedbackTimer);
                 this._feedbackTimer = null;
                 document.querySelectorAll('.ytkit-dl-thumb-btn').forEach(b => b.remove());
+                document.querySelectorAll('.ytkit-open-thumb-btn').forEach(b => b.remove());
                 this._btn = null;
+                this._openBtn = null;
             }
         },
         {

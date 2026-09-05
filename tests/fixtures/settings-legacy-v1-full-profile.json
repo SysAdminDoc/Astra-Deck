@@ -517,6 +517,7 @@
     "markWatchedVideos",
     "notificationHideRead",
     "notificationMaxCount",
+    "openThumbnailButton",
     "persistentQueue",
     "persistentQueueAutoAdvance",
     "photosensitiveDimPercent",
