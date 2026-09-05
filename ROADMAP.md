@@ -4,27 +4,21 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P1 — The MHTML capture tool no longer preserves inline scripts
-  Why: `scripts/capture-watch-mhtml.js` is the only way to refresh the selector fixtures,
-  and a capture taken today is materially weaker than the one it would overwrite. Running
-  it to clear the stale evidence tracked in `Roadmap_Blocked.md` would silently throw away
-  every inline payload the current fixture carries, and nothing would report it.
-  Evidence: measured 2026-09-05 on Chrome 152.0.7977.83. The shipped
-  `mhtml/WatchPage.mhtml` holds 62 `<script` tags, 19 `ytcfg` hits, 1 `INNERTUBE_API_KEY`,
-  3 `ytInitialPlayerResponse` and 3 `videoDetails`. A fresh
-  `node scripts/capture-watch-mhtml.js --surface watch --out <scratch>` produced a 4.4 MB
-  file (against 1.8 MB) containing **zero** of any of them. The capture reports success and
-  its own token checks pass, because `requiredTokens` only looks for `ytd-watch-flexy` and
-  `movie_player`, which are DOM.
-  Touches: `scripts/capture-watch-mhtml.js`, `scripts/build-selector-fixtures.js`, `tests/`.
-  Acceptance: WHEN a capture is written the tool SHALL verify the snapshot still carries
-  the inline payload it is expected to carry and SHALL fail rather than write a fixture
-  that has lost it, and the `requiredTokens` list for the watch surface SHALL include at
-  least one inline-script token so a DOM-only snapshot cannot pass. Whether the loss is
-  recoverable (a `Page.captureSnapshot` flag, a different CDP call, or a Chrome change with
-  no workaround) is part of the work; if it is not recoverable, the tool SHALL say so
-  loudly instead of writing the degraded file.
-  Complexity: M
+- [ ] P2 — Re-capture the search and embed fixtures, which carry no inline payload
+  Why: two shipped fixtures were captured while Page.captureSnapshot was dropping
+  scripts, so they hold DOM and nothing else. Anything that reads an inline payload out
+  of them is testing against a page YouTube never served.
+  Evidence: measured 2026-09-05. `mhtml/SearchResults.mhtml` and `mhtml/EmbedPlayer.mhtml`
+  contain none of `ytcfg`, `ytInitialData` or `ytInitialPlayerResponse`, while
+  `WatchPage.mhtml`, `Shorts.mhtml` and `Channel.mhtml` carry all three. The capture tool
+  now recovers the payload from the rendered DOM, so a fresh run would fix both.
+  `tests/capture-inline-payload.test.js` skips the search profile for exactly this reason.
+  Touches: `mhtml/SearchResults.mhtml`, `mhtml/EmbedPlayer.mhtml`,
+  `tests/capture-inline-payload.test.js`.
+  Acceptance: both fixtures carry the inline tokens their capture profile declares, the
+  embed profile declares the tokens an embed page actually serves, and the skip for the
+  search profile is removed so the consistency check covers every captured surface.
+  Complexity: S
 
 ## Research-Driven Additions
 
