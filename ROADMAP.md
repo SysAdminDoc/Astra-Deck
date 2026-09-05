@@ -49,29 +49,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
 
 Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Retire the inert panel stylesheets from `ytkit.js`
-  Why: `docs/architecture.md:157` §9 states the legacy panel sheets are overridden by
-  `core/settings-visual-system.js` for almost every selector, that editing them changes
-  nothing visible, and that panel CSS cannot be reasoned about by reading. Seven of the
-  last 200 commits are light-theme and surface repair (`84b95890`, `9f9ae66f`,
-  `9ed81851`, `42ad587a`, `b5a4950d`, `89660ce7`, `749f4eea`).
-  Evidence: `injectPanelStyles()` spans `extension/ytkit.js:43790-45199` (1,410 lines);
-  `scripts/probe-panel-colors.js:101-147` already reports, per surface, the computed
-  value and the sheet index that supplied it. Distinct from the blocked item
-  "Establish one canonical implementation per extracted extension feature", which owns
-  the duplicate `buildSettingsPanel()` DOM builder and needs a live Tampermonkey session;
-  this half is verifiable headlessly. `PALETTE_CSS` at `ytkit.js:43680` is eager and
-  load-bearing and must not be touched.
-  Touches: `extension/ytkit.js`, `extension/core/settings-visual-system.js`,
-  `scripts/probe-panel-colors.js`, `tests/settings-visual-system.test.js`,
-  `tests/ytkit-token-definitions.test.js`.
-  Acceptance: `npm run probe:panel-colors` reports no surface whose winning carrier is a
-  legacy sheet, every declaration that did win has been ported into
-  `settings-visual-system.js`, the legacy sheets are deleted, the reported stylesheet
-  count drops, and `audit:contrast`, `audit:light-theme`, `smoke:light-surfaces` and
-  `smoke:theme-controls` all pass unchanged in both themes.
-  Complexity: L
-
 - [ ] P1 — Run the steady-state benchmark as a gate
   Why: the long-session leak lane is fully built and nothing invokes it, so a feature
   whose `destroy()` leaks listeners or observers ships undetected.

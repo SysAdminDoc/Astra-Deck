@@ -659,3 +659,62 @@ Blocked items moved from the actionable roadmap:
 
 
 - `Roadmap_Blocked.md` "P3 — Chrome Writer/Rewriter API" is correctly blocked (still Developer Trial), but it should **not** be read as covering Chrome's built-in AI generally: Translator, Language Detector, Summarizer and the Prompt API have been **stable in extensions since Chrome 138**. That lane is unblocked and is tracked separately below.
+
+## P1 — Premise disproven, needs a product decision (2026-09-05)
+
+- [ ] P1 — Retire the inert panel stylesheets from `ytkit.js`
+  Why: `docs/architecture.md:157` §9 states the legacy panel sheets are overridden by
+  `core/settings-visual-system.js` for almost every selector, that editing them changes
+  nothing visible, and that panel CSS cannot be reasoned about by reading. Seven of the
+  last 200 commits are light-theme and surface repair (`84b95890`, `9f9ae66f`,
+  `9ed81851`, `42ad587a`, `b5a4950d`, `89660ce7`, `749f4eea`).
+  Evidence: `injectPanelStyles()` spans `extension/ytkit.js:43790-45199` (1,410 lines);
+  `scripts/probe-panel-colors.js:101-147` already reports, per surface, the computed
+  value and the sheet index that supplied it. Distinct from the blocked item
+  "Establish one canonical implementation per extracted extension feature", which owns
+  the duplicate `buildSettingsPanel()` DOM builder and needs a live Tampermonkey session;
+  this half is verifiable headlessly. `PALETTE_CSS` at `ytkit.js:43680` is eager and
+  load-bearing and must not be touched.
+  Touches: `extension/ytkit.js`, `extension/core/settings-visual-system.js`,
+  `scripts/probe-panel-colors.js`, `tests/settings-visual-system.test.js`,
+  `tests/ytkit-token-definitions.test.js`.
+  Acceptance: `npm run probe:panel-colors` reports no surface whose winning carrier is a
+  legacy sheet, every declaration that did win has been ported into
+  `settings-visual-system.js`, the legacy sheets are deleted, the reported stylesheet
+  count drops, and `audit:contrast`, `audit:light-theme`, `smoke:light-surfaces` and
+  `smoke:theme-controls` all pass unchanged in both themes.
+  Complexity: L
+  Blocker: the sheets are not inert, so "retire" is not a deletion and the
+  acceptance criterion as written would ship a broken panel. Measured
+  2026-09-05 with `node scripts/probe-panel-colors.js --legacy-audit`, which
+  was added for this item.
+
+  - **206 rules carrying 1,544 declarations across 3 legacy sheets set
+    properties the visual system sets on no element those rules match.** They
+    are not colour: they are `min-height`, `flex-wrap`, `row-gap`/`column-gap`,
+    `margin`, `padding`, `font-size`, `line-height`, `letter-spacing`,
+    `text-transform`, `-webkit-line-clamp`, `white-space-collapse`, `position`,
+    `transform` and `box-sizing`, on `.ytkit-badge`, `.ytkit-search-*`,
+    `.ytkit-nav-meta` (11 elements), `.ytkit-feature-meta` (217 elements),
+    `.ytkit-feature-badge` (220 elements) and the brand header.
+  - The visual system covers **painting** — backgrounds, borders, shadows,
+    accent surfaces — on the surfaces it claims. The legacy sheets still carry
+    the panel's **structure**. `docs/architecture.md` §9 has been corrected in
+    place to say so, with the measurement, so the next reader does not
+    re-derive this.
+  - The probe also disproves the narrower reading. Legacy `sheet#56` is still
+    the only carrier of `.ytkit-nav-btn.active`'s background, and is the
+    winning carrier of `transparent` for `.ytkit-content`,
+    `.ytkit-feature-card` and `.ytkit-sub-card`.
+  - What is actually available here is a **port**, not a retirement: move 1,544
+    declarations into `settings-visual-system.js` in reviewable batches, each
+    batch re-verified with `--legacy-audit` plus the contrast, light-theme and
+    theme-control lanes, until the audit reports zero. That is a different item
+    with a different size, and it needs a decision on whether a panel-CSS
+    consolidation of that scale is worth the regression risk against a product
+    whose release channels are already six versions behind.
+  - Three defects in the probe itself were fixed to get this measurement
+    (`1a4c384a`): a two-slash `file://` URL that parsed `C:` as the URL host, a
+    missing `--allow-file-access-from-files` that stopped the module graph
+    loading, and an EPERM from the cleanup `finally` that replaced every real
+    error with a temp-path permission message.
