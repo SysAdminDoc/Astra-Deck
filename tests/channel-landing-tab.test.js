@@ -155,6 +155,7 @@ test('the setting is declared with exactly the tabs the runtime accepts', () => 
 function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube' } = {}) {
     const helpers = api();
     const rules = new Map();
+    const documentListeners = new Map();
     let href = `https://www.youtube.com${startPath}`;
     const location = {
         get href() { return href; },
@@ -176,7 +177,10 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube' } =
         addNavigateRule: (id, fn) => rules.set(id, fn),
         removeNavigateRule: (id) => rules.delete(id),
         location,
-        document: { addEventListener() {}, removeEventListener() {} },
+        document: {
+            addEventListener: (type, handler) => { if (type === 'mousedown') documentListeners.set(type, handler); },
+            removeEventListener: (type) => documentListeners.delete(type)
+        },
         channelLandingTabSuffix: helpers.channelLandingTabSuffix,
         channelHasTab: (suffix) => {
             const available = helpers.listChannelTabSuffixes(initialData);
@@ -185,7 +189,15 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube' } =
     });
 
     feature.init();
-    return { landedOn: location.pathname, rules };
+
+    /** Click a link, the way the mousedown rewrite sees it. */
+    const clickAnchor = (href) => {
+        const anchor = { href, closest(sel) { return sel === 'a' ? anchor : null; } };
+        documentListeners.get('mousedown')?.({ target: anchor });
+        return anchor.href;
+    };
+
+    return { landedOn: location.pathname, rules, clickAnchor };
 }
 
 test('the redirect sends the user to the tab they chose', () => {
@@ -216,4 +228,58 @@ test('a deep link to a specific tab is left alone', () => {
 test('the redirect registers one navigation rule and no more', () => {
     const { rules } = driveFeature({ tab: 'videos', tabs: ['/videos'] });
     assert.deepEqual(Array.from(rules.keys()), ['channelRedirectorNav']);
+});
+
+// The anchor rewrite, which asks about a different channel than the one loaded.
+//
+// An adversarial review found this: the mousedown handler rewrites a link to
+// ANY channel, and the existence check reads the browse payload of the page you
+// are standing on. On a watch page that payload has no channel tabs at all, so
+// every link was forced to /videos and the setting was silently discarded. On
+// channel A's page, a link to channel B was rewritten using A's tab list.
+
+test('a link to another channel is not rewritten using this page tab list', () => {
+    // This page has /podcasts. The link points somewhere else entirely, and
+    // nothing here knows whether THAT channel has a Podcasts tab.
+    const { clickAnchor } = driveFeature({ tab: 'podcasts', tabs: ['/videos', '/podcasts'] });
+
+    assert.equal(
+        clickAnchor('https://www.youtube.com/@someoneElse'),
+        'https://www.youtube.com/@someoneElse',
+        'the href is left alone so the navigation rule can decide once the right payload is loaded'
+    );
+});
+
+test('the anchor rewrite still shortcuts to Videos, which every channel has', () => {
+    const { clickAnchor } = driveFeature({ tab: 'videos', tabs: ['/videos'] });
+
+    assert.equal(clickAnchor('https://www.youtube.com/@someoneElse'), '/@someoneElse/videos',
+        'the default tab needs no lookup, so the one-hop shortcut is kept');
+});
+
+test('the anchor rewrite leaves non-channel links alone', () => {
+    const { clickAnchor } = driveFeature({ tab: 'videos', tabs: ['/videos'] });
+
+    for (const href of [
+        'https://www.youtube.com/watch?v=abc12345678',
+        'https://www.youtube.com/@someoneElse/streams',
+        'https://example.com/@someoneElse'
+    ]) {
+        assert.equal(clickAnchor(href), href, `${href} must not be rewritten`);
+    }
+});
+
+test('a watch page cannot answer for a channel, and does not pretend to', () => {
+    // ytInitialData on a watch page carries twoColumnWatchNextResults, not the
+    // channel tab list, so the reader reports nothing.
+    const { clickAnchor, landedOn } = driveFeature({
+        tab: 'streams',
+        tabs: [],
+        startPath: '/watch?v=abc12345678'
+    });
+
+    assert.equal(landedOn, '/watch', 'a watch page is not a channel home and must not redirect');
+    assert.equal(clickAnchor('https://www.youtube.com/@someoneElse'),
+        'https://www.youtube.com/@someoneElse',
+        'and a channel link from a watch page waits for the channel page to answer');
 });

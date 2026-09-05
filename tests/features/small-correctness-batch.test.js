@@ -56,7 +56,13 @@ test('redirectToVideosTab rewrites every channel-home shape without mangling the
 
 test('redirectToVideosTab compares against the pathname, not the absolute href', () => {
     const start = sources.ytkit.indexOf("id: 'redirectToVideosTab'");
-    const block = sources.ytkit.slice(start, start + 3000);
+    // Bounded by the feature's own navigate-rule registration rather than a
+    // character count. The fixed 3000-character window silently stopped
+    // covering the comparison as soon as the surrounding comments grew, which
+    // failed the test without the code it guards having changed at all.
+    const end = sources.ytkit.indexOf("addNavigateRule('channelRedirectorNav'", start);
+    assert.ok(end > start, 'the channel redirector must register its navigate rule');
+    const block = sources.ytkit.slice(start, end);
     assert.match(block, /location\.pathname !== target/,
         'an absolute-vs-relative comparison is never equal and reassigns on every load');
 });
