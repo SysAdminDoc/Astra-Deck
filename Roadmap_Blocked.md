@@ -768,3 +768,41 @@ Blocked items moved from the actionable roadmap:
     `docs/platform-api-adoption.md`.
   - Recording a NEGATIVE result matters as much as a positive one here: an
     untested negative is how the next audio change breaks this silently.
+
+## P2 — No verifiable fixture (2026-09-05)
+
+- [ ] P2 — Show storyboard thumbnails under the clip timeline
+  Why: the timeline gives the shape of the clip but not what is in it, and
+  YouTube already ships the sprite sheets its own seek preview uses.
+  Evidence: the player response carries `storyboards.playerStoryboardSpecRenderer.spec`;
+  nothing in the repo parses it today (`grep -c storyboard extension/` is 0).
+  Touches: `extension/features/download-ui/index.js`, `extension/core/`.
+  Acceptance: WHEN a storyboard spec is present the track SHALL show the frame
+  nearest the hovered or dragged position, and WHEN it is absent or fails to
+  load the track SHALL keep working with no thumbnail and no error surfaced.
+  Complexity: M
+  Blocker: the spec format cannot be verified against anything this repository
+  holds, and the tool that would produce a fixture carrying one is itself
+  broken. Measured 2026-09-05.
+
+  - **No capture contains a storyboard spec.** `playerStoryboardSpecRenderer`
+    appears in none of the seven files in `mhtml/`. The only "storyboard" hits
+    are a `web_l3_storyboard` experiment flag in `WatchPage.mhtml` and
+    `.ytPlayerStoryboardHost` CSS class names in `EmbedPlayer.mhtml`.
+  - **A fresh capture cannot supply one either.** A live
+    `capture-watch-mhtml.js --surface watch` run on Chrome 152.0.7977.83 wrote a
+    4.4 MB file with **zero** `<script` tags, so it carries no player response at
+    all. That regression is now its own P1 in `ROADMAP.md`; until it is fixed,
+    the fixture path cannot produce the data this item needs.
+  - What is NOT blocking, recorded so the next attempt does not re-derive it:
+    the image origin is already permitted (`https://i.ytimg.com` is in
+    `manifest.json` host permissions, the extension-pages `connect-src`, and the
+    `data-flow.js` origin catalogue at `:148`), and the hook point is settled —
+    `secondsFromClientX` in `extension/features/download-ui/index.js:658` already
+    converts a pointer position to a timestamp for both hover and drag, and
+    `getPlayerResponseGlobal()` is already an injected dependency of that module.
+  - What would unblock it: either the capture tool preserving inline scripts
+    again, or a decision that a fail-closed parser written against the published
+    spec format is acceptable without a fixture proving the happy path. The
+    second is a judgement call, not a coding one: every negative branch is
+    testable today, and only the branch that actually draws a frame is not.

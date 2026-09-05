@@ -4,17 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P2 — Show storyboard thumbnails under the clip timeline
-  Why: the timeline gives the shape of the clip but not what is in it, and
-  YouTube already ships the sprite sheets its own seek preview uses.
-  Evidence: the player response carries `storyboards.playerStoryboardSpecRenderer.spec`;
-  nothing in the repo parses it today (`grep -c storyboard extension/` is 0).
-  Touches: `extension/features/download-ui/index.js`, `extension/core/`.
-  Acceptance: WHEN a storyboard spec is present the track SHALL show the frame
-  nearest the hovered or dragged position, and WHEN it is absent or fails to
-  load the track SHALL keep working with no thumbnail and no error surfaced.
-  Complexity: M
-
 - [ ] P1 — The MHTML capture tool no longer preserves inline scripts
   Why: `scripts/capture-watch-mhtml.js` is the only way to refresh the selector fixtures,
   and a capture taken today is materially weaker than the one it would overwrite. Running
