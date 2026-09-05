@@ -33,25 +33,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Acceptance: the language picker states each locale's translated percentage, `CATEGORY_META` resolves through `t()` for all 18 categories, and the coverage report is the single source for the number shown.
   Complexity: M
 
-- [ ] P2 — Prove OS media controls survive the Web Audio graph
-  Why: Astra routes YouTube's `<video>` through a Web Audio graph whenever any of six
-  audio features is on, and has no Media Session code at all, so hardware media keys and
-  the OS media panel are an untested casualty of a feature most users leave enabled.
-  Evidence: `extension/ytkit-main.js:1549` calls `createMediaElementSource(video)` for
-  mono-to-stereo, `volumeBoost`, normalization, auto-gain, high-pass and sync offset;
-  `grep -ri "mediaSession|media key|SMTC"` returns zero hits across `extension/`,
-  `docs/`, `ROADMAP.md` and `Roadmap_Blocked.md`; SponsorBlock issue #2543 (2026-09-01)
-  reports exactly this failure class in a YouTube extension on Firefox.
-  Touches: `extension/ytkit-main.js`, `extension/core/player.js`, a new probe under
-  `scripts/`, `tests/`.
-  Acceptance: a headless probe asserts that `navigator.mediaSession.metadata` and the
-  play/pause/seek action handlers are still populated after the audio graph attaches and
-  after it is torn down; if the graph is found to clear them, the MAIN world restores
-  metadata and handlers from the player state; the manual result of pressing a media key
-  with `volumeBoost` on and off, in Chrome and Firefox, is recorded in
-  `docs/platform-api-adoption.md` with its date either way.
-  Complexity: M
-
 - [ ] P2 — Add a channel-page landing-tab setting
   Why: landing on a channel's Home tab buries the thing most people opened the channel
   for, and it is a live competitor request with no equivalent key in the schema.

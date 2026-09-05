@@ -718,3 +718,48 @@ Blocked items moved from the actionable roadmap:
     missing `--allow-file-access-from-files` that stopped the module graph
     loading, and an EPERM from the cleanup `finally` that replaced every real
     error with a temp-path permission message.
+
+## P2 — Needs a human at the machine (2026-09-05)
+
+- [ ] P2 — Prove OS media controls survive the Web Audio graph
+  Why: Astra routes YouTube's `<video>` through a Web Audio graph whenever any of six
+  audio features is on, and has no Media Session code at all, so hardware media keys and
+  the OS media panel are an untested casualty of a feature most users leave enabled.
+  Evidence: `extension/ytkit-main.js:1549` calls `createMediaElementSource(video)` for
+  mono-to-stereo, `volumeBoost`, normalization, auto-gain, high-pass and sync offset;
+  `grep -ri "mediaSession|media key|SMTC"` returns zero hits across `extension/`,
+  `docs/`, `ROADMAP.md` and `Roadmap_Blocked.md`; SponsorBlock issue #2543 (2026-09-01)
+  reports exactly this failure class in a YouTube extension on Firefox.
+  Touches: `extension/ytkit-main.js`, `extension/core/player.js`, a new probe under
+  `scripts/`, `tests/`.
+  Acceptance: a headless probe asserts that `navigator.mediaSession.metadata` and the
+  play/pause/seek action handlers are still populated after the audio graph attaches and
+  after it is torn down; if the graph is found to clear them, the MAIN world restores
+  metadata and handlers from the player state; the manual result of pressing a media key
+  with `volumeBoost` on and off, in Chrome and Firefox, is recorded in
+  `docs/platform-api-adoption.md` with its date either way.
+  Complexity: M
+  Blocker: the headless half of the acceptance cannot substantiate the claim,
+  and the half that can needs a person pressing a key. Determined 2026-09-05.
+
+  - **Media Session is a write-only surface to the page.** `metadata`,
+    `playbackState`, `setActionHandler` and `setPositionState` are all things a
+    page *sets*. There is no API that reports whether the browser is currently
+    publishing a media session to the OS, which is the thing at risk. A probe
+    asserting `navigator.mediaSession.metadata` is populated would only be
+    asserting that something in the page set it, and would pass or fail
+    identically whether or not Windows SMTC had stopped receiving anything.
+  - It would also read null in any fixture, because the code that sets it is
+    YouTube's own player, not Astra. `grep -ri mediaSession extension/` is 0.
+  - So the assertion as written is not a proof of the property. Writing it would
+    produce a green check that means nothing, which is worse than no check.
+  - **What actually settles it:** open a YouTube video, press the hardware
+    play/pause key, then enable `volumeBoost` (which is what attaches
+    `createMediaElementSource`) and press it again. Repeat in Firefox. If the
+    key stops working, or the Windows media flyout stops showing the video, the
+    graph is the cause and the fix is for the MAIN world to set
+    `navigator.mediaSession.metadata` and the play/pause/seek handlers from the
+    player state. Record the result either way, with its date, in
+    `docs/platform-api-adoption.md`.
+  - Recording a NEGATIVE result matters as much as a positive one here: an
+    untested negative is how the next audio change breaks this silently.
