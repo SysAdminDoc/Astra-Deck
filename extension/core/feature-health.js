@@ -108,6 +108,42 @@
         return row?.lastOutcome === 'hit' && row?.lastTier === 'fallback';
     }
 
+    // Which player rollout the surfaces actually resolved against, and which
+    // surfaces are not on their pack's primary one. Reads the selector rows
+    // that resolution already recorded, so it issues no query of its own.
+    //
+    // The player refresh is served per account and per device, so two users on
+    // the same version can be looking at different pages. Without this a
+    // diagnostics bundle cannot distinguish "the selector broke" from "this
+    // user is on the other rollout", which are different bugs with different
+    // fixes.
+    function summarizeSurfaceVariants(attributionRows, resolveVariant) {
+        const resolve = typeof resolveVariant === 'function'
+            ? resolveVariant
+            : core.resolveSurfaceVariant;
+        const nonPrimary = [];
+        let playerVariant = 'unknown';
+        if (typeof resolve !== 'function') return { playerVariant, surfacesOnNonPrimaryVariant: nonPrimary };
+        for (const entry of Array.isArray(attributionRows) ? attributionRows : []) {
+            for (const row of Array.isArray(entry?.surfaces) ? entry.surfaces : []) {
+                if (row?.lastOutcome !== 'hit' || !row.lastSelector) continue;
+                const resolved = resolve(row.surface, row.lastSelector);
+                if (!resolved || resolved.variant === 'unknown') continue;
+                if (String(row.surface).split('.')[0] === 'playerChrome') playerVariant = resolved.variant;
+                if (resolved.isPrimary === false) {
+                    nonPrimary.push({
+                        surface: row.surface,
+                        variant: resolved.variant,
+                        primary: resolved.primary,
+                        selector: row.lastSelector
+                    });
+                }
+            }
+        }
+        nonPrimary.sort((a, b) => (a.surface < b.surface ? -1 : a.surface > b.surface ? 1 : 0));
+        return { playerVariant, surfacesOnNonPrimaryVariant: nonPrimary };
+    }
+
     function buildFeatureHealthReport(input = {}) {
         const now = Number.isFinite(input.now) ? input.now : Date.now();
         const features = Array.isArray(input.features) ? input.features : [];
@@ -322,6 +358,7 @@
                 : STATUS_HEALTHY,
             criticalCanary,
             antiAdblock,
+            ...summarizeSurfaceVariants(input.attribution, input.resolveSurfaceVariant),
             features: rows
         };
     }
@@ -363,6 +400,7 @@
         module.exports = {
             buildFeatureHealthReport,
             formatFeatureHealthLine,
+            summarizeSurfaceVariants,
             FEATURE_HEALTH_STATUSES: core.FEATURE_HEALTH_STATUSES
         };
     }

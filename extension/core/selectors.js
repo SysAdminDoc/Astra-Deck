@@ -152,6 +152,38 @@
         return 'unknown';
     }
 
+    // Which rollout of a surface the page is actually showing.
+    //
+    // YouTube's 2026 player refresh did not land uniformly: the control set
+    // differs between accounts and devices, so one selector pack is correct for
+    // some users and wrong for others at the same version. The tier already
+    // says whether the stable chain still holds; it cannot say WHICH page the
+    // reporter is looking at, and with an empty issue tracker the diagnostics
+    // bundle is the only intake this project has.
+    //
+    // Derived from the selector that already matched, so this adds no document
+    // query of its own — a pack declares `variants` and `primaryVariant`, and a
+    // pack that declares neither reports 'unknown' and changes nothing.
+    function resolveSurfaceVariant(surface, selector, options = {}) {
+        const unknown = { variant: 'unknown', primary: null, isPrimary: null };
+        if (!surface || !selector) return unknown;
+        const registry = options.registry || core.SurfacePackRegistry;
+        const key = String(surface);
+        const dot = key.indexOf('.');
+        const surfaceName = dot === -1 ? key : key.slice(0, dot);
+        const pack = registry instanceof Map
+            ? registry.get(surfaceName)
+            : (registry || {})[surfaceName];
+        const variants = pack?.variants;
+        if (!variants || typeof variants !== 'object') return unknown;
+        const primary = typeof pack.primaryVariant === 'string' ? pack.primaryVariant : null;
+        for (const [name, selectors] of Object.entries(variants)) {
+            if (!Array.isArray(selectors) || !selectors.includes(selector)) continue;
+            return { variant: name, primary, isPrimary: primary === null ? null : name === primary };
+        }
+        return { variant: 'unknown', primary, isPrimary: null };
+    }
+
     function recordSurfaceOutcome(surface, selector, outcome, error = null) {
         const featureId = attributionFeatureId;
         if (!featureId || !surface) return null;
@@ -1126,6 +1158,7 @@
         getSelectorAssetState,
         getSelectorAttributionSnapshot,
         selectorTier,
+        resolveSurfaceVariant,
         getSelectorHealthSnapshot,
         resetSelectorAttribution,
         withSelectorAttribution,

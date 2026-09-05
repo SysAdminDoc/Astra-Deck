@@ -49,6 +49,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- A bug report now says which YouTube player the reporter is actually looking
+  at. The 2026 player refresh is served per account and per device, so two
+  people on the same version can be seeing different pages, and until now
+  "the selector broke" and "this user is on the other rollout" looked identical
+  in a report. They need different fixes. The answer is read from the selector
+  that already matched, so it costs no extra work on the page, and a page it
+  does not recognise says so instead of guessing.
+
 - The migration that moves features out of `extension/ytkit.js` into their own
   modules now has a finish line. A new check counts the features still
   implemented inside the monolith, records that number, and fails if it goes up,

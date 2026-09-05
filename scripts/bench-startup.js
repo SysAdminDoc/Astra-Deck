@@ -712,10 +712,14 @@ function prepareFixtureDetails(stageDir, surface = CAPTURED_SURFACES[0], { force
     }
     if (plantLeak) {
         fs.writeFileSync(path.join(stageDir, 'steady-state-leak-self-test.js'), LEAK_SELF_TEST_DRIVER, 'utf8');
-        html = html.replace(
-            '    <script src="a11y-fixture-driver.js"></script>',
-            '    <script src="steady-state-leak-self-test.js"></script>\n    <script src="a11y-fixture-driver.js"></script>'
-        );
+        const anchor = '    <script src="a11y-fixture-driver.js"></script>';
+        // Fail loudly if the anchor ever moves. A silent no-op replace would
+        // make the self-test report "the planted leak did not trip the budget",
+        // which blames the gate for an injection that never happened.
+        if (!html.includes(anchor)) {
+            throw new Error('steady-state self-test could not find the fixture script anchor to plant the leak after');
+        }
+        html = html.replace(anchor, `    <script src="steady-state-leak-self-test.js"></script>\n${anchor}`);
     }
     fs.writeFileSync(fixturePath, html, 'utf8');
     return { fixturePath, fixtureMode };

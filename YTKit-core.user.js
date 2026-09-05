@@ -8525,6 +8525,36 @@ if (typeof globalThis !== "undefined") {
         return row?.lastOutcome === 'hit' && row?.lastTier === 'fallback';
     }
 
+    // surfaces are not on their pack's primary one. Reads the selector rows
+    // diagnostics bundle cannot distinguish "the selector broke" from "this
+    // user is on the other rollout", which are different bugs with different
+    function summarizeSurfaceVariants(attributionRows, resolveVariant) {
+        const resolve = typeof resolveVariant === 'function'
+            ? resolveVariant
+            : core.resolveSurfaceVariant;
+        const nonPrimary = [];
+        let playerVariant = 'unknown';
+        if (typeof resolve !== 'function') return { playerVariant, surfacesOnNonPrimaryVariant: nonPrimary };
+        for (const entry of Array.isArray(attributionRows) ? attributionRows : []) {
+            for (const row of Array.isArray(entry?.surfaces) ? entry.surfaces : []) {
+                if (row?.lastOutcome !== 'hit' || !row.lastSelector) continue;
+                const resolved = resolve(row.surface, row.lastSelector);
+                if (!resolved || resolved.variant === 'unknown') continue;
+                if (String(row.surface).split('.')[0] === 'playerChrome') playerVariant = resolved.variant;
+                if (resolved.isPrimary === false) {
+                    nonPrimary.push({
+                        surface: row.surface,
+                        variant: resolved.variant,
+                        primary: resolved.primary,
+                        selector: row.lastSelector
+                    });
+                }
+            }
+        }
+        nonPrimary.sort((a, b) => (a.surface < b.surface ? -1 : a.surface > b.surface ? 1 : 0));
+        return { playerVariant, surfacesOnNonPrimaryVariant: nonPrimary };
+    }
+
     function buildFeatureHealthReport(input = {}) {
         const now = Number.isFinite(input.now) ? input.now : Date.now();
         const features = Array.isArray(input.features) ? input.features : [];
@@ -8717,6 +8747,7 @@ if (typeof globalThis !== "undefined") {
                 : STATUS_HEALTHY,
             criticalCanary,
             antiAdblock,
+            ...summarizeSurfaceVariants(input.attribution, input.resolveSurfaceVariant),
             features: rows
         };
     }
@@ -8758,6 +8789,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = {
             buildFeatureHealthReport,
             formatFeatureHealthLine,
+            summarizeSurfaceVariants,
             FEATURE_HEALTH_STATUSES: core.FEATURE_HEALTH_STATUSES
         };
     }
