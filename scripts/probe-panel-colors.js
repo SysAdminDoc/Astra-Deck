@@ -58,7 +58,17 @@ async function main() {
     const browser = spawn(browserPath, [
         '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profileDir}`,
         '--no-first-run', '--no-default-browser-check', '--disable-gpu',
-        '--window-size=1356,920', `file://${fixturePath.replace(/\\/g, '/')}`
+        // runtime-bootstrap.js pulls the runtime module graph in by URL. Without
+        // this the imports are cross-origin against a file:// page, every module
+        // fails silently, and __ytkitSmoke never appears. The overlay smoke has
+        // always passed it; this copy did not.
+        '--allow-file-access-from-files',
+        // Three slashes, not two. `file://C:/...` parses `C:` as the URL's HOST,
+        // so Chrome opened a page whose entry still matched 'fixture.html' while
+        // nothing on it ever executed, and the probe died 45s later at "timed out
+        // waiting for the content-script stack". The overlay smoke has always
+        // built this correctly; this is the copy that drifted.
+        '--window-size=1356,920', `file:///${fixturePath.split(path.sep).join('/')}`
     ], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 
     let stderrBuf = '';
@@ -151,8 +161,17 @@ async function main() {
     } finally {
         browser.kill();
         await sleep(300);
-        fs.rmSync(stageDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
-        fs.rmSync(profileDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
+        // A cleanup failure must not replace the error that got us here. Chrome's
+        // children can still hold the profile directory on Windows, and an EPERM
+        // thrown from this finally block overwrote the real diagnostic with a
+        // temp-path permission error that pointed nowhere.
+        for (const [label, dir] of [['stage', stageDir], ['profile', profileDir]]) {
+            try {
+                fs.rmSync(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
+            } catch (error) {
+                console.warn(`[panel-color-probe] could not remove the disposable ${label} directory ${dir}: ${error.message}`);
+            }
+        }
     }
 }
 
