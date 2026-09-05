@@ -49,6 +49,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- The README now says that Astra can put the old YouTube layout and the old
+  player back. It has been able to do that for a long time through three
+  settings, and the README described neither, which is a strange thing to hide
+  when it is the single most asked-for thing about YouTube right now. There is
+  also a short note on the two things comparable tools charge for and Astra
+  does not.
+
 - Astra can now check for updated page-matching rules on its own, once a day,
   instead of only when you press Refresh. That matters because the refresh
   existed to fix an install YouTube had broken, and it only ever helped people
