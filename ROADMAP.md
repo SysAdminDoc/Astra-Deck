@@ -89,25 +89,6 @@ Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`
   available resolution when `maxresdefault` is missing.
   Complexity: S
 
-- [ ] P2 — Say in the README that Astra restores the classic layout and the pre-Delhi player
-  Why: undoing YouTube's redesign is the most-asked-for thing in the 2026 ecosystem and
-  Astra's implementation is better than what third-party guides currently recommend, but
-  the README never mentions it, and it also never states that Astra gives away the two
-  things competitors charge for.
-  Evidence: `extension/core/settings-schema.js:785` ships `classicLayoutProfile` with
-  `modern`, `classic-2020` and `classic-2016`; `extension/ytkit.js:38424` is a CSS-only
-  one-toggle pre-Delhi player restoration; the README description at `README.md:15`
-  lists neither. Third-party 2026 coverage reports no official rollback exists and
-  positions competitors mainly as the fix for the new player UI. PocketTube paywalls
-  nested subscription groups and Glasp meters summaries at three a day; Astra's
-  equivalents are free and BYO-key.
-  Touches: `README.md`.
-  Acceptance: the top-of-file description names the classic layout profiles and the
-  pre-Delhi player restoration, a short comparison states which paid features Astra
-  gives away, the prose carries no em dashes or other LLM tells per the project's
-  writing rule, and `npm run check:project-facts` still passes.
-  Complexity: S
-
 - [ ] P3 — Split `features/sticky-video/index.js`
   Why: at 6,217 lines a peeled module has become its own monolith with a single test
   file, which is the worst code-to-test ratio in the tree and leaves the next peel with

@@ -141,6 +141,38 @@ test('a surface that missed contributes no rollout claim', () => {
     assert.deepEqual(report.surfacesOnNonPrimaryVariant, []);
 });
 
+test('the reported player variant does not depend on which feature resolved first', () => {
+    const packs = loadWithPacks();
+    const health = loadCoreModule('extension/core/feature-health.js', packs);
+
+    // A delhi page still matches the classic chain, so both rows are real
+    // evidence from one page. Whichever order attribution recorded them in, the
+    // answer has to be the same, and it has to be the one that is actually
+    // distinguishing: only delhi pages carry .ytp-overflow-panel.
+    const classicRow = { surface: 'playerChrome.bottom', lastOutcome: 'hit', lastSelector: '.ytp-chrome-bottom' };
+    const delhiRow = { surface: 'playerChrome.overflow', lastOutcome: 'hit', lastSelector: '.ytp-overflow-panel' };
+    const build = (surfaces) => health.buildFeatureHealthReport({
+        features: [{ id: 'playerDock', name: 'Player Dock' }],
+        registryHealth: [{ id: 'playerDock', status: 'initialized', initialized: true }],
+        attribution: [{ featureId: 'playerDock', surfaces }]
+    });
+
+    assert.equal(build([classicRow, delhiRow]).playerVariant, 'delhi');
+    assert.equal(build([delhiRow, classicRow]).playerVariant, 'delhi',
+        'the headline variant must not flip with attribution order');
+
+    // Split across two features, which is how it actually arrives.
+    const split = health.buildFeatureHealthReport({
+        features: [{ id: 'playerDock', name: 'Player Dock' }],
+        registryHealth: [{ id: 'playerDock', status: 'initialized', initialized: true }],
+        attribution: [
+            { featureId: 'b', surfaces: [classicRow] },
+            { featureId: 'a', surfaces: [delhiRow] }
+        ]
+    });
+    assert.equal(split.playerVariant, 'delhi');
+});
+
 test('a report built with no attribution at all still has the fields', () => {
     const packs = loadWithPacks();
     const health = loadCoreModule('extension/core/feature-health.js', packs);

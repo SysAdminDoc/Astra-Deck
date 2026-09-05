@@ -122,14 +122,25 @@
             ? resolveVariant
             : core.resolveSurfaceVariant;
         const nonPrimary = [];
-        let playerVariant = 'unknown';
-        if (typeof resolve !== 'function') return { playerVariant, surfacesOnNonPrimaryVariant: nonPrimary };
+        // Every player variant any playerChrome surface resolved to, not just
+        // the last one seen. Features are iterated in whatever order attribution
+        // recorded them, so assigning on each hit made the headline field
+        // order-dependent: the same evidence reported 'delhi' or 'classic'
+        // depending on which feature happened to resolve first.
+        const playerVariants = new Set();
+        let primaryPlayerVariant = null;
+        if (typeof resolve !== 'function') {
+            return { playerVariant: 'unknown', surfacesOnNonPrimaryVariant: nonPrimary };
+        }
         for (const entry of Array.isArray(attributionRows) ? attributionRows : []) {
             for (const row of Array.isArray(entry?.surfaces) ? entry.surfaces : []) {
                 if (row?.lastOutcome !== 'hit' || !row.lastSelector) continue;
                 const resolved = resolve(row.surface, row.lastSelector);
                 if (!resolved || resolved.variant === 'unknown') continue;
-                if (String(row.surface).split('.')[0] === 'playerChrome') playerVariant = resolved.variant;
+                if (String(row.surface).split('.')[0] === 'playerChrome') {
+                    playerVariants.add(resolved.variant);
+                    if (resolved.primary) primaryPlayerVariant = resolved.primary;
+                }
                 if (resolved.isPrimary === false) {
                     nonPrimary.push({
                         surface: row.surface,
@@ -140,6 +151,13 @@
                 }
             }
         }
+        // A newer player still matches some of the older selectors, so seeing a
+        // non-primary variant anywhere is the stronger signal and the primary
+        // alongside it proves nothing. Sorted, so a set built in either order
+        // gives the same answer.
+        const seen = [...playerVariants].sort();
+        const offPrimary = seen.filter((name) => name !== primaryPlayerVariant);
+        const playerVariant = offPrimary[0] || seen[0] || 'unknown';
         nonPrimary.sort((a, b) => (a.surface < b.surface ? -1 : a.surface > b.surface ? 1 : 0));
         return { playerVariant, surfacesOnNonPrimaryVariant: nonPrimary };
     }

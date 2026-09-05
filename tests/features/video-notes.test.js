@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
 const { fakeTreeDocument } = require('../helpers/monolith');
 const { createVideoNotesFeature } = require('../../extension/features/video-notes');
 
-function build({ settings = {}, saveThrows = false } = {}) {
+function build({ settings = {}, saveThrows = false, videoId = 'dQw4w9WgXcQ' } = {}) {
     const saved = [];
     const navigateRules = new Map();
     const styles = [];
@@ -37,7 +37,7 @@ function build({ settings = {}, saveThrows = false } = {}) {
         },
         addNavigateRule: (id, rule) => navigateRules.set(id, rule),
         removeNavigateRule: (id) => navigateRules.delete(id),
-        getVideoId: () => 'dQw4w9WgXcQ',
+        getVideoId: () => videoId,
         isWatchPagePath: () => true
     });
     return { feature, appState, saved, navigateRules, styles };
@@ -147,4 +147,59 @@ test('init registers a navigation rule and destroy takes everything back down', 
     assert.equal(feature._container, null);
     assert.equal(feature._navRule, null);
     assert.equal(feature._attachTimer, null, 'destroy clears the pending attach timer');
+});
+
+
+// The SPA race, and the honesty of the save status.
+//
+// An adversarial review found three mutations the tests above could not see:
+// dropping the video id captured when the edit was scheduled, dropping the
+// flush from destroy, and reporting "Saved locally." after a failed write. The
+// first is the exact bug the module's own comment says the capture exists to
+// prevent, and losing user-typed text is the worst thing this feature can do.
+
+test('a debounced edit is saved under the video it was typed on', () => {
+    // The page has already moved on to B: getVideoId() answers B, while the
+    // pending edit was scheduled on A. Dropping the captured id makes the
+    // 450ms timer write A's text onto B, which is the race the module's own
+    // comment says the capture exists to prevent.
+    const { feature, appState } = build({ videoId: 'BBBBBBBBBBB' });
+
+    feature._pendingSave = { value: 'notes about A', videoId: 'AAAAAAAAAAA', title: 'Video A' };
+    feature._flushPendingSave();
+
+    const stored = appState.settings.videoNotesData || {};
+    assert.equal(stored.AAAAAAAAAAA?.note, 'notes about A', 'the note belongs to the video it was typed on');
+    assert.equal(stored.BBBBBBBBBBB, undefined, 'and must not land on whatever is playing when the timer fires');
+});
+
+test('the pending edit is flushed when the feature is torn down', (t) => {
+    const previousDocument = global.document;
+    global.document = fakeTreeDocument(() => null);
+    t.after(() => { global.document = previousDocument; });
+
+    const { feature, appState } = build();
+    feature.init();
+    feature._pendingSave = { value: 'unsaved thought', videoId: 'CCCCCCCCCCC', title: 'Video C' };
+
+    feature.destroy();
+
+    assert.equal(appState.settings.videoNotesData?.CCCCCCCCCCC?.note, 'unsaved thought',
+        'teardown must not discard text the user typed but has not paused long enough to save');
+});
+
+test('a failed write is reported as a failure, not as saved', () => {
+    const statuses = [];
+    const { feature } = build({ saveThrows: true });
+    feature._statusEl = { textContent: '', hidden: false };
+    feature._updateStatus = (message) => { statuses.push(message); };
+    feature._setEmptyState = () => {};
+    feature._updateCount = () => {};
+
+    feature._saveCurrentNote('some text', 'DDDDDDDDDDD', 'Video D');
+
+    assert.equal(statuses.length, 1);
+    assert.match(statuses[0], /save/i);
+    assert.doesNotMatch(statuses[0], /Saved locally/,
+        'claiming success after a storage failure loses the note silently');
 });
