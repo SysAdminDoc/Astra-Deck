@@ -248,10 +248,17 @@ test('startup benchmark argument parser rejects unsafe or ambiguous runs', () =>
         iterations: 7,
         steadyState: false,
         steadyStateMs: 10000,
+        selfTestLeak: false,
         timeoutMs: 30000,
         updateBaseline: false,
     });
     assert.equal(benchmark.parseArgs(['--steady-state']).steadyState, true);
+    // --self-test-leak is the gate's own proof that it can fail, so it has to
+    // imply the lane it proves: the steady-state window and the check.
+    const selfTest = benchmark.parseArgs(['--self-test-leak']);
+    assert.equal(selfTest.selfTestLeak, true);
+    assert.equal(selfTest.steadyState, true, '--self-test-leak must collect the idle window it judges');
+    assert.equal(selfTest.check, true, '--self-test-leak must compare against the recorded budget');
     assert.throws(() => benchmark.parseArgs(['--steady-state-ms', '500']), /between 2000 and 120000/);
     assert.equal(benchmark.parseArgs(['--check', '--allow-synthetic']).allowSynthetic, true);
     assert.throws(() => benchmark.parseArgs(['--iterations', '0']), /from 1 to 20/);

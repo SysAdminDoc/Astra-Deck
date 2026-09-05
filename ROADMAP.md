@@ -49,22 +49,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
 
 Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Run the steady-state benchmark as a gate
-  Why: the long-session leak lane is fully built and nothing invokes it, so a feature
-  whose `destroy()` leaks listeners or observers ships undetected.
-  Evidence: `scripts/bench-startup.js` implements `STEADY_STATE_MS`, `STEADY_STATE_KEYS`,
-  a `steadyStateBudget` baseline and `--check`; `package.json:96` exposes
-  `check:steady-state`; it appears in neither `scripts/run-checks.js:22-59` (37 gates)
-  nor `release:prepare` (`package.json:16`). `extension/` carries 659
-  `addEventListener` against 217 `removeEventListener`, and 22 `new MutationObserver`
-  against 50 `.disconnect()`, while `docs/architecture.md:157` §4 requires `destroy()`
-  to unwind all of it.
-  Touches: `package.json`, `scripts/run-checks.js`, `scripts/bench-startup.js`.
-  Acceptance: the steady-state check runs inside `release:prepare` against a recorded
-  budget, `MIN_GATES` is raised in the same commit if it joins the gate list, and a
-  deliberately planted listener that `destroy()` fails to remove turns the check red.
-  Complexity: S
-
 - [ ] P1 — Ratchet the monolith peel with a tracked remainder
   Why: peeling is an active migration with no finish line and no gate, so the monolith
   can grow between releases without anything saying so, while every other invariant in
