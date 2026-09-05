@@ -48,30 +48,35 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   already work would make readers compete. Retire the item or restate what it
   should deliver.
 
-## P0 — Half done; promotion needs a human at a screen reader (2026-08-27)
+## P0: Promotion needs a human at a screen reader (verified 2026-09-05)
 
-- [ ] P0 — Make release currency a blocking gate and tag the outstanding releases
-  Why: 67 commits and 13 releases including the 4.85.1 cookie-handoff security fix are unshipped while every channel serves 4.82.0, and `npm run check` stays green.
-  Evidence: `scripts/run-checks.js:30` calls `check-versions.js` without `--require-release-current`; `release-channels.json` shows `active: 4.82.0` on all five channels; `git tag --list | sort -V | tail -1` is `v4.84.3`; `git rev-list v4.84.3..HEAD --count` is 67.
+- [ ] P0: Make release currency a blocking gate and publish the outstanding release
+  Why: the source is v4.88.5 while every active channel still serves 4.82.0. The newest tag is v4.88.3, the latest GitHub release is v4.84.3, and `npm run check` reports the lag as a notice rather than a failure.
+  Evidence: `scripts/run-checks.js` calls `check-versions.js` without `--require-release-current`; `release-channels.json` shows `active: 4.82.0` on all five channels; `git tag --sort=-v:refname` starts at `v4.88.3`; `gh release list` reports v4.84.3 as latest.
   Touches: `scripts/run-checks.js`, `release-channels.json`, `CHANGELOG.md`.
   Acceptance: `npm run check` fails while any channel trails the newest tag; the GitHub-full and userscript channels are promoted to the current version with digests verified by `npm run release:channels`. Store channels stay governed by the submission items in `Roadmap_Blocked.md`.
   Complexity: M
-  Done: v4.88.3 is tagged and pushed. That half mattered on its own — the
+  Done: v4.88.3 is tagged and pushed. That half mattered on its own because the
   userscript's `@require` is now pinned to `refs/tags/v<version>`, so the tag
   has to exist for the core library to resolve at all.
 
+  Verification on 2026-09-05: all 38 repository checks and the complete
+  browser matrix pass. Chromium, live chat, Firefox, Tampermonkey, and
+  Violentmonkey all ran from disposable profiles. The v4.88.5 build produced
+  13 expected assets plus its SBOM, manifest, and checksums.
+
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
-  measured 2026-08-27:
+  measured again on 2026-09-05:
 
       npm run release:health   -> status fail, promotionEligible false
-        └ artifact-readiness   -> fail
-            └ release:readiness -> fail
-                └ screen-reader-evidence -> FAIL, docs/screen-reader-evidence.json is missing
+        artifact-readiness       -> fail
+          release:readiness      -> fail
+            screen-reader-evidence -> FAIL, docs/screen-reader-evidence.json is missing
 
   `scripts/screen-reader-evidence.js` refuses a release whose screen-reader
-  evidence is missing, thin, or stale, and this release changed UI (the
-  connectivity banner). Producing that record means running
+  evidence is missing, thin, or stale. The release line includes UI changes,
+  and producing that record means running
   `docs/screen-reader-smoke.md` against NVDA, which is the existing
   "Needs a human at a screen reader" item above.
 

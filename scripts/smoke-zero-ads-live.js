@@ -1095,7 +1095,11 @@ async function splitEngagementSnapshot(client) {
         const count = toolbar?.querySelector('#vote-count-middle') || null;
         const like = pick(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)});
         const reply = pick(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)});
-        const heart = pick(${JSON.stringify(SPLIT_ENGAGEMENT_HEART_SELECTOR)});
+        const heart = toolbar
+            ? Array.from(toolbar.querySelectorAll(
+                '#creator-heart-button button, #creator-heart-button .yt-spec-button-shape-next, button#creator-heart-button'
+            )).find(visible) || null
+            : null;
         const likeHost = directToolbarChild(like, toolbar);
         const replyHost = directToolbarChild(reply, toolbar);
         const heartHost = directToolbarChild(heart, toolbar);

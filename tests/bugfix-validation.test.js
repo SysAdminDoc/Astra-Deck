@@ -1345,6 +1345,26 @@ test('chatStyleComments styles creator-heart tooltips to match the premium comme
         'chatStyleComments should tint the creator-heart tooltip copy to match the heart accent');
 });
 
+test('live split engagement smoke scopes creator-heart checks to the active toolbar', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const smokeSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'smoke-zero-ads-live.js'),
+        'utf8'
+    );
+
+    assert.match(
+        smokeSource,
+        /const heart = toolbar[\s\S]*toolbar\.querySelectorAll\(/,
+        'creator-heart geometry must come from the engagement toolbar being exercised'
+    );
+    assert.doesNotMatch(
+        smokeSource,
+        /const heart = pick\(\$\{JSON\.stringify\(SPLIT_ENGAGEMENT_HEART_SELECTOR\)\}\)/,
+        'a document-wide creator-heart lookup can select a different offscreen comment'
+    );
+});
+
 test('chatStyleComments removes reply-composer underline chrome', () => {
     const fs = require('fs');
     const path = require('path');

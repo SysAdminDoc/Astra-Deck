@@ -252,6 +252,7 @@ async function startFirefoxSession(options) {
         '--profile-root', profileRoot,
         '--log', options.driverLog || 'error'
     ];
+    if (options.systemAccess) args.push('--allow-system-access');
     const proc = spawn(geckodriver, args, {
         cwd: options.cwd || process.cwd(),
         stdio: ['ignore', 'pipe', 'pipe'],
