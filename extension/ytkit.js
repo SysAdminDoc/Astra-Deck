@@ -1212,7 +1212,12 @@ return response;
                         const candidate = JSON.parse(text.substring(jsonStart, end));
                         // Accept only a real browse payload. An accidental JSON
                         // object would otherwise be cached and stop the walk.
-                        if (candidate && (candidate.contents || candidate.header || candidate.responseContext)) {
+                        // The keys have to be objects, not merely present: a
+                        // `{"header":"not a payload"}` passed a name-only guard.
+                        const looksLikePayload = candidate
+                            && ['contents', 'header', 'responseContext']
+                                .some((key) => candidate[key] && typeof candidate[key] === 'object');
+                        if (looksLikePayload) {
                             this._idCache = candidate;
                             break;
                         }
@@ -1258,13 +1263,13 @@ return response;
         return found;
     }
 
+    // Only ever asked about the channel whose payload is loaded. An unreadable
+    // payload answers false, and the one caller turns that into /videos: the
+    // tab every channel carries, and what this feature did before the setting
+    // existed. "Do not know" and "not there" deliberately share an answer here
+    // because they deserve the same safe landing.
     function channelHasTab(suffix) {
-        const available = listChannelTabSuffixes(_rw.ytInitialData);
-        // Unreadable payload means "do not know", not "not there". Answering
-        // false would silently pin every channel to /videos on a page whose
-        // inline script shape changed.
-        if (!available.length) return false;
-        return available.includes(suffix);
+        return listChannelTabSuffixes(_rw.ytInitialData).includes(suffix);
     }
 
 
@@ -10809,24 +10814,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // /featured with no trailing character never matched at all.
                 const RX_CHANNEL_HOME = /^https?:\/\/www\.youtube\.com(?:(\/(?:user|channel|c)\/[^/?#]+)(?:\/?(?=$|[?#])|\/featured(?=$|[/?#]))|(\/@[^/?#]+)(?=$|[?#]))/;
                 const DEFAULT_TAB_HREF = "/videos";
-                const videosTabPath = (url) => {
+                // `onThisChannel` says whether the loaded browse payload
+                // describes the channel in `url`. It is true for the page we are
+                // standing on and false for an arbitrary anchor, and it decides
+                // whether the tab list can be trusted for this URL at all.
+                const videosTabPath = (url, { onThisChannel = false } = {}) => {
                     const match = RX_CHANNEL_HOME.exec(String(url || ''));
                     if (!match) return null;
                     const base = match[1] || match[2];
                     if (!base) return null;
                     const tab = channelLandingTabSuffix(appState.settings?.channelLandingTab);
+                    if (tab === DEFAULT_TAB_HREF) return base + DEFAULT_TAB_HREF;
                     // Not every channel has every tab. Podcasts, Live and Posts
                     // are all commonly absent, and sending someone to a tab that
                     // is not there lands them back on the home tab they were
-                    // trying to skip. The browse payload lists the real ones, so
-                    // ask it; when it cannot be read we fall back to /videos,
-                    // which is the behaviour this feature has always had and the
-                    // one tab every channel carries.
-                    if (tab !== DEFAULT_TAB_HREF && !channelHasTab(tab)) return base + DEFAULT_TAB_HREF;
-                    return base + tab;
+                    // trying to skip.
+                    //
+                    // The browse payload lists the real ones, but it describes
+                    // the page we are ON. Asking it about a link to some other
+                    // channel answers the wrong question, so for an anchor we
+                    // rewrite nothing and let the navigation rule handle it on
+                    // arrival, where the payload is finally about the right
+                    // channel. One extra hop, and never a wrong tab.
+                    if (!onThisChannel) return null;
+                    return channelHasTab(tab) ? base + tab : base + DEFAULT_TAB_HREF;
                 };
                 const handleDirectNavigation = () => {
-                    const target = videosTabPath(location.href);
+                    // We are on this channel, so its tab list is the loaded one.
+                    const target = videosTabPath(location.href, { onThisChannel: true });
                     // Compare against pathname: the target is relative, so an
                     // href comparison is always unequal and loops.
                     if (target && location.pathname !== target) location.href = target;
