@@ -138,7 +138,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // The known-breakage feed toggle adds a further 26.
     // transcriptQaLane adds 31 bytes for the explicit local/remote choice.
     // Six DeArrow surface masks add 145 bytes and remain enabled by default.
-    assert.equal(assessment.totalBytes, 186414);
+    assert.equal(assessment.totalBytes, 186442);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

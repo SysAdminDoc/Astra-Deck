@@ -118,6 +118,23 @@ test('no profile declares an inline token its own capture contradicts', () => {
     }
 });
 
+test('a profile that declares no inline token is still checked', () => {
+    // The guard used to be skipped whenever inlineTokens was empty, which let
+    // the embed and notifications profiles write a script-free snapshot and
+    // report success. ytcfg is the floor every YouTube page carries.
+    const source = fs.readFileSync(path.join(REPO_ROOT, 'scripts', 'capture-watch-mhtml.js'), 'utf8');
+    assert.ok(source.includes("(opts.inlineTokens || []).length ? opts.inlineTokens : ['ytcfg']"),
+        'an empty declaration must fall back to a floor, not skip the check');
+    assert.ok(!source.includes('if (inlineTokens.length) {'),
+        'the check must not be conditional on the profile declaring something');
+});
+
+test('the reported capture mode is not overwritten when nothing was swapped', () => {
+    const source = fs.readFileSync(path.join(REPO_ROOT, 'scripts', 'capture-watch-mhtml.js'), 'utf8');
+    assert.ok(source.includes('if (chosen.recovered) captureMode = chosen.captureMode;'),
+        'a dom-mhtml-fallback relabelled as cdp-mhtml claims a capture that never happened');
+});
+
 test('the capture refuses rather than writing, when it cannot recover', () => {
     // The wiring, not just the decision: the thrown message has to name the
     // tokens and say why the file was not written.

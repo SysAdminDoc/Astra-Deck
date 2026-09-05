@@ -31,20 +31,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Acceptance: the overlay offers a "changed from defaults" filter with a count, a per-setting reset with the existing undo toast, and opens directly to a named setting from a URL fragment that the popup and failure copy can link to.
   Complexity: M
 
-- [ ] P2 — Add an open-thumbnail-at-full-size action
-  Why: the download path already resolves the highest-resolution thumbnail URL, so
-  viewing one costs almost nothing on top, and it is a live competitor request.
-  Evidence: Control Panel for YouTube issue #328 (2026-08-26); the schema has
-  `downloadThumbnail` but no view action, alongside `thumbnailPreviewSize` and
-  `thumbnailQualityUpgrade`.
-  Touches: `extension/core/settings-schema.js`, `extension/default-settings.json`,
-  `extension/ytkit.js`, `extension/_locales/en/messages.json`, `tests/`.
-  Acceptance: the action reuses the existing thumbnail-resolution code rather than a
-  second resolver, opens the full-resolution image in a new tab, is a visible control
-  rather than a keyboard shortcut per the project convention, and falls back to the next
-  available resolution when `maxresdefault` is missing.
-  Complexity: S
-
 - [ ] P3 — Split `features/sticky-video/index.js`
   Why: at 6,217 lines a peeled module has become its own monolith with a single test
   file, which is the worst code-to-test ratio in the tree and leaves the next peel with

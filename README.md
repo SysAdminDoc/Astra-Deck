@@ -50,7 +50,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.88.5` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `486` entries across `18` categories |
+| Settings schema | `487` entries across `18` categories |
 | Runtime graph | `117` modules, including `27` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
@@ -433,7 +433,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **481 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **482 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -558,7 +558,7 @@ This generated knowledgebase documents all **481 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Watch page and player controls</strong>: 74 settings</summary>
+<summary><strong>Watch page and player controls</strong>: 75 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -632,6 +632,7 @@ This generated knowledgebase documents all **481 user-facing settings** in the c
 | <a id="setting-monetizationIndicator"></a><strong>Monetization Indicator</strong><br><code>monetizationIndicator</code> | Adds a pill under the title showing whether the video is monetized (has ads or a sponsorship overlay) or not. It's a heuristic built from the paid promotion overlay, the sponsorship card, and SponsorBlock category data when available. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-videoAgeColors"></a><strong>Video Age Color Coding</strong><br><code>videoAgeColors</code> | Color-coded thumbnail borders by upload age: fresh (green), week (blue), month (yellow), year (orange), ancient (red) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-watchPageTabs"></a><strong>Watch Page Tabs</strong><br><code>watchPageTabs</code> | Horizontal tab bar above the comments/description area to quickly switch views on the watch page | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-openThumbnailButton"></a><strong>Open thumbnail button</strong><br><code>openThumbnailButton</code> | Adds a View button beside the thumbnail download button that opens the full-size thumbnail in a new tab. It shares the download resolver, so a video with no max-res thumbnail opens the best one it has. Needs the Download Thumbnail Button feature on, since it sits beside it. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.89.0</code> |
 | <a id="setting-copyChapterMarkdown"></a><strong>Copy Chapters as Markdown</strong><br><code>copyChapterMarkdown</code> | Copy all video chapters as a markdown timestamp list, from a button in the player controls | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-chapterJumpButtons"></a><strong>Chapter Jump Buttons</strong><br><code>chapterJumpButtons</code> | Prev/Next chapter buttons in the player right-controls, so you can skip to the previous or next chapter | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-removeScrubber"></a><strong>Hide Scrubber Handle</strong><br><code>removeScrubber</code> | Remove the round scrubber handle from the video progress bar | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |

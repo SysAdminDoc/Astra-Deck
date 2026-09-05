@@ -21,6 +21,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- A View button beside the thumbnail download button opens the full-size
+  thumbnail in a new tab. It shares the download resolver, so a video with no
+  max-res thumbnail opens the best one it has rather than a broken image. Off by
+  default.
+
 - You can pick which channel tab "Channels to Videos Tab" opens. It always went
   to Videos; now Shorts, Live, Podcasts, Playlists and Posts are options too. Not
   every channel has every tab, so Astra checks the channel first and stays on
