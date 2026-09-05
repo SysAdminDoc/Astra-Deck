@@ -49,26 +49,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
 
 Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Ratchet the monolith peel with a tracked remainder
-  Why: peeling is an active migration with no finish line and no gate, so the monolith
-  can grow between releases without anything saying so, while every other invariant in
-  the repo has a ratchet.
-  Evidence: `extension/ytkit.js` is 52,320 lines and its feature array
-  (`:7218-38820`) holds roughly 334 inline feature entries against 27 peeled modules
-  totalling 32,778 lines (counted by matching bare object literals at the array's
-  indentation plus `cssFeature(` calls in that range, which the gate must replace with
-  its own exact measure); `scripts/check-userscript-drift.js:11` only registers newly peeled
-  features and says nothing about the remainder. Existing ratchet idioms to copy:
-  `MIN_GATES = 37` (`scripts/run-checks.js:64`),
-  `scripts/generate-shipped-identity-baseline.js`, the light-theme lane baseline.
-  Touches: new `scripts/check-monolith-peel.js`, `scripts/run-checks.js`,
-  `package.json`, a committed baseline JSON beside the other baselines, `tests/`.
-  Acceptance: the gate prints the current inline-feature-literal count and the peeled
-  count, fails when the inline count rises above the recorded baseline, passes and
-  rewrites the baseline under `--record` when it falls, and `MIN_GATES` is raised in the
-  same commit.
-  Complexity: M
-
 - [ ] P2 — Prove OS media controls survive the Web Audio graph
   Why: Astra routes YouTube's `<video>` through a Web Audio graph whenever any of six
   audio features is on, and has no Media Session code at all, so hardware media keys and
