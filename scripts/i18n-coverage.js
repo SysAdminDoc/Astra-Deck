@@ -23,6 +23,13 @@ const REPO_ROOT = path.join(__dirname, '..');
 const LOCALES_DIR = path.join(REPO_ROOT, 'extension', '_locales');
 const REPORT_PATH = path.join(REPO_ROOT, 'docs', 'i18n-coverage.md');
 const PLACEHOLDER_BASELINE_PATH = path.join(__dirname, 'i18n-placeholder-baseline.json');
+// The machine-readable half of the same measurement, shipped inside the
+// extension so the language picker can state what a locale actually gives you.
+// "11 locales" reads as eleven translations; about 30% of every non-English
+// catalogue is byte-identical English. Generated from this report and only from
+// it, so the number a user sees and the number this gate enforces cannot drift
+// apart.
+const SHIPPED_COVERAGE_PATH = path.join(REPO_ROOT, 'extension', 'i18n-coverage.json');
 const SAMPLE_LIMIT = 8;
 const DEFAULT_FEATURE_WARNING_BASELINE = 582;
 
@@ -199,6 +206,31 @@ function buildCoverageReport({ localesDir = LOCALES_DIR } = {}) {
         featureKeys: featureKeys.length,
         rows
     };
+}
+
+// Whole percent. The picker shows "70%", and a figure carrying decimals would
+// rewrite this file on almost every commit that adds a string.
+function renderShippedCoverage(report) {
+    const percent = { [report.referenceLocale]: 100 };
+    for (const row of report.rows) percent[row.name] = Math.round(row.translatedPct);
+    return `${JSON.stringify({
+        generatedBy: 'scripts/i18n-coverage.js',
+        referenceLocale: report.referenceLocale,
+        referenceKeys: report.totalKeys,
+        translatedPercent: Object.fromEntries(Object.keys(percent).sort().map((key) => [key, percent[key]]))
+    }, null, 2)}\n`;
+}
+
+function checkShippedCoverageFreshness(expected) {
+    let actual = '';
+    try {
+        actual = fs.readFileSync(SHIPPED_COVERAGE_PATH, 'utf8');
+    } catch (_) {
+        return ['extension/i18n-coverage.json is missing; run node scripts/i18n-coverage.js'];
+    }
+    return actual === expected
+        ? []
+        : ['extension/i18n-coverage.json is stale; run node scripts/i18n-coverage.js'];
 }
 
 function renderMarkdown(report, options = {}) {
@@ -401,8 +433,10 @@ function main(argv = process.argv.slice(2)) {
         console.log(`[i18n-coverage] updated ${toPosix(path.relative(REPO_ROOT, options.placeholderBaselinePath))}`);
     }
     const markdown = renderMarkdown(report, options);
+    const shippedCoverage = renderShippedCoverage(report);
     if (options.writeReport) {
         fs.writeFileSync(options.reportPath, `${markdown}\n`, 'utf8');
+        fs.writeFileSync(SHIPPED_COVERAGE_PATH, shippedCoverage, 'utf8');
         printSummary(report, options.reportPath, REPO_ROOT);
     } else {
         console.log(`[i18n-coverage] analyzed ${report.rows.length} locale(s) against ${report.totalKeys} EN keys`);
@@ -410,6 +444,7 @@ function main(argv = process.argv.slice(2)) {
     emitWarnings(report, options.warnFeatureIdenticalAbove);
     const freshnessFailures = options.checkReport
         ? checkReportFreshness(markdown, options.reportPath)
+            .concat(checkShippedCoverageFreshness(shippedCoverage))
         : [];
     const failures = checkThreshold(report, options.failAbove);
     const baselineFailures = options.checkPlaceholderBaseline

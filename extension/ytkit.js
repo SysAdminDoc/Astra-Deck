@@ -39535,48 +39535,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         'Advanced': { icon: 'settings', color: '#94a3b8' },
     };
 
-    const CATEGORY_META = {
-        'Video Player': {
-            summary: 'Layout, theater behavior & player chrome',
-            description: 'Playback defaults, quality, and player behavior.'
-        },
-        'Playback': {
-            summary: 'Speed, looping & tab-aware behavior',
-            description: 'Resuming, looping, timing, and tab-aware playback.'
-        },
-        'Comments': {
-            summary: 'Readability, filtering & creator context',
-            description: 'Readability, filtering, and focused comment threads.'
-        },
-        'Watch Page': {
-            summary: 'Actions, utilities & page-level helpers',
-            description: 'Player actions, transcripts, and watch-page utilities.'
-        },
-        'Content': {
-            summary: 'Hide, block & curate what you see',
-            description: 'Recommendations, blocked channels, and content visibility.'
-        },
-        'Home / Subscriptions': {
-            summary: 'Feed cleanup & subscription shaping',
-            description: 'Feed density, subscriptions, and focused discovery.'
-        },
-        'Theme': {
-            summary: 'Color, density & visual polish',
-            description: 'Color, contrast, density, and custom appearance.'
-        },
-        'Live Chat': {
-            summary: 'Filters, density & live viewing comfort',
-            description: 'Filtering, spacing, and visibility for live streams.'
-        },
-            'Downloads': {
-                summary: 'Local yt-dlp downloads and server status',
-                description: 'Download quality, formats, and companion service.'
-            },
-        'Advanced': {
-            summary: 'Power-user toggles & experimental controls',
-            description: 'Diagnostics, experiments, and power-user controls.'
-        }
-    };
+    // Every feature group the registry actually uses, resolved through t().
+    //
+    // This was ten hardcoded English entries against seventeen groups in the
+    // tree, so seven groups rendered with no summary at all and the ten that
+    // did stayed English in every locale. The key is the group name the feature
+    // declares; the copy is looked up by a stable slug so a renamed group fails
+    // loudly in the parity test rather than silently losing its description.
+    const CATEGORY_COPY = [
+        ['Video Player', 'videoPlayer', 'Layout, theater behavior & player chrome', 'Playback defaults, quality, and player behavior.'],
+        ['Playback', 'playback', 'Speed, looping & tab-aware behavior', 'Resuming, looping, timing, and tab-aware playback.'],
+        ['Comments', 'comments', 'Readability, filtering & creator context', 'Readability, filtering, and focused comment threads.'],
+        ['Watch Page', 'watchPage', 'Actions, utilities & page-level helpers', 'Actions, utilities, and helpers for the watch page.'],
+        ['Content', 'content', 'Hiding, filtering & what reaches your feeds', 'What reaches your feeds, and what gets filtered out.'],
+        ['Home / Subscriptions', 'homeSubscriptions', 'Feed layout, density & subscription views', 'Layout and density for the home and subscription feeds.'],
+        ['Theme', 'theme', 'Color, density & visual polish', 'Color, contrast, density, and custom appearance.'],
+        ['Live Chat', 'liveChat', 'Filters, density & live viewing comfort', 'Filtering, spacing, and visibility for live streams.'],
+        ['Downloads', 'downloads', 'Local yt-dlp downloads and server status', 'Download quality, formats, and companion service.'],
+        ['Advanced', 'advanced', 'Power-user toggles & experimental controls', 'Diagnostics, experiments, and power-user controls.'],
+        ['Accessibility', 'accessibility', 'Motion, contrast & reading comfort', 'Reduced motion, contrast, focus, and reading comfort.'],
+        ['Integrations', 'integrations', 'External players and third-party services', 'Handing video to other players and services you choose.'],
+        ['Navigation', 'navigation', 'Guide, masthead & moving around the site', 'The guide, the masthead, and moving around YouTube.'],
+        ['Playlists', 'playlists', 'Queue, Watch Later & playlist tools', 'The queue, Watch Later, and playlist management.'],
+        ['Ratings', 'ratings', 'Likes, dislikes & community signal', 'Like and dislike counts, and community rating signal.'],
+        ['Research', 'research', 'Transcripts, summaries & note taking', 'Transcripts, summaries, questions, and notes.'],
+        ['Subscriptions', 'subscriptions', 'Groups, tags & managing who you follow', 'Grouping, tagging, and managing the channels you follow.']
+    ];
+    const CATEGORY_META = Object.fromEntries(CATEGORY_COPY.map(([group, slug, summary, description]) => [group, {
+        summary: t(`categoryMeta_${slug}_summary`, summary),
+        description: t(`categoryMeta_${slug}_description`, description)
+    }]));
     _settingsPanelRuntimeReady = true;
 
     function formatPageLabel(page) {
