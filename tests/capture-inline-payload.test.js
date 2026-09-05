@@ -104,15 +104,16 @@ test('the watch profile names an inline token, so a DOM-only snapshot cannot pas
 test('no profile declares an inline token its own capture contradicts', () => {
     // Guards the declaration against the fixture, in the direction that can be
     // checked without a browser: if a capture exists and the profile claims a
-    // token, the capture has to have it. SearchResults.mhtml and
-    // EmbedPlayer.mhtml already carry no inline payload at all, which is why
-    // they are tracked separately rather than asserted here.
+    // token, the capture has to have it. No surface is exempt now that the
+    // search and embed fixtures have been re-captured through the recovery
+    // path; a skip here would hide exactly the degradation this file exists for.
+    // Captures are gitignored, so a surface with no local file is simply not
+    // asserted rather than failing a clean checkout.
     for (const [name, profile] of Object.entries(SURFACE_PROFILES)) {
-        const declared = profile.inlineTokens || [];
-        if (!declared.length || !fs.existsSync(profile.out)) continue;
+        const declared = (profile.inlineTokens || []).length ? profile.inlineTokens : ['ytcfg'];
+        if (!fs.existsSync(profile.out)) continue;
         const body = fs.readFileSync(profile.out, 'latin1');
         const missing = declared.filter((token) => !body.includes(token));
-        if (name === 'search') continue; // known-degraded fixture, tracked in ROADMAP.md
         assert.deepEqual(missing, [],
             `the ${name} profile declares ${missing.join(', ')} but its capture does not carry it`);
     }

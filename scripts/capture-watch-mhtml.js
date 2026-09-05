@@ -59,6 +59,7 @@ const SURFACE_PROFILES = Object.freeze({
         out: path.join(REPO_ROOT, 'mhtml', 'EmbedPlayer.mhtml'),
         waitSelectors: Object.freeze(['#movie_player', '.html5-video-player']),
         requiredTokens: Object.freeze(['movie_player']),
+        inlineTokens: Object.freeze(['ytcfg']),
         requireDelhi: false,
         subject: 'YouTube embed player DOM fixture',
     }),

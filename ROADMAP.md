@@ -4,22 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P2 — Re-capture the search and embed fixtures, which carry no inline payload
-  Why: two shipped fixtures were captured while Page.captureSnapshot was dropping
-  scripts, so they hold DOM and nothing else. Anything that reads an inline payload out
-  of them is testing against a page YouTube never served.
-  Evidence: measured 2026-09-05. `mhtml/SearchResults.mhtml` and `mhtml/EmbedPlayer.mhtml`
-  contain none of `ytcfg`, `ytInitialData` or `ytInitialPlayerResponse`, while
-  `WatchPage.mhtml`, `Shorts.mhtml` and `Channel.mhtml` carry all three. The capture tool
-  now recovers the payload from the rendered DOM, so a fresh run would fix both.
-  `tests/capture-inline-payload.test.js` skips the search profile for exactly this reason.
-  Touches: `mhtml/SearchResults.mhtml`, `mhtml/EmbedPlayer.mhtml`,
-  `tests/capture-inline-payload.test.js`.
-  Acceptance: both fixtures carry the inline tokens their capture profile declares, the
-  embed profile declares the tokens an embed page actually serves, and the skip for the
-  search profile is removed so the consistency check covers every captured surface.
-  Complexity: S
-
 ## Research-Driven Additions
 
 Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`.
