@@ -565,6 +565,7 @@
   "redditComments": false,
   "diagnosticLog": false,
   "featureDisableFeed": true,
+  "channelLandingTab": "videos",
   "selectorAutoRefresh": false,
   "_errors": [],
   "storageQuotaLRU": false,

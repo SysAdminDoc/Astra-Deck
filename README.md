@@ -50,7 +50,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.88.5` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `485` entries across `18` categories |
+| Settings schema | `486` entries across `18` categories |
 | Runtime graph | `117` modules, including `27` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
@@ -433,7 +433,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **480 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **481 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -494,7 +494,7 @@ This generated knowledgebase documents all **480 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Navigation and Guide</strong>: 17 settings</summary>
+<summary><strong>Navigation and Guide</strong>: 18 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -511,6 +511,7 @@ This generated knowledgebase documents all **480 user-facing settings** in the c
 | <a id="setting-searchWhileWatching"></a><strong>Search While Watching</strong><br><code>searchWhileWatching</code> | Show YouTube search results in a lightweight watch-page panel without interrupting playback. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 | <a id="setting-openInAlternativeFrontend"></a><strong>Open In Alternative Frontend</strong><br><code>openInAlternativeFrontend</code> | Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting. | Default: Off | Extension + userscript<br>GitHub-full only<br>Global<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
 | <a id="setting-alternativeFrontendInstance"></a><strong>Alternative frontend instance</strong><br><code>alternativeFrontendInstance</code> | Sets the HTTPS frontend origin used when Open in Alternative Frontend builds an external video link. | Default: <code>https://yewtu.be</code> | Extension + userscript<br>GitHub-full only<br>Global<br>Live apply<br>Store-sensitive<br>Since <code>v0.1.0</code> |
+| <a id="setting-channelLandingTab"></a><strong>Channel landing tab</strong><br><code>channelLandingTab</code> | Which channel tab "Channels to Videos Tab" opens. Applies only while that feature is on, and falls back to Videos when the channel does not carry the chosen tab. | Default: <code>videos</code><br>Values: <code>videos</code>, <code>shorts</code>, <code>streams</code>, <code>podcasts</code>, <code>playlists</code>, <code>posts</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.89.0</code> |
 | <a id="setting-bypassPlaylistMode"></a><strong>Bypass Playlist Mode on Clicks</strong><br><code>bypassPlaylistMode</code> | Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hiddenGuideElementsManager"></a><strong>Hide Guide Elements</strong><br><code>hiddenGuideElementsManager</code> | Choose individual left-navigation (Guide) entries to hide | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 | <a id="setting-hiddenGuideElements"></a><strong>Hidden guide elements</strong><br><code>hiddenGuideElements</code> | Lists the individual Guide and mini-Guide destinations hidden by Hide Guide Elements. | Default: Empty list<br>Choices: <code>home</code>, <code>subscriptions</code>, <code>history</code>, <code>playlists</code>, <code>yourVideos</code>, <code>watchLater</code>, <code>likedVideos</code>, <code>trending</code>, <code>music</code>, <code>movies</code>, <code>live</code>, <code>gaming</code>, <code>news</code>, <code>sports</code>, <code>learning</code>, <code>premium</code>, <code>studio</code>, <code>settings</code>, <code>reportHistory</code>, <code>help</code>, <code>footer</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.49.0</code> |

@@ -10,7 +10,7 @@ This document orients a new contributor to the moving parts. It describes the v4
 | Release | `v4.88.5` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `485` entries across `18` categories |
+| Settings schema | `486` entries across `18` categories |
 | Runtime graph | `117` modules, including `27` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |

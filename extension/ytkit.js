@@ -1171,8 +1171,101 @@ return response;
             return this._prCache;
         },
         _prCache: null,
-        _prCacheHref: ''
+        _prCacheHref: '',
+
+        // The browse payload, which carries things the player response never
+        // does: the channel's real tab list, and on some A/B buckets the
+        // most-replayed curve. Two call sites already read `_rw.ytInitialData`
+        // and it did not exist, so the heatmap fallback their own comment
+        // describes could never fire.
+        //
+        // Brace-scanned only. The player-response getter above keeps a battery
+        // of regex fallbacks for inline shapes the scan cannot place; this one
+        // does not need them, and duplicating them for a second reader would be
+        // more code than the reader is worth.
+        get ytInitialData() {
+            if (this._idCache && this._idCacheHref === location.href) return this._idCache;
+            this._idCacheHref = location.href;
+            this._idCache = null;
+            try {
+                for (const script of document.querySelectorAll('script:not([src])')) {
+                    const text = script.textContent;
+                    if (!text || !text.includes('ytInitialData')) continue;
+                    const assignMatch = /(?:^|[;\s])(?:var\s+|window\.)?ytInitialData\s*=\s*\{/.exec(text);
+                    if (!assignMatch) continue;
+                    const jsonStart = text.indexOf('{', text.indexOf('=', assignMatch.index));
+                    if (jsonStart === -1) continue;
+                    let depth = 0, end = jsonStart, inString = false, escaped = false;
+                    for (; end < text.length; end++) {
+                        const ch = text[end];
+                        if (inString) {
+                            if (escaped) { escaped = false; continue; }
+                            if (ch === '\\') { escaped = true; continue; }
+                            if (ch === '"') inString = false;
+                            continue;
+                        }
+                        if (ch === '"') { inString = true; continue; }
+                        if (ch === '{') depth++;
+                        else if (ch === '}') { depth--; if (depth === 0) { end++; break; } }
+                    }
+                    try {
+                        const candidate = JSON.parse(text.substring(jsonStart, end));
+                        // Accept only a real browse payload. An accidental JSON
+                        // object would otherwise be cached and stop the walk.
+                        if (candidate && (candidate.contents || candidate.header || candidate.responseContext)) {
+                            this._idCache = candidate;
+                            break;
+                        }
+                    } catch (_) {
+                        // reason: brace-counting candidate failed to parse; keep walking
+                    }
+                }
+            } catch (_) {
+                // reason: script DOM walk is best-effort; callers receive null
+            }
+            return this._idCache;
+        },
+        _idCache: null,
+        _idCacheHref: ''
     };
+
+    // The channel tabs a browse payload actually lists, as unlocalised URL
+    // suffixes ('/videos', '/streams', ...).
+    //
+    // Read from the endpoint URL rather than the rendered tab strip on purpose:
+    // the strip's <yt-tab-shape> carries a `tab-title` and no href, and that
+    // title is translated, so matching it would be exactly the localised
+    // selector `scripts/check-localized-selectors.js` exists to forbid. The
+    // endpoint url is the same in every language.
+    const CHANNEL_TAB_SUFFIXES = Object.freeze(['videos', 'shorts', 'streams', 'podcasts', 'playlists', 'posts']);
+
+    function channelLandingTabSuffix(value) {
+        const wanted = String(value || '').trim().toLowerCase();
+        return CHANNEL_TAB_SUFFIXES.includes(wanted) ? `/${wanted}` : '/videos';
+    }
+
+    function listChannelTabSuffixes(data) {
+        const tabs = data?.contents?.twoColumnBrowseResultsRenderer?.tabs;
+        if (!Array.isArray(tabs)) return [];
+        const found = [];
+        for (const entry of tabs) {
+            const url = entry?.tabRenderer?.endpoint?.commandMetadata?.webCommandMetadata?.url
+                || entry?.expandableTabRenderer?.endpoint?.commandMetadata?.webCommandMetadata?.url;
+            if (typeof url !== 'string') continue;
+            const suffix = url.slice(url.lastIndexOf('/'));
+            if (CHANNEL_TAB_SUFFIXES.includes(suffix.slice(1)) && !found.includes(suffix)) found.push(suffix);
+        }
+        return found;
+    }
+
+    function channelHasTab(suffix) {
+        const available = listChannelTabSuffixes(_rw.ytInitialData);
+        // Unreadable payload means "do not know", not "not there". Answering
+        // false would silently pin every channel to /videos on a page whose
+        // inline script shape changed.
+        if (!available.length) return false;
+        return available.includes(suffix);
+    }
 
 
     //  SECTION 0A: CORE UTILITIES & UNIFIED STORAGE
@@ -4317,6 +4410,7 @@ const STORAGE_KEYS = Object.freeze({
             watchPageTabs: false,
             redditComments: false,
             featureDisableFeed: true,
+            channelLandingTab: "videos",
             selectorAutoRefresh: false,
             diagnosticLog: false,
             _errors: [],                     // { ts, ctx, msg }
@@ -10719,7 +10813,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const match = RX_CHANNEL_HOME.exec(String(url || ''));
                     if (!match) return null;
                     const base = match[1] || match[2];
-                    return base ? base + DEFAULT_TAB_HREF : null;
+                    if (!base) return null;
+                    const tab = channelLandingTabSuffix(appState.settings?.channelLandingTab);
+                    // Not every channel has every tab. Podcasts, Live and Posts
+                    // are all commonly absent, and sending someone to a tab that
+                    // is not there lands them back on the home tab they were
+                    // trying to skip. The browse payload lists the real ones, so
+                    // ask it; when it cannot be read we fall back to /videos,
+                    // which is the behaviour this feature has always had and the
+                    // one tab every channel carries.
+                    if (tab !== DEFAULT_TAB_HREF && !channelHasTab(tab)) return base + DEFAULT_TAB_HREF;
+                    return base + tab;
                 };
                 const handleDirectNavigation = () => {
                     const target = videosTabPath(location.href);

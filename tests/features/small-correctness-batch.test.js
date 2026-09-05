@@ -23,7 +23,17 @@ function channelRedirect() {
     const start = region.indexOf('const RX_CHANNEL_HOME');
     const end = region.indexOf('const handleDirectNavigation');
     assert.ok(start > -1 && end > start, 'the channel-home URL helpers must live in init()');
-    return vm.runInNewContext(`${region.slice(start, end)}; videosTabPath`, {});
+    // videosTabPath gained two dependencies when the landing tab became a
+    // setting. They are sliced out of the monolith rather than stubbed, so this
+    // still exercises the shipped tab resolution and not a convenient copy.
+    const helperStart = sources.ytkit.indexOf('const CHANNEL_TAB_SUFFIXES');
+    const helperEnd = sources.ytkit.indexOf('function channelHasTab');
+    assert.ok(helperStart > -1 && helperEnd > helperStart, 'the channel tab helpers must be top-level');
+    const helpers = sources.ytkit.slice(helperStart, helperEnd);
+    return vm.runInNewContext(
+        `${helpers}${region.slice(start, end)}; videosTabPath`,
+        { appState: { settings: {} }, channelHasTab: () => true }
+    );
 }
 
 test('redirectToVideosTab rewrites every channel-home shape without mangling the query', () => {

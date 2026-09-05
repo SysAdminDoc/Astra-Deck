@@ -21,6 +21,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- You can pick which channel tab "Channels to Videos Tab" opens. It always went
+  to Videos; now Shorts, Live, Podcasts, Playlists and Posts are options too. Not
+  every channel has every tab, so Astra checks the channel first and stays on
+  Videos when the one you picked is not there, rather than bouncing you back to
+  the Home tab you were trying to skip.
+
 - The language menu now says how much of each language is actually
   translated. Astra ships eleven locales, which reads as eleven translations,
   and about thirty percent of every non-English catalogue is still English text.
