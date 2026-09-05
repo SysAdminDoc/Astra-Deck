@@ -26,13 +26,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   Acceptance: the overlay offers a "changed from defaults" filter with a count, a per-setting reset with the existing undo toast, and opens directly to a named setting from a URL fragment that the popup and failure copy can link to.
   Complexity: M
 
-- [ ] P2 — Mark untranslated strings in non-English locales
-  Why: about 29% of every non-English catalogue ships byte-identical English with nothing telling the user it is untranslated, so "11 locales" overstates what a user receives.
-  Evidence: `docs/i18n-coverage.md` (833-859 placeholder-identical keys per locale, 0 missing); `extension/ytkit.js:39410` (`CATEGORY_META` is hardcoded English covering 10 of 18 schema categories).
-  Touches: `scripts/i18n-coverage.js`, `extension/ytkit.js`, `extension/popup.js`, `extension/_locales/*/messages.json`.
-  Acceptance: the language picker states each locale's translated percentage, `CATEGORY_META` resolves through `t()` for all 18 categories, and the coverage report is the single source for the number shown.
-  Complexity: M
-
 - [ ] P2 — Add a channel-page landing-tab setting
   Why: landing on a channel's Home tab buries the thing most people opened the channel
   for, and it is a live competitor request with no equivalent key in the schema.

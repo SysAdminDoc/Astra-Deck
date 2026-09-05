@@ -373,6 +373,108 @@
   "bulkUndoHides": {
     "message": "Undo hides"
   },
+  "categoryMeta_accessibility_description": {
+    "message": "Reduced motion, contrast, focus, and reading comfort."
+  },
+  "categoryMeta_accessibility_summary": {
+    "message": "Motion, contrast & reading comfort"
+  },
+  "categoryMeta_advanced_description": {
+    "message": "Diagnostics, experiments, and power-user controls."
+  },
+  "categoryMeta_advanced_summary": {
+    "message": "Power-user toggles & experimental controls"
+  },
+  "categoryMeta_comments_description": {
+    "message": "Readability, filtering, and focused comment threads."
+  },
+  "categoryMeta_comments_summary": {
+    "message": "Readability, filtering & creator context"
+  },
+  "categoryMeta_content_description": {
+    "message": "What reaches your feeds, and what gets filtered out."
+  },
+  "categoryMeta_content_summary": {
+    "message": "Hiding, filtering & what reaches your feeds"
+  },
+  "categoryMeta_downloads_description": {
+    "message": "Download quality, formats, and companion service."
+  },
+  "categoryMeta_downloads_summary": {
+    "message": "Local yt-dlp downloads and server status"
+  },
+  "categoryMeta_homeSubscriptions_description": {
+    "message": "Layout and density for the home and subscription feeds."
+  },
+  "categoryMeta_homeSubscriptions_summary": {
+    "message": "Feed layout, density & subscription views"
+  },
+  "categoryMeta_integrations_description": {
+    "message": "Handing video to other players and services you choose."
+  },
+  "categoryMeta_integrations_summary": {
+    "message": "External players and third-party services"
+  },
+  "categoryMeta_liveChat_description": {
+    "message": "Filtering, spacing, and visibility for live streams."
+  },
+  "categoryMeta_liveChat_summary": {
+    "message": "Filters, density & live viewing comfort"
+  },
+  "categoryMeta_navigation_description": {
+    "message": "The guide, the masthead, and moving around YouTube."
+  },
+  "categoryMeta_navigation_summary": {
+    "message": "Guide, masthead & moving around the site"
+  },
+  "categoryMeta_playback_description": {
+    "message": "Resuming, looping, timing, and tab-aware playback."
+  },
+  "categoryMeta_playback_summary": {
+    "message": "Speed, looping & tab-aware behavior"
+  },
+  "categoryMeta_playlists_description": {
+    "message": "The queue, Watch Later, and playlist management."
+  },
+  "categoryMeta_playlists_summary": {
+    "message": "Queue, Watch Later & playlist tools"
+  },
+  "categoryMeta_ratings_description": {
+    "message": "Like and dislike counts, and community rating signal."
+  },
+  "categoryMeta_ratings_summary": {
+    "message": "Likes, dislikes & community signal"
+  },
+  "categoryMeta_research_description": {
+    "message": "Transcripts, summaries, questions, and notes."
+  },
+  "categoryMeta_research_summary": {
+    "message": "Transcripts, summaries & note taking"
+  },
+  "categoryMeta_subscriptions_description": {
+    "message": "Grouping, tagging, and managing the channels you follow."
+  },
+  "categoryMeta_subscriptions_summary": {
+    "message": "Groups, tags & managing who you follow"
+  },
+  "categoryMeta_theme_description": {
+    "message": "Color, contrast, density, and custom appearance."
+  },
+  "categoryMeta_theme_summary": {
+    "message": "Color, density & visual polish"
+  },
+  "categoryMeta_videoPlayer_description": {
+    "message": "Playback defaults, quality, and player behavior."
+  },
+  "categoryMeta_videoPlayer_summary": {
+    "message": "Layout, theater behavior & player chrome"
+  },
+  "categoryMeta_watchPage_description": {
+    "message": "Actions, utilities, and helpers for the watch page."
+  },
+  "categoryMeta_watchPage_summary": {
+    "message": "Actions, utilities & page-level helpers"
+  },
   "channelAgePublishedOnTpl": {
     "message": "Pubblicato il {date}"
   },
@@ -4440,6 +4542,9 @@
   },
   "languageAutoDetectedTpl": {
     "message": "{label} ({detected})"
+  },
+  "languageCoverageTpl": {
+    "message": "{language} — {percent}% translated"
   },
   "languageDe": {
     "message": "Deutsch (Tedesco)"

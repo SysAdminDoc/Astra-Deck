@@ -21,6 +21,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- The language menu now says how much of each language is actually
+  translated. Astra ships eleven locales, which reads as eleven translations,
+  and about thirty percent of every non-English catalogue is still English text.
+  The figure comes from the same coverage report the build checks, so what you
+  see and what the build enforces cannot drift apart.
+
+- Seven groups in the settings panel had no description at all, and the ten that
+  did were English no matter which language you picked. All seventeen have copy
+  now, and it goes through the translation layer like everything else.
+
 - The download popup's clip range now has a timeline. Drag the handles to mark
   where a clip starts and ends instead of typing two timestamps, and a marker
   shows where you are in the video so "from here" is a glance. The handles are
