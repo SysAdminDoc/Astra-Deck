@@ -49,6 +49,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The migration that moves features out of `extension/ytkit.js` into their own
+  modules now has a finish line. A new check counts the features still
+  implemented inside the monolith, records that number, and fails if it goes up,
+  naming the feature that came back. It is 279 today, against 27 modules already
+  peeled out. Adding a feature inline is still allowed, it just has to be a
+  decision someone made on purpose and re-recorded in the same commit, the same
+  way removing a check already works.
+
 - Release preparation now measures what the extension costs while you are not
   touching the page. The steady-state lane existed but nothing ever ran it, so a
   feature whose teardown left a listener or an interval behind could ship

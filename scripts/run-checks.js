@@ -28,6 +28,7 @@ const GATES = Object.freeze([
     { id: 'feed-signatures', script: 'sign-remote-feeds.js', args: ['--check'] },
     { id: 'selector-evidence', script: 'check-selector-evidence.js' },
     { id: 'architecture-doc', script: 'check-architecture-doc.js' },
+    { id: 'monolith-peel', script: 'check-monolith-peel.js' },
     { id: 'project-facts', script: 'project-facts.js', args: ['--check'] },
     { id: 'settings-reference', script: 'generate-settings-reference.js', args: ['--check'] },
     { id: 'versions', script: 'check-versions.js' },
@@ -62,7 +63,7 @@ const GATES = Object.freeze([
 // A floor on the runner's own scope, like the list-scoped gates it drives. A
 // chain that quietly shrinks reports success for checks it never ran, which is
 // the failure this whole file exists to stop.
-const MIN_GATES = 37;
+const MIN_GATES = 38;
 
 function runGate(gate) {
     const started = process.hrtime.bigint();
