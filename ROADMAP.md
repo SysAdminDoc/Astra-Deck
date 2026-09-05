@@ -88,24 +88,6 @@ Sourced from the 2026-09-04 research pass. Evidence and reasoning: `RESEARCH.md`
   outside `findSurfaceElement`.
   Complexity: M
 
-- [ ] P2 — Give `video-notes` and `digital-wellbeing` behavioural tests of their own
-  Why: they are the only peeled modules with no dedicated test file, so roughly a
-  thousand lines of shipped feature code is covered only by cross-cutting gates that
-  cannot tell a working feature from a broken one — the exact debt the last ~45 commits
-  were spent repaying elsewhere.
-  Evidence: `extension/features/video-notes/index.js` (408 lines) and
-  `extension/features/digital-wellbeing/index.js` (606 lines) appear in `tests/` only
-  through `hardening.test.js`, `i18n-ratchet.test.js`, the light-theme lane and
-  `tests/features/next-monolith-peel.test.js`; `element-zapper` by contrast has three
-  dedicated files.
-  Touches: new `tests/features/video-notes.test.js` and
-  `tests/features/digital-wellbeing.test.js`.
-  Acceptance: each file loads the module through the same helper the other feature tests
-  use, drives `init()` and `destroy()` against a fixture DOM, asserts the feature's
-  primary observable behaviour and its full teardown, and breaking the corresponding
-  production function turns the new tests red.
-  Complexity: M
-
 - [ ] P2 — Add a channel-page landing-tab setting
   Why: landing on a channel's Home tab buries the thing most people opened the channel
   for, and it is a live competitor request with no equivalent key in the schema.
