@@ -133,6 +133,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Refreshing a page fixture no longer throws away half of it. Chrome stopped
+  putting inline scripts into the snapshots this project captures, so a fresh
+  capture came back with the page structure and none of the data underneath it,
+  and reported success. Captures are now checked for that data before they are
+  written, recovered from the live page when the snapshot has lost it, and
+  refused outright when neither has it.
+
 - The live Theater Split check now looks for a creator heart inside the comment
   toolbar it is testing. Its old document-wide lookup could select a disabled
   heart from a different offscreen comment and fail a healthy browser run.

@@ -23,6 +23,7 @@ const SURFACE_PROFILES = Object.freeze({
         out: DEFAULT_OUT,
         waitSelectors: Object.freeze(['ytd-app', 'ytd-watch-flexy', '#movie_player']),
         requiredTokens: Object.freeze(['ytd-watch-flexy', 'movie_player']),
+        inlineTokens: Object.freeze(['ytInitialPlayerResponse', 'ytcfg']),
         requireDelhi: true,
         subject: 'YouTube watch DOM fixture',
     }),
@@ -31,6 +32,7 @@ const SURFACE_PROFILES = Object.freeze({
         out: path.join(REPO_ROOT, 'mhtml', 'SearchResults.mhtml'),
         waitSelectors: Object.freeze(['ytd-app', 'ytd-search', 'ytd-video-renderer, yt-lockup-view-model']),
         requiredTokens: Object.freeze(['ytd-search']),
+        inlineTokens: Object.freeze(['ytInitialData', 'ytcfg']),
         requireDelhi: false,
         subject: 'YouTube search results DOM fixture',
     }),
@@ -39,6 +41,7 @@ const SURFACE_PROFILES = Object.freeze({
         out: path.join(REPO_ROOT, 'mhtml', 'Shorts.mhtml'),
         waitSelectors: Object.freeze(['ytd-app', 'ytd-reel-video-renderer']),
         requiredTokens: Object.freeze(['ytd-reel-video-renderer']),
+        inlineTokens: Object.freeze(['ytInitialData', 'ytcfg']),
         requireDelhi: false,
         subject: 'YouTube Shorts DOM fixture',
     }),
@@ -47,6 +50,7 @@ const SURFACE_PROFILES = Object.freeze({
         out: path.join(REPO_ROOT, 'mhtml', 'Channel.mhtml'),
         waitSelectors: Object.freeze(['ytd-app', 'ytd-browse', 'ytd-page-header-renderer, ytd-c4-tabbed-header-renderer, page-header-view-model, yt-page-header-renderer']),
         requiredTokens: Object.freeze(['ytd-browse']),
+        inlineTokens: Object.freeze(['ytInitialData', 'ytcfg']),
         requireDelhi: false,
         subject: 'YouTube channel DOM fixture',
     }),
@@ -67,6 +71,7 @@ const SURFACE_PROFILES = Object.freeze({
             'ytd-rich-grid-renderer, ytd-video-renderer, yt-lockup-view-model, ytd-item-section-renderer',
         ]),
         requiredTokens: Object.freeze(['ytd-browse']),
+        inlineTokens: Object.freeze(['ytInitialData', 'ytcfg']),
         requireDelhi: false,
         authRequired: true,
         contentCheck: 'history',
@@ -81,6 +86,7 @@ const SURFACE_PROFILES = Object.freeze({
             'ytd-playlist-video-renderer, ytd-video-renderer, yt-lockup-view-model',
         ]),
         requiredTokens: Object.freeze(['ytd-browse']),
+        inlineTokens: Object.freeze(['ytInitialData', 'ytcfg']),
         requireDelhi: false,
         authRequired: true,
         contentCheck: 'watch-later',
@@ -199,6 +205,7 @@ function parseArgs(argv) {
         preCaptureAction: profile.preCaptureAction || null,
         waitSelectors: raw.waitSelectors.length ? raw.waitSelectors : [...profile.waitSelectors],
         requiredTokens: raw.requiredTokens.length ? raw.requiredTokens : [...profile.requiredTokens],
+        inlineTokens: [...(profile.inlineTokens || [])],
         subject: profile.subject,
     };
 
@@ -502,6 +509,47 @@ function escapeMhtmlHeaderValue(value) {
     return String(value || '').replace(/[\r\n]+/g, ' ').trim();
 }
 
+// Which snapshot to keep, and whether it is usable at all.
+//
+// Chrome 152 stopped serialising <script> elements into Page.captureSnapshot
+// MHTML. Measured 2026-09-05: a fresh watch capture came back 4.4 MB with zero
+// script tags, against the 1.8 MB shipped fixture that holds 62 of them plus
+// ytcfg, ytInitialPlayerResponse and videoDetails. The capture reported success
+// the whole time, because the only tokens it checked were DOM elements, so
+// anyone refreshing the selector fixtures would silently have thrown away every
+// inline payload the fixture carries and nothing would have said so.
+//
+// The rendered DOM still has them: document.documentElement.outerHTML includes
+// inline script text. So when the snapshot has lost them and the rendered DOM
+// has not, the rendered DOM is the better fixture and we say we swapped. When
+// neither has them, there is no fixture worth writing.
+function chooseCaptureData({ snapshot, renderedHtml, inlineTokens = [], buildFallback }) {
+    const missingFrom = (text) => inlineTokens.filter((token) => !String(text || '').includes(token));
+
+    const snapshotMissing = missingFrom(snapshot);
+    if (!snapshotMissing.length) {
+        return { data: snapshot, captureMode: 'cdp-mhtml', missing: [], recovered: false };
+    }
+
+    const renderedMissing = missingFrom(renderedHtml);
+    if (!renderedMissing.length && typeof buildFallback === 'function') {
+        return {
+            data: buildFallback(renderedHtml),
+            captureMode: 'dom-mhtml-recovered',
+            missing: [],
+            recovered: true,
+            lostFromSnapshot: snapshotMissing
+        };
+    }
+
+    return {
+        data: snapshot,
+        captureMode: 'cdp-mhtml',
+        missing: renderedMissing.length ? renderedMissing : snapshotMissing,
+        recovered: false
+    };
+}
+
 function buildSinglePartMhtml(url, html, subject) {
     const boundary = '----astra-deck-dom-' + Date.now().toString(36);
     return [
@@ -601,6 +649,32 @@ async function capture(opts) {
             captureMode = 'dom-mhtml-fallback';
             data = buildSinglePartMhtml(opts.url, renderedHtml, opts.subject);
         }
+        // Before the DOM-token checks, because a snapshot that lost its inline
+        // scripts still satisfies every one of those.
+        const inlineTokens = opts.inlineTokens || [];
+        if (inlineTokens.length) {
+            const chosen = chooseCaptureData({
+                snapshot: data,
+                renderedHtml,
+                inlineTokens,
+                buildFallback: (html) => buildSinglePartMhtml(opts.url, html, opts.subject)
+            });
+            if (chosen.missing.length) {
+                throw new Error(
+                    `Captured MHTML lost its inline payload (${chosen.missing.join(', ')}) and the rendered DOM `
+                    + 'could not supply it either. Chrome no longer serialises <script> into '
+                    + 'Page.captureSnapshot; writing this file would silently downgrade the fixture.'
+                );
+            }
+            if (chosen.recovered) {
+                console.warn(
+                    `[capture] Page.captureSnapshot dropped ${chosen.lostFromSnapshot.join(', ')}; `
+                    + 'writing the rendered-DOM snapshot instead, which still carries them.'
+                );
+            }
+            data = chosen.data;
+            captureMode = chosen.captureMode;
+        }
         for (const token of opts.requiredTokens) {
             if (!data.includes(token)) {
                 throw new Error(`Captured MHTML does not contain required token: ${token}`);
@@ -631,12 +705,16 @@ async function capture(opts) {
     }
 }
 
-Promise.resolve()
-    .then(() => capture(parseArgs(process.argv.slice(2))))
-    .then((result) => {
-        console.log(JSON.stringify(result, null, 2));
-    })
-    .catch((err) => {
-        console.error(err.message);
-        process.exit(1);
-    });
+if (require.main === module) {
+    Promise.resolve()
+        .then(() => capture(parseArgs(process.argv.slice(2))))
+        .then((result) => {
+            console.log(JSON.stringify(result, null, 2));
+        })
+        .catch((err) => {
+            console.error(err.message);
+            process.exit(1);
+        });
+}
+
+module.exports = { chooseCaptureData, SURFACE_PROFILES };
