@@ -133,6 +133,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The Jump to Most Replayed button now finds the curve in both places
+  YouTube puts it. The code offered the parser two sources and one of them was
+  always empty, so on the half of page loads that carry the curve elsewhere the
+  button simply never appeared.
+
 - Refreshing a page fixture no longer throws away half of it. Chrome stopped
   putting inline scripts into the snapshots this project captures, so a fresh
   capture came back with the page structure and none of the data underneath it,

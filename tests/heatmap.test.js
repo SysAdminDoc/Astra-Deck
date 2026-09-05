@@ -240,3 +240,86 @@ test('the new keys are declared, defaulted off, and localizable', () => {
         assert.ok(messages[key]?.message, `${key} must be localizable`);
     }
 });
+
+// The A/B fallback the runtime claims to have.
+//
+// `_readMarkers` in ytkit.js offers the parser two sources with the comment
+// "the curve can arrive on either object depending on the A/B bucket, so both
+// are offered and the parser picks". The second source was `_rw.ytInitialData`,
+// and `_rw` exposed only `ytInitialPlayerResponse`, so that branch handed the
+// parser `undefined` on every call and had never once produced a marker.
+
+const { loadFeature } = require('./helpers/monolith');
+
+function heatmapPayload(count = 5) {
+    return {
+        frameworkUpdates: { entityBatchUpdate: { mutations: [{
+            payload: { macroMarkersListEntity: { markersList: {
+                markerType: 'MARKER_TYPE_HEATMAP',
+                markers: Array.from({ length: count }, (_, index) => ({
+                    startMillis: String(index * 10000),
+                    durationMillis: '10000',
+                    intensityScoreNormalized: index === 2 ? 1 : 0.2
+                }))
+            } } }
+        }] } }
+    };
+}
+
+test('the curve is read from ytInitialData when the player response has none', () => {
+    const feature = loadFeature('jumpToMostReplayed', {
+        parseHeatmapMarkers: loadHeatmap().parseHeatmapMarkers,
+        _rw: { ytInitialPlayerResponse: { videoDetails: {} }, ytInitialData: heatmapPayload() }
+    });
+
+    const markers = feature._readMarkers();
+
+    assert.equal(markers.length, 5, 'the documented A/B fallback has to actually reach the parser');
+    assert.equal(markers[0].startSeconds, 0);
+});
+
+test('the player response still wins when it carries the curve', () => {
+    const feature = loadFeature('jumpToMostReplayed', {
+        parseHeatmapMarkers: loadHeatmap().parseHeatmapMarkers,
+        _rw: { ytInitialPlayerResponse: heatmapPayload(6), ytInitialData: heatmapPayload(5) }
+    });
+
+    assert.equal(feature._readMarkers().length, 6, 'the first source is preferred, not merged');
+});
+
+test('neither source carrying a curve is still no markers and no throw', () => {
+    for (const _rw of [
+        {},
+        { ytInitialPlayerResponse: null, ytInitialData: null },
+        { ytInitialPlayerResponse: { videoDetails: {} }, ytInitialData: { contents: {} } },
+        // Below the useful-marker floor: a two-point curve is noise, not a heatmap.
+        { ytInitialPlayerResponse: null, ytInitialData: heatmapPayload(2) }
+    ]) {
+        const feature = loadFeature('jumpToMostReplayed', { _rw, parseHeatmapMarkers: loadHeatmap().parseHeatmapMarkers });
+        assert.deepEqual(Array.from(feature._readMarkers()), []);
+    }
+});
+
+test('the runtime object really exposes ytInitialData, not just the call site', () => {
+    // The tests above hand `_readMarkers` a stubbed `_rw`, so they pass whether
+    // or not the real object has the property. That is exactly how the original
+    // bug survived: the call site was right and the object was missing the
+    // getter. This drives the shipped accessor against a fake document.
+    const { loadDeclarations } = require('./helpers/monolith');
+    const payload = JSON.stringify(heatmapPayload(5));
+    const scripts = [
+        { textContent: 'var somethingElse = {"not":"it"};' },
+        { textContent: `var ytInitialData = ${payload};` }
+    ];
+    const { _rw } = loadDeclarations(['_rw'], {
+        document: { querySelectorAll: (sel) => (sel === 'script:not([src])' ? scripts : []) },
+        location: { href: 'https://www.youtube.com/watch?v=abc12345678' }
+    });
+
+    const data = _rw.ytInitialData;
+
+    assert.ok(data, 'the accessor must exist and find the assignment');
+    assert.ok(data.frameworkUpdates, 'and return the parsed payload, not the source text');
+    assert.equal(loadHeatmap().parseHeatmapMarkers(data).length, 5,
+        'the object the accessor returns has to be the one the parser understands');
+});

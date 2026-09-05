@@ -45,22 +45,6 @@ Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`
   available resolution when `maxresdefault` is missing.
   Complexity: S
 
-- [ ] P2 — Give the runtime a ytInitialData accessor, or drop the dead heatmap fallback
-  Why: the most-replayed marker parser offers two sources and one of them is always
-  undefined, so the A/B fallback its own comment describes has never produced a marker.
-  Evidence: `extension/ytkit.js:19134` and `:19227` call
-  `parseHeatmapMarkers(_rw.ytInitialData)`; the `_rw` object declared at `ytkit.js:1092`
-  exposes only `ytInitialPlayerResponse` (grep for ytInitialData inside that object
-  returns 0). The comment above the call says "the curve can arrive on either object
-  depending on the A/B bucket, so both are offered and the parser picks".
-  Touches: `extension/ytkit.js`, `tests/`.
-  Acceptance: WHEN the heatmap is absent from the player response but present in
-  ytInitialData the markers SHALL still parse, and WHEN neither carries it the feature
-  SHALL behave exactly as it does today; or, if reading ytInitialData is rejected, the
-  dead call and its comment are removed so the code stops claiming a fallback it has not
-  got. Either outcome is pinned by a test.
-  Complexity: S
-
 - [ ] P3 — Split `features/sticky-video/index.js`
   Why: at 6,217 lines a peeled module has become its own monolith with a single test
   file, which is the worst code-to-test ratio in the tree and leaves the next peel with
