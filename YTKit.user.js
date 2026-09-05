@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.88.4
+// @name         YTKit v4.88.5
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.88.4
+// @version      4.88.5
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -25,7 +25,7 @@
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
 // @connect      127.0.0.1
-// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.4/YTKit-core.user.js
+// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.5/YTKit-core.user.js
 // @homepageURL      https://github.com/SysAdminDoc/Astra-Deck
 // @supportURL      https://github.com/SysAdminDoc/Astra-Deck/issues
 // @license      MIT
@@ -269,7 +269,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.88.4';
+    const YTKIT_VERSION = '4.88.5';
 
     // ── Z-Index Hierarchy ──
     const Z = {

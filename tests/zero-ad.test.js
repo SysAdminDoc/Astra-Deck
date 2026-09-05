@@ -199,6 +199,21 @@ test('Firefox trusted clicks retry transient pointer handoffs before the DOM fal
     assert.match(clickBlock, /method: 'dom-fallback'/);
 });
 
+test('Firefox WebDriver enables privileged userscript-manager installation', () => {
+    const driverSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'firefox-webdriver.js'), 'utf8');
+    const managerSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-userscript-managers.js'), 'utf8');
+    assert.match(driverSource, /if \(options\.systemAccess\) args\.push\('--allow-system-access'\)/,
+        'geckodriver 0.37.1+ requires the system-access flag at the driver process boundary');
+    assert.match(managerSource, /systemAccess: true/,
+        'the real userscript-manager lane must explicitly request trusted add-on install access');
+    assert.match(managerSource, /button\.click\(\)/,
+        'Firefox 155 requires the privileged manager page to invoke its own install handler');
+    assert.doesNotMatch(managerSource, /clickElementExpression/,
+        'WebDriver pointer commands do not support Firefox privileged extension pages');
+    assert.doesNotMatch(driverSource, /remote-allow-system-access/,
+        'geckodriver 0.37.1+ rejects the equivalent Firefox capability argument');
+});
+
 test('Firefox watch proof falls back to trusted Enter activation before giving up', () => {
     const smokeSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-firefox-webext.js'), 'utf8');
     const driverSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'firefox-webdriver.js'), 'utf8');

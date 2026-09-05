@@ -1,8 +1,29 @@
 # Research: Astra Deck
 
-Date: 2026-09-04. Replaces all prior research (previous passes: 2026-08-27 at v4.88.2, 2026-08-23 at v4.84.3).
+Current delivery note: 2026-09-05. The engineering review below remains as a
+dated snapshot of the findings that informed v4.88.5.
 
-## Executive Summary
+## 2026-09-05 Delivery Update
+
+Astra Deck v4.88.5 has 485 settings across 18 categories, 303 declared feature
+IDs, 117 runtime modules, and 35 selector surfaces. All 38 local checks pass.
+The test suite covers 2,768 JavaScript tests, and the complete browser matrix
+passes in Chromium and Firefox. That matrix includes live YouTube, live chat,
+dark and light surfaces, keyboard and reflow states, plus real installs through
+Tampermonkey and Violentmonkey.
+
+The repository now leads with the product rather than its test inventory. A
+new social card and three current screenshots show Command Deck and Theater
+Split in both themes. The existing Astra glyph remains because it is distinct,
+consistent across browser sizes, and readable at 16 pixels.
+
+Release publication is still waiting on observed NVDA results. The v4.88.5
+artifact set, SBOM, manifest, and checksums are complete, but release readiness
+correctly fails while `docs/screen-reader-evidence.json` is absent. All five
+active update channels still serve 4.82.0, the newest tag is v4.88.3, and the
+latest GitHub release is v4.84.3.
+
+## 2026-09-04 Executive Summary (Historical Snapshot)
 
 Astra Deck is a local-first YouTube control suite for Chromium, Firefox, Tampermonkey and Violentmonkey, now at v4.88.4 with 484 settings, 303 feature IDs, 117 runtime modules, 35 selector surfaces, **37** check gates and **3,067** tests (`npm run test:fast`, 21.8 s, 3,066 pass / 1 skip). The 2026-08-27 pass found ten problems and nine of them are closed: `npm test` now runs inside `release:prepare` (`package.json:16`), both remote feeds carry detached ECDSA signatures with a `feed-signatures` gate, Trusted Types are enforced on extension pages, selector evidence has a freshness gate, stable-chain erosion is now observable (`core/feature-health.js:108` reads `lastTier`), offline listeners exist, the `@require` is pinned to an immutable tag (`sync-userscript.js:14-24`), and the MAIN↔ISOLATED bridge became a sealed, token-authenticated channel (`core/bridge-channel.js`). Dependencies are clean against every 2026 advisory checked: `ws` 8.21.3 (> 8.20.1, CVE-2026-45736), `brace-expansion` 5.0.9, `shell-quote` 1.10.0 (> 1.8.4, CVE-2026-9277), `adm-zip` 0.6.0, Node 24.19.0.
 

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Astra Deck for desktop YouTube</title>
+  <desc id="desc">Astra Deck branding above its Command Deck and Theater Split interfaces.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07101b"/>
+      <stop offset="0.58" stop-color="#0c1827"/>
+      <stop offset="1" stop-color="#121626"/>
+    </linearGradient>
+    <radialGradient id="coralGlow" cx="0" cy="0" r="1" gradientTransform="translate(1160 74) rotate(139) scale(430 300)">
+      <stop stop-color="#ff5148" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ff5148" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="greenGlow" cx="0" cy="0" r="1" gradientTransform="translate(72 586) rotate(-35) scale(340 250)">
+      <stop stop-color="#39d98a" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#39d98a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000814" flood-opacity="0.72"/>
+    </filter>
+    <clipPath id="commandClip">
+      <rect x="58" y="238" width="720" height="450" rx="14"/>
+    </clipPath>
+    <clipPath id="splitClip">
+      <rect x="806" y="252" width="416" height="260" rx="12"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#background)"/>
+  <rect width="1280" height="640" fill="url(#coralGlow)"/>
+  <rect width="1280" height="640" fill="url(#greenGlow)"/>
+  <path d="M0 206H1280" stroke="#2a3b52" stroke-opacity="0.62"/>
+  <path d="M0 207H465" stroke="#ff5148" stroke-width="2"/>
+
+  <image href="../logo.png" xlink:href="../logo.png" x="56" y="45" width="94" height="87" preserveAspectRatio="xMidYMid meet"/>
+  <text x="172" y="91" fill="#f5f7fb" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="750" letter-spacing="-1.5">Astra Deck</text>
+  <text x="174" y="136" fill="#c2cede" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="500">Take back desktop YouTube.</text>
+  <text x="176" y="177" fill="#ff746d" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2.2">CHROME  •  FIREFOX  •  USERSCRIPT</text>
+
+  <g filter="url(#shadow)">
+    <rect x="48" y="228" width="740" height="470" rx="20" fill="#091522" stroke="#ff5148" stroke-opacity="0.56"/>
+    <image href="../outputs/astra-deck-command-deck-dark-v7.png" xlink:href="../outputs/astra-deck-command-deck-dark-v7.png" x="58" y="238" width="720" height="450" preserveAspectRatio="xMidYMid slice" clip-path="url(#commandClip)"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="796" y="242" width="436" height="280" rx="18" fill="#091522" stroke="#39d98a" stroke-opacity="0.48"/>
+    <image href="../outputs/astra-deck-theater-split-dark-v7.png" xlink:href="../outputs/astra-deck-theater-split-dark-v7.png" x="806" y="252" width="416" height="260" preserveAspectRatio="xMidYMid slice" clip-path="url(#splitClip)"/>
+  </g>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="806" y="548" width="184" height="34" rx="7" fill="#152438" stroke="#2b415c"/>
+    <text x="898" y="570" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="650">Classic layouts</text>
+    <rect x="1002" y="548" width="220" height="34" rx="7" fill="#152438" stroke="#2b415c"/>
+    <text x="1112" y="570" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="650">Theater Split</text>
+    <rect x="806" y="592" width="184" height="34" rx="7" fill="#152438" stroke="#2b415c"/>
+    <text x="898" y="614" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="650">Cleaner feeds</text>
+    <rect x="1002" y="592" width="220" height="34" rx="7" fill="#152438" stroke="#2b415c"/>
+    <text x="1112" y="614" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="650">Private local controls</text>
+  </g>
+</svg>

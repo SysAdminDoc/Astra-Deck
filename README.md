@@ -4,6 +4,13 @@
 
 <h1 align="center">Astra Deck</h1>
 
+<p align="center"><strong>Take back desktop YouTube.</strong></p>
+
+<p align="center">
+  Bring back a familiar layout, put comments beside the video, and clear noise from your feed.
+  Every control is optional. There is no Astra account and no telemetry.
+</p>
+
 <p align="center">
   <img src="https://img.shields.io/github/v/release/SysAdminDoc/Astra-Deck?style=flat-square&color=ff4e45&label=release" alt="Latest Release">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
@@ -12,19 +19,35 @@
 </p>
 
 <p align="center">
-  A desktop YouTube toolkit for Chrome and Firefox with 200+ controls. It can put the old
-  layout and the old player back, and it also covers ad request filtering, SponsorBlock,
-  DeArrow, video and channel filters, downloads, transcript search, local or BYO-key AI
-  summaries, subscription groups, Theater Split, themes, and 11 extension locales. The
-  userscript keeps the same core tools without bundling the locale catalogues.
+  <a href="https://github.com/SysAdminDoc/Astra-Deck/releases/latest"><strong>Download for Chromium or Firefox</strong></a>
+  ·
+  <a href="#userscript-tampermonkey--violentmonkey"><strong>Install the userscript</strong></a>
+  ·
+  <a href="#features"><strong>Browse the features</strong></a>
 </p>
+
+<p align="center">
+  <img src=".github/social-preview.png" alt="Astra Deck Command Deck and Theater Split on desktop YouTube" width="100%">
+</p>
+
+## Make YouTube fit the way you watch
+
+- **Restore what changed.** Switch to a 2020 or 2016 style page, bring back classic player controls, or tighten the current interface.
+- **Use the whole screen.** Theater Split keeps the video playing beside a live, scrollable comments column.
+- **Cut the clutter.** Hide channels, keywords, Shorts, watched videos, sponsored requests, and the page elements you never use.
+- **Keep control local.** Settings stay in the browser. AI summaries use your own provider or Ollama, and Astra never sees the request.
+
+The searchable Command Deck covers playback, themes, comments, feed cleanup, downloads, transcripts, and hundreds of smaller choices. Start with the defaults, then change only what bothers you.
+
+<details>
+<summary><strong>Current build facts</strong></summary>
 
 <!-- BEGIN GENERATED PROJECT FACTS -->
 ### Source-derived project facts
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.88.4` |
+| Release | `v4.88.5` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `485` entries across `18` categories |
@@ -35,13 +58,7 @@
 | Compatibility modes | Desktop YouTube extension; bounded YouTube Music theme/OLED/density compatibility; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
 <!-- END GENERATED PROJECT FACTS -->
 
-<p align="center">
-  <a href="https://github.com/SysAdminDoc/Astra-Deck/releases/latest"><strong>Download Latest Release</strong></a>
-  ·
-  <a href="docs/privacy-policy.md"><strong>Privacy Policy</strong></a>
-  ·
-  <a href="SECURITY.md"><strong>Security Policy</strong></a>
-</p>
+</details>
 
 ---
 
@@ -386,22 +403,19 @@ Toggle individual elements on/off through the settings panel:
 Click the gear icon in the YouTube masthead or player controls, or use the toolbar popup's **Open Full Settings** action.
 
 <p align="center">
-  <img src="outputs/astra-deck-settings-command-deck-video-hider-v6.png" alt="Astra Deck Command Deck Video Hider settings workspace" width="900">
+  <img src="outputs/astra-deck-command-deck-dark-v7.png" alt="Astra Deck Command Deck showing searchable playback controls" width="900">
 </p>
 
-### YouTube Watch Themes
+### Theater Split
+
+Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. Dark and light modes follow YouTube.
 
 <p align="center">
-  <img src="outputs/astra-deck-youtube-normal-dark.png" alt="Astra Deck normal YouTube watch page in dark mode" width="440">
-  <img src="outputs/astra-deck-youtube-native-theater-dark.png" alt="Astra Deck native YouTube Theater page with comments and related videos in dark mode" width="440">
+  <img src="outputs/astra-deck-theater-split-dark-v7.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
+  <img src="outputs/astra-deck-theater-split-light-v7.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
 </p>
 
-<p align="center">
-  <img src="outputs/astra-deck-youtube-native-theater-light.png" alt="Astra Deck native YouTube Theater page with comments and related videos in light mode" width="440">
-  <img src="outputs/astra-deck-youtube-theater-split-light.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
-</p>
-
-<p align="center"><sub>Normal YouTube, native Theater, and Theater Split share the same dark and light page themes while the video canvas stays black.</sub></p>
+<p align="center"><sub>Captured from the packaged extension in a disposable offscreen Edge session.</sub></p>
 
 - Command Deck workspace with a mission card and three live preference summaries on every category
 - Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow
@@ -413,7 +427,7 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 - Conflict detection (auto-disables conflicting features with toast notification)
 - Verified dark/light and RTL layouts at supported desktop viewports, including normal YouTube, native Theater, and Theater Split. The live browser check measures metadata, comments, related videos or chat, scrolling, and player geometry across repeated mode changes. The mobile light state is exercised in the settings fixture; mobile browser support remains host-dependent.
 
-The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection. Selector drift and external service failures stay in the health panels and export bundle. They don't open automatic overlays on YouTube.
+The toolbar popup keeps common toggles, backups, diagnostics, and language selection close at hand. Selector drift and external service failures stay in the health panels and export bundle. They don't open automatic overlays on YouTube.
 
 
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->

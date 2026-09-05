@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.88.5] (2026-09-05)
+
+### Marketing
+
+- The README now opens with a clear product promise, direct install routes,
+  and a composite built from the real Command Deck and Theater Split. Fresh
+  dark and light captures replace the older test-heavy images, and the
+  repository description and topics now match what Astra actually does.
+
+- The existing Astra glyph remains unchanged. It stays legible at 16 pixels,
+  matches every shipped browser icon, and was stronger than a cosmetic
+  rebrand.
+
 ### Added
 
 - The download popup's clip range now has a timeline. Drag the handles to mark
@@ -103,6 +116,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   count budgets are not, because machine load does not change them.
 
 ### Fixed
+
+- The live Theater Split check now looks for a creator heart inside the comment
+  toolbar it is testing. Its old document-wide lookup could select a disabled
+  heart from a different offscreen comment and fail a healthy browser run.
+
+- The userscript-manager harness now gives geckodriver the trusted system
+  access flag required by Firefox 155. Real Tampermonkey and Violentmonkey
+  install checks can reach their confirmation pages again instead of timing
+  out before the test. Firefox no longer allows WebDriver pointer commands on
+  those privileged extension pages, so each page invokes its own install
+  handler before the runtime proof runs in a fresh document.
 
 - The Stream Links, Recent Downloads and Cobalt fallback buttons could not find
   the download button they mount beside, so none of the three ever appeared.

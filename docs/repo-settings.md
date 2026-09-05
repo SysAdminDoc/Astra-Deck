@@ -182,7 +182,7 @@ with `gh api repos/SysAdminDoc/Astra-Deck --jq '{description, homepage, topics}'
 **Description**
 
 ```
-Astra Deck, Premium YouTube enhancement extension for Chrome & Firefox, plus a Tampermonkey userscript. 200+ features: SponsorBlock, DeArrow, theater split, feed/comment filtering, transcript viewer, downloads, and deep playback control. No telemetry, no accounts.
+Take back desktop YouTube with classic layouts, Theater Split, cleaner feeds, transcript tools, SponsorBlock, DeArrow, and private controls for Chrome, Firefox, or a userscript.
 ```
 
 **Homepage**
@@ -199,7 +199,8 @@ needs to land, so it is the honest target.
 ```
 youtube, chrome-extension, firefox-addon, browser-extension, manifest-v3,
 userscript, tampermonkey, sponsorblock, dearrow, privacy, ad-free, dark-theme,
-javascript, youtube-enhancement
+javascript, youtube-enhancement, youtube-tools, youtube-customization,
+youtube-adblocker, youtube-downloader, transcript, productivity
 ```
 
 Rationale for what was added: `chrome-extension`, `firefox-addon`,
@@ -210,5 +211,9 @@ no-telemetry posture that is this project's differentiator against Return
 YouTube Dislike's freemium turn. `userscript` and `tampermonkey` keep the
 second distribution tier findable.
 
-**Social preview image**, still unset. It is an upload-only setting with no
-REST endpoint, so it stays an operator action; see `Roadmap_Blocked.md`.
+**Social preview image**
+
+Upload `.github/social-preview.png` in the repository's Social preview setting.
+The tracked image is 1280 by 640 pixels and is built from current product
+screenshots. GitHub still requires a settings-page upload and does not expose a
+supported REST endpoint for it.

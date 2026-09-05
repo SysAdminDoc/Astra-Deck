@@ -18,7 +18,6 @@ const path = require('node:path');
 
 const {
     captureScreenshot,
-    clickElementExpression,
     evaluateJson,
     reserveLoopbackPort,
     sleep,
@@ -328,16 +327,22 @@ async function installUserscript(client, baseContext, manager, baseUrl, timeoutM
             };
         })()`,
         (value) => value?.button && !value.disabled && value?.nameVisible && value?.runAtDocumentStart,
-        { timeoutMs, label: `${manager.name} trusted install confirmation` }
+        { timeoutMs, label: `${manager.name} install confirmation` }
     );
     if (!installPage.runAtDocumentStart) {
         throw new Error(`${manager.name} install page did not expose @run-at document-start`);
     }
-    await clickElementExpression(
+    const clicked = await evaluateJson(
         client,
         installContext.context,
-        `document.querySelector(${JSON.stringify(manager.installButton)})`
+        `(() => {
+            const button = document.querySelector(${JSON.stringify(manager.installButton)});
+            if (!button) return false;
+            button.click();
+            return true;
+        })()`
     );
+    if (!clicked) throw new Error(`${manager.name} install confirmation button disappeared`);
 
     if (manager.installedText) {
         await waitForJson(
@@ -351,8 +356,8 @@ async function installUserscript(client, baseContext, manager, baseUrl, timeoutM
             { timeoutMs, label: `${manager.name} installed confirmation` }
         );
     } else {
-        // Tampermonkey closes or retires its ask page after the real pointer
-        // click. Either outcome is stable; the runtime fixture below is the
+        // Tampermonkey closes or retires its ask page after confirmation.
+        // Either outcome is stable; the runtime fixture below is the
         // authoritative proof that installation persisted in the profile.
         await sleep(750);
     }
@@ -416,6 +421,7 @@ async function runManager(manager, options, firefox, xpiPath, dependencies = {})
             firefox,
             geckodriver: options.geckodriver,
             headed: options.headed,
+            systemAccess: true,
             commandTimeoutMs: options.timeoutMs,
             startupTimeoutMs: Math.min(options.timeoutMs, 30000)
         });
