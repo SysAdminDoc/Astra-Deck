@@ -21,6 +21,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- The settings overlay can answer "what did I actually change". A Changed
+  button beside the search box narrows the panel to settings that no longer
+  match their shipped default, with a live count, and it composes with whatever
+  you have typed rather than fighting it.
+
+- Every setting card now has its own reset. Resetting used to be category-wide,
+  so undoing one accidental toggle meant reverting everything next to it. The
+  same undo toast the category reset offers restores the value you had, not the
+  default again.
+
+- Settings have addresses. Opening the panel at `#ytkit-setting=<key>` scrolls
+  to that setting and highlights it, so the popup and any failure message can
+  link straight to the control they are talking about. The key is matched
+  against the card's own data attribute, never spliced into a query.
+
+- The popup's "in-page panel" chip uses that. It used to open the panel on
+  whatever category happened to be showing and leave you to find the row again;
+  now it lands on the setting, whether the panel is already open or a new
+  YouTube tab has to be opened for it.
+
 - A View button beside the thumbnail download button opens the full-size
   thumbnail in a new tab. It shares the download resolver, so a video with no
   max-res thumbnail opens the best one it has rather than a broken image. Off by

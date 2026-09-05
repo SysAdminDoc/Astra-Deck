@@ -5423,6 +5423,12 @@
   "settingsAutoDisabledConflictTpl": {
     "message": "자동으로 사용 중지됨: {features} — {reason}"
   },
+  "settingsCardReset": {
+    "message": "재설정"
+  },
+  "settingsCardResetTitleTpl": {
+    "message": "Reset “{name}” to its default"
+  },
   "settingsCategoryAriaTpl": {
     "message": "{category}. {summary}"
   },
@@ -5437,6 +5443,18 @@
   },
   "settingsCategorySummaryFallback": {
     "message": "카테고리 설정"
+  },
+  "settingsChangedCountTpl": {
+    "message": "{count}개 변경됨"
+  },
+  "settingsChangedFilter": {
+    "message": "Changed"
+  },
+  "settingsChangedFilterTitle": {
+    "message": "Show only settings you have changed from their defaults"
+  },
+  "settingsChangedNone": {
+    "message": "Nothing changed"
   },
   "settingsConflictWithTpl": {
     "message": "{featureName}과(와) 충돌함"
@@ -5776,6 +5794,9 @@
   },
   "settingsShortsLedgerSummary": {
     "message": "오늘 {minutes}분 시청했습니다."
+  },
+  "settingsSingleResetToastTpl": {
+    "message": "“{name}” reset to default"
   },
   "settingsSubFeatureBadge": {
     "message": "하위 기능"

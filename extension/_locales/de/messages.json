@@ -5423,6 +5423,12 @@
   "settingsAutoDisabledConflictTpl": {
     "message": "Automatisch deaktiviert: {features} — {reason}"
   },
+  "settingsCardReset": {
+    "message": "Zurücksetzen"
+  },
+  "settingsCardResetTitleTpl": {
+    "message": "Reset “{name}” to its default"
+  },
   "settingsCategoryAriaTpl": {
     "message": "{category}. {summary}"
   },
@@ -5437,6 +5443,18 @@
   },
   "settingsCategorySummaryFallback": {
     "message": "Kategorieeinstellungen"
+  },
+  "settingsChangedCountTpl": {
+    "message": "{count} geändert"
+  },
+  "settingsChangedFilter": {
+    "message": "Changed"
+  },
+  "settingsChangedFilterTitle": {
+    "message": "Show only settings you have changed from their defaults"
+  },
+  "settingsChangedNone": {
+    "message": "Nothing changed"
   },
   "settingsConflictWithTpl": {
     "message": "Konflikt mit {featureName}"
@@ -5776,6 +5794,9 @@
   },
   "settingsShortsLedgerSummary": {
     "message": "Heute {minutes} Min. angesehen."
+  },
+  "settingsSingleResetToastTpl": {
+    "message": "“{name}” reset to default"
   },
   "settingsSubFeatureBadge": {
     "message": "Unterfunktion"

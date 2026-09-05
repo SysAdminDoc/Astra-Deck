@@ -5423,6 +5423,12 @@
   "settingsAutoDisabledConflictTpl": {
     "message": "已自动停用：{features} — {reason}"
   },
+  "settingsCardReset": {
+    "message": "Reset"
+  },
+  "settingsCardResetTitleTpl": {
+    "message": "Reset “{name}” to its default"
+  },
   "settingsCategoryAriaTpl": {
     "message": "{category}。{summary}"
   },
@@ -5437,6 +5443,18 @@
   },
   "settingsCategorySummaryFallback": {
     "message": "类别设置"
+  },
+  "settingsChangedCountTpl": {
+    "message": "已更改 {count} 项"
+  },
+  "settingsChangedFilter": {
+    "message": "Changed"
+  },
+  "settingsChangedFilterTitle": {
+    "message": "Show only settings you have changed from their defaults"
+  },
+  "settingsChangedNone": {
+    "message": "Nothing changed"
   },
   "settingsConflictWithTpl": {
     "message": "与 {featureName} 冲突"
@@ -5776,6 +5794,9 @@
   },
   "settingsShortsLedgerSummary": {
     "message": "今天已观看 {minutes} 分钟。"
+  },
+  "settingsSingleResetToastTpl": {
+    "message": "“{name}” reset to default"
   },
   "settingsSubFeatureBadge": {
     "message": "子功能"

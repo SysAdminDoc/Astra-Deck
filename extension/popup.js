@@ -1934,7 +1934,7 @@ function renderEmpty(filter) {
     list.appendChild(empty);
 }
 
-async function sendPanelOpenMessage(tabId) {
+async function sendPanelOpenMessage(tabId, settingKey = '') {
     // The panel-open ack must distinguish "no receiver in the tab" (reject →
     // open a fresh tab) from "receiver busy hydrating" (timeout → trust
     // delivery). Collapsing both to a 2s null previously opened a duplicate
@@ -1944,7 +1944,9 @@ async function sendPanelOpenMessage(tabId) {
     let timeoutId;
     try {
         const response = await Promise.race([
-            callExtensionApi(ext?.tabs, 'sendMessage', tabId, { type: PANEL_OPEN_MESSAGE }),
+            callExtensionApi(ext?.tabs, 'sendMessage', tabId, settingKey
+                ? { type: PANEL_OPEN_MESSAGE, settingKey }
+                : { type: PANEL_OPEN_MESSAGE }),
             new Promise((resolve) => { timeoutId = setTimeout(() => resolve('ytkit-ack-timeout'), 8000); })
         ]);
         if (response === 'ytkit-ack-timeout') return true;
@@ -4539,18 +4541,30 @@ function createSchemaSurfaceChip(entry) {
         'This setting is edited in the Astra Deck panel on YouTube. Opens it.');
     chip.addEventListener('click', (event) => {
         event.stopPropagation();
-        void openSettingsSurfaceForKey();
+        void openSettingsSurfaceForKey(entry.key);
     });
     return chip;
 }
 
-async function openSettingsSurfaceForKey() {
+// The chip that says a setting lives in the in-page panel now carries the key
+// there. It used to open the panel on whatever category was last shown and
+// leave the user to find the row again, which for 484 settings is not a link.
+const PANEL_DEEP_LINK = '#ytkit-setting=';
+
+async function openSettingsSurfaceForKey(settingKey = '') {
+    const key = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(String(settingKey || '')) ? String(settingKey) : '';
     try {
         const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
         if (tab?.id && getTabContext(tab || null).mode === 'inline-panel') {
-            if (await sendPanelOpenMessage(tab.id)) { window.close(); return; }
+            if (await sendPanelOpenMessage(tab.id, key)) { window.close(); return; }
         }
-        await callExtensionApi(ext?.tabs, 'create', { url: 'https://www.youtube.com/' });
+        // A fresh tab has no content script to message yet, so the key rides on
+        // the URL and the panel picks it up when it builds.
+        await callExtensionApi(ext?.tabs, 'create', {
+            url: key
+                ? `https://www.youtube.com/${PANEL_DEEP_LINK}${encodeURIComponent(key)}`
+                : 'https://www.youtube.com/'
+        });
         window.close();
     } catch (_) {
         showStatus(t('statusOpenWorkspaceFail', 'Could not open the full workspace. Try again.'), 'error', 4200);

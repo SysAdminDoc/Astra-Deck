@@ -5423,6 +5423,12 @@
   "settingsAutoDisabledConflictTpl": {
     "message": "تم التعطيل تلقائيًا: {features} — {reason}"
   },
+  "settingsCardReset": {
+    "message": "Reset"
+  },
+  "settingsCardResetTitleTpl": {
+    "message": "Reset “{name}” to its default"
+  },
   "settingsCategoryAriaTpl": {
     "message": "{category}. {summary}"
   },
@@ -5437,6 +5443,18 @@
   },
   "settingsCategorySummaryFallback": {
     "message": "إعدادات الفئة"
+  },
+  "settingsChangedCountTpl": {
+    "message": "{count} تغييرات"
+  },
+  "settingsChangedFilter": {
+    "message": "Changed"
+  },
+  "settingsChangedFilterTitle": {
+    "message": "Show only settings you have changed from their defaults"
+  },
+  "settingsChangedNone": {
+    "message": "Nothing changed"
   },
   "settingsConflictWithTpl": {
     "message": "يتعارض مع {featureName}"
@@ -5776,6 +5794,9 @@
   },
   "settingsShortsLedgerSummary": {
     "message": "تمت مشاهدة {minutes} دقيقة اليوم."
+  },
+  "settingsSingleResetToastTpl": {
+    "message": "“{name}” reset to default"
   },
   "settingsSubFeatureBadge": {
     "message": "ميزة فرعية"
