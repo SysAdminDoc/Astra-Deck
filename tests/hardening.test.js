@@ -5531,7 +5531,7 @@ test('inline utility surfaces use logical margins and the shared accent variable
         'Return YouTube Dislike estimate spacing must mirror in RTL');
     assert.match(returnDislike, /margin-inline-start:8px/,
         'Return YouTube Dislike ratio spacing must mirror in RTL');
-    assert.match(ytkitSource, /\.ytkit-queue-btn \{ position: absolute; top: 4px; inset-inline-start: 4px;/,
+    assert.match(ytkitSource, /\.ytkit-queue-btn \{ position: absolute; top: 8px; inset-inline-start: 8px;/,
         'queue thumbnail button must use logical inline-start positioning');
     for (const token of [
         'rgba(var(--ytkit-accent-rgb,167,139,250)',

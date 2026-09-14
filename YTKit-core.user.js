@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.88.5
+// @version      4.89.0
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -2025,7 +2025,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "remainingTimeHideFullscreen", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "autoExitFullscreen", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "playbackErrorRecovery", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
-    Object.freeze({ key: "persistentQueue", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
+    Object.freeze({ key: "persistentQueue", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "persistentQueueAutoAdvance", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "shortsSpeedControl", category: "shorts", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "shortsAutoAdvance", category: "shorts", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),

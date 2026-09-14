@@ -11,7 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
+const { loadFeature, fakeNode, fakeDocument, fakeTreeDocument } = require('../helpers/monolith');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
@@ -31,12 +31,20 @@ function byClass(node, className) {
     return descendants(node).filter((element) => element.classList?.contains?.(className));
 }
 
-function queueFixture({ items = [], claim, now } = {}) {
+function queueFixture({ items = [], claim, currentVideoId = 'abcdefghijk' } = {}) {
     const store = new Map();
     if (items.length || claim) store.set('ytkit-queue', { v: 1, items, ...(claim ? { claim } : {}) });
     const toasts = [];
     const navigations = [];
     const listeners = new Map();
+    const persistentButtons = new Map();
+    const styles = [];
+    const video = {
+        listeners: new Map(),
+        addEventListener(type, handler) { this.listeners.set(type, handler); },
+        removeEventListener(type) { this.listeners.delete(type); },
+        play() { this.played = (this.played || 0) + 1; return Promise.resolve(); }
+    };
 
     // destroy() sweeps the buttons it injected into feed cards; the fixture has
     // to own one so the sweep can be observed.
@@ -83,13 +91,25 @@ function queueFixture({ items = [], claim, now } = {}) {
         showToast: (message, _colour, options) => toasts.push({ message, options }),
         registerCornerStackElement: () => () => {},
         _refreshCornerStack: () => {},
-        injectStyle: () => fakeNode(),
-        getVideoId: () => 'abcdefghijk',
-        getMainVideoElement: () => ({ addEventListener() {}, removeEventListener() {} }),
+        injectStyle: (css) => { styles.push(css); return fakeNode(); },
+        getVideoId: (value) => {
+            if (!value) return currentVideoId;
+            try {
+                const url = new URL(value, 'https://www.youtube.com');
+                return url.searchParams.get('v') || url.pathname.split('/').filter(Boolean).at(-1) || '';
+            } catch { return ''; }
+        },
+        getMainVideoElement: () => video,
+        registerPersistentButton: (id, parentSelector, checkSelector, injectFn) => {
+            persistentButtons.set(id, { parentSelector, checkSelector, injectFn });
+        },
+        unregisterPersistentButton: (id) => persistentButtons.delete(id),
         FileReader: StubFileReader
     });
-    void now;
-    return { feature, doc, store, toasts, navigations, listeners, created, rules, appState, cardButton };
+    return {
+        feature, doc, store, toasts, navigations, listeners, created, rules,
+        appState, cardButton, persistentButtons, styles, video
+    };
 }
 
 // A feature loaded in a vm sandbox returns arrays carrying the sandbox's
@@ -103,13 +123,26 @@ function entry(id, title = `Title ${id}`, channel = '') {
     return { id, title, channel, addedAt: 1 };
 }
 
+test('Watch Feed is ready on new installs and remains user-toggleable', () => {
+    const schema = require('../../extension/core/settings-schema.js');
+    const setting = schema.SETTINGS_SCHEMA.find((row) => row.key === 'persistentQueue');
+    const defaults = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'default-settings.json'), 'utf8'));
+
+    assert.equal(setting.defaultValue, true);
+    assert.equal(setting.scope, 'global', 'the control spans feeds and watch pages');
+    assert.equal(setting.destroyRequired, true, 'turning it off must remove every injected control');
+    assert.equal(defaults.persistentQueue, true);
+    assert.match(ytkitSource, /persistentQueue:\s*true/);
+});
+
 test('persistentQueue refuses a duplicate and caps the list it stores', () => {
     const { feature, store, toasts } = queueFixture();
 
     assert.equal(feature._add('aaaaaaaaaaa', 'First', 'Chan'), true);
     assert.equal(feature._add('aaaaaaaaaaa', 'First again', 'Chan'), false);
     assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa']);
-    assert.match(toasts.at(-1).message, /Already in queue/);
+    assert.match(toasts.at(-1).message, /Already in Watch Feed/);
 
     assert.equal(feature._MAX_ITEMS, 200, 'the cap is what _write slices to');
     const overfull = { v: 1, items: Array.from({ length: 205 }, (_v, i) => entry(String(i).padStart(11, 'x'))) };
@@ -126,13 +159,13 @@ test('persistentQueue renders the pill only while the queue has entries', () => 
     feature._add('aaaaaaaaaaa', 'First');
     assert.equal(doc.body.children.length, 1);
     assert.equal(doc.body.children[0].className, 'ytkit-queue-pill');
-    assert.equal(doc.body.children[0].textContent, 'Queue · 1');
-    assert.equal(doc.body.children[0].getAttribute('aria-label'), 'Open Astra queue (1 item)');
+    assert.equal(doc.body.children[0].textContent, 'Watch Feed · 1');
+    assert.equal(doc.body.children[0].getAttribute('aria-label'), 'Open Watch Feed (1 video)');
 
     feature._add('bbbbbbbbbbb', 'Second');
     assert.equal(doc.body.children.length, 1, 'the pill is updated, not duplicated');
-    assert.equal(doc.body.children[0].textContent, 'Queue · 2');
-    assert.equal(doc.body.children[0].getAttribute('aria-label'), 'Open Astra queue (2 items)');
+    assert.equal(doc.body.children[0].textContent, 'Watch Feed · 2');
+    assert.equal(doc.body.children[0].getAttribute('aria-label'), 'Open Watch Feed (2 videos)');
 
     feature._removeAt(0, 'aaaaaaaaaaa');
     feature._removeAt(0, 'bbbbbbbbbbb');
@@ -150,7 +183,7 @@ test('persistentQueue renders a row per entry with its move and remove controls'
 
     const panel = feature._panel;
     assert.equal(panel.getAttribute('role'), 'dialog');
-    assert.equal(panel.getAttribute('aria-label'), 'Astra persistent queue');
+    assert.equal(panel.getAttribute('aria-label'), 'Astra Watch Feed');
 
     const rows = byClass(panel, 'ytkit-queue-row');
     assert.equal(rows.length, 3);
@@ -164,7 +197,7 @@ test('persistentQueue renders a row per entry with its move and remove controls'
     assert.equal(buttons(rows[0])[0].disabled, true, 'the first row cannot move up');
     assert.equal(buttons(rows[0])[1].disabled, false);
     assert.equal(buttons(rows[2])[1].disabled, true, 'the last row cannot move down');
-    assert.equal(buttons(rows[1])[2].getAttribute('aria-label'), 'Remove from queue: Beta');
+    assert.equal(buttons(rows[1])[2].getAttribute('aria-label'), 'Remove from Watch Feed: Beta');
 });
 
 // A row's buttons close over the index they were rendered at, so the wiring has
@@ -188,9 +221,15 @@ test('persistentQueue row actions follow the video they were rendered for, not t
     // Another tab reorders the queue between render and click. The rendered
     // row for Gamma is still index 2, and a bare index would remove Alpha.
     const removeGamma = rowButtons(feature._panel, 2)[2];
-    store.set('ytkit-queue', { v: 1, items: [entry('ccccccccccc', 'Gamma'), entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')] });
+    store.set('ytkit-queue', {
+        v: 2,
+        items: [entry('ccccccccccc', 'Gamma'), entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')],
+        claim: { id: 'ccccccccccc', at: Date.now() }
+    });
     removeGamma.handlers.get('click')();
     assert.deepEqual(pluck(store.get('ytkit-queue').items, 'title'), ['Alpha', 'Beta']);
+    assert.equal(store.get('ytkit-queue').claim, undefined,
+        'removing a claimed item must release that playback claim');
 
     // Same for a move: the button rendered for Beta must move Beta, whatever
     // slid into its old position.
@@ -208,50 +247,71 @@ test('persistentQueue row actions follow the video they were rendered for, not t
         ['Zeta', 'Beta', 'Alpha']);
 });
 
-test('persistentQueue auto-advance is gated on its own sub-toggle', () => {
-    const played = [];
-    const { feature, appState } = queueFixture({ items: [entry('aaaaaaaaaaa', 'Alpha')] });
-    feature._playNext = () => played.push('advanced');
+test('persistentQueue consumes the finished item and auto-advances only when enabled', () => {
+    const { feature, appState, store, navigations } = queueFixture({
+        items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')],
+        currentVideoId: 'aaaaaaaaaaa'
+    });
     feature.init();
 
     assert.equal(typeof feature._endedHandler, 'function', 'the queue rides the video ended event');
 
     feature._endedHandler();
-    assert.deepEqual(played, ['advanced'], 'the sub-toggle is on unless it is explicitly off');
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb'],
+        'the item stays queued until its playback actually ends');
+    assert.deepEqual(navigations, ['https://www.youtube.com/watch?v=bbbbbbbbbbb'],
+        'the next queued item starts after the finished one is consumed');
 
+    store.set('ytkit-queue', {
+        v: 2,
+        items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')]
+    });
+    navigations.length = 0;
     appState.settings.persistentQueueAutoAdvance = false;
     feature._endedHandler();
-    assert.deepEqual(played, ['advanced'],
-        'a video ending with auto-advance off must not jump to the next entry');
-
-    appState.settings.persistentQueueAutoAdvance = true;
-    feature._endedHandler();
-    assert.deepEqual(played, ['advanced', 'advanced']);
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb'],
+        'finishing a queued video still clears that watched entry');
+    assert.deepEqual(navigations, [], 'auto-advance off must not navigate');
 });
 
-test('persistentQueue auto-advance stops at the end of the queue', () => {
-    const played = [];
-    const { feature } = queueFixture();
-    feature._playNext = () => played.push('advanced');
+test('persistentQueue clears the last item without handing playback to YouTube autoplay', () => {
+    const { feature, store, navigations } = queueFixture({
+        items: [entry('aaaaaaaaaaa', 'Alpha')],
+        currentVideoId: 'aaaaaaaaaaa'
+    });
     feature.init();
 
     feature._endedHandler();
-    assert.deepEqual(played, [], 'an empty queue has nothing to advance to');
+    assert.deepEqual(Array.from(store.get('ytkit-queue').items), []);
+    assert.deepEqual(navigations, [], 'an exhausted Watch Feed has nowhere to advance');
 });
 
-test('persistentQueue skips an entry another tab claimed within the claim window', () => {
+test('persistentQueue starts a normal pending feed without removing its first item early', () => {
+    const { feature, store, navigations } = queueFixture({
+        items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')],
+        currentVideoId: 'notqueued01'
+    });
+
+    assert.equal(feature._playNext(), true);
+    assert.deepEqual(navigations, ['https://www.youtube.com/watch?v=aaaaaaaaaaa']);
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa', 'bbbbbbbbbbb'],
+        'navigation failure or tab close must not lose an unplayed item');
+    assert.equal(store.get('ytkit-queue').claim.id, 'aaaaaaaaaaa');
+});
+
+test('persistentQueue leaves a freshly claimed head for the tab already starting it', () => {
     const claimedAt = Date.now();
     const { feature, store, navigations } = queueFixture({
         items: [entry('aaaaaaaaaaa'), entry('bbbbbbbbbbb')],
         claim: { id: 'aaaaaaaaaaa', at: claimedAt }
     });
 
-    feature._playNext();
+    assert.equal(feature._playNext(), false);
 
-    assert.deepEqual(navigations, ['https://www.youtube.com/watch?v=bbbbbbbbbbb'],
-        'the entry another tab claimed must not play twice');
-    assert.equal(store.get('ytkit-queue').claim.id, 'bbbbbbbbbbb', 'this tab records its own claim');
-    assert.deepEqual(Array.from(store.get('ytkit-queue').items), []);
+    assert.deepEqual(navigations, [], 'the entry another tab claimed must not play twice');
+    assert.equal(store.get('ytkit-queue').claim.id, 'aaaaaaaaaaa');
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa', 'bbbbbbbbbbb'],
+        'contention must not discard either video');
 });
 
 test('persistentQueue plays a head whose claim has expired', () => {
@@ -265,6 +325,90 @@ test('persistentQueue plays a head whose claim has expired', () => {
 
     assert.deepEqual(navigations, ['https://www.youtube.com/watch?v=aaaaaaaaaaa'],
         'a stale claim must not wedge the queue');
+});
+
+test('persistentQueue injects a watch-page button that toggles the current video', () => {
+    const { feature, store, persistentButtons } = queueFixture({ currentVideoId: 'aaaaaaaaaaa' });
+    feature.init();
+
+    const registration = persistentButtons.get('persistentQueueWatchFeed');
+    assert.ok(registration, 'the Watch Feed action must register with the durable watch-page button system');
+
+    const actions = fakeNode();
+    registration.injectFn(actions);
+    const button = actions.children[0];
+    assert.equal(button.className, 'ytkit-watch-feed-btn');
+    assert.equal(button.getAttribute('aria-pressed'), 'false');
+    assert.equal(button.getAttribute('aria-label'), 'Add this video to Watch Feed');
+
+    button.handlers.get('click')({ preventDefault() {}, stopPropagation() {} });
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa']);
+    assert.equal(button.getAttribute('aria-pressed'), 'true');
+    assert.equal(button.getAttribute('aria-label'), 'Remove this video from Watch Feed');
+
+    button.handlers.get('click')({ preventDefault() {}, stopPropagation() {} });
+    assert.deepEqual(Array.from(store.get('ytkit-queue').items), []);
+    assert.equal(button.getAttribute('aria-pressed'), 'false');
+});
+
+test('persistentQueue keeps the thumbnail action visible and follows recycled card data', () => {
+    const store = new Map();
+    const documentRef = fakeTreeDocument();
+    const card = documentRef.createElement('yt-lockup-view-model');
+    const thumbnail = documentRef.createElement('yt-thumbnail-view-model');
+    const link = documentRef.createElement('a');
+    link.className = 'yt-lockup-view-model__content-image';
+    link.href = 'https://www.youtube.com/watch?v=aaaaaaaaaaa';
+    const title = documentRef.createElement('span');
+    title.id = 'video-title';
+    title.textContent = 'Alpha';
+    const channel = documentRef.createElement('ytd-channel-name');
+    channel.textContent = 'Chan A';
+    thumbnail.appendChild(link);
+    card.append(thumbnail, title, channel);
+    documentRef.body.appendChild(card);
+
+    const styles = [];
+    const feature = loadFeature('persistentQueue', {
+        document: documentRef,
+        location: { href: '' },
+        window: { addEventListener() {}, removeEventListener() {} },
+        storageReadJSON: (key, fallback) => store.get(key) || fallback,
+        storageWriteJSON: (key, value) => store.set(key, value),
+        showToast() {},
+        injectStyle: (css) => { styles.push(css); return fakeNode(); },
+        getVideoId: (value) => new URL(value, 'https://www.youtube.com').searchParams.get('v'),
+        getMainVideoElement: () => null,
+        registerCornerStackElement: () => () => {},
+        _refreshCornerStack() {},
+        registerPersistentButton() {},
+        unregisterPersistentButton() {}
+    });
+
+    feature.init();
+    feature._addButtons();
+    let buttons = byClass(thumbnail, 'ytkit-queue-btn');
+    assert.equal(buttons.length, 1);
+    assert.equal(buttons[0].dataset.videoId, 'aaaaaaaaaaa');
+    assert.equal(buttons[0].getAttribute('aria-label'), 'Add Alpha to Watch Feed');
+    assert.match(styles[0], /min-width:\s*40px/,
+        'the desktop hit target must be substantially larger than the old 26px button');
+    assert.doesNotMatch(styles[0], /\.ytkit-queue-btn\s*\{[^}]*opacity:\s*0[;\s]/,
+        'the action must not disappear until hover');
+
+    link.href = 'https://www.youtube.com/watch?v=bbbbbbbbbbb';
+    title.textContent = 'Beta';
+    feature._addButtons();
+    buttons = byClass(thumbnail, 'ytkit-queue-btn');
+    assert.equal(buttons.length, 1, 'a recycled card must reuse its action');
+    assert.equal(buttons[0].dataset.videoId, 'bbbbbbbbbbb');
+    assert.equal(buttons[0].getAttribute('aria-label'), 'Add Beta to Watch Feed');
+
+    const click = buttons[0].listeners.get('click').values().next().value;
+    click({ preventDefault() {}, stopPropagation() {} });
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb'],
+        'the click must use the card data that is visible now, not its first render');
+    assert.equal(buttons[0].getAttribute('aria-pressed'), 'true');
 });
 
 test('persistentQueue import keeps valid ids, reports duplicates, and survives a bad file', () => {
@@ -292,29 +436,29 @@ test('persistentQueue import keeps valid ids, reports duplicates, and survives a
     assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa', 'bbbbbbbbbbb'],
         'only 11-character ids are imported, and an existing id is not added twice');
     assert.equal(store.get('ytkit-queue').items[1].channel, 'Chan B');
-    assert.match(toasts.at(-1).message, /1 added, 1 duplicate\(s\) skipped/);
+    assert.match(toasts.at(-1).message, /1 added, 1 already present/);
 
     runImport('{ not json');
-    assert.match(toasts.at(-1).message, /Import failed: not a valid queue JSON file/);
+    assert.match(toasts.at(-1).message, /Import failed: not a valid Watch Feed JSON file/);
     assert.equal(store.get('ytkit-queue').items.length, 2, 'a bad file must not touch the stored queue');
 });
 
 test('persistentQueue re-renders when another tab edits the queue, and detaches on destroy', () => {
-    const { feature, doc, store, listeners, rules, cardButton } = queueFixture({ items: [entry('aaaaaaaaaaa', 'Alpha')] });
+    const { feature, doc, store, listeners, rules, cardButton, persistentButtons } = queueFixture({ items: [entry('aaaaaaaaaaa', 'Alpha')] });
 
     feature.init();
     const handler = listeners.get('ytkit-storage-changed');
     assert.equal(typeof handler, 'function', 'the pill must follow cross-tab storage changes');
 
     assert.equal(doc.body.children.length, 1);
-    assert.equal(doc.body.children[0].textContent, 'Queue · 1');
+    assert.equal(doc.body.children[0].textContent, 'Watch Feed · 1');
 
     store.set('ytkit-queue', { v: 1, items: [entry('aaaaaaaaaaa'), entry('bbbbbbbbbbb')] });
     handler({ detail: { changes: { 'other-key': 1 } } });
-    assert.equal(doc.body.children[0].textContent, 'Queue · 1', 'an unrelated key must not re-render');
+    assert.equal(doc.body.children[0].textContent, 'Watch Feed · 1', 'an unrelated key must not re-render');
 
     handler({ detail: { changes: { 'ytkit-queue': 1 } } });
-    assert.equal(doc.body.children[0].textContent, 'Queue · 2');
+    assert.equal(doc.body.children[0].textContent, 'Watch Feed · 2');
 
     feature.destroy();
     assert.equal(listeners.has('ytkit-storage-changed'), false, 'destroy detaches the storage listener');
@@ -322,17 +466,31 @@ test('persistentQueue re-renders when another tab edits the queue, and detaches 
     // feature is switched off, and a leaked card button keeps offering to queue.
     assert.equal(rules.navigate.has('persistentQueue'), false, 'destroy releases the navigate rule');
     assert.equal(rules.scopedMutation.has('persistentQueue'), false, 'destroy releases the mutation rule');
+    assert.equal(persistentButtons.has('persistentQueueWatchFeed'), false,
+        'destroy unregisters the watch-page action');
     assert.equal(doc.body.children.length, 0, 'destroy takes the pill off the page');
     assert.equal(cardButton.removed, 1, 'destroy removes the buttons it injected into cards');
 });
 
 test('autoExitFullscreen treats a pending queue entry as up-next', () => {
-    // Cross-feature coupling read out of the monolith: this one is a genuine
-    // source relationship rather than a render, so it stays a source check.
+    let items = [entry('aaaaaaaaaaa')];
+    const feature = loadFeature('autoExitFullscreen', {
+        appState: { settings: { persistentQueue: true, persistentQueueAutoAdvance: true } },
+        storageReadJSON: () => ({ v: 2, items }),
+        getVideoId: () => 'aaaaaaaaaaa',
+        document: fakeDocument(() => null)
+    });
+
+    assert.equal(feature._hasUpNext(), false,
+        'the currently playing final item is not another video waiting to start');
+
+    items = [entry('aaaaaaaaaaa'), entry('bbbbbbbbbbb')];
+    assert.equal(feature._hasUpNext(), true,
+        'fullscreen stays engaged when a different Watch Feed item will start next');
+
+    // Keep the storage coupling visible as well as exercised. A future rename
+    // must move both features together rather than quietly reading two lists.
     const start = ytkitSource.indexOf("id: 'autoExitFullscreen'");
     const block = ytkitSource.slice(start, start + 4000);
-    assert.match(block, /persistentQueue/,
-        'fullscreen auto-exit must stay engaged when the queue will advance');
-    assert.match(block, /ytkit-queue/,
-        'queue check reads the shared queue storage key');
+    assert.match(block, /ytkit-queue/);
 });
