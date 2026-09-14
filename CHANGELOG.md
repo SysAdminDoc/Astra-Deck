@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.89.0] (2026-09-13)
+
+### Added
+
+- Watch Feed puts a large add button on video thumbnails across YouTube feeds
+  and a matching action on every watch page. Each button changes to a check
+  when the video is queued, so removing an accidental pick takes one click.
+
+- The Watch Feed panel now shows thumbnails and channel names, plus a clear
+  marker for the video that is playing. Its larger controls are easier to hit
+  when you reorder or remove items. **Start watching** begins the lineup from
+  another monitor.
+
+### Changed
+
+- Starting the feed no longer removes a video before it plays. Astra keeps the
+  current entry until playback ends, clears it at the handoff, then opens the
+  next video. Failed navigation and competing tabs no longer discard unwatched
+  entries.
+
+- Watch Feed is on for new installs. Existing profiles keep their saved choice,
+  and turning off auto-advance still clears a queued video after it finishes.
+
 ## [4.88.5] (2026-09-05)
 
 ### Marketing
@@ -244,7 +267,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The userscript's `@require` is pinned to an immutable release tag. It pointed
   at the `main` branch, so every install re-fetched 1.9 MB of executable code
-  from a mutable pointer — in a script that also grants `GM_xmlhttpRequest` to
+  from a mutable pointer. The same script also grants `GM_xmlhttpRequest` to
   three AI providers and loopback. Anything able to move `main` moved every
   install at once, with no version to notice it by. The size gate now rejects a
   branch ref outright.
@@ -266,8 +289,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The feature-disable feed cache key moved to `ytkit-feature-disable-feed-v2`.
   A cache entry is served for up to 30 days without refetching, so reusing the
   old key would have kept serving a payload cached by a build that did not
-  verify signatures — including one substituted while the feed was
-  unauthenticated — right through the upgrade meant to start checking it.
+  verify signatures. That includes a payload substituted while the feed was
+  unauthenticated, right through the upgrade meant to start checking it.
   Entries under the old key are dropped once a verified feed replaces them.
 
 - Both remote feeds now carry a detached signature. `selector-packs.json` and
@@ -296,8 +319,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The offline notice is a top-level banner. The first cut drew it into the two
   health sections, both of which ship hidden, and the external-health section
-  is unhidden only once a live content script answers — which is exactly what
-  a dropped connection prevents. The notice was invisible in the case it
+  is unhidden only once a live content script answers. A dropped connection
+  prevents that answer. The notice was invisible in the case it
   exists for.
 
 - The popup and side panel now watch connectivity. Nothing in the extension
@@ -311,13 +334,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - `docs/architecture.md` is now gated against source. Its trust-boundary
   section named eight content-to-background message types while the worker
   handled twenty-three, omitting the native token, the AI credential channel
-  and the cookie handoff — in the section written for reviewers. The test count
+  and the cookie handoff in the section written for reviewers. The test count
   and the popup's core-module count were similarly stale. All three are now
   recomputed by `npm run check`, which fails on drift.
 
 - Feature health now reports stable-chain erosion. The resolver walks a
   surface's stable selectors then its fallbacks and returns the first match,
-  and it only ever recorded that *something* matched — so a surface whose
+  and it only ever recorded that *something* matched. A surface whose
   stable chain had already broken looked perfectly healthy right up until the
   fallback broke too. Health rows now carry which tier resolved, and a feature
   living on a backup rule is reported as degraded with the surface named.
@@ -338,8 +361,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   release manifest over the built artifacts" two lines after an honest
   paragraph saying releases ship unsigned, and no signing key is published, so
   no `SHA256SUMS.sig` exists on any release. It now describes what releases
-  actually carry — an SBOM, `release-manifest.json` and `SHA256SUMS`, which
-  prove a download is intact but not who built it — and `npm run check` fails
+  actually carry: an SBOM, `release-manifest.json` and `SHA256SUMS`. These
+  prove a download is intact but not who built it. `npm run check` fails
   if the signed claim reappears before a key does.
 
 - Selector token fixtures were rebuilt from the captures currently on disk.

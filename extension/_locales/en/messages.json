@@ -3318,16 +3318,16 @@
     "message": "Per-Channel Speed Memory"
   },
   "feature_persistentQueueAutoAdvance_desc": {
-    "message": "Play the next queue entry automatically when the current video ends"
+    "message": "Remove the finished video and start the next Watch Feed entry automatically."
   },
   "feature_persistentQueueAutoAdvance_name": {
-    "message": "Queue Auto-Advance"
+    "message": "Watch Feed Auto-Advance"
   },
   "feature_persistentQueue_desc": {
-    "message": "Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance"
+    "message": "Build a local Watch Feed from video pages and thumbnails, then play it in order."
   },
   "feature_persistentQueue_name": {
-    "message": "Persistent Queue"
+    "message": "Watch Feed"
   },
   "feature_persistentSpeed_desc": {
     "message": "Remember your preferred playback speed globally and auto-apply it to every video"
@@ -5054,8 +5054,11 @@
   "queueClear": {
     "message": "Clear"
   },
+  "queueClose": {
+    "message": "Close"
+  },
   "queueCleared": {
-    "message": "Queue cleared"
+    "message": "Watch Feed cleared"
   },
   "queueExport": {
     "message": "Export"
@@ -5064,13 +5067,13 @@
     "message": "Import"
   },
   "queuePanelAria": {
-    "message": "Astra persistent queue"
+    "message": "Astra Watch Feed"
   },
   "queuePanelTitle": {
-    "message": "Persistent Queue"
+    "message": "Watch Feed"
   },
   "queuePlayNext": {
-    "message": "Play next"
+    "message": "Start watching"
   },
   "quickGroupCountTpl": {
     "message": "{enabled}/{total}"
@@ -8492,6 +8495,63 @@
   },
   "videoNotesTitle": {
     "message": "Video Notes"
+  },
+  "watchFeedAddButton": {
+    "message": "Add to Watch Feed"
+  },
+  "watchFeedAddCurrent": {
+    "message": "Add this video to Watch Feed"
+  },
+  "watchFeedAdded": {
+    "message": "Added to Watch Feed"
+  },
+  "watchFeedAddedButton": {
+    "message": "In Watch Feed"
+  },
+  "watchFeedAddVideoTpl": {
+    "message": "Add {title} to Watch Feed"
+  },
+  "watchFeedAlreadyAdded": {
+    "message": "Already in Watch Feed"
+  },
+  "watchFeedFullTpl": {
+    "message": "Watch Feed is full ({count})"
+  },
+  "watchFeedImportInvalid": {
+    "message": "Import failed: not a valid Watch Feed JSON file"
+  },
+  "watchFeedImportResultTpl": {
+    "message": "Watch Feed import: {added} added, {duplicates} already present"
+  },
+  "watchFeedMoveDownTpl": {
+    "message": "Move down: {title}"
+  },
+  "watchFeedMoveUpTpl": {
+    "message": "Move up: {title}"
+  },
+  "watchFeedOpenAriaOne": {
+    "message": "Open Watch Feed ({count} video)"
+  },
+  "watchFeedOpenAriaOther": {
+    "message": "Open Watch Feed ({count} videos)"
+  },
+  "watchFeedPillTpl": {
+    "message": "Watch Feed · {count}"
+  },
+  "watchFeedPlayingNow": {
+    "message": "Playing now"
+  },
+  "watchFeedRemoveCurrent": {
+    "message": "Remove this video from Watch Feed"
+  },
+  "watchFeedRemoved": {
+    "message": "Removed from Watch Feed"
+  },
+  "watchFeedRemoveTpl": {
+    "message": "Remove from Watch Feed: {title}"
+  },
+  "watchFeedRemoveVideoTpl": {
+    "message": "Remove {title} from Watch Feed"
   },
   "watchLaterNotInMenu": {
     "message": "Couldn’t find Watch Later in this menu. Try the native Save action on this card."

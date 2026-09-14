@@ -57,7 +57,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.88.5` |
+| Release | `v4.89.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `487` entries across `18` categories |
@@ -203,6 +203,7 @@ browser to whichever provider you configured, or to your own machine.
 | Zero-Ad Desktop Surface, static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
 | Theater Split, responsive video and comments panes with a click-or-drag divider, compact live header, matching themes, and exact inline-style restoration on exit | On |
 | Video Hider, hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
+| Watch Feed, queue videos from thumbnails or watch pages and play them in order | On |
 | Video Context Menu, right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
 | Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |
 | Known-Breakage Notices, pause features YouTube has broken until a fix ships | On |
@@ -227,6 +228,21 @@ recorded with SHA-256 plus ETag/Last-Modified validators. The popup shows the
 source host, format, verification age, and active/stale state; users can choose
 daily, weekly, or manual checks and pause last-known-good rules whenever a
 refresh fails or the last verification becomes older than seven days.
+
+### Watch Feed
+
+Build a lineup while you browse. A large button in the upper-left corner of
+each thumbnail adds or removes that video across Home, Subscriptions, search
+results, channel pages, related videos, Shorts, and playlists. The same control
+sits with the actions on every watch page.
+
+Open the floating Watch Feed control, reorder the list if needed, then choose
+**Start watching**. The current video stays in the feed until it finishes.
+Astra removes it at the handoff and opens the next one. When the final video
+ends, the feed is empty. If auto-advance is off, a finished queued video is
+still cleared and the next one waits for you.
+
+![Watch Feed with thumbnail controls and a two-video lineup](outputs/astra-deck-watch-feed-dark-v1.png)
 
 ### Interface
 
@@ -829,8 +845,8 @@ This generated knowledgebase documents all **482 user-facing settings** in the c
 | <a id="setting-hideVideosHideMovies"></a><strong>Hide videos hide movies</strong><br><code>hideVideosHideMovies</code> | Hides rental, purchase, free-with-ads, and movie-labelled cards. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosHideAutoDubbed"></a><strong>Hide videos hide auto dubbed</strong><br><code>hideVideosHideAutoDubbed</code> | Hides cards labelled as dubbed, auto-dubbed, or alternate-audio videos. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosWatchedRatio"></a><strong>Hide videos watched ratio</strong><br><code>hideVideosWatchedRatio</code> | Hides cards whose visible progress reaches this percentage; zero disables the rule. | Default: <code>0</code><br>Range: <code>0 to 1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-persistentQueue"></a><strong>Persistent Queue</strong><br><code>persistentQueue</code> | Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
-| <a id="setting-persistentQueueAutoAdvance"></a><strong>Queue Auto-Advance</strong><br><code>persistentQueueAutoAdvance</code> | Play the next queue entry automatically when the current video ends | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.48.0</code> |
+| <a id="setting-persistentQueue"></a><strong>Watch Feed</strong><br><code>persistentQueue</code> | Build a local Watch Feed from video pages and thumbnails, then play it in order. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
+| <a id="setting-persistentQueueAutoAdvance"></a><strong>Watch Feed Auto-Advance</strong><br><code>persistentQueueAutoAdvance</code> | Remove the finished video and start the next Watch Feed entry automatically. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.48.0</code> |
 | <a id="setting-feedPrefilter"></a><strong>Filter Feeds Before Render</strong><br><code>feedPrefilter</code> | Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v4.69.0</code> |
 | <a id="setting-hideWatchedVideos"></a><strong>Hide Watched Videos</strong><br><code>hideWatchedVideos</code> | Dim or hide videos with a red progress bar (already watched) from feeds | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideWatchedMode"></a><strong>Hide watched mode</strong><br><code>hideWatchedMode</code> | Chooses whether Hide Watched Videos dims matched cards or removes them from view. | Default: <code>dim</code><br>Values: <code>dim</code>, <code>hide</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |

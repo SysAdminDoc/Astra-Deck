@@ -5054,6 +5054,9 @@
   "queueClear": {
     "message": "Löschen"
   },
+  "queueClose": {
+    "message": "Schließen"
+  },
   "queueCleared": {
     "message": "Queue cleared"
   },
@@ -8492,6 +8495,63 @@
   },
   "videoNotesTitle": {
     "message": "Videonotizen"
+  },
+  "watchFeedAddButton": {
+    "message": "Add to Watch Feed"
+  },
+  "watchFeedAddCurrent": {
+    "message": "Add this video to Watch Feed"
+  },
+  "watchFeedAdded": {
+    "message": "Added to Watch Feed"
+  },
+  "watchFeedAddedButton": {
+    "message": "In Watch Feed"
+  },
+  "watchFeedAddVideoTpl": {
+    "message": "Add {title} to Watch Feed"
+  },
+  "watchFeedAlreadyAdded": {
+    "message": "Already in Watch Feed"
+  },
+  "watchFeedFullTpl": {
+    "message": "Watch Feed is full ({count})"
+  },
+  "watchFeedImportInvalid": {
+    "message": "Import failed: not a valid Watch Feed JSON file"
+  },
+  "watchFeedImportResultTpl": {
+    "message": "Watch Feed import: {added} added, {duplicates} already present"
+  },
+  "watchFeedMoveDownTpl": {
+    "message": "Move down: {title}"
+  },
+  "watchFeedMoveUpTpl": {
+    "message": "Move up: {title}"
+  },
+  "watchFeedOpenAriaOne": {
+    "message": "Open Watch Feed ({count} video)"
+  },
+  "watchFeedOpenAriaOther": {
+    "message": "Open Watch Feed ({count} videos)"
+  },
+  "watchFeedPillTpl": {
+    "message": "Watch Feed · {count}"
+  },
+  "watchFeedPlayingNow": {
+    "message": "Playing now"
+  },
+  "watchFeedRemoveCurrent": {
+    "message": "Remove this video from Watch Feed"
+  },
+  "watchFeedRemoved": {
+    "message": "Removed from Watch Feed"
+  },
+  "watchFeedRemoveTpl": {
+    "message": "Remove from Watch Feed: {title}"
+  },
+  "watchFeedRemoveVideoTpl": {
+    "message": "Remove {title} from Watch Feed"
   },
   "watchLaterNotInMenu": {
     "message": "„Später ansehen“ wurde in diesem Menü nicht gefunden. Nutze die native Speichern-Aktion auf dieser Karte."

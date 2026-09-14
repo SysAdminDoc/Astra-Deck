@@ -166,7 +166,7 @@
   "remainingTimeHideFullscreen": false,
   "autoExitFullscreen": false,
   "playbackErrorRecovery": false,
-  "persistentQueue": false,
+  "persistentQueue": true,
   "persistentQueueAutoAdvance": true,
   "shortsSpeedControl": false,
   "shortsAutoAdvance": false,

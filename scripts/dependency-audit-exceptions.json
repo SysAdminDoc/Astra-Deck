@@ -51,9 +51,11 @@
     },
     {
       "package": "adm-zip",
-      "range": "^0.6.0",
-      "reason": "Transitive development dependency; the pin holds the floor above the archive-traversal advisories.",
-      "lastCheckedOn": "2026-08-21"
+      "range": "^0.6.1",
+      "reason": "Transitive development dependency; 0.6.1 fixes destination-symlink traversal during archive extraction.",
+      "answersAdvisory": "GHSA-vwc7-r8mq-g2x9",
+      "advisoryUrl": "https://github.com/advisories/GHSA-vwc7-r8mq-g2x9",
+      "lastCheckedOn": "2026-09-13"
     },
     {
       "package": "shell-quote",
@@ -69,6 +71,14 @@
       "advisoryUrl": "https://github.com/advisories/GHSA-f65p-4m7j-42xc",
       "lastCheckedOn": "2026-09-05",
       "recheckBecause": "Four separate normalisation bypasses shipped against the same parser inside one minor line, so 3.1.6 holding today is not evidence the class is closed."
+    },
+    {
+      "package": "js-yaml",
+      "range": "^4.3.2",
+      "reason": "Transitive development dependency; 4.3.2 bounds merge-key expansion work and fixes the CPU denial-of-service advisory.",
+      "answersAdvisory": "GHSA-2883-xcg3-v3hh",
+      "advisoryUrl": "https://github.com/advisories/GHSA-2883-xcg3-v3hh",
+      "lastCheckedOn": "2026-09-13"
     }
   ]
 }
