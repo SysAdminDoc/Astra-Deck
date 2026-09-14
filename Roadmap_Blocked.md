@@ -48,17 +48,16 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   already work would make readers compete. Retire the item or restate what it
   should deliver.
 
-## P0: Promotion needs a human at a screen reader (verified 2026-09-14)
+## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14)
 
-- [ ] P0: Make release currency a blocking gate and publish the outstanding release
-  Why: the source and prepared draft are v4.89.0 while every active channel
-  still serves 4.82.0. The newest published tag is v4.88.3, the latest public
-  GitHub release is v4.84.3, and `npm run check` reports the lag as a notice
+- [ ] P0: Make release currency a blocking gate and promote the current release
+  Why: v4.89.0 is the latest public GitHub release while every active channel
+  still serves 4.82.0. `npm run check` reports the channel lag as a notice
   rather than a failure.
   Evidence: `scripts/run-checks.js` calls `check-versions.js` without
   `--require-release-current`; `release-channels.json` shows `active: 4.82.0`
-  on all five channels; `git tag --sort=-v:refname` starts at `v4.88.3`; and
-  GitHub draft `untagged-b4ea68889deae2115f6f` targets main commit `491b8d27`.
+  on all five channels; `git tag --sort=-v:refname` starts at `v4.89.0`; and
+  GitHub reports v4.89.0 as Latest with 15 public assets.
   Touches: `scripts/run-checks.js`, `release-channels.json`, `CHANGELOG.md`.
   Acceptance: `npm run check` fails while any channel trails the newest tag; the GitHub-full and userscript channels are promoted to the current version with digests verified by `npm run release:channels`. Store channels stay governed by the submission items in `Roadmap_Blocked.md`.
   Complexity: M
@@ -73,9 +72,10 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   manifest assets plus the release manifest and checksums. A replacement CRX
   key was not generated, so the established extension identity is unchanged.
 
-  The complete 15-file package set is uploaded to a private v4.89.0 GitHub
-  draft. GitHub's asset digests match the local `SHA256SUMS`; publication and
-  channel promotion have not occurred.
+  v4.89.0 was published on 2026-09-14 from release commit `491b8d27` with the
+  complete 15-file package set. `npm run release:verify-digests -- --tag
+  v4.89.0` confirms every public asset matches the local build. Publication is
+  complete; channel promotion has not occurred.
 
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
@@ -96,11 +96,10 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   false, so nothing here can be forced without overriding a gate the project
   built deliberately for this exact case.
 
-  Order once the evidence exists: rerun `npm run release:prepare:no-crx`,
-  publish the existing v4.89.0 draft, run
-  `npm run release:verify-digests -- --tag v4.89.0`, then run
-  `npm run release:promote`. Add `--require-release-current` to the `versions`
-  gate in `scripts/run-checks.js` and confirm `npm run check` is green.
+  Order once the evidence exists: rerun `npm run release:prepare:no-crx`, then
+  run `npm run release:health` and `npm run release:promote`. Add
+  `--require-release-current` to the `versions` gate in
+  `scripts/run-checks.js` and confirm `npm run check` is green.
 
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
