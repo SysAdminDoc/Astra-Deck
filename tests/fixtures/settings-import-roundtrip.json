@@ -1,5 +1,5 @@
 {
-  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 10.",
+  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 11.",
   "profiles": [
     {
       "schemaVersion": 1,
@@ -173,6 +173,19 @@
         "downloadCobaltFallback": true,
         "downloadCobaltInstance": "https://cobalt.example.net/",
         "safeUnknownKey": "custom-v9"
+      },
+      "absent": []
+    },
+    {
+      "schemaVersion": 10,
+      "settings": {
+        "_settingsVersion": 10,
+        "fullTitles": false,
+        "safeUnknownKey": "custom-v10"
+      },
+      "expected": {
+        "fullTitles": true,
+        "safeUnknownKey": "custom-v10"
       },
       "absent": []
     }

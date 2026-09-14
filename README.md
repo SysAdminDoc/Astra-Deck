@@ -57,7 +57,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.89.0` |
+| Release | `v4.90.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `487` entries across `18` categories |
@@ -506,7 +506,7 @@ This generated knowledgebase documents all **482 user-facing settings** in the c
 | <a id="setting-tokenThemeBridge"></a><strong>Native Token Theme Bridge</strong><br><code>tokenThemeBridge</code> | Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideAirplayButton"></a><strong>Hide Airplay Button</strong><br><code>hideAirplayButton</code> | Remove the Airplay icon from the player controls | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideQueueOnThumbnails"></a><strong>Hide &quot;Add to Queue&quot; on Thumbnails</strong><br><code>hideQueueOnThumbnails</code> | Remove the "Add to queue" overlay button that appears on thumbnail hover | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-fullTitles"></a><strong>Show Full Video Titles</strong><br><code>fullTitles</code> | Remove the 2-line clamp on thumbnail titles so long titles show in full | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-fullTitles"></a><strong>Show Full Video Titles</strong><br><code>fullTitles</code> | Remove the 2-line clamp on thumbnail titles so long titles show in full | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-titleCaseTransform"></a><strong>Transform Video Title Case</strong><br><code>titleCaseTransform</code> | Override YouTube's clickbait UPPERCASE titles with a casing style of your choice | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-titleCaseMode"></a><strong>Title Case Style</strong><br><code>titleCaseMode</code> | Choose the casing used while title transformation is enabled | Default: <code>none</code><br>Values: <code>none</code>, <code>uppercase</code>, <code>lowercase</code>, <code>capitalize</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-customSelectionColor"></a><strong>Custom Text Selection Color</strong><br><code>customSelectionColor</code> | Override the default text-selection background with your chosen color | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

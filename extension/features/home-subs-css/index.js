@@ -13,7 +13,7 @@
     // Schema keys touched (all default off):
     //   hideCreateButton, hideVoiceSearch, widenSearchBar,
     //   disablePlayOnHover, fullWidthSubscriptions,
-    //   hideSubscriptionOptions, listFeedLayout
+    //   hideSubscriptionOptions, listFeedLayout, fullTitles
 
     function buildHideCreateButtonCss() {
         const core = globalThis.YTKitCore;
@@ -48,6 +48,114 @@
 
     function buildHideSubscriptionOptionsCss() {
         return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
+    }
+
+    // NOTE: no apostrophes or backticks in comments in this function.
+    // stripSafeLineComments refuses to drop a comment line carrying a quote,
+    // so one costs bytes in a core bundle that sits against a 2 MiB host cap.
+    //
+    // v4.90.0: YouTube moved the feed off ytd-rich-grid-media and #video-title
+    // onto yt-lockup-view-model, so the old fullTitles selector list matched
+    // nothing at all on Home, Subscriptions, Channel or the watch sidebar.
+    // Ground truth read off the captured Subscriptions page in the repo root,
+    // verified 2026-09-14 -- 96 lockup titles, 0 legacy renderers:
+    //   .ytLockupMetadataViewModelStandard .ytLockupMetadataViewModelTitle {
+    //       overflow:hidden; max-height:4.4rem; display:-webkit-box;
+    //       -webkit-box-orient:vertical; text-overflow:ellipsis }
+    //   @supports (-webkit-line-clamp:1) { ... -webkit-line-clamp:2 }
+    // The TypographyBump variant repeats the block at 5.2rem. Shorts lockups
+    // clamp .shortsLockupViewModelHostMetadataTitle to 3 lines the same way.
+    //
+    // Two specificity notes, both deliberate:
+    //  * Selectors lead with html body.ytkit-fullTitles. canScopeCss in
+    //    core/styles.js refuses to wrap a sheet whose selectors start at the
+    //    document root, so this sheet stays unwrapped and keeps its own
+    //    specificity rather than inheriting the zero that @scope contributes.
+    //  * listFeedLayout re-clamps titles to 3 lines at (1,1,2) and (0,2,3).
+    //    The html body prefix clears both, so enabling full titles wins
+    //    whichever order the two sheets happen to land in.
+    //
+    // CSS comments live out here rather than inside the returned template.
+    // Anything in the template is shipped to every page on every load, and a
+    // comment there is also a compaction hazard: an apostrophe inside one used
+    // to be read as a string delimiter, which silently left the rest of the
+    // template uncompacted.
+    //
+    // Rules in the returned sheet, in order:
+    //  1. The unclamp itself, across every title surface.
+    //  2. The attributed-string span inside a lockup title, which carries its
+    //     own clamp on some experiments and would otherwise decide the
+    //     rendered height even after the anchor is freed.
+    //  3. Menu-button padding, so a title that now runs past two lines does
+    //     not slide under the overflow button pinned to the metadata block.
+    //  4. The legacy max-lines custom property, which sizes the old title box
+    //     independently of the clamp and so has to move with it.
+    function buildFullTitlesCss() {
+        // Ordered so the parent-qualified forms carry an extra type unit. That
+        // matters against the listFeedLayout rule ending yt-lockup-view-model
+        // a[title], which is (0,2,3): the bare class form would only tie it,
+        // and a tie is settled by sheet order, which nothing here controls.
+        const MODERN = [
+            'yt-lockup-metadata-view-model a.ytLockupMetadataViewModelTitle',
+            'yt-lockup-view-model a.ytLockupMetadataViewModelTitle',
+            'a.ytLockupMetadataViewModelTitle',
+            '.ytLockupMetadataViewModelTitle',
+            'h3.ytLockupMetadataViewModelHeadingReset',
+            '.ytLockupMetadataViewModelHeadingReset',
+            'ytm-shorts-lockup-view-model .shortsLockupViewModelHostMetadataTitle',
+            '.shortsLockupViewModelHostMetadataTitle',
+            'ytm-shorts-lockup-view-model h3'
+        ];
+        // Legacy Polymer renderers still back search results, playlist panels
+        // and a few shelves. Written as a pair of :is lists rather than the
+        // 27-selector cross product they expand to. An :is list takes the
+        // specificity of its most specific argument, so the host list counts
+        // as one type and the title list as one id, landing the whole rule at
+        // (1,1,3) -- one unit above the listFeedLayout (1,1,2) -- for a
+        // twentieth of the bytes.
+        const LEGACY_HOSTS = ':is(ytd-rich-item-renderer, ytd-rich-grid-media, ytd-grid-video-renderer,'
+            + ' ytd-video-renderer, ytd-compact-video-renderer, ytd-compact-radio-renderer,'
+            + ' ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer, ytd-reel-item-renderer)';
+        // The h3 anchor form also matches channel and playlist links, so it
+        // only ever appears scoped to one of the renderers above.
+        const LEGACY_TITLES = ':is(#video-title, #video-title-link, h3 a.yt-simple-endpoint)';
+        const selectors = [
+            ...MODERN,
+            `${LEGACY_HOSTS} ${LEGACY_TITLES}`,
+            // Safe unscoped: these two ids are only ever a video title.
+            '#video-title',
+            '#video-title-link'
+        ].map((selector) => `html body.ytkit-fullTitles ${selector}`);
+        return `
+            ${selectors.join(',\n            ')} {
+                display: block !important;
+                -webkit-line-clamp: unset !important;
+                line-clamp: unset !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+                overflow-wrap: anywhere !important;
+            }
+            html body.ytkit-fullTitles .ytLockupMetadataViewModelTitle .ytAttributedStringHost,
+            html body.ytkit-fullTitles .shortsLockupViewModelHostMetadataTitle .ytAttributedStringHost {
+                display: inline !important;
+                -webkit-line-clamp: unset !important;
+                max-height: none !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                white-space: normal !important;
+            }
+            html body.ytkit-fullTitles .ytLockupMetadataViewModelHasMenuButton .ytLockupMetadataViewModelTitle {
+                padding-right: 24px !important;
+            }
+            html body.ytkit-fullTitles ytd-rich-grid-media #video-title,
+            html body.ytkit-fullTitles ytd-video-renderer #video-title {
+                --yt-formatted-string-max-lines: none !important;
+            }
+        `;
     }
 
     function buildListFeedLayoutCss() {
@@ -183,6 +291,7 @@
         createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss,  ['subscriptions']),
         createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss, ['subscriptions']),
         createLifecycleSpec('listFeedLayout',           'feed',         buildListFeedLayoutCss,          ['home', 'subscriptions', 'search']),
+        createLifecycleSpec('fullTitles',              'feed',         buildFullTitlesCss,              ['all']),
     ]);
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -194,6 +303,7 @@
         buildFullWidthSubscriptionsCss,
         buildHideSubscriptionOptionsCss,
         buildListFeedLayoutCss,
+        buildFullTitlesCss,
         LIFECYCLE_SPECS
     });
 
@@ -221,6 +331,7 @@
             buildFullWidthSubscriptionsCss,
             buildHideSubscriptionOptionsCss,
             buildListFeedLayoutCss,
+            buildFullTitlesCss,
             LIFECYCLE_SPECS
         };
     }

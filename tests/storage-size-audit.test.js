@@ -139,8 +139,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // transcriptQaLane adds 31 bytes for the explicit local/remote choice.
     // Six DeArrow surface masks add 145 bytes and remain enabled by default.
     // Enabling Watch Feed trims one byte because JSON `true` is shorter than
-    // `false`.
-    assert.equal(assessment.totalBytes, 186441);
+    // `false`. Enabling fullTitles trims another for the same reason.
+    assert.equal(assessment.totalBytes, 186440);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

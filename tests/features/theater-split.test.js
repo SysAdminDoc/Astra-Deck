@@ -845,11 +845,22 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
     assert.doesNotMatch(footerBuild, /TrustedHTML\.setHTML\((?:editBtn|gear)/,
         'footer controls must not carry handwritten inline SVG markup');
 
+    // The userscript bundle ships these stylesheets whitespace-compacted, so
+    // every lookup below is written against `selector{...}` with optional
+    // spacing rather than the source formatting. Splitting on a literal
+    // "selector {" silently found nothing once compaction reached player-dock,
+    // and a loop over zero blocks asserts nothing at all.
+    const declarationsFor = (source, selector) => {
+        const literal = selector.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+        const pattern = new RegExp(`${literal}${String.raw`\s*\{([^}]*)\}`}`, 'g');
+        return [...source.matchAll(pattern)].map(match => match[1]);
+    };
+
     for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
         // No footer row may still be a stretched two-column grid.
-        const rows = source.split('.ytkit-ql-bottom {').slice(1);
-        for (const row of rows) {
-            const decl = row.slice(0, row.indexOf('}'));
+        const rows = declarationsFor(source, '.ytkit-ql-bottom');
+        assert.ok(rows.length >= 1, `${label}: stylesheet must define the footer row`);
+        for (const decl of rows) {
             assert.ok(!/grid-template-columns:\s*repeat\(2/.test(decl),
                 `${label}: the footer must not lay two icon buttons out as equal columns`);
             assert.ok(!/align-items:\s*stretch/.test(decl),
@@ -859,10 +870,9 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
 
     // And the buttons must opt out of the .ytkit-ql-item flex grow they inherit.
     for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
-        const btnBlocks = source.split('.ytkit-ql-bottom-btn {').slice(1);
+        const btnBlocks = declarationsFor(source, '.ytkit-ql-bottom-btn');
         assert.ok(btnBlocks.length >= 1, `${label}: stylesheet must define the button`);
-        for (const block of btnBlocks) {
-            const decl = block.slice(0, block.indexOf('}'));
+        for (const decl of btnBlocks) {
             assert.match(decl, /flex:\s*0 0 auto/,
                 `${label}: without this the .ytkit-ql-item flex grow stretches the button again`);
             // 28px in the base sheets, 26px in the denser po-drop override.
@@ -870,10 +880,12 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
             assert.match(decl, /height:\s*2[0-9]px/);
         }
 
-        const poStart = source.indexOf('#ytkit-po-drop .ytkit-ql-bottom-btn {');
-        const poBlock = source.slice(poStart, poStart + 400);
-        assert.match(poBlock, /flex:\s*0 0 auto !important/,
-            `${label}: the compact override must not reintroduce the stretch`);
+        const poBlocks = declarationsFor(source, '#ytkit-po-drop .ytkit-ql-bottom-btn');
+        assert.ok(poBlocks.length >= 1, `${label}: stylesheet must define the compact override`);
+        for (const decl of poBlocks) {
+            assert.match(decl, /flex:\s*0 0 auto\s*!important/,
+                `${label}: the compact override must not reintroduce the stretch`);
+        }
     }
 
     assert.match(sources.ytkit,

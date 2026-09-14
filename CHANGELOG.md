@@ -6,6 +6,40 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.90.0] (2026-09-14)
+
+### Full video titles
+
+- **Show Full Video Titles now works, and it is on by default.** YouTube caps
+  every feed title at two lines and cuts the rest off with an ellipsis. The
+  setting meant to undo that had been pointing at `ytd-rich-grid-media` and
+  `#video-title`, page furniture YouTube retired when it rebuilt the feed on
+  `yt-lockup-view-model`. On a captured Subscriptions page that is 96 title
+  elements the old rules did not match and 0 that they did, so turning the
+  toggle on changed nothing at all. The rules now name what the page actually
+  renders, on Home, Subscriptions, Search, channel pages, playlists, the watch
+  sidebar and Shorts lockups. Existing installs get it switched on once; it is
+  still one click to switch back off.
+
+- Transform Video Title Case had gone stale in the same place and now reaches
+  the same surfaces.
+
+### Fixed
+
+- **The userscript build was dropping stylesheet rules.** An apostrophe inside
+  a CSS comment (`the layer's job`) was read as the start of a string, so the
+  comment stripper ran past the end of the comment and deleted real rules on
+  its way to the next apostrophe. 183 of the 700 declarations in the settings
+  visual system never reached the shipped userscript, which is why its settings
+  panel sized and positioned itself differently from the extension. All 183 are
+  back.
+
+- Stylesheets written inline at the call site are now whitespace-compacted for
+  the userscript build like the named ones already were. That covers eleven
+  more modules and reclaims about 25 KB against the 2 MiB host cap, which is
+  what makes room for the restored rules.
+
+
 ## [4.89.0] (2026-09-14)
 
 This is the first public extension release since v4.84.3. It rolls up every

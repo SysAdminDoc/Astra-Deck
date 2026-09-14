@@ -1309,7 +1309,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.89.0';
+    const YTKIT_VERSION = '4.90.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4495,7 +4495,7 @@ const STORAGE_KEYS = Object.freeze({
             // setups are untouched; users opt in one-by-one from Settings)
             hideAirplayButton: false,
             hideQueueOnThumbnails: false,
-            fullTitles: false,
+            fullTitles: true,           // v4.90.0: on by default; YouTube clamps every feed title to 2 lines
             titleCaseTransform: false,
             titleCaseMode: 'none',              // 'none' | 'uppercase' | 'lowercase' | 'capitalize'
             customSelectionColor: false,
@@ -4527,7 +4527,7 @@ const STORAGE_KEYS = Object.freeze({
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 10,
+        SETTINGS_VERSION: 11,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -4630,6 +4630,19 @@ const STORAGE_KEYS = Object.freeze({
                     s.downloadCobaltInstance = '';
                     s.downloadCobaltFallback = false;
                 }
+                return s;
+            },
+            11: (s) => {
+                // v4.90.0: `fullTitles` shipped pointing at
+                // `ytd-rich-grid-media` / `#video-title`, which YouTube retired
+                // when the feed moved to `yt-lockup-view-model`. The toggle
+                // therefore did nothing on Home, Subscriptions, Channel or the
+                // watch sidebar for as long as those surfaces have been
+                // lockup-based, so a stored `false` records no opinion about a
+                // working feature — there was never a version of it to turn
+                // down. The default is now on and this seeds it onto existing
+                // profiles once. It is cosmetic and one click to undo.
+                s.fullTitles = true;
                 return s;
             },
         },
@@ -31908,18 +31921,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         ),
         cssFeature(
             'fullTitles',
-            'Show Full Video Titles',
-            'Remove the 2-line clamp on thumbnail titles so long titles show in full',
+            t('feature_fullTitles_name', 'Show Full Video Titles'),
+            t('feature_fullTitles_desc', 'Remove the 2-line clamp on thumbnail titles so long titles show in full'),
             'Home / Subscriptions',
             'type',
-            `#video-title.ytd-rich-grid-media,
-             #video-title.ytd-grid-video-renderer,
-             #video-title.ytd-compact-video-renderer,
-             ytd-rich-grid-media #video-title,
-             ytd-compact-video-renderer #video-title {
+            // v4.90.0: CSS construction delegated to features/home-subs-css/.
+            // The inline fallback below is only reached when that peel failed
+            // to load; it covers the modern lockup feed, which is what Home,
+            // Subscriptions, Channel and the watch sidebar all render now.
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildFullTitlesCss && globalThis.YTKitFeatures.homeSubsCss.buildFullTitlesCss())
+            || `html body.ytkit-fullTitles .ytLockupMetadataViewModelTitle,
+             html body.ytkit-fullTitles .shortsLockupViewModelHostMetadataTitle,
+             html body.ytkit-fullTitles #video-title,
+             html body.ytkit-fullTitles #video-title-link {
+                 display: block !important;
                  -webkit-line-clamp: unset !important;
                  max-height: none !important;
                  overflow: visible !important;
+                 text-overflow: clip !important;
                  white-space: normal !important;
              }`
         ),
@@ -31940,9 +31959,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (mode === 'uppercase') transform = 'uppercase';
                 else if (mode === 'lowercase') transform = 'lowercase';
                 else if (mode === 'capitalize') transform = 'capitalize';
+                // v4.90.0: the lockup selectors were missing here for the same
+                // reason they were missing from fullTitles — the modern feed
+                // has no `#video-title` at all, so casing only ever applied to
+                // the watch-page heading and the few legacy renderers left.
                 const css = `
                     #video-title, ytd-rich-grid-media #video-title,
                     ytd-compact-video-renderer #video-title,
+                    .ytLockupMetadataViewModelTitle,
+                    .shortsLockupViewModelHostMetadataTitle,
                     ytd-watch-metadata h1.ytd-watch-metadata,
                     ytd-video-primary-info-renderer h1 {
                         text-transform: ${transform} !important;

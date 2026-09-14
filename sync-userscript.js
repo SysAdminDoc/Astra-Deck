@@ -139,16 +139,57 @@ const COMPACT_RETURN_CSS_FUNCTIONS = new Map([
         'buildSplitMetaCss',
         'buildSplitCommentsCss',
     ]],
+    // These two carry the longest selector lists in the repo: the row feed
+    // layout names six surfaces per rule, and full titles names every renderer
+    // YouTube has ever drawn a video title with. Indented as written they cost
+    // the core bundle more than 9 KB against a 2 MiB host cap.
+    ['extension/features/home-subs-css/index.js', [
+        'buildListFeedLayoutCss',
+        'buildFullTitlesCss',
+    ]],
 ]);
 
 const COMPACT_LINE_COMMENT_MODULES = new Set([
     'extension/core/settings-schema.js',
 ]);
 
+// Modules whose CSS is written inline at the call site — `injectStyle(\`...\`)`
+// — rather than as a named template or a static `return`. The two maps above
+// can only find CSS by name, so roughly 20 KB of indented stylesheet in these
+// files reached the bundle untouched. Every template here is matched by shape
+// (a braced block with declarations) and skipped if it interpolates, so a
+// regex source or an HTML fragment in the same file is left alone.
+const COMPACT_INLINE_CSS_MODULES = new Set([
+    'extension/features/player-dock/index.js',
+    'extension/features/digital-wellbeing/index.js',
+    'extension/features/sponsorblock/index.js',
+    'extension/features/subscription-groups/index.js',
+    'extension/features/settings-panel/index.js',
+    'extension/features/sticky-chat/index.js',
+    'extension/features/dearrow/index.js',
+    'extension/features/subtitles/index.js',
+    'extension/features/video-notes/index.js',
+    'extension/features/video-filters/index.js',
+    'extension/features/return-dislike/index.js',
+]);
+
 function compactCssWhitespace(body) {
     const literals = [];
     let masked = '';
     for (let index = 0; index < body.length;) {
+        // CSS comments are dropped here rather than by a regex over the masked
+        // text further down. A comment is not code, so an apostrophe inside one
+        // ("the anchor's height") must not open a string literal: doing that
+        // swallowed everything up to the next apostrophe, and because the
+        // swallowed run is restored verbatim the rest of the template silently
+        // came through uncompacted. Nothing failed, the bundle just quietly got
+        // bigger, which is the failure this whole function exists to prevent.
+        if (body[index] === '/' && body[index + 1] === '*') {
+            const close = body.indexOf('*/', index + 2);
+            index = close === -1 ? body.length : close + 2;
+            continue;
+        }
+
         const quote = body[index];
         if (quote !== '"' && quote !== "'" && quote !== '`') {
             masked += quote;
@@ -172,13 +213,13 @@ function compactCssWhitespace(body) {
         masked += marker;
     }
 
+    // CSS comments explain the rules to whoever edits this file; they are not
+    // part of what a Greasy Fork reviewer reads, and the source keeps them in
+    // full. The core record is against a hard 2 MiB host cap, and these two
+    // templates alone carried 4,434 B of them, so relighting a surface was
+    // costing prose rather than bytes. The stripping itself now happens in the
+    // masking pass above, where a comment cannot be mistaken for a string.
     const compacted = masked
-        // CSS comments explain the rules to whoever edits this file; they are
-        // not part of what a Greasy Fork reviewer reads, and the source keeps
-        // them in full. The core record is against a hard 2 MiB host cap, and
-        // these two templates alone carried 4,434 B of them, so relighting a
-        // surface was costing prose rather than bytes.
-        .replace(/\/\*[\s\S]*?\*\//g, '')
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)
@@ -188,13 +229,63 @@ function compactCssWhitespace(body) {
         // combinator (`.toolbar :is(button)`). Only declaration/value spacing
         // after a colon is safe to remove without parsing selectors.
         .replace(/:\s+/g, ':')
+        // The space before !important is decoration, not syntax. These
+        // templates carry thousands of them.
+        .replace(/\s+!important/g, '!important')
         .replace(/;}/g, '}');
 
     return compacted.replace(/\u0001(\d+)\u0002/g,
         (_match, literalIndex) => literals[Number(literalIndex)]);
 }
 
+/**
+ * Compact every interpolation-free CSS template literal in `source`.
+ *
+ * Scanning is by shape rather than by name because these stylesheets are
+ * arguments at a call site, with no identifier to look them up by. Three
+ * conditions have to hold before a template is touched, and all three are
+ * about not mangling something that merely looks like CSS:
+ *   - no `${`, so nothing that reads a runtime value is rewritten;
+ *   - a braced block holding at least one `property: value;` pair;
+ *   - no backslash, which keeps regex sources such as text-metrics.js
+ *     TOKEN_SOURCE out of reach even if one grew a braced quantifier.
+ */
+function compactInlineCssTemplates(source) {
+    let out = '';
+    for (let index = 0; index < source.length;) {
+        const char = source[index];
+        if (char !== '`') {
+            out += char;
+            index += 1;
+            continue;
+        }
+
+        const start = index;
+        index += 1;
+        let depth = 0;
+        for (; index < source.length; index += 1) {
+            if (source[index] === '\\') { index += 1; continue; }
+            if (source[index] === '$' && source[index + 1] === '{') { depth += 1; index += 1; continue; }
+            if (source[index] === '}' && depth > 0) { depth -= 1; continue; }
+            if (source[index] === '`' && depth === 0) break;
+        }
+        const body = source.slice(start + 1, index);
+        index += 1;
+
+        const interpolates = body.includes('${');
+        const escapes = body.includes('\\');
+        const looksLikeCss = /\{[^{}]*[a-z-]+\s*:\s*[^{}]+;/.test(body) && body.includes('\n');
+        out += looksLikeCss && !interpolates && !escapes
+            ? `\`${compactCssWhitespace(body)}\``
+            : `\`${body}\``;
+    }
+    return out;
+}
+
 function compactBundledCssTemplates(source, relativePath) {
+    if (COMPACT_INLINE_CSS_MODULES.has(relativePath)) {
+        return compactInlineCssTemplates(source);
+    }
     const templateNames = COMPACT_CSS_TEMPLATES.get(relativePath) || [];
     const returnFunctions = COMPACT_RETURN_CSS_FUNCTIONS.get(relativePath) || [];
     if (templateNames.length === 0 && returnFunctions.length === 0) return source;

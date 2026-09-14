@@ -3424,11 +3424,11 @@ test('reactionSpammer defaults to false in both ytkit.js source and the generate
     );
 });
 
-test('SETTINGS_VERSION is 10 and migrations preserve safe AI and Cobalt defaults', () => {
+test('SETTINGS_VERSION is 11 and migrations preserve safe AI and Cobalt defaults', () => {
     assert.match(
         ytkitSource,
-        /SETTINGS_VERSION:\s*10,/,
-        'ytkit.js settingsManager must declare SETTINGS_VERSION: 10',
+        /SETTINGS_VERSION:\s*11,/,
+        'ytkit.js settingsManager must declare SETTINGS_VERSION: 11',
     );
     // The v7 migration must reset reactionSpammer to false and reset the
     // ack flag so the warning toast re-fires on the next opt-in.
@@ -3461,6 +3461,14 @@ test('SETTINGS_VERSION is 10 and migrations preserve safe AI and Cobalt defaults
         'migration 10 must clear an invalid or public endpoint');
     assert.match(cobaltMigrationBlock, /s\.downloadCobaltFallback\s*=\s*false/,
         'migration 10 must disable fallback when no valid self-hosted endpoint remains');
+
+    // v4.90.0: `fullTitles` only ever matched renderers YouTube has retired,
+    // so migration 11 turns the now-working feature on for existing profiles.
+    const fullTitlesMigrationStart = ytkitSource.indexOf('11: (s) =>');
+    assert.ok(fullTitlesMigrationStart > -1, 'migration 11 must exist');
+    const fullTitlesBlock = ytkitSource.slice(fullTitlesMigrationStart, fullTitlesMigrationStart + 1200);
+    assert.match(fullTitlesBlock, /s\.fullTitles\s*=\s*true/,
+        'migration 11 must enable fullTitles on existing profiles');
 });
 
 test('reaction spammer panel interval is clamped to a 500 ms minimum floor', () => {

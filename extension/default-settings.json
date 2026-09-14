@@ -590,7 +590,7 @@
   "chapterJumpButtons": false,
   "hideAirplayButton": false,
   "hideQueueOnThumbnails": false,
-  "fullTitles": false,
+  "fullTitles": true,
   "titleCaseTransform": false,
   "titleCaseMode": "none",
   "customSelectionColor": false,

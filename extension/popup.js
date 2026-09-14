@@ -445,7 +445,7 @@ const RETIRED_SETTING_KEYS = new Set([
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate
 // enforces parity across all three sources; bump in lockstep.
-const SETTINGS_VERSION_FALLBACK = 10;
+const SETTINGS_VERSION_FALLBACK = 11;
 const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     2(settings) {
         return settings;
