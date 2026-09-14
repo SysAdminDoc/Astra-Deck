@@ -6,28 +6,120 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
-## [4.89.0] (2026-09-13)
+## [4.89.0] (2026-09-14)
 
-### Added
+This is the first public extension release since v4.84.3. It rolls up every
+change recorded in the v4.85.0 through v4.88.5 development entries below.
 
-- Watch Feed puts a large add button on video thumbnails across YouTube feeds
-  and a matching action on every watch page. Each button changes to a check
+### Watch Feed
+
+- Watch Feed puts a large add button on video thumbnails across Home,
+  Subscriptions, Search, channel pages, related videos, Shorts and playlists.
+  A matching action appears on every watch page. Each button changes to a check
   when the video is queued, so removing an accidental pick takes one click.
 
-- The Watch Feed panel now shows thumbnails and channel names, plus a clear
-  marker for the video that is playing. Its larger controls are easier to hit
-  when you reorder or remove items. **Start watching** begins the lineup from
-  another monitor.
-
-### Changed
+- The Watch Feed panel shows thumbnails, channel names and a clear marker for
+  the video that is playing. Larger controls make reordering and removing items
+  easier. **Start watching** begins the lineup for hands-off viewing on another
+  monitor.
 
 - Starting the feed no longer removes a video before it plays. Astra keeps the
   current entry until playback ends, clears it at the handoff, then opens the
-  next video. Failed navigation and competing tabs no longer discard unwatched
-  entries.
+  next video. The final video empties the feed. Failed navigation and competing
+  tabs do not discard unwatched entries.
 
-- Watch Feed is on for new installs. Existing profiles keep their saved choice,
-  and turning off auto-advance still clears a queued video after it finishes.
+- Watch Feed is on for new installs. Existing profiles keep their saved choice.
+  Turning off auto-advance still clears a queued video after it finishes.
+
+### Settings and customization
+
+- The settings panel can show only changed values, reset one setting at a time
+  with undo, and open a setting directly from the popup or a diagnostic link.
+  Channel redirects can target Videos, Shorts, Live, Podcasts, Playlists or
+  Posts, with a safe fallback when that tab does not exist.
+
+- The thumbnail tools gained an optional full-size **View** action. Subtitle
+  styling gained controls for font, colors, opacity, offset and shadow. DeArrow
+  can now be enabled separately for six YouTube surfaces.
+
+- The popup reports transcript storage and damaged records accurately. Export
+  remains available when one saved setting needs repair, while imports reject
+  invalid text, unsafe URLs and dangerous regular expressions at the boundary.
+
+### Playback, comments and downloads
+
+- Theater Split gained a click-to-collapse divider, drag-to-reopen behavior and
+  a compact live-stream header. Normal watch pages, native Theater mode and
+  Theater Split now share one dark and light metadata treatment without leaking
+  player sizing between layouts.
+
+- Comment actions, owner controls, popups and sort menus were rebuilt around
+  compact readable controls. Automatic comment sorting now handles both current
+  YouTube menu layouts and leaves user-opened popups alone.
+
+- The download picker gained a keyboard-operable clip timeline. Companion
+  pairing now rechecks health immediately, signed-in downloads use an endpoint
+  challenge before any cookie handoff, and recovery screens provide direct
+  setup and retry actions. Firefox background startup and loopback access were
+  repaired for current releases.
+
+### Accessibility, themes and language
+
+- Settings, transcripts, Q&A, downloads, service notices, Video Hider, Comment
+  Search and the side panel now use one compact visual system. Dark and light
+  themes were checked across injected panels, native controls, narrow layouts,
+  forced colors and Theater Split states.
+
+- Keyboard access now covers Element Zapper targeting, settings category
+  ordering, floating chat movement, playback menus, AI Summary and Watch Feed.
+  Focus restoration, live-region timing and download progress announcements
+  were repaired so panels and status updates do not strand or overwhelm screen
+  reader users.
+
+- All eleven locale choices now show their actual translation coverage. Every
+  settings category has localized descriptive copy, plural text is grammatical,
+  and several popup and recovery fallbacks now match their translated messages.
+
+### Security and privacy
+
+- The MAIN-world bridge now uses a sealed per-page channel instead of writable
+  page attributes and forgeable navigation events. Privileged background
+  messages verify both the extension sender and the YouTube page origin.
+
+- Selector and feature-disable feeds now carry detached signatures. The
+  userscript pins its shared code to an immutable release tag, extension pages
+  enforce Trusted Types, and the dependency audit enforces install-script
+  refusal plus patched development parser versions.
+
+- Browser sync withdrawal takes effect immediately and clears the account copy.
+  Cookie handoff is bound to the intended downloader endpoint and document.
+  Shared guards now stop unsafe filter patterns, malformed settings and
+  untrusted external destinations before they reach runtime features.
+
+### Reliability and release engineering
+
+- Selector updates can run daily when enabled, ship new canaries safely and
+  report which YouTube player rollout matched. Stable-selector erosion and
+  stale capture evidence now appear in feature health before a fallback fails.
+
+- Captured fixtures refuse to overwrite good evidence when Chrome omits inline
+  page data. Startup and idle-cost budgets now run during release preparation,
+  with self-tests that prove the leak gates can fail.
+
+- Executable UI coverage, package checks, translation coverage, architecture
+  drift checks and test coverage floors now guard the shipped browser and
+  userscript surfaces. The detailed fixes and measurements for each development
+  line remain in the chronological entries below.
+
+- The automated v4.89.0 release run passes 3,085 tests, all 38 repository gates,
+  captured startup and idle budgets, and isolated browser smokes for Chromium,
+  Firefox, live chat, zero-ad behavior and both supported userscript managers.
+
+### Documentation
+
+- The README now leads with current product captures and direct install routes,
+  explains classic YouTube layout controls, and links to project support. The
+  repository description and topics match the features that ship.
 
 ## [4.88.5] (2026-09-05)
 
