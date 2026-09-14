@@ -48,11 +48,17 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   already work would make readers compete. Retire the item or restate what it
   should deliver.
 
-## P0: Promotion needs a human at a screen reader (verified 2026-09-05)
+## P0: Promotion needs a human at a screen reader (verified 2026-09-14)
 
 - [ ] P0: Make release currency a blocking gate and publish the outstanding release
-  Why: the source is v4.88.5 while every active channel still serves 4.82.0. The newest tag is v4.88.3, the latest GitHub release is v4.84.3, and `npm run check` reports the lag as a notice rather than a failure.
-  Evidence: `scripts/run-checks.js` calls `check-versions.js` without `--require-release-current`; `release-channels.json` shows `active: 4.82.0` on all five channels; `git tag --sort=-v:refname` starts at `v4.88.3`; `gh release list` reports v4.84.3 as latest.
+  Why: the source and prepared draft are v4.89.0 while every active channel
+  still serves 4.82.0. The newest published tag is v4.88.3, the latest public
+  GitHub release is v4.84.3, and `npm run check` reports the lag as a notice
+  rather than a failure.
+  Evidence: `scripts/run-checks.js` calls `check-versions.js` without
+  `--require-release-current`; `release-channels.json` shows `active: 4.82.0`
+  on all five channels; `git tag --sort=-v:refname` starts at `v4.88.3`; and
+  GitHub draft `untagged-b4ea68889deae2115f6f` targets main commit `491b8d27`.
   Touches: `scripts/run-checks.js`, `release-channels.json`, `CHANGELOG.md`.
   Acceptance: `npm run check` fails while any channel trails the newest tag; the GitHub-full and userscript channels are promoted to the current version with digests verified by `npm run release:channels`. Store channels stay governed by the submission items in `Roadmap_Blocked.md`.
   Complexity: M
@@ -60,14 +66,20 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   userscript's `@require` is now pinned to `refs/tags/v<version>`, so the tag
   has to exist for the core library to resolve at all.
 
-  Verification on 2026-09-05: all 38 repository checks and the complete
-  browser matrix pass. Chromium, live chat, Firefox, Tampermonkey, and
-  Violentmonkey all ran from disposable profiles. The v4.88.5 build produced
-  13 expected assets plus its SBOM, manifest, and checksums.
+  Preparation on 2026-09-14: the v4.89.0 changelog now rolls up every v4.85.0
+  through v4.89.0 change since public v4.84.3. The automated release run passed
+  3,085 tests, all 38 repository gates, captured startup and idle budgets, and
+  every isolated browser smoke. The no-CRX build produced all 13 expected
+  manifest assets plus the release manifest and checksums. A replacement CRX
+  key was not generated, so the established extension identity is unchanged.
+
+  The complete 15-file package set is uploaded to a private v4.89.0 GitHub
+  draft. GitHub's asset digests match the local `SHA256SUMS`; publication and
+  channel promotion have not occurred.
 
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
-  measured again on 2026-09-05:
+  measured again on 2026-09-14:
 
       npm run release:health   -> status fail, promotionEligible false
         artifact-readiness       -> fail
@@ -84,11 +96,11 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   false, so nothing here can be forced without overriding a gate the project
   built deliberately for this exact case.
 
-  Order once the evidence exists: `npm run release:prepare` (now runs the test
-  suite and the captured startup lane), publish the GitHub release with the
-  artifacts already in `build/`, `npm run release:promote`, then add
-  `--require-release-current` to the `versions` gate in `scripts/run-checks.js`
-  and confirm `npm run check` is green.
+  Order once the evidence exists: rerun `npm run release:prepare:no-crx`,
+  publish the existing v4.89.0 draft, run
+  `npm run release:verify-digests -- --tag v4.89.0`, then run
+  `npm run release:promote`. Add `--require-release-current` to the `versions`
+  gate in `scripts/run-checks.js` and confirm `npm run check` is green.
 
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
