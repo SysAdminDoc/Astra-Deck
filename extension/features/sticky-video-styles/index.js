@@ -3,7 +3,7 @@
 
     // extension/features/sticky-video-styles/index.js
     //
-    // Theater Split's three stylesheets: the page shell, the metadata column
+    // The three Theater Split stylesheets: the page shell, the metadata column
     // and the comments pane. Pure functions with no page or storage access, so
     // they load and test on their own. features/sticky-video/index.js injects
     // them from init().

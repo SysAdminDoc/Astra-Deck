@@ -43,7 +43,8 @@ const COVERED_SURFACES = Object.freeze([
             'extension/features/sticky-video/index.js',
             'extension/features/sticky-video-styles/index.js',
             'extension/features/sticky-video-autoscroll/index.js',
-            'extension/features/sticky-video-chat/index.js'
+            'extension/features/sticky-video-chat/index.js',
+            'extension/features/sticky-video-header/index.js'
         ])
     }),
     Object.freeze({

@@ -3,11 +3,11 @@
 
     // extension/features/sticky-video-autoscroll/index.js
     //
-    // Theater Split's middle-button autoscroll: holding the middle button over a
+    // Theater Split middle-button autoscroll: holding the middle button over a
     // scrollable pane scrolls it toward the pointer, faster the further away,
     // until the button is released, Escape is pressed or the window loses focus.
     // features/sticky-video merges these methods onto the feature object, so
-    // `this` is the feature and the autoscroll state lives there.
+    // this is the feature and the autoscroll state lives there.
 
     function createStickyVideoAutoscrollMethods() {
         return {

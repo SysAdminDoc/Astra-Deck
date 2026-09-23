@@ -3,11 +3,11 @@
 
     // extension/features/sticky-video-chat/index.js
     //
-    // Theater Split's live chat placement: find the chat frame (now or when it
+    // Theater Split live chat placement: find the chat frame (now or when it
     // arrives late), decide whether the right pane is live chat, a replay or
     // comments, and pin the frame over that pane with its inline styles stashed
     // for restore. features/sticky-video merges these methods onto the feature
-    // object, so `this` is the feature and the chat observer state lives there.
+    // object, so this is the feature and the chat observer state lives there.
 
     function createStickyVideoChatMethods(deps = {}) {
         const { VideoTypeDetector, DebugManager } = deps;

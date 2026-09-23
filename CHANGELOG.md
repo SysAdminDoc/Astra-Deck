@@ -38,6 +38,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   check would have caught the v4.90.0 bug that silently dropped 183 settings
   panel declarations. The core library comes out about 2 KB smaller.
 
+- **Theater Split is five modules now instead of one 6,200-line file.** The
+  stylesheets, the header and action dock, live chat placement and
+  middle-button autoscroll each moved into a module of their own, and what
+  stays behind is the part that mounts, resizes and collapses the split.
+  Nothing about how it looks or behaves changes. Each piece has its own
+  tests, which drive the real handlers rather than checking source text. If
+  one of the pieces ever fails to load, Theater Split turns itself off
+  instead of half working.
+
 ## [4.90.0] (2026-09-14)
 
 ### Full video titles

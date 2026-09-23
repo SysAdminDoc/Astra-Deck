@@ -148,6 +148,7 @@
         "features/sticky-video-styles/index.js",
         "features/sticky-video-autoscroll/index.js",
         "features/sticky-video-chat/index.js",
+        "features/sticky-video-header/index.js",
         "features/sticky-video/index.js",
         "features/sticky-chat/index.js",
         "features/video-hider/index.js",
@@ -206,6 +207,9 @@
             "stickyVideo"
         ],
         "features/sticky-video-chat/index.js": [
+            "stickyVideo"
+        ],
+        "features/sticky-video-header/index.js": [
             "stickyVideo"
         ],
         "features/sticky-video/index.js": [

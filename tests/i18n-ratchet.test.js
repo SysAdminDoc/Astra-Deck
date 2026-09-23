@@ -122,6 +122,8 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         'Return YouTube Dislike rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/features/sticky-video/index.js'], undefined,
         'Sticky Video rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/sticky-video-header/index.js'], undefined,
+        'the Theater Split header part carries the rendered copy the controller used to, and none of it may be English');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -187,7 +189,7 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         ['sponsorblock/index.js', 'sponsorCachedSegmentTitleTpl'],
         ['youtube-music-compat/index.js', 'feature_youtubeMusicCompat_desc'],
         ['return-dislike/index.js', 'ui_rydPausedTitleTpl'],
-        ['sticky-video/index.js', 'stickyVideoLiveInfoAria']
+        ['sticky-video-header/index.js', 'stickyVideoLiveInfoAria']
     ]) {
         const source = fs.readFileSync(path.join(repoRoot, 'extension', 'features', file), 'utf8');
         assert.match(source, new RegExp(`t\\(['"]${key}`));
