@@ -136,12 +136,25 @@ const BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules 
 // JavaScript with ternaries in them pass the CSS shape test, and compacting
 // them would have joined `//` comment lines onto the code after them.
 const CSS_SHAPE = /\{[^{}]*[a-z-]+\s*:\s*[^{}]+;/;
-// Checked on the static text with CSS comments removed, so prose in a comment
-// cannot trip it but a `//` line still counts: joining lines would glue such a
-// comment onto the code after it. Interpolations used to be the tell that kept
-// a script template out of reach; now that they are carried through instead,
-// this list has to recognise JavaScript on its own.
-const NOT_CSS = /=>|===|!==|&&|\b(?:function|return|typeof)\b|\b(?:if|for|while|switch)\s*\(|\belse\s*\{|\b(?:const|let|var)\s|\b(?:this|window|document)\.|<[a-zA-Z/!]|(?:^|[\s;{}])\/\//m;
+// Interpolations used to be the tell that kept a script template out of reach;
+// now that they are carried through instead, this list has to recognise
+// JavaScript on its own. It is tested by scriptSignals() on the static text
+// with CSS comments, quoted strings and unquoted url() blanked, so prose in a
+// comment cannot trip it. A `//` left after that is a script comment wherever
+// it sits: CSS has none, and joining lines would glue it onto the code after
+// it. ` = ` and `++` catch code that leans on automatic semicolon insertion,
+// which joining lines also breaks.
+const NOT_CSS = /=>|===|!==|&&|\+\+|\s=\s|\/\/|\b(?:function|return|typeof)\b|\b(?:if|for|while|switch|catch)\s*\(|\b(?:else|try)\s*\{|\b(?:const|let|var)\s|\b(?:this|window|document)\.|<[a-zA-Z/!]/;
+// To CSS an unquoted url() is one token: a `/*` or `//` inside it is part of
+// the address, not a comment.
+const UNQUOTED_URL = /\burl\(\s*[^\s'")][^)]*\)/gi;
+
+function scriptSignals(staticText) {
+    return NOT_CSS.test(staticText
+        .replace(UNQUOTED_URL, 'url()')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, '""'));
+}
 // An interpolation is carried through compaction as one opaque token and put
 // back byte for byte, so nothing that reads a runtime value is rewritten.
 const EXPRESSION_MARK = /\x03(\d+)\x04/;
@@ -165,6 +178,19 @@ function compactCssWhitespace(body) {
             const close = body.indexOf('*/', index + 2);
             index = close === -1 ? body.length : close + 2;
             continue;
+        }
+
+        // An unquoted url() is kept whole, so a `/*` in the address is not
+        // taken for a comment that swallows the rules after it.
+        if ((body[index] === 'u' || body[index] === 'U') && !/[\w-]/.test(body[index - 1] || '')) {
+            UNQUOTED_URL.lastIndex = 0;
+            const url = UNQUOTED_URL.exec(body.slice(index, index + 4096));
+            if (url && url.index === 0) {
+                literals.push(url[0]);
+                masked += `\u0001${literals.length - 1}\u0002`;
+                index += url[0].length;
+                continue;
+            }
         }
 
         const quote = body[index];
@@ -242,7 +268,11 @@ function untaggedTemplateLiterals(node, found = []) {
 // comment-apostrophe bug lived in that masking and deleted 183 declarations,
 // and a check sharing the code would have shared the bug.
 function cssTokens(text) {
-    return text.replace(/\/\*[\s\S]*?\*\//g, ' ')
+    return text
+        // Same reading of url() as CSS: a `/*` in an unquoted address opens
+        // no comment. Both sides get it, so equal addresses compare equal.
+        .replace(UNQUOTED_URL, (url) => url.replace(/\/\*/g, '/\u0005'))
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
         // The one structural change compaction is allowed: a last semicolon.
         .replace(/;(\s*)\}/g, '$1}')
         .split(/([{};])/)
@@ -294,7 +324,7 @@ function compactBundledCssTemplates(source, relativePath) {
             .join('');
         if (!CSS_SHAPE.test(staticText)) continue;
 
-        if (NOT_CSS.test(staticText.replace(/\/\*[\s\S]*?\*\//g, ' '))) continue;
+        if (scriptSignals(staticText)) continue;
         const compacted = compactCssWhitespace(staticText);
         const pieces = compacted.split(EXPRESSION_MARK);
         const quasis = pieces.filter((_piece, index) => index % 2 === 0);

@@ -149,6 +149,14 @@ test('the main userscript @require loads the core of its own version', () => {
     assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', tabbed).found,
         [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
         'a tab after // still declares a @require');
+    const indented = header(coreRequireUrl('4.90.0')).replace('// ==/UserScript==',
+        `  \t// @require      ${coreRequireUrl('4.89.0')}\n// ==/UserScript==`);
+    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', indented).found,
+        [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
+        'managers accept anything before the //, so an indented @require loads a second core');
+    const aboveBlock = `// @require      ${coreRequireUrl('4.90.0')}\n` + header();
+    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', aboveBlock).found, [],
+        'a @require above the metadata block is not metadata, so no core loads');
 
     const committed = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
     assert.equal(findUserscriptCoreRequireDrift(pkg.version, committed), null,

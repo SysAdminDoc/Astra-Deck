@@ -98,11 +98,18 @@ function readUserscriptNameVersion(source = fs.readFileSync(path.join(REPO_ROOT,
 function findUserscriptCoreRequireDrift(productVersion, source) {
     const { coreRequireUrl } = require('../sync-userscript.js');
     const expected = coreRequireUrl(productVersion);
-    const headerEnd = source.indexOf('// ==/UserScript==');
-    const header = headerEnd === -1 ? '' : source.slice(0, headerEnd);
-    // Userscript managers read `//`, any whitespace, then the key, so a tab or
-    // a doubled space still declares a @require.
-    const found = [...header.matchAll(/^\/\/\s*@require\s+(\S+)/gm)].map((match) => match[1]);
+    // Read the lines a userscript manager reads: only those between the
+    // ==UserScript== markers, and with its relaxed parsing, where anything may
+    // precede the `//` (Violentmonkey matches `(.*?)//[ \t]*@key`, to agree
+    // with Tampermonkey). An indented @require still loads a core; one above
+    // the block loads nothing.
+    const lines = source.split(/\r?\n/);
+    const open = lines.findIndex((line) => /\/\/[ \t]*==UserScript==/.test(line));
+    const close = open === -1 ? -1 : lines.findIndex((line, index) => index > open && /\/\/[ \t]*==\/UserScript==/.test(line));
+    const block = close === -1 ? [] : lines.slice(open + 1, close);
+    const found = block
+        .map((line) => /\/\/[ \t]*@require[ \t]+(\S+)/.exec(line)?.[1])
+        .filter(Boolean);
     return found.length === 1 && found[0] === expected ? null : { expected, found };
 }
 

@@ -320,7 +320,15 @@ test('tagged templates, escapes and JavaScript-looking templates are left alone'
             + dollar + '{cfg} ? on : off;\n}\n' + tick + ';',
         // A `//` line is the one script signal here. CSS has no line comments,
         // and joining lines would glue this one onto the rule after it.
-        'const sheet = ' + tick + '\n.a {\n    color: red;\n}\n// generated below\n.b {\n    top: 0;\n}\n' + tick + ';'
+        'const sheet = ' + tick + '\n.a {\n    color: red;\n}\n// generated below\n.b {\n    top: 0;\n}\n' + tick + ';',
+        // A trailing `//` after code, and code that leans on automatic
+        // semicolon insertion: joining the lines breaks both, and neither
+        // starts a line with `//` or names window/document.
+        'const trailing = ' + tick + '\ntry {\n    ytcfg.mode = ' + dollar + '{cfg} ? on : off;\n    apply()// then flag it\n    ytcfg.ready = true;\n} catch (e) {}\n' + tick + ';',
+        'const asi = ' + tick + '\ntry {\n    ytcfg.mode = ' + dollar + '{cfg} ? on : off\n    ytcfg.ready = true;\n} catch (e) {}\n' + tick + ';',
+        // The same two signals on their own, so each marker is pinned.
+        'const lone = ' + tick + '\n.a {\n    color: red;\n}\nnext()// go on\n.b {\n    top: 0;\n}\n' + tick + ';',
+        'const assign = ' + tick + '\n.a {\n    color: red;\n}\nmode = on\nready = yes;\n' + tick + ';'
     ];
     for (const source of untouched) {
         assert.equal(sync.compactBundledCssTemplates(source, 'fixture.js'), source, source);
@@ -342,6 +350,19 @@ test('interpolations come through compaction byte for byte', () => {
     // what the code evaluates. The template is skipped instead.
     const commented = 'const css = ' + tick + '\n/* ' + dollar + '{note} */\n.a {\n    color: red;\n}' + tick + ';';
     assert.equal(sync.compactBundledCssTemplates(commented, 'fixture.js'), commented);
+});
+
+// To CSS an unquoted url() is one token, so a `/*` in the address opens no
+// comment. The compactor used to read one there and drop every rule up to the
+// next real `*/`, and the round trip, stripping comments the same way, agreed.
+test('a comment marker inside an unquoted url() is part of the address', () => {
+    const css = '\n.a { background: url(https://x.test/*/bg.png); }\n.b { color: red; }\n/* note */\n.c { top: 0; }\n';
+    assert.equal(
+        sync.compactBundledCssTemplates('const s = ' + tick + css + tick + ';', 'fixture.js'),
+        'const s = ' + tick + '.a{background:url(https://x.test/*/bg.png)}.b{color:red}.c{top:0}' + tick + ';'
+    );
+    assert.throws(() => sync.assertCssSurvives(css, '.a{background:url(https://x.test .c{top:0}', 'fixture'),
+        /changed the stylesheet/, 'the checker must see the rules the old reading dropped');
 });
 
 test('the rule-fragment round trip catches a compactor that loses CSS', () => {
