@@ -82,3 +82,18 @@ test('every package.json override carries its review record', () => {
     assert.throws(() => dependencyAudit.validateResolutionOverrides(dependencyOverrides, undocumented),
         /documented resolution overrides vs package.json overrides/);
 });
+
+// NODE_ENV=production, an omit=dev npmrc line or npm_config_omit make a bare
+// `npm audit` skip devDependencies and report clean, which turned the
+// development audit into a pass for a critical dev finding. npm lets
+// --include win over --omit, and every launch shape has to carry it.
+test('the development audit includes devDependencies whatever npm omits', () => {
+    assert.ok(dependencyAudit.AUDIT_ARGS.includes('--include=dev'));
+    const source = fs.readFileSync(path.join(repoRoot, 'scripts', 'audit-dependencies.js'), 'utf8');
+    const launches = source.match(/spawnSync\(/g) || [];
+    const shared = source.match(/AUDIT_ARGS/g) || [];
+    assert.equal(launches.length, 3, 'three launch shapes: npm_execpath, Windows shell, plain npm');
+    assert.ok(shared.length >= 4, 'each launch shape must build its argv from AUDIT_ARGS');
+    assert.equal((source.match(/'audit', '--json'/g) || []).length, 1,
+        'the argument list is written once, in AUDIT_ARGS, and no launch carries its own');
+});

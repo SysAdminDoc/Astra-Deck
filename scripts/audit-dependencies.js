@@ -8,6 +8,10 @@ const repoRoot = path.join(__dirname, '..');
 const overridesPath = path.join(__dirname, 'dependency-overrides.json');
 const lockfilePath = path.join(repoRoot, 'package-lock.json');
 const npmrcPath = path.join(repoRoot, '.npmrc');
+// --include=dev because this is the DEVELOPMENT audit. NODE_ENV=production, an
+// omit=dev npmrc line or npm_config_omit all make a bare `npm audit` skip
+// devDependencies and report clean; npm lets --include win over --omit.
+const AUDIT_ARGS = Object.freeze(['audit', '--json', '--audit-level=moderate', '--include=dev']);
 
 function readJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -140,16 +144,16 @@ function run() {
     if (npmExecPath) {
         result = spawnSync(
             process.execPath,
-            [npmExecPath, 'audit', '--json', '--audit-level=moderate'],
+            [npmExecPath, ...AUDIT_ARGS],
             spawnOptions
         );
     } else if (process.platform === 'win32') {
         result = spawnSync(
-            'npm audit --json --audit-level=moderate',
+            `npm ${AUDIT_ARGS.join(' ')}`,
             { ...spawnOptions, shell: true }
         );
     } else {
-        result = spawnSync('npm', ['audit', '--json', '--audit-level=moderate'], spawnOptions);
+        result = spawnSync('npm', [...AUDIT_ARGS], spawnOptions);
     }
 
     if (result.error) {
@@ -189,6 +193,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+    AUDIT_ARGS,
     parseAuditOutput,
     validateCleanAudit,
     validateInstallScriptPolicy,
