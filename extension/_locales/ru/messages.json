@@ -4582,6 +4582,15 @@
   "languageZhCn": {
     "message": "简体中文 (Упрощённый китайский)"
   },
+  "likeViewRatioAriaTpl": {
+    "message": "Доля лайков {ratio}%: лайков {likes}, просмотров {views}"
+  },
+  "likeViewRatioLabel": {
+    "message": "Доля лайков"
+  },
+  "likeViewRatioTitleTpl": {
+    "message": "Лайков: {likes}, просмотров: {views}"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
@@ -6596,6 +6605,9 @@
   },
   "stickyVideoVideoActionsAria": {
     "message": "Действия видео"
+  },
+  "stickyVideoWatchingNowTpl": {
+    "message": "Сейчас смотрят: {count}"
   },
   "storageBannerCorruptionTpl": {
     "message": "Данные хранилища повреждены — Сбросьте для восстановления."

@@ -15,6 +15,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   v4.90.0, and that tag exists. The version check also fails from now on if the
   two ever disagree again.
 
+- **View counts are in your language now.** Theater Split's header wrote
+  "1,234,567 views" in every language, and for live streams it made "watching
+  now" by rewriting that English word, so no other language ever got it
+  either. The Like/View Ratio badge did the same in its tooltip, its screen
+  reader label and the "Like Rate" label beside the number. All of them come
+  from the translation files now, in all 11 languages.
+
 ### Maintenance
 
 - **The development dependency audit is clean again, with no exception left

@@ -15998,7 +15998,14 @@ if (typeof globalThis !== "undefined") {
             _formatSplitViewCount(value) {
                 const count = Number(value);
                 if (!Number.isFinite(count) || count < 0) return '';
-                return `${new Intl.NumberFormat().format(Math.floor(count))} views`;
+                return t('preciseViewCountTpl', '{count} views')
+                    .replace('{count}', new Intl.NumberFormat().format(Math.floor(count)));
+            },
+            _formatSplitWatchingCount(value) {
+                const count = Number(value);
+                if (!Number.isFinite(count) || count < 0) return '';
+                return t('stickyVideoWatchingNowTpl', '{count} watching now')
+                    .replace('{count}', new Intl.NumberFormat().format(Math.floor(count)));
             },
 
             _getSplitFallbackViewCountText() {
@@ -16107,7 +16114,7 @@ if (typeof globalThis !== "undefined") {
                     const playerResponse = _rw.ytInitialPlayerResponse;
                     const liveDetails = playerResponse?.microformat?.playerMicroformatRenderer?.liveBroadcastDetails;
                     const isLive = playerResponse?.videoDetails?.isLive || playerResponse?.videoDetails?.isLiveContent || !!liveDetails;
-                    const viewText = isLive ? this._formatSplitViewCount(playerResponse?.videoDetails?.viewCount).replace(/\s+views$/i, ' watching now') : '';
+                    const viewText = isLive ? this._formatSplitWatchingCount(playerResponse?.videoDetails?.viewCount) : '';
                     if (viewText) return viewText;
                 } catch { /* reason: player response live count unavailable; fallback to visible metadata */ }
                 return parts.find(text => /\bviews?\b/i.test(text))

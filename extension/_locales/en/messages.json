@@ -4582,6 +4582,18 @@
   "languageZhCn": {
     "message": "简体中文 (Simplified Chinese)"
   },
+  "likeViewRatioAriaTpl": {
+    "message": "Like rate {ratio}% based on {likes} likes and {views} views",
+    "description": "Like/View Ratio badge label for screen readers"
+  },
+  "likeViewRatioLabel": {
+    "message": "Like Rate",
+    "description": "Short label beside the Like/View Ratio percentage on the watch page"
+  },
+  "likeViewRatioTitleTpl": {
+    "message": "{likes} likes from {views} views",
+    "description": "Like/View Ratio badge tooltip: the like and view counts the ratio was computed from"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
@@ -6596,6 +6608,10 @@
   },
   "stickyVideoVideoActionsAria": {
     "message": "Video actions"
+  },
+  "stickyVideoWatchingNowTpl": {
+    "message": "{count} watching now",
+    "description": "Theater Split live header: how many people are watching a live stream right now"
   },
   "storageBannerCorruptionTpl": {
     "message": "Storage data is malformed. Choose Reset to recover."

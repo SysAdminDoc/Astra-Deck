@@ -771,8 +771,9 @@ test('split live chat gets a video info header and premium divider treatment', (
     assert.ok(source.includes('ytkit-split-live-view-count')
         && source.includes('_getSplitLiveViewCountText()')
         && source.includes('_formatSplitLiveViewText(text)')
-        && source.includes("replace(/\\s+views$/i, ' watching now')"),
-        'extension live header should extract current live viewers before falling back to total views');
+        && source.includes('this._formatSplitWatchingCount(playerResponse?.videoDetails?.viewCount)')
+        && !source.includes("replace(/\\s+views$/i, ' watching now')"),
+        'extension live header should extract current live viewers before falling back to total views, labelled through a locale key rather than an English suffix');
     assert.ok(source.includes('_formatSplitLiveInfoText(text, viewText = \'\')')
         && source.includes('_getSplitLiveInfoText(viewText = \'\')')
         && source.includes('const dateInfo = supplementalInfo || dateText;')

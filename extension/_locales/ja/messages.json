@@ -4582,6 +4582,15 @@
   "languageZhCn": {
     "message": "简体中文 (簡体字中国語)"
   },
+  "likeViewRatioAriaTpl": {
+    "message": "高評価率 {ratio}%（高評価 {likes} 件、視聴 {views} 回）"
+  },
+  "likeViewRatioLabel": {
+    "message": "高評価率"
+  },
+  "likeViewRatioTitleTpl": {
+    "message": "{views} 回の視聴で高評価 {likes} 件"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
@@ -6596,6 +6605,9 @@
   },
   "stickyVideoVideoActionsAria": {
     "message": "動画の操作"
+  },
+  "stickyVideoWatchingNowTpl": {
+    "message": "{count} 人が視聴中"
   },
   "storageBannerCorruptionTpl": {
     "message": "ストレージデータが破損しています — リセットして復旧してください。"

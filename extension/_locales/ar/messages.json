@@ -4582,6 +4582,15 @@
   "languageZhCn": {
     "message": "简体中文 (Simplified Chinese)"
   },
+  "likeViewRatioAriaTpl": {
+    "message": "نسبة الإعجاب {ratio}% بناءً على {likes} إعجاب و{views} مشاهدة"
+  },
+  "likeViewRatioLabel": {
+    "message": "نسبة الإعجاب"
+  },
+  "likeViewRatioTitleTpl": {
+    "message": "{likes} إعجاب من {views} مشاهدة"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
@@ -6596,6 +6605,9 @@
   },
   "stickyVideoVideoActionsAria": {
     "message": "إجراءات الفيديو"
+  },
+  "stickyVideoWatchingNowTpl": {
+    "message": "{count} يشاهدون الآن"
   },
   "storageBannerCorruptionTpl": {
     "message": "بيانات التخزين تالفة — أعِد التعيين للاسترداد."

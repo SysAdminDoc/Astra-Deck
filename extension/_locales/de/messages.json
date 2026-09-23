@@ -4582,6 +4582,15 @@
   "languageZhCn": {
     "message": "简体中文 (Vereinfachtes Chinesisch)"
   },
+  "likeViewRatioAriaTpl": {
+    "message": "Like-Rate {ratio} % bei {likes} Likes und {views} Aufrufen"
+  },
+  "likeViewRatioLabel": {
+    "message": "Like-Rate"
+  },
+  "likeViewRatioTitleTpl": {
+    "message": "{likes} Likes bei {views} Aufrufen"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
@@ -6596,6 +6605,9 @@
   },
   "stickyVideoVideoActionsAria": {
     "message": "Videoaktionen"
+  },
+  "stickyVideoWatchingNowTpl": {
+    "message": "{count} sehen gerade zu"
   },
   "storageBannerCorruptionTpl": {
     "message": "Speicherdaten beschädigt — Zurücksetzen zur Wiederherstellung."

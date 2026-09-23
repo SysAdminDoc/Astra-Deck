@@ -25545,8 +25545,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 badge.dataset.state = this._getTone(ratio);
                 badge.setAttribute('translate', 'no');
                 const ratioValue = this._formatRatio(ratio);
-                badge.title = `${this._formatCount(likes)} likes from ${this._formatCount(views)} views`;
-                badge.setAttribute('aria-label', `Like rate ${ratioValue}% based on ${this._formatCount(likes)} likes and ${this._formatCount(views)} views`);
+                const likesText = this._formatCount(likes);
+                const viewsText = this._formatCount(views);
+                badge.title = t('likeViewRatioTitleTpl', '{likes} likes from {views} views')
+                    .replace('{likes}', likesText)
+                    .replace('{views}', viewsText);
+                badge.setAttribute('aria-label', t('likeViewRatioAriaTpl', 'Like rate {ratio}% based on {likes} likes and {views} views')
+                    .replace('{ratio}', ratioValue)
+                    .replace('{likes}', likesText)
+                    .replace('{views}', viewsText));
 
                 const value = document.createElement('span');
                 value.className = 'ytkit-meta-chip__value';
@@ -25554,7 +25561,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const label = document.createElement('span');
                 label.className = 'ytkit-meta-chip__label';
-                label.textContent = 'Like Rate';
+                label.textContent = t('likeViewRatioLabel', 'Like Rate');
 
                 badge.appendChild(value);
                 badge.appendChild(label);

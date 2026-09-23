@@ -637,8 +637,17 @@ test('stickyVideo clamps live titles and keeps responsive header geometry bounde
             `${label} must measure the clamped card with its responsive outer padding`);
         assert.ok(contents.includes('const dateInfo = supplementalInfo || dateText;'),
             `${label} must avoid repeating upload dates while a live start status is available`);
-        assert.ok(contents.includes("replace(/\\swatching$/i, ' watching now')")
-            && contents.includes("replace(/\\s+views$/i, ' watching now')"),
+        assert.ok(contents.includes("replace(/\\swatching$/i, ' watching now')"),
+            `${label} must label live audience counts read from the page clearly`);
+        // A count the header formats itself goes through a locale key in the
+        // extension, and must not depend on rewriting an English "views"
+        // suffix, which no other locale has. The standalone userscript ships
+        // English only.
+        assert.ok(label.startsWith('extension')
+            ? contents.includes("t('stickyVideoWatchingNowTpl', '{count} watching now')")
+                && contents.includes('this._formatSplitWatchingCount(playerResponse?.videoDetails?.viewCount)')
+                && !contents.includes("replace(/\\s+views$/i, ' watching now')")
+            : contents.includes("replace(/\\s+views$/i, ' watching now')"),
             `${label} must label fallback live audience counts clearly`);
         assert.ok(contents.includes('const liveHeaderTop =')
             && contents.includes("chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important')")

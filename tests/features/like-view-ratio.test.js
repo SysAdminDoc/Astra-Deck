@@ -160,3 +160,33 @@ test('no view threshold is rescaled on the users behalf', () => {
     assert.doesNotMatch(stripComments(migrations), /hideVideosLowViewThreshold\s*[*/]/,
         'no migration should scale a stored view threshold');
 });
+
+// The badge's title and aria-label used to be English template literals, so
+// every locale (and every screen reader) got "likes from ... views". They come
+// from the catalogue now; this renders the badge with the shipped German one.
+test('the badge speaks the active locale, screen-reader label included', () => {
+    const catalogue = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', '_locales', 'de', 'messages.json'), 'utf8'));
+    const t = (key, fallback) => catalogue[key]?.message ?? fallback;
+    const view = fakeNode({ tag: 'span', text: '1.5M views' });
+    const row = fakeNode({ tag: 'div', children: [view] });
+    const like = fakeNode({ tag: 'button', attributes: { 'aria-label': '90,000 likes' } });
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector.startsWith('#info-container')) return [view];
+        if (selector.startsWith('like-button-view-model')) return like;
+        return null;
+    });
+    const feature = loadFeature('likeViewRatio', { document: documentRef, isWatchPagePath: () => true, t });
+    feature._calculate();
+
+    const badge = row.children[1];
+    const likes = new Intl.NumberFormat().format(90000);
+    const views = new Intl.NumberFormat().format(1500000);
+    assert.equal(badge.children[1].textContent, 'Like-Rate');
+    assert.equal(badge.title, `${likes} Likes bei ${views} Aufrufen`);
+    assert.equal(badge.getAttribute('aria-label'), `Like-Rate 6.0 % bei ${likes} Likes und ${views} Aufrufen`);
+    for (const text of [badge.title, badge.getAttribute('aria-label'), badge.children[1].textContent]) {
+        assert.doesNotMatch(text, /\b(likes from|views|Like Rate|based on)\b/, 'no English left');
+    }
+    feature.destroy();
+});

@@ -154,3 +154,32 @@ test('docking the header fills in the metadata and moves the Quick Links launche
         assert.deepEqual(appended, [], 'nothing docks while the split is closed');
     });
 });
+
+// The view count ended in a hard-coded English "views", and the live header
+// turned it into "watching now" by rewriting that English suffix, so no other
+// locale ever got either. Rendered here with the shipped German catalogue.
+test('view and live audience counts come from the locale catalogue', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const catalogue = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', '_locales', 'de', 'messages.json'), 'utf8'));
+    const t = (key, fallback) => catalogue[key]?.message ?? fallback;
+    const count = new Intl.NumberFormat().format(1234567);
+    withDocument({}, () => {
+        const recorded = header({
+            t,
+            getVideoId: () => 'v',
+            _rw: { ytInitialPlayerResponse: playerResponse('v', { videoDetails: { viewCount: '1234567' } }) }
+        });
+        assert.equal(recorded._getSplitViewCountText(), `${count} Aufrufe`);
+
+        const live = header({
+            t,
+            getVideoId: () => 'v',
+            _rw: { ytInitialPlayerResponse: playerResponse('v', { videoDetails: { viewCount: '1234567', isLive: true } }) }
+        }, { _getBelow: () => ({ querySelectorAll: () => [] }) });
+        const text = live._getSplitLiveViewCountText();
+        assert.equal(text, `${count} sehen gerade zu`);
+        assert.doesNotMatch(text, /views|watching/);
+    });
+});
