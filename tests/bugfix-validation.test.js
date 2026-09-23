@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
+const { readTheaterSplitSource } = require('./helpers/source');
 
 test('extension fetch rejects non-JSON-safe bodies before runtime messaging', () => {
     const fs = require('fs');
@@ -587,7 +588,7 @@ test('global comment text selection support covers community posts and comment s
 test('split comment replies keep nested cards readable', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('margin: 7px 0 0 12px !important;'),
@@ -650,7 +651,7 @@ test('split comment replies keep nested cards readable', () => {
 test('split title header and comment composer stay visually compact', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('border-left: 2px solid rgba(var(--ytkit-split-accent-rgb), 0.42) !important;'),
@@ -681,7 +682,7 @@ test('split title header and comment composer stay visually compact', () => {
 test('split title header shows upload date and docks quick links beside YouTube logo', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('_dockSplitHeader()'),
@@ -746,7 +747,7 @@ test('split title header shows upload date and docks quick links beside YouTube 
 test('split live chat gets a video info header and premium divider treatment', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
     // VideoTypeDetector moved to core/video-type.js
     // so the live-override invariant is asserted against the new source location.
@@ -930,7 +931,7 @@ test('split live chat gets a video info header and premium divider treatment', (
 test('split title and owner cards use a compact title-first hierarchy', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     const blockBetween = (contents, startNeedle, endNeedle, label, { fromStart = false, beforeEnd = false } = {}) => {
@@ -1183,7 +1184,7 @@ test('split title and owner cards use a compact title-first hierarchy', () => {
 test('split theater supports middle-mouse autoscroll in the right column', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('_middleMouseHandler'),

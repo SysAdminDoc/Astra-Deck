@@ -11,26 +11,29 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { sources, config, extractFeatureBlock } = require('../helpers/source');
+const { sources, config, extractFeatureBlock, readTheaterSplitSource } = require('../helpers/source');
 const { fakeTreeDocument } = require('../helpers/monolith');
 
 const MODULE_PATH = '../../extension/features/sticky-video/index.js';
+const STYLES_PATH = '../../extension/features/sticky-video-styles/index.js';
 
 // The behaviour used to exist twice: once in the feature module and once as an
 // inline fallback inside ytkit.js that every page load parsed and discarded.
 // The fallback is a descriptor stub now, so the module IS the implementation
 // and these assertions read it directly.
-const MODULE_SOURCE = fs.readFileSync(
-    path.join(config.repoRoot, 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+const MODULE_SOURCE = readTheaterSplitSource();
 
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
     delete require.cache[require.resolve(MODULE_PATH)];
+    delete require.cache[require.resolve(STYLES_PATH)];
     globalThis.YTKitFeatures = {};
+    const styles = require(STYLES_PATH);
     const mod = require(MODULE_PATH);
     const exported = globalThis.YTKitFeatures.stickyVideo;
+    const exportedStyles = globalThis.YTKitFeatures.stickyVideoStyles;
     globalThis.YTKitFeatures = originalFeatures;
-    return { mod, exported };
+    return { mod, exported, styles, exportedStyles };
 }
 
 function extractTemplate(block, name) {
@@ -69,18 +72,18 @@ test('stickyVideo + scoped CSS rules exist in the extension build', () => {
         'stickyVideo feature flag must exist in ytkit.js');
 });
 
-test('stickyVideo module exports the Theater Split style builders', () => {
-    const { mod, exported } = loadModule();
-    assert.equal(typeof mod.buildSplitShellCss, 'function');
-    assert.equal(typeof mod.buildSplitMetaCss, 'function');
-    assert.equal(typeof mod.buildSplitCommentsCss, 'function');
+test('the Theater Split modules export the style builders and the factory', () => {
+    const { mod, exported, styles, exportedStyles } = loadModule();
+    assert.equal(typeof styles.buildSplitShellCss, 'function');
+    assert.equal(typeof styles.buildSplitMetaCss, 'function');
+    assert.equal(typeof styles.buildSplitCommentsCss, 'function');
     assert.equal(typeof mod.createStickyVideoFeature, 'function');
-    assert.deepEqual(mod.STYLE_IDS, {
+    assert.deepEqual(styles.STYLE_IDS, {
         shell: 'stickyVideo',
         meta: 'stickyVideo-meta-layout',
         comments: 'stickyVideo-comments'
     });
-    assert.equal(typeof exported.buildSplitShellCss, 'function');
+    assert.equal(typeof exportedStyles.buildSplitShellCss, 'function');
     assert.equal(typeof exported.createStickyVideoFeature, 'function');
 });
 
@@ -316,8 +319,8 @@ test('Theater Split divider separates a click toggle from a drag resize', () => 
 });
 
 test('Theater Split keeps the premium theme and standalone divider contract', () => {
-    const { mod } = loadModule();
-    const commentsCss = mod.buildSplitCommentsCss();
+    const { styles } = loadModule();
+    const commentsCss = styles.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
         path.join(config.repoRoot, 'theater-split.user.js'),
         'utf8'
@@ -352,8 +355,8 @@ test('Theater Split keeps the premium theme and standalone divider contract', ()
 });
 
 test('Theater Split theme chrome is tokenized in both artifacts', () => {
-    const { mod } = loadModule();
-    const commentsCss = mod.buildSplitCommentsCss();
+    const { styles } = loadModule();
+    const commentsCss = styles.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
         path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
 
@@ -369,8 +372,8 @@ test('Theater Split theme chrome is tokenized in both artifacts', () => {
 });
 
 test('Theater Split metadata uses a compact title-first vertical hierarchy', () => {
-    const { mod } = loadModule();
-    const commentsCss = mod.buildSplitCommentsCss();
+    const { styles } = loadModule();
+    const commentsCss = styles.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
         path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
 
@@ -406,8 +409,8 @@ test('Theater Split metadata uses a compact title-first vertical hierarchy', () 
 });
 
 test('Theater Split comment actions use wrapper-proof compact controls in every state', () => {
-    const { mod } = loadModule();
-    const commentsCss = mod.buildSplitCommentsCss();
+    const { styles } = loadModule();
+    const commentsCss = styles.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
         path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
     const visualSystem = fs.readFileSync(
@@ -542,10 +545,10 @@ test('stickyVideo resolves premiered-video chat placeholders back to comments', 
 
 
 test('stickyVideo keeps comment scrolling native and bounds offscreen rendering', () => {
-    const { mod } = loadModule();
-    const moduleSource = fs.readFileSync(path.join(config.repoRoot, 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const { styles } = loadModule();
+    const moduleSource = readTheaterSplitSource();
     const userscriptSource = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
-    const commentsCss = mod.buildSplitCommentsCss();
+    const commentsCss = styles.buildSplitCommentsCss();
 
     for (const [contents, label] of [
         [moduleSource, 'extension module'],
@@ -577,8 +580,8 @@ test('stickyVideo keeps comment scrolling native and bounds offscreen rendering'
 });
 
 test('stickyVideo clamps live titles and keeps responsive header geometry bounded', () => {
-    const { mod } = loadModule();
-    const css = mod.buildSplitMetaCss();
+    const { styles } = loadModule();
+    const css = styles.buildSplitMetaCss();
     const userscriptPath = path.join(config.repoRoot, 'theater-split.user.js');
     const theaterSplit = fs.readFileSync(userscriptPath, 'utf8');
 
@@ -763,8 +766,7 @@ test('fullscreen exit only pins a px player width while the resize observer is a
     }
 });
 
-const STICKY_MODULE_SOURCE = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+const STICKY_MODULE_SOURCE = readTheaterSplitSource();
 
 // ── Collapse belongs to the comments pane, not the video ───────────────
 // Scrolling up while the pointer rested over the player used to throw the

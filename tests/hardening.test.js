@@ -7930,6 +7930,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
         'extension/features/chat-style-comments/index.js',
+        'extension/features/sticky-video-styles/index.js',
         'extension/features/sticky-video/index.js',
         'extension/features/sticky-chat/index.js',
         'extension/features/video-hider/index.js',
@@ -7989,6 +7990,19 @@ test('userscript core compacts static visual CSS without changing other modules'
     assert.doesNotMatch(compactedFixture, /ytd-comment-engagement-bar:is\(/,
         'CSS compaction must not fuse descendant selectors into the host element');
 
+    // Theater Split's stylesheets live in their own part module; the
+    // controller beside them is runtime code that compaction must not touch.
+    const stickyStylesSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sticky-video-styles', 'index.js'),
+        'utf8'
+    );
+    const compactedStickyStyles = sync.compactBundledCssTemplates(
+        stickyStylesSource,
+        'extension/features/sticky-video-styles/index.js'
+    );
+    assert.ok(Buffer.byteLength(stickyStylesSource, 'utf8') - Buffer.byteLength(compactedStickyStyles, 'utf8') > 20_000,
+        'Theater Split CSS compaction must recover userscript library headroom');
+    assert.doesNotMatch(compactedStickyStyles, /function buildSplitMetaCss\(\) \{\s*return `\r?\n/);
     const stickySource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'),
         'utf8'
@@ -7997,9 +8011,6 @@ test('userscript core compacts static visual CSS without changing other modules'
         stickySource,
         'extension/features/sticky-video/index.js'
     );
-    assert.ok(Buffer.byteLength(stickySource, 'utf8') - Buffer.byteLength(compactedSticky, 'utf8') > 20_000,
-        'Theater Split CSS compaction must recover userscript library headroom');
-    assert.doesNotMatch(compactedSticky, /function buildSplitMetaCss\(\) \{\s*return `\r?\n/);
     assert.match(compactedSticky, /_applyDividerRatio\(left, right, newLeftPct\)/,
         'Theater Split runtime code must remain in the generated module');
     assert.equal(
@@ -8109,7 +8120,8 @@ test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () 
         'features/wave-8-css/index.js':         'function buildHideNotificationButtonCss()',
         'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
         'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
-        'features/sticky-video/index.js':       'function buildSplitShellCss()',
+        'features/sticky-video-styles/index.js': 'function buildSplitShellCss()',
+        'features/sticky-video/index.js':       'function createStickyVideoFeature',
         'features/sticky-chat/index.js':        'function createStickyChatFeature',
         'features/video-hider/index.js':        'function createHideVideosFromHomeFeature',
         'features/video-notes/index.js':        'function createVideoNotesFeature',
@@ -8201,6 +8213,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
         'extension/features/chat-style-comments/index.js',
+        'extension/features/sticky-video-styles/index.js',
         'extension/features/sticky-video/index.js',
         'extension/features/sticky-chat/index.js',
         'extension/features/video-hider/index.js',

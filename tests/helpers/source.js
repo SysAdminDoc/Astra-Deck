@@ -60,6 +60,19 @@ function findNormalRuntimeEntry(manifest = config.manifest) {
     );
 }
 
+// Theater Split is a controller (features/sticky-video) plus part modules
+// (features/sticky-video-*), every one of them listed in the manifest. Source
+// pins read them all, so a rule or a method is found whichever part holds it,
+// and a new part is picked up without touching a test.
+function readTheaterSplitSource() {
+    const files = runtimeModules(findNormalRuntimeEntry())
+        .filter((file) => /^features\/sticky-video(?:-[a-z]+)*\/index\.js$/.test(file));
+    if (!files.includes('features/sticky-video/index.js')) {
+        throw new Error('readTheaterSplitSource: the Theater Split controller is not in the manifest');
+    }
+    return files.map((file) => readUtf8('extension', ...file.split('/'))).join('\n');
+}
+
 /**
  * Extract the source-text block corresponding to a feature object
  * literal so per-area tests don't have to compute start/end indices.
@@ -89,4 +102,5 @@ module.exports = {
     runtimeModules,
     findNormalRuntimeEntry,
     extractFeatureBlock,
+    readTheaterSplitSource,
 };

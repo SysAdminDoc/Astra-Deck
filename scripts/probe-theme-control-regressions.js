@@ -58,6 +58,7 @@ function buildFixture(outDir) {
         ...extractCss('extension/core/settings-visual-system.js', 'SURFACE_VISUAL_SYSTEM_CSS'),
         ...extractCss('extension/features/player-dock/index.js', null),
         ...extractCss('extension/features/sticky-video/index.js', null),
+        ...extractCss('extension/features/sticky-video-styles/index.js', null),
         ...extractCss('extension/ytkit.js', null)
     ].map((css) => `<style>${css}</style>`).join('\n');
     const iconLibrary = inlineScript(fs.readFileSync(

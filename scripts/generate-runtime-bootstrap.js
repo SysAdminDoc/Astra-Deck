@@ -16,6 +16,7 @@ const FEATURE_SETTINGS = Object.freeze({
     'features/theme-css/index.js': ['colorTheme', 'oledTheme', 'themeAccentColor'],
     'features/home-subs-css/index.js': ['fullWidthSubscriptions', 'hideSubscriptionOptions', 'hideVoiceSearch', 'widenSearchBar'],
     'features/chat-style-comments/index.js': ['chatStyleComments'],
+    'features/sticky-video-styles/index.js': ['stickyVideo'],
     'features/sticky-video/index.js': ['stickyVideo'],
     'features/sticky-chat/index.js': ['stickyChat'],
     'features/video-hider/index.js': ['hideVideosFromHome', 'hideVideosHideAutoDubbed', 'hideVideosHideLive', 'hideVideosHideMixes', 'hideVideosHideMovies', 'hideVideosHidePlaylists', 'hideVideosHideUpcoming'],
