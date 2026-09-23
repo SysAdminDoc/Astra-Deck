@@ -5486,6 +5486,15 @@
   "settingsChangedNone": {
     "message": "Nothing changed"
   },
+  "settingsChoiceChangedTpl": {
+    "message": "تم تغيير {name} إلى {value}."
+  },
+  "settingsColorSettingFallback": {
+    "message": "إعداد اللون"
+  },
+  "settingsColorUpdatedTpl": {
+    "message": "تم تحديث {name}."
+  },
   "settingsConflictWithTpl": {
     "message": "يتعارض مع {featureName}"
   },
@@ -5555,6 +5564,15 @@
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
   },
+  "settingsExportAriaTpl": {
+    "message": "تصدير إعدادات {brand}"
+  },
+  "settingsExportedStatus": {
+    "message": "تم تصدير الإعدادات. الملف جاهز للتنزيل."
+  },
+  "settingsExportedToast": {
+    "message": "تم تصدير الإعدادات"
+  },
   "settingsFeatureClearAriaTpl": {
     "message": "مسح {featureName}"
   },
@@ -5567,6 +5585,9 @@
   "settingsFooterSaved": {
     "message": "تم الحفظ"
   },
+  "settingsGenericSettingFallback": {
+    "message": "الإعداد"
+  },
   "settingsGitHubTitle": {
     "message": "عرض على GitHub"
   },
@@ -5575,6 +5596,12 @@
   },
   "settingsHealthNeedsAttention": {
     "message": "يحتاج إلى انتباه"
+  },
+  "settingsHostAccessNeededTpl": {
+    "message": "تحتاج الميزة {name} إلى إذن الوصول إلى الموقع قبل تفعيلها. حاول مرة أخرى ووافق على طلب المتصفح."
+  },
+  "settingsImportAriaTpl": {
+    "message": "استيراد إعدادات {brand}"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -5642,6 +5669,9 @@
   "settingsPanelContentControls": {
     "message": "عناصر التحكم بالمحتوى"
   },
+  "settingsRangeSettingFallback": {
+    "message": "إعداد نطاق"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -5680,6 +5710,12 @@
   },
   "settingsSectionAiContent": {
     "message": "محتوى الذكاء الاصطناعي"
+  },
+  "settingsSectionAllDisabled": {
+    "message": "تم إيقاف كل الإعدادات في هذا القسم."
+  },
+  "settingsSectionAllEnabled": {
+    "message": "تم تفعيل كل الإعدادات في هذا القسم."
   },
   "settingsSectionAudio": {
     "message": "الصوت"
@@ -5860,6 +5896,12 @@
   },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsTextSettingFallback": {
+    "message": "إعداد نصي"
+  },
+  "settingsValueSavedTpl": {
+    "message": "تم حفظ {name}."
   },
   "settingsVersionPrefix": {
     "message": "v"

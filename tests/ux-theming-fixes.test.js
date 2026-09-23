@@ -169,7 +169,11 @@ test('settings panel exposes persistent live status feedback for save/import/exp
             `${label} settings panel must render the footer status live region`);
         assert.ok(source.includes("footerStatus.setAttribute('role', 'status')"),
             `${label} footer status must announce changes to assistive tech`);
-        assert.ok(source.includes("setPanelStatus('Settings exported. The download is ready.', 'success')"),
+        // The module routes this copy through a locale key; the monolith
+        // fallback and the userscript panel still carry the English literal.
+        assert.ok(source.includes(label === 'module'
+            ? "setPanelStatus(t('settingsExportedStatus', 'Settings exported. The download is ready.'), 'success')"
+            : "setPanelStatus('Settings exported. The download is ready.', 'success')"),
             `${label} export path must update the live status`);
         assert.ok(source.includes('reset to defaults. Undo is available in the toast.'),
             `${label} reset path must explain the undo recovery state`);

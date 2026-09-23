@@ -5486,6 +5486,15 @@
   "settingsChangedNone": {
     "message": "Nothing changed"
   },
+  "settingsChoiceChangedTpl": {
+    "message": "{name} 已改为 {value}。"
+  },
+  "settingsColorSettingFallback": {
+    "message": "颜色设置"
+  },
+  "settingsColorUpdatedTpl": {
+    "message": "已更新 {name}。"
+  },
   "settingsConflictWithTpl": {
     "message": "与 {featureName} 冲突"
   },
@@ -5555,6 +5564,15 @@
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
   },
+  "settingsExportAriaTpl": {
+    "message": "导出 {brand} 设置"
+  },
+  "settingsExportedStatus": {
+    "message": "设置已导出，可以下载了。"
+  },
+  "settingsExportedToast": {
+    "message": "设置已导出"
+  },
   "settingsFeatureClearAriaTpl": {
     "message": "清除 {featureName}"
   },
@@ -5567,6 +5585,9 @@
   "settingsFooterSaved": {
     "message": "已保存"
   },
+  "settingsGenericSettingFallback": {
+    "message": "设置"
+  },
   "settingsGitHubTitle": {
     "message": "在 GitHub 上查看"
   },
@@ -5575,6 +5596,12 @@
   },
   "settingsHealthNeedsAttention": {
     "message": "需要注意"
+  },
+  "settingsHostAccessNeededTpl": {
+    "message": "启用 {name} 前需要网站访问权限。请重试并批准浏览器的请求。"
+  },
+  "settingsImportAriaTpl": {
+    "message": "导入 {brand} 设置"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -5642,6 +5669,9 @@
   "settingsPanelContentControls": {
     "message": "内容控制"
   },
+  "settingsRangeSettingFallback": {
+    "message": "范围设置"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -5680,6 +5710,12 @@
   },
   "settingsSectionAiContent": {
     "message": "AI 内容"
+  },
+  "settingsSectionAllDisabled": {
+    "message": "已停用此部分的所有设置。"
+  },
+  "settingsSectionAllEnabled": {
+    "message": "已启用此部分的所有设置。"
   },
   "settingsSectionAudio": {
     "message": "音频"
@@ -5860,6 +5896,12 @@
   },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsTextSettingFallback": {
+    "message": "文本设置"
+  },
+  "settingsValueSavedTpl": {
+    "message": "已保存 {name}。"
   },
   "settingsVersionPrefix": {
     "message": "v"

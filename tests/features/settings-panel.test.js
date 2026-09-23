@@ -504,3 +504,78 @@ test('the settings search count announces itself', () => {
     assert.equal(searchMeta.textContent, 'Everything',
         'the initial count must use the active locale function');
 });
+
+// The panel's live status line announced every change in English: "X enabled.",
+// "X saved.", "X changed to Y.". It reads the active catalogue now; this flips
+// a feature on through the real delegated change handler with the shipped
+// German one and reads the status region back.
+test('the live status line reports a toggle in the active locale', async () => {
+    const catalogue = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', '_locales', 'de', 'messages.json'), 'utf8'));
+    const events = new Map();
+    const appState = { settings: { returnDislike: false } };
+    const status = { textContent: '', dataset: {} };
+    const input = {
+        checked: true,
+        disabled: false,
+        setAttribute() {},
+        removeAttribute() {},
+        matches: (selector) => selector === '.ytkit-feature-cb',
+        closest: (selector) => (selector === '[data-feature-id]' ? card : selector === '.ytkit-switch' ? switchEl : null)
+    };
+    const card = {
+        dataset: { featureId: 'returnDislike' },
+        classList: { toggle() {}, contains: () => false, add() {}, remove() {} },
+        querySelector: () => null
+    };
+    const switchEl = { classList: { toggle() {}, add() {}, remove() {} } };
+    const panel = { contains: () => true };
+    const originalDocument = globalThis.document;
+    globalThis.document = {
+        body: { classList: { contains: (name) => name === 'ytkit-panel-open', toggle() {} } },
+        documentElement: { classList: { toggle() {} }, style: {} },
+        activeElement: input,
+        getElementById: (id) => (id === 'ytkit-settings-panel' ? panel : id === 'ytkit-panel-status' ? status : null),
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener(type, handler) { events.set(type, handler); },
+        removeEventListener() {}
+    };
+    try {
+        const api = loadModule().createSettingsPanelRuntime({
+            PANEL_OPEN_CLASS,
+            CONFLICT_MAP: {},
+            appState,
+            DebugManager: { log() {} },
+            StorageManager: { get: (_key, fallback) => fallback, set() {}, setSync: async () => ({ ok: true }) },
+            shouldBuildPrimaryUI: () => true,
+            buildSettingsPanel: () => panel,
+            createToast() {},
+            injectStyle: () => ({ remove() {} }),
+            isBooleanFeature: (feature) => feature?.type === 'checkbox',
+            getFeatureById: (id) => ({ id, type: 'checkbox', name: 'Return YouTube Dislike' }),
+            getFeatureName: (feature) => feature?.name || feature?.id,
+            getFeatureDescription: () => '',
+            getFocusableUiElements: () => [],
+            liveFeatureList: [],
+            requestFeatureOptionalHosts: async () => true,
+            safeInitFeature() {},
+            safeDestroyFeature() {},
+            initFeatureLifecycle() {},
+            destroyFeatureLifecycle() {},
+            settingsManager: {
+                save(nextSettings) {
+                    return Promise.resolve({ ok: true, settings: { ...nextSettings } });
+                }
+            },
+            showToast() {},
+            t: (key, fallback) => catalogue[key]?.message ?? fallback
+        });
+        api.attachUIEventListeners();
+        await events.get('change')({ target: input });
+        assert.equal(status.textContent, 'Return YouTube Dislike aktiviert');
+        assert.equal(status.dataset.tone, 'success');
+    } finally {
+        globalThis.document = originalDocument;
+    }
+});

@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **The settings panel confirms your changes in your language.** Every toggle,
+  text box, slider, colour and choice wrote its confirmation into the panel's
+  status line (the one screen readers announce) in English: "X enabled.",
+  "X saved.", "X changed to Y." They come from the translation files now, and
+  so do the export toast, the host-access message and the Export and Import
+  button labels.
+
 ## [4.90.1] (2026-09-23)
 
 ### Fixed

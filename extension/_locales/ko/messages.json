@@ -5486,6 +5486,15 @@
   "settingsChangedNone": {
     "message": "Nothing changed"
   },
+  "settingsChoiceChangedTpl": {
+    "message": "{name}을(를) {value}(으)로 바꿨습니다."
+  },
+  "settingsColorSettingFallback": {
+    "message": "색상 설정"
+  },
+  "settingsColorUpdatedTpl": {
+    "message": "{name}을(를) 업데이트했습니다."
+  },
   "settingsConflictWithTpl": {
     "message": "{featureName}과(와) 충돌함"
   },
@@ -5555,6 +5564,15 @@
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
   },
+  "settingsExportAriaTpl": {
+    "message": "{brand} 설정 내보내기"
+  },
+  "settingsExportedStatus": {
+    "message": "설정을 내보냈습니다. 다운로드할 준비가 되었습니다."
+  },
+  "settingsExportedToast": {
+    "message": "설정을 내보냈습니다"
+  },
   "settingsFeatureClearAriaTpl": {
     "message": "{featureName} 지우기"
   },
@@ -5567,6 +5585,9 @@
   "settingsFooterSaved": {
     "message": "저장됨"
   },
+  "settingsGenericSettingFallback": {
+    "message": "설정"
+  },
   "settingsGitHubTitle": {
     "message": "GitHub에서 보기"
   },
@@ -5575,6 +5596,12 @@
   },
   "settingsHealthNeedsAttention": {
     "message": "주의 필요"
+  },
+  "settingsHostAccessNeededTpl": {
+    "message": "{name}을(를) 켜려면 사이트 접근 권한이 필요합니다. 다시 시도한 뒤 브라우저 요청을 허용하세요."
+  },
+  "settingsImportAriaTpl": {
+    "message": "{brand} 설정 가져오기"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -5642,6 +5669,9 @@
   "settingsPanelContentControls": {
     "message": "콘텐츠 제어"
   },
+  "settingsRangeSettingFallback": {
+    "message": "범위 설정"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -5680,6 +5710,12 @@
   },
   "settingsSectionAiContent": {
     "message": "AI 콘텐츠"
+  },
+  "settingsSectionAllDisabled": {
+    "message": "이 섹션의 설정을 모두 껐습니다."
+  },
+  "settingsSectionAllEnabled": {
+    "message": "이 섹션의 설정을 모두 켰습니다."
   },
   "settingsSectionAudio": {
     "message": "오디오"
@@ -5860,6 +5896,12 @@
   },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsTextSettingFallback": {
+    "message": "텍스트 설정"
+  },
+  "settingsValueSavedTpl": {
+    "message": "{name}을(를) 저장했습니다."
   },
   "settingsVersionPrefix": {
     "message": "v"

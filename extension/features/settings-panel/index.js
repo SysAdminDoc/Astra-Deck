@@ -3284,14 +3284,14 @@ function buildSettingsPanel() {
             label: t('commonExport', 'Export'),
             icon: 'download',
             variant: 'secondary',
-            ariaLabel: `Export ${BRAND.name} settings`
+            ariaLabel: t('settingsExportAriaTpl', 'Export {brand} settings').replace('{brand}', () => BRAND.name)
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-import',
             label: t('commonImport', 'Import'),
             icon: 'upload',
             variant: 'secondary',
-            ariaLabel: `Import ${BRAND.name} settings`
+            ariaLabel: t('settingsImportAriaTpl', 'Import {brand} settings').replace('{brand}', () => BRAND.name)
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-reset-active-section',
@@ -3822,8 +3822,8 @@ function attachUIEventListeners() {
             if (e.target.closest('#ytkit-export')) {
                 const configString = settingsManager.exportAllSettings();
                 handleFileExport('astra_deck_settings.json', configString);
-                createToast('Settings exported successfully', 'success');
-                setPanelStatus('Settings exported. The download is ready.', 'success');
+                createToast(t('settingsExportedToast', 'Settings exported successfully'), 'success');
+                setPanelStatus(t('settingsExportedStatus', 'Settings exported. The download is ready.'), 'success');
                 const lastExport = doc.getElementById('ytkit-insight-last-export');
                 if (lastExport) lastExport.textContent = t('commonJustNow', 'Just now');
                 return;
@@ -4207,7 +4207,8 @@ function attachUIEventListeners() {
                         // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
-                            : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
+                            : t('settingsHostAccessNeededTpl', '{name} needs host access before it can be enabled. Try again and approve the browser prompt.')
+                                .replace('{name}', () => featureName);
                         showToast(message, '#ef4444', { duration: 6 });
                         setPanelStatus(message, 'error');
                         DebugManager.log('Permissions', `${featureId} enable blocked: ${error?.message || 'host access denied'}`);
@@ -4368,7 +4369,8 @@ function attachUIEventListeners() {
                 }
 
                 updateAllToggleStates();
-                setPanelStatus(`${getFeatureName(feature) || featureId} ${finalEnabled ? 'enabled' : 'disabled'}.`, 'success');
+                setPanelStatus((finalEnabled ? t('spStatusEnabledTpl', '{name} enabled') : t('spStatusDisabledTpl', '{name} disabled'))
+                    .replace('{name}', () => getFeatureName(feature) || featureId), 'success');
             }
 
             // Toggle all
@@ -4414,7 +4416,9 @@ function attachUIEventListeners() {
                         cb.checked = isEnabled;
                         cb.dispatchEvent(new Event('change', { bubbles: true }));
                     });
-                    setPanelStatus(`${isEnabled ? 'Enabled' : 'Disabled'} all settings in this section.`, 'success');
+                    setPanelStatus(isEnabled
+                        ? t('settingsSectionAllEnabled', 'Enabled all settings in this section.')
+                        : t('settingsSectionAllDisabled', 'Disabled all settings in this section.'), 'success');
                 }
             }
         });
@@ -4435,7 +4439,8 @@ function attachUIEventListeners() {
                 const key = feature?.settingKey || featureId;
                 appState.settings[key] = e.target.value;
                 settingsManager.save(appState.settings);
-                setPanelStatus(`${getFeatureName(feature) || 'Text setting'} saved.`, 'success');
+                setPanelStatus(t('settingsValueSavedTpl', '{name} saved.')
+                    .replace('{name}', () => getFeatureName(feature) || t('settingsTextSettingFallback', 'Text setting')), 'success');
                 if (feature) {
                     // Per-feature, like the range and colour handlers below.
                     // The shared `_textareaReinitTimer` meant editing feature
@@ -4486,8 +4491,12 @@ function attachUIEventListeners() {
                     contextValue.textContent = selectedText;
                     contextValue.title = selectedText;
                 }
-                createToast(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}`, 'success');
-                setPanelStatus(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}.`, 'success');
+                const choiceName = getFeatureName(feature) || t('settingsGenericSettingFallback', 'Setting');
+                const choiceChanged = t('settingsChoiceChangedTpl', '{name} changed to {value}.')
+                    .replace('{name}', () => choiceName)
+                    .replace('{value}', () => selectedText);
+                createToast(choiceChanged, 'success');
+                setPanelStatus(choiceChanged, 'success');
             }
             // Range slider — debounce reinit to avoid destroy/init churn during drag
             if (e.target.matches('.ytkit-range')) {
@@ -4499,7 +4508,8 @@ function attachUIEventListeners() {
                 const val = parseFloat(e.target.value);
                 appState.settings[settingKey] = val;
                 settingsManager.save(appState.settings);
-                setPanelStatus(`${getFeatureName(feature) || 'Range setting'} saved.`, 'success');
+                setPanelStatus(t('settingsValueSavedTpl', '{name} saved.')
+                    .replace('{name}', () => getFeatureName(feature) || t('settingsRangeSettingFallback', 'Range setting')), 'success');
                 if (feature) {
                     if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
                     _reinitTimers.set(featureId, setTimeout(() => {
@@ -4522,7 +4532,8 @@ function attachUIEventListeners() {
                 const settingKey = feature?.settingKey || featureId;
                 appState.settings[settingKey] = e.target.value;
                 settingsManager.save(appState.settings);
-                setPanelStatus(`${getFeatureName(feature) || 'Color setting'} updated.`, 'success');
+                setPanelStatus(t('settingsColorUpdatedTpl', '{name} updated.')
+                    .replace('{name}', () => getFeatureName(feature) || t('settingsColorSettingFallback', 'Color setting')), 'success');
                 if (feature) {
                     // Native color dialogs fire `input` continuously while
                     // dragging — debounce the full destroy/init cycle like the

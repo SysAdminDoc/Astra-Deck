@@ -5486,6 +5486,15 @@
   "settingsChangedNone": {
     "message": "Nothing changed"
   },
+  "settingsChoiceChangedTpl": {
+    "message": "{name} : {value}."
+  },
+  "settingsColorSettingFallback": {
+    "message": "Paramètre de couleur"
+  },
+  "settingsColorUpdatedTpl": {
+    "message": "{name} mis à jour."
+  },
   "settingsConflictWithTpl": {
     "message": "entre en conflit avec {featureName}"
   },
@@ -5555,6 +5564,15 @@
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
   },
+  "settingsExportAriaTpl": {
+    "message": "Exporter les paramètres de {brand}"
+  },
+  "settingsExportedStatus": {
+    "message": "Paramètres exportés. Le fichier est prêt."
+  },
+  "settingsExportedToast": {
+    "message": "Paramètres exportés"
+  },
   "settingsFeatureClearAriaTpl": {
     "message": "Effacer {featureName}"
   },
@@ -5567,6 +5585,9 @@
   "settingsFooterSaved": {
     "message": "Enregistré"
   },
+  "settingsGenericSettingFallback": {
+    "message": "Paramètre"
+  },
   "settingsGitHubTitle": {
     "message": "Voir sur GitHub"
   },
@@ -5575,6 +5596,12 @@
   },
   "settingsHealthNeedsAttention": {
     "message": "Attention requise"
+  },
+  "settingsHostAccessNeededTpl": {
+    "message": "{name} a besoin d’accéder au site avant de pouvoir être activé. Réessayez et acceptez la demande du navigateur."
+  },
+  "settingsImportAriaTpl": {
+    "message": "Importer les paramètres de {brand}"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -5642,6 +5669,9 @@
   "settingsPanelContentControls": {
     "message": "Contrôles du contenu"
   },
+  "settingsRangeSettingFallback": {
+    "message": "Paramètre de plage"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -5680,6 +5710,12 @@
   },
   "settingsSectionAiContent": {
     "message": "Contenu IA"
+  },
+  "settingsSectionAllDisabled": {
+    "message": "Tous les paramètres de cette section sont désactivés."
+  },
+  "settingsSectionAllEnabled": {
+    "message": "Tous les paramètres de cette section sont activés."
   },
   "settingsSectionAudio": {
     "message": "Audio"
@@ -5860,6 +5896,12 @@
   },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsTextSettingFallback": {
+    "message": "Paramètre texte"
+  },
+  "settingsValueSavedTpl": {
+    "message": "{name} enregistré."
   },
   "settingsVersionPrefix": {
     "message": "v"

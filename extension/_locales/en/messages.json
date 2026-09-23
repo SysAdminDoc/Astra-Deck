@@ -5495,6 +5495,18 @@
   "settingsChangedNone": {
     "message": "Nothing changed"
   },
+  "settingsChoiceChangedTpl": {
+    "message": "{name} changed to {value}.",
+    "description": "Settings panel status and toast after a choice setting changes"
+  },
+  "settingsColorSettingFallback": {
+    "message": "Color setting",
+    "description": "Fallback name for a colour setting with no label"
+  },
+  "settingsColorUpdatedTpl": {
+    "message": "{name} updated.",
+    "description": "Settings panel status after a colour setting changes"
+  },
   "settingsConflictWithTpl": {
     "message": "conflicts with {featureName}"
   },
@@ -5564,6 +5576,18 @@
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
   },
+  "settingsExportAriaTpl": {
+    "message": "Export {brand} settings",
+    "description": "Settings panel footer: Export button label for screen readers"
+  },
+  "settingsExportedStatus": {
+    "message": "Settings exported. The download is ready.",
+    "description": "Settings panel status line after export"
+  },
+  "settingsExportedToast": {
+    "message": "Settings exported successfully",
+    "description": "Toast after the settings file is exported"
+  },
   "settingsFeatureClearAriaTpl": {
     "message": "Clear {featureName}"
   },
@@ -5576,6 +5600,10 @@
   "settingsFooterSaved": {
     "message": "Saved"
   },
+  "settingsGenericSettingFallback": {
+    "message": "Setting",
+    "description": "Fallback name for a setting with no label"
+  },
   "settingsGitHubTitle": {
     "message": "View on GitHub"
   },
@@ -5584,6 +5612,14 @@
   },
   "settingsHealthNeedsAttention": {
     "message": "Needs attention"
+  },
+  "settingsHostAccessNeededTpl": {
+    "message": "{name} needs host access before it can be enabled. Try again and approve the browser prompt.",
+    "description": "Settings panel status when an optional feature was refused host access"
+  },
+  "settingsImportAriaTpl": {
+    "message": "Import {brand} settings",
+    "description": "Settings panel footer: Import button label for screen readers"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -5651,6 +5687,10 @@
   "settingsPanelContentControls": {
     "message": "Content Controls"
   },
+  "settingsRangeSettingFallback": {
+    "message": "Range setting",
+    "description": "Fallback name for a slider setting with no label"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -5689,6 +5729,14 @@
   },
   "settingsSectionAiContent": {
     "message": "AI content"
+  },
+  "settingsSectionAllDisabled": {
+    "message": "Disabled all settings in this section.",
+    "description": "Settings panel status after disabling every setting in a section"
+  },
+  "settingsSectionAllEnabled": {
+    "message": "Enabled all settings in this section.",
+    "description": "Settings panel status after enabling every setting in a section"
   },
   "settingsSectionAudio": {
     "message": "Audio"
@@ -5869,6 +5917,14 @@
   },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsTextSettingFallback": {
+    "message": "Text setting",
+    "description": "Fallback name for a text setting with no label"
+  },
+  "settingsValueSavedTpl": {
+    "message": "{name} saved.",
+    "description": "Settings panel status after a text or range setting is saved"
   },
   "settingsVersionPrefix": {
     "message": "v"
