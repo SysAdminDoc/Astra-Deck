@@ -6,14 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.90.1] (2026-09-23)
+
 ### Fixed
 
 - **Userscript installs now load the core library that matches them.** The
   v4.90.0 userscript still pointed its `@require` at the v4.89.0 core, so
   everyone on the userscript got a 4.90.0 header running 4.89.0 code, without
   the full-titles fix or the restored settings panel rules. The link now names
-  v4.90.0, and that tag exists. The version check also fails from now on if the
-  two ever disagree again.
+  the version it ships with, and both v4.90.0 and v4.90.1 are tagged. Anyone on
+  4.90.0 picks up the right core with this update. The version check also fails
+  from now on if the two ever disagree again.
 
 - **View counts are in your language now.** Theater Split's header wrote
   "1,234,567 views" in every language, and for live streams it made "watching
