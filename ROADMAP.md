@@ -4,21 +4,21 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P3 — Four more UI strings are English template literals that no gate sees
-  Why: found while localizing the view counts. `extension/ytkit.js` builds each of these with
-  English words around an interpolation, which the UI-copy gate does not inspect:
-  the comment replies count (`repl${n === 1 ? 'y' : 'ies'}`, around line 11566), the
-  heatmap tooltip (`${count} likes`, around 11822), the Reddit result meta line
-  (`pts` and `comments`, around 30506), and the Watch Later bulk status, whose
-  `t('wlwbStatusTpl', ...)` key exists in no catalogue, so every locale gets the English
-  fallback (around 32615).
-  Touches: `extension/ytkit.js`, `extension/_locales/*/messages.json`,
-  `scripts/check-localizable-ui-copy.js`, `tests/`.
-  Acceptance: WHEN the UI locale is not English, those four strings SHALL render from
-  catalogue keys present in all 11 locales; the UI-copy gate SHALL fail on a new template
-  literal at a strict sink whose static text carries a word outside `t()`, and on a `t()`
-  key that no catalogue defines.
-  Complexity: M
+- [ ] P3 — Three more UI strings render English in every locale
+  Why: found while localizing the view counts. `extension/ytkit.js` still builds these with
+  English words around an interpolation: the Comment Enhancements replies count
+  (`repl${n === 1 ? 'y' : 'ies'}`, around line 11566, built in a `return`, which the UI-copy
+  gate cannot see), the comment heat tooltip (`${count} likes`, around 11822) and the Reddit
+  Comments result meta line (`pts` and `comments`, around 30506) with its `(untitled)`
+  fallback. The last two sit at gate sinks but were grandfathered into the ratchet baseline.
+  (Corrected 2026-09-23: this item first listed `wlwbStatusTpl` as missing from the
+  catalogues; it is present and translated in all 11.)
+  Touches: `extension/ytkit.js`, `extension/_locales/*/messages.json`, `tests/`.
+  Acceptance: WHEN the UI locale is not English, the replies count, the heat tooltip and the
+  Reddit meta line and untitled fallback SHALL render from catalogue keys present in all 11
+  locales, with singular and plural counts chosen through `tCount`; the UI-copy baseline
+  SHALL ratchet down by the removed literals.
+  Complexity: S
 
 ## Research-Driven Additions
 
