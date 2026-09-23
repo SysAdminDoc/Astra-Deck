@@ -251,3 +251,99 @@ test('a character class may contain a backtick without tripping the guard', () =
     assert.equal(evaluateModule(stripped), evaluateModule(source),
         'a backtick inside [] is an ordinary pattern, not a misread division');
 });
+
+// CSS compaction used to find stylesheets three ways: a named const, a named
+// `return`, and a backtick scan over an allowlist of eleven modules. A module
+// that grew a new stylesheet was compacted only if someone remembered to list
+// it. It is one parser-driven pass over every module now, and these pin what
+// that pass may and may not touch.
+const tick = String.fromCharCode(96);
+const dollar = String.fromCharCode(36);
+
+test('every bundled module compacts with its CSS intact and still parses', () => {
+    let saved = 0;
+    for (const rel of sync.V5_BUNDLE_MODULES) {
+        const source = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
+        // compactBundledCssTemplates runs the rule-fragment round trip on every
+        // template it rewrites and throws on a loss, so not throwing is the check.
+        const compacted = sync.compactBundledCssTemplates(source, rel);
+        // eslint-disable-next-line no-new-func
+        assert.doesNotThrow(() => new Function(compacted), `${rel} must still parse after compaction`);
+        saved += source.length - compacted.length;
+    }
+    assert.ok(saved > 200_000, `compaction reclaimed only ${saved} B across the bundle`);
+});
+
+test('a stylesheet in a module nothing ever listed is compacted anyway', () => {
+    const source = [
+        'injectStyle(' + tick,
+        '    .brand-new-surface {',
+        '        color: red;',
+        '        margin: 0 auto;',
+        '    }',
+        tick + ');'
+    ].join('\n');
+    assert.equal(
+        sync.compactBundledCssTemplates(source, 'extension/features/not-yet-written/index.js'),
+        'injectStyle(' + tick + '.brand-new-surface{color:red;margin:0 auto}' + tick + ');'
+    );
+});
+
+test('code between two backticks in regex literals is never read as a stylesheet', () => {
+    // A character scan pairs these two backticks and hands the function between
+    // them to the compactor: it has a brace and an `a : b;`, which is all the CSS
+    // shape test asks for. Joining its lines would glue the comment onto the code.
+    const source = [
+        'const open = /' + tick + '/;',
+        'function pick(x, a, b) {',
+        '    // keep: this comment ends here',
+        '    return x ? a : b;',
+        '}',
+        'const close = /' + tick + '/;'
+    ].join('\n');
+    assert.equal(sync.compactBundledCssTemplates(source, 'fixture.js'), source);
+});
+
+test('tagged templates, escapes and JavaScript-looking templates are left alone', () => {
+    const untouched = [
+        // String.raw hands its raw text to a function, so whitespace is data.
+        'const re = String.raw' + tick + '.a {\n    color: red;\n}' + tick + ';',
+        // A backslash in the static text keeps the whole template out of reach.
+        'const glyph = ' + tick + '.a::before {\n    content: "\\\\2014";\n}' + tick + ';',
+        // Braces and `a : b;` again, but this is a script someone ships as text.
+        'const script = ' + tick + '(() => {\n    const v = a ? b : c;\n})();' + tick + ';',
+        'const html = ' + tick + '<style>\n.a { color: red; }\n</style>' + tick + ';'
+    ];
+    for (const source of untouched) {
+        assert.equal(sync.compactBundledCssTemplates(source, 'fixture.js'), source, source);
+    }
+});
+
+test('interpolations come through compaction byte for byte', () => {
+    const source = 'const css = ' + tick + '\n'
+        + '    .a ' + dollar + '{sel} .b {\n'
+        + '        color: ' + dollar + '{ok ? \'x : y\' : \'z\'};\n'
+        + '    }\n' + tick + ';';
+    assert.equal(
+        sync.compactBundledCssTemplates(source, 'fixture.js'),
+        'const css = ' + tick + '.a ' + dollar + '{sel} .b{color:' + dollar + '{ok ? \'x : y\' : \'z\'}}' + tick + ';',
+        'the descendant spaces around an interpolation stay, and the expression is not rewritten'
+    );
+
+    // One inside a CSS comment would be dropped with the comment, which changes
+    // what the code evaluates. The template is skipped instead.
+    const commented = 'const css = ' + tick + '\n/* ' + dollar + '{note} */\n.a {\n    color: red;\n}' + tick + ';';
+    assert.equal(sync.compactBundledCssTemplates(commented, 'fixture.js'), commented);
+});
+
+test('the rule-fragment round trip catches a compactor that loses CSS', () => {
+    const before = '.a {\n    color: red;\n    margin: 0 auto;\n}\n.b .c { top: 0; }';
+    assert.doesNotThrow(() => sync.assertCssSurvives(before, '.a{color:red;margin:0 auto}.b .c{top:0}', 'fixture'));
+    assert.throws(() => sync.assertCssSurvives(before, '.a{color:red}.b .c{top:0}', 'fixture'),
+        /lost 1 rule fragment\(s\) in fixture: "margin:0 auto"/);
+    // Whitespace that means something is not normalised away.
+    assert.throws(() => sync.assertCssSurvives(before, '.a{color:red;margin:0auto}.b .c{top:0}', 'fixture'),
+        /margin:0 auto/);
+    assert.throws(() => sync.assertCssSurvives(before, '.a{color:red;margin:0 auto}.b.c{top:0}', 'fixture'),
+        /\.b \.c/);
+});

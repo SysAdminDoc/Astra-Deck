@@ -17,22 +17,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   pushed so the `@require` URL on `main` returns the matching core.
   Complexity: S
 
-- [ ] P3 — Make CSS-template compaction automatic instead of allowlisted
-  Why: `sync-userscript.js` now has three ways to find a stylesheet (a named const, a
-  named `return`, and a shape scan over an allowlisted module). A module that grows a new
-  inline stylesheet is compacted only if someone remembers to add it, and the cost of
-  forgetting is invisible: the bundle just gets bigger against a hard 2 MiB host cap.
-  Evidence: `COMPACT_INLINE_CSS_MODULES` was added in v4.90.0 covering eleven modules and
-  reclaimed about 25 KB that had never been compacted. The two older name-keyed maps could
-  not reach any of it because the CSS is written as an argument at the call site.
-  Touches: `sync-userscript.js`, `tests/bundle-headroom.test.js`.
-  Acceptance: the shape scan runs over every bundled module rather than an allowlist, with
-  the interpolation and backslash guards kept; a round-trip check asserts every
-  `property: value` pair present in a module's source CSS survives compaction; the three
-  maps collapse to one mechanism; `check:userscript-size` and the headroom floor pass.
-  Complexity: M
-
-
 ## Research-Driven Additions
 
 Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`.

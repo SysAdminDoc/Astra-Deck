@@ -111,6 +111,7 @@
     "crx3": "^2.0.0"
   },
   "devDependencies": {
+    "acorn": "8.16.0",
     "eslint": "^10.9.1",
     "web-ext": "10.7.0",
     "ws": "8.21.3"

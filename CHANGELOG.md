@@ -17,6 +17,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   moved to `scripts/dependency-overrides.json`. None of this ships to users;
   web-ext only lints the Firefox build.
 
+- **Every stylesheet in the userscript core is compacted now, not just the
+  ones on a list.** The build used to find CSS three different ways, and a
+  module that grew a new stylesheet stayed indented until someone remembered
+  to add it. It now parses each bundled module and compacts every template
+  literal shaped like CSS, wherever it lives. A parser matters here because a
+  backtick inside a regex can make a character scan pair up the wrong
+  backticks and treat ordinary code as a stylesheet. After compacting, the
+  build checks that every selector and `property: value` pair from the source
+  is still there, and it stops rather than ship a file that lost one. That
+  check would have caught the v4.90.0 bug that silently dropped 183 settings
+  panel declarations. The core library comes out about 2 KB smaller.
+
 ## [4.90.0] (2026-09-14)
 
 ### Full video titles

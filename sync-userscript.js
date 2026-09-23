@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('fs');
+const acorn = require('acorn');
 const path = require('path');
 const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
 
@@ -116,61 +117,29 @@ const V5_BUNDLE_MODULES = [
 
 const BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
 
-// Greasy Fork caps each script record at 2 MiB. The settings and Theater
-// modules contain large static CSS templates, so preserve their JavaScript
-// while removing source-only indentation from those templates in the
-// generated core library. Joining with a single space keeps CSS descendant
-// combinators and multi-line values intact.
-const COMPACT_CSS_TEMPLATES = new Map([
-    ['extension/core/settings-visual-system.js', [
-        'SETTINGS_VISUAL_SYSTEM_CSS',
-        'SURFACE_VISUAL_SYSTEM_CSS',
-    ]],
-]);
-
-const COMPACT_RETURN_CSS_FUNCTIONS = new Map([
-    ['extension/features/chat-style-comments/index.js', [
-        'buildPremiumCommentsCss',
-        'buildPremiumInteractionCss',
-        'buildSelectorSupportFallbackCss',
-    ]],
-    ['extension/features/sticky-video/index.js', [
-        'buildSplitShellCss',
-        'buildSplitMetaCss',
-        'buildSplitCommentsCss',
-    ]],
-    // These two carry the longest selector lists in the repo: the row feed
-    // layout names six surfaces per rule, and full titles names every renderer
-    // YouTube has ever drawn a video title with. Indented as written they cost
-    // the core bundle more than 9 KB against a 2 MiB host cap.
-    ['extension/features/home-subs-css/index.js', [
-        'buildListFeedLayoutCss',
-        'buildFullTitlesCss',
-    ]],
-]);
+// Greasy Fork caps each script record at 2 MiB, and most of this repo's CSS is
+// written as indented template literals. Every bundled module goes through one
+// pass that finds them: the module is parsed, each untagged template literal
+// whose static text has the shape of a stylesheet is compacted, and nothing is
+// looked up by name. Three mechanisms used to share this job (a named const, a
+// named `return`, and a backtick scan over an allowlist of eleven modules), and
+// a module that grew a new stylesheet was compacted only if someone remembered
+// to list it. Forgetting cost nothing visible; the bundle just got bigger.
+//
+// A parser rather than a character scan because a backtick inside a string or
+// a regex desyncs a scan, and then the text BETWEEN two templates is taken for
+// one. extension/core/ai-summary-artifacts.js reads that way: four spans of
+// JavaScript with ternaries in them pass the CSS shape test, and compacting
+// them would have joined `//` comment lines onto the code after them.
+const CSS_SHAPE = /\{[^{}]*[a-z-]+\s*:\s*[^{}]+;/;
+// Checked on the compacted text, so prose in a CSS comment cannot trip it.
+const NOT_CSS = /=>|\bfunction\b|\breturn\b|\b(?:const|let|var)\s|<[a-zA-Z/!]/;
+// An interpolation is carried through compaction as one opaque token and put
+// back byte for byte, so nothing that reads a runtime value is rewritten.
+const EXPRESSION_MARK = /\x03(\d+)\x04/;
 
 const COMPACT_LINE_COMMENT_MODULES = new Set([
     'extension/core/settings-schema.js',
-]);
-
-// Modules whose CSS is written inline at the call site — `injectStyle(\`...\`)`
-// — rather than as a named template or a static `return`. The two maps above
-// can only find CSS by name, so roughly 20 KB of indented stylesheet in these
-// files reached the bundle untouched. Every template here is matched by shape
-// (a braced block with declarations) and skipped if it interpolates, so a
-// regex source or an HTML fragment in the same file is left alone.
-const COMPACT_INLINE_CSS_MODULES = new Set([
-    'extension/features/player-dock/index.js',
-    'extension/features/digital-wellbeing/index.js',
-    'extension/features/sponsorblock/index.js',
-    'extension/features/subscription-groups/index.js',
-    'extension/features/settings-panel/index.js',
-    'extension/features/sticky-chat/index.js',
-    'extension/features/dearrow/index.js',
-    'extension/features/subtitles/index.js',
-    'extension/features/video-notes/index.js',
-    'extension/features/video-filters/index.js',
-    'extension/features/return-dislike/index.js',
 ]);
 
 function compactCssWhitespace(body) {
@@ -238,96 +207,99 @@ function compactCssWhitespace(body) {
         (_match, literalIndex) => literals[Number(literalIndex)]);
 }
 
-/**
- * Compact every interpolation-free CSS template literal in `source`.
- *
- * Scanning is by shape rather than by name because these stylesheets are
- * arguments at a call site, with no identifier to look them up by. Three
- * conditions have to hold before a template is touched, and all three are
- * about not mangling something that merely looks like CSS:
- *   - no `${`, so nothing that reads a runtime value is rewritten;
- *   - a braced block holding at least one `property: value;` pair;
- *   - no backslash, which keeps regex sources such as text-metrics.js
- *     TOKEN_SOURCE out of reach even if one grew a braced quantifier.
- */
-function compactInlineCssTemplates(source) {
-    let out = '';
-    for (let index = 0; index < source.length;) {
-        const char = source[index];
-        if (char !== '`') {
-            out += char;
-            index += 1;
-            continue;
+function untaggedTemplateLiterals(node, found = []) {
+    if (!node || typeof node.type !== 'string') return found;
+    if (node.type === 'TemplateLiteral') found.push(node);
+    for (const [key, value] of Object.entries(node)) {
+        // A tagged template hands its raw text to a function (String.raw is how
+        // this repo writes regex sources), so its whitespace is data. Its
+        // interpolations are still ordinary code and are walked.
+        if (node.type === 'TaggedTemplateExpression' && key === 'quasi') {
+            value.expressions.forEach((expression) => untaggedTemplateLiterals(expression, found));
+        } else if (Array.isArray(value)) {
+            value.forEach((child) => untaggedTemplateLiterals(child, found));
+        } else if (value && typeof value.type === 'string') {
+            untaggedTemplateLiterals(value, found);
         }
-
-        const start = index;
-        index += 1;
-        let depth = 0;
-        for (; index < source.length; index += 1) {
-            if (source[index] === '\\') { index += 1; continue; }
-            if (source[index] === '$' && source[index + 1] === '{') { depth += 1; index += 1; continue; }
-            if (source[index] === '}' && depth > 0) { depth -= 1; continue; }
-            if (source[index] === '`' && depth === 0) break;
-        }
-        const body = source.slice(start + 1, index);
-        index += 1;
-
-        const interpolates = body.includes('${');
-        const escapes = body.includes('\\');
-        const looksLikeCss = /\{[^{}]*[a-z-]+\s*:\s*[^{}]+;/.test(body) && body.includes('\n');
-        out += looksLikeCss && !interpolates && !escapes
-            ? `\`${compactCssWhitespace(body)}\``
-            : `\`${body}\``;
     }
-    return out;
+    return found;
 }
 
+// Every selector and `property: value` pair in `before` must still be present
+// in `after`, compared with only the whitespace compaction is allowed to drop
+// normalised away. This is deliberately not built on compactCssWhitespace's own
+// masking: the v4.90.0 comment-apostrophe bug lived in that masking and deleted
+// 183 declarations, and a check sharing the code would have shared the bug.
+function cssSegments(text) {
+    return new Set(text.replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .split(/[{};]/)
+        .map((segment) => segment.replace(/\s+/g, ' ')
+            .replace(/\s*,\s*/g, ',')
+            .replace(/:\s+/g, ':')
+            .replace(/\s+!important/g, '!important')
+            .trim())
+        .filter(Boolean));
+}
+
+function assertCssSurvives(before, after, where) {
+    const kept = cssSegments(after);
+    const lost = [...cssSegments(before)].filter((segment) => !kept.has(segment));
+    if (lost.length) {
+        throw new Error(`CSS compaction lost ${lost.length} rule fragment(s) in ${where}: `
+            + lost.slice(0, 3).map((segment) => JSON.stringify(segment)).join(', '));
+    }
+}
+
+/**
+ * Compact every CSS-shaped template literal in `source`, whatever module it
+ * came from. A template is left exactly as written unless all of these hold:
+ *   - it is untagged, and its static text has a braced `property: value;`;
+ *   - its static text has no backslash, which keeps escapes and regex sources
+ *     out of reach, and none of the control characters used as markers here;
+ *   - the compacted text shows none of the markers of JavaScript or HTML;
+ *   - every interpolation comes back out in order (one inside a CSS comment
+ *     would be dropped with the comment, so that template is skipped).
+ * A template that passes all of that and still loses a rule fragment is a bug
+ * in the compactor, and the build stops rather than ship the smaller file.
+ */
 function compactBundledCssTemplates(source, relativePath) {
-    if (COMPACT_INLINE_CSS_MODULES.has(relativePath)) {
-        return compactInlineCssTemplates(source);
-    }
-    const templateNames = COMPACT_CSS_TEMPLATES.get(relativePath) || [];
-    const returnFunctions = COMPACT_RETURN_CSS_FUNCTIONS.get(relativePath) || [];
-    if (templateNames.length === 0 && returnFunctions.length === 0) return source;
-
-    let compacted = source;
-    for (const templateName of templateNames) {
-        const opener = `const ${templateName} = \``;
-        const start = compacted.indexOf(opener);
-        if (start === -1) {
-            throw new Error(`Cannot compact ${relativePath}: ${templateName} is missing`);
-        }
-        const bodyStart = start + opener.length;
-        const end = compacted.indexOf('`;', bodyStart);
-        if (end === -1) {
-            throw new Error(`Cannot compact ${relativePath}: ${templateName} is unterminated`);
-        }
-        const body = compacted.slice(bodyStart, end);
-        const compactBody = compactCssWhitespace(body);
-        compacted = compacted.slice(0, bodyStart) + compactBody + compacted.slice(end);
+    let ast;
+    try {
+        ast = acorn.parse(source, { ecmaVersion: 'latest', sourceType: 'script' });
+    } catch (error) {
+        throw new Error(`Cannot compact ${relativePath}: ${error.message}`);
     }
 
-    for (const functionName of returnFunctions) {
-        const functionStart = compacted.indexOf(`function ${functionName}(`);
-        if (functionStart === -1) {
-            throw new Error(`Cannot compact ${relativePath}: ${functionName} is missing`);
-        }
-        const opener = 'return `';
-        const start = compacted.indexOf(opener, functionStart);
-        if (start === -1) {
-            throw new Error(`Cannot compact ${relativePath}: ${functionName} has no static CSS return`);
-        }
-        const bodyStart = start + opener.length;
-        const end = compacted.indexOf('`;', bodyStart);
-        if (end === -1) {
-            throw new Error(`Cannot compact ${relativePath}: ${functionName} CSS is unterminated`);
-        }
-        const body = compacted.slice(bodyStart, end);
-        compacted = compacted.slice(0, bodyStart)
-            + compactCssWhitespace(body)
-            + compacted.slice(end);
+    const edits = [];
+    for (const node of untaggedTemplateLiterals(ast)) {
+        const raws = node.quasis.map((quasi) => quasi.value.raw);
+        if (raws.some((raw) => /[\\\x01-\x04]/.test(raw))) continue;
+        const staticText = raws
+            .map((raw, index) => (index ? `\x03${index - 1}\x04` : '') + raw)
+            .join('');
+        if (!CSS_SHAPE.test(staticText)) continue;
+
+        const compacted = compactCssWhitespace(staticText);
+        if (NOT_CSS.test(compacted)) continue;
+        const pieces = compacted.split(EXPRESSION_MARK);
+        const quasis = pieces.filter((_piece, index) => index % 2 === 0);
+        const order = pieces.filter((_piece, index) => index % 2 === 1).map(Number);
+        if (quasis.length !== raws.length || order.some((value, index) => value !== index)) continue;
+        // Joining lines can close up `$` and `{`; that would be a new interpolation.
+        if (quasis.some((quasi) => quasi.includes('${'))) continue;
+
+        const line = source.slice(0, node.start).split('\n').length;
+        assertCssSurvives(staticText, compacted, `${relativePath}:${line}`);
+        node.quasis.forEach((quasi, index) => {
+            edits.push({ start: quasi.start, end: quasi.end, text: quasis[index] });
+        });
     }
-    return compacted;
+
+    let compactedSource = source;
+    for (const edit of edits.sort((left, right) => right.start - left.start)) {
+        compactedSource = compactedSource.slice(0, edit.start) + edit.text + compactedSource.slice(edit.end);
+    }
+    return compactedSource;
 }
 
 function compactStandaloneLineComments(source, relativePath) {
@@ -714,6 +686,7 @@ module.exports = {
     V5_BUNDLE_MODULES,
     buildBundleRegion,
     buildCoreLibrarySource,
+    assertCssSurvives,
     compactBundledCssTemplates,
     compactStandaloneLineComments,
     stripSafeLineComments,
