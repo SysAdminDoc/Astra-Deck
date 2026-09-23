@@ -243,12 +243,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 121 | `true` on every entry |
-| `store-safe` | firefox | A | 121 | omitted |
-| `chromium-store` | chromium | B | 120 | `true` on every entry |
-| `chromium-store` | firefox | B | 120 | omitted |
-| `github-full` | chromium | A | 121 | `true` on every entry |
-| `github-full` | firefox | A | 121 | omitted |
+| `store-safe` | chromium | A | 122 | `true` on every entry |
+| `store-safe` | firefox | A | 122 | omitted |
+| `chromium-store` | chromium | B | 121 | `true` on every entry |
+| `chromium-store` | firefox | B | 121 | omitted |
+| `github-full` | chromium | A | 122 | `true` on every entry |
+| `github-full` | firefox | A | 122 | omitted |
 
 #### Resource set A
 
@@ -373,6 +373,7 @@ Entry 2 resource paths:
 - `features/home-subs-css/index.js`
 - `features/chat-style-comments/index.js`
 - `features/sticky-video-styles/index.js`
+- `features/sticky-video-autoscroll/index.js`
 - `features/sticky-video/index.js`
 - `features/sticky-chat/index.js`
 - `features/video-hider/index.js`
@@ -516,6 +517,7 @@ Entry 2 resource paths:
 - `features/home-subs-css/index.js`
 - `features/chat-style-comments/index.js`
 - `features/sticky-video-styles/index.js`
+- `features/sticky-video-autoscroll/index.js`
 - `features/sticky-video/index.js`
 - `features/sticky-chat/index.js`
 - `features/video-hider/index.js`

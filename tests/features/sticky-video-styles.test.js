@@ -85,15 +85,19 @@ test('the controller injects exactly these sheets under the STYLE_IDS ids', () =
 // The extension imports feature modules concurrently, so the controller may
 // load before its parts. It must look them up when the factory is called, and
 // hand back nothing (ytkit.js then uses its descriptor stub) if one never came.
-test('the controller resolves the part at call time, whatever order they loaded in', () => {
-    const read = (rel) => fs.readFileSync(path.join(repoRoot, 'extension', 'features', rel, 'index.js'), 'utf8');
-    // A browser-like global: no module, no require.
+test('the controller resolves every part at call time, whatever order they loaded in', () => {
+    const featuresDir = path.join(repoRoot, 'extension', 'features');
+    const read = (dir) => fs.readFileSync(path.join(featuresDir, dir, 'index.js'), 'utf8');
+    const parts = fs.readdirSync(featuresDir).filter((dir) => dir.startsWith('sticky-video-')).sort();
+    assert.ok(parts.includes('sticky-video-styles'));
+    // A browser-like global: no module, no require. The controller loads first.
     const context = vm.createContext({ YTKitFeatures: {} });
     vm.runInContext(read('sticky-video'), context);
     const create = context.YTKitFeatures.stickyVideo.createStickyVideoFeature;
-    assert.equal(create({}), null, 'with the styles part missing there is nothing to run');
-
-    vm.runInContext(read('sticky-video-styles'), context);
+    for (const dir of parts) {
+        assert.equal(create({}), null, `with ${dir} still missing there is nothing to run`);
+        vm.runInContext(read(dir), context);
+    }
     const feature = create({});
-    assert.equal(feature?.id, 'stickyVideo', 'the same factory works once the part has registered');
+    assert.equal(feature?.id, 'stickyVideo', 'the same factory works once every part has registered');
 });

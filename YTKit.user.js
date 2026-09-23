@@ -174,6 +174,7 @@
     // ── bundled module: extension/features/home-subs-css/index.js ──
     // ── bundled module: extension/features/chat-style-comments/index.js ──
     // ── bundled module: extension/features/sticky-video-styles/index.js ──
+    // ── bundled module: extension/features/sticky-video-autoscroll/index.js ──
     // ── bundled module: extension/features/sticky-video/index.js ──
     // ── bundled module: extension/features/sticky-chat/index.js ──
     // ── bundled module: extension/features/video-hider/index.js ──

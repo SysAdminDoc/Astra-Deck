@@ -15499,201 +15499,11 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // Theater Split's controller: mounting, the divider, expand and collapse,
+    // Theater Split's middle-button autoscroll: holding the middle button over a
+    // `this` is the feature and the autoscroll state lives there.
 
-    const DIVIDER_WIDTH_PX = 8;
-    const DIVIDER_DRAG_THRESHOLD_PX = 4;
-
-    const SPLIT_POSITIONED_STYLE_PROPERTIES = Object.freeze([
-        'position', 'top', 'right', 'width', 'max-width', 'height', 'margin',
-        'overflow-y', 'overflow-x', 'overscroll-behavior-y', 'z-index',
-        'background', 'padding', 'box-sizing', 'visibility', 'pointer-events',
-        'display', 'scrollbar-width', 'scrollbar-color', 'border-radius',
-        'border-bottom'
-    ]);
-
-    function resolveParts() {
-        const registry = globalThis.YTKitFeatures || {};
-        const commonJs = typeof module !== 'undefined' && module.exports && typeof require === 'function';
-        const parts = {
-            styles: registry.stickyVideoStyles
-                || (commonJs ? require('../sticky-video-styles/index.js') : null),
-        };
-        return Object.values(parts).every(Boolean) ? parts : null;
-    }
-
-    function createStickyVideoFeature(deps = {}) {
-        const parts = resolveParts();
-        if (!parts) return null;
-        const { buildSplitShellCss, buildSplitMetaCss, buildSplitCommentsCss } = parts.styles;
-        const {
-            PageTypes = { WATCH: 'watch' },
-            VideoTypeDetector = {
-                refresh() { return 'standard'; },
-                hasChat() { return false; },
-                getChatEl() { return null; }
-            },
-            getVideoId = () => '',
-            _rw = {},
-            getFeatureById = () => null,
-            storageRead = (_key, fallbackValue) => fallbackValue,
-            storageWrite = () => {},
-            DebugManager = { log() {} },
-            checkAllButtons = null,
-            waitForElement = () => {},
-            injectStyle = () => ({ remove() {} }),
-            stripCommentRestyleCss = value => value,
-            addNavigateRule = () => {},
-            removeNavigateRule = () => {},
-            t = (_key, fallback) => fallback
-        } = deps;
-
+    function createStickyVideoAutoscrollMethods() {
         return {
-            id: 'stickyVideo',
-            name: t('feature_stickyVideo_name', 'Theater Split'),
-            description: t('feature_stickyVideo_desc', 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.'),
-            group: 'Watch Page',
-            icon: 'picture-in-picture-2',
-            pages: [PageTypes.WATCH],
-
-            _styleEl: null,
-            _splitMetaStyleEl: null,
-            _splitCommentsStyleEl: null,
-            _isSplit: false,          // right panel is open
-            _isActive: false,         // overlay is mounted
-            _entering: false,
-            _dismissed: false,        // user explicitly closed split — block re-expand until nav
-            _chatObserver: null,      // single observer for late chat frame insertion
-            _lastVideoId: null,
-            _splitWrapper: null,
-            _navRuleId: '_theaterSplit',
-            _wheelHandler: null,
-            _middleMouseHandler: null,
-            _commentSelectionMouseDownHandler: null,
-            _commentSelectionSelectStartHandler: null,
-            _autoscrollState: null,
-            _touchHandler: null,
-            _touchMoveHandler: null,
-            _touchStartY: 0,
-            _rightWheelHandler: null,
-            _rightTouchHandler: null,
-            _rightTouchMoveHandler: null,
-            _rightTouchStartY: 0,
-            _dividerDragCleanup: null,
-            _mastheadDisplay: undefined,
-            _windowResizeHandler: null,
-            _keyHandler: null,
-            _fullscreenHandler: null,
-            _fullscreenHidden: false,
-            _fullscreenOverlayStash: null, // saved visibility for _positionedEls during native fullscreen
-            _playerResizeObs: null,
-            _playerResizeDebounceTimer: null,
-            _chatObserverTimer: null,
-            _scrollToCommentsTimer: null,
-            _scrollToCommentsIdle: null,
-            _expandFallbackTimer: null,
-            _postExpandButtonsTimer: null,
-            _splitActionDock: null,
-            _splitActionDockMoved: null,
-            _splitActionDockObserver: null,
-            _splitActionDockTimer: null,
-            _splitHeaderBar: null,
-            _splitHeaderMovedLogo: null,
-            _splitLiveHeader: null,
-            _splitLiveActionPinned: null,
-            _liveHeaderHeight: 154,
-            _videoType: 'standard',        // 'live' | 'vod' | 'standard'
-            _positionedEls: [],            // elements we CSS-positioned over right panel
-            _playerGeometryStash: [],      // original inline geometry restored after unmount
-            _splitInlineStyleStash: new Map(), // exact YouTube-owned declarations restored after unmount
-            _scrollTarget: null,           // which element receives scroll/wheel handlers
-            _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
-            _destroyed: false,             // blocks zombie mounts after teardown
-
-            _getPlayer()  { return document.querySelector('#player-container'); },
-            _belowCache: null,
-            _belowCacheHref: '',
-            _getBelow() {
-                if (this._belowCache?.isConnected && this._belowCacheHref === location.href) return this._belowCache;
-                this._belowCacheHref = location.href;
-                this._belowCache = document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement;
-                return this._belowCache;
-            },
-            _getChatEl() {
-                const chatEl = VideoTypeDetector.getChatEl();
-                return this._isSplitChatCandidate(chatEl) ? chatEl : null;
-            },
-
-            _isSplitChatCandidate(chatEl) {
-                if (!chatEl || typeof chatEl.hasAttribute !== 'function') return false;
-                if (chatEl.hidden === true || chatEl.hasAttribute('hidden')) return false;
-                if (typeof chatEl.getAttribute === 'function' && chatEl.getAttribute('aria-hidden') === 'true') return false;
-                return true;
-            },
-
-            _hasSplitCommentsSurface(below) {
-                return !!below?.querySelector?.('ytd-comments#comments, ytd-comments, ytd-comments-header-renderer, ytd-comment-thread-renderer');
-            },
-
-            _resolveSplitPanelType(rawType, chatEl, below) {
-                const type = rawType || 'standard';
-                const hasChat = this._isSplitChatCandidate(chatEl);
-                const hasComments = this._hasSplitCommentsSurface(below);
-                const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
-
-                if (type === 'live') {
-                    if (hasChat && !chatCollapsed) return 'live';
-                    return below ? 'standard' : 'live';
-                }
-                if (type === 'vod') {
-                    if (hasChat && !chatCollapsed) return 'vod';
-                    return below ? 'standard' : 'vod';
-                }
-                if (type === 'premiere') {
-                    return hasChat && !hasComments && !chatCollapsed ? 'live' : 'standard';
-                }
-                if (type === 'standard' && hasChat && !hasComments && !chatCollapsed) return 'live';
-                return 'standard';
-            },
-
-            // Nudge YouTube's player to recalculate control bar layout.
-            _triggerPlayerResize() {
-                clearTimeout(this._resizeTimer);
-                this._resizeTimer = setTimeout(() => {
-                    this._resizeTimer = null;
-                    window.dispatchEvent(new Event('resize'));
-                }, 200);
-            },
-
-            _positionOverRight(el, rightPct, topOffset, heightStr) {
-                if (!el) return;
-                this._stashSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
-                if (el.id === 'below') el.classList.add('ytkit-split-scroll-surface');
-                this._setStyles(el, {
-                    position:'fixed', top:topOffset||'0', right:'0',
-                    width:`calc(${rightPct}% - 6px)`, 'max-width':'none',
-                    height:heightStr||'100vh', margin:'0',
-                    'overflow-y':'auto', 'overflow-x':'hidden',
-                    'overscroll-behavior-y':'contain',
-                    'z-index':'10001', background:'var(--ytkit-split-panel)', padding:'0',
-                    'box-sizing':'border-box', visibility:'visible',
-                    'pointer-events':'auto', display:'block',
-                    'scrollbar-width':'thin', 'scrollbar-color':'var(--ytkit-split-scrollbar) transparent'
-                });
-                if (!this._positionedEls.includes(el)) this._positionedEls.push(el);
-            },
-
-            _unpositionEl(el) {
-                if (el?.id === 'below') el.classList.remove('ytkit-split-scroll-surface');
-                this._restoreSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
-            },
-
-            _unpositionAll() {
-                (this._positionedEls || []).forEach(el => this._unpositionEl(el));
-                this._positionedEls = [];
-                this._scrollTarget = null;
-            },
-
             _isSplitScrollable(el) {
                 return !!(el && el.scrollHeight > el.clientHeight + 1);
             },
@@ -15837,6 +15647,218 @@ if (typeof globalThis !== "undefined") {
                 if (state.upHandler) document.removeEventListener('mouseup', state.upHandler, true);
                 if (state.keyHandler) document.removeEventListener('keydown', state.keyHandler, true);
                 if (state.blurHandler) window.removeEventListener('blur', state.blurHandler);
+            },
+        };
+    }
+
+    const api = Object.freeze({ createStickyVideoAutoscrollMethods });
+
+    const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
+    features.stickyVideoAutoscroll = api;
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = api;
+    }
+})();
+//m:1g
+(() => {
+    'use strict';
+
+    // Theater Split's controller: mounting, the divider, expand and collapse,
+
+    const DIVIDER_WIDTH_PX = 8;
+    const DIVIDER_DRAG_THRESHOLD_PX = 4;
+
+    const SPLIT_POSITIONED_STYLE_PROPERTIES = Object.freeze([
+        'position', 'top', 'right', 'width', 'max-width', 'height', 'margin',
+        'overflow-y', 'overflow-x', 'overscroll-behavior-y', 'z-index',
+        'background', 'padding', 'box-sizing', 'visibility', 'pointer-events',
+        'display', 'scrollbar-width', 'scrollbar-color', 'border-radius',
+        'border-bottom'
+    ]);
+
+    function resolveParts() {
+        const registry = globalThis.YTKitFeatures || {};
+        const commonJs = typeof module !== 'undefined' && module.exports && typeof require === 'function';
+        const parts = {
+            autoscroll: registry.stickyVideoAutoscroll
+                || (commonJs ? require('../sticky-video-autoscroll/index.js') : null),
+            styles: registry.stickyVideoStyles
+                || (commonJs ? require('../sticky-video-styles/index.js') : null),
+        };
+        return Object.values(parts).every(Boolean) ? parts : null;
+    }
+
+    function createStickyVideoFeature(deps = {}) {
+        const parts = resolveParts();
+        if (!parts) return null;
+        const { buildSplitShellCss, buildSplitMetaCss, buildSplitCommentsCss } = parts.styles;
+        const {
+            PageTypes = { WATCH: 'watch' },
+            VideoTypeDetector = {
+                refresh() { return 'standard'; },
+                hasChat() { return false; },
+                getChatEl() { return null; }
+            },
+            getVideoId = () => '',
+            _rw = {},
+            getFeatureById = () => null,
+            storageRead = (_key, fallbackValue) => fallbackValue,
+            storageWrite = () => {},
+            DebugManager = { log() {} },
+            checkAllButtons = null,
+            waitForElement = () => {},
+            injectStyle = () => ({ remove() {} }),
+            stripCommentRestyleCss = value => value,
+            addNavigateRule = () => {},
+            removeNavigateRule = () => {},
+            t = (_key, fallback) => fallback
+        } = deps;
+
+        const feature = {
+            id: 'stickyVideo',
+            name: t('feature_stickyVideo_name', 'Theater Split'),
+            description: t('feature_stickyVideo_desc', 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.'),
+            group: 'Watch Page',
+            icon: 'picture-in-picture-2',
+            pages: [PageTypes.WATCH],
+
+            _styleEl: null,
+            _splitMetaStyleEl: null,
+            _splitCommentsStyleEl: null,
+            _isSplit: false,          // right panel is open
+            _isActive: false,         // overlay is mounted
+            _entering: false,
+            _dismissed: false,        // user explicitly closed split — block re-expand until nav
+            _chatObserver: null,      // single observer for late chat frame insertion
+            _lastVideoId: null,
+            _splitWrapper: null,
+            _navRuleId: '_theaterSplit',
+            _wheelHandler: null,
+            _middleMouseHandler: null,
+            _commentSelectionMouseDownHandler: null,
+            _commentSelectionSelectStartHandler: null,
+            _autoscrollState: null,
+            _touchHandler: null,
+            _touchMoveHandler: null,
+            _touchStartY: 0,
+            _rightWheelHandler: null,
+            _rightTouchHandler: null,
+            _rightTouchMoveHandler: null,
+            _rightTouchStartY: 0,
+            _dividerDragCleanup: null,
+            _mastheadDisplay: undefined,
+            _windowResizeHandler: null,
+            _keyHandler: null,
+            _fullscreenHandler: null,
+            _fullscreenHidden: false,
+            _fullscreenOverlayStash: null, // saved visibility for _positionedEls during native fullscreen
+            _playerResizeObs: null,
+            _playerResizeDebounceTimer: null,
+            _chatObserverTimer: null,
+            _scrollToCommentsTimer: null,
+            _scrollToCommentsIdle: null,
+            _expandFallbackTimer: null,
+            _postExpandButtonsTimer: null,
+            _splitActionDock: null,
+            _splitActionDockMoved: null,
+            _splitActionDockObserver: null,
+            _splitActionDockTimer: null,
+            _splitHeaderBar: null,
+            _splitHeaderMovedLogo: null,
+            _splitLiveHeader: null,
+            _splitLiveActionPinned: null,
+            _liveHeaderHeight: 154,
+            _videoType: 'standard',        // 'live' | 'vod' | 'standard'
+            _positionedEls: [],            // elements we CSS-positioned over right panel
+            _playerGeometryStash: [],      // original inline geometry restored after unmount
+            _splitInlineStyleStash: new Map(), // exact YouTube-owned declarations restored after unmount
+            _scrollTarget: null,           // which element receives scroll/wheel handlers
+            _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
+            _destroyed: false,             // blocks zombie mounts after teardown
+
+            _getPlayer()  { return document.querySelector('#player-container'); },
+            _belowCache: null,
+            _belowCacheHref: '',
+            _getBelow() {
+                if (this._belowCache?.isConnected && this._belowCacheHref === location.href) return this._belowCache;
+                this._belowCacheHref = location.href;
+                this._belowCache = document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement;
+                return this._belowCache;
+            },
+            _getChatEl() {
+                const chatEl = VideoTypeDetector.getChatEl();
+                return this._isSplitChatCandidate(chatEl) ? chatEl : null;
+            },
+
+            _isSplitChatCandidate(chatEl) {
+                if (!chatEl || typeof chatEl.hasAttribute !== 'function') return false;
+                if (chatEl.hidden === true || chatEl.hasAttribute('hidden')) return false;
+                if (typeof chatEl.getAttribute === 'function' && chatEl.getAttribute('aria-hidden') === 'true') return false;
+                return true;
+            },
+
+            _hasSplitCommentsSurface(below) {
+                return !!below?.querySelector?.('ytd-comments#comments, ytd-comments, ytd-comments-header-renderer, ytd-comment-thread-renderer');
+            },
+
+            _resolveSplitPanelType(rawType, chatEl, below) {
+                const type = rawType || 'standard';
+                const hasChat = this._isSplitChatCandidate(chatEl);
+                const hasComments = this._hasSplitCommentsSurface(below);
+                const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
+
+                if (type === 'live') {
+                    if (hasChat && !chatCollapsed) return 'live';
+                    return below ? 'standard' : 'live';
+                }
+                if (type === 'vod') {
+                    if (hasChat && !chatCollapsed) return 'vod';
+                    return below ? 'standard' : 'vod';
+                }
+                if (type === 'premiere') {
+                    return hasChat && !hasComments && !chatCollapsed ? 'live' : 'standard';
+                }
+                if (type === 'standard' && hasChat && !hasComments && !chatCollapsed) return 'live';
+                return 'standard';
+            },
+
+            // Nudge YouTube's player to recalculate control bar layout.
+            _triggerPlayerResize() {
+                clearTimeout(this._resizeTimer);
+                this._resizeTimer = setTimeout(() => {
+                    this._resizeTimer = null;
+                    window.dispatchEvent(new Event('resize'));
+                }, 200);
+            },
+
+            _positionOverRight(el, rightPct, topOffset, heightStr) {
+                if (!el) return;
+                this._stashSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
+                if (el.id === 'below') el.classList.add('ytkit-split-scroll-surface');
+                this._setStyles(el, {
+                    position:'fixed', top:topOffset||'0', right:'0',
+                    width:`calc(${rightPct}% - 6px)`, 'max-width':'none',
+                    height:heightStr||'100vh', margin:'0',
+                    'overflow-y':'auto', 'overflow-x':'hidden',
+                    'overscroll-behavior-y':'contain',
+                    'z-index':'10001', background:'var(--ytkit-split-panel)', padding:'0',
+                    'box-sizing':'border-box', visibility:'visible',
+                    'pointer-events':'auto', display:'block',
+                    'scrollbar-width':'thin', 'scrollbar-color':'var(--ytkit-split-scrollbar) transparent'
+                });
+                if (!this._positionedEls.includes(el)) this._positionedEls.push(el);
+            },
+
+            _unpositionEl(el) {
+                if (el?.id === 'below') el.classList.remove('ytkit-split-scroll-surface');
+                this._restoreSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
+            },
+
+            _unpositionAll() {
+                (this._positionedEls || []).forEach(el => this._unpositionEl(el));
+                this._positionedEls = [];
+                this._scrollTarget = null;
             },
 
             _scheduleSplitActionDock(delay = 80) {
@@ -17864,6 +17886,9 @@ if (typeof globalThis !== "undefined") {
                 removeNavigateRule(this._navRuleId);
             }
         };
+        // call goes through `this`, and tests and callers swap methods per
+        return Object.assign(feature,
+            parts.autoscroll.createStickyVideoAutoscrollMethods());
     }
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -17877,7 +17902,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1g
+//m:1h
 (() => {
     'use strict';
 
@@ -18140,7 +18165,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createStickyChatFeature, sanitizeStickyChatLayout };
     }
 })();
-//m:1h
+//m:1i
 (() => {
     'use strict';
 
@@ -21105,7 +21130,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1i
+//m:1j
 (() => {
     'use strict';
 
@@ -21474,7 +21499,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1j
+//m:1k
 (() => {
     'use strict';
 
@@ -24331,7 +24356,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1k
+//m:1l
 (() => {
     'use strict';
 
@@ -24748,7 +24773,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1l
+//m:1m
 (() => {
     'use strict';
 
@@ -28963,7 +28988,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1m
+//m:1n
 (() => {
     'use strict';
 
@@ -29220,7 +29245,7 @@ function attachUIEventListeners() {
         module.exports = api;
     }
 })();
-//m:1n
+//m:1o
 (() => {
     'use strict';
 
@@ -29262,7 +29287,7 @@ function attachUIEventListeners() {
         module.exports = api;
     }
 })();
-//m:1o
+//m:1p
 (() => {
     'use strict';
 
@@ -30140,7 +30165,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1p
+//m:1q
 (() => {
     'use strict';
 
@@ -31149,7 +31174,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1q
+//m:1r
 (() => {
     'use strict';
 
@@ -31691,7 +31716,7 @@ function attachUIEventListeners() {
         module.exports = { createDeArrowFeature };
     }
 })();
-//m:1r
+//m:1s
 (() => {
     'use strict';
 

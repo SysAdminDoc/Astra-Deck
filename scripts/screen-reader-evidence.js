@@ -41,7 +41,8 @@ const COVERED_SURFACES = Object.freeze([
         label: 'Theater Split',
         sources: Object.freeze([
             'extension/features/sticky-video/index.js',
-            'extension/features/sticky-video-styles/index.js'
+            'extension/features/sticky-video-styles/index.js',
+            'extension/features/sticky-video-autoscroll/index.js'
         ])
     }),
     Object.freeze({
