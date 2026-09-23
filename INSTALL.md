@@ -17,7 +17,7 @@ Best if you just want it working in under a minute.
 2. Click the userscript on the
    [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
    (the file ending in **`.user.js`**).
-3. Your userscript manager opens an install tab — click **Install**.
+3. Your userscript manager opens an install tab. Click **Install**.
 4. Open YouTube. Done. It auto-updates when new versions ship.
 
 ---
@@ -37,7 +37,7 @@ Gives you the toolbar popup and every feature.
 
 > **`github-full`** has everything (downloads, optional AI summary, Cobalt
 > fallback). **`store-safe`** is the slimmer build with those extra-permission
-> features removed — use it if you prefer the minimal permission set.
+> features removed. Use it if you'd rather grant the fewest permissions.
 
 ---
 
