@@ -69,9 +69,12 @@
     // (`0:00`, `1:02:03`). Sub-second precision is kept only when it is there,
     // because a handle dragged to 12.000 should read `0:12`, not `0:12.0`.
     function formatSectionTimestamp(seconds) {
-        const total = Math.max(0, Number(seconds) || 0);
-        const whole = Math.floor(total);
-        const fraction = Math.round((total - whole) * 10) / 10;
+        // Round the whole value to tenths first. Rounding the fraction on its
+        // own turned 12.97 into a fraction of 1.0 that printed as nothing, so
+        // the field read 0:12 and the handle jumped back a second.
+        const tenths = Math.round(Math.max(0, Number(seconds) || 0) * 10);
+        const whole = Math.floor(tenths / 10);
+        const fraction = tenths % 10;
         const hours = Math.floor(whole / 3600);
         const minutes = Math.floor((whole % 3600) / 60);
         const rest = whole % 60;
@@ -79,7 +82,7 @@
         const clock = hours > 0
             ? `${hours}:${pad(minutes)}:${pad(rest)}`
             : `${minutes}:${pad(rest)}`;
-        return fraction > 0 ? `${clock}${String(fraction).slice(1)}` : clock;
+        return fraction > 0 ? `${clock}.${fraction}` : clock;
     }
 
     const FORMAT_ESTIMATE_QUALITY_VALUES = Object.freeze([
@@ -372,15 +375,28 @@
         const start = parseSectionTimestampInput(startRaw);
         const end = parseSectionTimestampInput(endRaw);
         if (start === null || end === null) {
-            return { section: null, error: 'Enter both clip times as seconds, MM:SS, or HH:MM:SS.' };
+            return { section: null, error: 'Enter both clip times as seconds, MM:SS, or HH:MM:SS.', errorKey: 'dlPopupClipFormat' };
         }
         if (end <= start) {
-            return { section: null, error: 'Clip end must be later than its start.' };
+            return { section: null, error: 'Clip end must be later than its start.', errorKey: 'dlPopupClipInvalid' };
         }
-        if (end - start < 0.1) {
-            return { section: null, error: 'Clip must be at least 0.1 seconds long.' };
+        // Whole milliseconds: 10.1 - 10 is 0.0999... in floating point, so the
+        // 0.1 s clip the handles pin to was refused on send.
+        if (Math.round((end - start) * 1000) < 100) {
+            return { section: null, error: 'Clip must be at least 0.1 seconds long.', errorKey: 'dlPopupClipTooShort' };
         }
         return { section: { start, end }, error: '' };
+    }
+
+    // A range that covers the whole video is not a clip. End on the end handle,
+    // Home on the start one or an edge drag fills both fields that way, and
+    // sending it made the companion re-encode the full file to produce the
+    // same download.
+    function effectiveClipSection(section, duration) {
+        if (!section) return null;
+        const length = Number(duration);
+        if (length > 0 && section.start <= 0.05 && section.end >= length - 0.05) return null;
+        return section;
     }
 
     // A 426 carries its own explanation in the body; extensionFetchJson throws
@@ -519,7 +535,12 @@
         // element is the fallback for a page where the response has not landed.
         function readClipDuration() {
             const details = getPlayerResponseGlobal()?.videoDetails;
-            const declared = Number(details?.lengthSeconds);
+            // After an in-page navigation the inline player response still
+            // describes the first video of the tab, so a 3-minute video's
+            // length scaled the track of a 2-hour one and clamped typed times.
+            const currentId = getVideoId();
+            const sameVideo = !details?.videoId || !currentId || details.videoId === currentId;
+            const declared = sameVideo ? Number(details?.lengthSeconds) : NaN;
             if (Number.isFinite(declared) && declared > 0) return declared;
             const media = getMainVideoElement();
             const measured = Number(media?.duration);
@@ -729,6 +750,12 @@
             const media = getMainVideoElement();
             if (media && typeof media.addEventListener === 'function') {
                 const syncPlayhead = () => {
+                    // The popup is rebuilt on every open; a listener left on
+                    // the video kept each closed one alive.
+                    if (track.isConnected === false) {
+                        media.removeEventListener?.('timeupdate', syncPlayhead);
+                        return;
+                    }
                     const at = Number(media.currentTime);
                     if (!Number.isFinite(at) || duration <= 0) return;
                     playhead.hidden = false;
@@ -956,7 +983,11 @@
                             method: 'GET',
                             url: 'http://127.0.0.1:' + port + '/health',
                             headers,
-                            timeout: 1500
+                            timeout: 1500,
+                            // A stopped companion refuses at once; backing off
+                            // 1+2+4 s on each of six ports held every recovery
+                            // button on "Checking..." for minutes.
+                            retry: false
                         });
                         if (this._isAstraDownloaderHealth(data)) return data;
                         // Something answered /health here but it is NOT Astra
@@ -1753,7 +1784,17 @@
                     }
                     if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                         stopPolling();
-                        const failureReason = data.error || t('dlProgressFailureDefault', 'Astra Downloader failed');
+                        // A companion that names the cause gets the mapped copy
+                        // and its own next step. Matching words in its English
+                        // text sent sign-in, network and runtime failures to the
+                        // "cannot reach the downloader" repair prompt while the
+                        // downloader was answering. Older companions send no
+                        // code, and only they fall back to the text.
+                        const mapped = (data.error_code || data.errorCode) ? classifyDownloaderFailureResponse(data) : null;
+                        const failureReason = mapped
+                            ? `${mapped.message} ${mapped.advice}`
+                            : (data.error || t('dlProgressFailureDefault', 'Astra Downloader failed'));
+                        if (mapped) DiagnosticLog?.record?.('download-failure', `${mapped.code}: ${mapped.detail}`);
                         DiagnosticLog?.record?.('download-outcome', `${data.status}: ${failureReason.slice(0, 200)}`);
                         fill.classList.remove('is-success');
                         fill.classList.add('is-error');
@@ -1761,7 +1802,9 @@
                         pct.textContent = t('dlProgressStateFailed', 'Failed');
                         spd.textContent = '';
                         eta.textContent = '';
-                        const needsRepair = /cookie|yt-dlp|unauthorized|local downloader|astra downloader/i.test(failureReason);
+                        const needsRepair = mapped
+                            ? DOWNLOADER_REPAIR_CODES.has(mapped.code)
+                            : /cookie|yt-dlp|unauthorized|local downloader|astra downloader/i.test(failureReason);
                         setProgressState('error', t('dlProgressStateNeedsAttention', 'Needs Attention'), failureReason, needsRepair);
                         showToast(failureReason, '#ef4444', { duration: 6 });
                         if (needsRepair) {
@@ -1849,6 +1892,11 @@
             } catch (_) {
                 recordCookieHandoffDiagnostic('disclosure-storage-failed');
             }
+        }
+
+        function _isDownloadRequestTimeout(error) {
+            return !!error?.isTimeout
+                || String(error?.message || '').toLowerCase().includes('extension request timed out');
         }
 
         function _isDownloaderConnectionError(error) {
@@ -1958,6 +2006,10 @@
             },
         });
 
+        // Failures the repair prompt (setup, start, check again) can fix. Every
+        // other code has its own advice and a downloader that is answering.
+        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'client-api-too-old', 'companion-api-too-new']);
+
         function classifyDownloaderFailureResponse(resp = {}) {
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
             const code = String(rawCode || 'download-failed');
@@ -2063,6 +2115,14 @@
                 await _mediaDLSendDownload(videoUrl, audioOnly, mdl.token, opts);
             } catch (e) {
                 let finalError = e;
+                // A timeout is not a refusal. The companion probes the video
+                // inside this request, so it may have queued the job and only
+                // answered late; restarting and resending queued a second copy.
+                if (_isDownloadRequestTimeout(e)) {
+                    DebugManager.log('Download', 'Download request timed out; not resending');
+                    showToast(t('toastDlTimedOut', 'Astra Downloader took too long to answer. The download may already be queued, so check the downloader before trying again.'), '#f59e0b', { duration: 7 });
+                    return;
+                }
                 if (_isDownloaderConnectionError(e)) {
                     DebugManager.log('Download', 'Local downloader request failed; attempting one server restart');
                     showToast(t('toastDlStopped', 'Astra Downloader stopped. Starting it again…'), '#3b82f6', { duration: 4 });
@@ -2108,7 +2168,10 @@
                             'X-Auth-Token': token
                         }),
                         data: JSON.stringify(payload),
-                        timeout: 5000
+                        // The companion runs a yt-dlp size probe before it
+                        // answers, which routinely took longer than 5 s and
+                        // turned a queued download into an apparent failure.
+                        timeout: 30000
                     });
                     DebugManager.log('MediaDL', `Download response: ${response.status} - ${response.responseText}`);
                     // An empty or non-JSON 2xx body yields a null resp. Reading
@@ -2133,6 +2196,16 @@
                         // the thing that is out of date.
                         MediaDLManager._apiMismatch = mismatch;
                         showDownloaderFailure(mismatch);
+                        return;
+                    }
+                    // The companion answered: a refusal (runtime missing, disk
+                    // full, queue full) with its own error body, or a reply we
+                    // could not read. Neither means it is unreachable, and the
+                    // connection handler would restart it, send the download
+                    // again and offer a repair prompt for a running service.
+                    const status = Number(error?.response?.status) || 0;
+                    if (status >= 400 || (status >= 200 && status < 300)) {
+                        showDownloaderFailure(error?.data && typeof error.data === 'object' ? error.data : {});
                         return;
                     }
                     throw error;
@@ -2853,16 +2926,17 @@
                 if (customDir) opts.outputDir = customDir;
                 const clip = normalizeSectionInput(clipStartInput.value, clipEndInput.value);
                 if (clip.error) {
-                    const message = t('dlPopupClipInvalid', clip.error);
+                    const message = t(clip.errorKey || 'dlPopupClipInvalid', clip.error);
                     clipStartInput.setCustomValidity(message);
                     clipEndInput.setCustomValidity(message);
                     (clipStartInput.value.trim() ? clipEndInput : clipStartInput).reportValidity();
                     return;
                 }
-                if (clip.section) opts.section = clip.section;
+                const section = effectiveClipSection(clip.section, readClipDuration());
+                if (section) opts.section = section;
                 let requestUrl = openedUrl;
                 if (playlistSelection instanceof Set) {
-                    if (clip.section) {
+                    if (opts.section) {
                         showToast(
                             t('dlPopupPlaylistClipConflict', 'Choose either a clip range or playlist items.'),
                             '#f59e0b'
@@ -4009,6 +4083,9 @@
             createFormatEstimateStore,
             appendDownloadPlaylistList,
             renderDownloadPlaylistItems,
+            normalizeSectionInput,
+            formatSectionTimestamp,
+            effectiveClipSection,
             DOWNLOAD_HEALTH_SCHEMA_VERSION,
             AUTO_START_RETRY_BUDGET
         };

@@ -1074,6 +1074,10 @@
   "dlPopupClipEndPlaceholder": {
     "message": "End · 1:30"
   },
+  "dlPopupClipFormat": {
+    "message": "Enter both clip times as seconds, MM:SS, or HH:MM:SS.",
+    "description": "Download popup: a clip time could not be read"
+  },
   "dlPopupClipHint": {
     "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
   },
@@ -1088,6 +1092,10 @@
   },
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
+  },
+  "dlPopupClipTooShort": {
+    "message": "Clip must be at least 0.1 seconds long.",
+    "description": "Download popup: the clip range is shorter than the minimum"
   },
   "dlPopupCtaAudio": {
     "message": "Download audio"
@@ -7436,6 +7444,10 @@
   },
   "toastDlStopped": {
     "message": "Astra Downloader stopped. Starting it again…"
+  },
+  "toastDlTimedOut": {
+    "message": "Astra Downloader took too long to answer. The download may already be queued, so check the downloader before trying again.",
+    "description": "Toast when the download request to Astra Downloader timed out; the job may already be queued"
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck cannot save to this browser profile. Recent changes may be lost."

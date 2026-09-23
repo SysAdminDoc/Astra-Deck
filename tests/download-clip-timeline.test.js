@@ -307,3 +307,94 @@ test('an hour-long video reads in hours, not in minutes past sixty', () => {
     fire(view.startInput, 'input', {});
     assert.equal(view.handle('start').style.left, '75%');
 });
+
+// ── Edge cases a 2026-09-23 audit found ─────────────────────────────────
+
+const { normalizeSectionInput, formatSectionTimestamp, effectiveClipSection } = require('../extension/features/download-ui');
+
+test('a time a hair under the next second reads as that second', () => {
+    // Rounding only the fraction turned 12.97 into a 1.0 that printed as
+    // nothing: the field read 0:12 and the handle jumped back a second.
+    assert.equal(formatSectionTimestamp(12.97), '0:13');
+    assert.equal(formatSectionTimestamp(59.96), '1:00');
+    assert.equal(formatSectionTimestamp(3599.99), '1:00:00');
+    assert.equal(formatSectionTimestamp(12.34), '0:12.3');
+});
+
+test('the shortest clip the handles allow is accepted on send', () => {
+    // 10.1 - 10 is 0.0999... in floating point.
+    assert.deepEqual(normalizeSectionInput('0:10', '0:10.1'), { section: { start: 10, end: 10.1 }, error: '' });
+    assert.deepEqual(normalizeSectionInput('3:59.9', '4:00'), { section: { start: 239.9, end: 240 }, error: '' });
+    assert.equal(normalizeSectionInput('0:10', '0:10.05').errorKey, 'dlPopupClipTooShort');
+});
+
+test('each clip error names its own problem', () => {
+    // One key used to carry all three, so a too-short clip was told to put
+    // its end after its start.
+    assert.equal(normalizeSectionInput('abc', '0:10').errorKey, 'dlPopupClipFormat');
+    assert.equal(normalizeSectionInput('0:20', '0:10').errorKey, 'dlPopupClipInvalid');
+    assert.equal(normalizeSectionInput('0:10', '0:10.05').errorKey, 'dlPopupClipTooShort');
+});
+
+test('a range covering the whole video downloads the video, not a clip', () => {
+    assert.equal(effectiveClipSection({ start: 0, end: 600 }, 600), null);
+    assert.equal(effectiveClipSection({ start: 0.04, end: 599.96 }, 600), null);
+    assert.deepEqual(effectiveClipSection({ start: 0, end: 300 }, 600), { start: 0, end: 300 });
+    assert.deepEqual(effectiveClipSection({ start: 0, end: 600 }, 0), { start: 0, end: 600 },
+        'with no known length there is nothing to compare against');
+});
+
+test('after an in-page navigation the track is scaled to the video on screen', () => {
+    // The inline player response still describes the tab's first video.
+    const originalWindow = globalThis.window;
+    const documentRef = fakeTreeDocument(() => null);
+    const createElement = documentRef.createElement.bind(documentRef);
+    documentRef.createElement = (tag) => {
+        const node = createElement(tag);
+        node.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, bottom: 26, right: 300, height: 26 });
+        node.replaceChildren = () => { node.children.length = 0; };
+        node.scrollIntoView = () => {};
+        node.focus = () => {};
+        node.setPointerCapture = () => {};
+        return node;
+    };
+    documentRef.getElementById = () => null;
+    globalThis.document = documentRef;
+    globalThis.window = { location: { href: 'https://www.youtube.com/watch?v=BBBBBBBBBBB' }, innerWidth: 1280, innerHeight: 900,
+        addEventListener() {}, removeEventListener() {}, getComputedStyle: () => ({ getPropertyValue: () => '' }) };
+    try {
+        const feature = createDownloadUIFeature({
+            getVideoId: () => 'BBBBBBBBBBB',
+            isWatchPagePath: () => true,
+            supportsPopover: () => false,
+            getPlayerResponseGlobal: () => ({ videoDetails: { videoId: 'AAAAAAAAAAA', lengthSeconds: '180' } }),
+            getMainVideoElement: () => ({ currentTime: 0, duration: 7200, addEventListener() {} }),
+            setTimeoutFn: () => 0, clearTimeoutFn: () => {}, setIntervalFn: () => 0, clearIntervalFn: () => {},
+            t: (_key, fallback) => fallback
+        });
+        feature.downloadFormatEstimates.probe = async () => ({ status: 'error', error: 'stubbed' });
+        const anchor = fakeNode({ tag: 'button', attributes: { class: 'ytkit-po-dl' } });
+        anchor.getBoundingClientRect = () => ({ top: 400, bottom: 424, left: 600, width: 40 });
+        anchor.focus = () => {};
+        feature.showDownloadPopup(anchor);
+        const popup = documentRef.body.children[documentRef.body.children.length - 1];
+        const all = [];
+        (function walk(node) { all.push(node); for (const child of node.children || []) walk(child); })(popup);
+        const track = all.find((node) => String(node.className).split(/\s+/).includes('ytkit-dl-popup__clip-track'));
+        const endHandle = (track.children || []).find((node) => node.dataset?.handle === 'end');
+        assert.equal(endHandle.getAttribute('aria-valuemax'), '7200', 'the track spans the two-hour video, not the first one');
+    } finally {
+        globalThis.window = originalWindow;
+    }
+});
+
+test('the playhead stops listening once its popup is gone', () => {
+    const view = openPopup({ currentTime: 30 });
+    const removed = [];
+    view.media.removeEventListener = (type, callback) => removed.push({ type, callback });
+    const [sync] = view.media.listeners.get('timeupdate');
+    view.track.isConnected = false;
+    sync();
+    assert.deepEqual(removed.map((entry) => entry.type), ['timeupdate']);
+    assert.equal(removed[0].callback, sync);
+});

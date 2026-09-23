@@ -1070,6 +1070,9 @@
   "dlPopupClipEndPlaceholder": {
     "message": "End · 1:30"
   },
+  "dlPopupClipFormat": {
+    "message": "Укажите оба времени клипа в секундах или в формате ММ:СС либо ЧЧ:ММ:СС."
+  },
   "dlPopupClipHint": {
     "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
   },
@@ -1084,6 +1087,9 @@
   },
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
+  },
+  "dlPopupClipTooShort": {
+    "message": "Клип должен длиться не меньше 0,1 секунды."
   },
   "dlPopupCtaAudio": {
     "message": "Скачать аудио"
@@ -7403,6 +7409,9 @@
   },
   "toastDlStopped": {
     "message": "Astra Downloader остановлен. Запуск повторно…"
+  },
+  "toastDlTimedOut": {
+    "message": "Astra Downloader слишком долго не отвечал. Загрузка, возможно, уже в очереди, поэтому проверьте загрузчик, прежде чем пробовать снова."
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck не может сохранить данные в этом профиле браузера. Недавние изменения могут быть потеряны."

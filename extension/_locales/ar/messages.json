@@ -1070,6 +1070,9 @@
   "dlPopupClipEndPlaceholder": {
     "message": "End · 1:30"
   },
+  "dlPopupClipFormat": {
+    "message": "أدخل وقتي المقطع بالثواني أو بصيغة MM:SS أو HH:MM:SS."
+  },
   "dlPopupClipHint": {
     "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
   },
@@ -1084,6 +1087,9 @@
   },
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
+  },
+  "dlPopupClipTooShort": {
+    "message": "يجب ألا يقل طول المقطع عن 0.1 ثانية."
   },
   "dlPopupCtaAudio": {
     "message": "تنزيل الصوت"
@@ -7403,6 +7409,9 @@
   },
   "toastDlStopped": {
     "message": "توقف Astra Downloader. جارٍ إعادة تشغيله…"
+  },
+  "toastDlTimedOut": {
+    "message": "استغرق Astra Downloader وقتًا طويلًا للرد. ربما أُضيف التنزيل إلى القائمة بالفعل، لذا تحقّق من برنامج التنزيل قبل المحاولة مرة أخرى."
   },
   "toastStorageWriteFailed": {
     "message": "تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة."

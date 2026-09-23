@@ -762,7 +762,9 @@ test('downloadUI playlist chooser uses the preview endpoint and canonical subset
     // dead end whose only escape was reopening the popup.
     assert.match(source, /if \(playlistSelection\.size\) \{/);
     assert.doesNotMatch(source, /Select at least one playlist item/);
-    assert.match(source, /if \(clip\.section\)/);
+    // The conflict is with the section actually sent: a range covering the
+    // whole video is not a clip, and must not block a playlist choice.
+    assert.match(source, /if \(opts\.section\)/);
 });
 
 test('downloadUI renders the playlist chooser into its row with real checkbox controls', () => {

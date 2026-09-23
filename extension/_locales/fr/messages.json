@@ -1070,6 +1070,9 @@
   "dlPopupClipEndPlaceholder": {
     "message": "End · 1:30"
   },
+  "dlPopupClipFormat": {
+    "message": "Saisissez les deux temps de l’extrait en secondes, en MM:SS ou en HH:MM:SS."
+  },
   "dlPopupClipHint": {
     "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
   },
@@ -1084,6 +1087,9 @@
   },
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
+  },
+  "dlPopupClipTooShort": {
+    "message": "L’extrait doit durer au moins 0,1 seconde."
   },
   "dlPopupCtaAudio": {
     "message": "Télécharger l'audio"
@@ -7403,6 +7409,9 @@
   },
   "toastDlStopped": {
     "message": "Astra Downloader arrêté. Redémarrage en cours..."
+  },
+  "toastDlTimedOut": {
+    "message": "Astra Downloader a mis trop de temps à répondre. Le téléchargement est peut-être déjà en file d’attente, vérifiez le téléchargeur avant de réessayer."
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck ne peut pas enregistrer dans ce profil de navigateur. Les modifications récentes risquent d’être perdues."

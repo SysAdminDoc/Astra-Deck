@@ -1070,6 +1070,9 @@
   "dlPopupClipEndPlaceholder": {
     "message": "End · 1:30"
   },
+  "dlPopupClipFormat": {
+    "message": "请以秒、MM:SS 或 HH:MM:SS 格式输入剪辑的开始和结束时间。"
+  },
   "dlPopupClipHint": {
     "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
   },
@@ -1084,6 +1087,9 @@
   },
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
+  },
+  "dlPopupClipTooShort": {
+    "message": "剪辑长度至少为 0.1 秒。"
   },
   "dlPopupCtaAudio": {
     "message": "下载音频"
@@ -7403,6 +7409,9 @@
   },
   "toastDlStopped": {
     "message": "本地下载器已停止。正在重新启动…"
+  },
+  "toastDlTimedOut": {
+    "message": "Astra Downloader 响应时间过长。下载可能已经在队列中，请先检查下载器再重试。"
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。"

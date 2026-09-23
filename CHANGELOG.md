@@ -15,6 +15,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   so do the export toast, the host-access message and the Export and Import
   button labels.
 
+- **One click on Download queues one download.** When Astra Downloader took
+  longer than five seconds to answer (it checks the video's size before it
+  replies), the extension sent the request again, up to seven more times, and
+  every copy became its own download. A late answer is now treated as "this
+  may already be queued" instead of "the service stopped", and the request
+  gets 30 seconds.
+- When Astra Downloader is not running, Start service and Check again now
+  answer in seconds. They used to spin for several minutes, retrying each of
+  its six ports with growing waits.
+- A download the companion refuses (a missing runtime, a full disk, a busy
+  queue) now says why, instead of claiming Astra Deck cannot reach the
+  downloader and restarting it. Failed downloads only offer the repair prompt
+  when a repair is what they need.
+- The clip timeline fixes: it now shows where you are in the video and uses
+  the video's real length after you move between videos; a clip of the
+  minimum 0.1 seconds is accepted; a time like 12.97 s reads 0:13 instead of
+  0:12; each clip mistake gets its own message; and a range covering the whole
+  video downloads the video instead of re-encoding it as a "clip".
 - SponsorBlock tells screen readers what it skipped in your language now,
   category names included. It used to say "Skipped sponsor segment." in
   English whatever language you ran.

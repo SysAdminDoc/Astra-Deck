@@ -643,9 +643,19 @@
         });
     }
 
+    // Methods safe to send twice; see extensionRequestWithRetry.
+    const IDEMPOTENT_REQUEST_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
     async function extensionRequestWithRetry(details, { retries = 3, baseDelayMs = 1000 } = {}) {
         const signal = details?.signal;
         _throwIfRequestAborted(signal);
+        // Only a request that can be sent twice safely is retried on an outcome
+        // we cannot see (a timeout or dropped connection may have been
+        // processed). A POST /download that timed out while the companion
+        // probed the video was resent up to three more times, and each copy
+        // queued another download. A non-idempotent request is retried only
+        // when the server says it did nothing: 429 or 503.
+        const idempotent = IDEMPOTENT_REQUEST_METHODS.has(String(details?.method || 'GET').toUpperCase());
         let lastErr;
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
@@ -653,8 +663,9 @@
                 const resp = await extensionRequestAsync(details);
                 _throwIfRequestAborted(signal);
                 const st = resp?.status;
-                // Retry on 5xx / 429. Return on everything else.
-                if (st && (st === 429 || (st >= 500 && st < 600)) && attempt < retries) {
+                const retryable = st === 429 || (idempotent ? (st >= 500 && st < 600) : st === 503);
+                // Retry on 5xx / 429 (429 / 503 for a non-idempotent request). Return on everything else.
+                if (st && retryable && attempt < retries) {
                     lastErr = new Error('HTTP ' + st);
                     // Server-provided Retry-After wins over the exponential
                     // schedule when present and reasonable; otherwise fall back
@@ -669,7 +680,7 @@
             } catch (e) {
                 lastErr = e;
                 if (e?.name === 'AbortError') throw e;
-                if (attempt >= retries) break;
+                if (!idempotent || attempt >= retries) break;
                 await _waitForRequestRetry(baseDelayMs * Math.pow(2, attempt), signal);
             }
         }
@@ -819,14 +830,18 @@
     });
 
     async function extensionFetchJson(details) {
+        // `retry: false` opts one request out of backoff: a loopback probe that
+        // is refused will be refused again, and waiting 7 s per port only
+        // stalls the caller. The flag is not forwarded.
+        const { retry, ...rest } = details || {};
         const req = {
-            ...details,
+            ...rest,
             headers: {
                 Accept: 'application/json',
                 ...(details?.headers || {})
             }
         };
-        const useRetry = appState?.settings?.apiRetryBackoff !== false;
+        const useRetry = retry !== false && appState?.settings?.apiRetryBackoff !== false;
         const response = useRetry
             ? await extensionRequestWithRetry(req)
             : await extensionRequestAsync(req);
@@ -5750,6 +5765,8 @@ const STORAGE_KEYS = Object.freeze({
         createCloseWatcher,
         destroyCloseWatcher,
         getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+        // The clip track's playhead and its duration fallback read the video.
+        getMainVideoElement,
         })
         : createUnavailableDownloadUIFeature();
     const _elementZapper = typeof globalThis.YTKitFeatures?.createElementZapperFeature === 'function'

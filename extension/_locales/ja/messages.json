@@ -1070,6 +1070,9 @@
   "dlPopupClipEndPlaceholder": {
     "message": "End · 1:30"
   },
+  "dlPopupClipFormat": {
+    "message": "クリップの開始と終了を、秒数、MM:SS、または HH:MM:SS で入力してください。"
+  },
   "dlPopupClipHint": {
     "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
   },
@@ -1084,6 +1087,9 @@
   },
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
+  },
+  "dlPopupClipTooShort": {
+    "message": "クリップは 0.1 秒以上にしてください。"
   },
   "dlPopupCtaAudio": {
     "message": "音声をダウンロード"
@@ -7403,6 +7409,9 @@
   },
   "toastDlStopped": {
     "message": "Astra Downloader が停止しました。再起動中…"
+  },
+  "toastDlTimedOut": {
+    "message": "Astra Downloader の応答に時間がかかりすぎました。ダウンロードはすでにキューに入っている可能性があります。再試行する前にダウンローダーを確認してください。"
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck はこのブラウザー プロファイルに保存できません。最近の変更が失われる可能性があります。"
