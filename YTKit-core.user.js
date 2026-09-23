@@ -28475,7 +28475,11 @@ function attachUIEventListeners() {
                 const feature = getFeatureById(featureId);
 
                 const settingKey = feature?.settingKey || featureId;
-                const newValue = e.target.value;
+                const rawValue = e.target.value;
+                const newValue = typeof settingsManager.defaults?.[settingKey] === 'number'
+                    && rawValue.trim() !== '' && Number.isFinite(Number(rawValue))
+                    ? Number(rawValue)
+                    : rawValue;
 
                 appState.settings[settingKey] = newValue;
                 settingsManager.save(appState.settings);

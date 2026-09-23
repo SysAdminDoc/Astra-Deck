@@ -579,3 +579,81 @@ test('the live status line reports a toggle in the active locale', async () => {
         globalThis.document = originalDocument;
     }
 });
+
+// Option values are strings. The panel stored them as-is, so picking 1.5x in
+// Persistent Speed wrote "1.5" into a number setting; the schema refused it,
+// export quietly reset it to 1, and the popup listed it as "Unrecognized".
+test('a choice for a number setting is saved as a number', async () => {
+    const events = new Map();
+    const appState = { settings: {} };
+    const saved = [];
+    const features = {
+        persistentSpeed: { id: 'persistentSpeed', type: 'select', settingKey: 'persistentSpeedValue', name: 'Speed' },
+        playerTheme: { id: 'playerTheme', type: 'select', name: 'Theme' }
+    };
+    const selectFor = (featureId, value) => {
+        const card = { dataset: { featureId } };
+        return {
+            value,
+            selectedIndex: 0,
+            options: [{ text: String(value) }],
+            matches: (selector) => selector === '.ytkit-select',
+            closest: (selector) => (selector === '[data-feature-id]' ? card : null)
+        };
+    };
+    const panel = { contains: () => true };
+    const originalDocument = globalThis.document;
+    globalThis.document = {
+        body: { classList: { contains: () => true, toggle() {} } },
+        documentElement: { classList: { toggle() {} }, style: {} },
+        activeElement: null,
+        getElementById: (id) => (id === 'ytkit-settings-panel' ? panel : null),
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener(type, handler) { events.set(type, handler); },
+        removeEventListener() {}
+    };
+    try {
+        const api = loadModule().createSettingsPanelRuntime({
+            PANEL_OPEN_CLASS,
+            CONFLICT_MAP: {},
+            appState,
+            DebugManager: { log() {} },
+            StorageManager: { get: (_key, fallback) => fallback, set() {}, setSync: async () => ({ ok: true }) },
+            shouldBuildPrimaryUI: () => true,
+            buildSettingsPanel: () => panel,
+            createToast() {},
+            injectStyle: () => ({ remove() {} }),
+            isBooleanFeature: () => false,
+            getFeatureById: (id) => features[id],
+            getFeatureName: (feature) => feature?.name,
+            getFeatureDescription: () => '',
+            getFocusableUiElements: () => [],
+            liveFeatureList: [],
+            requestFeatureOptionalHosts: async () => true,
+            safeInitFeature() {},
+            safeDestroyFeature() {},
+            initFeatureLifecycle() {},
+            destroyFeatureLifecycle() {},
+            settingsManager: {
+                defaults: { persistentSpeedValue: 1, playerTheme: 'dark' },
+                save(nextSettings) {
+                    saved.push({ ...nextSettings });
+                    return Promise.resolve({ ok: true, settings: { ...nextSettings } });
+                }
+            },
+            showToast() {},
+            t: (_key, fallback) => fallback
+        });
+        api.attachUIEventListeners();
+        await events.get('input')({ target: selectFor('persistentSpeed', '1.5') });
+        assert.strictEqual(appState.settings.persistentSpeedValue, 1.5);
+        assert.strictEqual(saved.at(-1).persistentSpeedValue, 1.5);
+        await events.get('input')({ target: selectFor('playerTheme', 'light') });
+        assert.strictEqual(appState.settings.playerTheme, 'light', 'a text choice stays text');
+        await events.get('input')({ target: selectFor('playerTheme', '2') });
+        assert.strictEqual(appState.settings.playerTheme, '2', 'even one that looks like a number');
+    } finally {
+        globalThis.document = originalDocument;
+    }
+});

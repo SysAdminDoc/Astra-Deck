@@ -4468,7 +4468,14 @@ function attachUIEventListeners() {
 
                 // Use settingKey if specified, otherwise use featureId
                 const settingKey = feature?.settingKey || featureId;
-                const newValue = e.target.value;
+                // Option values are strings. A number setting (speed, rotation,
+                // videos per row) stored as one fails the schema: export reset
+                // it to the default and the popup showed "Unrecognized: 1.5".
+                const rawValue = e.target.value;
+                const newValue = typeof settingsManager.defaults?.[settingKey] === 'number'
+                    && rawValue.trim() !== '' && Number.isFinite(Number(rawValue))
+                    ? Number(rawValue)
+                    : rawValue;
 
                 appState.settings[settingKey] = newValue;
                 settingsManager.save(appState.settings);

@@ -27,6 +27,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   "Clear the store" for you to press once you've seen the file.
 - The side panel no longer steals focus from the setting you're on when a
   YouTube tab loads in the background or you switch tabs in another window.
+- Picking a speed, a rotation or a videos-per-row count in the settings panel
+  saves a number again. It was saved as text, which the settings check
+  refuses, so the next export quietly put it back to the default and the
+  popup listed it as "Unrecognized".
 
 - **The settings panel confirms your changes in your language.** Every toggle,
   text box, slider, colour and choice wrote its confirmation into the panel's
