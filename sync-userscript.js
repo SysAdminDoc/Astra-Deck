@@ -102,6 +102,7 @@ const V5_BUNDLE_MODULES = [
     'extension/features/chat-style-comments/index.js',
     'extension/features/sticky-video-styles/index.js',
     'extension/features/sticky-video-autoscroll/index.js',
+    'extension/features/sticky-video-chat/index.js',
     'extension/features/sticky-video/index.js',
     'extension/features/sticky-chat/index.js',
     'extension/features/video-hider/index.js',

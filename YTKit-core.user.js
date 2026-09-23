@@ -15664,6 +15664,143 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // Theater Split's live chat placement: find the chat frame (now or when it
+    // object, so `this` is the feature and the chat observer state lives there.
+
+    function createStickyVideoChatMethods(deps = {}) {
+        const { VideoTypeDetector, DebugManager } = deps;
+        return {
+            _forceChatFill(chatEl) {
+                if (!chatEl) return;
+                const fill = {width:'100%',height:'100%'};
+                const showHide = chatEl.querySelector('#show-hide-button');
+                const container = chatEl.querySelector('#container');
+                const frame = chatEl.querySelector('iframe');
+                this._stashSplitInlineStyles(showHide, ['display']);
+                this._stashSplitInlineStyles(container, ['width','height','max-height','min-height','border-radius']);
+                this._stashSplitInlineStyles(frame, ['width','height','min-height','border','border-radius']);
+                this._setStyles(showHide, {display:'none'});
+                this._setStyles(container, {...fill,'max-height':'none','min-height':'0','border-radius':'0'});
+                this._setStyles(frame, {...fill,'min-height':'0',border:'none','border-radius':'0'});
+            },
+            _restoreChatFill(chatEl) {
+                if (!chatEl) return;
+                this._restoreSplitInlineStyles(chatEl.querySelector('#show-hide-button'), ['display']);
+                this._restoreSplitInlineStyles(chatEl.querySelector('#container'), ['width','height','max-height','min-height','border-radius']);
+                this._restoreSplitInlineStyles(chatEl.querySelector('iframe'), ['width','height','min-height','border','border-radius']);
+            },
+
+            _setupChat(chatEl, rightPct, top, height) {
+                if (!chatEl) { this._waitForChat(rightPct, top, height); return; }
+                this._positionChat(chatEl, rightPct, top, height);
+            },
+
+            _positionChat(chatEl, rightPct, top, height) {
+                this._positionOverRight(chatEl, rightPct, top, height);
+                chatEl.removeAttribute('collapsed');
+                this._setStyles(chatEl, {width:`calc(${rightPct}% - 2px)`,padding:'0 8px 0 0','border-radius':'0'});
+                this._forceChatFill(chatEl);
+            },
+
+            _prepareSecondaryForChat() {
+                const sec = document.querySelector('#secondary');
+                if (!sec) return;
+                this._stashSplitInlineStyles(sec, ['display', 'pointer-events']);
+                sec.style.setProperty('display', 'block', 'important');
+                sec.style.setProperty('pointer-events', 'none', 'important');
+                sec.dataset.ytkitSplitHidden = '1';
+                const related = sec.querySelector('#related');
+                if (related) {
+                    this._stashSplitInlineStyles(related, ['display']);
+                    related.dataset.ytkitSplitHidden = '1';
+                    related.style.display = 'none';
+                }
+            },
+
+            _stopChatObserver() {
+                clearTimeout(this._chatObserverTimer);
+                this._chatObserverTimer = null;
+                this._chatObserver?.disconnect();
+                this._chatObserver = null;
+            },
+
+            _handleChatFound(chatEl, options = {}) {
+                if (!chatEl || !this._isActive) return;
+                const detectedType = VideoTypeDetector.refresh();
+                const below = this._getBelow();
+                const resolvedType = this._resolveSplitPanelType(detectedType, chatEl, below);
+                this._videoType = resolvedType;
+                if (resolvedType === 'live' || resolvedType === 'vod') {
+                    this._prepareSecondaryForChat();
+                } else {
+                    DebugManager.log('Theater', `Late chat ignored, using ${resolvedType} comments panel`);
+                    return;
+                }
+                if (!options.position || !this._isSplit) {
+                    DebugManager.log('Theater', `Late chat detected, reclassified as ${this._videoType}`);
+                    return;
+                }
+
+                let chatTop = options.topOffset;
+                let chatHeight = options.heightStr;
+                if (this._videoType === 'live') {
+                    const liveHeaderTop = this._ensureSplitLiveHeader(options.rightPct);
+                    chatTop = `${liveHeaderTop}px`;
+                    chatHeight = `calc(100vh - ${liveHeaderTop}px)`;
+                }
+                this._positionChat(chatEl, options.rightPct, chatTop, chatHeight);
+                if (!this._scrollTarget) this._scrollTarget = chatEl;
+                if (this._videoType === 'vod') {
+                    this._stashSplitInlineStyles(chatEl, ['border-bottom']);
+                    chatEl.style.setProperty('border-bottom', '2px solid var(--ytkit-split-border)', 'important');
+                    const below = this._getBelow();
+                    if (below && parseFloat(below.style.getPropertyValue('top')) === 0) {
+                        below.style.setProperty('top', '45vh', 'important');
+                        below.style.setProperty('height', '55vh', 'important');
+                    }
+                }
+                DebugManager.log('Theater', 'Late chat frame found and positioned');
+            },
+
+            _watchForChat(options = {}) {
+                this._stopChatObserver();
+                const existing = this._getChatEl();
+                if (existing) { this._handleChatFound(existing, options); return; }
+                this._chatObserver = new MutationObserver(() => {
+                    const chatEl = this._getChatEl();
+                    if (!chatEl) return;
+                    this._stopChatObserver();
+                    this._handleChatFound(chatEl, options);
+                });
+                this._chatObserver.observe(document.body, { childList: true, subtree: true });
+                this._chatObserverTimer = setTimeout(() => this._stopChatObserver(), options.timeoutMs || 10000);
+            },
+
+            _waitForChat(rightPct, topOffset, heightStr) {
+                this._watchForChat({
+                    position: true,
+                    rightPct,
+                    topOffset,
+                    heightStr,
+                    timeoutMs: 10000
+                });
+            },
+        };
+    }
+
+    const api = Object.freeze({ createStickyVideoChatMethods });
+
+    const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
+    features.stickyVideoChat = api;
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = api;
+    }
+})();
+//m:1h
+(() => {
+    'use strict';
+
     // Theater Split's controller: mounting, the divider, expand and collapse,
 
     const DIVIDER_WIDTH_PX = 8;
@@ -15681,6 +15818,8 @@ if (typeof globalThis !== "undefined") {
         const registry = globalThis.YTKitFeatures || {};
         const commonJs = typeof module !== 'undefined' && module.exports && typeof require === 'function';
         const parts = {
+            chat: registry.stickyVideoChat
+                || (commonJs ? require('../sticky-video-chat/index.js') : null),
             autoscroll: registry.stickyVideoAutoscroll
                 || (commonJs ? require('../sticky-video-autoscroll/index.js') : null),
             styles: registry.stickyVideoStyles
@@ -16834,122 +16973,6 @@ if (typeof globalThis !== "undefined") {
                 }
             },
 
-            _forceChatFill(chatEl) {
-                if (!chatEl) return;
-                const fill = {width:'100%',height:'100%'};
-                const showHide = chatEl.querySelector('#show-hide-button');
-                const container = chatEl.querySelector('#container');
-                const frame = chatEl.querySelector('iframe');
-                this._stashSplitInlineStyles(showHide, ['display']);
-                this._stashSplitInlineStyles(container, ['width','height','max-height','min-height','border-radius']);
-                this._stashSplitInlineStyles(frame, ['width','height','min-height','border','border-radius']);
-                this._setStyles(showHide, {display:'none'});
-                this._setStyles(container, {...fill,'max-height':'none','min-height':'0','border-radius':'0'});
-                this._setStyles(frame, {...fill,'min-height':'0',border:'none','border-radius':'0'});
-            },
-            _restoreChatFill(chatEl) {
-                if (!chatEl) return;
-                this._restoreSplitInlineStyles(chatEl.querySelector('#show-hide-button'), ['display']);
-                this._restoreSplitInlineStyles(chatEl.querySelector('#container'), ['width','height','max-height','min-height','border-radius']);
-                this._restoreSplitInlineStyles(chatEl.querySelector('iframe'), ['width','height','min-height','border','border-radius']);
-            },
-
-            _setupChat(chatEl, rightPct, top, height) {
-                if (!chatEl) { this._waitForChat(rightPct, top, height); return; }
-                this._positionChat(chatEl, rightPct, top, height);
-            },
-
-            _positionChat(chatEl, rightPct, top, height) {
-                this._positionOverRight(chatEl, rightPct, top, height);
-                chatEl.removeAttribute('collapsed');
-                this._setStyles(chatEl, {width:`calc(${rightPct}% - 2px)`,padding:'0 8px 0 0','border-radius':'0'});
-                this._forceChatFill(chatEl);
-            },
-
-            _prepareSecondaryForChat() {
-                const sec = document.querySelector('#secondary');
-                if (!sec) return;
-                this._stashSplitInlineStyles(sec, ['display', 'pointer-events']);
-                sec.style.setProperty('display', 'block', 'important');
-                sec.style.setProperty('pointer-events', 'none', 'important');
-                sec.dataset.ytkitSplitHidden = '1';
-                const related = sec.querySelector('#related');
-                if (related) {
-                    this._stashSplitInlineStyles(related, ['display']);
-                    related.dataset.ytkitSplitHidden = '1';
-                    related.style.display = 'none';
-                }
-            },
-
-            _stopChatObserver() {
-                clearTimeout(this._chatObserverTimer);
-                this._chatObserverTimer = null;
-                this._chatObserver?.disconnect();
-                this._chatObserver = null;
-            },
-
-            _handleChatFound(chatEl, options = {}) {
-                if (!chatEl || !this._isActive) return;
-                const detectedType = VideoTypeDetector.refresh();
-                const below = this._getBelow();
-                const resolvedType = this._resolveSplitPanelType(detectedType, chatEl, below);
-                this._videoType = resolvedType;
-                if (resolvedType === 'live' || resolvedType === 'vod') {
-                    this._prepareSecondaryForChat();
-                } else {
-                    DebugManager.log('Theater', `Late chat ignored, using ${resolvedType} comments panel`);
-                    return;
-                }
-                if (!options.position || !this._isSplit) {
-                    DebugManager.log('Theater', `Late chat detected, reclassified as ${this._videoType}`);
-                    return;
-                }
-
-                let chatTop = options.topOffset;
-                let chatHeight = options.heightStr;
-                if (this._videoType === 'live') {
-                    const liveHeaderTop = this._ensureSplitLiveHeader(options.rightPct);
-                    chatTop = `${liveHeaderTop}px`;
-                    chatHeight = `calc(100vh - ${liveHeaderTop}px)`;
-                }
-                this._positionChat(chatEl, options.rightPct, chatTop, chatHeight);
-                if (!this._scrollTarget) this._scrollTarget = chatEl;
-                if (this._videoType === 'vod') {
-                    this._stashSplitInlineStyles(chatEl, ['border-bottom']);
-                    chatEl.style.setProperty('border-bottom', '2px solid var(--ytkit-split-border)', 'important');
-                    const below = this._getBelow();
-                    if (below && parseFloat(below.style.getPropertyValue('top')) === 0) {
-                        below.style.setProperty('top', '45vh', 'important');
-                        below.style.setProperty('height', '55vh', 'important');
-                    }
-                }
-                DebugManager.log('Theater', 'Late chat frame found and positioned');
-            },
-
-            _watchForChat(options = {}) {
-                this._stopChatObserver();
-                const existing = this._getChatEl();
-                if (existing) { this._handleChatFound(existing, options); return; }
-                this._chatObserver = new MutationObserver(() => {
-                    const chatEl = this._getChatEl();
-                    if (!chatEl) return;
-                    this._stopChatObserver();
-                    this._handleChatFound(chatEl, options);
-                });
-                this._chatObserver.observe(document.body, { childList: true, subtree: true });
-                this._chatObserverTimer = setTimeout(() => this._stopChatObserver(), options.timeoutMs || 10000);
-            },
-
-            _waitForChat(rightPct, topOffset, heightStr) {
-                this._watchForChat({
-                    position: true,
-                    rightPct,
-                    topOffset,
-                    heightStr,
-                    timeoutMs: 10000
-                });
-            },
-
             _buildOverlay() {
                 const wrapper = document.createElement('div');
                 wrapper.id = 'ytkit-split-wrapper';
@@ -17888,7 +17911,8 @@ if (typeof globalThis !== "undefined") {
         };
         // call goes through `this`, and tests and callers swap methods per
         return Object.assign(feature,
-            parts.autoscroll.createStickyVideoAutoscrollMethods());
+            parts.autoscroll.createStickyVideoAutoscrollMethods(),
+            parts.chat.createStickyVideoChatMethods({ VideoTypeDetector, DebugManager }));
     }
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -17902,7 +17926,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1h
+//m:1i
 (() => {
     'use strict';
 
@@ -18165,7 +18189,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createStickyChatFeature, sanitizeStickyChatLayout };
     }
 })();
-//m:1i
+//m:1j
 (() => {
     'use strict';
 
@@ -21130,7 +21154,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1j
+//m:1k
 (() => {
     'use strict';
 
@@ -21499,7 +21523,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1k
+//m:1l
 (() => {
     'use strict';
 
@@ -24356,7 +24380,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1l
+//m:1m
 (() => {
     'use strict';
 
@@ -24773,7 +24797,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1m
+//m:1n
 (() => {
     'use strict';
 
@@ -28988,7 +29012,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1n
+//m:1o
 (() => {
     'use strict';
 
@@ -29245,7 +29269,7 @@ function attachUIEventListeners() {
         module.exports = api;
     }
 })();
-//m:1o
+//m:1p
 (() => {
     'use strict';
 
@@ -29287,7 +29311,7 @@ function attachUIEventListeners() {
         module.exports = api;
     }
 })();
-//m:1p
+//m:1q
 (() => {
     'use strict';
 
@@ -30165,7 +30189,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1q
+//m:1r
 (() => {
     'use strict';
 
@@ -31174,7 +31198,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1r
+//m:1s
 (() => {
     'use strict';
 
@@ -31716,7 +31740,7 @@ function attachUIEventListeners() {
         module.exports = { createDeArrowFeature };
     }
 })();
-//m:1s
+//m:1t
 (() => {
     'use strict';
 
