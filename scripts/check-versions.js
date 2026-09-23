@@ -100,7 +100,9 @@ function findUserscriptCoreRequireDrift(productVersion, source) {
     const expected = coreRequireUrl(productVersion);
     const headerEnd = source.indexOf('// ==/UserScript==');
     const header = headerEnd === -1 ? '' : source.slice(0, headerEnd);
-    const found = [...header.matchAll(/^\/\/ @require\s+(\S+)/gm)].map((match) => match[1]);
+    // Userscript managers read `//`, any whitespace, then the key, so a tab or
+    // a doubled space still declares a @require.
+    const found = [...header.matchAll(/^\/\/\s*@require\s+(\S+)/gm)].map((match) => match[1]);
     return found.length === 1 && found[0] === expected ? null : { expected, found };
 }
 

@@ -144,6 +144,11 @@ test('the main userscript @require loads the core of its own version', () => {
         [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
         'a second core @require would load two cores'
     );
+    const tabbed = header(coreRequireUrl('4.90.0')).replace('// ==/UserScript==',
+        `//\t@require\t${coreRequireUrl('4.89.0')}\n// ==/UserScript==`);
+    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', tabbed).found,
+        [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
+        'a tab after // still declares a @require');
 
     const committed = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
     assert.equal(findUserscriptCoreRequireDrift(pkg.version, committed), null,
