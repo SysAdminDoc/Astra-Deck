@@ -5243,6 +5243,42 @@
   "resultsVisibleTpl": {
     "message": "{count} matching"
   },
+  "sbSkipCategory_filler": {
+    "message": "filler tangent",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "interaction reminder",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_intro": {
+    "message": "intro",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "non-music section",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_outro": {
+    "message": "outro",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_preview": {
+    "message": "preview or recap",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "self promotion",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "sponsor",
+    "description": "SponsorBlock category name in the skip announcement"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "Skipped {category} segment.",
+    "description": "Screen-reader announcement after SponsorBlock skips a segment; {category} is one of the sbSkipCategory_ names"
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "This setting only applies when GitHub-Full Profile is enabled."
   },

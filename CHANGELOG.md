@@ -15,6 +15,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   so do the export toast, the host-access message and the Export and Import
   button labels.
 
+- SponsorBlock tells screen readers what it skipped in your language now,
+  category names included. It used to say "Skipped sponsor segment." in
+  English whatever language you ran.
+
 ## [4.90.1] (2026-09-23)
 
 ### Fixed

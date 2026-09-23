@@ -5234,6 +5234,33 @@
   "resultsVisibleTpl": {
     "message": "{count} 个匹配项"
   },
+  "sbSkipCategory_filler": {
+    "message": "题外话"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "互动提醒"
+  },
+  "sbSkipCategory_intro": {
+    "message": "片头"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "非音乐片段"
+  },
+  "sbSkipCategory_outro": {
+    "message": "片尾"
+  },
+  "sbSkipCategory_preview": {
+    "message": "预告或回顾"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "自我推广"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "赞助"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "已跳过：{category}"
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "此设置仅在启用 GitHub-Full 配置档时生效。"
   },

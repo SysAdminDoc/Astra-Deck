@@ -36,8 +36,39 @@ test('SponsorBlock skip path announces via aria-live with a human-friendly categ
     const region = block.slice(idx, idx + 3500);
     assert.match(region, /announceA11y\(/,
         'SponsorBlock skip must announce via announceA11y');
-    assert.match(region, /Skipped \$\{label\}/,
+    assert.match(region, /t\('sbSkippedAnnounceTpl', 'Skipped \{category\} segment\.'\)/,
         'SponsorBlock announcement must use a human-friendly category label, not the raw category id');
+    assert.match(region, /t\('sbSkipCategory_selfpromo', 'self promotion'\)/,
+        'the richer v3.23.0 category names stay, now through the catalogue');
+});
+
+// The announcement is what a screen-reader user hears instead of a toast, on
+// every skip. It was English in every locale; it reads the catalogue now.
+test('a skip announces the category in the active locale', () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const german = JSON.parse(require('node:fs').readFileSync(require('node:path').join(
+        __dirname, '..', '..', 'extension', '_locales', 'de', 'messages.json'), 'utf8'));
+    const skip = (t, category) => {
+        const announced = [];
+        const video = { paused: false, currentTime: 2 };
+        const feature = createSponsorBlockFeature({
+            appState: { settings: { [`sbCat_${category}`]: true } },
+            getMainVideoElement: () => video,
+            announceA11y: (message) => announced.push(message),
+            ...(t ? { t } : {})
+        });
+        feature._segments = [{ segment: [1, 10], category, actionType: 'skip' }];
+        feature._getEnabledCategories = () => [category];
+        feature._scheduleNextSkip = () => {};
+        feature._checkSkip();
+        assert.equal(video.currentTime, 10, 'the segment is skipped');
+        return announced;
+    };
+    assert.deepEqual(skip(null, 'selfpromo'), ['Skipped self promotion segment.']);
+    assert.deepEqual(skip((key, fallback) => german[key]?.message ?? fallback, 'selfpromo'),
+        ['Abschnitt übersprungen: Eigenwerbung.']);
+    assert.deepEqual(skip(null, 'exclusive_access'), ['Skipped exclusive access segment.'],
+        'a category with no name falls back to its id, spaced');
 });
 
 test('SponsorBlock anti-adblock diagnostic records a string, not [object Object]', () => {

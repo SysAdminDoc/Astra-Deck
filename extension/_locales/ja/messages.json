@@ -5234,6 +5234,33 @@
   "resultsVisibleTpl": {
     "message": "{count} 件が一致"
   },
+  "sbSkipCategory_filler": {
+    "message": "本題から外れた部分"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "高評価や登録の呼びかけ"
+  },
+  "sbSkipCategory_intro": {
+    "message": "イントロ"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "音楽以外の部分"
+  },
+  "sbSkipCategory_outro": {
+    "message": "エンディング"
+  },
+  "sbSkipCategory_preview": {
+    "message": "予告・振り返り"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "自己宣伝"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "スポンサー"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "スキップしました: {category}"
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "この設定は GitHub-Full プロファイルが有効な場合にのみ適用されます。"
   },

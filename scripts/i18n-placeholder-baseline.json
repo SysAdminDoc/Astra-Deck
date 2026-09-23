@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "referenceLocale": "en",
-  "referenceKeys": 2999,
+  "referenceKeys": 3008,
   "locales": {
     "ar": 906,
     "de": 906,
-    "es": 912,
-    "fr": 913,
-    "it": 916,
+    "es": 913,
+    "fr": 916,
+    "it": 919,
     "ja": 895,
     "ko": 899,
     "pt_BR": 912,

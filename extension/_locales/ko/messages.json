@@ -5234,6 +5234,33 @@
   "resultsVisibleTpl": {
     "message": "{count}개 일치"
   },
+  "sbSkipCategory_filler": {
+    "message": "잡담"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "참여 유도"
+  },
+  "sbSkipCategory_intro": {
+    "message": "인트로"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "음악이 아닌 구간"
+  },
+  "sbSkipCategory_outro": {
+    "message": "아웃트로"
+  },
+  "sbSkipCategory_preview": {
+    "message": "미리보기 또는 요약"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "자기 홍보"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "스폰서"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "건너뛴 구간: {category}"
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "이 설정은 GitHub-Full 프로필이 활성화된 경우에만 적용됩니다."
   },

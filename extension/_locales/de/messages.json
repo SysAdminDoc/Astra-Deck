@@ -5234,6 +5234,33 @@
   "resultsVisibleTpl": {
     "message": "{count} Treffer"
   },
+  "sbSkipCategory_filler": {
+    "message": "Abschweifung"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "Interaktionserinnerung"
+  },
+  "sbSkipCategory_intro": {
+    "message": "Intro"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "Teil ohne Musik"
+  },
+  "sbSkipCategory_outro": {
+    "message": "Outro"
+  },
+  "sbSkipCategory_preview": {
+    "message": "Vorschau oder Rückblick"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "Eigenwerbung"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "Sponsor"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "Abschnitt übersprungen: {category}."
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "Diese Einstellung gilt nur, wenn das GitHub-Full-Profil aktiviert ist."
   },

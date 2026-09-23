@@ -540,18 +540,20 @@
                         // are human-friendly via the SB label map but fall back
                         // to the raw category id.
                         try {
+                            // Functions, so only the matched name is looked up.
                             const labels = {
-                                sponsor: 'sponsor',
-                                selfpromo: 'self promotion',
-                                interaction: 'interaction reminder',
-                                intro: 'intro',
-                                outro: 'outro',
-                                preview: 'preview or recap',
-                                music_offtopic: 'non-music section',
-                                filler: 'filler tangent',
+                                sponsor: () => t('sbSkipCategory_sponsor', 'sponsor'),
+                                selfpromo: () => t('sbSkipCategory_selfpromo', 'self promotion'),
+                                interaction: () => t('sbSkipCategory_interaction', 'interaction reminder'),
+                                intro: () => t('sbSkipCategory_intro', 'intro'),
+                                outro: () => t('sbSkipCategory_outro', 'outro'),
+                                preview: () => t('sbSkipCategory_preview', 'preview or recap'),
+                                music_offtopic: () => t('sbSkipCategory_music_offtopic', 'non-music section'),
+                                filler: () => t('sbSkipCategory_filler', 'filler tangent'),
                             };
-                            const label = labels[seg.category] || seg.category.replace(/_/g, ' ');
-                            announceA11y(`Skipped ${label} segment.`);
+                            const label = labels[seg.category]?.() || seg.category.replace(/_/g, ' ');
+                            announceA11y(t('sbSkippedAnnounceTpl', 'Skipped {category} segment.')
+                                .replace('{category}', () => label));
                         } catch (_) {
                             // reason: announcement is best-effort
                         }

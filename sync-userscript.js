@@ -530,14 +530,70 @@ function skipRegexLiteral(line, from) {
 // Shrink a module only if the result still parses as the same kind of source.
 function shrinkModuleBody(body, relativePath) {
     const stripped = stripSafeLineComments(body);
-    if (stripped.length >= body.length) return body;
+    if (stripped.length >= body.length) return stripCommentsByParser(body, relativePath);
     try {
         new Function(stripped);
     } catch (_) {
         console.warn('[sync-userscript] kept comments in ' + relativePath + ': stripping did not re-parse');
-        return body;
+        return stripCommentsByParser(body, relativePath);
     }
-    return stripped;
+    return stripCommentsByParser(stripped, relativePath);
+}
+
+function codeTokens(source) {
+    const tokens = [];
+    for (const token of acorn.tokenizer(source, { ecmaVersion: 'latest', sourceType: 'script' })) {
+        tokens.push(token.type.label + '\u0000' + String(token.value));
+    }
+    return tokens;
+}
+
+// The scanner above keeps any comment line that carries a quote, a backtick or
+// an interpolation, because it cannot be sure the line is not template data;
+// about 31 KB of comments shipped that way. acorn reports exactly the comments
+// the engine sees, so every one of them goes here: a whole-line comment with
+// its line, a trailing one with the spaces before it, and an inline block
+// comment as one space, so no two tokens can join up. The result has to
+// tokenize exactly like the input or the sync stops.
+function stripCommentsByParser(body, relativePath) {
+    const comments = [];
+    acorn.parse(body, {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+        onComment: (block, _text, start, end) => comments.push({ block, start, end })
+    });
+    if (!comments.length) return body;
+
+    let out = '';
+    let cursor = 0;
+    for (const comment of comments) {
+        if (comment.start < cursor) continue;
+        const lineStart = body.lastIndexOf('\n', comment.start - 1) + 1;
+        const newline = body.indexOf('\n', comment.end);
+        const lineEnd = newline === -1 ? body.length : newline;
+        const wholeLine = lineStart >= cursor
+            && !body.slice(lineStart, comment.start).trim()
+            && !body.slice(comment.end, lineEnd).trim();
+        if (wholeLine) {
+            out += body.slice(cursor, lineStart);
+            cursor = newline === -1 ? body.length : newline + 1;
+        } else if (comment.block) {
+            out += body.slice(cursor, comment.start) + ' ';
+            cursor = comment.end;
+        } else {
+            out += body.slice(cursor, comment.start).replace(/[ \t]+$/, '');
+            cursor = comment.end;
+        }
+    }
+    out += body.slice(cursor);
+
+    const before = codeTokens(body);
+    const after = codeTokens(out);
+    const at = before.findIndex((token, index) => token !== after[index]);
+    if (at !== -1 || before.length !== after.length) {
+        throw new Error(`Comment stripping changed the code of ${relativePath} at token ${at === -1 ? before.length : at}`);
+    }
+    return out;
 }
 
 function bundledModuleHeader(rel) {
@@ -735,6 +791,7 @@ module.exports = {
     compactBundledCssTemplates,
     compactStandaloneLineComments,
     stripSafeLineComments,
+    stripCommentsByParser,
     shrinkModuleBody,
     bundledModuleHeader,
     coreModuleHeader,

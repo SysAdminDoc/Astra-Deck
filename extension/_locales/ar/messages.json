@@ -5234,6 +5234,33 @@
   "resultsVisibleTpl": {
     "message": "{count} متطابق"
   },
+  "sbSkipCategory_filler": {
+    "message": "حشو خارج الموضوع"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "تذكير بالتفاعل"
+  },
+  "sbSkipCategory_intro": {
+    "message": "مقدمة"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "جزء غير موسيقي"
+  },
+  "sbSkipCategory_outro": {
+    "message": "خاتمة"
+  },
+  "sbSkipCategory_preview": {
+    "message": "معاينة أو ملخص"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "ترويج ذاتي"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "رعاية"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "تم تخطي مقطع: {category}."
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "لا يسري هذا الإعداد إلا عند تفعيل ملف GitHub-Full."
   },

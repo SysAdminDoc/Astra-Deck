@@ -5234,6 +5234,33 @@
   "resultsVisibleTpl": {
     "message": "Совпадений: {count}"
   },
+  "sbSkipCategory_filler": {
+    "message": "отступление"
+  },
+  "sbSkipCategory_interaction": {
+    "message": "призыв к действию"
+  },
+  "sbSkipCategory_intro": {
+    "message": "заставка"
+  },
+  "sbSkipCategory_music_offtopic": {
+    "message": "фрагмент без музыки"
+  },
+  "sbSkipCategory_outro": {
+    "message": "концовка"
+  },
+  "sbSkipCategory_preview": {
+    "message": "анонс или повтор"
+  },
+  "sbSkipCategory_selfpromo": {
+    "message": "самореклама"
+  },
+  "sbSkipCategory_sponsor": {
+    "message": "спонсорская вставка"
+  },
+  "sbSkippedAnnounceTpl": {
+    "message": "Пропущено: {category}."
+  },
   "schemaBadgeGithubFullTitle": {
     "message": "Эта настройка действует только при включённом профиле GitHub-Full."
   },
