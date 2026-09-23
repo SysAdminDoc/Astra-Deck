@@ -112,7 +112,7 @@
   },
   "devDependencies": {
     "eslint": "^10.9.1",
-    "web-ext": "10.6.0",
+    "web-ext": "10.7.0",
     "ws": "8.21.3"
   },
   "overrides": {

@@ -8,7 +8,7 @@ const { checkChainText } = require('./helpers/check-chain');
 
 const repoRoot = path.join(__dirname, '..');
 
-const auditExceptions = require(path.join(repoRoot, 'scripts', 'dependency-audit-exceptions.json'));
+const dependencyOverrides = require(path.join(repoRoot, 'scripts', 'dependency-overrides.json'));
 const dependencyAudit = require(path.join(repoRoot, 'scripts', 'audit-dependencies.js'));
 
 test('dependency review stays local-only with no validate workflow', () => {
@@ -41,72 +41,44 @@ test('dependency review stays local-only with no validate workflow', () => {
         'the check gate must not reference a Python audit this repo cannot run');
 });
 
-test('development dependency exception is narrow, machine-readable, and strict', () => {
-    assert.equal(auditExceptions.schemaVersion, 1);
-    assert.equal(auditExceptions.auditLevel, 'moderate');
-    assert.equal(auditExceptions.scope, 'development-only');
-    assert.equal(auditExceptions.exceptions.length, 1);
+test('development dependency audit must be clean, with no exception path left', () => {
+    // image-size 2.0.2 was the one reviewed exception. web-ext 10.7.0 took the
+    // patched release, so the exception record and its validator are gone. A
+    // stale "exceptions" list reappearing would be read by nothing, which is
+    // worse than not having one.
+    assert.equal(fs.existsSync(path.join(repoRoot, 'scripts', 'dependency-audit-exceptions.json')), false);
+    assert.equal(Object.hasOwn(dependencyOverrides, 'exceptions'), false);
+    assert.equal(dependencyAudit.validateExceptionPolicy, undefined);
 
-    const exception = auditExceptions.exceptions[0];
-    assert.equal(exception.package, 'image-size');
-    assert.deepEqual(
-        exception.advisories.map((item) => item.id).sort(),
-        ['GHSA-5p2g-fcmc-qvqq', 'GHSA-w3rx-r6r6-pgpr']
-    );
-    assert.equal(exception.shipsToUsers, false);
-
-    const report = {
+    const clean = {
         auditReportVersion: 2,
-        vulnerabilities: {
-            'addons-linter': {
-                severity: 'high',
-                isDirect: false,
-                via: ['image-size'],
-                effects: ['web-ext'],
-            },
-            'image-size': {
-                severity: 'high',
-                isDirect: false,
-                via: exception.advisories.map((item) => ({
-                    url: item.url,
-                    range: item.range,
-                    severity: 'high',
-                })),
-            },
-            'web-ext': {
-                severity: 'high',
-                isDirect: true,
-                via: ['addons-linter'],
-                fixAvailable: {
-                    name: 'web-ext',
-                    version: '5.5.0',
-                    isSemVerMajor: true,
-                },
-            },
-        },
-        metadata: {
-            vulnerabilities: {
-                info: 0,
-                low: 0,
-                moderate: 0,
-                high: 3,
-                critical: 0,
-                total: 3,
-            },
-        },
+        vulnerabilities: {},
+        metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0, total: 0 } },
     };
-    const lockfile = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package-lock.json'), 'utf8'));
-    assert.doesNotThrow(() => dependencyAudit.validateExceptionPolicy(report, auditExceptions, lockfile));
+    assert.doesNotThrow(() => dependencyAudit.validateCleanAudit(clean, 0));
 
-    const widened = structuredClone(report);
-    widened.vulnerabilities['other-package'] = {
-        severity: 'high',
-        isDirect: false,
-        via: [],
-        effects: [],
-    };
-    assert.throws(
-        () => dependencyAudit.validateExceptionPolicy(widened, auditExceptions, lockfile),
-        /audited vulnerability package set/
-    );
+    const finding = structuredClone(clean);
+    finding.vulnerabilities['image-size'] = { severity: 'high', isDirect: false, via: [], effects: [] };
+    finding.metadata.vulnerabilities.high = 1;
+    finding.metadata.vulnerabilities.total = 1;
+    assert.throws(() => dependencyAudit.validateCleanAudit(finding, 1), /not clean: image-size \(high\)/);
+
+    // Each signal is enough on its own: a report whose map and totals disagree,
+    // or an npm exit code that says something the JSON does not, still fails.
+    const totalsOnly = structuredClone(clean);
+    totalsOnly.metadata.vulnerabilities.total = 2;
+    assert.throws(() => dependencyAudit.validateCleanAudit(totalsOnly, 0), /not clean: 2 finding\(s\)/);
+    assert.throws(() => dependencyAudit.validateCleanAudit(clean, 1), /npm exit 1/);
+    assert.throws(() => dependencyAudit.validateCleanAudit({ ...clean, auditReportVersion: 3 }, 0),
+        /unsupported npm audit report version/);
+});
+
+test('every package.json override carries its review record', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+    assert.doesNotThrow(() => dependencyAudit.validateResolutionOverrides(dependencyOverrides, pkg));
+
+    const undocumented = structuredClone(pkg);
+    undocumented.overrides = { ...pkg.overrides, 'left-pad': '^1.3.0' };
+    assert.throws(() => dependencyAudit.validateResolutionOverrides(dependencyOverrides, undocumented),
+        /documented resolution overrides vs package.json overrides/);
 });

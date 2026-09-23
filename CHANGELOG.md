@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Maintenance
+
+- **The development dependency audit is clean again, with no exception left
+  open.** web-ext 10.7.0 pulls addons-linter 10.13.0, which finally takes the
+  patched image-size 2.0.4, so the two infinite-loop advisories that had been
+  carried as a reviewed exception since August are gone. The exception record
+  and the code that accepted it are deleted rather than kept around, and the
+  `deps` gate now fails on any development finding at all. The override notes
+  moved to `scripts/dependency-overrides.json`. None of this ships to users;
+  web-ext only lints the Firefox build.
+
 ## [4.90.0] (2026-09-14)
 
 ### Full video titles

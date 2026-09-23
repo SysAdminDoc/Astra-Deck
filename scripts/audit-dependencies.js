@@ -5,7 +5,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const repoRoot = path.join(__dirname, '..');
-const exceptionPath = path.join(__dirname, 'dependency-audit-exceptions.json');
+const overridesPath = path.join(__dirname, 'dependency-overrides.json');
 const lockfilePath = path.join(repoRoot, 'package-lock.json');
 const npmrcPath = path.join(repoRoot, '.npmrc');
 
@@ -39,33 +39,6 @@ function equalJson(actual, expected, label) {
     }
 }
 
-function getInstalledVersions(lockfile, names) {
-    const packages = lockfile?.packages;
-    if (!packages || typeof packages !== 'object') {
-        throw new Error('package-lock.json is missing its packages map');
-    }
-
-    return Object.fromEntries(names.map((name) => {
-        const entry = packages[`node_modules/${name}`];
-        if (!entry?.version) {
-            throw new Error(`package-lock.json has no installed entry for ${name}`);
-        }
-        return [name, entry.version];
-    }));
-}
-
-function advisoryShape(entry) {
-    return entry
-        .filter((item) => item && typeof item === 'object')
-        .map((item) => ({
-            id: `GHSA-${String(item.url || '').split('GHSA-')[1] || ''}`,
-            url: item.url,
-            range: item.range,
-            severity: item.severity,
-        }))
-        .sort((left, right) => left.id.localeCompare(right.id));
-}
-
 // `.npmrc` sets `ignore-scripts=true` and names the 2026-08-04 ChainDrop
 // worm as the reason, but nothing read it: deleting the file, or one
 // `npm i --ignore-scripts=false`, was invisible to every gate. The lockfile
@@ -95,97 +68,11 @@ function validateInstallScriptPolicy(npmrcText, lockfile) {
     return problems;
 }
 
-function validateExceptionPolicy(report, policy, lockfile) {
-    if (report?.auditReportVersion !== 2) {
-        throw new Error(`unsupported npm audit report version: ${report?.auditReportVersion}`);
-    }
-    if (policy?.schemaVersion !== 1 || policy.auditLevel !== 'moderate' || policy.scope !== 'development-only') {
-        throw new Error('dependency audit exception policy metadata is invalid');
-    }
-    if (!Array.isArray(policy.exceptions) || policy.exceptions.length !== 1) {
-        throw new Error('dependency audit exception policy must contain exactly one reviewed exception');
-    }
-
-    const exception = policy.exceptions[0];
-    const vulnerabilityMap = report.vulnerabilities;
-    const vulnerabilityNames = sorted(Object.keys(vulnerabilityMap || {}));
-    const expectedNames = sorted([
-        exception.package,
-        ...exception.reachableThrough.map((item) => item.package),
-    ]);
-    equalJson(vulnerabilityNames, expectedNames, 'audited vulnerability package set');
-
-    const installedVersions = getInstalledVersions(
-        lockfile,
-        expectedNames
-    );
-    equalJson(
-        installedVersions,
-        Object.fromEntries([
-            [exception.package, exception.version],
-            ...exception.reachableThrough.map((item) => [item.package, item.version]),
-        ]),
-        'reviewed development dependency versions'
-    );
-
-    const imageSize = vulnerabilityMap[exception.package];
-    if (!imageSize || imageSize.severity !== exception.severity || imageSize.isDirect !== exception.directDependency) {
-        throw new Error('image-size vulnerability metadata no longer matches the reviewed exception');
-    }
-    equalJson(
-        advisoryShape(imageSize.via),
-        exception.advisories.map((item) => ({
-            id: item.id,
-            url: item.url,
-            range: item.range,
-            severity: exception.severity,
-        })).sort((left, right) => left.id.localeCompare(right.id)),
-        'image-size advisory set'
-    );
-
-    const addonsLinter = vulnerabilityMap['addons-linter'];
-    if (!addonsLinter || addonsLinter.severity !== exception.severity || addonsLinter.isDirect !== false) {
-        throw new Error('addons-linter is no longer the reviewed transitive boundary');
-    }
-    equalJson(addonsLinter.via, [exception.package], 'addons-linter dependency path');
-    equalJson(addonsLinter.effects, ['web-ext'], 'addons-linter effect path');
-
-    const webExt = vulnerabilityMap['web-ext'];
-    if (!webExt || webExt.severity !== exception.severity || webExt.isDirect !== true) {
-        throw new Error('web-ext is no longer the reviewed direct development dependency');
-    }
-    equalJson(webExt.via, ['addons-linter'], 'web-ext dependency path');
-    equalJson(webExt.fixAvailable, {
-        name: exception.availableFix.package,
-        version: exception.availableFix.version,
-        isSemVerMajor: exception.availableFix.breaking,
-    }, 'npm proposed fix');
-
-    const metadata = report.metadata?.vulnerabilities;
-    equalJson(metadata, {
-        info: 0,
-        low: 0,
-        moderate: 0,
-        high: 3,
-        critical: 0,
-        total: 3,
-    }, 'audit severity totals');
-
-    if (exception.shipsToUsers || exception.directDependency) {
-        throw new Error('reviewed exception is not constrained to development tooling');
-    }
-    if (!exception.upstreamStatus || !exception.availableFix?.breaking) {
-        throw new Error('reviewed exception is missing its upstream status or bounded fix note');
-    }
-
-    return exception;
-}
-
 // package.json cannot carry comments, so an `overrides` pin arrives with no
 // record of which advisory it answers or when anyone last looked at it — and a
-// pin that looks current is not evidence that it is. The record lives beside
-// the audit exceptions and is checked against package.json here, so it cannot
-// drift out of agreement with the pins it describes.
+// pin that looks current is not evidence that it is. The record lives in
+// dependency-overrides.json and is checked against package.json here, so it
+// cannot drift out of agreement with the pins it describes.
 function validateResolutionOverrides(policy, manifest) {
     const documented = Array.isArray(policy.resolutionOverrides) ? policy.resolutionOverrides : [];
     const pinned = manifest.overrides || {};
@@ -212,6 +99,24 @@ function parseAuditOutput(output) {
         throw new Error('npm audit did not return a JSON report');
     }
     return JSON.parse(text.slice(start, end + 1));
+}
+
+// The development audit has to be clean. It used to carry one reviewed
+// exception (image-size 2.0.2 under web-ext -> addons-linter) with an exact
+// graph pinned around it; web-ext 10.7.0 took the patched release, so that
+// path is gone rather than left open for the next finding to walk through.
+// A new finding is a decision to make in review, not something to absorb here.
+function validateCleanAudit(report, exitStatus) {
+    if (report?.auditReportVersion !== 2) {
+        throw new Error(`unsupported npm audit report version: ${report?.auditReportVersion}`);
+    }
+    const findings = sorted(Object.keys(report.vulnerabilities || {}))
+        .map((name) => `${name} (${report.vulnerabilities[name]?.severity || 'unknown'})`);
+    const total = report.metadata?.vulnerabilities?.total;
+    if (findings.length || total !== 0 || exitStatus !== 0) {
+        throw new Error('development dependency audit is not clean: '
+            + `${findings.join(', ') || `${total} finding(s)`}, npm exit ${exitStatus}`);
+    }
 }
 
 function run() {
@@ -252,10 +157,9 @@ function run() {
     }
 
     const report = parseAuditOutput(result.stdout || result.stderr);
-    const policy = readJson(exceptionPath);
-    // Checked before the clean-audit exit below. The overrides are WHY the
-    // audit is clean, so skipping their record on a clean run would leave the
-    // one thing worth re-reading unchecked exactly when nothing else is.
+    const policy = readJson(overridesPath);
+    // Checked on every run. The overrides are WHY the audit is clean, so they
+    // are the one thing worth re-reading exactly when nothing else fails.
     const overrides = validateResolutionOverrides(policy, readJson(path.join(repoRoot, 'package.json')));
     for (const item of overrides) {
         const advisory = item.answersAdvisory ? ` (${item.answersAdvisory})` : '';
@@ -271,15 +175,8 @@ function run() {
     }
     console.log('[audit-deps] install scripts refused by .npmrc; no lockfile entry declares one');
 
-    if (result.status === 0 && report.metadata?.vulnerabilities?.total === 0) {
-        console.log('[audit-deps] development dependency audit is clean');
-        return;
-    }
-
-    const exception = validateExceptionPolicy(report, policy, readJson(lockfilePath));
-    console.log(`[audit-deps] accepted one reviewed development-only exception: ${exception.package}@${exception.version}`);
-    console.log(`[audit-deps] advisories: ${exception.advisories.map((item) => item.id).join(', ')}`);
-    console.log(`[audit-deps] upstream status: ${exception.upstreamStatus}`);
+    validateCleanAudit(report, result.status);
+    console.log('[audit-deps] development dependency audit is clean');
 }
 
 if (require.main === module) {
@@ -292,8 +189,8 @@ if (require.main === module) {
 }
 
 module.exports = {
-    advisoryShape,
     parseAuditOutput,
-    validateExceptionPolicy,
+    validateCleanAudit,
     validateInstallScriptPolicy,
+    validateResolutionOverrides,
 };

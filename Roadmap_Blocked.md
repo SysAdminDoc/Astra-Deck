@@ -196,26 +196,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   and `hideAiContextPanels` selectors, which have not been checked against the
   new surfaces.
 
-## P1 — Upstream dependency fix (2026-08-13)
-
-- [ ] P1 — Remove the reviewed `image-size` audit exception after an upstream fix
-  Why: `web-ext@10.6.0` depends on `addons-linter@10.10.0`, which pins
-  `image-size@2.0.2`; the two reviewed infinite-loop advisories therefore keep
-  the development audit at three high findings. Production dependencies remain
-  clean and the existing exception gate pins the exact dev-only graph.
-  Blocker: As of 2026-08-13, npm still publishes `image-size@2.0.2` as latest,
-  GitHub advisories GHSA-w3rx-r6r6-pgpr and GHSA-5p2g-fcmc-qvqq mark every
-  version `<=2.0.2` affected with no patched release, and both `web-ext` and
-  `addons-linter` are already at their latest releases. The proposed 1.2.1
-  override is also inside the advisory range, so it cannot make `npm audit`
-  clean and would only disguise the dependency risk.
-  Unblock by: upgrade when `image-size` publishes a non-vulnerable release or
-  `addons-linter` replaces the dependency; then delete
-  `scripts/dependency-audit-exceptions.json` (and simplify
-  `scripts/audit-dependencies.js`), require a zero-finding development audit,
-  and rerun all three Firefox lint profiles.
-  Complexity: S
-
 ## P2 — Greasy Fork publication (2026-08-11)
 
 - [ ] P2 — Publish the YTKit userscript and its core library on Greasy Fork
