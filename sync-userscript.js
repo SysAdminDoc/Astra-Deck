@@ -133,8 +133,12 @@ const BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules 
 // JavaScript with ternaries in them pass the CSS shape test, and compacting
 // them would have joined `//` comment lines onto the code after them.
 const CSS_SHAPE = /\{[^{}]*[a-z-]+\s*:\s*[^{}]+;/;
-// Checked on the compacted text, so prose in a CSS comment cannot trip it.
-const NOT_CSS = /=>|\bfunction\b|\breturn\b|\b(?:const|let|var)\s|<[a-zA-Z/!]/;
+// Checked on the static text with CSS comments removed, so prose in a comment
+// cannot trip it but a `//` line still counts: joining lines would glue such a
+// comment onto the code after it. Interpolations used to be the tell that kept
+// a script template out of reach; now that they are carried through instead,
+// this list has to recognise JavaScript on its own.
+const NOT_CSS = /=>|===|!==|&&|\b(?:function|return|typeof)\b|\b(?:if|for|while|switch)\s*\(|\belse\s*\{|\b(?:const|let|var)\s|\b(?:this|window|document)\.|<[a-zA-Z/!]|(?:^|[\s;{}])\/\//m;
 // An interpolation is carried through compaction as one opaque token and put
 // back byte for byte, so nothing that reads a runtime value is rewritten.
 const EXPRESSION_MARK = /\x03(\d+)\x04/;
@@ -226,28 +230,35 @@ function untaggedTemplateLiterals(node, found = []) {
     return found;
 }
 
-// Every selector and `property: value` pair in `before` must still be present
-// in `after`, compared with only the whitespace compaction is allowed to drop
-// normalised away. This is deliberately not built on compactCssWhitespace's own
-// masking: the v4.90.0 comment-apostrophe bug lived in that masking and deleted
-// 183 declarations, and a check sharing the code would have shared the bug.
-function cssSegments(text) {
-    return new Set(text.replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .split(/[{};]/)
-        .map((segment) => segment.replace(/\s+/g, ' ')
+// `after` must carry the same selectors, declarations and braces as `before`,
+// in the same order and as many times, compared with only the whitespace and
+// final semicolons compaction is allowed to drop normalised away. Order and
+// count matter: a dropped duplicate, a declaration moved into another rule and
+// two swapped rules all change which declaration wins. This is deliberately
+// not built on compactCssWhitespace's own masking: the v4.90.0
+// comment-apostrophe bug lived in that masking and deleted 183 declarations,
+// and a check sharing the code would have shared the bug.
+function cssTokens(text) {
+    return text.replace(/\/\*[\s\S]*?\*\//g, ' ')
+        // The one structural change compaction is allowed: a last semicolon.
+        .replace(/;(\s*)\}/g, '$1}')
+        .split(/([{};])/)
+        .map((token) => token.replace(/\s+/g, ' ')
             .replace(/\s*,\s*/g, ',')
             .replace(/:\s+/g, ':')
             .replace(/\s+!important/g, '!important')
             .trim())
-        .filter(Boolean));
+        .filter(Boolean);
 }
 
 function assertCssSurvives(before, after, where) {
-    const kept = cssSegments(after);
-    const lost = [...cssSegments(before)].filter((segment) => !kept.has(segment));
-    if (lost.length) {
-        throw new Error(`CSS compaction lost ${lost.length} rule fragment(s) in ${where}: `
-            + lost.slice(0, 3).map((segment) => JSON.stringify(segment)).join(', '));
+    const expected = cssTokens(before);
+    const actual = cssTokens(after);
+    const at = expected.findIndex((token, index) => token !== actual[index]);
+    if (at !== -1 || actual.length !== expected.length) {
+        const index = at === -1 ? expected.length : at;
+        throw new Error(`CSS compaction changed the stylesheet in ${where} at token ${index}: `
+            + `expected ${JSON.stringify(expected[index] ?? '<end>')}, got ${JSON.stringify(actual[index] ?? '<end>')}`);
     }
 }
 
@@ -257,11 +268,11 @@ function assertCssSurvives(before, after, where) {
  *   - it is untagged, and its static text has a braced `property: value;`;
  *   - its static text has no backslash, which keeps escapes and regex sources
  *     out of reach, and none of the control characters used as markers here;
- *   - the compacted text shows none of the markers of JavaScript or HTML;
+ *   - its static text shows none of the markers of JavaScript or HTML;
  *   - every interpolation comes back out in order (one inside a CSS comment
  *     would be dropped with the comment, so that template is skipped).
- * A template that passes all of that and still loses a rule fragment is a bug
- * in the compactor, and the build stops rather than ship the smaller file.
+ * A template that passes all of that and still changes its rules is a bug in
+ * the compactor, and the build stops rather than ship the smaller file.
  */
 function compactBundledCssTemplates(source, relativePath) {
     let ast;
@@ -280,8 +291,8 @@ function compactBundledCssTemplates(source, relativePath) {
             .join('');
         if (!CSS_SHAPE.test(staticText)) continue;
 
+        if (NOT_CSS.test(staticText.replace(/\/\*[\s\S]*?\*\//g, ' '))) continue;
         const compacted = compactCssWhitespace(staticText);
-        if (NOT_CSS.test(compacted)) continue;
         const pieces = compacted.split(EXPRESSION_MARK);
         const quasis = pieces.filter((_piece, index) => index % 2 === 0);
         const order = pieces.filter((_piece, index) => index % 2 === 1).map(Number);

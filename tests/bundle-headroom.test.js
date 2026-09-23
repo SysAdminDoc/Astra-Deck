@@ -312,7 +312,15 @@ test('tagged templates, escapes and JavaScript-looking templates are left alone'
         'const glyph = ' + tick + '.a::before {\n    content: "\\\\2014";\n}' + tick + ';',
         // Braces and `a : b;` again, but this is a script someone ships as text.
         'const script = ' + tick + '(() => {\n    const v = a ? b : c;\n})();' + tick + ';',
-        'const html = ' + tick + '<style>\n.a { color: red; }\n</style>' + tick + ';'
+        'const html = ' + tick + '<style>\n.a { color: red; }\n</style>' + tick + ';',
+        // Interpolations no longer keep a template out of reach, so a script
+        // with one has to be recognised as a script. Joined into one line, the
+        // comment here would swallow the assignment after it.
+        'const boot = ' + tick + '\nif (window.ytcfg) {\n    // pick the playback mode\n    window.ytcfg.mode = '
+            + dollar + '{cfg} ? on : off;\n}\n' + tick + ';',
+        // A `//` line is the one script signal here. CSS has no line comments,
+        // and joining lines would glue this one onto the rule after it.
+        'const sheet = ' + tick + '\n.a {\n    color: red;\n}\n// generated below\n.b {\n    top: 0;\n}\n' + tick + ';'
     ];
     for (const source of untouched) {
         assert.equal(sync.compactBundledCssTemplates(source, 'fixture.js'), source, source);
@@ -340,10 +348,20 @@ test('the rule-fragment round trip catches a compactor that loses CSS', () => {
     const before = '.a {\n    color: red;\n    margin: 0 auto;\n}\n.b .c { top: 0; }';
     assert.doesNotThrow(() => sync.assertCssSurvives(before, '.a{color:red;margin:0 auto}.b .c{top:0}', 'fixture'));
     assert.throws(() => sync.assertCssSurvives(before, '.a{color:red}.b .c{top:0}', 'fixture'),
-        /lost 1 rule fragment\(s\) in fixture: "margin:0 auto"/);
+        /changed the stylesheet in fixture at token 3: expected ";", got "\}"/);
     // Whitespace that means something is not normalised away.
     assert.throws(() => sync.assertCssSurvives(before, '.a{color:red;margin:0auto}.b .c{top:0}', 'fixture'),
         /margin:0 auto/);
     assert.throws(() => sync.assertCssSurvives(before, '.a{color:red;margin:0 auto}.b.c{top:0}', 'fixture'),
         /\.b \.c/);
+
+    // Order and count decide which declaration wins, so they are part of the
+    // check. A set of fragments passed all three of these.
+    const twoRules = '.a { color: red; }\n.b { color: blue; }';
+    assert.throws(() => sync.assertCssSurvives('.a { color: red; }\n.b { color: red; }', '.a{color:red}.b{}', 'fixture'),
+        /expected "color:red", got "\}"/, 'a dropped duplicate');
+    assert.throws(() => sync.assertCssSurvives('.a { color: red; }\n.b { top: 0; }', '.a{}.b{top:0;color:red}', 'fixture'),
+        /expected "color:red", got "\}"/, 'a declaration moved into another rule');
+    assert.throws(() => sync.assertCssSurvives(twoRules, '.b{color:blue}.a{color:red}', 'fixture'),
+        /at token 0: expected "\.a", got "\.b"/, 'two rules swapped');
 });
