@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "{count} 个赞"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "{count} 个赞"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "{count} 条回复"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "{count} 条回复"
+  },
   "commentSearchActiveHint": {
     "message": "YouTube 加载评论列表时，搜索会保持启用。"
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "无法加载 Reddit 讨论"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • {score} 分 • {comments} 条评论"
+  },
+  "redditResultUntitled": {
+    "message": "(无标题)"
   },
   "reenableMediadlAria": {
     "message": "重新启用 Astra Downloader 安装提示"

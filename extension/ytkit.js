@@ -11563,7 +11563,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const { more, less } = this._getReplyButtons(replies);
                 const nativeText = (less?.textContent || more?.textContent || '').trim().replace(/\s+/g, ' ');
                 if (nativeText) return nativeText;
-                return `${this._formatCount(loadedCount)} repl${loadedCount === 1 ? 'y' : 'ies'}`;
+                return tCount(loadedCount, 'commentRepliesLoadedTpl', '{count} reply', '{count} replies')
+                    .replace('{count}', this._formatCount(loadedCount));
             },
             _syncReplyToggle(replies) {
                 if (!(replies instanceof HTMLElement)) return;
@@ -11819,7 +11820,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 heat.textContent = voteText;
                                 if (count >= 10000) heat.classList.add('ytkit-heat-fire');
                                 else heat.classList.add('ytkit-heat-hot');
-                                heat.title = `${this._formatCount(count)} likes`;
+                                heat.title = tCount(count, 'commentHeatLikesTpl', '{count} like', '{count} likes')
+                                    .replace('{count}', this._formatCount(count));
                                 timeEl.after(heat);
                             }
                         }
@@ -30500,10 +30502,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         row.rel = 'noopener noreferrer';
                         const title = document.createElement('div');
                         title.className = 'ytkit-rc-title';
-                        title.textContent = d.title || '(untitled)';
+                        title.textContent = d.title || t('redditResultUntitled', '(untitled)');
                         const meta = document.createElement('div');
                         meta.className = 'ytkit-rc-meta';
-                        meta.textContent = `r/${d.subreddit} • ${d.score} pts • ${d.num_comments} comments`;
+                        meta.textContent = t('redditResultMetaTpl', 'r/{subreddit} • {score} pts • {comments} comments')
+                            // Functions, so a `$` in Reddit's data is inserted as text.
+                            .replace('{subreddit}', () => String(d.subreddit))
+                            .replace('{score}', () => String(d.score))
+                            .replace('{comments}', () => String(d.num_comments));
                         row.append(title, meta);
                         container.appendChild(row);
                     }

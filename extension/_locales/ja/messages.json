@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "高評価 {count} 件"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "高評価 {count} 件"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "返信 {count} 件"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "返信 {count} 件"
+  },
   "commentSearchActiveHint": {
     "message": "YouTube がコメント一覧を読み込んでいる間も検索は有効です。"
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "Reddit の議論を読み込めませんでした"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • {score} ポイント • コメント {comments} 件"
+  },
+  "redditResultUntitled": {
+    "message": "(無題)"
   },
   "reenableMediadlAria": {
     "message": "Astra Downloader のインストールプロンプトを再有効化"

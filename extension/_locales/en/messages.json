@@ -499,6 +499,22 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "{count} like",
+    "description": "Comment heat indicator tooltip for a comment with one like"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "{count} likes",
+    "description": "Comment heat indicator tooltip for any other number of likes"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "{count} reply",
+    "description": "Comment Enhancements: reply toggle label when one reply is loaded"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "{count} replies",
+    "description": "Comment Enhancements: reply toggle label for any other number of loaded replies"
+  },
   "commentSearchActiveHint": {
     "message": "Your search stays active while YouTube loads the comment list."
   },
@@ -5185,6 +5201,14 @@
   },
   "redditCommentsFailed": {
     "message": "Could not load Reddit discussions"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • {score} pts • {comments} comments",
+    "description": "Reddit Comments result line: subreddit, score and comment count"
+  },
+  "redditResultUntitled": {
+    "message": "(untitled)",
+    "description": "Reddit Comments result title when the post has none"
   },
   "reenableMediadlAria": {
     "message": "Re-enable Astra Downloader install prompts"

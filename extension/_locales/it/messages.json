@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "{count} Mi piace"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "{count} Mi piace"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "{count} risposta"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "{count} risposte"
+  },
   "commentSearchActiveHint": {
     "message": "La ricerca resta attiva mentre YouTube carica l’elenco dei commenti."
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "Impossibile caricare le discussioni di Reddit"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • punti: {score} • commenti: {comments}"
+  },
+  "redditResultUntitled": {
+    "message": "(senza titolo)"
   },
   "reenableMediadlAria": {
     "message": "Riattiva le richieste di installazione di Astra Downloader"

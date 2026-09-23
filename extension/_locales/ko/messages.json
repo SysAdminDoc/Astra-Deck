@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "좋아요 {count}개"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "좋아요 {count}개"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "답글 {count}개"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "답글 {count}개"
+  },
   "commentSearchActiveHint": {
     "message": "YouTube가 댓글 목록을 불러오는 동안에도 검색은 유지됩니다."
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "Reddit 토론을 불러오지 못했습니다"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • {score}점 • 댓글 {comments}개"
+  },
+  "redditResultUntitled": {
+    "message": "(제목 없음)"
   },
   "reenableMediadlAria": {
     "message": "Astra Downloader 설치 프롬프트 다시 활성화"

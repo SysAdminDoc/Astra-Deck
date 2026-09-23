@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "{count} Like"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "{count} Likes"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "{count} Antwort"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "{count} Antworten"
+  },
   "commentSearchActiveHint": {
     "message": "Deine Suche bleibt aktiv, während YouTube die Kommentarliste lädt."
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "Reddit-Diskussionen konnten nicht geladen werden"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • Punkte: {score} • Kommentare: {comments}"
+  },
+  "redditResultUntitled": {
+    "message": "(ohne Titel)"
   },
   "reenableMediadlAria": {
     "message": "Astra Downloader Installationsaufforderungen erneut aktivieren"

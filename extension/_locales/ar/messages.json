@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "إعجاب واحد ({count})"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "{count} إعجاب"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "رد واحد ({count})"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "{count} ردود"
+  },
   "commentSearchActiveHint": {
     "message": "يبقى البحث نشطًا أثناء تحميل YouTube لقائمة التعليقات."
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "تعذّر تحميل نقاشات Reddit"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • النقاط: {score} • التعليقات: {comments}"
+  },
+  "redditResultUntitled": {
+    "message": "(بلا عنوان)"
   },
   "reenableMediadlAria": {
     "message": "إعادة تفعيل مطالبات تثبيت Astra Downloader"

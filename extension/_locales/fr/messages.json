@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "{count} j’aime"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "{count} j’aime"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "{count} réponse"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "{count} réponses"
+  },
   "commentSearchActiveHint": {
     "message": "Votre recherche reste active pendant que YouTube charge la liste des commentaires."
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "Impossible de charger les discussions Reddit"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • points : {score} • commentaires : {comments}"
+  },
+  "redditResultUntitled": {
+    "message": "(sans titre)"
   },
   "reenableMediadlAria": {
     "message": "Réactiver les invites d'installation d'Astra Downloader"

@@ -32,6 +32,14 @@ function textOf(node, className) {
 // Several renderers read a node back out of the tree they just built
 // (`chip.querySelector('.sleep-time')`) or move focus into it, and the shared
 // fake stops short of both.
+// Translate through a shipped catalogue, the way the extension does when that
+// locale is active.
+function catalogueT(locale) {
+    const catalogue = JSON.parse(require('node:fs').readFileSync(require('node:path').join(
+        __dirname, '..', '..', 'extension', '_locales', locale, 'messages.json'), 'utf8'));
+    return (key, fallback) => catalogue[key]?.message ?? fallback;
+}
+
 function renderDocument(resolve = () => []) {
     const doc = fakeDocument(resolve);
     const create = doc.createElement.bind(doc);
@@ -1470,6 +1478,47 @@ test('redditComments renders a row per thread with its subreddit line', async ()
         'r/videos • 42 pts • 7 comments',
         'r/youtube • 1 pts • 0 comments'
     ]);
+});
+
+// The Reddit meta line and its untitled fallback were English literals. They
+// render from the catalogue now, shown with the shipped German one, and Reddit's
+// own text goes in literally even when it carries a `$` replacement pattern.
+
+test('redditComments renders its meta line in the active locale', async () => {
+    const doc = renderDocument(() => []);
+    const response = { data: { data: { children: [
+        redditPost(),
+        redditPost({ title: '', subreddit: 'a$&b', score: 1, num_comments: 0 })
+    ] } } };
+    const feature = loadFeature('redditComments', {
+        document: doc,
+        URL,
+        t: catalogueT('de'),
+        getVideoId: () => 'abcdefghijk',
+        extensionFetchJson: async () => response,
+        YTKitCore: { describeFailure: () => '', describeFailureWithLabel: () => '', failureDiagnosticText: String },
+        DiagnosticLog: { record() {} }
+    });
+    const container = doc.createElement('div');
+    await feature._load(container);
+    assert.deepEqual(textOf(container, 'ytkit-rc-title'), ['A thread about the video', '(ohne Titel)']);
+    assert.deepEqual(textOf(container, 'ytkit-rc-meta'), [
+        'r/videos • Punkte: 42 • Kommentare: 7',
+        'r/a$&b • Punkte: 1 • Kommentare: 0'
+    ]);
+});
+
+test('commentEnhancements labels loaded replies with a real singular and plural', () => {
+    const replies = { querySelector: () => null };
+    const german = loadFeature('commentEnhancements', { t: catalogueT('de') });
+    assert.equal(german._getReplyMeta(replies, 1), '1 Antwort');
+    assert.equal(german._getReplyMeta(replies, 3), '3 Antworten');
+    const english = loadFeature('commentEnhancements', {});
+    assert.equal(english._getReplyMeta(replies, 1), '1 reply');
+    assert.equal(english._getReplyMeta(replies, 12), '12 replies');
+    // YouTube's own button text wins whenever it is there.
+    const native = { querySelector: (selector) => (selector.includes('#less-replies') ? { textContent: ' Hide  replies ' } : null) };
+    assert.equal(german._getReplyMeta(native, 3), 'Hide replies');
 });
 
 test('redditComments skips a permalink that would leave reddit.com', async () => {

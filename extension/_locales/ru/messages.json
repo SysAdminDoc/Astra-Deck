@@ -499,6 +499,18 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentHeatLikesTplOne": {
+    "message": "Лайков: {count}"
+  },
+  "commentHeatLikesTplOther": {
+    "message": "Лайков: {count}"
+  },
+  "commentRepliesLoadedTplOne": {
+    "message": "Ответов: {count}"
+  },
+  "commentRepliesLoadedTplOther": {
+    "message": "Ответов: {count}"
+  },
   "commentSearchActiveHint": {
     "message": "Поиск остаётся активным, пока YouTube загружает список комментариев."
   },
@@ -5182,6 +5194,12 @@
   },
   "redditCommentsFailed": {
     "message": "Не удалось загрузить обсуждения с Reddit"
+  },
+  "redditResultMetaTpl": {
+    "message": "r/{subreddit} • баллов: {score} • комментариев: {comments}"
+  },
+  "redditResultUntitled": {
+    "message": "(без названия)"
   },
   "reenableMediadlAria": {
     "message": "Повторно включить подсказки установки Astra Downloader"

@@ -22,6 +22,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   reader label and the "Like Rate" label beside the number. All of them come
   from the translation files now, in all 11 languages.
 
+- Three more bits of English are translated: the reply count on comment
+  threads ("1 reply", "3 replies", now a proper singular and plural in every
+  language), the tooltip on the comment heat marker, and the subreddit line
+  and "(untitled)" fallback in Reddit Comments. A new check makes sure every
+  singular and plural message pair exists in all 11 languages.
+
 ### Maintenance
 
 - **The development dependency audit is clean again, with no exception left
