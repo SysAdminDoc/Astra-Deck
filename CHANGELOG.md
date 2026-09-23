@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **Userscript installs now load the core library that matches them.** The
+  v4.90.0 userscript still pointed its `@require` at the v4.89.0 core, so
+  everyone on the userscript got a 4.90.0 header running 4.89.0 code, without
+  the full-titles fix or the restored settings panel rules. The link now names
+  v4.90.0, and that tag exists. The version check also fails from now on if the
+  two ever disagree again.
+
 ### Maintenance
 
 - **The development dependency audit is clean again, with no exception left

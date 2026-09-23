@@ -89,6 +89,35 @@ function readUserscriptNameVersion(source = fs.readFileSync(path.join(REPO_ROOT,
     return { source: 'YTKit.user.js (@name version)', value: m ? m[1] : '' };
 }
 
+// YTKit.user.js carries no executable core of its own; it loads
+// YTKit-core.user.js through @require, pinned to the release tag. The v4.90.0
+// bump moved @version and left @require on the v4.89.0 tag, and every source
+// above still agreed, so userscript installs ran the previous release's core
+// with nothing anywhere saying so. The expected URL comes from the same
+// function sync-userscript.js writes it with.
+function findUserscriptCoreRequireDrift(productVersion, source) {
+    const { coreRequireUrl } = require('../sync-userscript.js');
+    const expected = coreRequireUrl(productVersion);
+    const headerEnd = source.indexOf('// ==/UserScript==');
+    const header = headerEnd === -1 ? '' : source.slice(0, headerEnd);
+    const found = [...header.matchAll(/^\/\/ @require\s+(\S+)/gm)].map((match) => match[1]);
+    return found.length === 1 && found[0] === expected ? null : { expected, found };
+}
+
+function checkUserscriptCoreRequire(productVersion) {
+    const source = fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8');
+    const drift = findUserscriptCoreRequireDrift(productVersion, source);
+    if (!drift) {
+        console.log(`[check-versions] YTKit.user.js @require loads the v${productVersion} core`);
+        return true;
+    }
+    console.error('[check-versions] YTKit.user.js @require does not load this version\'s core:');
+    console.error(`  expected ${drift.expected}`);
+    console.error(`  found    ${drift.found.length ? drift.found.join(', ') : '<no @require in the header>'}`);
+    console.error('Run `node sync-userscript.js`, and push the matching tag before main serves it.');
+    return false;
+}
+
 function readUserscriptCoreVersion() {
     const src = fs.readFileSync(path.join(REPO_ROOT, 'YTKit-core.user.js'), 'utf8');
     const m = src.match(/^\/\/ @version\s+(\S+)/m);
@@ -458,11 +487,12 @@ function main(argv) {
     }
 
     const docsOk = productOk && checkActiveDocumentationTruth(sources[0].value);
+    const coreRequireOk = !productOk || checkUserscriptCoreRequire(sources[0].value);
     const tagsOk = !productOk || checkProductTagSanity(sources[0].value);
     const releaseOk = !productOk
         || checkReleaseCurrency(sources[0].value, argv.includes('--require-release-current'));
 
-    process.exit(productOk && settingsOk && docsOk && tagsOk && releaseOk ? 0 : 1);
+    process.exit(productOk && settingsOk && docsOk && coreRequireOk && tagsOk && releaseOk ? 0 : 1);
 }
 
 if (require.main === module) {
@@ -478,6 +508,7 @@ module.exports = {
     checkReleaseCurrency,
     compareVersionSegments,
     findStrayProductTags,
+    findUserscriptCoreRequireDrift,
     newestProductTag,
     readChannelActiveVersions,
     parseProductTagSegments,
