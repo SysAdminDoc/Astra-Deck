@@ -276,8 +276,20 @@ function describeFailureCause(error) {
     return t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
 }
 
+// A failure the popup understood and already wrote localized copy for. Before
+// this, the catch blocks ran that copy through failureText like any other
+// throw, so "Import stopped... export a backup first" reached the user as
+// "Something unexpected went wrong. The diagnostic log has the details."
+function userFacingError(message, cause) {
+    const error = new Error(message);
+    error.userFacing = true;
+    if (cause) error.cause = cause;
+    return error;
+}
+
 function failureText(context, error, labelKey, labelFallback) {
-    logFailure(context, error);
+    logFailure(context, error?.userFacing && error.cause ? error.cause : error);
+    if (error?.userFacing) return error.message;
     const label = labelKey ? t(labelKey, labelFallback) : '';
     const withLabel = globalThis.YTKitCore?.describeFailureWithLabel;
     if (typeof withLabel === 'function') return withLabel(label, error, t);
@@ -2486,6 +2498,10 @@ function setStatCardsUnavailable() {
 // It has to be asked for through a YouTube tab, because that is where the
 // database is. When there is not one, say so rather than showing nothing.
 let transcriptRecoveryBusy = false;
+// Set when the export went out through an anchor click, which cannot report
+// whether the file was written. The next press clears without exporting
+// again, once the user has seen the file.
+let transcriptRecoveryAwaitingClear = false;
 
 function setTranscriptIndexDetail(text) {
     if (transcriptIndexDetail) transcriptIndexDetail.textContent = text;
@@ -2557,13 +2573,28 @@ async function recoverTranscriptIndex() {
         }
 
         const records = Array.isArray(exported.records) ? exported.records : [];
-        try {
-            downloadTranscriptRecovery(records);
-        } catch (error) {
-            showStatus(failureText('transcript-recovery-download', error,
-                'transcriptStoreExportFailed',
-                'Could not export the transcript store. Nothing was cleared.'), 'error', 5000);
-            return;
+        if (!transcriptRecoveryAwaitingClear) {
+            let confirmed;
+            try {
+                confirmed = await downloadTranscriptRecovery(records);
+            } catch (error) {
+                showStatus(failureText('transcript-recovery-download', error,
+                    'transcriptStoreExportFailed',
+                    'Could not export the transcript store. Nothing was cleared.'), 'error', 5000);
+                return;
+            }
+            if (!confirmed) {
+                transcriptRecoveryAwaitingClear = true;
+                if (transcriptIndexRecover) {
+                    transcriptIndexRecover.textContent = t('transcriptStoreClearNow', 'Clear the store');
+                    transcriptIndexRecover.setAttribute('aria-label',
+                        t('transcriptStoreClearNowAria', 'Clear the store, after checking the exported file'));
+                }
+                showStatus(t('transcriptStoreExportUnconfirmed',
+                    'Astra Deck can\'t confirm the export reached your downloads, so nothing was cleared yet. Check for astra-deck-transcripts-recovery.json, then press Clear the store.'),
+                'info', 9000);
+                return;
+            }
         }
 
         try {
@@ -2578,6 +2609,12 @@ async function recoverTranscriptIndex() {
             'Exported {count} readable transcript and cleared the store.',
             'Exported {count} readable transcripts and cleared the store.')
             .replace('{count}', formatCount(records.length)), 'success', 4200);
+        if (transcriptRecoveryAwaitingClear && transcriptIndexRecover) {
+            transcriptIndexRecover.textContent = t('transcriptStoreRecover', 'Export and clear');
+            transcriptIndexRecover.setAttribute('aria-label', t('transcriptStoreRecoverAria',
+                'Export the readable transcripts, then clear the damaged store'));
+        }
+        transcriptRecoveryAwaitingClear = false;
         await renderTranscriptIndexUsage();
     } finally {
         transcriptRecoveryBusy = false;
@@ -2585,21 +2622,40 @@ async function recoverTranscriptIndex() {
     }
 }
 
-function downloadTranscriptRecovery(records) {
+// Resolves true only once the browser reports the file written. The clear that
+// follows destroys the only other copy, so "the download started" is not
+// enough. An anchor click (the store build has no downloads permission) gives
+// no signal at all, so it resolves false and the caller asks the user.
+async function downloadTranscriptRecovery(records) {
     const payload = JSON.stringify({
         kind: 'astra-deck-transcript-recovery',
         exportedAt: new Date().toISOString(),
         records
     }, null, 2);
+    const filename = 'astra-deck-transcripts-recovery.json';
     const blob = new Blob([payload], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     try {
+        if (ext?.downloads?.download && ext.downloads.search) {
+            const id = await callExtensionApi(ext.downloads, 'download', { url, filename, saveAs: false });
+            const deadline = Date.now() + 60000;
+            while (Date.now() < deadline) {
+                const [item] = await callExtensionApi(ext.downloads, 'search', { id });
+                if (item?.state === 'complete') return true;
+                if (!item || item.state === 'interrupted') {
+                    throw new Error('Transcript export download ' + (item?.error || 'was removed'));
+                }
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+            throw new Error('Transcript export download timed out');
+        }
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'astra-deck-transcripts-recovery.json';
+        link.download = filename;
         link.click();
+        return false;
     } finally {
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
 }
 
@@ -6223,7 +6279,7 @@ async function importFilterList(file) {
         try {
             data = JSON.parse(await file.text());
         } catch (_) {
-            throw new Error(t('filterListImportNotJson', 'That file is not valid JSON.'));
+            throw userFacingError(t('filterListImportNotJson', 'That file is not valid JSON.'));
         }
         // Parse and validate the versioned format before reading a snapshot or
         // writing any storage. Future formats are a strict no-op.
@@ -6254,7 +6310,7 @@ async function importFilterList(file) {
         const snapped = await writeImportSnapshot(snapshot);
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
-            throw new Error(t('statusImportSnapshotFail',
+            throw userFacingError(t('statusImportSnapshotFail',
                 'Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.'));
         }
         try {
@@ -6272,7 +6328,7 @@ async function importFilterList(file) {
                 await clearImportSnapshot();
                 await discardCoordinatedSnapshot(snapshot);
             }
-            throw new Error(t('filterListImportRollback', 'Filter-list import failed; previous data was restored.'));
+            throw userFacingError(t('filterListImportRollback', 'Filter-list import failed; previous data was restored.'), error);
         }
     } catch (error) {
         setFilterListStatus('filterListStatusFail', 'Something went wrong. Your saved rules were not changed.', 'error');
@@ -6441,14 +6497,30 @@ async function importSettings(file) {
             // this one leaked the parser's. Keep the raw text for the console
             // and the diagnostic bundle, and tell the user what a backup is.
             console.warn('[Astra Deck popup] Settings import parse failed:', parseError);
-            throw new Error(t('statusImportNotBackup',
-                'That file is not an Astra Deck backup. Choose the .json file produced by Export. A valid backup contains an "exportVersion" field.'));
+            throw userFacingError(t('statusImportNotBackup',
+                'That file is not an Astra Deck backup. Choose the .json file produced by Export. A valid backup contains an "exportVersion" field.'), parseError);
         }
         // Version validation happens before any snapshot or write. A backup
         // from a future Astra version must be a strict no-op, not a best-effort
         // partial import that silently drops unknown domains.
-        const migrated = persistedDomains.migrateBackup(data);
         const importCatalog = await loadSettingsImportCatalog();
+        let migrated;
+        try {
+            migrated = persistedDomains.migrateBackup(data, {
+                isSettingsKey: (key) => Object.prototype.hasOwnProperty.call(importCatalog.defaults, key)
+                    || RETIRED_SETTING_KEYS.has(key)
+            });
+        } catch (rejection) {
+            if (rejection?.code === 'backup-too-new') {
+                throw userFacingError(t('statusImportBackupTooNew',
+                    'That backup comes from a newer version of Astra Deck. Update Astra Deck, then import it again. Nothing was changed.'), rejection);
+            }
+            if (rejection?.code === 'not-a-backup') {
+                throw userFacingError(t('statusImportWrongFile',
+                    'That file isn\'t an Astra Deck backup, so nothing was imported. Choose the .json file that Export saved.'), rejection);
+            }
+            throw rejection;
+        }
         const sanitized = persistedDomains.sanitizeMigratedDomains(migrated, (importedSettings) => (
             mergeImportedSettingsWithDefaults(
                 importedSettings,
@@ -6460,7 +6532,10 @@ async function importSettings(file) {
         ));
         const writes = persistedDomains.domainsToExtensionWrites(sanitized.domains);
         const hasTranscriptDomain = Object.prototype.hasOwnProperty.call(sanitized.domains, 'transcriptIndex');
-        if (Object.keys(writes).length === 0 && !hasTranscriptDomain) throw new Error('No valid portable data found in file');
+        if (Object.keys(writes).length === 0 && !hasTranscriptDomain) {
+            throw userFacingError(t('statusImportNothingFound',
+                'That backup holds nothing Astra Deck can import, so nothing was changed.'));
+        }
         if (estimateSerializedBytes(writes) > 64 * 1024 * 1024) throw new Error('Extension-local import data exceeds the 64 MB safety limit');
 
         const preview = persistedDomains.buildImportPreview(

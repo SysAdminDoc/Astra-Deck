@@ -793,24 +793,48 @@
         return removals;
     }
 
-    function migrateBackup(raw) {
-        if (!isPlainObject(raw)) throw new Error('Invalid backup format');
+    function backupError(code, message) {
+        const error = new Error(message);
+        error.code = code;
+        return error;
+    }
+
+    // A v1 backup is a bare settings object, so any JSON object used to pass
+    // as one: `{}`, a package.json, a Watch Feed export (which declares
+    // exportVersion 1). The popup merged it over the defaults and replaced
+    // every setting. A caller that knows the schema passes isSettingsKey, and
+    // a bag counts when at least one key, and at least half of them, are real
+    // settings; old backups still carry a few retired keys.
+    function looksLikeSettingsBag(value, isSettingsKey) {
+        if (!isPlainObject(value)) return false;
+        const keys = Object.keys(value).filter((key) => !key.startsWith('_'));
+        if (typeof isSettingsKey !== 'function') return keys.length > 0;
+        const known = keys.filter((key) => isSettingsKey(key)).length;
+        return known > 0 && known * 2 >= keys.length;
+    }
+
+    function migrateBackup(raw, options = {}) {
+        if (!isPlainObject(raw)) throw backupError('bad-format', 'Invalid backup format');
         const version = Number(raw.exportVersion || 1);
-        if (!Number.isInteger(version) || version < 1) throw new Error('Invalid backup version');
+        if (!Number.isInteger(version) || version < 1) throw backupError('bad-format', 'Invalid backup version');
         if (version > BACKUP_EXPORT_VERSION) {
-            throw new Error(`Backup version ${version} is newer than this Astra Deck build supports (${BACKUP_EXPORT_VERSION})`);
+            throw backupError('backup-too-new',
+                `Backup version ${version} is newer than this Astra Deck build supports (${BACKUP_EXPORT_VERSION})`);
         }
         const domains = {};
         if (version === BACKUP_EXPORT_VERSION) {
             if (Number(raw.backupSchemaVersion) !== BACKUP_SCHEMA_VERSION || !isPlainObject(raw.domains)) {
-                throw new Error('Invalid current-version backup schema');
+                throw backupError('bad-format', 'Invalid current-version backup schema');
             }
             for (const domain of INCLUDED_DOMAINS) {
                 if (Object.prototype.hasOwnProperty.call(raw.domains, domain.id)) domains[domain.id] = raw.domains[domain.id];
             }
         } else {
-            if (isPlainObject(raw.settings)) domains.settings = raw.settings;
-            else if (version === 1) domains.settings = raw;
+            const settingsBag = isPlainObject(raw.settings) ? raw.settings : (version === 1 ? raw : null);
+            if (version === 1 && !looksLikeSettingsBag(settingsBag, options.isSettingsKey)) {
+                throw backupError('not-a-backup', 'Not an Astra Deck backup');
+            }
+            if (settingsBag) domains.settings = settingsBag;
             const hidden = Array.isArray(raw.hiddenVideos) ? raw.hiddenVideos : raw.filteredVideoPosts;
             if (Array.isArray(hidden)) domains.hiddenVideos = hidden;
             if (version >= 3 && Array.isArray(raw.allowedVideos)) domains.allowedVideos = raw.allowedVideos;

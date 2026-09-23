@@ -6546,6 +6546,10 @@
     "message": "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.",
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
+  "statusImportBackupTooNew": {
+    "message": "That backup comes from a newer version of Astra Deck. Update Astra Deck, then import it again. Nothing was changed.",
+    "description": "Popup import refusal: the backup was written by a newer Astra Deck build."
+  },
   "statusImportBackupWrittenTpl": {
     "message": "Your previous data was saved to {file} first.",
     "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
@@ -6555,6 +6559,10 @@
   },
   "statusImportNotBackup": {
     "message": "That file is not an Astra Deck backup. Choose the .json file produced by Export. A valid backup contains an \"exportVersion\" field."
+  },
+  "statusImportNothingFound": {
+    "message": "That backup holds nothing Astra Deck can import, so nothing was changed.",
+    "description": "Popup import refusal: the backup parsed but contained no importable data."
   },
   "statusImportPreviewApplyTpl": {
     "message": "Import preview: {preview}. Applying with rollback…"
@@ -6579,6 +6587,10 @@
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
+  },
+  "statusImportWrongFile": {
+    "message": "That file isn't an Astra Deck backup, so nothing was imported. Choose the .json file that Export saved.",
+    "description": "Popup import refusal: the JSON file is not an Astra Deck backup (for example a Watch Feed export)."
   },
   "statusMediadlReenableFail": {
     "message": "Could not re-enable Astra Downloader prompts. Open your browser's extensions page and reload."
@@ -7704,6 +7716,14 @@
   "transcriptStoreClearFailed": {
     "message": "The export was saved, but the store could not be cleared."
   },
+  "transcriptStoreClearNow": {
+    "message": "Clear the store",
+    "description": "Transcript store recovery button, second step: the export could not be confirmed, so this press only clears."
+  },
+  "transcriptStoreClearNowAria": {
+    "message": "Clear the store, after checking the exported file",
+    "description": "Accessible name for the second-step transcript store button. Starts with the visible label."
+  },
   "transcriptStoreDamagedTplOne": {
     "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
   },
@@ -7715,6 +7735,10 @@
   },
   "transcriptStoreExportFailed": {
     "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreExportUnconfirmed": {
+    "message": "Astra Deck can't confirm the export reached your downloads, so nothing was cleared yet. Check for astra-deck-transcripts-recovery.json, then press Clear the store.",
+    "description": "Status after a transcript store export the browser cannot confirm (no downloads permission). Names the second-step button."
   },
   "transcriptStoreFailed": {
     "message": "Transcript store: could not be measured."

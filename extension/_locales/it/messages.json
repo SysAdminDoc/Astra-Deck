@@ -6512,6 +6512,9 @@
     "message": "Astra Deck non è riuscito a salvare prima un file di backup dei tuoi dati precedenti, quindi «Annulla importazione» è l'unica via di ritorno.",
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
+  "statusImportBackupTooNew": {
+    "message": "Questo backup proviene da una versione più recente di Astra Deck. Aggiorna Astra Deck, poi importalo di nuovo. Non è stato modificato nulla."
+  },
   "statusImportBackupWrittenTpl": {
     "message": "I tuoi dati precedenti sono stati salvati prima in {file}.",
     "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
@@ -6521,6 +6524,9 @@
   },
   "statusImportNotBackup": {
     "message": "Questo file non è un backup di Astra Deck. Scegli il file .json prodotto da Esporta: un backup valido contiene un campo \"exportVersion\"."
+  },
+  "statusImportNothingFound": {
+    "message": "Questo backup non contiene nulla che Astra Deck possa importare, quindi non è stato modificato nulla."
   },
   "statusImportPreviewApplyTpl": {
     "message": "Anteprima importazione: {preview}. Applicazione con ripristino…"
@@ -6545,6 +6551,9 @@
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
+  },
+  "statusImportWrongFile": {
+    "message": "Questo file non è un backup di Astra Deck, quindi non è stato importato nulla. Scegli il file .json salvato da Esporta."
   },
   "statusMediadlReenableFail": {
     "message": "Impossibile riattivare gli avvisi di Astra Downloader. Apri la pagina delle estensioni del browser e ricarica."
@@ -7668,6 +7677,12 @@
   "transcriptStoreClearFailed": {
     "message": "The export was saved, but the store could not be cleared."
   },
+  "transcriptStoreClearNow": {
+    "message": "Svuota l'archivio"
+  },
+  "transcriptStoreClearNowAria": {
+    "message": "Svuota l'archivio, dopo aver controllato il file esportato"
+  },
   "transcriptStoreDamagedTplOne": {
     "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
   },
@@ -7679,6 +7694,9 @@
   },
   "transcriptStoreExportFailed": {
     "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreExportUnconfirmed": {
+    "message": "Astra Deck non può confermare che l'esportazione sia arrivata nei download, quindi non è ancora stato cancellato nulla. Cerca astra-deck-transcripts-recovery.json, poi premi Svuota l'archivio."
   },
   "transcriptStoreFailed": {
     "message": "Transcript store: could not be measured."

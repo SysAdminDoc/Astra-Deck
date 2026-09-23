@@ -1085,11 +1085,25 @@ installConnectivityWatch();
         if (pending) clearTimeout(pending);
         pending = setTimeout(() => { pending = null; void refresh(); }, 250);
     };
+    // Only the tab this panel describes. A refresh makes the settings list
+    // inert and rebuilds it, so a YouTube tab finishing a load in the
+    // background, or a tab switch in another window, moved focus off the
+    // toggle the user was about to press. Until the window id resolves, every
+    // window counts, which is the old behaviour.
+    let panelWindowId = null;
+    Promise.resolve()
+        .then(() => ext?.windows?.getCurrent?.())
+        .then((win) => { if (Number.isInteger(win?.id)) panelWindowId = win.id; })
+        .catch(() => { /* reason: no windows API in the static preview */ });
+    const inPanelWindow = (windowId) => panelWindowId === null || windowId === panelWindowId;
     try {
-        tabs.onActivated.addListener(scheduleRefresh);
+        tabs.onActivated.addListener((info) => {
+            if (inPanelWindow(info?.windowId)) scheduleRefresh();
+        });
         tabs.onUpdated?.addListener?.((_tabId, changeInfo, tab) => {
             // Only a completed navigation changes what the diagnostics say.
             if (changeInfo?.status !== 'complete') return;
+            if (!tab?.active || !inPanelWindow(tab.windowId)) return;
             if (!isSupportedUrl(tab?.url || '')) return;
             scheduleRefresh();
         });

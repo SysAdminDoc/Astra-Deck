@@ -6512,6 +6512,9 @@
     "message": "Astra Deck は以前のデータのバックアップファイルを先に保存できませんでした。「インポートを取り消す」が唯一の復元手段です。",
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
+  "statusImportBackupTooNew": {
+    "message": "このバックアップは新しいバージョンの Astra Deck で作成されています。Astra Deck を更新してから、もう一度インポートしてください。何も変更されていません。"
+  },
   "statusImportBackupWrittenTpl": {
     "message": "以前のデータは先に {file} に保存されました。",
     "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
@@ -6521,6 +6524,9 @@
   },
   "statusImportNotBackup": {
     "message": "このファイルは Astra Deck のバックアップではありません。エクスポートで作成された .json ファイルを選択してください。有効なバックアップには \"exportVersion\" フィールドがあります。"
+  },
+  "statusImportNothingFound": {
+    "message": "このバックアップには Astra Deck がインポートできるものが含まれていないため、何も変更されていません。"
   },
   "statusImportPreviewApplyTpl": {
     "message": "インポートのプレビュー: {preview}。ロールバック付きで適用中…"
@@ -6545,6 +6551,9 @@
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
+  },
+  "statusImportWrongFile": {
+    "message": "このファイルは Astra Deck のバックアップではないため、何もインポートされませんでした。エクスポートで保存した .json ファイルを選択してください。"
   },
   "statusMediadlReenableFail": {
     "message": "Astra Downloader のプロンプトを再有効化できませんでした。ブラウザーの拡張機能ページを開いて再読み込みしてください。"
@@ -7668,6 +7677,12 @@
   "transcriptStoreClearFailed": {
     "message": "The export was saved, but the store could not be cleared."
   },
+  "transcriptStoreClearNow": {
+    "message": "ストアを消去"
+  },
+  "transcriptStoreClearNowAria": {
+    "message": "ストアを消去（エクスポートしたファイルを確認した後）"
+  },
   "transcriptStoreDamagedTplOne": {
     "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
   },
@@ -7679,6 +7694,9 @@
   },
   "transcriptStoreExportFailed": {
     "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreExportUnconfirmed": {
+    "message": "エクスポートがダウンロードフォルダーに届いたことを Astra Deck で確認できないため、まだ何も消去していません。astra-deck-transcripts-recovery.json があることを確認してから、「ストアを消去」を押してください。"
   },
   "transcriptStoreFailed": {
     "message": "Transcript store: could not be measured."

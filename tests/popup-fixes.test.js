@@ -16,6 +16,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const popupSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'popup.js'),
@@ -953,6 +954,52 @@ test('the side panel refreshes on tab changes it claims to track live', () => {
         'the navigation filter must reuse the shared URL predicate');
     assert.match(sidepanel, /clearTimeout\(pending\)/,
         'refreshes must coalesce — one navigation emits several events');
+});
+
+// A refresh makes the settings list inert and rebuilds it, so any refresh the
+// user did not cause takes focus off the control they were on. A YouTube tab
+// loading in the background, or a tab switch in another window, caused one.
+test('the side panel refreshes only for the tab it describes', async () => {
+    const sidepanel = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8');
+    const start = sidepanel.indexOf('(() => {\n    const tabs = ext?.tabs;');
+    assert.ok(start > -1, 'the tab listener block must exist');
+    const block = sidepanel.slice(start, sidepanel.indexOf('\n})();', start) + '\n})();'.length);
+    const listeners = {};
+    let refreshes = 0;
+    const timers = [];
+    const ext = {
+        windows: { getCurrent: async () => ({ id: 1 }) },
+        tabs: {
+            onActivated: { addListener: (fn) => { listeners.activated = fn; } },
+            onUpdated: { addListener: (fn) => { listeners.updated = fn; } }
+        }
+    };
+    vm.runInNewContext(block, {
+        ext,
+        Promise,
+        Number,
+        refresh: () => { refreshes += 1; },
+        isSupportedUrl: (url) => url.startsWith('https://www.youtube.com/'),
+        setTimeout: (fn) => { timers.push(fn); return timers.length; },
+        clearTimeout: (id) => { timers[id - 1] = null; }
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    const flush = () => { const due = timers.splice(0).filter(Boolean); due.forEach((fn) => fn()); };
+    const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+
+    listeners.updated(5, { status: 'complete' }, { active: false, windowId: 1, url });
+    listeners.updated(6, { status: 'complete' }, { active: true, windowId: 2, url });
+    listeners.activated({ tabId: 6, windowId: 2 });
+    flush();
+    assert.equal(refreshes, 0, 'a background tab or another window is not what the panel shows');
+
+    listeners.updated(7, { status: 'complete' }, { active: true, windowId: 1, url });
+    flush();
+    assert.equal(refreshes, 1, 'the active tab in this window still refreshes');
+    listeners.activated({ tabId: 8, windowId: 1 });
+    flush();
+    assert.equal(refreshes, 2, 'and so does switching tabs in this window');
 });
 
 test('side panel byte formatting scales past MB and matches the popup', () => {

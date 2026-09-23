@@ -6512,6 +6512,9 @@
     "message": "Astra Deck konnte zuvor keine Sicherungsdatei Ihrer vorherigen Daten speichern; „Import rückgängig“ ist daher der einzige Weg zurück.",
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
+  "statusImportBackupTooNew": {
+    "message": "Dieses Backup stammt aus einer neueren Version von Astra Deck. Aktualisieren Sie Astra Deck und importieren Sie es dann erneut. Es wurde nichts geändert."
+  },
   "statusImportBackupWrittenTpl": {
     "message": "Ihre vorherigen Daten wurden zuvor in {file} gesichert.",
     "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
@@ -6521,6 +6524,9 @@
   },
   "statusImportNotBackup": {
     "message": "Diese Datei ist kein Astra Deck-Backup. Wählen Sie die von „Exportieren“ erzeugte .json-Datei — ein gültiges Backup enthält ein Feld \"exportVersion\"."
+  },
+  "statusImportNothingFound": {
+    "message": "Dieses Backup enthält nichts, was Astra Deck importieren kann, daher wurde nichts geändert."
   },
   "statusImportPreviewApplyTpl": {
     "message": "Import-Vorschau: {preview}. Anwendung mit Rollback…"
@@ -6545,6 +6551,9 @@
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
+  },
+  "statusImportWrongFile": {
+    "message": "Diese Datei ist kein Astra Deck-Backup, daher wurde nichts importiert. Wählen Sie die .json-Datei, die „Exportieren“ gespeichert hat."
   },
   "statusMediadlReenableFail": {
     "message": "Astra Downloader Aufforderungen konnten nicht erneut aktiviert werden. Öffnen Sie die Erweiterungsseite Ihres Browsers und laden Sie neu."
@@ -7668,6 +7677,12 @@
   "transcriptStoreClearFailed": {
     "message": "The export was saved, but the store could not be cleared."
   },
+  "transcriptStoreClearNow": {
+    "message": "Speicher leeren"
+  },
+  "transcriptStoreClearNowAria": {
+    "message": "Speicher leeren, nachdem Sie die exportierte Datei geprüft haben"
+  },
   "transcriptStoreDamagedTplOne": {
     "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
   },
@@ -7679,6 +7694,9 @@
   },
   "transcriptStoreExportFailed": {
     "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreExportUnconfirmed": {
+    "message": "Astra Deck kann nicht bestätigen, dass der Export in Ihren Downloads angekommen ist, daher wurde noch nichts gelöscht. Suchen Sie nach astra-deck-transcripts-recovery.json und drücken Sie dann „Speicher leeren“."
   },
   "transcriptStoreFailed": {
     "message": "Transcript store: could not be measured."

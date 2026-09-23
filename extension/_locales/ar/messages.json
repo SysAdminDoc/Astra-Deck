@@ -6512,6 +6512,9 @@
     "message": "تعذّر على Astra Deck حفظ ملف نسخة احتياطية من بياناتك السابقة أولاً، لذا «تراجع عن الاستيراد» هو السبيل الوحيد للعودة.",
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
+  "statusImportBackupTooNew": {
+    "message": "هذه النسخة الاحتياطية من إصدار أحدث من Astra Deck. حدّث Astra Deck ثم استوردها مرة أخرى. لم يتغير شيء."
+  },
   "statusImportBackupWrittenTpl": {
     "message": "تم حفظ بياناتك السابقة في {file} أولاً.",
     "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
@@ -6521,6 +6524,9 @@
   },
   "statusImportNotBackup": {
     "message": "هذا الملف ليس نسخة احتياطية من Astra Deck. اختر ملف .json الذي أنشأه التصدير — النسخة الصحيحة تحتوي على حقل \"exportVersion\"."
+  },
+  "statusImportNothingFound": {
+    "message": "لا تحتوي هذه النسخة الاحتياطية على أي شيء يمكن لـ Astra Deck استيراده، لذلك لم يتغير شيء."
   },
   "statusImportPreviewApplyTpl": {
     "message": "معاينة الاستيراد: {preview}. يجري التطبيق مع إمكانية التراجع…"
@@ -6545,6 +6551,9 @@
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
+  },
+  "statusImportWrongFile": {
+    "message": "هذا الملف ليس نسخة احتياطية من Astra Deck، لذلك لم يُستورد شيء. اختر ملف .json الذي حفظه التصدير."
   },
   "statusMediadlReenableFail": {
     "message": "تعذّرت إعادة تفعيل إشعارات Astra Downloader. افتح صفحة الإضافات في متصفحك وأعد التحميل."
@@ -7668,6 +7677,12 @@
   "transcriptStoreClearFailed": {
     "message": "The export was saved, but the store could not be cleared."
   },
+  "transcriptStoreClearNow": {
+    "message": "مسح المخزن"
+  },
+  "transcriptStoreClearNowAria": {
+    "message": "مسح المخزن، بعد التحقق من الملف المُصدَّر"
+  },
   "transcriptStoreDamagedTplOne": {
     "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
   },
@@ -7679,6 +7694,9 @@
   },
   "transcriptStoreExportFailed": {
     "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreExportUnconfirmed": {
+    "message": "لا يستطيع Astra Deck التأكد من وصول الملف المُصدَّر إلى التنزيلات، لذلك لم يُمسح شيء بعد. ابحث عن astra-deck-transcripts-recovery.json ثم اضغط مسح المخزن."
   },
   "transcriptStoreFailed": {
     "message": "Transcript store: could not be measured."

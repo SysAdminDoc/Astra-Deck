@@ -6512,6 +6512,9 @@
     "message": "Astra Deck 未能先保存你之前数据的备份文件，因此“撤销导入”是唯一的回退方式。",
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
+  "statusImportBackupTooNew": {
+    "message": "该备份来自更新版本的 Astra Deck。请更新 Astra Deck 后再导入。未做任何更改。"
+  },
   "statusImportBackupWrittenTpl": {
     "message": "你之前的数据已先保存到 {file}。",
     "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
@@ -6521,6 +6524,9 @@
   },
   "statusImportNotBackup": {
     "message": "该文件不是 Astra Deck 备份。请选择由“导出”生成的 .json 文件——有效的备份包含 \"exportVersion\" 字段。"
+  },
+  "statusImportNothingFound": {
+    "message": "该备份中没有 Astra Deck 可以导入的内容，因此未做任何更改。"
   },
   "statusImportPreviewApplyTpl": {
     "message": "导入预览:{preview}。正在应用并支持回滚…"
@@ -6545,6 +6551,9 @@
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
+  },
+  "statusImportWrongFile": {
+    "message": "该文件不是 Astra Deck 备份，因此未导入任何内容。请选择由“导出”保存的 .json 文件。"
   },
   "statusMediadlReenableFail": {
     "message": "无法重新启用 Astra Downloader 提示。请打开浏览器的扩展页面并重新加载。"
@@ -7668,6 +7677,12 @@
   "transcriptStoreClearFailed": {
     "message": "The export was saved, but the store could not be cleared."
   },
+  "transcriptStoreClearNow": {
+    "message": "清空存储"
+  },
+  "transcriptStoreClearNowAria": {
+    "message": "清空存储（请先检查导出的文件）"
+  },
   "transcriptStoreDamagedTplOne": {
     "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
   },
@@ -7679,6 +7694,9 @@
   },
   "transcriptStoreExportFailed": {
     "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreExportUnconfirmed": {
+    "message": "Astra Deck 无法确认导出文件已保存到下载文件夹，因此尚未清除任何内容。请确认 astra-deck-transcripts-recovery.json 存在，然后点击“清空存储”。"
   },
   "transcriptStoreFailed": {
     "message": "Transcript store: could not be measured."

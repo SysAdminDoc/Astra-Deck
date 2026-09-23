@@ -31,17 +31,38 @@ function loadRecovery(overrides = {}) {
     // declared above them and the closures read it.
     const body = pick('let transcriptRecoveryBusy = false;', '\nasync function renderStorageInfo() {');
 
-    const calls = { messages: [], downloads: [], statuses: [] };
+    const calls = { messages: [], downloads: [], statuses: [], searches: 0 };
     const detail = { textContent: '' };
-    const recover = { hidden: true, disabled: false };
+    const recover = {
+        hidden: true,
+        disabled: false,
+        textContent: 'Export and clear',
+        setAttribute(name, value) { this[name] = value; }
+    };
+    const FILE = 'astra-deck-transcripts-recovery.json';
+    const downloadsApi = {
+        download: async (options) => {
+            if (overrides.breakDownload) throw new Error('download blocked');
+            calls.downloads.push(options.filename);
+            return 7;
+        },
+        search: async ({ id }) => (calls.searches += 1) && [overrides.downloadState === 'interrupted'
+            ? { id, state: 'interrupted', error: 'FILE_NO_SPACE' }
+            : { id, state: 'complete', filename: FILE }]
+    };
 
     const sandbox = {
         console,
-        setTimeout,
+        // The blob URL revoke waits a minute; it must not hold the test run open.
+        setTimeout: (fn, ms) => { const handle = setTimeout(fn, ms); handle.unref?.(); return handle; },
         clearTimeout,
         Blob: class { constructor(parts) { this.parts = parts; } },
         URL: { createObjectURL: () => 'blob:stub', revokeObjectURL() {} },
         Date,
+        // The store build has no downloads permission; that browser can only
+        // click an anchor, which never says whether the file was written.
+        ext: overrides.noDownloadsApi ? {} : { downloads: downloadsApi },
+        callExtensionApi: (target, method, ...args) => target[method](...args),
         document: {
             createElement: () => {
                 if (overrides.breakDownload) throw new Error('download blocked');
@@ -159,7 +180,7 @@ test('a successful export is written out and then the store is cleared', async (
     });
 
     await api.recoverTranscriptIndex();
-    assert.deepEqual(calls.downloads, ['clicked'], 'the readable records must reach a file');
+    assert.deepEqual(calls.downloads, ['astra-deck-transcripts-recovery.json'], 'the readable records must reach a file');
     assert.deepEqual(cleared, ['https://www.youtube.com'],
         'and the clear must go to the tab the export came from');
     assert.match(calls.statuses.at(-1).message, /Exported 2 readable transcripts/);
@@ -236,8 +257,56 @@ test('a failed clear still reports the export as saved', async () => {
         }
     });
     await api.recoverTranscriptIndex();
-    assert.deepEqual(calls.downloads, ['clicked']);
+    assert.deepEqual(calls.downloads, ['astra-deck-transcripts-recovery.json']);
     assert.match(calls.statuses.at(-1).message, /export was saved/);
+});
+
+// A download that started is not a file on disk. The clear destroys the only
+// other copy, so it waits for the browser to report the file complete.
+test('an interrupted download clears nothing', async () => {
+    const cleared = [];
+    const { api, calls } = loadRecovery({
+        readAllTranscriptRecords: async () => ({
+            records: [{ videoId: 'aaaaaaaaaaa' }], origin: 'https://www.youtube.com', available: true
+        }),
+        sendPersistedDataMessage: async (message) => {
+            if (message.action === 'clear') cleared.push(message);
+            return { response: {}, origin: '' };
+        },
+        downloadState: 'interrupted'
+    });
+    await api.recoverTranscriptIndex();
+    assert.deepEqual(cleared, [], 'a disk-full download left the user with no copy');
+    assert.equal(calls.searches, 1, 'an interrupted download is final; polling it until the deadline only delays the answer');
+    assert.match(calls.statuses.at(-1).message, /Nothing was cleared/);
+    assert.equal(calls.statuses.at(-1).tone, 'error');
+});
+
+// WHEN the browser cannot report the file written, the store SHALL survive the
+// first press, and the second press SHALL clear it without exporting again.
+test('an export the browser cannot confirm waits for a second press', async () => {
+    const cleared = [];
+    const { api, calls, recover } = loadRecovery({
+        readAllTranscriptRecords: async () => ({
+            records: [{ videoId: 'aaaaaaaaaaa' }], origin: 'https://www.youtube.com', available: true
+        }),
+        sendPersistedDataMessage: async (message, origin) => {
+            if (message.action === 'clear') cleared.push(origin);
+            return { response: { records: 0 }, origin: 'https://www.youtube.com' };
+        },
+        noDownloadsApi: true
+    });
+    await api.recoverTranscriptIndex();
+    assert.deepEqual(calls.downloads, ['clicked'], 'the file still goes out');
+    assert.deepEqual(cleared, [], 'but nothing is cleared on a click nobody can confirm');
+    assert.match(calls.statuses.at(-1).message, /can't confirm/);
+    assert.equal(recover.textContent, 'Clear the store', 'the button says what the next press does');
+
+    await api.recoverTranscriptIndex();
+    assert.deepEqual(calls.downloads, ['clicked'], 'the second press does not export again');
+    assert.deepEqual(cleared, ['https://www.youtube.com']);
+    assert.equal(calls.statuses.at(-1).tone, 'success');
+    assert.equal(recover.textContent, 'Export and clear', 'and the button goes back to its own job');
 });
 
 // ── the plumbing behind it ──

@@ -8,6 +8,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Importing the wrong file no longer resets your settings.** The popup's
+  Import accepted any JSON file as an old-style backup: a Watch Feed export,
+  a package.json, even `{}`. It then put every setting back to its default
+  and said "Backup imported". It now checks that the file really holds
+  Astra Deck settings, and says so plainly when it doesn't. A backup from a
+  newer Astra Deck gets its own message too, instead of "something
+  unexpected went wrong".
+- Import and filter-list errors show the reason Astra Deck actually knows
+  ("that file is not valid JSON", "could not save an undo point") again.
+  Those messages were being swapped for a generic one that pointed at a
+  diagnostic log with nothing useful in it.
+- **Export and clear keeps your transcripts until the file is saved.** The
+  transcript store recovery cleared the store as soon as the download
+  started, so a download that failed (a full disk, say) lost the only copy.
+  It now waits for the browser to report the file written. Where the browser
+  can't report that, the store is left alone and the button changes to
+  "Clear the store" for you to press once you've seen the file.
+- The side panel no longer steals focus from the setting you're on when a
+  YouTube tab loads in the background or you switch tabs in another window.
+
 - **The settings panel confirms your changes in your language.** Every toggle,
   text box, slider, colour and choice wrote its confirmation into the panel's
   status line (the one screen readers announce) in English: "X enabled.",
