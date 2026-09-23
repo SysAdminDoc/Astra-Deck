@@ -4,6 +4,19 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
+- [ ] P1 — The main userscript loads a core library one version behind it
+  Why: `YTKit.user.js` on `main` says `@version 4.90.0` but `@require`s
+  `refs/tags/v4.89.0/YTKit-core.user.js`, because the v4.90.0 bump rewrote the header
+  version and never re-ran the `@require` sync. Userscript users therefore get the 4.89.0
+  core: none of the v4.90.0 CSS fixes (full titles, the 183 restored declarations) reach
+  them. Re-syncing alone is worse, since no `v4.90.0` tag exists and the `@require` would 404.
+  Nothing caught it: every gate passes with the two versions disagreeing.
+  Touches: `YTKit.user.js`, `scripts/check-versions.js`, `tests/`.
+  Acceptance: WHEN the version gate runs, it SHALL fail if the main userscript's `@require`
+  does not name `refs/tags/v<@version>`; the next version bump SHALL be synced and its tag
+  pushed so the `@require` URL on `main` returns the matching core.
+  Complexity: S
+
 - [ ] P3 — Make CSS-template compaction automatic instead of allowlisted
   Why: `sync-userscript.js` now has three ways to find a stylesheet (a named const, a
   named `return`, and a shape scan over an allowlisted module). A module that grows a new
