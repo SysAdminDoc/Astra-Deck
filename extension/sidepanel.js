@@ -241,7 +241,7 @@ function isSupportedUrl(url) {
     try {
         const parsed = new URL(url);
         const h = parsed.hostname;
-        if (h === 'm.youtube.com' || h === 'studio.youtube.com') return false;
+        if (h === 'm.youtube.com' || h === 'music.youtube.com' || h === 'studio.youtube.com') return false;
         if (parsed.pathname.startsWith('/live_chat')) return false;
         return h === 'youtu.be'
             || h === 'youtube.com'

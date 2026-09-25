@@ -1436,6 +1436,37 @@ test('a filter-list URL is refused when the build does not declare the broad opt
     assert.equal(fetchCalled, false, 'store-safe builds must not reach a user-configured host');
 });
 
+test('YouTube Music stays blocked even through the dynamic filter-list grant path', async () => {
+    let permissionChecked = false;
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsContainsImpl: (_payload, callback) => {
+            permissionChecked = true;
+            callback(true);
+        },
+        permissionsRequestImpl: (_payload, callback) => callback(true),
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('{}', { status: 200 });
+        }
+    });
+
+    const grant = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://music.youtube.com/*']
+    });
+    assert.match(grant.error, /not declared by this extension build/);
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://music.youtube.com/youtubei/v1/player' }
+    });
+    assert.match(response.error, /not in allowlist/i);
+    assert.equal(permissionChecked, false, 'the excluded host must fail before permission lookup');
+    assert.equal(fetchCalled, false, 'the excluded host must never reach fetch');
+});
+
 test('a declared filter-list host is still fetched only after the user grants that exact origin', async () => {
     let capturedOrigins = null;
     let fetchCalled = false;

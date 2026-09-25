@@ -57,15 +57,15 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.90.1` |
+| Release | `v4.90.2` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `487` entries across `18` categories |
-| Runtime graph | `121` modules, including `31` peeled feature modules and `303` declared feature IDs |
+| Settings schema | `486` entries across `18` categories |
+| Runtime graph | `120` modules, including `30` peeled feature modules and `302` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
-| Compatibility modes | Desktop YouTube extension; bounded YouTube Music theme/OLED/density compatibility; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
+| Compatibility modes | Desktop YouTube extension; YouTube Music excluded; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
 <!-- END GENERATED PROJECT FACTS -->
 
 </details>
@@ -459,7 +459,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **482 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **481 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -1059,7 +1059,7 @@ This generated knowledgebase documents all **482 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Accessibility and performance</strong>: 11 settings</summary>
+<summary><strong>Accessibility and performance</strong>: 10 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -1072,7 +1072,6 @@ This generated knowledgebase documents all **482 user-facing settings** in the c
 | <a id="setting-presetResearcher"></a><strong>Researcher Preset</strong><br><code>presetResearcher</code> | Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-presetPowerUser"></a><strong>Power User Preset</strong><br><code>presetPowerUser</code> | Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-presetFocus"></a><strong>Focus Preset</strong><br><code>presetFocus</code> | Distraction-free viewing: hide Shorts, related videos, infinite scroll, notifications, and autoplay. Enables Zen Mode and Digital Wellbeing tracking. Toggle off to restore prior values. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
-| <a id="setting-youtubeMusicCompat"></a><strong>YouTube Music Compatibility</strong><br><code>youtubeMusicCompat</code> | Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v0.1.0</code> |
 | <a id="setting-apiRetryBackoff"></a><strong>API retry backoff</strong><br><code>apiRetryBackoff</code> | Enables bounded exponential backoff for retryable external API requests so a failing service is not hammered. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 
 </details>
@@ -1251,9 +1250,9 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 
-**Not supported:** Mobile browsers and YouTube Studio. YouTube Music has
-bounded theme/OLED/density compatibility; embedded `/embed/:id` pages have
-bounded player/quality support, not full watch-page parity.
+**Not supported:** Mobile browsers, YouTube Music, and YouTube Studio. Embedded
+`/embed/:id` pages have bounded player/quality support, not full watch-page
+parity.
 
 ### Optional browser capabilities
 

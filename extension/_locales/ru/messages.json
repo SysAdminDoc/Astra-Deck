@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "Раздел транскрипта"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "Применяет темы Astra Deck + OLED + функции плотности на music.youtube.com. Функции плеера (загрузки, RYD, SponsorBlock) сохраняют существующее ограничение по страницам."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "Совместимость с YouTube Music"
-  },
   "feature_zenMode_desc": {
     "message": "Затемняет страницу вокруг видеоплеера для сосредоточенного просмотра"
   },

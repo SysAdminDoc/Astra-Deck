@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "Transkriptbereich"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "Wendet Astra Deck Theming + OLED + Dichte-Funktionen auf music.youtube.com an. Player-spezifische Funktionen (Downloads, RYD, SponsorBlock) behalten ihre bestehende seitenweise Steuerung."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music-Kompatibilität"
-  },
   "feature_zenMode_desc": {
     "message": "Dunkelt die Seite um den Videoplayer herum ab für ein konzentriertes Seherlebnis"
   },

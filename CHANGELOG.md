@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.90.2] (2026-09-25)
+
+### Changed
+
+- **YouTube Music is left untouched.** Astra Deck no longer injects scripts or
+  styles on `music.youtube.com`, messages its tabs, exposes extension resources
+  there, proxies its requests, or applies ad-filter rules to its traffic.
+
+### Removed
+
+- Removed the old YouTube Music Compatibility toggle and runtime module. Saved
+  values for the retired toggle are discarded safely during settings cleanup.
+
 ### Fixed
 
 - **Importing the wrong file no longer resets your settings.** The popup's

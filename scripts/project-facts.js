@@ -90,18 +90,14 @@ function collectColorThemeOptions(ytkitSource) {
     return names;
 }
 
-function collectCompatibilityFacts(manifest, pageSource, musicSource, ytkitSource) {
+function collectCompatibilityFacts(manifest, pageSource, ytkitSource) {
     const requiredEvidence = [
-        [/MUSIC:\s*'music'/, 'PageTypes.MUSIC'],
         [/EMBED:\s*'embed'/, 'PageTypes.EMBED'],
-        [/isMusicHost/, 'music host classifier'],
         [/isEmbedPath/, 'embed path classifier'],
-        [/location\.hostname !== 'music\.youtube\.com'/, 'exact YouTube Music host gate'],
-        [/themeing \+ OLED \+ density/, 'bounded YouTube Music feature description'],
         [/qualityDefaultEmbed/, 'embed quality context'],
         [/data-ytkit-quality-context/, 'embed quality context marker']
     ];
-    const sources = [pageSource, pageSource, pageSource, pageSource, musicSource, musicSource, ytkitSource, ytkitSource];
+    const sources = [pageSource, pageSource, ytkitSource, ytkitSource];
     for (let index = 0; index < requiredEvidence.length; index += 1) {
         if (!requiredEvidence[index][0].test(sources[index])) {
             throw new Error(`Compatibility source drift: missing ${requiredEvidence[index][1]}`);
@@ -111,14 +107,19 @@ function collectCompatibilityFacts(manifest, pageSource, musicSource, ytkitSourc
     const excludedMatches = unique((manifest.content_scripts || [])
         .flatMap(entry => entry.exclude_matches || []));
     const mobileExcluded = excludedMatches.some(value => value.includes('m.youtube.com'));
+    const musicExcluded = excludedMatches.some(value => value === 'https://music.youtube.com/*');
     const studioExcluded = excludedMatches.some(value => value.includes('studio.youtube.com'));
-    if (!mobileExcluded || !studioExcluded) {
-        throw new Error('Manifest compatibility exclusions must include mobile YouTube and YouTube Studio');
+    const musicMatchingGroups = (manifest.content_scripts || []).filter(entry =>
+        (entry.matches || []).includes('https://*.youtube.com/*'));
+    const everyMusicMatchingGroupExcluded = musicMatchingGroups.every(entry =>
+        (entry.exclude_matches || []).includes('https://music.youtube.com/*'));
+    if (!mobileExcluded || !musicExcluded || !studioExcluded || !everyMusicMatchingGroupExcluded) {
+        throw new Error('Manifest compatibility exclusions must include mobile YouTube, YouTube Music, and YouTube Studio');
     }
 
     return Object.freeze({
         desktop: 'Desktop YouTube extension',
-        music: 'bounded YouTube Music theme/OLED/density compatibility',
+        music: 'YouTube Music excluded',
         embed: 'bounded /embed/:id player mode',
         excluded: 'mobile browsers and YouTube Studio',
         userscript: 'userscript follows the host desktop browser'
@@ -135,7 +136,6 @@ function collectProjectFacts() {
     const dataFlow = require(path.join(REPO_ROOT, 'extension', 'core', 'data-flow.js'));
     const ytkitSource = readText(path.join('extension', 'ytkit.js'));
     const pageSource = readText(path.join('extension', 'core', 'page.js'));
-    const musicSource = readText(path.join('extension', 'features', 'youtube-music-compat', 'index.js'));
     const modules = collectManifestModules(manifest);
     const featureModules = modules
         .filter(modulePath => /^features\/[^/]+\/index\.js$/.test(modulePath))
@@ -188,7 +188,7 @@ function collectProjectFacts() {
         fullOnlyOrigins: Object.freeze(fullOnlyOrigins.map(entry => entry.origin)),
         colorThemes: Object.freeze(themeOptions.filter(name => name !== 'none')),
         themeControls: Object.freeze(['oledTheme', 'denseMode', 'tokenThemeBridge']),
-        compatibility: collectCompatibilityFacts(manifest, pageSource, musicSource, ytkitSource),
+        compatibility: collectCompatibilityFacts(manifest, pageSource, ytkitSource),
         semanticClaims: collectSemanticClaims(REPO_ROOT, packageJson, readText('extension/runtime-bootstrap.js'))
     });
 }

@@ -3134,7 +3134,8 @@ test('build-extension gates web_accessible_resources policy for every profile', 
     ));
     const runtimeResources = builder.getRuntimeModuleResources();
     const matches = [
-        'https://*.youtube.com/*',
+        'https://www.youtube.com/*',
+        'https://youtube.com/*',
         'https://*.youtube-nocookie.com/*',
         'https://youtu.be/*'
     ];
@@ -5231,21 +5232,6 @@ test('astraContextMenu adds a contextmenu listener but never blocks the native m
         'destroy() must remove the contextmenu listener');
 });
 
-test('youtubeMusicCompat only runs on music.youtube.com', () => {
-    // v4.47.0 EI-NEW2: substring includes() match was replaced with
-    // exact-equality `!==` so a hypothetical music.youtube.com.evil.tld
-    // can't be matched. The early-return invariant is preserved.
-    // Reads the feature module: ytkit.js carried a byte-identical second copy
-    // of this object until v4.72.0 and now carries only a descriptor stub.
-    const musicSource = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'features', 'youtube-music-compat', 'index.js'), 'utf8');
-    const start = musicSource.indexOf("id: 'youtubeMusicCompat'");
-    assert.ok(start > -1, 'youtubeMusicCompat must exist');
-    const block = musicSource.slice(start, start + 3000);
-    assert.match(block, /location\.hostname !== 'music\.youtube\.com'/,
-        'must early-return on non-music hostnames via exact-equality match');
-});
-
 // ── v4.1.0 P1: Deferred-item follow-ups (DeArrow channel override + per-context quality) ──
 
 test('deArrow honors per-channel override before fetching branding', () => {
@@ -5780,11 +5766,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // The remote known-breakage feed adds its own default-on toggle (476 -> 477).
     // The Transcript Q&A provider lane adds one explicit local/remote choice (478).
     // Six DeArrow surface masks add explicit request boundaries (484), plus
-    // the opt-in scheduled selector refresh and the channel landing tab and the open-thumbnail button (487).
+    // the opt-in scheduled selector refresh, the channel landing tab, and the
+    // open-thumbnail button (487). Retiring YouTube Music compatibility leaves 486.
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 487,
-        'SETTINGS_SCHEMA must cover all 487 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 486,
+        'SETTINGS_SCHEMA must cover all 486 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7939,7 +7926,6 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/features/video-hider/index.js',
         'extension/features/video-notes/index.js',
         'extension/features/player-dock/index.js',
-        'extension/features/youtube-music-compat/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     for (const mod of expectedModules) {
@@ -8135,7 +8121,6 @@ test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () 
         'features/digital-wellbeing/index.js':  'function createDigitalWellbeingFeature',
         'features/settings-panel/index.js':     'function createSettingsPanelRuntime',
         'features/player-dock/index.js':        'function createFloatingLogoOnWatchFeature',
-        'features/youtube-music-compat/index.js': 'function createYoutubeMusicCompatFeature',
         'core/external-api-health.js':          'function createExternalApiHealth(options',
         'core/transcript-service.js':           'function createTranscriptService(options',
         'core/transcript-index.js':             'function prepareTranscriptRecord(raw)',
@@ -8231,7 +8216,6 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/digital-wellbeing/index.js',
         'extension/features/settings-panel/index.js',
         'extension/features/player-dock/index.js',
-        'extension/features/youtube-music-compat/index.js',
         'extension/features/return-dislike/index.js',
         'extension/features/sponsorblock/index.js',
         'extension/features/dearrow/index.js',
@@ -11538,25 +11522,10 @@ test('transcriptAiHandoff tracks and clears its delayed navigation injection', (
         'transcriptAiHandoff must not leave an untracked navigation timeout');
 });
 
-test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', () => {
+test('v4.47.0 polish batch EI-NEW3 and EI-NEW4 invariants stay pinned', () => {
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
     );
-
-    // EI-NEW2: youtubeMusicCompat must use exact-hostname match.
-    // The previous .includes('music.youtube.com') was a substring smell.
-    // (We pin the new form positively; the prior-form mention in the
-    // explanatory comment is fine — only the executable expression
-    // matters, and the positive match below guarantees the new form
-    // exists. Banning the old form via regex would false-positive on
-    // the comment.)
-    // The expression lives in features/youtube-music-compat/index.js since the
-    // v4.72.0 peel; ytkit.js keeps only the descriptor stub.
-    const musicSrc = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'features', 'youtube-music-compat', 'index.js'), 'utf8'
-    );
-    assert.match(musicSrc, /location\.hostname !== 'music\.youtube\.com'/,
-        'youtubeMusicCompat must use exact-hostname match (=== or !==)');
 
     // EI-NEW3: reactionSpammer floor reads from settings with hard-floor clamp.
     assert.match(ytkitSrc, /_INTERVAL_MIN_MS_FLOOR:\s*500/,

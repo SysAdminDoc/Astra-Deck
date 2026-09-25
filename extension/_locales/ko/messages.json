@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "대본 섹션"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "music.youtube.com에 Astra Deck 테마 + OLED + 밀도 기능을 적용합니다. 플레이어 관련 기능(다운로드, RYD, SponsorBlock)은 기존 페이지별 제한을 유지합니다."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music 호환"
-  },
   "feature_zenMode_desc": {
     "message": "집중 시청을 위해 동영상 플레이어 주변의 페이지를 어둡게 합니다"
   },

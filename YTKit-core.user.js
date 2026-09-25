@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.90.1
+// @version      4.90.2
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -1313,8 +1313,6 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "vlcMpvHandoff", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "astraContextMenu", category: "downloads", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
-    Object.freeze({ key: "youtubeMusicCompat", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-
     Object.freeze({ key: "subtitleDownload", category: "downloads", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     Object.freeze({ key: "videoVisualFilters", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -1504,6 +1502,7 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     "preferredQuality",
     "useEnhancedBitrate",
     "hideQualityPopup",
+    "youtubeMusicCompat",
     "aiSummaryApiKey",
     "lowPowerProfileBackup",
     "ytAdBlock",
@@ -28848,46 +28847,6 @@ function attachUIEventListeners() {
     'use strict';
 
 
-    function createYoutubeMusicCompatFeature(deps = {}) {
-        const {
-            injectStyle = () => ({ remove() {} }),
-            t = (_key, fallback) => fallback
-        } = deps;
-
-        return {
-            id: 'youtubeMusicCompat',
-            name: t('feature_youtubeMusicCompat_name', 'YouTube Music Compatibility'),
-            description: t('feature_youtubeMusicCompat_desc', 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.'),
-            group: 'Integrations',
-            icon: 'music',
-            _styleElement: null,
-            init() {
-                if (location.hostname !== 'music.youtube.com') return;
-                this._styleElement = injectStyle(`ytmusic-app,ytmusic-app-layout{background:var(--yt-sys-color-baseline--base-background,#0f0f0f)!important}ytmusic-pill-shape-renderer,yt-button-shape{border-radius:8px!important}`, 'youtube-music-compat');
-            },
-            destroy() {
-                this._styleElement?.remove();
-                this._styleElement = null;
-            }
-        };
-    }
-
-    const api = {
-        createYoutubeMusicCompatFeature
-    };
-
-    const root = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
-    root.youtubeMusicCompat = Object.assign(root.youtubeMusicCompat || {}, api);
-
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = api;
-    }
-})();
-//m:1r
-(() => {
-    'use strict';
-
-
     function createReturnDislikeFeature(deps = {}) {
         const {
             appState = { settings: {} },
@@ -29752,7 +29711,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1s
+//m:1r
 (() => {
     'use strict';
 
@@ -30754,7 +30713,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1t
+//m:1s
 (() => {
     'use strict';
 
@@ -31290,7 +31249,7 @@ function attachUIEventListeners() {
         module.exports = { createDeArrowFeature };
     }
 })();
-//m:1u
+//m:1t
 (() => {
     'use strict';
 

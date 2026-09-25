@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "Sezione trascrizione"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "Applica il tema Astra Deck + OLED + funzionalita di densita su music.youtube.com. Le funzionalita specifiche del Player (download, RYD, SponsorBlock) mantengono il gating per pagina esistente."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "Compatibilita YouTube Music"
-  },
   "feature_zenMode_desc": {
     "message": "Attenua la pagina attorno al Player video per un'esperienza di visione concentrata"
   },

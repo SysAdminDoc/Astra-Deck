@@ -85,6 +85,16 @@ const CONTENT_HOST_PERMISSIONS = Object.freeze([
     'https://youtu.be/*'
 ]);
 
+// Manifest V3 has no exclude_matches equivalent for web-accessible resources.
+// Use the desktop hosts explicitly so the broad YouTube host grant does not
+// expose extension resources to music.youtube.com.
+const WEB_ACCESSIBLE_RESOURCE_MATCHES = Object.freeze([
+    'https://www.youtube.com/*',
+    'https://youtube.com/*',
+    'https://*.youtube-nocookie.com/*',
+    'https://youtu.be/*'
+]);
+
 const WEB_ACCESSIBLE_RESOURCE_CONSUMERS = Object.freeze([
     Object.freeze({
         resource: 'icons/32.png',
@@ -102,7 +112,7 @@ const WEB_ACCESSIBLE_RESOURCE_CONSUMERS = Object.freeze([
 
 const WEB_ACCESSIBLE_RESOURCE_POLICY = Object.freeze({
     resources: Object.freeze(WEB_ACCESSIBLE_RESOURCE_CONSUMERS.map((entry) => entry.resource)),
-    matches: CONTENT_HOST_PERMISSIONS
+    matches: WEB_ACCESSIBLE_RESOURCE_MATCHES
 });
 
 const ORIGIN_HOST_PERMISSION_ALIASES = Object.freeze({

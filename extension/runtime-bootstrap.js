@@ -159,7 +159,6 @@
         "features/digital-wellbeing/index.js",
         "features/settings-panel/index.js",
         "features/player-dock/index.js",
-        "features/youtube-music-compat/index.js",
         "features/search-hygiene/index.js",
         "features/search-while-watching/index.js",
         "features/video-insights/index.js",
@@ -238,9 +237,6 @@
         ],
         "features/digital-wellbeing/index.js": [
             "digitalWellbeing"
-        ],
-        "features/youtube-music-compat/index.js": [
-            "musicVideoSpeedLock"
         ],
         "features/search-hygiene/index.js": [
             "searchHideRelatedSearches",

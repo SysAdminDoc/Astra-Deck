@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.17
+// @name         Theater Split v1.0.18
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.17
+// @version      1.0.18
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -9,6 +9,7 @@
 // @match        https://www.youtube.com/*
 // @match        https://youtube.com/*
 // @exclude      https://m.youtube.com/*
+// @exclude      https://music.youtube.com/*
 // @exclude      https://studio.youtube.com/*
 // @run-at       document-start
 // @grant        none
@@ -39,6 +40,7 @@
 //                     a small movement threshold to resize without toggling.
 //                     Live headers now reflow at narrow widths, clamp long
 //                     titles, keep actions visible, and move chat after resize.
+//   @version 1.0.18 - Exclude YouTube Music so the script never runs there.
 
 (function() {
     'use strict';

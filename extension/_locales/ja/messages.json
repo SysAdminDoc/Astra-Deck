@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "文字起こしセクション"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "music.youtube.com に Astra Deck のテーマ + OLED + 密度機能を適用。プレーヤー固有の機能（ダウンロード、RYD、SponsorBlock）は既存のページ別制御を維持。"
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music 互換"
-  },
   "feature_zenMode_desc": {
     "message": "動画プレーヤーの周囲を暗くして集中視聴環境を提供"
   },

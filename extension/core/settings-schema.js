@@ -795,9 +795,6 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "vlcMpvHandoff", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "astraContextMenu", category: "downloads", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
-    // ─── a11y-perf ───
-    Object.freeze({ key: "youtubeMusicCompat", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-
     // ─── downloads ───
     Object.freeze({ key: "subtitleDownload", category: "downloads", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
@@ -1068,6 +1065,8 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     "preferredQuality",
     "useEnhancedBitrate",
     "hideQualityPopup",
+    // v4.90.2: YouTube Music is fully excluded from Astra Deck.
+    "youtubeMusicCompat",
     // v4.49.0: credentials moved behind the background worker.
     "aiSummaryApiKey",
     // v4.62.0: low-power restore state has always lived in the dedicated

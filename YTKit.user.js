@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.90.1
+// @name         YTKit v4.90.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.90.1
+// @version      4.90.2
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -10,6 +10,7 @@
 // @match        https://youtube.com/*
 // @match        https://youtu.be/*
 // @exclude      https://m.youtube.com/*
+// @exclude      https://music.youtube.com/*
 // @exclude      https://studio.youtube.com/*
 // @run-at       document-start
 // @inject-into  content
@@ -25,7 +26,7 @@
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
 // @connect      127.0.0.1
-// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.90.1/YTKit-core.user.js
+// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.90.2/YTKit-core.user.js
 // @homepageURL      https://github.com/SysAdminDoc/Astra-Deck
 // @supportURL      https://github.com/SysAdminDoc/Astra-Deck/issues
 // @license      MIT
@@ -185,7 +186,6 @@
     // ── bundled module: extension/features/digital-wellbeing/index.js ──
     // ── bundled module: extension/features/settings-panel/index.js ──
     // ── bundled module: extension/features/player-dock/index.js ──
-    // ── bundled module: extension/features/youtube-music-compat/index.js ──
     // ── bundled module: extension/features/return-dislike/index.js ──
     // ── bundled module: extension/features/sponsorblock/index.js ──
     // ── bundled module: extension/features/dearrow/index.js ──
@@ -273,7 +273,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.90.1';
+    const YTKIT_VERSION = '4.90.2';
 
     // ── Z-Index Hierarchy ──
     const Z = {

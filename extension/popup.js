@@ -434,6 +434,7 @@ const RETIRED_SETTING_KEYS = new Set([
     'preferredQuality',
     'useEnhancedBitrate',
     'hideQualityPopup',
+    'youtubeMusicCompat',
     'aiSummaryApiKey',
     'lowPowerProfileBackup',
     'adblockFilterAutoUpdate',
@@ -554,6 +555,24 @@ const YOUTUBE_TAB_URLS = [
     '*://*.youtube-nocookie.com/*',
     '*://youtu.be/*'
 ];
+
+function isControlledYouTubeUrl(rawUrl) {
+    try {
+        const parsed = new URL(String(rawUrl || ''));
+        const hostname = parsed.hostname.toLowerCase();
+        if (parsed.protocol !== 'https:'
+            || hostname === 'music.youtube.com'
+            || hostname === 'm.youtube.com'
+            || hostname === 'studio.youtube.com') return false;
+        return hostname === 'youtube.com'
+            || hostname.endsWith('.youtube.com')
+            || hostname === 'youtube-nocookie.com'
+            || hostname.endsWith('.youtube-nocookie.com')
+            || hostname === 'youtu.be';
+    } catch (_) {
+        return false;
+    }
+}
 
 const PERSISTED_DATA_MESSAGE = 'YTKIT_PERSISTED_DATA';
 const persistedDomains = globalThis.YTKitCore?.persistedDomains;
@@ -1681,14 +1700,9 @@ function isAnyYouTubeUrl(urlString) {
 function isSupportedInlinePanelUrl(urlString) {
     try {
         const parsed = new URL(urlString);
-        const hostname = parsed.hostname;
-        if (hostname === 'm.youtube.com' || hostname === 'studio.youtube.com') return false;
+        if (!isControlledYouTubeUrl(urlString)) return false;
         if (parsed.pathname.startsWith('/live_chat')) return false;
-        return hostname === 'youtu.be'
-            || hostname === 'youtube.com'
-            || hostname === 'youtube-nocookie.com'
-            || hostname.endsWith('.youtube.com')
-            || hostname.endsWith('.youtube-nocookie.com');
+        return true;
     } catch { return false; }
 }
 
@@ -1984,7 +1998,9 @@ async function sendTabMessageResponse(tabId, message) {
 async function queryYoutubeTabs() {
     try {
         const tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS });
-        return Array.isArray(tabs) ? tabs : [];
+        return Array.isArray(tabs)
+            ? tabs.filter((tab) => isControlledYouTubeUrl(tab?.url))
+            : [];
     } catch (_) {
         return [];
     }
@@ -2136,7 +2152,7 @@ async function deleteAiCredential() {
 // understand the bulk message still re-read storage on `ext.storage.onChanged`.
 async function broadcastSettingsReplaced(settings) {
     try {
-        const tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS });
+        const tabs = await queryYoutubeTabs();
         await Promise.all(tabs.map((tab) => browserApi.sendTabMessage(
                 tab.id,
                 { type: 'YTKIT_SETTINGS_REPLACED', settings },
@@ -6797,9 +6813,7 @@ async function sendPopupBridgeMessageToYouTubeTabs(messageType) {
 }
 
 async function sendPopupBridgeMessageToYouTubeTabsWithPayload(messageType, payload = {}) {
-    let tabs = [];
-    try { tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS }); }
-    catch (_) { /* reason: extension suspended or tabs API unavailable */ }
+    let tabs = await queryYoutubeTabs();
     tabs = sortPopupBridgeTabs(tabs).filter((tab) =>
         tab && typeof tab.id !== 'undefined' && Number.isFinite(Number(tab.id)));
     if (!tabs.length) {

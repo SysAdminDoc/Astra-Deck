@@ -17,6 +17,9 @@
         "youtube.com",
         "youtube-nocookie.com"
       ],
+      "excludedInitiatorDomains": [
+        "music.youtube.com"
+      ],
       "resourceTypes": [
         "font",
         "image",
@@ -44,6 +47,9 @@
         "youtube.com",
         "youtube-nocookie.com"
       ],
+      "excludedInitiatorDomains": [
+        "music.youtube.com"
+      ],
       "resourceTypes": [
         "image",
         "other",
@@ -65,6 +71,9 @@
         "youtube.com",
         "youtube-nocookie.com"
       ],
+      "excludedInitiatorDomains": [
+        "music.youtube.com"
+      ],
       "resourceTypes": [
         "other",
         "ping",
@@ -83,6 +92,9 @@
       "initiatorDomains": [
         "youtube.com",
         "youtube-nocookie.com"
+      ],
+      "excludedInitiatorDomains": [
+        "music.youtube.com"
       ],
       "resourceTypes": [
         "image",
@@ -103,6 +115,9 @@
       "initiatorDomains": [
         "youtube.com",
         "youtube-nocookie.com"
+      ],
+      "excludedInitiatorDomains": [
+        "music.youtube.com"
       ],
       "resourceTypes": [
         "other",

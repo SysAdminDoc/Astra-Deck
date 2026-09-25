@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "字幕板块"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "在 music.youtube.com 上应用 Astra Deck 主题 + OLED + 密度功能。播放器特定功能（下载、RYD、SponsorBlock）保持其现有的逐页控制。"
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music 兼容"
-  },
   "feature_zenMode_desc": {
     "message": "将视频播放器周围的页面调暗，提供专注的观看体验"
   },

@@ -140,7 +140,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Six DeArrow surface masks add 145 bytes and remain enabled by default.
     // Enabling Watch Feed trims one byte because JSON `true` is shorter than
     // `false`. Enabling fullTitles trims another for the same reason.
-    assert.equal(assessment.totalBytes, 186440);
+    // Retiring the YouTube Music toggle trims another 27 bytes.
+    assert.equal(assessment.totalBytes, 186413);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -31,7 +31,6 @@ const FEATURE_SETTINGS = Object.freeze({
     // Subscription Groups behind its false default would leave only the inert
     // descriptor for the lifetime of that tab.
     'features/digital-wellbeing/index.js': ['digitalWellbeing'],
-    'features/youtube-music-compat/index.js': ['musicVideoSpeedLock'],
     'features/search-hygiene/index.js': ['searchHideRelatedSearches', 'searchHideUnrelatedShelves', 'searchHideWatchedRecommended'],
     'features/search-while-watching/index.js': ['searchWhileWatching'],
     'features/video-insights/index.js': ['videoInsights'],

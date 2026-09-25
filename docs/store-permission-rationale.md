@@ -243,12 +243,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 124 | `true` on every entry |
-| `store-safe` | firefox | A | 124 | omitted |
-| `chromium-store` | chromium | B | 123 | `true` on every entry |
-| `chromium-store` | firefox | B | 123 | omitted |
-| `github-full` | chromium | A | 124 | `true` on every entry |
-| `github-full` | firefox | A | 124 | omitted |
+| `store-safe` | chromium | A | 123 | `true` on every entry |
+| `store-safe` | firefox | A | 123 | omitted |
+| `chromium-store` | chromium | B | 122 | `true` on every entry |
+| `chromium-store` | firefox | B | 122 | omitted |
+| `github-full` | chromium | A | 123 | `true` on every entry |
+| `github-full` | firefox | A | 123 | omitted |
 
 #### Resource set A
 
@@ -256,7 +256,8 @@ Used by: `store-safe` chromium, `store-safe` firefox, `github-full` chromium, `g
 
 Entry 1 match patterns:
 
-- `https://*.youtube.com/*`
+- `https://www.youtube.com/*`
+- `https://youtube.com/*`
 - `https://*.youtube-nocookie.com/*`
 - `https://youtu.be/*`
 
@@ -267,7 +268,8 @@ Entry 1 resource paths:
 
 Entry 2 match patterns:
 
-- `https://*.youtube.com/*`
+- `https://www.youtube.com/*`
+- `https://youtube.com/*`
 - `https://*.youtube-nocookie.com/*`
 - `https://youtu.be/*`
 
@@ -386,7 +388,6 @@ Entry 2 resource paths:
 - `features/digital-wellbeing/index.js`
 - `features/settings-panel/index.js`
 - `features/player-dock/index.js`
-- `features/youtube-music-compat/index.js`
 - `features/search-hygiene/index.js`
 - `features/search-while-watching/index.js`
 - `features/video-insights/index.js`
@@ -402,7 +403,8 @@ Used by: `chromium-store` chromium, `chromium-store` firefox.
 
 Entry 1 match patterns:
 
-- `https://*.youtube.com/*`
+- `https://www.youtube.com/*`
+- `https://youtube.com/*`
 - `https://*.youtube-nocookie.com/*`
 - `https://youtu.be/*`
 
@@ -413,7 +415,8 @@ Entry 1 resource paths:
 
 Entry 2 match patterns:
 
-- `https://*.youtube.com/*`
+- `https://www.youtube.com/*`
+- `https://youtube.com/*`
 - `https://*.youtube-nocookie.com/*`
 - `https://youtu.be/*`
 
@@ -532,7 +535,6 @@ Entry 2 resource paths:
 - `features/digital-wellbeing/index.js`
 - `features/settings-panel/index.js`
 - `features/player-dock/index.js`
-- `features/youtube-music-compat/index.js`
 - `features/search-hygiene/index.js`
 - `features/search-while-watching/index.js`
 - `features/video-insights/index.js`

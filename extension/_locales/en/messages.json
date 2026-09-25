@@ -4304,12 +4304,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "Transcript Section"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music Compatibility"
-  },
   "feature_zenMode_desc": {
     "message": "Dims the page around the video player for a focused viewing experience"
   },

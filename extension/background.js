@@ -197,6 +197,32 @@ const YOUTUBE_TAB_URLS = [
     '*://youtu.be/*'
 ];
 
+function isYouTubeMusicUrl(rawUrl) {
+    try {
+        return new URL(String(rawUrl || '')).hostname.toLowerCase() === 'music.youtube.com';
+    } catch (_) {
+        return false;
+    }
+}
+
+function isControlledYouTubeUrl(rawUrl) {
+    try {
+        const parsed = new URL(String(rawUrl || ''));
+        const hostname = parsed.hostname.toLowerCase();
+        if (parsed.protocol !== 'https:'
+            || hostname === 'music.youtube.com'
+            || hostname === 'm.youtube.com'
+            || hostname === 'studio.youtube.com') return false;
+        return hostname === 'youtube.com'
+            || hostname.endsWith('.youtube.com')
+            || hostname === 'youtube-nocookie.com'
+            || hostname.endsWith('.youtube-nocookie.com')
+            || hostname === 'youtu.be';
+    } catch (_) {
+        return false;
+    }
+}
+
 async function broadcastSettingsMutation(result, source = '') {
     // The initiating in-page surface already holds an optimistic snapshot and
     // every tab receives the authoritative storage.onChanged event.
@@ -212,7 +238,7 @@ async function broadcastSettingsMutation(result, source = '') {
         const message = result.key
             ? { type: 'YTKIT_SETTING_CHANGED', key: result.key, value: result.value, settings: result.settings }
             : { type: 'YTKIT_SETTINGS_REPLACED', settings: result.settings };
-        await Promise.allSettled((tabs || []).filter((tab) => tab?.id).map((tab) =>
+        await Promise.allSettled((tabs || []).filter((tab) => tab?.id && isControlledYouTubeUrl(tab.url)).map((tab) =>
             callExtensionApi(ext.tabs, 'sendMessage', tab.id, message)
         ));
     } catch (_) {
@@ -954,7 +980,6 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://www.youtube.com',
     'https://youtube.com',
     'https://m.youtube.com',
-    'https://music.youtube.com',
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
     'https://i.ytimg.com',
@@ -983,7 +1008,6 @@ const CREDENTIALED_FETCH_ORIGINS = new Set([
     'https://www.youtube.com',
     'https://youtube.com',
     'https://m.youtube.com',
-    'https://music.youtube.com',
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
     ...COMPANION_ORIGINS,
@@ -1357,6 +1381,7 @@ function isStaticAllowlistedUrl(url) {
 // still demands that the user actually granted this exact origin.
 function isRemoteListUrlAdmissible(url) {
     if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) return false;
+    if (isYouTubeMusicUrl(url)) return false;
     const described = describeRemoteListUrl(url);
     // The dynamic GET door exists for user-owned data sources, not as an
     // alternate route back to Cobalt's public service. The dedicated Cobalt
@@ -1365,6 +1390,7 @@ function isRemoteListUrlAdmissible(url) {
 }
 
 function isUrlAllowed(url) {
+    if (isYouTubeMusicUrl(url)) return false;
     return isStaticAllowlistedUrl(url) || isRemoteListUrlAdmissible(url);
 }
 
@@ -1427,6 +1453,7 @@ function getRuntimeOptionalHostPermissionsForUrl(url) {
 function isGrantableRemoteListOrigin(origin) {
     if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) return false;
     if (typeof origin !== 'string' || !origin.endsWith('/*')) return false;
+    if (isYouTubeMusicUrl(origin.slice(0, -2) + '/')) return false;
     const described = describeRemoteListUrl(origin.slice(0, -2) + '/');
     return described.ok === true
         && described.hostname !== COBALT_PUBLIC_INSTANCE_HOST

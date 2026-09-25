@@ -4298,12 +4298,6 @@
   "feature_wpHide_transcriptSection_name": {
     "message": "قسم النص المكتوب"
   },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "تطبيق سمات Astra Deck + OLED + ميزات الكثافة على music.youtube.com. الميزات الخاصة بالمشغّل (التنزيلات، RYD، SponsorBlock) تحتفظ ببوابتها الحالية لكل صفحة."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "توافق YouTube Music"
-  },
   "feature_zenMode_desc": {
     "message": "يخفت الصفحة حول مشغّل الفيديو لتجربة مشاهدة مُركَّزة"
   },

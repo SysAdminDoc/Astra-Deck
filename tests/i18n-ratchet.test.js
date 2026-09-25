@@ -116,8 +116,6 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         'search-while-watching rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/features/sponsorblock/index.js'], undefined,
         'SponsorBlock rendered sink copy should stay at zero after the burn-down pass');
-    assert.equal(baseline.entries['extension/features/youtube-music-compat/index.js'], undefined,
-        'YouTube Music compatibility rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/features/return-dislike/index.js'], undefined,
         'Return YouTube Dislike rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/features/sticky-video/index.js'], undefined,
@@ -187,7 +185,6 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         ['player-dock/index.js', 'playerDockHomeLink'],
         ['search-while-watching/index.js', 'feature_searchWhileWatching_desc'],
         ['sponsorblock/index.js', 'sponsorCachedSegmentTitleTpl'],
-        ['youtube-music-compat/index.js', 'feature_youtubeMusicCompat_desc'],
         ['return-dislike/index.js', 'ui_rydPausedTitleTpl'],
         ['sticky-video-header/index.js', 'stickyVideoLiveInfoAria']
     ]) {

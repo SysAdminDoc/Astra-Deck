@@ -1324,7 +1324,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.90.1';
+    const YTKIT_VERSION = '4.90.2';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -3893,6 +3893,8 @@ const STORAGE_KEYS = Object.freeze({
         'preferredQuality',
         'useEnhancedBitrate',
         'hideQualityPopup',
+        // v4.90.2: YouTube Music is fully excluded from Astra Deck.
+        'youtubeMusicCompat',
         // v4.62.0: low-power restore state has always lived in the dedicated
         // top-level `ytkit-low-power-backup` store. The schema key was never
         // read and exposed a misleading, read-only null row in the popup.
@@ -4444,7 +4446,6 @@ const STORAGE_KEYS = Object.freeze({
             alternativeFrontendInstance: 'https://yewtu.be', // User-configurable Invidious/Piped instance
             vlcMpvHandoff: false,                      // ytvlc:// / ytmpv:// protocol buttons; GitHub-full only
             astraContextMenu: false,                   // Right-click menu items on the player + cards
-            youtubeMusicCompat: false,                 // Apply select features on music.youtube.com
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -39489,25 +39490,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement = null;
             }
         },
-        // ═══════════════════════════════════════════════════════════════════
-        //  YOUTUBE MUSIC COMPAT — Apply select features on music.youtube.com
-        // ═══════════════════════════════════════════════════════════════════
-        (globalThis.YTKitFeatures?.youtubeMusicCompat?.createYoutubeMusicCompatFeature?.({
-            injectStyle,
-            t
-        }) || {
-            // Descriptor only. The behaviour lives in
-            // extension/features/youtube-music-compat/index.js, which was a
-            // byte-identical second copy of this object until v4.72.0.
-            id: 'youtubeMusicCompat',
-            name: t('feature_youtubeMusicCompat_name', 'YouTube Music Compatibility'),
-            description: t('feature_youtubeMusicCompat_desc', 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.'),
-            group: 'Integrations',
-            icon: 'music',
-            init() { DebugManager.log('YouTubeMusicCompat', 'Feature module unavailable'); },
-            destroy() {}
-        }),
-
     ];
 
     const RETIRED_COMMENT_FEATURE_IDS = RETIRED_SETTING_KEYS;

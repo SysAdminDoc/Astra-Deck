@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.90.1",
+  "version": "4.90.2",
   "minimum_chrome_version": "120",
   "x-ytkit-build-profile": "development",
   "description": "__MSG_extDescription__",
@@ -83,6 +83,7 @@
       ],
       "exclude_matches": [
         "https://m.youtube.com/*",
+        "https://music.youtube.com/*",
         "https://studio.youtube.com/*",
         "https://*.youtube.com/live_chat*"
       ],
@@ -103,6 +104,7 @@
       ],
       "exclude_matches": [
         "https://m.youtube.com/*",
+        "https://music.youtube.com/*",
         "https://studio.youtube.com/*",
         "https://*.youtube.com/live_chat*"
       ],
@@ -126,6 +128,7 @@
       ],
       "exclude_matches": [
         "https://m.youtube.com/*",
+        "https://music.youtube.com/*",
         "https://studio.youtube.com/*",
         "https://*.youtube.com/live_chat*"
       ],
@@ -245,7 +248,6 @@
         "features/digital-wellbeing/index.js",
         "features/settings-panel/index.js",
         "features/player-dock/index.js",
-        "features/youtube-music-compat/index.js",
         "features/search-hygiene/index.js",
         "features/search-while-watching/index.js",
         "features/video-insights/index.js",
@@ -264,6 +266,7 @@
       ],
       "exclude_matches": [
         "https://m.youtube.com/*",
+        "https://music.youtube.com/*",
         "https://studio.youtube.com/*"
       ],
       "css": [
@@ -290,7 +293,8 @@
         "assets/cat.gif"
       ],
       "matches": [
-        "https://*.youtube.com/*",
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
         "https://*.youtube-nocookie.com/*",
         "https://youtu.be/*"
       ],
@@ -411,7 +415,6 @@
         "features/digital-wellbeing/index.js",
         "features/settings-panel/index.js",
         "features/player-dock/index.js",
-        "features/youtube-music-compat/index.js",
         "features/search-hygiene/index.js",
         "features/search-while-watching/index.js",
         "features/video-insights/index.js",
@@ -422,7 +425,8 @@
         "ytkit.js"
       ],
       "matches": [
-        "https://*.youtube.com/*",
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
         "https://*.youtube-nocookie.com/*",
         "https://youtu.be/*"
       ],
