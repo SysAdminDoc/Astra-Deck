@@ -15,9 +15,10 @@ const acorn = require('acorn');
 
 const repoRoot = path.join(__dirname, '..');
 
-// Placeholders whose value comes from YouTube, a third-party service or the
-// user's own typing.
-const OUTSIDE_TEXT = /^\{(title|channel|author|handle|query|name|text|comment|subreddit|playlist|video|creator|term|keyword|file|filename)\}$/;
+// Placeholders whose value comes from YouTube, a third-party service, an
+// imported backup, an error message or the user's own typing (group names,
+// tags, labels).
+const OUTSIDE_TEXT = /^\{(title|channel|author|handle|query|name|text|comment|subreddit|playlist|video|creator|term|keyword|file|filename|keys|group|channelName|channels|tags|error|preview|label|reason|selector|emoji|value|key|feature|featureName|features|source|surface)\}$/;
 
 function walk(node, visit) {
     if (!node || typeof node.type !== 'string') return;

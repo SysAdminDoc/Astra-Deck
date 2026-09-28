@@ -14827,7 +14827,7 @@ if (typeof globalThis !== "undefined") {
         badge.title = likeLabel;
         badge.setAttribute('aria-label', voteText && voteText !== '0'
             ? translate('ui_commentLikeBadgeCountAriaTpl', '{label}. {count} likes')
-                .replace('{label}', likeLabel).replace('{count}', voteText)
+                .replace('{label}', () => likeLabel).replace('{count}', voteText)
             : likeLabel);
 
         const liked = !!comment.querySelector('#like-button button[aria-pressed="true"]');
@@ -19773,7 +19773,7 @@ if (typeof globalThis !== "undefined") {
                 }
                 const reasonLabel = this._filterReasonLabel(reason, element?.dataset?.ytkitFilterChannel || '');
                 const label = t('videoHiderHiddenReason', 'Hidden by Video Hider: {reason}')
-                    .replace('{reason}', reasonLabel);
+                    .replace('{reason}', () => reasonLabel);
                 placeholder.textContent = label;
                 placeholder.setAttribute('aria-label', label);
                 placeholder.dataset.ytkitHiddenReason = reason;
@@ -21960,7 +21960,7 @@ if (typeof globalThis !== "undefined") {
                 if (typeof showToast === 'function') showToast(t(
                     'subscriptionGroupPlayingTpl',
                     'Playing {count} videos from {group}{truncated}'
-                ).replace('{count}', ids.length).replace('{group}', groupName).replace('{truncated}', truncated), '#22c55e');
+                ).replace('{count}', ids.length).replace('{group}', () => groupName).replace('{truncated}', truncated), '#22c55e');
             },
 
             _exportGroups() {
@@ -22109,7 +22109,7 @@ if (typeof globalThis !== "undefined") {
                     if (typeof showToast === 'function') showToast(t(
                         'subscriptionGroupsImportFailedTpl',
                         'Import failed: {error}'
-                    ).replace('{error}', describeFailureCause(e)), '#ef4444');
+                    ).replace('{error}', () => describeFailureCause(e)), '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
@@ -22126,7 +22126,7 @@ if (typeof globalThis !== "undefined") {
                     const message = t(
                         'subscriptionGroupsImportOpmlFailedTpl',
                         'OPML import failed: {error}'
-                    ).replace('{error}', describeFailureCause(e));
+                    ).replace('{error}', () => describeFailureCause(e));
                     if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
                     return { ok: false, error: e.message };
                 }
@@ -22368,7 +22368,7 @@ if (typeof globalThis !== "undefined") {
                     showToast(t(
                         'subscriptionChannelsMarkedReadTpl',
                         'Marked {count} {channels} read for {group}'
-                    ).replace('{count}', marked).replace('{channels}', channelLabel).replace('{group}', label), '#22c55e', { duration: 4 });
+                    ).replace('{count}', marked).replace('{channels}', () => channelLabel).replace('{group}', () => label), '#22c55e', { duration: 4 });
                 }
             },
 
@@ -22439,7 +22439,7 @@ if (typeof globalThis !== "undefined") {
                     const newVideos = summaries.filter(item => item.isNew);
                     const renderedChannels = new Set(summaries.map(item => item.channelId)).size;
                     meta.textContent = t('subscriptionHealthMetaTpl', '{channels} rendered channels · {groups} groups')
-                        .replace('{channels}', String(renderedChannels))
+                        .replace('{channels}', () => String(renderedChannels))
                         .replace('{groups}', String(Object.keys(groups).length));
 
                     const stats = document.createElement('div');
@@ -22604,7 +22604,7 @@ if (typeof globalThis !== "undefined") {
                     newSummary.textContent = newVideos.length
                         ? t('subscriptionHealthNewSummaryTpl', '{videos} new videos from {channels} channels since your last visit.')
                             .replace('{videos}', String(newVideos.length))
-                            .replace('{channels}', String(new Set(newVideos.map(item => item.channelId)).size))
+                            .replace('{channels}', () => String(new Set(newVideos.map(item => item.channelId)).size))
                         : t('subscriptionHealthNewEmpty', 'Nothing new since your last visit stamp.');
                     const openDigest = document.createElement('button');
                     openDigest.type = 'button';
@@ -22656,7 +22656,7 @@ if (typeof globalThis !== "undefined") {
                     errorBox.className = 'ytkit-sub-health-error';
                     logFailure('health-scan', err);
                     errorBox.textContent = t('subscriptionHealthFailedTpl', 'Health scan failed: {error} The feed may still be loading, so Rescan may help.')
-                        .replace('{error}', describeFailureCause(err));
+                        .replace('{error}', () => describeFailureCause(err));
                     panel.appendChild(errorBox);
                 }
 
@@ -22715,20 +22715,20 @@ if (typeof globalThis !== "undefined") {
                     rendered.className = 'ytkit-sub-digest-muted';
                     rendered.textContent = t('subscriptionDigestRenderedTpl', '{shown} shown / {channels} channels')
                         .replace('{shown}', String(entry.renderedVideos))
-                        .replace('{channels}', String(entry.newChannels));
+                        .replace('{channels}', () => String(entry.newChannels));
                     const actions = document.createElement('div');
                     const mark = document.createElement('button');
                     mark.type = 'button';
                     mark.textContent = t('subscriptionDigestMarkRead', 'Mark read');
                     mark.disabled = entry.newVideos === 0;
                     mark.setAttribute('aria-label', t('subscriptionDigestMarkReadAriaTpl', 'Mark {group} digest as read')
-                        .replace('{group}', entry.name));
+                        .replace('{group}', () => entry.name));
                     mark.addEventListener('click', () => this._markGroupDigestRead(entry.groupId || ''));
                     const view = document.createElement('button');
                     view.type = 'button';
                     view.textContent = t('subscriptionDigestView', 'View');
                     view.setAttribute('aria-label', t('subscriptionDigestViewAriaTpl', 'View {group} subscriptions')
-                        .replace('{group}', entry.name));
+                        .replace('{group}', () => entry.name));
                     view.addEventListener('click', () => {
                         this._activeGroupId = entry.groupId || '';
                         this._renderToolbar();
@@ -23357,7 +23357,7 @@ if (typeof globalThis !== "undefined") {
                 if (typeof showToast === 'function') showToast(t(
                     'subscriptionAiTagsGeneratingTpl',
                     'Generating tags for "{group}"…'
-                ).replace('{group}', group.name || groupId), '#7c3aed', { duration: 6 });
+                ).replace('{group}', () => group.name || groupId), '#7c3aed', { duration: 6 });
                 const allowed = this._getGroupChannelIdSet(groupId, groups);
                 const titles = [];
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
@@ -23390,7 +23390,7 @@ if (typeof globalThis !== "undefined") {
                     if (typeof showToast === 'function') showToast(t(
                         'subscriptionAiTagsGenerationFailedTpl',
                         'Tag generation failed: {error}'
-                    ).replace('{error}', describeFailureCause(e)), '#ef4444');
+                    ).replace('{error}', () => describeFailureCause(e)), '#ef4444');
                     return;
                 }
                 if (!tags.length) {
@@ -23405,7 +23405,7 @@ if (typeof globalThis !== "undefined") {
                 if (typeof showToast === 'function') showToast(t(
                     'subscriptionAiTagsTaggedTpl',
                     'Tagged "{group}": {tags}'
-                ).replace('{group}', group.name || groupId).replace('{tags}', tags.join(', ')), '#22c55e', { duration: 6 });
+                ).replace('{group}', () => group.name || groupId).replace('{tags}', () => tags.join(', ')), '#22c55e', { duration: 6 });
                 this._renderToolbar();
             },
 
@@ -23426,7 +23426,7 @@ if (typeof globalThis !== "undefined") {
                 h.className = 'ytkit-sub-group-dialog__title';
                 h.textContent = safeParentId
                     ? t('subscriptionSubgroupNameTpl', 'Name a subgroup under {group}')
-                        .replace('{group}', groups[safeParentId]?.name || safeParentId)
+                        .replace('{group}', () => groups[safeParentId]?.name || safeParentId)
                     : t('subscriptionGroupDialogTitle', 'Name this group');
                 const input = document.createElement('input');
                 input.className = 'ytkit-sub-group-dialog__input';
@@ -23545,7 +23545,7 @@ if (typeof globalThis !== "undefined") {
                         'subscriptionGroupChipTpl',
                         '{prefix}{name} ({count}){tags}'
                     ).replace('{prefix}', prefix).replace('{name}', () => groupName)
-                        .replace('{count}', channelCount).replace('{tags}', tagSuffix);
+                        .replace('{count}', channelCount).replace('{tags}', () => tagSuffix);
                     const channelLabel = channelCount === 1
                         ? t('subscriptionChannelSingular', 'channel')
                         : t('subscriptionChannelPlural', 'channels');
@@ -23554,12 +23554,12 @@ if (typeof globalThis !== "undefined") {
                         'subscriptionGroupChipAriaTpl',
                         '{name}. {count} {channels}{subgroup}'
                     ).replace('{name}', () => groupName).replace('{count}', channelCount)
-                        .replace('{channels}', channelLabel).replace('{subgroup}', subgroupSuffix));
+                        .replace('{channels}', () => channelLabel).replace('{subgroup}', subgroupSuffix));
                     if (aiTagData[id]?.tags?.length) {
                         chip.title = t(
                             'subscriptionAiTagsRegenerateTitleTpl',
                             'AI tags: {tags} · Shift+click to regenerate'
-                        ).replace('{tags}', aiTagData[id].tags.join(', '));
+                        ).replace('{tags}', () => aiTagData[id].tags.join(', '));
                     } else if (appState?.settings?.subscriptionAiTags) {
                         chip.title = t('subscriptionAiTagsGenerateTitle', 'Shift+click to generate AI tags');
                     }
@@ -23610,7 +23610,7 @@ if (typeof globalThis !== "undefined") {
                     editBtn.setAttribute('aria-label', t(
                         'subscriptionMembersRegionAriaTpl',
                         'Edit channels in {group}'
-                    ).replace('{group}', groups[activeGroupId].name || activeGroupId));
+                    ).replace('{group}', () => groups[activeGroupId].name || activeGroupId));
                     editBtn.setAttribute('aria-haspopup', 'dialog');
                     editBtn.addEventListener('click', () => this._toggleMembersPanel(activeGroupId));
                     bar.appendChild(editBtn);
@@ -23622,7 +23622,7 @@ if (typeof globalThis !== "undefined") {
                     playBtn.setAttribute('aria-label', t(
                         'subscriptionToolbarPlayAllAriaTpl',
                         'Play all videos from {group}'
-                    ).replace('{group}', groups[activeGroupId].name || activeGroupId));
+                    ).replace('{group}', () => groups[activeGroupId].name || activeGroupId));
                     playBtn.addEventListener('click', () => this._playGroupAsQueue(activeGroupId));
                     bar.appendChild(playBtn);
 
@@ -23630,7 +23630,7 @@ if (typeof globalThis !== "undefined") {
                     archiveBtn.type = 'button';
                     archiveBtn.dataset.action = 'archive-group';
                     archiveBtn.textContent = t('subscriptionToolbarArchive', 'Auto-download');
-                    archiveBtn.setAttribute('aria-label', t('subscriptionToolbarArchiveAriaTpl', 'Schedule new uploads from {group}').replace('{group}', groups[activeGroupId].name || activeGroupId));
+                    archiveBtn.setAttribute('aria-label', t('subscriptionToolbarArchiveAriaTpl', 'Schedule new uploads from {group}').replace('{group}', () => groups[activeGroupId].name || activeGroupId));
                     archiveBtn.title = t('subscriptionToolbarArchiveTitle', 'Schedule this group in Astra Downloader. Existing uploads are deduplicated by the companion archive.');
                     archiveBtn.addEventListener('click', () => this._archiveActiveGroup());
                     bar.appendChild(archiveBtn);
@@ -23954,7 +23954,7 @@ if (typeof globalThis !== "undefined") {
                 panel.className = 'ytkit-sub-members-panel';
                 panel.setAttribute('role', 'dialog');
                 panel.setAttribute('aria-label', t('subscriptionMembersRegionAriaTpl', 'Edit channels in {group}')
-                    .replace('{group}', group.name || groupId));
+                    .replace('{group}', () => group.name || groupId));
                 panel.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
                         e.preventDefault();
@@ -23969,7 +23969,7 @@ if (typeof globalThis !== "undefined") {
                 const title = document.createElement('h3');
                 title.className = 'ytkit-sub-members-title';
                 title.textContent = t('subscriptionMembersTitleTpl', 'Edit channels in {group}')
-                    .replace('{group}', group.name || groupId);
+                    .replace('{group}', () => group.name || groupId);
                 const meta = document.createElement('div');
                 meta.className = 'ytkit-sub-members-meta';
                 meta.textContent = t('subscriptionMembersMeta', 'Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels.');
@@ -23990,7 +23990,7 @@ if (typeof globalThis !== "undefined") {
                 rename.className = 'ytkit-sub-members-action';
                 rename.textContent = t('subscriptionGroupRename', 'Rename');
                 rename.setAttribute('aria-label', t('subscriptionGroupRenameAriaTpl', 'Rename the group {group}')
-                    .replace('{group}', group.name || groupId));
+                    .replace('{group}', () => group.name || groupId));
                 rename.addEventListener('click', () => this._renameGroup(groupId));
 
                 const remove = document.createElement('button');
@@ -23998,7 +23998,7 @@ if (typeof globalThis !== "undefined") {
                 remove.className = 'ytkit-sub-members-action ytkit-sub-members-action--danger';
                 remove.textContent = t('subscriptionGroupDelete', 'Delete');
                 remove.setAttribute('aria-label', t('subscriptionGroupDeleteAriaTpl', 'Delete the group {group}')
-                    .replace('{group}', group.name || groupId));
+                    .replace('{group}', () => group.name || groupId));
                 remove.addEventListener('click', () => this._deleteGroup(groupId));
 
                 const actions = document.createElement('div');
@@ -24029,7 +24029,7 @@ if (typeof globalThis !== "undefined") {
                     checkbox.setAttribute('aria-label', t(
                         'subscriptionMembersIncludeChannelAriaTpl',
                         'Include {channel} in {group}'
-                    ).replace('{channel}', () => channelName).replace('{group}', group.name || groupId));
+                    ).replace('{channel}', () => channelName).replace('{group}', () => group.name || groupId));
                     checkbox.addEventListener('change', () => {
                         this._setGroupMembership(groupId, channelId, checkbox.checked);
                     });
@@ -24087,7 +24087,7 @@ if (typeof globalThis !== "undefined") {
                 if (typeof showToast === 'function') {
                     showToast(
                         t('subscriptionGroupDeletedTpl', 'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.')
-                            .replace('{group}', label)
+                            .replace('{group}', () => label)
                             .replace('{count}', String(count)),
                         '#7c3aed',
                         {
@@ -26656,7 +26656,7 @@ function buildSettingsPanel() {
                             removeBtn.setAttribute('aria-label', t(
                                 'videoHiderUnblockChannelAriaTpl',
                                 'Unblock channel {channelName}'
-                            ).replace('{channelName}', ch.name || ch.id));
+                            ).replace('{channelName}', () => ch.name || ch.id));
                             removeBtn.onclick = () => {
                                 videoHiderFeature._removeBlockedChannel?.(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
@@ -28177,7 +28177,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             clearBtn.setAttribute('aria-label', t(
                 'settingsFeatureClearAriaTpl',
                 'Clear {featureName}'
-            ).replace('{featureName}', featureName));
+            ).replace('{featureName}', () => featureName));
             clearBtn.textContent = t('commonClear', 'Clear');
             clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('input', { bubbles: true })); };
             wrapper.appendChild(colorInput);
@@ -28831,11 +28831,11 @@ function attachUIEventListeners() {
                             const conflictReason = CONFLICT_MAP[featureId].reason || t(
                                 'settingsConflictWithTpl',
                                 'conflicts with {featureName}'
-                            ).replace('{featureName}', getFeatureName(feature) || featureId);
+                            ).replace('{featureName}', () => getFeatureName(feature) || featureId);
                             showToast(t(
                                 'settingsAutoDisabledConflictTpl',
                                 'Auto-disabled {features}. {reason}'
-                            ).replace('{features}', conflictNames).replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
+                            ).replace('{features}', () => conflictNames).replace('{reason}', () => conflictReason), '#f59e0b', { duration: 5 });
                         }
                     }
 
@@ -30761,7 +30761,7 @@ function attachUIEventListeners() {
                     if (seg._ytkitCacheSource === 'stale') {
                         bar.dataset.ytkitCacheSource = 'stale';
                         bar.title = t('sponsorCachedSegmentTitleTpl', '{label} (cached at {time})')
-                            .replace('{label}', label)
+                            .replace('{label}', () => label)
                             .replace('{time}', this._formatCacheTimestamp(seg._ytkitCachedAt));
                     } else {
                         bar.title = label;
@@ -30979,7 +30979,7 @@ function attachUIEventListeners() {
                     const evidence = document.createElement('p');
                     evidence.className = 'ytkit-anti-adblock-evidence';
                     evidence.textContent = t('antiAdblockEvidenceTpl', 'Selector: {selector} · Playback: {state}')
-                        .replace('{selector}', snapshot.selector)
+                        .replace('{selector}', () => snapshot.selector)
                         .replace('{state}', this._playbackStateLabel(snapshot.playbackState));
                     notice.appendChild(evidence);
                 }

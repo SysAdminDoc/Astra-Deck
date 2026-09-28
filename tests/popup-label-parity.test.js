@@ -79,11 +79,11 @@ test('every name the row speaks is the name it shows', () => {
     // being unwound in between.
     const body = rowBuilder();
 
-    assert.match(body, /\.replace\('\{key\}', visibleLabel\)/,
+    assert.match(body, /\.replace\('\{key\}', \(\) => visibleLabel\)/,
         'the reset tooltip must use the visible label');
-    assert.match(body, /t\('schemaResetAriaTpl'[\s\S]{0,80}\.replace\('\{key\}', visibleLabel\)\)/,
+    assert.match(body, /t\('schemaResetAriaTpl'[\s\S]{0,80}\.replace\('\{key\}', \(\) => visibleLabel\)\)/,
         'the reset button accessible name must use the visible label');
-    assert.match(body, /t\('statusPerKeyResetTpl'[\s\S]{0,80}\.replace\('\{key\}', visibleLabel\)/,
+    assert.match(body, /t\('statusPerKeyResetTpl'[\s\S]{0,80}\.replace\('\{key\}', \(\) => visibleLabel\)/,
         'the reset toast must use the visible label');
     assert.match(body, /btn\.setAttribute\('aria-label', visibleLabel \+ ' \(' \+ stateWord \+ '\)'\)/,
         'the switch accessible name must contain the visible label');

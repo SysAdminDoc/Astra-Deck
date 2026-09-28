@@ -18,7 +18,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - After you click from one video to another, features that read YouTube's page data no longer pick up the first video's copy. That affected the original-language description and chapter titles, chapter export, the Theater Split title and channel fallbacks, and the heatmap. The heatmap features now only run on the video you opened directly, until YouTube gives them fresh data.
 - The feature timing list in the popup and side panel shows timings again, with readable feature names. It was reading from a source that was never connected.
 - The userscript's Anti-Translate Chapters restores original chapter titles. Its helpers were never connected either.
-- Channel names, video titles, group names and search text that contain dollar signs show up as written in notices and labels. A name like "Cash $$ Club" used to lose a character, and "$&" repeated the whole message. This covered 31 places, including blocking and allowing channels, Subscription Groups, Comment Search, the Watch Later cleanup and several popup and side panel messages.
+- Channel names, video titles, group names, tags, error text and search text that contain dollar signs show up as written in notices and labels. A name like "Cash $$ Club" used to lose a character, and "$&" repeated the whole message. This covered 116 places, including blocking and allowing channels, Subscription Groups (renaming a group to "$$ Money" was enough), Comment Search, the Watch Later cleanup, the skipped-settings notice after importing a backup and several popup and side panel messages.
 - The Undo button on four settings panel notices was English in every language. It's translated now.
 
 ## [4.91.0] (2026-09-28)

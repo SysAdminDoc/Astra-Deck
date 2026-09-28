@@ -1473,7 +1473,7 @@
         badge.title = likeLabel;
         badge.setAttribute('aria-label', voteText && voteText !== '0'
             ? translate('ui_commentLikeBadgeCountAriaTpl', '{label}. {count} likes')
-                .replace('{label}', likeLabel).replace('{count}', voteText)
+                .replace('{label}', () => likeLabel).replace('{count}', voteText)
             : likeLabel);
 
         const liked = !!comment.querySelector('#like-button button[aria-pressed="true"]');

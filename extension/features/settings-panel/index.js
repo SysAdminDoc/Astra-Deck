@@ -2012,7 +2012,7 @@ function buildSettingsPanel() {
                             removeBtn.setAttribute('aria-label', t(
                                 'videoHiderUnblockChannelAriaTpl',
                                 'Unblock channel {channelName}'
-                            ).replace('{channelName}', ch.name || ch.id));
+                            ).replace('{channelName}', () => ch.name || ch.id));
                             removeBtn.onclick = () => {
                                 videoHiderFeature._removeBlockedChannel?.(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
@@ -3603,7 +3603,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             clearBtn.setAttribute('aria-label', t(
                 'settingsFeatureClearAriaTpl',
                 'Clear {featureName}'
-            ).replace('{featureName}', featureName));
+            ).replace('{featureName}', () => featureName));
             clearBtn.textContent = t('commonClear', 'Clear');
             clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('input', { bubbles: true })); };
             wrapper.appendChild(colorInput);
@@ -4324,11 +4324,11 @@ function attachUIEventListeners() {
                             const conflictReason = CONFLICT_MAP[featureId].reason || t(
                                 'settingsConflictWithTpl',
                                 'conflicts with {featureName}'
-                            ).replace('{featureName}', getFeatureName(feature) || featureId);
+                            ).replace('{featureName}', () => getFeatureName(feature) || featureId);
                             showToast(t(
                                 'settingsAutoDisabledConflictTpl',
                                 'Auto-disabled {features}. {reason}'
-                            ).replace('{features}', conflictNames).replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
+                            ).replace('{features}', () => conflictNames).replace('{reason}', () => conflictReason), '#f59e0b', { duration: 5 });
                         }
                     }
 

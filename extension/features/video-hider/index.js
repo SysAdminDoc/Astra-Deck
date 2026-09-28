@@ -1499,7 +1499,7 @@
                 }
                 const reasonLabel = this._filterReasonLabel(reason, element?.dataset?.ytkitFilterChannel || '');
                 const label = t('videoHiderHiddenReason', 'Hidden by Video Hider: {reason}')
-                    .replace('{reason}', reasonLabel);
+                    .replace('{reason}', () => reasonLabel);
                 placeholder.textContent = label;
                 placeholder.setAttribute('aria-label', label);
                 placeholder.dataset.ytkitHiddenReason = reason;

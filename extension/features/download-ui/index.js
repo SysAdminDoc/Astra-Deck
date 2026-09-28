@@ -2038,7 +2038,7 @@
             const mapped = classifyDownloaderFailureResponse(resp);
             DiagnosticLog?.record?.('download-failure', `${mapped.code}: ${mapped.detail || mapped.message} | ${mapped.advice}`);
             showToast(t('dlFailureTpl', 'Astra Downloader: {error} {advice}')
-                .replace('{error}', mapped.message)
+                .replace('{error}', () => mapped.message)
                 .replace('{advice}', mapped.advice), mapped.tone, {
                 duration: mapped.duration,
             });
@@ -3212,11 +3212,11 @@
                 pill.className = 'ytkit-download-health__pill';
                 pill.dataset.tone = tone;
                 pill.textContent = t('dlHealthPillTpl', '{label}: {value}')
-                    .replace('{label}', label)
-                    .replace('{value}', value);
+                    .replace('{label}', () => label)
+                    .replace('{value}', () => value);
                 pill.setAttribute('aria-label', t('dlHealthPillAriaTpl', '{label} {value}')
-                    .replace('{label}', label)
-                    .replace('{value}', value));
+                    .replace('{label}', () => label)
+                    .replace('{value}', () => value));
                 return pill;
             },
 
@@ -3321,7 +3321,7 @@
                                     }
                                 } catch (e) {
                                     logFailure('deno-provision', e);
-                                    showToast(t('dlHealthDenoFailedTpl', 'Deno provision failed: {error}').replace('{error}', describeFailureCause(e)), '#ef4444');
+                                    showToast(t('dlHealthDenoFailedTpl', 'Deno provision failed: {error}').replace('{error}', () => describeFailureCause(e)), '#ef4444');
                                     pill.textContent = t('dlHealthDenoFailedLabel', 'Deno: failed');
                                 }
                             }, { once: true });
@@ -3644,7 +3644,7 @@
                     DebugManager.log('CobaltFallback', `Failed: ${e.message}`);
                     this._recordFailureDiagnostic(instance, e);
                     if (typeof showToast === 'function') showToast(t('dlCobaltFailedTpl', 'Cobalt fallback failed: {error}')
-                        .replace('{error}', describeFailureCause(e)), '#ef4444', { duration: 6 });
+                        .replace('{error}', () => describeFailureCause(e)), '#ef4444', { duration: 6 });
                 }
             },
 

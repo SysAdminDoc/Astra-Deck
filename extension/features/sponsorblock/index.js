@@ -633,7 +633,7 @@
                     if (seg._ytkitCacheSource === 'stale') {
                         bar.dataset.ytkitCacheSource = 'stale';
                         bar.title = t('sponsorCachedSegmentTitleTpl', '{label} (cached at {time})')
-                            .replace('{label}', label)
+                            .replace('{label}', () => label)
                             .replace('{time}', this._formatCacheTimestamp(seg._ytkitCachedAt));
                     } else {
                         bar.title = label;
@@ -852,7 +852,7 @@
                     const evidence = document.createElement('p');
                     evidence.className = 'ytkit-anti-adblock-evidence';
                     evidence.textContent = t('antiAdblockEvidenceTpl', 'Selector: {selector} · Playback: {state}')
-                        .replace('{selector}', snapshot.selector)
+                        .replace('{selector}', () => snapshot.selector)
                         .replace('{state}', this._playbackStateLabel(snapshot.playbackState));
                     notice.appendChild(evidence);
                 }

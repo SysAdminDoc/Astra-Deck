@@ -352,7 +352,7 @@ function initLanguageDropdown() {
             const detected = NATIVE[ui] || NATIVE[ui.split('-')[0]] || ui || '?';
             const baseLabel = t('languageAuto', 'Auto (browser default)');
             autoOpt.textContent = t('languageAutoDetectedTpl', '{label} ({detected})')
-                .replace('{label}', baseLabel)
+                .replace('{label}', () => baseLabel)
                 .replace('{detected}', detected);
         }
     } catch (_) { /* reason: i18n detection is best-effort */ }
@@ -1030,7 +1030,7 @@ function reportImportSkippedKeys(keys) {
         '{count} setting from a newer version was skipped: {keys}',
         '{count} settings from a newer version were skipped: {keys}')
         .replace('{count}', String(keys.length))
-        .replace('{keys}', named + extra);
+        .replace('{keys}', () => named + extra);
     // Held longer than a routine status: the user needs time to read a list.
     showStatus(message, 'info', 9000);
     console.warn('[Astra Deck] settings import skipped unknown keys:', keys.join(', '));
@@ -2898,7 +2898,7 @@ async function renderSelectorHealthDashboard() {
             const assetLabel = t('selectorHealthAssetTpl', 'Rules: {status} · {version} · {source}')
                 .replace('{status}', String(asset.status || 'unknown'))
                 .replace('{version}', String(asset.assetVersion || 'unknown'))
-                .replace('{source}', String(asset.source || 'unknown'));
+                .replace('{source}', () => String(asset.source || 'unknown'));
             const youtubeBuild = response.youtubeClientVersion
                 ? t('selectorHealthYouTubeBuildTpl', 'YouTube {version}')
                     .replace('{version}', String(response.youtubeClientVersion))
@@ -3170,7 +3170,7 @@ function formatExternalHealthDetail(service) {
     const parts = [];
     if (service.lastSuccessTs) parts.push(`success ${formatExternalHealthAge(service.lastSuccessTs)}`);
     if (service.lastSuccessSource) parts.push(t('externalHealthSourceTpl', 'source {source}')
-        .replace('{source}', String(service.lastSuccessSource)));
+        .replace('{source}', () => String(service.lastSuccessSource)));
     if (service.lastRefreshAgeMs !== null && service.lastRefreshAgeMs !== undefined) {
         parts.push(t('externalHealthRefreshTpl', 'refreshed {age} ago')
             .replace('{age}', formatExternalHealthAge(service.lastRefreshTs).replace(/\s+ago$/, '')));
@@ -3479,18 +3479,18 @@ function renderFeatureHealthRows(report) {
                         : t('antiAdblockPlaybackUnknown', 'unknown');
             const what = reason.kind === 'selector'
                 ? t('featureHealthReasonSelectorTpl', 'Page element “{surface}” no longer found')
-                    .replace('{surface}', reason.surface || reason.detail || '')
+                    .replace('{surface}', () => reason.surface || reason.detail || '')
                 : reason.kind === 'selector-fallback'
                     ? t('featureHealthReasonSelectorFallbackTpl',
                         'Page element “{surface}” only matched a backup rule')
-                        .replace('{surface}', reason.surface || reason.detail || '')
+                        .replace('{surface}', () => reason.surface || reason.detail || '')
                 : reason.kind === 'selector-canary'
                     ? t('featureHealthReasonCanaryTpl', 'YouTube {version} changed {surface}')
                         .replace('{version}', canaryVersion)
-                        .replace('{surface}', reason.surface || reason.detail || '')
+                        .replace('{surface}', () => reason.surface || reason.detail || '')
                 : reason.kind === 'anti-adblock'
                     ? t('featureHealthReasonAntiAdblockTpl', 'YouTube warning via {selector}; playback {state}')
-                        .replace('{selector}', reason.selector || '')
+                        .replace('{selector}', () => reason.selector || '')
                         .replace('{state}', antiAdblockState)
                 : reason.kind === 'api'
                     ? t('featureHealthReasonApiTpl', '{service}: {detail}')
@@ -4264,7 +4264,7 @@ function renderBisect(session) {
     }
     if (finished && bisectResult) {
         bisectResult.textContent = session.phase === core.BISECT_PHASES?.CULPRIT
-            ? t('bisectCulpritTpl', 'It is {feature}.').replace('{feature}', session.candidates[0])
+            ? t('bisectCulpritTpl', 'It is {feature}.').replace('{feature}', () => session.candidates[0])
             : t('bisectNoCulprit',
                 'No single feature is responsible. Something outside Astra Deck, or a combination of features, is causing it.');
         _bisectFinishedSession = session;
@@ -4830,7 +4830,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             legacy.disabled = true;
             legacy.selected = true;
             legacy.textContent = t('settingValueUnrecognized', 'Unrecognized: {value}')
-                .replace('{value}', String(effective) || '—');
+                .replace('{value}', () => String(effective) || '—');
             select.appendChild(legacy);
         }
         for (const value of entry.enum) {
@@ -5159,11 +5159,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             resetBtn.className = 'so-key-reset-btn';
             resetBtn.textContent = '↺';
             resetBtn.title = t('schemaResetTitleTpl', 'Reset {key} to default ({value})')
-                .replace('{key}', visibleLabel)
-                .replace('{value}', describeDefaultForTooltip(entry.defaultValue));
+                .replace('{key}', () => visibleLabel)
+                .replace('{value}', () => describeDefaultForTooltip(entry.defaultValue));
             resetBtn.setAttribute('aria-label',
                 t('schemaResetAriaTpl', 'Reset {key} to default value')
-                    .replace('{key}', visibleLabel));
+                    .replace('{key}', () => visibleLabel));
             resetBtn.addEventListener('click', async () => {
                 resetBtn.disabled = true;
                 try {
@@ -5172,7 +5172,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                     // extension, and the old tokenless message meant every
                     // reset toasted the same context-free "… reset to default."
                     showStatus(t('statusPerKeyResetTpl', '{key} reset to default.')
-                        .replace('{key}', visibleLabel), 'ok', 2400);
+                        .replace('{key}', () => visibleLabel), 'ok', 2400);
                     renderSchemaOverview();
                     // The rebuild removed this reset button (value is back
                     // at default) — refocus the row's remaining control so
@@ -6177,7 +6177,7 @@ function renderFilterListSubscriptionStatus(described, record) {
             setFilterListStatusText(
                 t('filterListStatusErrorTpl', 'No rules from {host} are active. Last refresh failed because {reason}.')
                     .replace('{host}', host)
-                    .replace('{reason}', reason), 'error');
+                    .replace('{reason}', () => reason), 'error');
             return;
         }
         setFilterListStatusText(
@@ -6201,7 +6201,7 @@ function renderFilterListSubscriptionStatus(described, record) {
             template
                 .replace('{host}', host)
                 .replace('{age}', age)
-                .replace('{reason}', reason)
+                .replace('{reason}', () => reason)
                 .replace('{version}', version)
                 .replace('{hash}', hash), current.staleEnabled ? 'error' : 'info');
         return;
@@ -6434,7 +6434,7 @@ async function refreshFilterList() {
                 const reason = getFilterListFailureText(result?.code, result?.status);
                 setFilterListStatusText(
                     t('filterListStatusRefreshReasonTpl', 'Could not refresh the list because {reason}.')
-                        .replace('{reason}', reason), 'error');
+                        .replace('{reason}', () => reason), 'error');
             }
             return;
         }
@@ -6562,7 +6562,7 @@ async function importSettings(file) {
         );
         const previewText = persistedDomains.formatImportPreview(preview);
         showStatus(t('statusImportPreviewApplyTpl', 'Import preview: {preview}. Applying with rollback…')
-            .replace('{preview}', previewText), 'success', 6000);
+            .replace('{preview}', () => previewText), 'success', 6000);
         await new Promise((resolve) => (globalThis.requestAnimationFrame || setTimeout)(resolve, 0));
 
         const currentLocal = await readLocalStorageSnapshot();
@@ -6637,10 +6637,10 @@ async function importSettings(file) {
             : t('statusBackupImportedUndo',
                 'Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.');
         const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
-            .replace('{preview}', previewText);
+            .replace('{preview}', () => previewText);
         const importSummary = t('statusImportSummaryTpl', '{status} {preview}')
             .replace('{status}', importedStatus)
-            .replace('{preview}', previewSummary);
+            .replace('{preview}', () => previewSummary);
         const backupNote = preImportBackupName
             ? t('statusImportBackupWrittenTpl',
                 'Your previous data was saved to {file} first.')
@@ -6901,7 +6901,7 @@ async function updateYtdlpNow() {
                 : '';
             // Same reasoning — t() would lose the stderr appendix.
             showStatus(t('statusYtdlpUpdateFailedTpl', 'yt-dlp update failed. {error}{recovery}')
-                .replace('{error}', err)
+                .replace('{error}', () => err)
                 .replace('{recovery}', recovery), 'error', 7200);
         }
     } finally {
@@ -6941,7 +6941,7 @@ async function updateCompanionNow() {
         } else {
             const err = (result && result.error) || t('statusUpdateFailed', 'Update failed.');
             showStatus(t('statusCompanionUpdateFailedTpl', 'Astra Downloader update failed. {error}')
-                .replace('{error}', err), 'error', 7200);
+                .replace('{error}', () => err), 'error', 7200);
         }
     } finally {
         updateCompanionButton.removeAttribute('aria-busy');

@@ -2577,7 +2577,7 @@ const STORAGE_KEYS = Object.freeze({
         const xBtn = document.createElement('button');
         xBtn.className = 'ytkit-pc-x';
         xBtn.type = 'button';
-        const dismissLabel = t('pageControlDismissTpl', `Dismiss ${label}`).replace('{label}', label);
+        const dismissLabel = t('pageControlDismissTpl', `Dismiss ${label}`).replace('{label}', () => label);
         xBtn.title = dismissLabel;
         xBtn.setAttribute('aria-label', dismissLabel);
         xBtn.textContent = '×';
@@ -6203,7 +6203,7 @@ const STORAGE_KEYS = Object.freeze({
         syncHiddenNote?.(element, {
             enabled: explain,
             text: t('hiddenCardNoteTpl', 'Hidden by {feature}: {rule}')
-                .replace('{feature}', featureName || featureId)
+                .replace('{feature}', () => featureName || featureId)
                 .replace('{rule}', hideRuleLabel(rule))
         });
     }
@@ -13147,7 +13147,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     label.append(checkbox, emojiLabel);
 
                     const testButton = this._createButton(t('reactionSenderTest', 'Test'), 'compact');
-                    testButton.title = t('reactionSenderTestTitleTpl', `Send ${emoji} once`).replace('{emoji}', emoji);
+                    testButton.title = t('reactionSenderTestTitleTpl', `Send ${emoji} once`).replace('{emoji}', () => emoji);
                     testButton.addEventListener('click', event => {
                         event.preventDefault();
                         this._clickReaction(emoji);
@@ -13975,7 +13975,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const template = revealed
                     ? t('sponsoredFilterHideTpl', 'Hide {label} ({reason})')
                     : t('sponsoredFilterShowTpl', 'Show {label} ({reason})');
-                const text = template.replace('{label}', label).replace('{reason}', reason);
+                const text = template.replace('{label}', () => label).replace('{reason}', () => reason);
                 button.textContent = text;
                 button.setAttribute('aria-label', text);
                 button.setAttribute('aria-expanded', String(revealed));
@@ -20252,7 +20252,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (isStale()) return;
                     if (typeof showToast === 'function') {
                         showToast(t('transcriptTranslationFailedTpl', 'Translation failed: {error}')
-                            .replace('{error}', describeFailureCause(e)), '#ef4444');
+                            .replace('{error}', () => describeFailureCause(e)), '#ef4444');
                     }
                     if (btn) { btn.textContent = t('transcriptTranslate', 'Translate'); btn.disabled = false; }
                 }
@@ -20346,12 +20346,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     await navigator.clipboard.writeText(text);
                     if (typeof showToast === 'function') {
                         showToast(t('transcriptCopiedTpl', '{label} copied to clipboard')
-                            .replace('{label}', label), '#22c55e');
+                            .replace('{label}', () => label), '#22c55e');
                     }
                 } catch (_) {
                     if (typeof showToast === 'function') {
                         showToast(t('transcriptCopyFailedTpl', 'Failed to copy {label}')
-                            .replace('{label}', label), '#ef4444');
+                            .replace('{label}', () => label), '#ef4444');
                     }
                 }
             },
@@ -20423,7 +20423,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._setTranscriptMeta(
                         t('transcriptPanelFallback', 'Panel Fallback'),
                         t('transcriptMetaPanelTpl', 'Loaded from {source} {age}; {language}.')
-                            .replace('{source}', source)
+                            .replace('{source}', () => source)
                             .replace('{age}', ageText)
                             .replace('{language}', language),
                         'info'
@@ -20434,7 +20434,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._setTranscriptMeta(
                         t('transcriptRefreshedTrack', 'Refreshed Track'),
                         t('transcriptMetaRefreshedTpl', 'Replaced an expired caption URL from {source}; fetched {age}; {language}.')
-                            .replace('{source}', source)
+                            .replace('{source}', () => source)
                             .replace('{age}', ageText)
                             .replace('{language}', language),
                         'success'
@@ -20447,7 +20447,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._setTranscriptMeta(
                     trackLabel,
                     t('transcriptMetaSourceTpl', 'Loaded from {source} {age}; {language}; track URL expiry: {expires}.')
-                        .replace('{source}', source)
+                        .replace('{source}', () => source)
                         .replace('{age}', ageText)
                         .replace('{language}', language)
                         .replace('{expires}', expires),
@@ -41937,7 +41937,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 : t('videoHiderUnblockChannel', 'Unblock');
                             removeBtn.setAttribute('aria-label', allowlist
                                 ? `${t('videoHiderRemoveAllowedChannel', 'Remove from Allowlist')} ${ch.name || ch.id}`
-                                : t('videoHiderUnblockChannelAriaTpl', 'Unblock channel {channelName}').replace('{channelName}', ch.name || ch.id));
+                                : t('videoHiderUnblockChannelAriaTpl', 'Unblock channel {channelName}').replace('{channelName}', () => ch.name || ch.id));
                             removeBtn.onclick = () => {
                                 removeManagedChannel(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
@@ -43312,7 +43312,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         '{version}',
                         canaryVersion
                     )
-                    .replace('{features}', affected.join(', '));
+                    .replace('{features}', () => affected.join(', '));
 
                 canaryRow.appendChild(canaryName);
                 canaryRow.appendChild(canaryMeta);
@@ -44268,10 +44268,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 return getFeatureName(cf) || cid;
                             }).join(', ');
                             const conflictReason = CONFLICT_MAP[featureId].reason || t('settingsConflictWithTpl', 'conflicts with {featureName}')
-                                .replace('{featureName}', getFeatureName(feature) || featureId);
+                                .replace('{featureName}', () => getFeatureName(feature) || featureId);
                             showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
-                                .replace('{features}', conflictNames)
-                                .replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
+                                .replace('{features}', () => conflictNames)
+                                .replace('{reason}', () => conflictReason), '#f59e0b', { duration: 5 });
                         }
                     }
 

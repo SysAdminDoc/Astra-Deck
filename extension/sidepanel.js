@@ -458,7 +458,7 @@ function externalDetail(service) {
     }
     if (service.lastSuccessSource) {
         parts.push(t('externalHealthSourceTpl', 'source {source}')
-            .replace('{source}', String(service.lastSuccessSource)));
+            .replace('{source}', () => String(service.lastSuccessSource)));
     }
     if (service.lastRefreshAgeMs !== null && service.lastRefreshAgeMs !== undefined) {
         parts.push(t('externalHealthRefreshTpl', 'refreshed {age} ago')
@@ -818,7 +818,7 @@ function renderSettings(filter) {
             row.setAttribute('aria-description', rowLabel(humanName, on, entry));
             row.setAttribute('tabindex', '0');
             row.title = t('spSettingRowTitleTpl', '{key} ({category})')
-                .replace('{key}', entry.key)
+                .replace('{key}', () => entry.key)
                 .replace('{category}', localizeCategory(entry.category || 'general'));
 
             const copy = document.createElement('span');

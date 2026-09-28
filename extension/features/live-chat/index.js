@@ -383,7 +383,7 @@
                 }
                 const emoji = selected[Math.floor(Math.random() * selected.length)];
                 dispatchReaction(available.get(emoji));
-                setStatus(t('reactionSenderSentTpl', `Sent ${emoji}`).replace('{emoji}', emoji));
+                setStatus(t('reactionSenderSentTpl', `Sent ${emoji}`).replace('{emoji}', () => emoji));
                 timer = win.setTimeout(schedule, clampInterval(state.intervalMs));
             }
 
