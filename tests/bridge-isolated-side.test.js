@@ -35,7 +35,10 @@ function fakeRoot() {
     };
 }
 
-/** The isolated world at document_start: channel, then token bootstrap. */
+/**
+ * The isolated world as Chrome builds it: the token bootstrap alone at
+ * document_start, then the channel module from the runtime loader.
+ */
 function isolatedWorld({ crypto: cryptoRef } = {}) {
     const documentElement = fakeRoot();
     const context = {
@@ -45,10 +48,27 @@ function isolatedWorld({ crypto: cryptoRef } = {}) {
     };
     context.globalThis = context;
     vm.createContext(context);
-    vm.runInContext(channelSource, context, { filename: 'extension/core/bridge-channel.js' });
     vm.runInContext(tokenSource, context, { filename: 'extension/core/bridge-token.js' });
+    vm.runInContext(channelSource, context, { filename: 'extension/core/bridge-channel.js' });
     return { context, documentElement };
 }
+
+test('the bootstrap stands alone and uses the channel names', () => {
+    // The token entry carries this one file, so it cannot lean on
+    // YTKitCore.bridgeChannel for its names. If the two ever drift, the
+    // bridge looks for a token under a name nobody wrote.
+    const documentElement = fakeRoot();
+    const context = { Uint8Array, Math, document: { documentElement },
+        crypto: require('node:crypto').webcrypto };
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(tokenSource, context, { filename: 'extension/core/bridge-token.js' });
+
+    assert.equal(context.YTKitCore, undefined, 'it must not need or build the core namespace');
+    const token = context[bridgeChannel.TOKEN_GLOBAL];
+    assert.match(String(token), /^[0-9a-f]{64}$/);
+    assert.equal(documentElement.getAttribute(bridgeChannel.TOKEN_ATTR), token);
+});
 
 test('the bootstrap mints a real token and leaves it where the bridge will find it', () => {
     const { context, documentElement } = isolatedWorld();

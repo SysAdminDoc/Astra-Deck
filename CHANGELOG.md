@@ -8,6 +8,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Features that run inside YouTube's own page did nothing from 4.89.0 on. That's Force H.264 Codec, Codec Selector, Always Best Quality, Preferred Audio Track Language, Audio-Only Mode, Volume Boost, Mono to Stereo, Audio Normalization, Audio Pan and the other audio effects, Buffer / Preload, Force DVR for Live Streams, Filter Feeds Before Render, CPU Tamer and Photosensitive Flash Protection. Chrome loads a script file only once per page, even when two content script entries list it, and the file these features need was listed twice. So it only ever loaded on the extension's side, and the page side never received a single setting. They work again. With Force H.264 on, YouTube is now actually refused VP9 and AV1.
 - Watch Feed no longer replays a video that finishes in the miniplayer. On the home, search and channel pages the URL names no video, so the finished entry was never removed and auto-advance started it again. It's now found through the player, and the next entry plays.
 - Mix and playlist cards don't get a Watch Feed button any more. It queued only the first video, under the list's name ("Mix - Some Artist"). Rows on a playlist page still get one.
 - An import that runs into Watch Feed's 200-entry limit now says how many entries were left out. It used to count them as added.

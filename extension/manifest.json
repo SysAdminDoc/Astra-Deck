@@ -88,7 +88,6 @@
         "https://*.youtube.com/live_chat*"
       ],
       "js": [
-        "core/bridge-channel.js",
         "core/bridge-token.js"
       ],
       "css": [

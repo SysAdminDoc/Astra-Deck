@@ -10,6 +10,7 @@
 //   7. Staging skip-lists exclude key material and logs.
 //   8. The live-chat ISOLATED entry remains scope-minimal.
 //   9. The retired schema command validates without rewriting canonical data.
+//  10. No script file is listed in two content_scripts entries.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -52,7 +53,10 @@ test('ISOLATED content_scripts blocks keep normal pages and live chat isolated',
     // run at document_start, and before the MAIN block, or the bridge finds
     // no token and stays dark.
     assert.equal(bootstrap.run_at, 'document_start');
-    assert.deepEqual(bootstrap.js, ['core/bridge-channel.js', 'core/bridge-token.js'],
+    // The token pass is the token file and nothing else. It used to carry
+    // core/bridge-channel.js as well, and since Chrome injects a file once per
+    // frame, that silently took the channel module away from the MAIN entry.
+    assert.deepEqual(bootstrap.js, ['core/bridge-token.js'],
         'nothing else belongs in the pass that runs before every page script');
     const blocks = manifest.content_scripts;
     const mainBlock = blocks.find((block) => block.world === 'MAIN');
@@ -66,6 +70,29 @@ test('ISOLATED content_scripts blocks keep normal pages and live chat isolated',
         'normal pages must inject only the thin runtime bootstrap statically');
     assert.ok(chat.js.length < runtimeModules(normal).length / 4,
         'live-chat script count must remain materially below the normal-page entry');
+});
+
+test('no script file is listed in two content_scripts entries', () => {
+    // Chrome injects a given file into a frame once, in the first entry that
+    // names it, and skips it in every later entry, even one bound for another
+    // world. core/bridge-channel.js sat in both the ISOLATED token entry and
+    // the MAIN entry, so it only ever ran in ISOLATED. The MAIN bridge found
+    // no createBridgeReader, took no token and read nothing, which switched
+    // off every MAIN-world feature on real pages while every unit test passed.
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(REPO_ROOT, 'extension', 'manifest.json'), 'utf8'
+    ));
+    const seen = new Map();
+    (manifest.content_scripts || []).forEach((block, index) => {
+        for (const file of block.js || []) {
+            assert.ok(!seen.has(file),
+                `${file} is in content_scripts[${seen.get(file)}] and [${index}]; the second copy never runs`);
+            seen.set(file, index);
+        }
+    });
+    const mainBlock = manifest.content_scripts.find((block) => block.world === 'MAIN');
+    assert.equal(mainBlock.js[0], 'core/bridge-channel.js',
+        'the MAIN bridge builds its reader from this module, so it must load there first');
 });
 
 test('lint and no-eval inventories cover every shipped top-level content script', () => {
