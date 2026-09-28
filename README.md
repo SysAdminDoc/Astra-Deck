@@ -57,7 +57,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.90.3` |
+| Release | `v4.91.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `488` entries across `18` categories |

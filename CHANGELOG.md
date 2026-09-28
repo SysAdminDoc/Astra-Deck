@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.91.0] (2026-09-28)
+
 ### Added
 
 - Block Comment Authors. The ⋮ menu on every comment now has a "Block @handle" item. Pick it and that person's comments and replies disappear on every video, with Undo right there in the notice. Blocked authors live in Settings under Comments, one per line, and deleting a line unblocks them. You can also paste a channel link or channel ID there. It's on by default, works in Theater Split, and ships in the userscript too.
