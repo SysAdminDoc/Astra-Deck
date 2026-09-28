@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.90.3] (2026-09-28)
+
 ### Changed
 
 - **Theater Split has a new look that follows your theme.** The comments pane
