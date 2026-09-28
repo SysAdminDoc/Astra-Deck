@@ -203,7 +203,7 @@
 
             showToast(
                 t('settingsSingleResetToastTpl', '“{name}” reset to default')
-                    .replace('{name}', settingDisplayName(featureId, key)),
+                    .replace('{name}', () => settingDisplayName(featureId, key)),
                 '#f97316',
                 {
                     duration: 5,
@@ -1748,7 +1748,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderRestoreHiddenVideosTpl',
                                 'Restored {count} hidden videos'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setHiddenVideos(backup);
                                 videoHiderFeature._removeAllowedVideos?.(allowedAdded);
                                 videoHiderFeature._processAllVideos();
@@ -1775,7 +1775,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderClearHiddenEntriesTpl',
                                 'Cleared {count} hidden list entries'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setHiddenVideos(backup);
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('videos');
@@ -1944,7 +1944,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderClearAllowedVideosTpl',
                                 'Cleared {count} allowed videos'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setAllowedVideos(backup);
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('allowed');
@@ -2045,7 +2045,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderUnblockedChannelsTpl',
                                 'Unblocked {count} channels'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setBlockedChannels(backup);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
@@ -3655,7 +3655,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             resetBtn.className = 'ytkit-card-reset';
             resetBtn.textContent = t('settingsCardReset', 'Reset');
             resetBtn.title = t('settingsCardResetTitleTpl', 'Reset “{name}” to its default')
-                .replace('{name}', featureName);
+                .replace('{name}', () => featureName);
             resetBtn.setAttribute('aria-label', resetBtn.title);
             card.appendChild(resetBtn);
         }

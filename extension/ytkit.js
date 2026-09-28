@@ -24560,7 +24560,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         'Showing {visible} of {total} comment threads for “{query}”.'
                     ).replace('{visible}', formattedVisible)
                         .replace('{total}', formattedTotal)
-                        .replace('{query}', query);
+                        .replace('{query}', () => query);
                     this._hintEl.textContent = t(
                         'commentSearchNavigatorHint',
                         'Use Next or Previous in Comment Navigator to jump between matches.'
@@ -24569,7 +24569,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._summaryEl.textContent = t(
                         'commentSearchWaitingForQuery',
                         'Waiting for comments to load for “{query}”…'
-                    ).replace('{query}', query);
+                    ).replace('{query}', () => query);
                     this._hintEl.textContent = t(
                         'commentSearchActiveHint',
                         'Your search stays active while YouTube loads the comment list.'
@@ -24578,7 +24578,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._summaryEl.textContent = t(
                         'commentSearchNoThreadsForQuery',
                         'No comment threads match “{query}”.'
-                    ).replace('{query}', query);
+                    ).replace('{query}', () => query);
                     this._hintEl.textContent = t(
                         'commentSearchShorterHint',
                         'Try a shorter phrase, a creator name, or clear the filter.'
@@ -32717,10 +32717,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     rowEl.className = 'ytkit-wlwb-row';
                     const label = document.createElement('span');
                     label.textContent = e.title;
-                    label.title = t('wlwbRowTitleTpl', `${e.title} by ${e.channel} (${e.watchedPct.toFixed(0)}% watched)`)
-                        .replace('{title}', e.title)
-                        .replace('{channel}', e.channel)
-                        .replace('{percent}', e.watchedPct.toFixed(0));
+                    // One pass with a function replacement: a title holding
+                    // "$&" or "{channel}" is inserted as written.
+                    const rowValues = { title: e.title, channel: e.channel, percent: e.watchedPct.toFixed(0) };
+                    label.title = t('wlwbRowTitleTpl', '{title} by {channel} ({percent}% watched)')
+                        .replace(/\{(title|channel|percent)\}/g, (_match, key) => String(rowValues[key]));
                     const meta = document.createElement('span');
                     meta.className = 'ytkit-wlwb-meta';
                     const duration = e.durationKnown ? this._formatDuration(e.durationSec) : t('wlwbUnknownDuration', 'duration ?');
@@ -32969,7 +32970,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._updateRemovalLogEntry(entry, { restoredAt: Date.now(), restoreError: null });
                     if (!silent) {
                         showToast(t('wlwbRestoredItemTpl', 'Restored {title} to Watch Later')
-                            .replace('{title}', entry.title || entry.videoId), '#22c55e', { duration: 4 });
+                            .replace('{title}', () => entry.title || entry.videoId), '#22c55e', { duration: 4 });
                     }
                     return true;
                 } catch (error) {
@@ -32978,8 +32979,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     });
                     if (!silent) {
                         showToast(t('wlwbRestoreFailedTpl', 'Could not restore {title}: {error}')
-                            .replace('{title}', entry.title || entry.videoId)
-                            .replace('{error}', describeFailureCause(error)), '#f59e0b', {
+                            .replace('{error}', () => describeFailureCause(error))
+                            .replace('{title}', () => entry.title || entry.videoId), '#f59e0b', {
                                 duration: 6,
                                 tone: 'warning'
                             });
@@ -41468,7 +41469,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const message = result?.added
                         ? t(allowlist ? 'videoHiderAllowedChannelAddedToast' : 'videoHiderBlockedChannelAddedToast', '{name} added to the channel list')
                         : t(allowlist ? 'videoHiderAlreadyAllowedChannelToast' : 'videoHiderAlreadyBlockedChannelToast', '{name} is already in the channel list');
-                    showToast(message.replace('{name}', name), '#6b7280');
+                    showToast(message.replace('{name}', () => name), '#6b7280');
                 });
                 section.appendChild(form);
                 return section;
@@ -43969,9 +43970,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 searchStateTitle.textContent = t('settingsSearchMatchingTpl', '{count} matching settings').replace('{count}', String(matchCount));
                 searchStateCopy.textContent = t('settingsSearchShowingTpl', 'Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result.')
                     .replace('{sections}', String(visibleSectionCount))
-                    .replace('{query}', rawLabel);
+                    .replace('{query}', () => rawLabel);
             } else {
-                searchStateTitle.textContent = t('settingsSearchNoneTpl', 'No settings found for “{query}”').replace('{query}', rawLabel);
+                searchStateTitle.textContent = t('settingsSearchNoneTpl', 'No settings found for “{query}”').replace('{query}', () => rawLabel);
                 searchStateCopy.textContent = t('settingsSearchHint', 'Try a feature name, page, or words like comments, transcript, download, or theme.');
             }
         }

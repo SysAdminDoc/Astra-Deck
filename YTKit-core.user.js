@@ -5984,7 +5984,7 @@ if (typeof globalThis !== "undefined") {
                     open.type = 'button';
                     const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(artifact.generatedAt));
                     open.textContent = t('aiSummaryArtifactTpl', '{title} · {date}')
-                        .replace('{title}', artifact.title)
+                        .replace('{title}', () => artifact.title)
                         .replace('{date}', date);
                     open.addEventListener('click', () => feature._renderArtifact(artifact));
                     const remove = doc.createElement('button');
@@ -19739,11 +19739,11 @@ if (typeof globalThis !== "undefined") {
                 if (!named) return label;
                 if (normalizedReason === 'blockedChannel') {
                     return t('videoHiderReasonBlockedChannelNamedTpl', 'a blocked channel rule ({channel})')
-                        .replace('{channel}', named);
+                        .replace('{channel}', () => named);
                 }
                 if (normalizedReason === 'channelNotAllowed') {
                     return t('videoHiderReasonChannelNotAllowedNamedTpl', 'your channel allowlist ({channel})')
-                        .replace('{channel}', named);
+                        .replace('{channel}', () => named);
                 }
                 return label;
             },
@@ -20249,8 +20249,8 @@ if (typeof globalThis !== "undefined") {
                     this._hideChannelVideos(record);
                     this._lastHidden = { type: 'allowed-channel', info: record };
                     const message = result.added
-                        ? t('videoHiderAllowedChannelToast', 'Channel allowed: {name}').replace('{name}', record.name)
-                        : t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed').replace('{name}', record.name);
+                        ? t('videoHiderAllowedChannelToast', 'Channel allowed: {name}').replace('{name}', () => record.name)
+                        : t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed').replace('{name}', () => record.name);
                     this._showToast(message, [
                         { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
                         { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
@@ -20262,8 +20262,8 @@ if (typeof globalThis !== "undefined") {
                 this._hideChannelVideos(record);
                 this._lastHidden = { type: 'channel', info: record };
                 this._showToast(result.added
-                    ? t('videoHiderBlockedChannelToast', 'Blocked: {name}').replace('{name}', record.name)
-                    : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked').replace('{name}', record.name), [
+                    ? t('videoHiderBlockedChannelToast', 'Blocked: {name}').replace('{name}', () => record.name)
+                    : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked').replace('{name}', () => record.name), [
                     { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
                     { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
                 ]);
@@ -22555,7 +22555,7 @@ if (typeof globalThis !== "undefined") {
                             undo.type = 'button';
                             undo.textContent = t('toastActionUndo', 'Undo');
                             undo.setAttribute('aria-label', t('subscriptionHealthUndoStageAriaTpl', 'Undo staged unsubscribe for {channel}')
-                                .replace('{channel}', name.textContent));
+                                .replace('{channel}', () => name.textContent));
                             undo.addEventListener('click', () => {
                                 this._undoStagedUnsubscribes([entry.channelId]);
                                 this._renderHealthPanel();
@@ -23544,7 +23544,7 @@ if (typeof globalThis !== "undefined") {
                     chip.textContent = t(
                         'subscriptionGroupChipTpl',
                         '{prefix}{name} ({count}){tags}'
-                    ).replace('{prefix}', prefix).replace('{name}', groupName)
+                    ).replace('{prefix}', prefix).replace('{name}', () => groupName)
                         .replace('{count}', channelCount).replace('{tags}', tagSuffix);
                     const channelLabel = channelCount === 1
                         ? t('subscriptionChannelSingular', 'channel')
@@ -23553,7 +23553,7 @@ if (typeof globalThis !== "undefined") {
                     chip.setAttribute('aria-label', t(
                         'subscriptionGroupChipAriaTpl',
                         '{name}. {count} {channels}{subgroup}'
-                    ).replace('{name}', groupName).replace('{count}', channelCount)
+                    ).replace('{name}', () => groupName).replace('{count}', channelCount)
                         .replace('{channels}', channelLabel).replace('{subgroup}', subgroupSuffix));
                     if (aiTagData[id]?.tags?.length) {
                         chip.title = t(
@@ -24029,7 +24029,7 @@ if (typeof globalThis !== "undefined") {
                     checkbox.setAttribute('aria-label', t(
                         'subscriptionMembersIncludeChannelAriaTpl',
                         'Include {channel} in {group}'
-                    ).replace('{channel}', channelName).replace('{group}', group.name || groupId));
+                    ).replace('{channel}', () => channelName).replace('{group}', group.name || groupId));
                     checkbox.addEventListener('change', () => {
                         this._setGroupMembership(groupId, channelId, checkbox.checked);
                     });
@@ -25060,7 +25060,7 @@ if (typeof globalThis !== "undefined") {
 
             showToast(
                 t('settingsSingleResetToastTpl', '“{name}” reset to default')
-                    .replace('{name}', settingDisplayName(featureId, key)),
+                    .replace('{name}', () => settingDisplayName(featureId, key)),
                 '#f97316',
                 {
                     duration: 5,
@@ -26395,7 +26395,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderRestoreHiddenVideosTpl',
                                 'Restored {count} hidden videos'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setHiddenVideos(backup);
                                 videoHiderFeature._removeAllowedVideos?.(allowedAdded);
                                 videoHiderFeature._processAllVideos();
@@ -26422,7 +26422,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderClearHiddenEntriesTpl',
                                 'Cleared {count} hidden list entries'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setHiddenVideos(backup);
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('videos');
@@ -26591,7 +26591,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderClearAllowedVideosTpl',
                                 'Cleared {count} allowed videos'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setAllowedVideos(backup);
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('allowed');
@@ -26689,7 +26689,7 @@ function buildSettingsPanel() {
                             showToast(t(
                                 'videoHiderUnblockedChannelsTpl',
                                 'Unblocked {count} channels'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 videoHiderFeature._setBlockedChannels(backup);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
@@ -28221,7 +28221,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             resetBtn.className = 'ytkit-card-reset';
             resetBtn.textContent = t('settingsCardReset', 'Reset');
             resetBtn.title = t('settingsCardResetTitleTpl', 'Reset “{name}” to its default')
-                .replace('{name}', featureName);
+                .replace('{name}', () => featureName);
             resetBtn.setAttribute('aria-label', resetBtn.title);
             card.appendChild(resetBtn);
         }

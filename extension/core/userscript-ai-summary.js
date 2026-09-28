@@ -251,7 +251,7 @@
                     open.type = 'button';
                     const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(artifact.generatedAt));
                     open.textContent = t('aiSummaryArtifactTpl', '{title} · {date}')
-                        .replace('{title}', artifact.title)
+                        .replace('{title}', () => artifact.title)
                         .replace('{date}', date);
                     open.addEventListener('click', () => feature._renderArtifact(artifact));
                     const remove = doc.createElement('button');

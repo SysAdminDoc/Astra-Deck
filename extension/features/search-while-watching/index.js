@@ -300,7 +300,7 @@
             // "query"` composition with hardcoded curly quotes.
             _setStatus(t('searchWatchResultsStatus', '{count} results for "{query}"')
                 .replace('{count}', count)
-                .replace('{query}', query), 'ready');
+                .replace('{query}', () => query), 'ready');
             for (const result of results) {
                 const item = documentRef.createElement('li');
                 item.className = 'ytkit-search-watch-item';

@@ -1375,7 +1375,7 @@ function formatSettingWriteError(name, error) {
     if ((isOptionalHostPermissionError(error) || isCobaltInstanceError(error)) && error?.message) {
         return error.message;
     }
-    return t('toggleUpdateFailTpl', `Couldn't update ${name}. Try again.`).replace('{name}', name);
+    return t('toggleUpdateFailTpl', `Couldn't update ${name}. Try again.`).replace('{name}', () => name);
 }
 
 function setEquals(a, b) {
@@ -2312,7 +2312,7 @@ function render(settings, filter) {
             row.setAttribute('role', 'switch');
             row.setAttribute('aria-checked', String(on));
             row.setAttribute('aria-label', t('quickToggleAriaTpl', '{name}. {description}. {state}.{permission}')
-                .replace('{name}', tName)
+                .replace('{name}', () => tName)
                 .replace('{description}', tDesc)
                 .replace('{state}', stateLabel)
                 .replace('{permission}', permissionState));
@@ -2375,7 +2375,7 @@ function installToggleClickDelegation() {
             const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
             if (refocus) refocus.focus();
             showStatus(t('toggleStatusTpl', '{name} {state}.')
-                .replace('{name}', tName)
+                .replace('{name}', () => tName)
                 .replace('{state}', next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')), 'success');
         } catch (error) {
             console.warn('[Astra Deck popup] Failed to toggle setting:', error);
@@ -4458,7 +4458,7 @@ function renderSchemaOverview() {
         empty.className = 'so-empty';
         empty.textContent = t('schemaOverviewNoMatchesTpl',
             'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.')
-            .replace('{term}', rawTerm);
+            .replace('{term}', () => rawTerm);
         schemaOverviewList.appendChild(empty);
         return;
     }
@@ -6644,7 +6644,7 @@ async function importSettings(file) {
         const backupNote = preImportBackupName
             ? t('statusImportBackupWrittenTpl',
                 'Your previous data was saved to {file} first.')
-                .replace('{file}', preImportBackupName)
+                .replace('{file}', () => preImportBackupName)
             : t('statusImportBackupFileFailed',
                 'Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.');
         const cleanupFailure = formatPermissionCleanupFailure(permissionCleanup);

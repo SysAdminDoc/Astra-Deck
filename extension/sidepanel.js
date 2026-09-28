@@ -762,7 +762,7 @@ function renderSettings(filter) {
     if (visible.length) {
         hideEmpty(settingsEmpty);
     } else if (query) {
-        showEmpty(settingsEmpty, t('spSettingsNoMatchTpl', 'No settings match "{query}". Clear the filter to return to all controls.').replace('{query}', String(filter)), 'idle', {
+        showEmpty(settingsEmpty, t('spSettingsNoMatchTpl', 'No settings match "{query}". Clear the filter to return to all controls.').replace('{query}', () => String(filter)), 'idle', {
             title: t('spSettingsNoMatchTitle', 'No matching quick settings'),
             actionLabel: settingsClear ? t('spSettingsClearFilter', 'Clear filter') : '',
             actionAriaLabel: t('spSettingsClearFilterAria', 'Clear quick settings filter'),
@@ -895,8 +895,8 @@ function renderSettings(filter) {
                     // way the popup already does.
                     const deniedGrant = !granted;
                     row.setAttribute('aria-description', deniedGrant
-                        ? t('spRowHostAccessDeniedTpl', '{name}. Needs site access before it can be enabled.').replace('{name}', humanName)
-                        : t('spRowSaveFailedTpl', '{name}. Save failed. Try refreshing the dashboard.').replace('{name}', humanName));
+                        ? t('spRowHostAccessDeniedTpl', '{name}. Needs site access before it can be enabled.').replace('{name}', () => humanName)
+                        : t('spRowSaveFailedTpl', '{name}. Save failed. Try refreshing the dashboard.').replace('{name}', () => humanName));
                     setRefreshStatus(deniedGrant
                         ? t('spStatusHostAccessDenied', 'Astra Deck needs host access for this optional feature before it can be enabled.')
                         : t('spStatusSaveFailed', 'Could not save setting'), 'error');
@@ -911,7 +911,7 @@ function renderSettings(filter) {
                 } catch (_) { /* reason: CSS.escape or querySelector may fail */ }
                 setRefreshStatus(
                     t(next ? 'spStatusEnabledTpl' : 'spStatusDisabledTpl', next ? '{name} enabled' : '{name} disabled')
-                        .replace('{name}', humanName),
+                        .replace('{name}', () => humanName),
                     'success'
                 );
             });

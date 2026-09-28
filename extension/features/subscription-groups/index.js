@@ -1054,7 +1054,7 @@
                             undo.type = 'button';
                             undo.textContent = t('toastActionUndo', 'Undo');
                             undo.setAttribute('aria-label', t('subscriptionHealthUndoStageAriaTpl', 'Undo staged unsubscribe for {channel}')
-                                .replace('{channel}', name.textContent));
+                                .replace('{channel}', () => name.textContent));
                             undo.addEventListener('click', () => {
                                 this._undoStagedUnsubscribes([entry.channelId]);
                                 this._renderHealthPanel();
@@ -2114,7 +2114,7 @@
                     chip.textContent = t(
                         'subscriptionGroupChipTpl',
                         '{prefix}{name} ({count}){tags}'
-                    ).replace('{prefix}', prefix).replace('{name}', groupName)
+                    ).replace('{prefix}', prefix).replace('{name}', () => groupName)
                         .replace('{count}', channelCount).replace('{tags}', tagSuffix);
                     const channelLabel = channelCount === 1
                         ? t('subscriptionChannelSingular', 'channel')
@@ -2123,7 +2123,7 @@
                     chip.setAttribute('aria-label', t(
                         'subscriptionGroupChipAriaTpl',
                         '{name}. {count} {channels}{subgroup}'
-                    ).replace('{name}', groupName).replace('{count}', channelCount)
+                    ).replace('{name}', () => groupName).replace('{count}', channelCount)
                         .replace('{channels}', channelLabel).replace('{subgroup}', subgroupSuffix));
                     if (aiTagData[id]?.tags?.length) {
                         chip.title = t(
@@ -2632,7 +2632,7 @@
                     checkbox.setAttribute('aria-label', t(
                         'subscriptionMembersIncludeChannelAriaTpl',
                         'Include {channel} in {group}'
-                    ).replace('{channel}', channelName).replace('{group}', group.name || groupId));
+                    ).replace('{channel}', () => channelName).replace('{group}', group.name || groupId));
                     checkbox.addEventListener('change', () => {
                         this._setGroupMembership(groupId, channelId, checkbox.checked);
                     });

@@ -1465,11 +1465,11 @@
                 if (!named) return label;
                 if (normalizedReason === 'blockedChannel') {
                     return t('videoHiderReasonBlockedChannelNamedTpl', 'a blocked channel rule ({channel})')
-                        .replace('{channel}', named);
+                        .replace('{channel}', () => named);
                 }
                 if (normalizedReason === 'channelNotAllowed') {
                     return t('videoHiderReasonChannelNotAllowedNamedTpl', 'your channel allowlist ({channel})')
-                        .replace('{channel}', named);
+                        .replace('{channel}', () => named);
                 }
                 return label;
             },
@@ -2010,8 +2010,8 @@
                     this._hideChannelVideos(record);
                     this._lastHidden = { type: 'allowed-channel', info: record };
                     const message = result.added
-                        ? t('videoHiderAllowedChannelToast', 'Channel allowed: {name}').replace('{name}', record.name)
-                        : t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed').replace('{name}', record.name);
+                        ? t('videoHiderAllowedChannelToast', 'Channel allowed: {name}').replace('{name}', () => record.name)
+                        : t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed').replace('{name}', () => record.name);
                     this._showToast(message, [
                         { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
                         { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
@@ -2023,8 +2023,8 @@
                 this._hideChannelVideos(record);
                 this._lastHidden = { type: 'channel', info: record };
                 this._showToast(result.added
-                    ? t('videoHiderBlockedChannelToast', 'Blocked: {name}').replace('{name}', record.name)
-                    : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked').replace('{name}', record.name), [
+                    ? t('videoHiderBlockedChannelToast', 'Blocked: {name}').replace('{name}', () => record.name)
+                    : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked').replace('{name}', () => record.name), [
                     { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
                     { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
                 ]);
