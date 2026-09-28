@@ -439,7 +439,7 @@ and this project supports Chrome 120.
 `ytkit.pem`:
 
 ```
-%LOCALAPPDATA%\Astra-Deck\keyseed-signing.pem
+%LOCALAPPDATA%\Astra-Deck\keys\feed-signing.pem
 ```
 
 Override with `ASTRA_FEED_SIGNING_KEY_PATH`.

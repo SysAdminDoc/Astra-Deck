@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The signing-keys guide showed the feed key path as `keys` followed by a stray page-break character. It now reads `keys\feed-signing.pem`.
+
 ## [4.90.3] (2026-09-28)
 
 ### Changed
