@@ -347,6 +347,52 @@ test('Video Hider refreshes filter lists anonymously and preserves stale cache o
     assert.equal(Object.prototype.hasOwnProperty.call(failedWrite, 'error'), false, 'free-text errors must not persist');
 });
 
+test('a filter-list fetch that finishes after destroy does not rescan the feed', async () => {
+    const { mod } = loadModule();
+    const url = 'https://example.com/rules.json';
+    const payload = globalThis.YTKitCore.persistedDomains.createVideoFilterList({
+        keywordFilter: 'late', hiddenVideos: [], allowedVideos: [], blockedChannels: [], allowedChannels: []
+    });
+    const makeFeature = () => {
+        let release;
+        const gate = new Promise((resolve) => { release = resolve; });
+        const feature = mod.createHideVideosFromHomeFeature({
+            appState: { settings: { hideVideosFilterListUrl: url } },
+            storageReadJSON: (_key, fallback) => fallback,
+            storageWriteJSON: async () => ({ ok: true }),
+            extensionFetchJson: async () => {
+                await gate;
+                return { data: payload, response: { status: 200, responseText: JSON.stringify(payload), responseHeaders: '' } };
+            },
+            sha256TextFn: async () => 'b'.repeat(64),
+            nowFn: () => 1000000,
+            setTimeoutFn: () => 0,
+            clearTimeoutFn: () => {}
+        });
+        let scans = 0;
+        feature._processAllVideos = () => { scans += 1; };
+        return { feature, release: () => release(), scans: () => scans };
+    };
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+    // Positive control: a live feature rescans once the list lands.
+    const live = makeFeature();
+    const liveRefresh = live.feature._refreshFilterListNow();
+    live.release();
+    assert.equal((await liveRefresh).ok, true);
+    await settle();
+    assert.equal(live.scans(), 1);
+
+    // destroy() sets _destroyed first; the in-flight fetch resolves after it.
+    const stopped = makeFeature();
+    const stoppedRefresh = stopped.feature._refreshFilterListNow();
+    stopped.feature._destroyed = true;
+    stopped.release();
+    assert.equal((await stoppedRefresh).ok, true);
+    await settle();
+    assert.equal(stopped.scans(), 0, 'a switched-off Video Hider must not re-hide cards');
+});
+
 test('Video Hider sends validators and refreshes last-known-good age on HTTP 304', async () => {
     const { mod } = loadModule();
     const codec = globalThis.YTKitCore.persistedDomains;

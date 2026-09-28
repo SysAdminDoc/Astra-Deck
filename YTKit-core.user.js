@@ -20640,9 +20640,11 @@ if (typeof globalThis !== "undefined") {
                 return handle;
             },
             _processAllVideosDebounced(delay = 300) {
+                if (this._destroyed) return;
                 if (this._processAllDebounceTimer) clearTimeout(this._processAllDebounceTimer);
                 this._processAllDebounceTimer = setTimeout(() => {
                     this._processAllDebounceTimer = null;
+                    if (this._destroyed) return;
                     this._processAllVideos();
                 }, delay);
             },

@@ -2481,9 +2481,14 @@
                 return handle;
             },
             _processAllVideosDebounced(delay = 300) {
+                // A filter-list fetch started before destroy() still resolves
+                // afterwards and lands here; without this the switched-off
+                // feature re-hid cards and re-mounted its buttons.
+                if (this._destroyed) return;
                 if (this._processAllDebounceTimer) clearTimeout(this._processAllDebounceTimer);
                 this._processAllDebounceTimer = setTimeout(() => {
                     this._processAllDebounceTimer = null;
+                    if (this._destroyed) return;
                     this._processAllVideos();
                 }, delay);
             },

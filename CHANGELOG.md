@@ -20,6 +20,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The userscript's Anti-Translate Chapters restores original chapter titles. Its helpers were never connected either.
 - Channel names, video titles, group names, tags, error text and search text that contain dollar signs show up as written in notices and labels. A name like "Cash $$ Club" used to lose a character, and "$&" repeated the whole message. This covered 116 places, including blocking and allowing channels, Subscription Groups (renaming a group to "$$ Money" was enough), Comment Search, the Watch Later cleanup, the skipped-settings notice after importing a backup and several popup and side panel messages.
 - The Undo button on four settings panel notices was English in every language. It's translated now.
+- Turning Video Hider off while it was still downloading a subscribed filter list no longer brings it back. When the download finished, it hid cards and put its buttons back on a feature you'd just switched off.
 
 ## [4.91.0] (2026-09-28)
 
