@@ -37,46 +37,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   monolith-peel gate SHALL record the removal.
   Complexity: M
 
-- [ ] P1 — Watch Feed replays a queued video that ends in the miniplayer
-  Why: 2026-09-28 audit, confirmed by probe. `_finishCurrent()` reads the finished id from
-  `location`, which is null on home, search and channel pages, so nothing is removed and
-  `_playNext()` navigates back to the video that just ended (still first in the queue).
-  Where: `extension/ytkit.js` persistentQueue `_finishCurrent` / `_playNext` (~23098).
-  Acceptance: WHEN a queued video ends in the miniplayer, THEN it SHALL be removed using the
-  player's own video id, and auto-advance SHALL start the next entry.
-  Complexity: S
-
-- [ ] P2 — Watch Feed queues only the first video of Mix and playlist cards
-  Why: 2026-09-28 audit, confirmed. `_extractCardData` accepts `watch?v=X&list=RD...` cards and
-  stores X under the Mix's title ("Mix - Some Artist"). The video hider already detects mixes
-  (`features/video-hider/index.js` ~1733).
-  Where: `extension/ytkit.js` `_extractCardData` and `_addButtons` (~23339-23385).
-  Acceptance: WHEN a card links to a Mix or playlist, THEN no Watch Feed button SHALL be added
-  (or it SHALL queue the playlist explicitly), never the first video under the list's title.
-  Complexity: S
-
-- [ ] P3 — Watch Feed import count, `$` in titles and English tooltip
-  Why: 2026-09-28 audit, all confirmed. Import reports entries that `_write()` then cuts at
-  the 200 cap ("10 added" when 1 fit). `.replace('{title}', title)` treats `$$` and `` $` ``
-  in a title as replacement patterns, garbling labels and tooltips. The panel row tooltip is a
-  hard-coded `` `${it.title} by ${it.channel}` ``. Related, lower severity: focus is lost after
-  move/remove/Clear, Import is unreachable with an empty feed, and Clear has no Undo.
-  Where: `extension/ytkit.js` (~23122-23136 import, ~23208 tooltip, ~23233, ~23411 labels).
-  Acceptance: import SHALL report what was stored; titles SHALL be inserted with a function
-  replacement; the tooltip SHALL come from a catalogue key in all 11 locales.
-  Complexity: S
-
-- [ ] P2 — Heatmap features use the previous video's curve after in-page navigation
-  Why: 2026-09-28 audit, confirmed against the WatchPage capture. The curve only exists in
-  `ytInitialData`'s `macroMarkersListEntity`, read from hard-load inline scripts that go stale
-  on SPA navigation. Jump to Most Replayed seeks to the old video's peak and Smart Speed uses
-  the old hot and cold regions. The userscript (`window.ytInitialData`) has the same bug.
-  Where: `extension/ytkit.js` `_rw.ytInitialData` reader (~1186) and both heatmap callers
-  (~19306, ~19401, ~19449); `YTKit.user.js` ~10012.
-  Acceptance: WHEN the payload's `externalVideoId` (or `currentVideoEndpoint` id) differs from
-  `getVideoId()`, THEN both features SHALL ignore it.
-  Complexity: S
-
 - [ ] P2 — Settings panel per-card Reset doesn't repaint or take effect
   Why: 2026-09-28 audit, confirmed. Single Reset saves the default but leaves the checkbox or
   textarea showing the old value (a textarea blur then saves it back). It dispatches no
@@ -98,15 +58,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: WHEN a deep link names a setting, THEN the panel SHALL open on its category with
   that card focused, and SHALL report false when no card exists.
   Complexity: M
-
-- [ ] P3 — Thumbnail View button borrows the download button's labels
-  Why: 2026-09-28 audit, confirmed. `_setButtonFeedback` hard-codes download labels and a
-  shared 2 s revert timer, so View reads "Download thumbnail" after a click and its error says
-  "Retry download". Toggling `openThumbnailButton` doesn't apply until the next navigation.
-  Where: `extension/ytkit.js` `_setButtonFeedback` (~25645), `hasRelevantSettingsChange` for
-  `downloadThumbnail`.
-  Acceptance: each button SHALL keep its own labels and timer; the toggle SHALL apply live.
-  Complexity: S
 
 - [ ] P2 — Page script can read the MAIN-world bridge token
   Why: 2026-09-28 audit, confirmed by PoC. `YTKitCore.mainBridgeReader` (with a `token` getter)
@@ -167,6 +118,51 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: the chip SHALL align with the header text in dark and light captures, and the
   closed rail SHALL expose a visible and accessible "Show comments" affordance.
   Complexity: S
+
+- [ ] P2 — Heatmap features have no curve after in-app navigation
+  Why: since the 2026-09-28 fix, Jump to Most Replayed and Heatmap Smart Speed ignore page data
+  that belongs to another video, so after you click from one video to another they do nothing
+  until a full reload. The ISOLATED world only has the hard-load inline scripts. The fresh curve
+  arrives in the `/next` response (`frameworkUpdates.entityBatchUpdate.mutations[].payload
+  .macroMarkersListEntity`), which only the MAIN world sees.
+  Where: `extension/ytkit-main.js` and `extension/core/bridge-channel.js` (carry the markers
+  across), `extension/ytkit.js` heatmap `_readMarkers` (x2), `extension/core/heatmap.js`
+  `heatmapMarkersFor`. Userscript: `YTKit.user.js` jumpToMostReplayed.
+  Acceptance: WHEN you click from one video to another, THEN both features SHALL use the new
+  video's curve without a reload, and SHALL still refuse a curve whose id doesn't match.
+  Complexity: M
+
+- [ ] P3 — Watch Feed Import is unreachable when the feed is empty
+  Why: 2026-09-28 audit, confirmed. Import lives in the Watch Feed panel, and the only way into
+  the panel is the pill, which `_renderPill()` removes when the feed is empty. A new install or a
+  cleared feed can't restore a backup.
+  Where: `extension/ytkit.js` persistentQueue `_renderPill` (~23215) and `_togglePanel`
+  (~23351, Import at ~23379).
+  Acceptance: WHEN the feed is empty, THEN Import SHALL still be reachable from the keyboard
+  (for example from the feature's settings card or an empty-state pill).
+  Complexity: S
+
+- [ ] P3 — Check the userscript's page-data reads under `@inject-into content`
+  Why: `YTKit.user.js` declares `@inject-into content`. Where a manager honors that (Violentmonkey,
+  and Firefox builds), `window` is the sandbox, so `window.ytInitialPlayerResponse` and
+  `window.ytInitialData` may be undefined and Anti-Translate Chapters, Jump to Most Replayed and
+  the other readers quietly do nothing. Not tested in a real manager yet.
+  Where: `YTKit.user.js` header and every `window.ytInitial*` read (grep).
+  Acceptance: each supported manager SHALL be shown to expose the payload, or the reads SHALL
+  fall back to parsing the page's inline scripts the way the extension does.
+  Complexity: S
+
+- [ ] P3 — Finish the 2026-09-28 audit sweep
+  Why: the pass covered the watch-page monolith features it touched, background, popup, side
+  panel, Subscription Groups, Video Hider, Digital Wellbeing, Download UI, Video Notes and
+  Studio Comments. Not yet read with the same care: `features/dearrow`, `element-zapper`,
+  `player-dock`, `return-dislike`, `search-hygiene`, `sponsorblock`, `subtitles`,
+  `video-insights`, `live-chat`, `sticky-chat`, `subscription-view`, and `extension/core/*`
+  beyond heatmap, chapters and settings-schema.
+  Where: the modules above.
+  Acceptance: each module read for lifecycle symmetry, late async work after destroy, outside
+  text in templates and unbound guards, with findings fixed or logged here.
+  Complexity: L
 
 ## Research-Driven Additions
 
