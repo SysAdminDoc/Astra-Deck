@@ -8,6 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The ⋮ menu on comments couldn't be clicked on a normal watch page. The layer that keeps comment text selectable was sitting on top of it.
+- Comment text handling stopped partway down the comment list whenever another script shared the page's context, because YouTube swaps out the style property on some of its text elements. Those elements are skipped now.
 - The signing-keys guide showed the feed key path as `keys` followed by a stray page-break character. It now reads `keys\feed-signing.pem`.
 
 ## [4.90.3] (2026-09-28)

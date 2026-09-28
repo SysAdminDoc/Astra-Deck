@@ -39835,6 +39835,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     const COMMENT_TEXT_SELECTION_ROOT_SELECTOR = COMMENT_TEXT_SELECTION_ROOT_SELECTORS.join(',');
     const COMMENT_TEXT_SELECTION_TEXT_SELECTOR = COMMENT_TEXT_SELECTION_TEXT_SELECTORS.join(',');
     const COMMENT_TEXT_SELECTION_INTERACTIVE_SELECTOR = COMMENT_TEXT_SELECTION_INTERACTIVE_SELECTORS.join(',');
+    // Page components can shadow an element's style property (YouTube's
+    // yt-attributed-string does, with its own style enum), and any script
+    // sharing the page's JS world then sees that value instead of the
+    // CSSStyleDeclaration. The stylesheet below covers those elements anyway,
+    // so a node without a real style object is skipped rather than allowed to
+    // throw and stop the pass for every comment after it.
+    function setImportantDeclarations(node, declarations) {
+        const style = node?.style;
+        if (!style || typeof style.setProperty !== 'function') return;
+        for (const [property, value] of declarations) style.setProperty(property, value, 'important');
+    }
+    const COMMENT_HITBOX_DECLARATIONS = [['display', 'none'], ['pointer-events', 'none'], ['visibility', 'hidden'], ['opacity', '0'], ['width', '0'], ['height', '0']];
     const commentTextSelectionSupport = {
         _initialized: false,
         _styleElement: null,
@@ -39860,42 +39872,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             rootComments.push(...nestedComments);
 
             if (scope instanceof Element && scope.matches?.('ytd-comment-thread-renderer')) {
-                scope.querySelectorAll('.thread-hitbox').forEach((hitbox) => {
-                    hitbox.style.setProperty('display', 'none', 'important');
-                    hitbox.style.setProperty('pointer-events', 'none', 'important');
-                    hitbox.style.setProperty('visibility', 'hidden', 'important');
-                    hitbox.style.setProperty('opacity', '0', 'important');
-                    hitbox.style.setProperty('width', '0', 'important');
-                    hitbox.style.setProperty('height', '0', 'important');
-                });
+                scope.querySelectorAll('.thread-hitbox').forEach((hitbox) => setImportantDeclarations(hitbox, COMMENT_HITBOX_DECLARATIONS));
             }
 
             rootComments.forEach((comment) => {
-                comment.closest('ytd-comment-thread-renderer')?.querySelectorAll('.thread-hitbox').forEach((hitbox) => {
-                    hitbox.style.setProperty('display', 'none', 'important');
-                    hitbox.style.setProperty('pointer-events', 'none', 'important');
-                    hitbox.style.setProperty('visibility', 'hidden', 'important');
-                    hitbox.style.setProperty('opacity', '0', 'important');
-                    hitbox.style.setProperty('width', '0', 'important');
-                    hitbox.style.setProperty('height', '0', 'important');
-                });
+                comment.closest('ytd-comment-thread-renderer')?.querySelectorAll('.thread-hitbox').forEach((hitbox) => setImportantDeclarations(hitbox, COMMENT_HITBOX_DECLARATIONS));
 
                 comment.querySelectorAll('#main, #header, #header-author, ytd-expander, #content, #content-text, #home-content-text, #post-text').forEach((node) => {
-                    node.style.setProperty('position', 'relative', 'important');
-                    node.style.setProperty('z-index', '1', 'important');
-                    node.style.setProperty('pointer-events', 'auto', 'important');
+                    setImportantDeclarations(node, [['position', 'relative'], ['z-index', '1'], ['pointer-events', 'auto']]);
                 });
 
                 comment.querySelectorAll('#author-text, #author-text a, #published-time-text, #published-time-text a').forEach((node) => {
-                    node.style.setProperty('position', 'relative', 'important');
-                    node.style.setProperty('z-index', '2', 'important');
-                    node.style.setProperty('pointer-events', 'auto', 'important');
+                    setImportantDeclarations(node, [['position', 'relative'], ['z-index', '2'], ['pointer-events', 'auto']]);
                 });
 
                 comment.querySelectorAll('#content, #content-text, #home-content-text, #post-text, yt-attributed-string, .ytAttributedStringHost, yt-core-attributed-string').forEach((node) => {
-                    node.style.setProperty('pointer-events', 'auto', 'important');
-                    node.style.setProperty('-webkit-user-select', 'text', 'important');
-                    node.style.setProperty('user-select', 'text', 'important');
+                    setImportantDeclarations(node, [['pointer-events', 'auto'], ['-webkit-user-select', 'text'], ['user-select', 'text']]);
                 });
             });
         },
@@ -39973,6 +39965,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 ytd-comment-view-model #published-time-text a,
                 ytd-comment-renderer #published-time-text a {
                     z-index: 2 !important;
+                }
+
+                /* YouTube positions the action menu absolutely over the
+                   header row. The raised layers above would otherwise cover
+                   its button and swallow every click on it. */
+                ytd-comment-view-model > #body > #action-menu,
+                ytd-comment-renderer > #body > #action-menu,
+                ytd-comment-view-model #inline-action-menu,
+                ytd-comment-renderer #inline-action-menu {
+                    z-index: 3 !important;
                 }
 
                 ytd-comment-view-model #content-text,

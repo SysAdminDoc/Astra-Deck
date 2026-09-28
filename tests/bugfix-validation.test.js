@@ -1792,3 +1792,42 @@ test('the userscript download poller terminates on a skipped result', () => {
     assert.ok(!source.includes("resp.message === 'Already downloaded'"),
         'the retired download-archive response check should be gone');
 });
+
+test('comment action menu stays clickable above the raised text layer', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf('const commentTextSelectionSupport = {');
+    const block = source.slice(start, source.indexOf('//  SECTION 4: PREMIUM UI', start));
+    // The text layer lifts #main and #header to z-index 1. YouTube positions
+    // the action menu absolutely over the header row, so it must sit higher.
+    assert.match(block, /ytd-comment-view-model > #body > #action-menu,[\s\S]*?\{\s*z-index: 3 !important;\s*\}/,
+        'the action menu must be raised above the z-index 1 text layer');
+    assert.match(block, /#main, #header[^']*'\)\.forEach\(\(node\) => \{\s*setImportantDeclarations\(node, \[\['position', 'relative'\], \['z-index', '1'\]/,
+        'the header layer stays at z-index 1, below the menu');
+});
+
+test('comment surface normalizing skips elements whose style property a page component replaced', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const vm = require('vm');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf('function setImportantDeclarations(node, declarations) {');
+    const end = source.indexOf('\n    }\n', start) + 6;
+    assert.ok(start > -1 && end > start, 'the guarded style writer should exist');
+    const setImportantDeclarations = vm.runInNewContext(`(${source.slice(start, end)})`);
+
+    // YouTube's yt-attributed-string exposes its own style enum here when a
+    // script shares the page's JS world.
+    const shadowed = { style: Symbol('yt-attributed-string style') };
+    assert.doesNotThrow(() => setImportantDeclarations(shadowed, [['z-index', '1']]));
+    assert.doesNotThrow(() => setImportantDeclarations({}, [['z-index', '1']]));
+
+    const calls = [];
+    setImportantDeclarations({ style: { setProperty: (...args) => calls.push(args) } }, [['position', 'relative'], ['z-index', '1']]);
+    assert.deepEqual(calls, [['position', 'relative', 'important'], ['z-index', '1', 'important']]);
+
+    const normalize = source.slice(source.indexOf('_normalizeCommentSurface(root) {'), source.indexOf('_scheduleNormalize(root = document) {'));
+    assert.ok(!/\bnode\.style\.setProperty\(|\bhitbox\.style\.setProperty\(/.test(normalize),
+        'normalizing must go through the guarded writer, never style.setProperty directly');
+});
