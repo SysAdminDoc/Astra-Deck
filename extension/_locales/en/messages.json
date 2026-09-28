@@ -7361,6 +7361,38 @@
   "switchLabelOn": {
     "message": "on"
   },
+  "thumbnailDownloadAria": {
+    "message": "Download thumbnail",
+    "description": "Accessible name and tooltip of the thumbnail download button while idle."
+  },
+  "thumbnailDownloadBusy": {
+    "message": "Downloading…",
+    "description": "Label on the thumbnail download button while the file is being saved."
+  },
+  "thumbnailDownloadDone": {
+    "message": "Downloaded",
+    "description": "Label on the thumbnail download button for two seconds after a successful download."
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "Thumbnail downloaded",
+    "description": "Accessible name and tooltip of the thumbnail download button after a successful download."
+  },
+  "thumbnailDownloadFailed": {
+    "message": "Thumbnail download failed. Check the browser download prompt and try again.",
+    "description": "Error notice when the thumbnail download fails."
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "Thumbnail download failed. Retry",
+    "description": "Accessible name and tooltip of the thumbnail download button after a failed download."
+  },
+  "thumbnailDownloadLabel": {
+    "message": "Thumbnail",
+    "description": "Visible label on the watch-page button that downloads the video thumbnail. Keep it short."
+  },
+  "thumbnailDownloadRetry": {
+    "message": "Retry",
+    "description": "Label on the thumbnail download button after a failed download."
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Bookmarked at {time}"
   },

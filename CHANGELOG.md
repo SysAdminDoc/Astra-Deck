@@ -21,6 +21,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Channel names, video titles, group names, tags, error text and search text that contain dollar signs show up as written in notices and labels. A name like "Cash $$ Club" used to lose a character, and "$&" repeated the whole message. This covered 116 places, including blocking and allowing channels, Subscription Groups (renaming a group to "$$ Money" was enough), Comment Search, the Watch Later cleanup, the skipped-settings notice after importing a backup and several popup and side panel messages.
 - The Undo button on four settings panel notices was English in every language. It's translated now.
 - Turning Video Hider off while it was still downloading a subscribed filter list no longer brings it back. When the download finished, it hid cards and put its buttons back on a feature you'd just switched off.
+- The Thumbnail and View buttons under a video each keep their own labels now. After a View click, View announced itself as "Download thumbnail" and stopped the Download button from resetting. The Download button's labels and error notice are translated, a slow download no longer flips back to "Thumbnail" halfway through, and turning View on or off takes effect right away instead of on the next video.
+- In the userscript, the Thumbnail button follows you to the next video. After you clicked from one video to another it kept downloading the first video's thumbnail.
 
 ## [4.91.0] (2026-09-28)
 

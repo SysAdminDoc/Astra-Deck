@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "activado"
   },
+  "thumbnailDownloadAria": {
+    "message": "Descargar miniatura"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "Descargando…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "Descargada"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "Miniatura descargada"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "No se pudo descargar la miniatura. Revisa el aviso de descarga del navegador y vuelve a intentarlo."
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "No se pudo descargar la miniatura. Reintentar"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "Miniatura"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "Reintentar"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Marcado en {time}"
   },

@@ -13,20 +13,21 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { loadFeature, fakeTreeDocument } = require('./helpers/monolith');
+const { loadFeature, loadUserscriptFeature, fakeTreeDocument } = require('./helpers/monolith');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const VIDEO_ID = 'dQw4w9WgXcQ';
 
-function build({ openThumbnailButton = true, headStatuses = {}, opened = [] } = {}) {
+function build({ openThumbnailButton = true, headStatuses = {}, opened = [], extra = {} } = {}) {
     const documentRef = fakeTreeDocument(() => null);
     const actions = documentRef.createElement('div');
     actions.id = 'actions';
     documentRef.body.append(actions);
+    const appState = { settings: { downloadThumbnail: true, openThumbnailButton } };
 
     const feature = loadFeature('downloadThumbnail', {
         document: documentRef,
-        appState: { settings: { downloadThumbnail: true, openThumbnailButton } },
+        appState,
         getVideoId: () => VIDEO_ID,
         isWatchPagePath: () => true,
         openExternalUrl: async (url) => { opened.push(url); return { ok: true }; },
@@ -40,10 +41,27 @@ function build({ openThumbnailButton = true, headStatuses = {}, opened = [] } = 
             const status = Object.prototype.hasOwnProperty.call(headStatuses, url) ? headStatuses[url] : 200;
             if (status === 'throw') throw new Error('network');
             return { status };
-        }
+        },
+        ...extra
     });
-    return { feature, documentRef, actions, opened };
+    return { feature, documentRef, actions, opened, appState };
 }
+
+// Timers the test runs by hand, so a revert can be fired (or shown to be
+// cancelled) without waiting two seconds.
+function manualTimers() {
+    const timers = [];
+    return {
+        timers,
+        pending: () => timers.filter((entry) => !entry.cleared && !entry.ran),
+        setTimeout: (fn, ms) => { timers.push({ fn, ms, cleared: false, ran: false }); return timers.length; },
+        clearTimeout: (id) => { if (timers[id - 1]) timers[id - 1].cleared = true; },
+        run(entry) { entry.ran = true; entry.fn(); }
+    };
+}
+
+const click = (button) => button.listeners.get('click').values().next().value({});
+const labelOf = (button) => button.querySelector('.ytkit-watch-action-btn__label').textContent;
 
 const MAXRES = `https://i.ytimg.com/vi/${VIDEO_ID}/maxresdefault.jpg`;
 const HQ = `https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`;
@@ -142,4 +160,159 @@ test('the setting is declared and defaults off in every mirror', () => {
 
     const defaults = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'extension', 'default-settings.json'), 'utf8'));
     assert.equal(defaults.openThumbnailButton, false);
+});
+
+test('each button keeps its own labels and its own revert timer', async () => {
+    const clock = manualTimers();
+    let openFails = false;
+    const { feature, documentRef } = build({
+        extra: {
+            setTimeout: clock.setTimeout,
+            clearTimeout: clock.clearTimeout,
+            openExternalUrl: async () => { if (openFails) throw new Error('blocked'); return { ok: true }; }
+        }
+    });
+    feature._create();
+    const download = documentRef.querySelector('.ytkit-dl-thumb-btn');
+    const view = documentRef.querySelector('.ytkit-open-thumb-btn');
+
+    await click(download);
+    assert.equal(labelOf(download), 'Downloaded');
+    assert.equal(clock.pending().length, 1, 'a finished download arms one revert');
+    const downloadRevert = clock.pending()[0];
+
+    // A View click used to clear that shared timer and stamp the download
+    // button's labels onto View.
+    await click(view);
+    assert.equal(labelOf(view), 'View');
+    assert.equal(view.getAttribute('aria-label'), 'Open thumbnail at full size');
+    assert.equal(downloadRevert.cleared, false, 'a View click must not cancel the Download revert');
+
+    clock.run(downloadRevert);
+    assert.equal(labelOf(download), 'Thumbnail');
+    assert.equal(download.getAttribute('aria-label'), 'Download thumbnail');
+
+    openFails = true;
+    await click(view);
+    assert.equal(labelOf(view), 'Retry');
+    assert.equal(view.getAttribute('aria-label'), 'Could not open the thumbnail. Try again in a moment.',
+        'a failed View must not announce a failed download');
+    clock.run(clock.pending()[0]);
+    assert.equal(labelOf(view), 'View', 'View reverts to its own label, not "Thumbnail"');
+    assert.equal(view.getAttribute('aria-label'), 'Open thumbnail at full size');
+});
+
+test('the download button speaks the catalog, not hardcoded English', async () => {
+    const clock = manualTimers();
+    const { feature, documentRef } = build({
+        openThumbnailButton: false,
+        extra: {
+            t: (key) => `<${key}>`,
+            setTimeout: clock.setTimeout,
+            clearTimeout: clock.clearTimeout,
+            triggerDownload: async () => { throw new Error('denied'); }
+        }
+    });
+    feature._create();
+    const download = documentRef.querySelector('.ytkit-dl-thumb-btn');
+    assert.equal(labelOf(download), '<thumbnailDownloadLabel>');
+    assert.equal(download.getAttribute('aria-label'), '<thumbnailDownloadAria>');
+
+    await click(download);
+    assert.equal(labelOf(download), '<thumbnailDownloadRetry>');
+    assert.equal(download.getAttribute('aria-label'), '<thumbnailDownloadFailedAria>');
+});
+
+test('a slow download keeps its busy label instead of reverting mid-download', async () => {
+    const clock = manualTimers();
+    let finish;
+    const { feature, documentRef } = build({
+        openThumbnailButton: false,
+        extra: {
+            setTimeout: clock.setTimeout,
+            clearTimeout: clock.clearTimeout,
+            triggerDownload: () => new Promise((resolve) => { finish = resolve; })
+        }
+    });
+    feature._create();
+    const download = documentRef.querySelector('.ytkit-dl-thumb-btn');
+    const running = click(download);
+    for (let i = 0; i < 10 && !finish; i++) await Promise.resolve();
+    assert.equal(labelOf(download), 'Downloading…');
+    assert.equal(clock.pending().length, 0, 'nothing may flip the label back while the download runs');
+    finish();
+    await running;
+    assert.equal(labelOf(download), 'Downloaded');
+});
+
+test('turning the View setting on or off applies without waiting for the next video', () => {
+    const { feature, documentRef, appState } = build({
+        openThumbnailButton: false,
+        extra: { setTimeout: () => 0, clearTimeout: () => {} }
+    });
+    feature.init();
+    feature._create();
+    const fire = () => documentRef.listeners.get('ytkit-settings-changed')?.forEach((handler) => handler({ detail: {} }));
+    assert.equal(documentRef.querySelectorAll('.ytkit-open-thumb-btn').length, 0);
+
+    appState.settings.openThumbnailButton = true;
+    fire();
+    assert.equal(documentRef.querySelectorAll('.ytkit-open-thumb-btn').length, 1);
+    fire();
+    assert.equal(documentRef.querySelectorAll('.ytkit-open-thumb-btn').length, 1, 'a repeat event does not stack buttons');
+
+    appState.settings.openThumbnailButton = false;
+    fire();
+    assert.equal(documentRef.querySelectorAll('.ytkit-open-thumb-btn').length, 0);
+
+    feature.destroy();
+    assert.equal(documentRef.listeners.get('ytkit-settings-changed')?.size || 0, 0, 'destroy drops the settings listener');
+});
+
+test('the userscript Thumbnail button follows the video after in-app navigation', () => {
+    // YouTube keeps #actions when you click from one video to another, so the
+    // old button stayed in place, bound to the first video, and _create() saw
+    // it and stopped. Checked live: a node appended to #actions survives the
+    // navigation.
+    const clock = manualTimers();
+    const documentRef = fakeTreeDocument(() => null);
+    const actions = documentRef.createElement('div');
+    actions.id = 'actions';
+    documentRef.body.append(actions);
+    const locationRef = { href: 'https://www.youtube.com/watch?v=aaaaaaaaaaa' };
+    let onNavigate = null;
+    const fetched = [];
+    const feature = loadUserscriptFeature('downloadThumbnail', {
+        document: documentRef,
+        location: locationRef,
+        URL,
+        isWatchPagePath: () => true,
+        setTimeout: clock.setTimeout,
+        clearTimeout: clock.clearTimeout,
+        addNavigateRule: (_id, fn) => { onNavigate = fn; },
+        removeNavigateRule: () => {},
+        setSafeBlankTarget: () => {},
+        fetch: async (url) => { fetched.push(url); return { ok: false }; }
+    });
+
+    feature.init();
+    clock.run(clock.pending()[0]);
+    assert.equal(documentRef.querySelectorAll('.ytkit-dl-thumb-btn').length, 1);
+
+    locationRef.href = 'https://www.youtube.com/watch?v=bbbbbbbbbbb';
+    onNavigate();
+    clock.run(clock.pending()[0]);
+    const buttons = documentRef.querySelectorAll('.ytkit-dl-thumb-btn');
+    assert.equal(buttons.length, 1);
+    return click(buttons[0]).then(() => {
+        assert.deepEqual(fetched, ['https://i.ytimg.com/vi/bbbbbbbbbbb/maxresdefault.jpg'],
+            'the button must fetch the video on screen, not the first one');
+
+        // Switching the feature off inside the two-second window must not let
+        // the pending create put a button back.
+        onNavigate();
+        feature.destroy();
+        assert.equal(clock.pending().length, 0);
+        assert.equal(documentRef.querySelectorAll('.ytkit-dl-thumb-btn').length, 0);
+    });
 });

@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "开"
   },
+  "thumbnailDownloadAria": {
+    "message": "下载缩略图"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "正在下载…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "已下载"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "缩略图已下载"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "缩略图下载失败。请检查浏览器的下载提示后重试。"
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "缩略图下载失败。重试"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "缩略图"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "重试"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "已在 {time} 添加书签"
   },

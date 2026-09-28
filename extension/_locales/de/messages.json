@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "an"
   },
+  "thumbnailDownloadAria": {
+    "message": "Vorschaubild herunterladen"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "Wird heruntergeladen…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "Heruntergeladen"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "Vorschaubild heruntergeladen"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "Download des Vorschaubilds fehlgeschlagen. Prüfe die Download-Abfrage des Browsers und versuche es erneut."
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "Download des Vorschaubilds fehlgeschlagen. Erneut versuchen"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "Vorschaubild"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "Erneut versuchen"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Lesezeichen bei {time} gesetzt"
   },

@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "вкл"
   },
+  "thumbnailDownloadAria": {
+    "message": "Скачать обложку"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "Скачивание…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "Скачано"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "Обложка скачана"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "Не удалось скачать обложку. Проверьте запрос на скачивание в браузере и попробуйте снова."
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "Не удалось скачать обложку. Повторить"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "Обложка"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "Повторить"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Закладка на {time} добавлена"
   },

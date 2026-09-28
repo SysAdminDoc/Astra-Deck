@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "オン"
   },
+  "thumbnailDownloadAria": {
+    "message": "サムネイルをダウンロード"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "ダウンロード中…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "ダウンロード済み"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "サムネイルをダウンロードしました"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "サムネイルをダウンロードできませんでした。ブラウザのダウンロード確認を確かめて、もう一度お試しください。"
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "サムネイルをダウンロードできませんでした。再試行"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "サムネイル"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "再試行"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "{time} にブックマークしました"
   },

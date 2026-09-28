@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "켜짐"
   },
+  "thumbnailDownloadAria": {
+    "message": "썸네일 다운로드"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "다운로드 중…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "다운로드됨"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "썸네일을 다운로드했습니다"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "썸네일을 다운로드하지 못했습니다. 브라우저의 다운로드 확인 창을 확인한 뒤 다시 시도하세요."
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "썸네일을 다운로드하지 못했습니다. 다시 시도"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "썸네일"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "다시 시도"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "{time}에 북마크함"
   },

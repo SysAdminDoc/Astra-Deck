@@ -12972,15 +12972,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn = btn;
             },
 
+            _createTimer: null,
+            _scheduleCreate() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, 2000);
+            },
             init() {
                 addNavigateRule('downloadThumbnail', () => {
+                    // YouTube keeps #actions across in-app navigation, so a
+                    // button that is only forgotten stays on the page, bound to
+                    // the first video, and _create() then sees it and stops.
+                    this._btn?.remove();
                     this._btn = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate();
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate();
             },
             destroy() {
                 removeNavigateRule('downloadThumbnail');
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 document.querySelectorAll('.ytkit-dl-thumb-btn').forEach(b => b.remove());
                 this._btn = null;
             }

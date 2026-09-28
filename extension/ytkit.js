@@ -25731,7 +25731,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'image',
             _btn: null,
             _createTimer: null,
-            _feedbackTimer: null,
+            _feedbackTimers: null,
+            _settingsHandler: null,
             _sanitizeFilename(name) {
                 return String(name || '')
                     .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
@@ -25755,42 +25756,47 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
-            _setButtonFeedback(labelEl, btn, text, state = 'idle') {
+            // Each button carries its own labels and its own revert timer. The
+            // two buttons used to share one timer and the download button's
+            // English labels, so after a View click the View button announced
+            // "Download thumbnail" and read "Thumbnail", and the click cancelled
+            // a pending revert on the Download button.
+            _downloadLabels() {
+                return {
+                    idle: t('thumbnailDownloadLabel', 'Thumbnail'),
+                    idleAria: t('thumbnailDownloadAria', 'Download thumbnail'),
+                    successAria: t('thumbnailDownloadDoneAria', 'Thumbnail downloaded'),
+                    errorAria: t('thumbnailDownloadFailedAria', 'Thumbnail download failed. Retry')
+                };
+            },
+            _openLabels() {
+                const title = t('openThumbnailTitle', 'Open thumbnail at full size');
+                return {
+                    idle: t('openThumbnailLabel', 'View'),
+                    idleAria: title,
+                    successAria: title,
+                    errorAria: t('openThumbnailFailed', 'Could not open the thumbnail. Try again in a moment.')
+                };
+            },
+            _setButtonFeedback(labelEl, btn, labels, text, state = 'idle') {
                 labelEl.textContent = text;
                 btn.dataset.state = state;
-                const labelMap = {
-                    idle: {
-                        aria: 'Download thumbnail',
-                        title: 'Download thumbnail'
-                    },
-                    busy: {
-                        aria: text,
-                        title: text
-                    },
-                    success: {
-                        aria: 'Thumbnail downloaded',
-                        title: 'Thumbnail downloaded'
-                    },
-                    error: {
-                        aria: 'Thumbnail download failed. Retry download',
-                        title: 'Thumbnail download failed. Retry'
-                    }
-                };
-                const meta = labelMap[state] || labelMap.idle;
-                btn.setAttribute('aria-label', meta.aria);
-                btn.title = meta.title;
-                if (this._feedbackTimer) clearTimeout(this._feedbackTimer);
-                if (text !== 'Thumbnail') {
-                    this._feedbackTimer = setTimeout(() => {
-                        labelEl.textContent = 'Thumbnail';
-                        btn.dataset.state = 'idle';
-                        btn.setAttribute('aria-label', 'Download thumbnail');
-                        btn.title = 'Download thumbnail';
-                        this._feedbackTimer = null;
-                    }, 2000);
-                } else {
-                    this._feedbackTimer = null;
-                }
+                const aria = state === 'busy' ? text
+                    : state === 'success' ? labels.successAria
+                        : state === 'error' ? labels.errorAria
+                            : labels.idleAria;
+                btn.setAttribute('aria-label', aria);
+                btn.title = aria;
+                if (!this._feedbackTimers) this._feedbackTimers = new Map();
+                clearTimeout(this._feedbackTimers.get(btn));
+                this._feedbackTimers.delete(btn);
+                // Only a finished state reverts. A busy label that reverted after
+                // two seconds read "Thumbnail" while a slow download was running.
+                if (state !== 'success' && state !== 'error') return;
+                this._feedbackTimers.set(btn, setTimeout(() => {
+                    this._feedbackTimers?.delete(btn);
+                    this._setButtonFeedback(labelEl, btn, labels, labels.idle, 'idle');
+                }, 2000));
             },
 
             async _resolveThumbnailUrl(videoId) {
@@ -25827,11 +25833,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const actions = document.querySelector('#actions, ytd-watch-metadata #actions, #top-level-buttons-computed');
                 if (!actions) return;
 
+                const labels = this._downloadLabels();
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'ytkit-watch-action-btn ytkit-dl-thumb-btn';
-                btn.title = 'Download thumbnail';
-                btn.setAttribute('aria-label', 'Download thumbnail');
+                btn.title = labels.idleAria;
+                btn.setAttribute('aria-label', labels.idleAria);
                 btn.dataset.state = 'idle';
 
                 const icon = document.createElement('span');
@@ -25849,7 +25856,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const label = document.createElement('span');
                 label.className = 'ytkit-watch-action-btn__label';
-                label.textContent = 'Thumbnail';
+                label.textContent = labels.idle;
 
                 btn.appendChild(icon);
                 btn.appendChild(label);
@@ -25858,14 +25865,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (btn.disabled) return;
                     btn.disabled = true;
                     try {
-                        this._setButtonFeedback(label, btn, 'Checking…', 'busy');
+                        this._setButtonFeedback(label, btn, labels, t('commonChecking', 'Checking…'), 'busy');
                         const thumbUrl = await this._resolveThumbnailUrl(videoId);
-                        this._setButtonFeedback(label, btn, 'Downloading…', 'busy');
+                        this._setButtonFeedback(label, btn, labels, t('thumbnailDownloadBusy', 'Downloading…'), 'busy');
                         await triggerDownload(thumbUrl, this._getFilename(videoId));
-                        this._setButtonFeedback(label, btn, 'Downloaded', 'success');
+                        this._setButtonFeedback(label, btn, labels, t('thumbnailDownloadDone', 'Downloaded'), 'success');
                     } catch (e) {
-                        this._setButtonFeedback(label, btn, 'Retry', 'error');
-                        showToast('Thumbnail download failed. Check the browser download prompt and try again.', '#ef4444', { duration: 4 });
+                        void e;
+                        this._setButtonFeedback(label, btn, labels, t('thumbnailDownloadRetry', 'Retry'), 'error');
+                        showToast(t('thumbnailDownloadFailed', 'Thumbnail download failed. Check the browser download prompt and try again.'), '#ef4444', { duration: 4 });
                     } finally {
                         btn.disabled = false;
                     }
@@ -25884,11 +25892,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _createOpenButton(actions, videoId) {
                 // No duplicate guard of its own: _create() already returns early
                 // when its own button is present, and this only runs from there.
+                const openLabels = this._openLabels();
                 const openBtn = document.createElement('button');
                 openBtn.type = 'button';
                 openBtn.className = 'ytkit-watch-action-btn ytkit-open-thumb-btn';
-                openBtn.title = t('openThumbnailTitle', 'Open thumbnail at full size');
-                openBtn.setAttribute('aria-label', t('openThumbnailTitle', 'Open thumbnail at full size'));
+                openBtn.title = openLabels.idleAria;
+                openBtn.setAttribute('aria-label', openLabels.idleAria);
                 openBtn.dataset.state = 'idle';
 
                 const openIcon = document.createElement('span');
@@ -25906,7 +25915,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const openLabel = document.createElement('span');
                 openLabel.className = 'ytkit-watch-action-btn__label';
-                openLabel.textContent = t('openThumbnailLabel', 'View');
+                openLabel.textContent = openLabels.idle;
 
                 openBtn.appendChild(openIcon);
                 openBtn.appendChild(openLabel);
@@ -25915,13 +25924,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (openBtn.disabled) return;
                     openBtn.disabled = true;
                     try {
-                        this._setButtonFeedback(openLabel, openBtn, t('openThumbnailChecking', 'Checking…'), 'busy');
+                        this._setButtonFeedback(openLabel, openBtn, openLabels, t('openThumbnailChecking', 'Checking…'), 'busy');
                         const thumbUrl = await this._resolveThumbnailUrl(videoId);
                         await openExternalUrl(thumbUrl);
-                        this._setButtonFeedback(openLabel, openBtn, t('openThumbnailLabel', 'View'), 'idle');
+                        this._setButtonFeedback(openLabel, openBtn, openLabels, openLabels.idle, 'idle');
                     } catch (e) {
                         void e;
-                        this._setButtonFeedback(openLabel, openBtn, t('openThumbnailRetry', 'Retry'), 'error');
+                        this._setButtonFeedback(openLabel, openBtn, openLabels, t('openThumbnailRetry', 'Retry'), 'error');
                         showToast(t('openThumbnailFailed', 'Could not open the thumbnail. Try again in a moment.'), '#ef4444', { duration: 4 });
                     } finally {
                         openBtn.disabled = false;
@@ -25932,7 +25941,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._openBtn = openBtn;
             },
 
+            // The runtime restarts a feature only when its own toggle changes,
+            // so flipping the View setting used to wait for the next video.
+            _syncOpenButton() {
+                if (!appState.settings.openThumbnailButton) {
+                    this._openBtn?.remove();
+                    this._openBtn = null;
+                    return;
+                }
+                if (this._openBtn?.isConnected) return;
+                const actions = this._btn?.isConnected ? this._btn.parentElement : null;
+                const videoId = getVideoId();
+                if (actions && videoId) this._createOpenButton(actions, videoId);
+            },
+
             init() {
+                this._settingsHandler = () => this._syncOpenButton();
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
                 addNavigateRule('downloadThumbnail', () => {
                     this._btn?.remove();
                     this._btn = null;
@@ -25952,8 +25977,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._createTimer = null;
                 removeNavigateRule('downloadThumbnail');
                 removeMutationRule('downloadThumbnail');
-                if (this._feedbackTimer) clearTimeout(this._feedbackTimer);
-                this._feedbackTimer = null;
+                if (this._settingsHandler) {
+                    document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                    this._settingsHandler = null;
+                }
+                this._feedbackTimers?.forEach((timer) => clearTimeout(timer));
+                this._feedbackTimers = null;
                 document.querySelectorAll('.ytkit-dl-thumb-btn').forEach(b => b.remove());
                 document.querySelectorAll('.ytkit-open-thumb-btn').forEach(b => b.remove());
                 this._btn = null;

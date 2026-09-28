@@ -7314,6 +7314,30 @@
   "switchLabelOn": {
     "message": "تشغيل"
   },
+  "thumbnailDownloadAria": {
+    "message": "تنزيل الصورة المصغرة"
+  },
+  "thumbnailDownloadBusy": {
+    "message": "جارٍ التنزيل…"
+  },
+  "thumbnailDownloadDone": {
+    "message": "تم التنزيل"
+  },
+  "thumbnailDownloadDoneAria": {
+    "message": "تم تنزيل الصورة المصغرة"
+  },
+  "thumbnailDownloadFailed": {
+    "message": "فشل تنزيل الصورة المصغرة. تحقّق من نافذة التنزيل في المتصفح ثم أعد المحاولة."
+  },
+  "thumbnailDownloadFailedAria": {
+    "message": "فشل تنزيل الصورة المصغرة. أعد المحاولة"
+  },
+  "thumbnailDownloadLabel": {
+    "message": "صورة مصغرة"
+  },
+  "thumbnailDownloadRetry": {
+    "message": "إعادة المحاولة"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "تم وضع إشارة عند {time}"
   },
