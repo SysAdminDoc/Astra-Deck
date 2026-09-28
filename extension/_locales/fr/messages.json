@@ -6699,6 +6699,9 @@
   "stickyVideoSubscriptionsLink": {
     "message": "Accéder aux abonnements"
   },
+  "stickyVideoUploadedTpl": {
+    "message": "Mis en ligne le {date}"
+  },
   "stickyVideoVideoActionsAria": {
     "message": "Actions vidéo"
   },

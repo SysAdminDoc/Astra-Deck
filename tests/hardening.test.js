@@ -7989,9 +7989,16 @@ test('userscript core compacts static visual CSS without changing other modules'
         stickyStylesSource,
         'extension/features/sticky-video-styles/index.js'
     );
-    assert.ok(Buffer.byteLength(stickyStylesSource, 'utf8') - Buffer.byteLength(compactedStickyStyles, 'utf8') > 20_000,
+    // The Theater Split rewrite took these sheets from about 260 KB of CSS to
+    // about 45 KB, so the bytes compaction can recover shrank with them. What
+    // matters is that no sheet is skipped: a single backslash in a template
+    // makes the compactor leave it as written.
+    assert.ok(Buffer.byteLength(stickyStylesSource, 'utf8') - Buffer.byteLength(compactedStickyStyles, 'utf8') > 6_000,
         'Theater Split CSS compaction must recover userscript library headroom');
-    assert.doesNotMatch(compactedStickyStyles, /function buildSplitMetaCss\(\) \{\s*return `\r?\n/);
+    for (const builder of ['buildSplitShellCss', 'buildSplitMetaCss', 'buildSplitCommentsCss']) {
+        assert.doesNotMatch(compactedStickyStyles, new RegExp(`function ${builder}\\(\\) \\{[\\s\\S]{0,200}?return \`\\r?\\n`),
+            `${builder} must be compacted, not skipped`);
+    }
     const stickySource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'),
         'utf8'

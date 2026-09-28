@@ -314,19 +314,15 @@
                 divider.setAttribute('aria-hidden', 'true');
                 divider.dataset.ytkitPanelState = 'hidden';
                 divider.title = t('stickyVideoResizePanelsLabel', 'Resize Theater Split panels');
-                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:var(--ytkit-split-canvas);transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;scrollbar-width:none;color:var(--ytkit-split-muted);`;
+                // Layout only. The look, including hover, focus and the closed
+                // state, lives in the shell stylesheet so it follows the theme.
+                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;`;
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
-                pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:var(--ytkit-split-muted);pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ytkit-split-muted);`;
+                pip.style.pointerEvents = 'none';
                 // Three-dot grip pattern — universal drag indicator
-                for (let i = 0; i < 3; i++) {
-                    const dot = document.createElement('div');
-                    dot.style.cssText = 'width:3px;height:3px;border-radius:0;background:currentColor;flex-shrink:0;';
-                    pip.appendChild(dot);
-                }
+                for (let i = 0; i < 3; i++) pip.appendChild(document.createElement('div'));
                 divider.appendChild(pip);
-                divider.addEventListener('mouseenter', () => { divider.style.background='rgba(var(--ytkit-split-accent-rgb),0.08)'; pip.style.background='rgba(var(--ytkit-split-accent-rgb),0.82)'; pip.style.color='var(--ytkit-split-text)'; });
-                divider.addEventListener('mouseleave', () => { divider.style.background='var(--ytkit-split-canvas)'; pip.style.background='var(--ytkit-split-muted)'; pip.style.color='var(--ytkit-split-muted)'; });
 
                 // RIGHT — collapsed initially
                 const right = document.createElement('div');
@@ -958,7 +954,7 @@
                     this._setupChat(chatEl, rightPct, '0', '45vh');
                     if (chatEl) {
                         this._stashSplitInlineStyles(chatEl, ['border-bottom']);
-                        chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                        chatEl.style.setProperty('border-bottom', '1px solid var(--ytkit-split-hairline)', 'important');
                     }
                     if (below) {
                         const hasChat = !!chatEl;

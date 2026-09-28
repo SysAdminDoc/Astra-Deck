@@ -6,6 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **Theater Split has a new look that follows your theme.** The comments pane
+  takes its colors from the page now. It goes black with the OLED theme, picks
+  up Catppuccin, Nord and the other palettes, and uses your accent color. It
+  used to paint its own navy panel no matter which theme was on.
+- Cards inside cards are gone. The title, channel, actions and description sit
+  in one flat section, and comments read as a clean list whose buttons stay
+  quiet until you point at them.
+- Every button in the pane shares one height and one corner size, and each
+  shows hover, pressed, selected, disabled and keyboard focus states.
+- The divider is easier to find and grab. It has a wider hit area and a
+  visible grip, and it lights up in your accent color on hover and focus.
+- The close button reads clearly over any video, and a narrow pane keeps the
+  action row on one line.
+- The Theater Split stylesheet is about 200 KB smaller, which also gives the
+  userscript build more room.
+
+### Fixed
+
+- The Theater Split header shows the view count again. After moving between
+  videos it read "views" with no number, because YouTube now draws the count
+  as a rolling animation.
+- Comments and the description no longer sit on a navy band with the OLED
+  theme or a color theme. A page-wide rule painted the canvas color behind
+  them.
+- The upload date line in the Theater Split header is translated.
+
 ## [4.90.2] (2026-09-25)
 
 ### Changed

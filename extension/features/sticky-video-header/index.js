@@ -190,10 +190,14 @@
                 }).format(date);
             },
 
+            _formatSplitUploadedText(date) {
+                return t('stickyVideoUploadedTpl', 'Uploaded {date}').replace('{date}', () => date);
+            },
+
             _getSplitUploadDateText() {
                 const anchor = this._getSplitDateAnchor();
                 const publishDate = this._getSplitPublishDate(anchor);
-                if (publishDate) return `Uploaded ${this._formatSplitUploadDate(publishDate)}`;
+                if (publishDate) return this._formatSplitUploadedText(this._formatSplitUploadDate(publishDate));
 
                 const rawText = String(anchor?.textContent || '').replace(/\u00A0/g, ' ').trim();
                 if (!rawText) return '';
@@ -203,9 +207,9 @@
                     || segments[0]
                     || rawText;
 
-                if (/^Published on\s+/i.test(preferred)) return preferred.replace(/^Published on\s+/i, 'Uploaded ');
+                if (/^Published on\s+/i.test(preferred)) return this._formatSplitUploadedText(preferred.replace(/^Published on\s+/i, ''));
                 if (/^(Uploaded|Published|Premiered|Streamed)/i.test(preferred)) return preferred;
-                return `Uploaded ${preferred}`;
+                return this._formatSplitUploadedText(preferred);
             },
 
             _formatSplitViewCount(value) {
@@ -221,8 +225,21 @@
                     .replace('{count}', new Intl.NumberFormat().format(Math.floor(count)));
             },
 
+            // YouTube draws the count as a rolling-digit animation: every column
+            // holds all ten digits, so its text reads "1234567890..." and a
+            // text match found only the word "views". The element's
+            // aria-label carries the real, localized count.
+            _getSplitViewCountLabel() {
+                const root = this._getBelow() || document;
+                const labelled = root.querySelector?.('ytd-watch-info-text #view-count[aria-label], ytd-watch-metadata #view-count[aria-label]');
+                const label = (labelled?.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
+                return /\d/.test(label) ? label : '';
+            },
+
             _getSplitFallbackViewCountText() {
                 const root = this._getBelow() || document;
+                const label = this._getSplitViewCountLabel();
+                if (label) return label;
                 const candidates = Array.from(root.querySelectorAll(
                     'ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata #info-text yt-formatted-string, ytd-watch-metadata #metadata-line span'
                 ));
@@ -321,6 +338,8 @@
                 const parts = Array.from(root.querySelectorAll(
                     'ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata #info-text yt-formatted-string, ytd-watch-metadata #metadata-line span, ytd-watch-info-text yt-formatted-string, factoid-renderer yt-formatted-string'
                 )).map(el => (el.textContent || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+                const label = this._getSplitViewCountLabel();
+                if (label) parts.unshift(label);
                 const watchingText = parts.map(text => this._formatSplitLiveViewText(text)).find(Boolean);
                 if (watchingText) return watchingText;
                 try {
@@ -350,8 +369,8 @@
                     'pointer-events:auto',
                     'color:var(--ytkit-split-text)',
                     'background:var(--ytkit-split-panel)',
-                    'border-left:1px solid var(--ytkit-split-border)',
-                    'border-bottom:1px solid var(--ytkit-split-border)',
+                    'border-left:1px solid var(--ytkit-split-hairline)',
+                    'border-bottom:1px solid var(--ytkit-split-hairline)',
                     'box-shadow:none',
                     'overflow:hidden'
                 ].join(';');
@@ -360,10 +379,10 @@
                 card.className = 'ytkit-split-live-card';
                 card.style.cssText = [
                     'min-height:0',
-                    'border-radius: 12px',
-                    'border:1px solid var(--ytkit-split-border)',
+                    'border-radius:var(--ytkit-split-radius, 8px)',
+                    'border:0',
                     'background:var(--ytkit-split-raised)',
-                    'box-shadow:var(--ytkit-split-control-shadow)',
+                    'box-shadow:none',
                     'position:relative',
                     'display:grid',
                     'min-width:0',
@@ -384,7 +403,7 @@
                 const channel = document.createElement('div');
                 channel.className = 'ytkit-split-live-channel';
                 channel.setAttribute('translate', 'no');
-                channel.style.cssText = 'grid-area:channel;min-width:0;max-width:100%;font:800 14px/1.25 Arial,sans-serif;color:var(--ytkit-split-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                channel.style.cssText = 'grid-area:channel;min-width:0;max-width:100%;font:600 14px/1.3 Roboto,Arial,sans-serif;color:var(--ytkit-split-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                 card.appendChild(channel);
 
                 const meta = document.createElement('div');
@@ -394,19 +413,19 @@
                 const liveBadge = document.createElement('span');
                 liveBadge.className = 'ytkit-split-live-badge';
                 liveBadge.textContent = t('stickyVideoLiveBadge', 'LIVE');
-                liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius:4px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
+                liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:700 11px/1.2 Roboto,Arial,sans-serif;letter-spacing:0.02em;color:#fff;background:#cc0000;border-radius:4px;padding:4px 8px;';
                 meta.appendChild(liveBadge);
 
                 const viewCount = document.createElement('span');
                 viewCount.className = 'ytkit-split-live-view-count';
                 viewCount.setAttribute('translate', 'no');
-                viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:var(--ytkit-split-text);background:var(--ytkit-split-comment-control);border:1px solid var(--ytkit-split-border);border-radius:6px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:500 12px/1.2 Roboto,Arial,sans-serif;color:var(--ytkit-split-text);background:var(--ytkit-split-hover);border:0;border-radius:6px;padding:4px 8px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                 meta.appendChild(viewCount);
 
                 const date = document.createElement('span');
                 date.className = 'ytkit-split-live-date';
                 date.setAttribute('translate', 'no');
-                date.style.cssText = 'display:-webkit-box;flex:1 1 240px;min-width:0;max-width:100%;font:650 12px/1.25 Arial,sans-serif;color:var(--ytkit-split-muted);overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
+                date.style.cssText = 'display:-webkit-box;flex:1 1 240px;min-width:0;max-width:100%;font:400 12px/1.3 Roboto,Arial,sans-serif;color:var(--ytkit-split-muted);overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
                 meta.appendChild(date);
                 card.appendChild(meta);
 
@@ -420,11 +439,11 @@
                     'max-width:100%',
                     'justify-self:stretch',
                     'box-sizing:border-box',
-                    'font:800 16px/1.22 Arial,sans-serif',
+                    'font:700 16px/1.3 "YouTube Sans",Roboto,Arial,sans-serif',
                     'letter-spacing:0',
                     'color:var(--ytkit-split-text)',
                     'display:-webkit-box',
-                    'max-height:2.44em',
+                    'max-height:2.6em',
                     '-webkit-line-clamp:2',
                     '-webkit-box-orient:vertical',
                     'overflow:hidden',
@@ -507,7 +526,7 @@
                     titleEl.style.setProperty('word-break', 'normal');
                     titleEl.style.setProperty('-webkit-line-clamp', '2');
                     titleEl.style.setProperty('-webkit-box-orient', 'vertical');
-                    titleEl.style.setProperty('max-height', '2.44em');
+                    titleEl.style.setProperty('max-height', '2.6em');
                     if (title) titleEl.title = title;
                     else titleEl.removeAttribute('title');
                 }
@@ -720,7 +739,7 @@
                 control.querySelectorAll('button, .yt-spec-button-shape-next, .ytSpecButtonShapeNextHost').forEach(button => {
                     button.style.setProperty('height', '32px', 'important');
                     button.style.setProperty('min-height', '32px', 'important');
-                    button.style.setProperty('border-radius', '10px', 'important');
+                    button.style.setProperty('border-radius', 'var(--ytkit-split-radius, 8px)', 'important');
                     button.style.setProperty('white-space', 'nowrap', 'important');
                 });
             },

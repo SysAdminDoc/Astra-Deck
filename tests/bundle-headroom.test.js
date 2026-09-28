@@ -261,7 +261,10 @@ test('every bundled module compacts with its CSS intact and still parses', () =>
         assert.doesNotThrow(() => new Function(compacted), `${rel} must still parse after compaction`);
         saved += source.length - compacted.length;
     }
-    assert.ok(saved > 200_000, `compaction reclaimed only ${saved} B across the bundle`);
+    // Was 200 KB while Theater Split shipped about 260 KB of CSS; its rewrite
+    // removed roughly 200 KB of source, which is headroom the size gate now
+    // sees directly, and left less whitespace here to reclaim.
+    assert.ok(saved > 100_000, `compaction reclaimed only ${saved} B across the bundle`);
 });
 
 test('a stylesheet in a module nothing ever listed is compacted anyway', () => {

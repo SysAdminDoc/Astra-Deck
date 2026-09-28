@@ -6699,6 +6699,9 @@
   "stickyVideoSubscriptionsLink": {
     "message": "구독으로 이동"
   },
+  "stickyVideoUploadedTpl": {
+    "message": "{date} 업로드"
+  },
   "stickyVideoVideoActionsAria": {
     "message": "동영상 작업"
   },

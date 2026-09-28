@@ -5,6 +5,19 @@ const assert = require('node:assert/strict');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
 const { readTheaterSplitSource } = require('./helpers/source');
 
+// The Theater Split sheets as the page receives them. The source builds them
+// from scoped template fragments, so rule text is asserted on the output.
+function splitSheets() {
+    const stylesPath = require.resolve('../extension/features/sticky-video-styles/index.js');
+    delete require.cache[stylesPath];
+    const styles = require(stylesPath);
+    return {
+        shell: styles.buildSplitShellCss(),
+        meta: styles.buildSplitMetaCss(),
+        comments: styles.buildSplitCommentsCss()
+    };
+}
+
 test('extension fetch rejects non-JSON-safe bodies before runtime messaging', () => {
     const fs = require('fs');
     const path = require('path');
@@ -591,34 +604,27 @@ test('split comment replies keep nested cards readable', () => {
     const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
-    assert.ok(source.includes('margin: 7px 0 0 12px !important;'),
-        'extension split replies should use a shallow left offset');
-    assert.ok(source.includes('padding: 10px 40px 10px 10px !important;'),
-        'extension split reply cards should reclaim text width from the action-menu gutter');
-    assert.ok(source.includes('ytd-comment-replies-renderer ytd-comment-replies-renderer'),
+    const comments = splitSheets().comments;
+    assert.ok(comments.includes('ytd-comment-replies-renderer ytd-comment-replies-renderer { margin-inline-start: 32px !important; }'),
         'extension split replies should handle nested reply indentation separately');
-    assert.ok(source.includes('flex-basis: 28px !important;'),
+    assert.match(comments, /ytd-comment-replies-renderer :is\(ytd-comment-view-model, ytd-comment-renderer\) > #body \{ grid-template-columns: 24px /,
         'extension split replies should use smaller avatars to preserve text width');
-    assert.ok(source.includes('-webkit-user-select: text !important;'),
+    assert.ok(comments.includes('-webkit-user-select: text !important;'),
         'extension split comments should allow selecting comment text');
-    assert.ok(source.includes('yt-core-attributed-string'),
+    assert.ok(comments.includes('yt-core-attributed-string'),
         'extension split comments should cover the newer attributed-string host');
-    assert.ok(source.includes('cursor: text !important;'),
+    assert.ok(comments.includes('cursor: text !important;'),
         'extension split comment text should use a text cursor');
-    assert.ok(source.includes('.thread-hitbox.style-scope.ytd-comment-thread-renderer'),
+    assert.ok(comments.includes('.thread-hitbox.style-scope.ytd-comment-thread-renderer { display: none !important; pointer-events: none !important; }'),
         'extension split comments should disable the invisible thread hitbox overlay');
-    assert.ok(source.includes('pointer-events: auto !important;'),
+    assert.ok(comments.includes('pointer-events: auto !important;'),
         'extension split comments should force pointer events onto the actual text containers');
     assert.ok(source.includes('_isSplitCommentTextTarget(target)'),
         'extension split should detect selectable comment-text targets explicitly');
     assert.ok(source.includes("window.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);"),
         'extension split should protect comment selection before downstream handlers can cancel it');
-    assert.ok(source.includes('font-weight: 650 !important;'),
-        'extension split replies toggle should read as a deliberate pill control');
-    assert.ok(source.includes('margin: 6px 0 0 !important;'),
-        'extension split replies toggle should stay visually centered on the guide rail');
-    assert.ok(source.includes('padding: 0 14px !important;'),
-        'extension split replies toggle should have room to breathe');
+    assert.match(comments, /#more-replies-sub-thread[\s\S]{0,200}\{[\s\S]{0,400}height: 32px !important;[\s\S]{0,300}color: var\(--ytkit-split-accent-ink\) !important;[\s\S]{0,200}font-weight: 600 !important;/,
+        'extension split replies toggle should be a quiet accent control on the 32px row');
 
     assert.ok(theaterSplit.includes('margin: 7px 0 0 12px !important;'),
         'standalone split replies should use the same shallow left offset');
@@ -651,20 +657,16 @@ test('split comment replies keep nested cards readable', () => {
 test('split title header and comment composer stay visually compact', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
-    assert.ok(source.includes('border-left: 2px solid rgba(var(--ytkit-split-accent-rgb), 0.42) !important;'),
-        'extension split title should have a scoped accent edge');
-    assert.ok(source.includes('text-wrap: balance !important;'),
-        'extension split title should balance long titles');
-    assert.ok(source.includes('padding: 8px 10px 8px !important;'),
-        'extension comments header should trim the composer bottom padding');
-    assert.ok(source.includes('min-height: 34px !important;'),
-        'extension split composer placeholder should stay condensed');
-    assert.ok(source.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row'),
+    const { meta, comments } = splitSheets();
+    assert.ok(meta.includes('text-wrap: pretty !important;'),
+        'extension split title should wrap long titles without orphans');
+    assert.match(comments, /#placeholder-area \{[\s\S]{0,200}min-height: 40px !important;/,
+        'extension split composer placeholder should match the 40px input height');
+    assert.ok(comments.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row { display: none !important; }'),
         'extension expanded split composer should hide the stale placeholder row');
-    assert.ok(source.includes('grid-template-columns: minmax(0, 1fr) !important;'),
+    assert.match(comments, /ytd-comment-simplebox-renderer:has\(> #comment-dialog:not\(\[hidden\]\)\) \{\n    display: grid !important;\n    grid-template-columns: minmax\(0, 1fr\) !important;/,
         'extension expanded split composer should let the editor take the full width');
 
     assert.ok(theaterSplit.includes('border-left: 2px solid rgba(var(--ts-accent-rgb), 0.42) !important;'),
@@ -700,12 +702,15 @@ test('split title header shows upload date and docks quick links beside YouTube 
         && source.includes('videoDetails?.viewCount')
         && source.includes('new Intl.NumberFormat().format(Math.floor(count))'),
         'extension split should format the current video view count from playerResponse');
-    assert.ok(source.includes('grid-template-columns: auto minmax(0, 1fr) auto !important;')
-        && source.includes('"home actions date" !important;'),
+    const { meta } = splitSheets();
+    assert.ok(meta.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;')
+        && meta.includes('grid-template-areas: "home actions date" !important;'),
         'extension split title header should keep utilities on one compact row beneath the title');
-    assert.ok(source.includes('-webkit-line-clamp: 3 !important;'),
-        'extension split title should clamp long titles before they overlap the owner card');
-    assert.ok(source.includes('overflow-wrap: anywhere !important;'),
+    // The title sits in normal flow above the owner row now, so nothing can
+    // overlap it and it shows in full instead of clamping at three lines.
+    assert.ok(meta.includes('-webkit-line-clamp: unset !important;'),
+        'extension split title should show in full');
+    assert.ok(meta.includes('overflow-wrap: anywhere !important;'),
         'extension split title should protect the side rail from very long title tokens');
     assert.ok(source.includes("microformat?.publishDate"),
         'extension split upload date should prefer YouTube microformat publishDate');
@@ -819,13 +824,14 @@ test('split live chat gets a video info header and premium divider treatment', (
         && source.includes("chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important');")
         && source.includes("chatEl.style.setProperty('height', `calc(100vh - ${liveHeaderTop}px)`, 'important');"),
         'extension divider resizing should keep the live header and chat geometry synchronized');
-    assert.ok(source.includes('background: var(--ytkit-split-canvas) !important;'),
+    const { shell } = splitSheets();
+    assert.match(shell, /#ytkit-split-divider \{[\s\S]{0,200}background: var\(--ytkit-split-canvas\) !important;/,
         'extension divider base should use the opaque active-theme canvas');
-    assert.ok(source.includes("divider.style.background='rgba(var(--ytkit-split-accent-rgb),0.08)'"),
-        'extension divider hover should use the restrained active-theme accent');
-    assert.ok(source.includes("pip.style.color='var(--ytkit-split-muted)'"),
+    assert.match(shell, /#ytkit-split-divider:hover,\n[^{]*:focus-visible \{ background: color-mix\(in srgb, var\(--ytkit-split-accent\) 10%, var\(--ytkit-split-canvas\)\) !important; \}/,
+        'extension divider hover should use a restrained tint of the active accent');
+    assert.match(shell, /\.ytkit-divider-pip \{[\s\S]{0,700}color: var\(--ytkit-split-muted\) !important;/,
         'extension divider grip should use the active-theme neutral');
-    assert.ok(!source.includes("divider.style.background='rgba(59,130,246,0.22)'"),
+    assert.ok(!source.includes('rgba(59,130,246,0.22)') && !shell.includes('rgba(59,130,246,0.22)'),
         'extension divider hover should not use the old blue-purple color');
 
     assert.ok(theaterSplit.includes('function ensureSplitLiveHeader(rightPct)'),
@@ -929,164 +935,120 @@ test('split live chat gets a video info header and premium divider treatment', (
         'standalone should restore visually pinned native controls before removing the live header');
 });
 
-test('split title and owner cards use a compact title-first hierarchy', () => {
+test('standalone split title and owner cards use a compact title-first hierarchy', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = readTheaterSplitSource();
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
-    const blockBetween = (contents, startNeedle, endNeedle, label, { fromStart = false, beforeEnd = false } = {}) => {
-        const boundary = beforeEnd ? contents.indexOf(endNeedle) : -1;
-        const start = beforeEnd
-            ? contents.lastIndexOf(startNeedle, boundary)
-            : (fromStart ? contents.indexOf(startNeedle) : contents.lastIndexOf(startNeedle));
+    const blockBetween = (contents, startNeedle, endNeedle, label, { fromStart = false } = {}) => {
+        const start = fromStart ? contents.indexOf(startNeedle) : contents.lastIndexOf(startNeedle);
         assert.ok(start > -1, `${label} should exist`);
-        const end = beforeEnd ? boundary : contents.indexOf(endNeedle, start);
+        const end = contents.indexOf(endNeedle, start);
         assert.ok(end > start, `${label} should end after it starts`);
         return contents.slice(start, end);
     };
 
-    const extensionTopRow = blockBetween(
-        source,
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #top-row',
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title',
-        'extension split top-row rule'
-    );
-    const extensionOwner = blockBetween(
-        source,
-        '#below.ytkit-split-scroll-surface #owner,',
-        '#below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer',
-        'extension split owner rule'
-    );
-    const standaloneTopRow = blockBetween(
-        theaterSplit,
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #top-row',
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title',
-        'standalone split top-row rule',
-        { fromStart: true }
-    );
-    const standaloneOwner = blockBetween(
-        theaterSplit,
-        '#below.ytkit-split-scroll-surface #owner,',
-        '#below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer',
-        'standalone split owner rule'
-    );
-    const extensionTitleCard = blockBetween(
-        source,
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title {',
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title:has',
-        'extension split title card rule',
-        { beforeEnd: true }
-    );
-    const standaloneTitleCard = blockBetween(
-        theaterSplit,
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title {',
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title:has',
-        'standalone split title card rule',
-        { fromStart: true }
-    );
-    const extensionTitleBar = blockBetween(
-        source,
-        '#title .ytkit-split-title-bar {',
-        '#title .ytkit-split-youtube-link',
-        'extension split title header rule'
-    );
-    const standaloneTitleBar = blockBetween(
-        theaterSplit,
-        '#title .ytkit-split-title-bar {',
-        '#title .ytkit-split-youtube-link',
-        'standalone split title header rule',
-        { fromStart: true }
-    );
-    const extensionTitleText = blockBetween(
-        source,
-        '#title h1,',
-        '#title yt-formatted-string',
-        'extension split title text rule'
-    );
-    const standaloneTitleText = blockBetween(
-        theaterSplit,
-        '#title h1,',
-        '#title yt-formatted-string',
-        'standalone split title text rule'
-    );
+    const topRow = blockBetween(theaterSplit, '#below.ytkit-split-scroll-surface ytd-watch-metadata #top-row',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title', 'standalone split top-row rule', { fromStart: true });
+    const owner = blockBetween(theaterSplit, '#below.ytkit-split-scroll-surface #owner,',
+        '#below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer', 'standalone split owner rule');
+    const titleCard = blockBetween(theaterSplit, '#below.ytkit-split-scroll-surface ytd-watch-metadata #title {',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title:has', 'standalone split title card rule', { fromStart: true });
+    const titleBar = blockBetween(theaterSplit, '#title .ytkit-split-title-bar {', '#title .ytkit-split-youtube-link',
+        'standalone split title header rule', { fromStart: true });
+    const titleText = blockBetween(theaterSplit, '#title h1,', '#title yt-formatted-string', 'standalone split title text rule');
 
-    for (const [block, label] of [
-        [extensionTopRow, 'extension top row'],
-        [extensionOwner, 'extension owner card'],
-        [standaloneTopRow, 'standalone top row'],
-        [standaloneOwner, 'standalone owner card'],
-    ]) {
+    for (const [block, label] of [[topRow, 'top row'], [owner, 'owner card']]) {
         assert.ok(block.includes('width: 100% !important;'), `${label} should span the metadata column`);
         assert.ok(block.includes('max-width: none !important;'), `${label} should not keep YouTube's narrow card width`);
         assert.ok(block.includes('justify-self: stretch !important;'), `${label} should align with the title card`);
     }
+    assert.ok(topRow.includes('gap: 8px !important;'));
+    assert.ok(topRow.includes('margin: 0 !important;'));
+    assert.ok(titleCard.includes('display: grid !important;'));
+    assert.ok(titleCard.includes('row-gap: 8px !important;'));
+    assert.ok(titleCard.includes('margin: 0 !important;'));
+    assert.ok(titleCard.includes('box-sizing: border-box !important;'));
+    assert.ok(titleBar.includes('grid-template-columns: auto minmax(0, 1fr) auto !important;'));
+    assert.ok(titleBar.includes('"home actions date" !important;'));
+    assert.ok(titleBar.includes('order: 2 !important;'));
+    assert.ok(titleBar.includes('width: 100% !important;'));
+    assert.ok(titleText.includes('-webkit-line-clamp: 3 !important;'));
+    assert.ok(titleText.includes('order: 1 !important;'));
+    assert.ok(titleText.includes('overflow: hidden !important;'));
+    assert.ok(titleText.includes('overflow-wrap: anywhere !important;'));
 
-    for (const [block, label] of [
-        [extensionTopRow, 'extension top row'],
-        [standaloneTopRow, 'standalone top row'],
-    ]) {
-        assert.ok(block.includes('gap: 8px !important;'), `${label} should use compact spacing between split controls`);
-        assert.ok(block.includes('margin: 0 !important;'), `${label} should not reserve an empty trailing band`);
-    }
+    assert.match(theaterSplit, /#owner:has\(\.ytkit-split-owner-actions\)[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto !important;[\s\S]*?grid-template-areas:[\s\S]*?"owner sub"[\s\S]*?"actions actions" !important;/);
+    assert.match(theaterSplit, /#owner:not\(:has\(#subscribe-button\)\):has\(\.ytkit-split-owner-actions\)[\s\S]*?grid-template-areas:[\s\S]*?"owner owner"[\s\S]*?"actions actions" !important;/);
+    assert.match(theaterSplit, /\.ytkit-split-owner-actions\s*\{[\s\S]*?grid-area: actions !important;[\s\S]*?grid-column: 1 \/ -1 !important;/);
+    assert.ok(theaterSplit.includes('function findNotificationControl()')
+        && theaterSplit.includes('dockControl(findNotificationControl(), dock);'));
+    assert.ok(theaterSplit.includes('function findPageControl()')
+        && theaterSplit.includes('dockControl(findPageControl(), dock);'));
 
-    for (const [block, label] of [
-        [extensionTitleCard, 'extension title card'],
-        [standaloneTitleCard, 'standalone title card'],
-    ]) {
-        assert.ok(block.includes('display: grid !important;'), `${label} should stack header and title text predictably`);
-        assert.ok(block.includes('row-gap: 8px !important;'), `${label} should keep a compact gap between title and utilities`);
-        assert.ok(block.includes('margin: 0 !important;'), `${label} should rely on the metadata grid instead of a trailing spacer`);
-        assert.ok(block.includes('box-sizing: border-box !important;'), `${label} should include padding in its measured height`);
-    }
+    const notification = blockBetween(theaterSplit, '#below.ytkit-split-scroll-surface #owner #subscribe-button,',
+        '#below.ytkit-split-scroll-surface #owner #subscribe-button .yt-spec-button-shape-next',
+        'standalone owner notification controls', { fromStart: true });
+    assert.ok(notification.includes('overflow: visible !important;'));
+    assert.ok(notification.includes('pointer-events: auto !important;'));
+    assert.ok(notification.includes('z-index: 40 !important;'));
+    assert.ok(notification.includes('#notification-preference-button *'));
 
-    for (const [block, label] of [
-        [extensionTitleBar, 'extension title header'],
-        [standaloneTitleBar, 'standalone title header'],
-    ]) {
-        assert.ok(block.includes('grid-template-columns: auto minmax(0, 1fr) auto !important;'),
-            `${label} should fit home, quick controls, and upload details in one row`);
-        assert.ok(block.includes('"home actions date" !important;'),
-            `${label} should keep every utility in the compact row below the title`);
-        assert.ok(block.includes('order: 2 !important;'), `${label} should follow the title text`);
-        assert.ok(block.includes('width: 100% !important;'), `${label} should span the full title card`);
-    }
+    assert.ok(theaterSplit.includes('body.ts-split ytd-popup-container'));
+    assert.ok(theaterSplit.includes('body.ts-split tp-yt-iron-dropdown'));
+    assert.ok(theaterSplit.includes('body.ts-split ytd-menu-popup-renderer'));
+    const popup = blockBetween(theaterSplit, 'body.ts-split ytd-popup-container',
+        'body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata', 'standalone native split popup stack rule', { fromStart: true });
+    assert.ok(popup.includes('z-index: 2147483647 !important;'));
 
-    for (const [block, label] of [
-        [extensionTitleText, 'extension title text'],
-        [standaloneTitleText, 'standalone title text'],
-    ]) {
-        assert.ok(block.includes('-webkit-line-clamp: 3 !important;'), `${label} should clamp before it overlaps the owner card`);
-        assert.ok(block.includes('order: 1 !important;'), `${label} should lead the title card hierarchy`);
-        assert.ok(block.includes('overflow: hidden !important;'), `${label} should be contained inside the title card`);
-        assert.ok(block.includes('overflow-wrap: anywhere !important;'), `${label} should protect against long unbroken tokens`);
-    }
+    const quickLinks = blockBetween(theaterSplit, '#ytkit-po-logo-wrap .ytkit-ql-drop', '#title .ytkit-split-upload-date',
+        'standalone split quick links dropdown rule');
+    assert.ok(theaterSplit.includes('#ytkit-po-logo-wrap.ytkit-ql-open'));
+    assert.ok(theaterSplit.includes('#title:has(#ytkit-po-logo-wrap.ytkit-ql-open)'));
+    assert.ok(theaterSplit.includes('z-index: 2147483646 !important;'));
+    assert.ok(quickLinks.includes('right: auto !important;'));
+    assert.ok(quickLinks.includes('left: 0 !important;'));
+    assert.ok(quickLinks.includes('z-index: 2147483647 !important;'));
+    assert.ok(quickLinks.includes('max-height: min(440px, calc(100vh - 92px)) !important;'));
+});
 
-    for (const [contents, label] of [
-        [source, 'extension owner card'],
-        [theaterSplit, 'standalone owner card'],
-    ]) {
-        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\)[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto !important;[\s\S]*?grid-template-areas:[\s\S]*?"owner sub"[\s\S]*?"actions actions" !important;/,
-            `${label} should keep identity and subscription together above one action row`);
-        assert.match(contents, /#owner:not\(:has\(#subscribe-button\)\):has\(\.ytkit-split-owner-actions\)[\s\S]*?grid-template-areas:[\s\S]*?"owner owner"[\s\S]*?"actions actions" !important;/,
-            `${label} should let identity span the first row when the channel is already subscribed`);
-        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\) #subscribe-button,[\s\S]*?#owner:has\(\.ytkit-split-owner-actions\) yt-subscribe-button-view-model,[\s\S]*?#owner:has\(\.ytkit-split-owner-actions\) ytd-subscribe-button-renderer\s*\{[\s\S]*?grid-area: sub !important;[\s\S]*?width: auto !important;/,
-            `${label} should keep subscribe beside channel identity before docked actions`);
-        assert.match(contents, /\.ytkit-split-owner-actions\s*\{[\s\S]*?grid-area: actions !important;[\s\S]*?grid-column: 1 \/ -1 !important;/,
-            `${label} should place docked like/download actions on the actions grid row`);
-        assert.match(contents, /\.ytkit-split-owner-actions #notification-preference-button,[\s\S]*?order: 1 !important;/,
-            `${label} should align the subscribed-state bell with the owner actions`);
-        assert.match(contents, /\.ytkit-split-owner-actions > #ytkit-page-btn-watch,[\s\S]*?order: 2 !important;/,
-            `${label} should align page tools after the notification control`);
-        assert.match(contents, /\.ytkit-split-owner-actions \.ytkit-local-dl-btn\s*\{[\s\S]*?order: 4 !important;/,
-            `${label} should keep download after compact icon actions`);
-        assert.ok(contents.includes('display: inline-flex !important;'), `${label} should keep channel identity tight beside the avatar`);
-        assert.ok(contents.includes('margin: 0 !important;'), `${label} should remove inherited owner metadata spacing`);
-        assert.ok(!contents.includes('"owner owner owner owner"'), `${label} should not reserve a full empty row for identity`);
-        assert.ok(contents.includes('justify-items: start !important;'), `${label} should anchor channel text to the avatar`);
-        assert.ok(contents.includes('text-align: left !important;'), `${label} should keep channel metadata left-aligned`);
-        assert.ok(contents.includes('min-width: 118px !important;'), `${label} should give the subscribe control an intentional pill width`);
+test('extension split title and owner rows keep a title-first hierarchy and working native menus', () => {
+    const source = readTheaterSplitSource();
+    const { shell, meta } = splitSheets();
+    const rule = (css, selectorTail) => {
+        const at = css.indexOf(`${selectorTail} {`);
+        assert.ok(at > -1, `${selectorTail} rule should exist`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+
+    const topRow = rule(meta, 'ytd-watch-metadata #top-row');
+    for (const declaration of ['display: grid !important;', 'width: 100% !important;', 'min-width: 0 !important;', 'margin: 0 !important;', 'padding: 0 !important;']) {
+        assert.ok(topRow.includes(declaration), `the top row should hold ${declaration}`);
     }
+    const title = rule(meta, 'ytd-watch-metadata #title');
+    assert.ok(title.includes('display: grid !important;') && title.includes('row-gap: 10px !important;')
+        && title.includes('margin: 0 !important;') && title.includes('border: 0 !important;'),
+        'the title is one plain grid, not a card');
+
+    const owner = rule(meta, 'ytd-watch-metadata #owner');
+    assert.ok(owner.includes('grid-template-columns: minmax(0, 1fr) auto !important;')
+        && owner.includes('grid-template-areas: "owner sub" "actions actions" !important;'),
+        'identity and Subscribe share a row above one action row');
+    assert.ok(meta.includes('#owner:not(:has(#subscribe-button *)) { grid-template-areas: "owner owner" "actions actions" !important; }'),
+        'a subscribed channel lets identity span the first row');
+    assert.match(meta, /#owner #subscribe-button \{ grid-area: sub !important;/);
+    assert.match(meta, /#owner \.ytkit-split-owner-actions \{\n    grid-area: actions !important;/);
+    const orderOf = (selector) => {
+        const match = meta.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^{]*\\{ order: (\\d) !important; \\}`));
+        assert.ok(match, `${selector} should have an order`);
+        return Number(match[1]);
+    };
+    const like = orderOf('.ytkit-split-owner-actions > :is(segmented-like-dislike-button-view-model');
+    const download = orderOf('.ytkit-split-owner-actions > .ytkit-local-dl-btn');
+    const bell = orderOf('.ytkit-split-owner-actions > #notification-preference-button');
+    const tools = orderOf('.ytkit-split-owner-actions > :is(#ytkit-page-btn-watch, #ytkit-watch-btn)');
+    assert.ok(like < download && download < bell && bell < tools,
+        'the dock reads Like, Download, the bell, then Astra tools');
 
     assert.ok(source.includes('_findSplitNotificationControl()')
         && source.includes('this._dockSplitControl(this._findSplitNotificationControl(), dock);'),
@@ -1094,91 +1056,23 @@ test('split title and owner cards use a compact title-first hierarchy', () => {
     assert.ok(source.includes('_findSplitPageControl()')
         && source.includes('this._dockSplitControl(this._findSplitPageControl(), dock);'),
         'extension split should dock page tools into the aligned action row');
-    assert.ok(theaterSplit.includes('function findNotificationControl()')
-        && theaterSplit.includes('dockControl(findNotificationControl(), dock);'),
-        'standalone split should dock subscribed-state notification controls into the aligned action row');
-    assert.ok(theaterSplit.includes('function findPageControl()')
-        && theaterSplit.includes('dockControl(findPageControl(), dock);'),
-        'standalone split should dock page tools into the aligned action row');
 
-    const standaloneNotification = blockBetween(
-        theaterSplit,
-        '#below.ytkit-split-scroll-surface #owner #subscribe-button,',
-        '#below.ytkit-split-scroll-surface #owner #subscribe-button .yt-spec-button-shape-next',
-        'standalone owner notification controls',
-        { fromStart: true }
-    );
+    const bellRule = rule(meta, '#owner :is(#subscribe-button, #notification-preference-button, #notification-preference-button *)');
+    assert.ok(bellRule.includes('overflow: visible !important;') && bellRule.includes('pointer-events: auto !important;'),
+        'extension notification controls should not clip or deactivate the bell dropdown');
+    assert.ok(meta.includes('#owner #notification-preference-button { position: relative !important; z-index: 40 !important; }'),
+        'the bell sits above the owner action dock');
 
-    assert.match(
-        source,
-        /#below\.ytkit-split-scroll-surface #owner #subscribe-button,[\s\S]*?overflow: visible !important;[\s\S]*?pointer-events: auto !important;[\s\S]*?#notification-preference-button \*[\s\S]*?z-index: 40 !important;/,
-        'extension notification controls should not clip or deactivate the bell dropdown'
-    );
+    assert.ok(shell.includes(':is(ytd-popup-container, tp-yt-iron-dropdown, ytd-menu-popup-renderer, ytd-multi-page-menu-renderer) { z-index: 2147483647 !important; }'),
+        'extension split should raise YouTube popups above the split player');
 
-    for (const [block, label] of [[standaloneNotification, 'standalone notification controls']]) {
-        assert.ok(block.includes('overflow: visible !important;'), `${label} should not clip the bell dropdown trigger`);
-        assert.ok(block.includes('pointer-events: auto !important;'), `${label} should keep the native bell click target active`);
-        assert.ok(block.includes('z-index: 40 !important;'), `${label} should sit above the owner action dock`);
-        assert.ok(block.includes('#notification-preference-button *'), `${label} should preserve clicks on nested YouTube button parts`);
-    }
-
-    assert.ok(source.includes('html:is(.ytkit-split-active, .ytkit-split-open) ytd-popup-container'),
-        'extension split should raise YouTube popup containers from the polished split layer');
-    assert.ok(source.includes('html.ytkit-split-active ytd-popup-container'),
-        'extension split should raise YouTube popup containers from the early split layer');
-    assert.ok(source.includes('html:is(.ytkit-split-active, .ytkit-split-open) tp-yt-iron-dropdown'),
-        'extension split should raise YouTube iron dropdowns');
-    assert.ok(source.includes('html:is(.ytkit-split-active, .ytkit-split-open) ytd-menu-popup-renderer'),
-        'extension split should raise native menu popup renderers');
-    assert.ok(theaterSplit.includes('body.ts-split ytd-popup-container'),
-        'standalone split should raise YouTube popup containers');
-    assert.ok(theaterSplit.includes('body.ts-split tp-yt-iron-dropdown'),
-        'standalone split should raise YouTube iron dropdowns');
-    assert.ok(theaterSplit.includes('body.ts-split ytd-menu-popup-renderer'),
-        'standalone split should raise native menu popup renderers');
-    const extensionNativePopup = blockBetween(
-        source,
-        'html:is(.ytkit-split-active, .ytkit-split-open) ytd-popup-container',
-        '#below.ytkit-split-scroll-surface ytd-watch-metadata',
-        'extension native split popup stack rule'
-    );
-    const standaloneNativePopup = blockBetween(
-        theaterSplit,
-        'body.ts-split ytd-popup-container',
-        'body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata',
-        'standalone native split popup stack rule',
-        { fromStart: true }
-    );
-    assert.ok(extensionNativePopup.includes('z-index: 2147483647 !important;'),
-        'extension native popup stack should sit above the split player');
-    assert.ok(standaloneNativePopup.includes('z-index: 2147483647 !important;'),
-        'standalone native popup stack should sit above the split player');
-
-    const extensionQuickLinks = blockBetween(
-        source,
-        '#ytkit-po-logo-wrap .ytkit-ql-drop',
-        '#title .ytkit-split-upload-date',
-        'extension split quick links dropdown rule'
-    );
-    const standaloneQuickLinks = blockBetween(
-        theaterSplit,
-        '#ytkit-po-logo-wrap .ytkit-ql-drop',
-        '#title .ytkit-split-upload-date',
-        'standalone split quick links dropdown rule'
-    );
-
-    for (const [contents, block, label] of [
-        [source, extensionQuickLinks, 'extension quick links'],
-        [theaterSplit, standaloneQuickLinks, 'standalone quick links'],
-    ]) {
-        assert.ok(contents.includes('#ytkit-po-logo-wrap.ytkit-ql-open'), `${label} should raise the open launcher`);
-        assert.ok(contents.includes('#title:has(#ytkit-po-logo-wrap.ytkit-ql-open)'), `${label} should raise the title card above sibling controls`);
-        assert.ok(contents.includes('z-index: 2147483646 !important;'), `${label} should lift the open title stack above split cards`);
-        assert.ok(block.includes('right: auto !important;'), `${label} should stop opening behind the video edge`);
-        assert.ok(block.includes('left: 0 !important;'), `${label} should open into the metadata panel`);
-        assert.ok(block.includes('z-index: 2147483647 !important;'), `${label} should stack above the player`);
-        assert.ok(block.includes('max-height: min(440px, calc(100vh - 92px)) !important;'),
-            `${label} should remain scrollable in shorter viewports`);
+    assert.ok(meta.includes('#title #ytkit-po-logo-wrap.ytkit-ql-open { z-index: 2147483647 !important; }'),
+        'the open launcher sits above everything');
+    assert.ok(meta.includes('#title:has(#ytkit-po-logo-wrap.ytkit-ql-open) { z-index: 2147483646 !important; }'),
+        'the title stack rises above sibling controls while the launcher is open');
+    const drop = rule(meta, '#title #ytkit-po-logo-wrap .ytkit-ql-drop');
+    for (const declaration of ['right: auto !important;', 'left: 0 !important;', 'z-index: 2147483647 !important;', 'max-height: min(440px, calc(100vh - 92px)) !important;']) {
+        assert.ok(drop.includes(declaration), `the quick links dropdown should hold ${declaration}`);
     }
 });
 

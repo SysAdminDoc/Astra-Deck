@@ -6699,6 +6699,9 @@
   "stickyVideoSubscriptionsLink": {
     "message": "前往订阅"
   },
+  "stickyVideoUploadedTpl": {
+    "message": "上传于 {date}"
+  },
   "stickyVideoVideoActionsAria": {
     "message": "视频操作"
   },

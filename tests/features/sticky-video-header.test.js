@@ -183,3 +183,39 @@ test('view and live audience counts come from the locale catalogue', () => {
         assert.doesNotMatch(text, /views|watching/);
     });
 });
+
+// YouTube draws the view count as a rolling-digit animation, one column per
+// digit holding all ten digits, so the element's text reads "1234567890..."
+// and a text search found only the word "views": the header showed "views"
+// with no number whenever the player response was missing or stale, which is
+// every SPA navigation. The count lives in the element's aria-label.
+test('the header reads a rolling-digit view count from its aria-label', () => {
+    const rolling = '1234567890'.repeat(3);
+    const viewCount = { getAttribute: (name) => (name === 'aria-label' ? '46,814 views ' : null) };
+    const strings = [rolling, 'views'].map((text) => ({ textContent: text }));
+    const below = {
+        querySelector: (selector) => (/#view-count\[aria-label\]/.test(selector) ? viewCount : null),
+        querySelectorAll: () => strings
+    };
+    withDocument({}, () => {
+        const recorded = header({ getVideoId: () => 'v', _rw: {} }, { _getBelow: () => below });
+        assert.equal(recorded._getSplitViewCountText(), '46,814 views');
+
+        const live = header({ getVideoId: () => 'v', _rw: {} }, { _getBelow: () => below });
+        assert.equal(live._getSplitLiveViewCountText(), '46,814 views',
+            'the live header must not settle for the bare word either');
+    });
+});
+
+test('the upload date line goes through the locale catalogue', () => {
+    withDocument({ querySelector: () => null, querySelectorAll: () => [] }, () => {
+        const localized = header({
+            t: (key, fallback) => (key === 'stickyVideoUploadedTpl' ? 'Hochgeladen am {date}' : fallback),
+            getVideoId: () => 'v',
+            _rw: { ytInitialPlayerResponse: playerResponse('v', { microformat: { publishDate: '2026-05-18' } }) }
+        });
+        const text = localized._getSplitUploadDateText();
+        assert.match(text, /^Hochgeladen am /);
+        assert.doesNotMatch(text, /Uploaded/);
+    });
+});

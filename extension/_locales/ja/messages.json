@@ -6699,6 +6699,9 @@
   "stickyVideoSubscriptionsLink": {
     "message": "登録チャンネルに移動"
   },
+  "stickyVideoUploadedTpl": {
+    "message": "{date} にアップロード"
+  },
   "stickyVideoVideoActionsAria": {
     "message": "動画の操作"
   },

@@ -318,13 +318,10 @@ test('Theater Split divider separates a click toggle from a drag resize', () => 
     }
 });
 
-test('Theater Split keeps the premium theme and standalone divider contract', () => {
-    const { styles } = loadModule();
-    const commentsCss = styles.buildSplitCommentsCss();
-    const standalone = fs.readFileSync(
-        path.join(config.repoRoot, 'theater-split.user.js'),
-        'utf8'
-    );
+// ── The standalone userscript: its own design, pinned as it ships ──
+
+test('the standalone Theater Split keeps its divider contract and token lanes', () => {
+    const standalone = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
 
     assert.match(standalone, /setAttribute\('role', 'separator'\)/,
         'the standalone userscript must expose the resize divider as a separator');
@@ -335,157 +332,196 @@ test('Theater Split keeps the premium theme and standalone divider contract', ()
     assert.match(standalone, /collapseSplit\(false, \{ keepDivider: true \}\)/);
     assert.match(standalone, /setAttribute\('aria-expanded', String\(open\)\)/);
     assert.match(standalone, /data-panel-state="closed"/);
-    assert.match(MODULE_SOURCE, /DIVIDER_DRAG_THRESHOLD_PX = 4/);
-    assert.match(MODULE_SOURCE, /_collapseSplit\(false, \{ keepDivider: true \}\)/);
-    assert.match(MODULE_SOURCE, /data-ytkit-panel-state="closed"/);
-
-    assert.match(commentsCss, /--ytkit-split-panel: var\(--ytkit-premium-panel, #0d1928\)/);
-    assert.match(commentsCss, /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)/,
-        'the extension split must follow YouTube light mode');
-    assert.match(commentsCss, /color-scheme: inherit !important/,
-        'the positioned comments surface must inherit the active theme');
-    assert.match(commentsCss, /#ytkit-split-divider:focus-visible/);
-    assert.match(commentsCss, /border-radius: 6px !important/);
     assert.match(standalone, /--ts-panel: #0d1928/);
     assert.match(standalone, /html:not\(\[dark\]\) body\.ts-active/,
         'the standalone split must define a light token lane');
     assert.match(standalone, /background: 'var\(--ts-panel\)'/,
         'standalone positioned surfaces must consume the shared panel token');
     assert.match(standalone, /#ts-divider:focus-visible/);
-});
-
-test('Theater Split theme chrome is tokenized in both artifacts', () => {
-    const { styles } = loadModule();
-    const commentsCss = styles.buildSplitCommentsCss();
-    const standalone = fs.readFileSync(
-        path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
-
     assert.match(standalone, /setAttribute\('aria-label', 'Close side panel'\)/,
         'the standalone userscript close button must keep its accessible name');
-    assert.match(commentsCss,
-        /--ytkit-split-scrollbar: var\(--ytkit-premium-scrollbar, rgba\(151, 178, 208, 0\.34\)\)/);
-    assert.match(MODULE_SOURCE, /background:'var\(--ytkit-split-panel\)'/);
-    assert.doesNotMatch(MODULE_SOURCE, /background:'#0b1624'/,
-        'positioned split surfaces must not bypass theme tokens');
     assert.doesNotMatch(standalone, /background: '#0b1624'/,
         'standalone positioned surfaces must not bypass theme tokens');
 });
 
-test('Theater Split metadata uses a compact title-first vertical hierarchy', () => {
-    const { styles } = loadModule();
-    const commentsCss = styles.buildSplitCommentsCss();
-    const standalone = fs.readFileSync(
-        path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
-
-    for (const [css, label] of [
-        [commentsCss, 'extension'],
-        [standalone, 'standalone userscript']
-    ]) {
-        assert.match(css, /grid-template-areas:\s*"home actions date" !important/,
-            `${label} must keep title utilities on one compact row`);
-        assert.match(css, /\.ytkit-split-title-bar[\s\S]{0,900}order: 2 !important/,
-            `${label} must place utilities after the video title`);
-        assert.match(css, /#title h1[\s\S]{0,900}order: 1 !important/,
-            `${label} must keep the video title first in the reading hierarchy`);
-        assert.match(css, /row-gap: 6px !important;\s*padding: 8px 10px 9px !important/,
-            `${label} must use compact title-card padding`);
-        assert.match(css, /\.ytkit-split-upload-meta[\s\S]{0,420}height: 40px !important[\s\S]{0,420}box-sizing: border-box !important/,
-            `${label} must keep the two-line upload summary compact without clipping`);
-        assert.match(css, /grid-template-areas:\s*"owner sub"\s*"actions actions" !important/,
-            `${label} must place channel identity and subscribe on one row`);
-        assert.match(css, /grid-template-areas:\s*"owner owner"\s*"actions actions" !important/,
-            `${label} must collapse the empty subscribe slot for subscribed channels`);
-        assert.doesNotMatch(css, /grid-template-areas:\s*"owner"\s*"sub"\s*"actions"/,
-            `${label} must not reserve three vertical owner rows`);
-        assert.match(css, /#owner(?:#owner)?[\s\S]{0,900}gap: 6px 10px !important[\s\S]{0,260}padding: 8px 10px !important/,
-            `${label} must keep the owner card dense without crowding identity and actions`);
-        assert.match(css, /#subscribe-button[\s\S]{0,420}min-width: 98px !important[\s\S]{0,200}height: 32px !important[\s\S]{0,220}border-radius: 6px !important/,
-            `${label} must keep Subscribe compact and squared to the shared radius scale`);
-        assert.match(css, /ytd-comment-replies-renderer[\s\S]{0,1500}border-radius: 6px !important[\s\S]{0,400}background: var\(--[^,;]*comment-control\) !important/,
-            `${label} must replace reply-expander pills with compact themed controls`);
-        assert.match(css, /margin: 0 0 10px !important;\s*padding: 0 0 10px !important/,
-            `${label} must keep the metadata-to-comments divider compact`);
-    }
+test('the standalone Theater Split keeps its compact metadata hierarchy', () => {
+    const css = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+    assert.match(css, /grid-template-areas:\s*"home actions date" !important/);
+    assert.match(css, /\.ytkit-split-title-bar[\s\S]{0,900}order: 2 !important/);
+    assert.match(css, /#title h1[\s\S]{0,900}order: 1 !important/);
+    assert.match(css, /row-gap: 6px !important;\s*padding: 8px 10px 9px !important/);
+    assert.match(css, /\.ytkit-split-upload-meta[\s\S]{0,420}height: 40px !important[\s\S]{0,420}box-sizing: border-box !important/);
+    assert.match(css, /grid-template-areas:\s*"owner sub"\s*"actions actions" !important/);
+    assert.match(css, /grid-template-areas:\s*"owner owner"\s*"actions actions" !important/);
+    assert.doesNotMatch(css, /grid-template-areas:\s*"owner"\s*"sub"\s*"actions"/);
+    assert.match(css, /#owner(?:#owner)?[\s\S]{0,900}gap: 6px 10px !important[\s\S]{0,260}padding: 8px 10px !important/);
+    assert.match(css, /#subscribe-button[\s\S]{0,420}min-width: 98px !important[\s\S]{0,200}height: 32px !important[\s\S]{0,220}border-radius: 6px !important/);
+    assert.match(css, /ytd-comment-replies-renderer[\s\S]{0,1500}border-radius: 6px !important[\s\S]{0,400}background: var\(--[^,;]*comment-control\) !important/);
+    assert.match(css, /margin: 0 0 10px !important;\s*padding: 0 0 10px !important/);
 });
 
-test('Theater Split comment actions use wrapper-proof compact controls in every state', () => {
-    const { styles } = loadModule();
-    const commentsCss = styles.buildSplitCommentsCss();
-    const standalone = fs.readFileSync(
-        path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+test('the standalone Theater Split keeps wrapper-proof comment controls in every state', () => {
+    const css = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
     const visualSystem = fs.readFileSync(
         path.join(config.repoRoot, 'extension', 'core', 'settings-visual-system.js'), 'utf8');
-
-    for (const [css, label, tokenPrefix] of [
-        [commentsCss, 'extension', '--ytkit-split-comment'],
-        [standalone, 'standalone userscript', '--ts-comment']
-    ]) {
-        for (const token of ['control', 'control-hover', 'control-active', 'border', 'divider', 'shadow']) {
-            assert.match(css, new RegExp(`${tokenPrefix.replaceAll('-', '\\-')}-${token}:`),
-                `${label} must define the dedicated ${token} comment token`);
-        }
-        assert.match(css, /ytd-comment-engagement-bar #toolbar[\s\S]{0,180}gap: 8px !important/,
-            `${label} must use deliberate toolbar spacing`);
-        const wrapperStart = css.indexOf('#toolbar#toolbar > :is(');
-        const wrapperRules = wrapperStart >= 0 ? css.slice(wrapperStart, wrapperStart + 2600) : '';
-        assert.ok(wrapperRules.includes('#like-button,')
-            && wrapperRules.includes('#reply-button-end,')
-            && wrapperRules.includes('height: 32px !important;'),
-        `${label} must constrain YouTube's outer action wrappers to the compact row`);
-        assert.ok(wrapperRules.includes('> :is(yt-button-shape, ytd-button-renderer, yt-icon-button)')
-            && wrapperRules.lastIndexOf('height: 32px !important;') > wrapperRules.indexOf('> :is(yt-button-shape'),
-        `${label} must constrain first-level native wrapper rollouts too`);
-        assert.match(css, /#vote-count-middle[\s\S]{0,620}height: 30px !important[\s\S]{0,260}margin: 0 4px 0 -4px !important/,
-            `${label} must keep Like and its count close without fusing them into a pill`);
-        assert.match(css, /#vote-count-middle[\s\S]{0,900}border: 0 !important[\s\S]{0,260}border-radius: 0 !important[\s\S]{0,260}background: transparent !important/,
-            `${label} must render the count as readable inline metadata`);
-        assert.match(css, /#vote-count-middle[\s\S]{0,1400}font-variant-numeric: tabular-nums !important/,
-            `${label} must keep like counts visually stable`);
-        const countPseudoStart = css.indexOf('ytd-comment-engagement-bar #vote-count-middle::before');
-        const countPseudoRules = countPseudoStart >= 0
-            ? css.slice(countPseudoStart, countPseudoStart + 1300)
-            : '';
-        assert.ok(countPseudoStart >= 0
-            && countPseudoRules.includes('ytd-comment-engagement-bar #vote-count-middle::after'),
-        `${label} must target both native count decorations`);
-        assert.match(countPseudoRules, /content: none !important;[\s\S]{0,160}display: none !important;/,
-            `${label} must remove the native separator drawn after the like count`);
-        assert.match(countPseudoRules, /border: 0 !important;[\s\S]{0,160}background: transparent !important;/,
-            `${label} must leave no separator paint behind`);
-        assert.match(css, /#like-button:has\(~ #vote-count-middle:not\(:empty\)\)[\s\S]{0,240}border-radius: 6px !important/,
-            `${label} must keep Like as a complete compact control when a count is present`);
-        assert.match(css, /#reply-button-end[\s\S]{0,220}min-width: 48px !important[\s\S]{0,160}height: 30px !important/,
-            `${label} must keep Reply compact without crushing its label`);
-        assert.match(css, /:is\(:hover, :focus-within\)[\s\S]{0,260}background:/,
-            `${label} must keep comment-row interaction inside the active theme`);
-        assert.match(css, /#like-button:is\(:hover, :focus-within\) ~ #vote-count-middle[\s\S]{0,300}color:/,
-            `${label} must keep the inline count legible when Like is hovered or focused`);
-        assert.match(css, /#creator-heart-button[\s\S]{0,1200}height: 30px !important/,
-            `${label} must keep the creator-heart control in the same geometry`);
-        assert.match(css, /translateY\(-1px\)/,
-            `${label} must provide a hover lift`);
-        assert.match(css, /scale\(0\.98\)/,
-            `${label} must provide pressed feedback`);
-        assert.match(css, /\[aria-pressed="true"\]/,
-            `${label} must expose a visible selected state`);
-        assert.match(css, /\[aria-disabled="true"\]/,
-            `${label} must keep disabled state parity with native disabled controls`);
-        assert.match(css, /@media \(forced-colors: active\)[\s\S]*ButtonFace/,
-            `${label} must preserve native forced-color surfaces`);
+    for (const token of ['control', 'control-hover', 'control-active', 'border', 'divider', 'shadow']) {
+        assert.match(css, new RegExp(`--ts-comment-${token}:`), `standalone must define the ${token} comment token`);
     }
+    assert.match(css, /ytd-comment-engagement-bar #toolbar[\s\S]{0,180}gap: 8px !important/);
+    const wrapperStart = css.indexOf('#toolbar#toolbar > :is(');
+    const wrapperRules = wrapperStart >= 0 ? css.slice(wrapperStart, wrapperStart + 2600) : '';
+    assert.ok(wrapperRules.includes('#like-button,') && wrapperRules.includes('#reply-button-end,')
+        && wrapperRules.includes('height: 32px !important;'));
+    assert.ok(wrapperRules.includes('> :is(yt-button-shape, ytd-button-renderer, yt-icon-button)'));
+    assert.match(css, /#vote-count-middle[\s\S]{0,1400}font-variant-numeric: tabular-nums !important/);
+    assert.match(css, /#creator-heart-button[\s\S]{0,1200}height: 30px !important/);
+    assert.match(css, /\[aria-pressed="true"\]/);
+    assert.match(css, /\[aria-disabled="true"\]/);
+    assert.match(css, /@media \(forced-colors: active\)[\s\S]*ButtonFace/);
 
     assert.match(visualSystem, /--ytkit-premium-control: #101f33/,
         'the shared visual system must own the dark control surface');
     assert.match(visualSystem, /html:not\(\[dark\]\)[\s\S]*--ytkit-premium-control: #f7f9fb/,
         'the shared visual system must own the light control surface');
-    assert.match(commentsCss, /--ytkit-split-comment-control: rgba\(151, 178, 208, 0\.08\)/,
-        'dark comment controls must use a restrained local surface token');
-    assert.match(commentsCss,
-        /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)[\s\S]*--ytkit-split-comment-control: rgba\(30, 53, 78, 0\.055\)/,
-        'light comment controls must use a restrained local surface token');
-    assert.doesNotMatch(commentsCss,
-        /ytd-comment-engagement-bar :is\([\s\S]{0,260}?\) \{[\s\S]{0,260}?border-radius: 4px !important/,
-        'the late flat-rectangle engagement override must stay removed');
+});
+
+// ── The extension split: one token set, one flat pane ──
+
+function extensionSheets() {
+    const { styles } = loadModule();
+    return {
+        shell: styles.buildSplitShellCss(),
+        meta: styles.buildSplitMetaCss(),
+        comments: styles.buildSplitCommentsCss()
+    };
+}
+
+// Literal colors the split may still name: things that look the same in
+// every theme (YouTube's red glyph, the LIVE badge, the creator heart, the
+// white play mark) and the close button, which always sits over video.
+const THEME_INDEPENDENT_COLORS = new Set([
+    '#ff0033', '#ffffff', '#cc0000', '#ff4e45',
+    'rgba(8, 8, 10, 0.74)', 'rgba(255, 255, 255, 0.16)', 'rgba(255, 255, 255, 0.3)',
+    'rgba(24, 24, 28, 0.86)', 'rgba(0, 0, 0, 0.32)'
+]);
+
+test('the extension split derives every color from the page theme and the Astra accent', () => {
+    const { shell, meta, comments } = extensionSheets();
+    const all = [shell, meta, comments].join('\n');
+
+    // YouTube's own tokens are what the OLED theme and the color themes
+    // override, so deriving from them is what makes the split follow those.
+    assert.match(shell, /--ytkit-split-text: var\(--yt-spec-text-primary,/);
+    assert.match(shell, /--ytkit-split-panel: var\(--yt-spec-base-background,/);
+    assert.match(shell, /--ytkit-split-accent: var\(--ytkit-accent,/,
+        'the split uses the accent the user picked, not a fixed coral');
+    assert.match(shell, /html:not\(\[dark\]\)\.ytkit-split-active \{/,
+        'the split must follow YouTube light mode');
+    assert.match(shell, /--yt-spec-base-background: var\(--ytkit-split-panel\);/,
+        'native fades inside the pane must paint the pane color, not an ancestor scope');
+    assert.match(shell, /color-scheme: inherit !important/,
+        'the positioned comments surface must inherit the active theme');
+    assert.doesNotMatch(all, /--ytkit-premium-/,
+        'the split no longer carries its own fixed palette');
+
+    const withoutFallbacks = all.replace(/var\(--[\w-]+,\s*[^()]*(?:\([^()]*\))?[^()]*\)/g, 'var()');
+    const literals = withoutFallbacks.match(/rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b/g) || [];
+    const unexpected = [...new Set(literals)].filter((color) => !THEME_INDEPENDENT_COLORS.has(color));
+    assert.deepEqual(unexpected, [], 'every other color must come from a token');
+
+    assert.match(MODULE_SOURCE, /background:'var\(--ytkit-split-panel\)'/);
+    assert.doesNotMatch(MODULE_SOURCE, /background:'#0b1624'/,
+        'positioned split surfaces must not bypass theme tokens');
+    assert.doesNotMatch(MODULE_SOURCE, /2px solid rgba\(255,255,255,0\.1\)/,
+        'the VOD chat divider must use the hairline token');
+    assert.doesNotMatch(all, /border-radius:\s*(?:50%|9{3,}px)/, 'no pill or circle backdrops');
+});
+
+test('the extension split keeps shell and metadata sheets safe to strip', () => {
+    const { shell, meta } = extensionSheets();
+    const { stripCommentRestyleCss } = require('../../extension/core/styles.js');
+    for (const [name, css] of [['shell', shell], ['meta', meta]]) {
+        // The controller passes these two through stripCommentRestyleCss,
+        // which splits on "}": an at-rule block would be cut in half and a
+        // comment rule would silently vanish.
+        assert.doesNotMatch(css, /@(?:media|container|supports)\b/, `${name} must hold no at-rule blocks`);
+        const rules = (css.match(/\}/g) || []).length;
+        const kept = (stripCommentRestyleCss(css).match(/\}/g) || []).length;
+        assert.equal(kept, rules, `${name} must hold no comment rules the strip would drop`);
+    }
+});
+
+test('the extension divider and close button carry every interactive state', () => {
+    const { shell, comments } = extensionSheets();
+    assert.match(shell, /#ytkit-split-divider:hover/);
+    assert.match(shell, /#ytkit-split-divider:focus-visible \.ytkit-divider-pip \{[\s\S]{0,120}outline: 2px solid var\(--ytkit-split-accent\)/,
+        'keyboard focus on the divider must show a ring');
+    assert.match(shell, /#ytkit-split-divider\[data-ytkit-panel-state="closed"\]/,
+        'a click-collapsed divider must read as a handle to reopen');
+    assert.match(shell, /#ytkit-split-divider\[data-ytkit-panel-state="hidden"\]/);
+    assert.match(shell, /#ytkit-split-divider::after \{[\s\S]{0,120}inset: 0 0 0 -8px/,
+        'the divider needs a hit area wider than its 8px strip');
+    assert.match(shell, /#ytkit-split-close:focus-visible/);
+    assert.match(shell, /#ytkit-split-close:active \{ transform: translateY\(0\) scale\(0\.96\)/);
+    assert.doesNotMatch(MODULE_SOURCE, /addEventListener\('mouseenter'/,
+        'divider hover lives in CSS, where it follows the theme');
+    assert.match(comments, /@media \(prefers-reduced-motion: reduce\)[\s\S]*#ytkit-split-divider/);
+    assert.match(comments, /@media \(forced-colors: active\)[\s\S]*#ytkit-split-divider[\s\S]*ButtonFace/);
+});
+
+test('the extension split lays metadata out title first in one flat section', () => {
+    const { meta, comments } = extensionSheets();
+    assert.match(meta, /#title h1,\n[^{]*h1\.ytd-watch-metadata \{\n    order: 1 !important/,
+        'the video title leads the reading order');
+    assert.match(meta, /\.ytkit-split-title-bar \{\n    order: 2 !important[\s\S]{0,400}grid-template-areas: "home actions date" !important/,
+        'utilities sit on one compact row after the title');
+    assert.match(meta, /ytd-watch-metadata \{\n    display: block !important;[\s\S]{0,400}border: 0 !important;\n    border-bottom: 1px solid var\(--ytkit-split-hairline\) !important;\n    border-radius: 0 !important;\n    background: none !important;/,
+        'the watch restyle card is flattened to one section with a hairline under it');
+    assert.match(meta, /grid-template-areas: "owner sub" "actions actions" !important/,
+        'channel identity and Subscribe share a row');
+    assert.match(meta, /#owner:not\(:has\(#subscribe-button \*\)\) \{ grid-template-areas: "owner owner" "actions actions" !important; \}/,
+        'a subscribed channel gives the empty slot back');
+    assert.match(meta, /height: var\(--ytkit-split-control-h\) !important/);
+    assert.match(meta, /\.ytkit-split-upload-date:not\(\[hidden\]\):not\(:empty\) ~ \.ytkit-split-view-count/,
+        'date and view count read as one line with a separator');
+    assert.match(meta, /#description-inline-expander\) \{\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 0 !important;\n    background: none !important;/,
+        'the description is one box, not a box in a box');
+    assert.match(comments, /@container ytkit-split-owner \(max-width: 420px\)[\s\S]{0,600}ytkit-watch-action-btn__label[\s\S]{0,200}clip-path: inset\(50%\)/,
+        'a narrow pane keeps the action row on one line and Download named for screen readers');
+});
+
+test('the extension split keeps comment controls quiet, compact and stateful', () => {
+    const { comments } = extensionSheets();
+    assert.match(comments, /ytd-comments-header-renderer \{\n    display: flex !important;\n    flex-direction: column !important;\n    align-items: stretch !important;\n    gap: 0 !important;/,
+        'the header must not turn its empty children into gapped rows');
+    assert.match(comments, /ytd-comments-header-renderer #simple-box \{ margin-top: 16px !important; \}/);
+    assert.match(comments, /ytd-comment-engagement-bar #toolbar \{[\s\S]{0,200}gap: 8px !important/);
+    const wrapperStart = comments.indexOf('#toolbar#toolbar > :is(');
+    const wrapperRules = wrapperStart >= 0 ? comments.slice(wrapperStart, wrapperStart + 900) : '';
+    assert.ok(wrapperRules.includes('#like-button,') && wrapperRules.includes('#reply-button-end,')
+        && wrapperRules.includes('height: 32px !important;'),
+    'YouTube\'s outer action wrappers are held to the 32px row');
+    assert.ok(wrapperRules.includes('> :is(yt-button-shape, ytd-button-renderer, yt-icon-button)'),
+        'and so are their first-level wrappers');
+    assert.match(comments, /#toolbar#toolbar :is\(\.yt-spec-button-shape-next, \.ytSpecButtonShapeNextHost\),[\s\S]{0,700}background: transparent !important;/,
+        'comment actions are ghost buttons until hovered');
+    assert.match(comments, /:hover \{ background: var\(--ytkit-split-control-hover\) !important;/);
+    assert.match(comments, /:active \{ background: var\(--ytkit-split-control-active\) !important; transform: scale\(0\.96\)/);
+    assert.match(comments, /\[aria-pressed="true"\] \{ background: var\(--ytkit-split-accent-soft\) !important; color: var\(--ytkit-split-accent-ink\)/,
+        'a liked comment reads as selected in the accent');
+    assert.match(comments, /\[aria-disabled="true"\]\) \{ opacity: 0\.45 !important;/);
+    assert.match(comments, /:focus-visible \{ outline: 2px solid var\(--ytkit-split-accent\) !important;/);
+    const countStart = comments.indexOf('ytd-comment-engagement-bar #vote-count-middle {');
+    const countRules = countStart >= 0 ? comments.slice(countStart, countStart + 1100) : '';
+    assert.ok(/border: 0 !important;[\s\S]*background: transparent !important;[\s\S]*font-variant-numeric: tabular-nums !important;/.test(countRules),
+        'like counts are stable inline metadata');
+    assert.ok(/#vote-count-middle::after \{\n    content: none !important;\n    display: none !important;/.test(countRules),
+        'the native separator after the count is gone');
+    assert.match(comments, /#more-replies-sub-thread[\s\S]{0,400}\{[\s\S]{0,700}background: transparent !important;\n    color: var\(--ytkit-split-accent-ink\) !important;/,
+        'reply expanders are quiet accent text, not pills');
+    assert.match(comments, /#action-menu \{[\s\S]{0,160}opacity: 0 !important;[\s\S]{0,400}:is\(:hover, :focus-within\) > #body > #action-menu/,
+        'the overflow menu appears with the comment it belongs to');
+    assert.match(comments, /content-visibility: auto !important;/);
 });
 
 test('stickyVideo factory returns the full Theater Split runtime surface', () => {

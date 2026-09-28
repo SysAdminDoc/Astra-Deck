@@ -6736,6 +6736,10 @@
   "stickyVideoSubscriptionsLink": {
     "message": "Go to subscriptions"
   },
+  "stickyVideoUploadedTpl": {
+    "message": "Uploaded {date}",
+    "description": "Theater Split header: upload date line. {date} is a locale-formatted date."
+  },
   "stickyVideoVideoActionsAria": {
     "message": "Video actions"
   },
