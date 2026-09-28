@@ -23,6 +23,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Turning Video Hider off while it was still downloading a subscribed filter list no longer brings it back. When the download finished, it hid cards and put its buttons back on a feature you'd just switched off.
 - The Thumbnail and View buttons under a video each keep their own labels now. After a View click, View announced itself as "Download thumbnail" and stopped the Download button from resetting. The Download button's labels and error notice are translated, a slow download no longer flips back to "Thumbnail" halfway through, and turning View on or off takes effect right away instead of on the next video.
 - In the userscript, the Thumbnail button follows you to the next video. After you clicked from one video to another it kept downloading the first video's thumbnail.
+- Userscript Quick Settings turns Fit Player to Window off when you turn Theater Split on, the same as the full settings panel. Both used to run at once.
 
 ## [4.91.0] (2026-09-28)
 

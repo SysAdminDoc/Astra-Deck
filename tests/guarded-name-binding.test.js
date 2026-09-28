@@ -32,11 +32,11 @@ const PLATFORM_GLOBALS = new Set([
     'AudioContext', 'webkitAudioContext'
 ]);
 
-// Deliberate, each with a working fallback when the name is absent.
-const ALLOWED = new Map([
-    ['YTKit.user.js:applyExternalSettingsUpdate',
-        'the quick-settings toggle was ported from the extension and toggles the one feature when the shared reconciler is absent']
-]);
+// Deliberate, each with a working fallback when the name is absent. Keyed
+// `<file basename>:<name>`, valued with the reason. The one former entry, the
+// userscript Quick Settings `applyExternalSettingsUpdate` guard, was removed
+// with the dead branch it guarded.
+const ALLOWED = new Map();
 
 function walk(node, visit) {
     if (!node || typeof node.type !== 'string') return;
@@ -192,6 +192,62 @@ test('the userscript restores chapter titles through YTKitCore, for the playing 
     feature._process();
     assert.deepEqual(rows.map((heading) => heading.textContent), ['Intro', 'Middle'],
         'the original titles come back once the helpers are reached through YTKitCore');
+});
+
+test('userscript Quick Settings turns off the other side of a conflict pair', async () => {
+    // The guard above hid this: Quick Settings called a reconciler the
+    // userscript never defines, and its fallback toggled only the one feature.
+    // Turning Theater Split on left Fit Player to Window running with it.
+    const { loadUserscriptDeclarations, fakeTreeDocument, fakeNode } = require('./helpers/monolith');
+    const calls = [];
+    const feature = (id, name, initialized) => ({
+        id, name, _initialized: initialized,
+        init() { calls.push(`init:${id}`); },
+        destroy() { calls.push(`destroy:${id}`); }
+    });
+    const run = async (saveResult) => {
+        const documentRef = fakeTreeDocument();
+        calls.length = 0;
+        const features = [feature('stickyVideo', 'Theater Split', false), feature('fitPlayerToWindow', 'Fit Player to Window', true)];
+        const appState = { settings: { stickyVideo: false, fitPlayerToWindow: true } };
+        const saved = [];
+        const toasts = [];
+        const api = loadUserscriptDeclarations(['CONFLICT_MAP', 'closePageModal', 'openPageModal'], {
+            document: documentRef,
+            features,
+            appState,
+            _pageModalOpen: false,
+            _pageModalOverlay: null,
+            getCurrentPage: () => 'watch',
+            PAGE_MODAL_PAGE_MAP: { watch: 'watch' },
+            PAGE_MODAL_CONFIG: { watch: [{ id: 'stickyVideo', label: 'Theater Split' }] },
+            PAGE_LABELS: { watch: 'Watch' },
+            ICONS: new Proxy({}, { get: () => () => fakeNode() }),
+            requestAnimationFrame: (fn) => fn(),
+            setTimeout: () => 0,
+            settingsManager: { save: (next) => { saved.push({ ...next }); return saveResult; } },
+            showToast: (message) => toasts.push(message),
+            DebugManager: { log() {} }
+        });
+        api.openPageModal();
+        const card = documentRef.querySelector('.ytkit-pm-card');
+        assert.ok(card, 'the Quick Settings card renders');
+        await card.listeners.get('click').values().next().value({});
+        return { appState, saved, toasts };
+    };
+
+    const ok = await run({ ok: true });
+    assert.equal(ok.appState.settings.stickyVideo, true);
+    assert.equal(ok.appState.settings.fitPlayerToWindow, false, 'the conflicting feature is switched off');
+    assert.equal(ok.saved.at(-1).fitPlayerToWindow, false, 'and that is what gets saved');
+    assert.deepEqual(calls, ['init:stickyVideo', 'destroy:fitPlayerToWindow']);
+    assert.match(ok.toasts.join('\n'), /Fit Player to Window turned off/);
+
+    // A rejected save puts both features back the way they were.
+    const rejected = await run(Promise.resolve({ ok: false }));
+    assert.deepEqual({ ...rejected.appState.settings }, { stickyVideo: false, fitPlayerToWindow: true });
+    assert.deepEqual(calls, ['init:stickyVideo', 'destroy:fitPlayerToWindow', 'destroy:stickyVideo', 'init:fitPlayerToWindow']);
+    assert.equal(rejected.toasts.length, 0, 'nothing was turned off, so nothing is announced');
 });
 
 test('every allowance names a guard that still exists', () => {

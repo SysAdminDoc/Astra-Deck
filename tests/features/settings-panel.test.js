@@ -250,7 +250,10 @@ test('page quick controls reconcile feature settings without in-place mutation',
             `${label} quick controls must snapshot settings before toggling`);
         assert.match(block, /const nextSettings = \{[\s\S]{0,120}\[fid\]: !previousSettings\[fid\]/,
             `${label} quick controls must build a replacement settings object`);
-        assert.match(block, /quick-settings-rollback/,
+        // The userscript passes no source label (it had only fed a reconciler
+        // the userscript never defined); tests/guarded-name-binding.test.js
+        // drives its rollback for real.
+        assert.match(block, /quick-settings-rollback|reconcile\(result\.settings \|\| previousSettings\)/,
             `${label} quick controls must restore the prior setting after a failed write`);
         assert.doesNotMatch(block, /appState\.settings\[fid\] = newVal/,
             `${label} quick controls must not mutate the live settings object in place`);

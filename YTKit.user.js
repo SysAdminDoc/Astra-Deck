@@ -18959,35 +18959,48 @@ html:not([dark]) .ytkit-lv-ratio .ytkit-meta-chip__label{color:#475569;}
                     ...previousSettings,
                     [fid]: !previousSettings[fid]
                 };
-                const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
-                const reconcile = (settings, source) => {
-                    if (useSharedReconciliation) {
-                        applyExternalSettingsUpdate({ source, nextSettings: settings });
-                        return;
-                    }
+                // The settings panel turns off the other side of a conflict pair
+                // when one side goes on. Quick Settings skipped that, so Theater
+                // Split and Fit Player to Window could both end up running.
+                const switchedOff = nextSettings[fid]
+                    ? (CONFLICT_MAP[fid]?.conflicts || []).filter((cid) => previousSettings[cid])
+                    : [];
+                switchedOff.forEach((cid) => { nextSettings[cid] = false; });
+                const reconcile = (settings) => {
                     appState.settings = settings;
-                    try {
-                        if (settings[fid]) { feat.init?.(); feat._initialized = true; }
-                        else { feat.destroy?.(); feat._initialized = false; }
-                    } catch (err) {
-                        DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
-                    }
+                    [fid, ...switchedOff].forEach((id) => {
+                        const f = features.find((candidate) => candidate.id === id);
+                        if (!f) return;
+                        try {
+                            if (settings[id] && !f._initialized) { f.init?.(); f._initialized = true; }
+                            else if (!settings[id] && f._initialized) { f.destroy?.(); f._initialized = false; }
+                        } catch (err) {
+                            DebugManager.log('QuickSettings', `Toggle failed for "${id}": ${err.message}`);
+                        }
+                    });
                 };
                 try {
                     const saveResult = settingsManager.save(nextSettings);
-                    reconcile(nextSettings, 'quick-settings');
+                    reconcile(nextSettings);
                     const result = await Promise.resolve(saveResult);
                     if (result?.ok === false) {
-                        reconcile(result.settings || previousSettings, 'quick-settings-rollback');
+                        reconcile(result.settings || previousSettings);
                     }
                 } catch (err) {
                     DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
-                    reconcile(previousSettings, 'quick-settings-rollback');
+                    reconcile(previousSettings);
                 }
-                const finalValue = appState.settings[fid] === true;
-                card.classList.toggle('on', finalValue);
-                // Update all matching dock pills if any remain
-                document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
+                const offNow = switchedOff.filter((cid) => appState.settings[cid] === false);
+                if (offNow.length) {
+                    const names = offNow.map((cid) => features.find((candidate) => candidate.id === cid)?.name || cid).join(', ');
+                    showToast(`${names} turned off. ${CONFLICT_MAP[fid]?.reason || ''}`.trim(), '#f59e0b', { duration: 5 });
+                }
+                card.classList.toggle('on', appState.settings[fid] === true);
+                [fid, ...switchedOff].forEach((id) => {
+                    const value = appState.settings[id] === true;
+                    document.querySelectorAll(`.ytkit-pm-card[data-fid="${id}"], .ytkit-dock-pill[data-fid="${id}"]`)
+                        .forEach((el) => el.classList.toggle('on', value));
+                });
                 card.disabled = false;
             });
 
