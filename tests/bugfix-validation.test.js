@@ -1831,3 +1831,25 @@ test('comment surface normalizing skips elements whose style property a page com
     assert.ok(!/\bnode\.style\.setProperty\(|\bhitbox\.style\.setProperty\(/.test(normalize),
         'normalizing must go through the guarded writer, never style.setProperty directly');
 });
+
+test('a settings update that changes nothing does not restart running features', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const vm = require('vm');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf('function hasRelevantSettingsChange(feature, changedKeysSet) {');
+    const end = source.indexOf('\n    }\n', start) + 6;
+    assert.ok(start > -1 && end > start);
+    const hasRelevantSettingsChange = vm.runInNewContext(`
+        const getFeatureSettingKey = (feature) => feature.settingKey || feature.id;
+        const arraySettingKeysByParentId = new Map([['hiddenChatElementsManager', ['hiddenChatElements']]]);
+        (${source.slice(start, end)})`);
+    const splitFeature = { id: 'stickyVideo' };
+    assert.equal(hasRelevantSettingsChange(splitFeature, new Set()), false,
+        'an empty diff must leave Theater Split (and every other feature) running as is');
+    assert.equal(hasRelevantSettingsChange(splitFeature, null), true, 'an unknown diff still re-applies');
+    assert.equal(hasRelevantSettingsChange(splitFeature, new Set(['commentBlockedAuthors'])), false);
+    assert.equal(hasRelevantSettingsChange(splitFeature, new Set(['stickyVideo'])), true);
+    assert.equal(hasRelevantSettingsChange({ id: 'commentBlockedAuthors', parentId: 'commentAuthorBlock' }, new Set(['commentAuthorBlock'])), true);
+    assert.equal(hasRelevantSettingsChange({ id: 'hiddenChatElementsManager' }, new Set(['hiddenChatElements'])), true);
+});

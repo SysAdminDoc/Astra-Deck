@@ -6362,7 +6362,14 @@ const STORAGE_KEYS = Object.freeze({
     }
 
     function hasRelevantSettingsChange(feature, changedKeysSet) {
-        if (!changedKeysSet || changedKeysSet.size === 0) return true;
+        // No set means the caller could not say what changed, so every running
+        // feature re-applies. An empty set means the settings were compared
+        // and nothing differed. Restarting every feature then only disrupts
+        // the page: a feature that saved a value it had already applied (the
+        // save echo arrives as an update with no difference) used to collapse
+        // an open Theater Split and rebuild every other running feature.
+        if (!changedKeysSet) return true;
+        if (changedKeysSet.size === 0) return false;
         const ownKey = getFeatureSettingKey(feature);
         if (changedKeysSet.has(feature.id) || changedKeysSet.has(ownKey)) return true;
         if (feature.dependsOn && changedKeysSet.has(feature.dependsOn)) return true;
