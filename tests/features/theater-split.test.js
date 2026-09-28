@@ -320,7 +320,7 @@ test('Theater Split divider separates a click toggle from a drag resize', () => 
 
 // ── The standalone userscript: its own design, pinned as it ships ──
 
-test('the standalone Theater Split keeps its divider contract and token lanes', () => {
+test('the standalone Theater Split keeps its divider contract and follows the YouTube theme', () => {
     const standalone = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
 
     assert.match(standalone, /setAttribute\('role', 'separator'\)/,
@@ -332,52 +332,61 @@ test('the standalone Theater Split keeps its divider contract and token lanes', 
     assert.match(standalone, /collapseSplit\(false, \{ keepDivider: true \}\)/);
     assert.match(standalone, /setAttribute\('aria-expanded', String\(open\)\)/);
     assert.match(standalone, /data-panel-state="closed"/);
-    assert.match(standalone, /--ts-panel: #0d1928/);
-    assert.match(standalone, /html:not\(\[dark\]\) body\.ts-active/,
+    assert.match(standalone, /setAttribute\('aria-label', 'Close side panel'\)/,
+        'the standalone userscript close button must keep its accessible name');
+
+    assert.match(standalone, /--ts-panel: var\(--yt-spec-base-background,/,
+        'the standalone pane takes its surface from the YouTube theme');
+    assert.match(standalone, /--ts-accent: var\(--yt-spec-call-to-action,/,
+        'without Astra Deck there is no user accent, so YouTube\'s own link color is used');
+    assert.match(standalone, /html:not\(\[dark\]\) body\.ts-active \{/,
         'the standalone split must define a light token lane');
     assert.match(standalone, /background: 'var\(--ts-panel\)'/,
         'standalone positioned surfaces must consume the shared panel token');
     assert.match(standalone, /#ts-divider:focus-visible/);
-    assert.match(standalone, /setAttribute\('aria-label', 'Close side panel'\)/,
-        'the standalone userscript close button must keep its accessible name');
     assert.doesNotMatch(standalone, /background: '#0b1624'/,
         'standalone positioned surfaces must not bypass theme tokens');
+    assert.doesNotMatch(standalone, /background:#07101b|background:#02060b/,
+        'the overlay surfaces come from the stylesheet, not fixed navy');
+    assert.doesNotMatch(standalone, /addEventListener\('mouseenter'/,
+        'divider hover lives in CSS, where it follows the theme');
+    assert.match(standalone, /for \(let i = 0; i < 3; i\+\+\) pip\.appendChild\(document\.createElement\('div'\)\);/,
+        'the standalone grip carries the same three dots as the extension');
 });
 
-test('the standalone Theater Split keeps its compact metadata hierarchy', () => {
-    const css = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
-    assert.match(css, /grid-template-areas:\s*"home actions date" !important/);
-    assert.match(css, /\.ytkit-split-title-bar[\s\S]{0,900}order: 2 !important/);
-    assert.match(css, /#title h1[\s\S]{0,900}order: 1 !important/);
-    assert.match(css, /row-gap: 6px !important;\s*padding: 8px 10px 9px !important/);
-    assert.match(css, /\.ytkit-split-upload-meta[\s\S]{0,420}height: 40px !important[\s\S]{0,420}box-sizing: border-box !important/);
-    assert.match(css, /grid-template-areas:\s*"owner sub"\s*"actions actions" !important/);
-    assert.match(css, /grid-template-areas:\s*"owner owner"\s*"actions actions" !important/);
-    assert.doesNotMatch(css, /grid-template-areas:\s*"owner"\s*"sub"\s*"actions"/);
-    assert.match(css, /#owner(?:#owner)?[\s\S]{0,900}gap: 6px 10px !important[\s\S]{0,260}padding: 8px 10px !important/);
-    assert.match(css, /#subscribe-button[\s\S]{0,420}min-width: 98px !important[\s\S]{0,200}height: 32px !important[\s\S]{0,220}border-radius: 6px !important/);
-    assert.match(css, /ytd-comment-replies-renderer[\s\S]{0,1500}border-radius: 6px !important[\s\S]{0,400}background: var\(--[^,;]*comment-control\) !important/);
-    assert.match(css, /margin: 0 0 10px !important;\s*padding: 0 0 10px !important/);
+test('the standalone stylesheet is generated from the extension sheets', () => {
+    const generator = require('../../scripts/generate-theater-split-css.js');
+    const standalone = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+    assert.equal(generator.spliceInto(standalone, generator.generateCss()), standalone,
+        'theater-split.user.js is stale; run npm run generate:theater-split-css');
+
+    const css = generator.generateCss();
+    assert.doesNotMatch(css, /ytkit-split-active|--ytkit-split-|#ytkit-split-/,
+        'no extension scope may leak into the standalone');
+    assert.doesNotMatch(css, /#movie_player|video\.html5-main-video/,
+        'the standalone reparents its player, so the extension\'s player geometry stays out');
+    assert.match(css, /body\.ts-active #ts-left \{ background: var\(--ts-player\) !important; \}/,
+        'letterboxing behind the video stays black');
+    assert.match(css, /grid-template-areas: "home actions date" !important/);
+    assert.match(css, /grid-template-areas: "owner sub" "actions actions" !important/);
+    assert.match(css, /#ts-divider\[data-panel-state="closed"\]/);
+    assert.match(css, /@container ts-owner \(max-width: 420px\)/);
 });
 
-test('the standalone Theater Split keeps wrapper-proof comment controls in every state', () => {
+test('the standalone keeps quiet, compact and stateful comment controls', () => {
     const css = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
     const visualSystem = fs.readFileSync(
         path.join(config.repoRoot, 'extension', 'core', 'settings-visual-system.js'), 'utf8');
-    for (const token of ['control', 'control-hover', 'control-active', 'border', 'divider', 'shadow']) {
-        assert.match(css, new RegExp(`--ts-comment-${token}:`), `standalone must define the ${token} comment token`);
-    }
-    assert.match(css, /ytd-comment-engagement-bar #toolbar[\s\S]{0,180}gap: 8px !important/);
     const wrapperStart = css.indexOf('#toolbar#toolbar > :is(');
-    const wrapperRules = wrapperStart >= 0 ? css.slice(wrapperStart, wrapperStart + 2600) : '';
+    const wrapperRules = wrapperStart >= 0 ? css.slice(wrapperStart, wrapperStart + 900) : '';
     assert.ok(wrapperRules.includes('#like-button,') && wrapperRules.includes('#reply-button-end,')
         && wrapperRules.includes('height: 32px !important;'));
     assert.ok(wrapperRules.includes('> :is(yt-button-shape, ytd-button-renderer, yt-icon-button)'));
-    assert.match(css, /#vote-count-middle[\s\S]{0,1400}font-variant-numeric: tabular-nums !important/);
-    assert.match(css, /#creator-heart-button[\s\S]{0,1200}height: 30px !important/);
-    assert.match(css, /\[aria-pressed="true"\]/);
-    assert.match(css, /\[aria-disabled="true"\]/);
+    assert.match(css, /#vote-count-middle \{[\s\S]{0,900}font-variant-numeric: tabular-nums !important;/);
+    assert.match(css, /\[aria-pressed="true"\] \{ background: var\(--ts-accent-soft\) !important;/);
+    assert.match(css, /\[aria-disabled="true"\]\) \{ opacity: 0\.45 !important;/);
     assert.match(css, /@media \(forced-colors: active\)[\s\S]*ButtonFace/);
+    assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
     assert.match(visualSystem, /--ytkit-premium-control: #101f33/,
         'the shared visual system must own the dark control surface');

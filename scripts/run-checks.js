@@ -22,6 +22,7 @@ const REPO_ROOT = path.join(__dirname, '..');
 const GATES = Object.freeze([
     { id: 'syntax', script: 'check-syntax.js' },
     { id: 'live-chat-css', script: 'generate-live-chat-css.js', args: ['--check'] },
+    { id: 'theater-split-css', script: 'generate-theater-split-css.js', args: ['--check'] },
     { id: 'runtime-bootstrap', script: 'generate-runtime-bootstrap.js', args: ['--check'] },
     { id: 'sidebar', script: 'generate-sidebar.js', args: ['--check'] },
     { id: 'selector-asset', script: 'build-selector-asset.js', args: ['--check'] },
@@ -63,7 +64,7 @@ const GATES = Object.freeze([
 // A floor on the runner's own scope, like the list-scoped gates it drives. A
 // chain that quietly shrinks reports success for checks it never ran, which is
 // the failure this whole file exists to stop.
-const MIN_GATES = 38;
+const MIN_GATES = 39;
 
 function runGate(gate) {
     const started = process.hrtime.bigint();

@@ -39,6 +39,7 @@
     "generate:selector-asset": "node scripts/build-selector-asset.js",
     "build:fixtures": "node scripts/build-selector-fixtures.js",
     "generate:live-chat-css": "node scripts/generate-live-chat-css.js",
+    "generate:theater-split-css": "node scripts/generate-theater-split-css.js",
     "generate:sidebar": "node scripts/generate-sidebar.js",
     "generate:settings-reference": "node scripts/generate-settings-reference.js",
     "generate:reviewer-resources": "node scripts/generate-reviewer-resource-docs.js --write",

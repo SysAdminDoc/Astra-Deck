@@ -54,7 +54,6 @@ ${ROOT} {
     --ytkit-split-border-strong: color-mix(in srgb, var(--ytkit-split-text) 26%, transparent);
     --ytkit-split-hairline: color-mix(in srgb, var(--ytkit-split-text) 9%, transparent);
     --ytkit-split-accent: var(--ytkit-accent, #a78bfa);
-    --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 167, 139, 250);
     --ytkit-split-accent-ink: color-mix(in srgb, var(--ytkit-split-accent) 82%, var(--ytkit-split-text));
     --ytkit-split-accent-soft: color-mix(in srgb, var(--ytkit-split-accent) 16%, transparent);
     --ytkit-split-control: var(--ytkit-split-raised);

@@ -23,6 +23,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   action row on one line.
 - The Theater Split stylesheet is about 200 KB smaller, which also gives the
   userscript build more room.
+- The standalone Theater Split userscript (1.0.19) gets the same look. Without
+  Astra Deck it has no accent setting, so it uses YouTube's own link color.
+  Its stylesheet is now generated from the extension's, so the two can't
+  drift apart again.
 
 ### Fixed
 
