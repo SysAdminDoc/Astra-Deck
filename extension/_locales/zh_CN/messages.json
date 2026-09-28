@@ -493,6 +493,18 @@
   "closeBtnAria": {
     "message": "关闭"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author} 已被屏蔽"
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "屏蔽 {author}"
+  },
+  "commentBlockToastTpl": {
+    "message": "已屏蔽 {author}，其评论已隐藏。"
+  },
+  "commentBlockUndoneTpl": {
+    "message": "已取消屏蔽 {author}"
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2104,6 +2116,18 @@
   },
   "feature_colorThemeManager_name": {
     "message": "颜色主题"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "在每条评论的菜单中添加“屏蔽”。被屏蔽作者的评论和回复在所有视频中都会隐藏。"
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "屏蔽评论作者"
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "每行一位作者：@账号、频道 ID 或频道链接。删除一行即可取消屏蔽该作者。"
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "已屏蔽的评论作者"
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."

@@ -5768,10 +5768,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Six DeArrow surface masks add explicit request boundaries (484), plus
     // the opt-in scheduled selector refresh, the channel landing tab, and the
     // open-thumbnail button (487). Retiring YouTube Music compatibility leaves 486.
+    // Block Comment Authors adds its toggle and the blocked-author list (488).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 486,
-        'SETTINGS_SCHEMA must cover all 486 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 488,
+        'SETTINGS_SCHEMA must cover all 488 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7917,6 +7918,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
         'extension/features/chat-style-comments/index.js',
+        'extension/features/comment-author-block/index.js',
         'extension/features/sticky-video-styles/index.js',
         'extension/features/sticky-video-autoscroll/index.js',
         'extension/features/sticky-video-chat/index.js',
@@ -8116,6 +8118,7 @@ test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () 
         'features/wave-8-css/index.js':         'function buildHideNotificationButtonCss()',
         'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
         'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
+        'features/comment-author-block/index.js': 'function createCommentAuthorBlockFeatures',
         'features/sticky-video-styles/index.js': 'function buildSplitShellCss()',
         'features/sticky-video-autoscroll/index.js': 'function createStickyVideoAutoscrollMethods',
         'features/sticky-video-chat/index.js': 'function createStickyVideoChatMethods',
@@ -8211,6 +8214,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
         'extension/features/chat-style-comments/index.js',
+        'extension/features/comment-author-block/index.js',
         'extension/features/sticky-video-styles/index.js',
         'extension/features/sticky-video-autoscroll/index.js',
         'extension/features/sticky-video-chat/index.js',

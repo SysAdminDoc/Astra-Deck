@@ -60,8 +60,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.90.3` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `486` entries across `18` categories |
-| Runtime graph | `120` modules, including `30` peeled feature modules and `302` declared feature IDs |
+| Settings schema | `488` entries across `18` categories |
+| Runtime graph | `121` modules, including `31` peeled feature modules and `304` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -367,6 +367,7 @@ stable public fixture before accepting extractor dependency bumps.
 | Feature | Default |
 |---------|---------|
 | Sort Comments Newest First | Off |
+| Block Comment Authors, a Block item in each comment's menu that hides that person's comments and replies everywhere | On |
 | Creator Comment Highlight | Off |
 | Comment Handle Revealer, show original channel name next to @handle | Off |
 | Preload Comments | Off |
@@ -459,7 +460,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **481 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **483 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -859,7 +860,7 @@ This generated knowledgebase documents all **481 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Comments</strong>: 24 settings</summary>
+<summary><strong>Comments</strong>: 26 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -885,6 +886,8 @@ This generated knowledgebase documents all **481 user-facing settings** in the c
 | <a id="setting-commentFilterRules"></a><strong>Comment Filter Rules</strong><br><code>commentFilterRules</code> | One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded). | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-commentLanguageAllowlist"></a><strong>Comment Language Allowlist</strong><br><code>commentLanguageAllowlist</code> | Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain. | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-commentDuplicateCollapse"></a><strong>Collapse Similar Comments</strong><br><code>commentDuplicateCollapse</code> | Collapse near-duplicate comments under an accessible expander using local text comparison only. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
+| <a id="setting-commentAuthorBlock"></a><strong>Block Comment Authors</strong><br><code>commentAuthorBlock</code> | Adds Block to the menu on every comment. Comments and replies from a blocked author stay hidden on every video. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v4.91.0</code> |
+| <a id="setting-commentBlockedAuthors"></a><strong>Blocked Comment Authors</strong><br><code>commentBlockedAuthors</code> | One author per line: an @handle, a channel id, or a channel link. Delete a line to unblock that author. | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply<br>Since <code>v4.91.0</code> |
 | <a id="setting-hideCommentComposer"></a><strong>Hide Comment Composer</strong><br><code>hideCommentComposer</code> | Remove the "Add a comment" text field above comments | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 | <a id="setting-hideCommentReplyButton"></a><strong>Hide Comment Reply Button</strong><br><code>hideCommentReplyButton</code> | Remove the Reply button on individual comments | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 

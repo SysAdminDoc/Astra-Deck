@@ -174,6 +174,7 @@
     // ── bundled module: extension/features/wave-8-css/index.js ──
     // ── bundled module: extension/features/home-subs-css/index.js ──
     // ── bundled module: extension/features/chat-style-comments/index.js ──
+    // ── bundled module: extension/features/comment-author-block/index.js ──
     // ── bundled module: extension/features/sticky-video-styles/index.js ──
     // ── bundled module: extension/features/sticky-video-autoscroll/index.js ──
     // ── bundled module: extension/features/sticky-video-chat/index.js ──
@@ -2849,6 +2850,8 @@
             hideHashtags: true,
             hidePinnedComments: true,
             hideCommentActionMenu: true,
+            commentAuthorBlock: true,
+            commentBlockedAuthors: '',
             condenseComments: true,
             hideCommentTeaser: true,
             autoExpandComments: true,
@@ -5714,6 +5717,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement = null;
             }
         },
+        ...(globalThis.YTKitFeatures?.commentAuthorBlock?.createCommentAuthorBlockFeatures?.({
+            injectStyle,
+            readSetting: (key) => appState.settings?.[key],
+            writeSetting: (key, value) => {
+                appState.settings[key] = value;
+                settingsManager.save(appState.settings);
+                document.dispatchEvent(new CustomEvent('ytkit-settings-changed', { detail: { key } }));
+            },
+            showToast,
+            t
+        }) || []),
         {
             id: 'commentEnhancements',
             name: 'Comment Enhancements',

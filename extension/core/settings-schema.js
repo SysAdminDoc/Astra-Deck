@@ -693,6 +693,8 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "commentFilterRules", category: "comments", type: "string", maxLength: 20000, defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "commentLanguageAllowlist", category: "comments", type: "string", maxLength: 200, pattern: "^[A-Za-z0-9,\\s-]*$", defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
     Object.freeze({ key: "commentDuplicateCollapse", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
+    Object.freeze({ key: "commentAuthorBlock", category: "comments", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.91.0" }),
+    Object.freeze({ key: "commentBlockedAuthors", category: "comments", type: "string", maxLength: 20000, defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.91.0" }),
     Object.freeze({ key: "sponsoredContentFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
 
     // ─── content-filter ───

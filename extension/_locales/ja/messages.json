@@ -493,6 +493,18 @@
   "closeBtnAria": {
     "message": "閉じる"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author} はすでにブロックされています"
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "{author} をブロック"
+  },
+  "commentBlockToastTpl": {
+    "message": "{author} をブロックしました。コメントは非表示になります。"
+  },
+  "commentBlockUndoneTpl": {
+    "message": "{author} のブロックを解除しました"
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2104,6 +2116,18 @@
   },
   "feature_colorThemeManager_name": {
     "message": "カラーテーマ"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "各コメントのメニューに「ブロック」を追加します。ブロックした投稿者のコメントと返信は、どの動画でも非表示のままになります。"
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "コメント投稿者をブロック"
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "1行に1人ずつ、@ハンドル、チャンネルID、またはチャンネルのリンクを入力します。行を削除するとブロックが解除されます。"
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "ブロック中のコメント投稿者"
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."

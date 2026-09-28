@@ -4361,6 +4361,8 @@ const STORAGE_KEYS = Object.freeze({
             commentFilterRules: '',
             commentLanguageAllowlist: '',
             commentDuplicateCollapse: false,
+            commentAuthorBlock: true,
+            commentBlockedAuthors: '',
             sponsoredContentFilter: false,
             bulkCardActions: false,
             feedTriageProfile: false,
@@ -34149,6 +34151,41 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {}
         },
+        ...(globalThis.YTKitFeatures?.commentAuthorBlock?.createCommentAuthorBlockFeatures?.({
+            injectStyle,
+            readSetting: (key) => appState.settings?.[key],
+            writeSetting: (key, value) => {
+                appState.settings[key] = value;
+                void settingsManager.save(appState.settings);
+                document.dispatchEvent(new CustomEvent('ytkit-settings-changed', { detail: { key } }));
+            },
+            showToast,
+            t
+        }) || [
+            {
+                id: 'commentAuthorBlock',
+                name: t('feature_commentAuthorBlock_name', 'Block Comment Authors'),
+                description: t('feature_commentAuthorBlock_desc', 'Adds Block to the menu on every comment. Comments and replies from a blocked author stay hidden on every video.'),
+                group: 'Comments',
+                icon: 'user-x',
+                init() { DebugManager.log('CommentAuthorBlock', 'Feature module unavailable'); },
+                destroy() {}
+            },
+            {
+                id: 'commentBlockedAuthors',
+                name: t('feature_commentBlockedAuthors_name', 'Blocked Comment Authors'),
+                description: t('feature_commentBlockedAuthors_desc', 'One author per line: an @handle, a channel id, or a channel link. Delete a line to unblock that author.'),
+                group: 'Comments',
+                icon: 'user-x',
+                isSubFeature: true,
+                parentId: 'commentAuthorBlock',
+                type: 'textarea',
+                settingKey: 'commentBlockedAuthors',
+                dependsOn: 'commentAuthorBlock',
+                init() {},
+                destroy() {}
+            }
+        ]),
         // ═══════════════════════════════════════════════════════════════════
         //  BULK CARD ACTIONS — Multi-select for feed cards
         // ═══════════════════════════════════════════════════════════════════

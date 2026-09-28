@@ -493,6 +493,22 @@
   "closeBtnAria": {
     "message": "Close"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author} is already blocked",
+    "description": "Toast when the comment author is already blocked. {author} is the author's handle."
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "Block {author}",
+    "description": "Menu item on a comment that blocks its author. {author} is the author's handle."
+  },
+  "commentBlockToastTpl": {
+    "message": "Blocked {author}. Their comments are hidden.",
+    "description": "Toast after blocking a comment author. {author} is the author's handle."
+  },
+  "commentBlockUndoneTpl": {
+    "message": "Unblocked {author}",
+    "description": "Toast after undoing a block. {author} is the author's handle."
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2110,6 +2126,22 @@
   },
   "feature_colorThemeManager_name": {
     "message": "Color Theme"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "Adds Block to the menu on every comment. Comments and replies from a blocked author stay hidden on every video.",
+    "description": "Description of the Block Comment Authors feature."
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "Block Comment Authors",
+    "description": "Name of the feature that blocks comment authors."
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "One author per line: an @handle, a channel id, or a channel link. Delete a line to unblock that author.",
+    "description": "Description of the blocked comment authors list."
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "Blocked Comment Authors",
+    "description": "Name of the editable list of blocked comment authors."
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."

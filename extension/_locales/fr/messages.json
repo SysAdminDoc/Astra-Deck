@@ -493,6 +493,18 @@
   "closeBtnAria": {
     "message": "Fermer"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author} est déjà bloqué"
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "Bloquer {author}"
+  },
+  "commentBlockToastTpl": {
+    "message": "{author} bloqué. Ses commentaires sont masqués."
+  },
+  "commentBlockUndoneTpl": {
+    "message": "{author} débloqué"
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2104,6 +2116,18 @@
   },
   "feature_colorThemeManager_name": {
     "message": "Thème de couleurs"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "Ajoute Bloquer au menu de chaque commentaire. Les commentaires et réponses d'un auteur bloqué restent masqués sur toutes les vidéos."
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "Bloquer des auteurs de commentaires"
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "Un auteur par ligne : un @identifiant, un ID de chaîne ou un lien de chaîne. Supprimez une ligne pour débloquer cet auteur."
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "Auteurs de commentaires bloqués"
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."

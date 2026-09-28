@@ -145,6 +145,7 @@
         "features/wave-8-css/index.js",
         "features/home-subs-css/index.js",
         "features/chat-style-comments/index.js",
+        "features/comment-author-block/index.js",
         "features/sticky-video-styles/index.js",
         "features/sticky-video-autoscroll/index.js",
         "features/sticky-video-chat/index.js",

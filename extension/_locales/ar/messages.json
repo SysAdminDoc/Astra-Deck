@@ -493,6 +493,18 @@
   "closeBtnAria": {
     "message": "إغلاق"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author} محظور بالفعل"
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "حظر {author}"
+  },
+  "commentBlockToastTpl": {
+    "message": "تم حظر {author}. تعليقاته مخفية الآن."
+  },
+  "commentBlockUndoneTpl": {
+    "message": "تم إلغاء حظر {author}"
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2104,6 +2116,18 @@
   },
   "feature_colorThemeManager_name": {
     "message": "سمة الألوان"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "يضيف خيار الحظر إلى قائمة كل تعليق. تبقى تعليقات الكاتب المحظور وردوده مخفية في كل الفيديوهات."
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "حظر كتّاب التعليقات"
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "كاتب واحد في كل سطر: @handle أو معرّف قناة أو رابط قناة. احذف السطر لإلغاء حظر ذلك الكاتب."
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "كتّاب التعليقات المحظورون"
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."

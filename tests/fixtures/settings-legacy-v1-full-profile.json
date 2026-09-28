@@ -564,7 +564,9 @@
     "volumeBoost",
     "volumeBoostLevel",
     "watchLaterWorkbench",
-    "zenMode"
+    "zenMode",
+    "commentAuthorBlock",
+    "commentBlockedAuthors"
   ],
   "expectedAbsent": [
     "preferredQuality",

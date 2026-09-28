@@ -493,6 +493,18 @@
   "closeBtnAria": {
     "message": "닫기"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author}님은 이미 차단되어 있습니다"
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "{author} 차단"
+  },
+  "commentBlockToastTpl": {
+    "message": "{author}님을 차단했습니다. 댓글이 숨겨집니다."
+  },
+  "commentBlockUndoneTpl": {
+    "message": "{author}님의 차단을 해제했습니다"
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2104,6 +2116,18 @@
   },
   "feature_colorThemeManager_name": {
     "message": "색상 테마"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "모든 댓글 메뉴에 차단을 추가합니다. 차단한 작성자의 댓글과 답글은 모든 동영상에서 숨겨집니다."
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "댓글 작성자 차단"
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "한 줄에 한 명씩 @핸들, 채널 ID 또는 채널 링크를 입력합니다. 줄을 지우면 해당 작성자의 차단이 해제됩니다."
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "차단된 댓글 작성자"
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."

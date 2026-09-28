@@ -141,7 +141,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Enabling Watch Feed trims one byte because JSON `true` is shorter than
     // `false`. Enabling fullTitles trims another for the same reason.
     // Retiring the YouTube Music toggle trims another 27 bytes.
-    assert.equal(assessment.totalBytes, 186413);
+    // Block Comment Authors adds 53: its toggle and the empty author list.
+    assert.equal(assessment.totalBytes, 186466);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

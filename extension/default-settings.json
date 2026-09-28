@@ -476,6 +476,8 @@
   "commentFilterRules": "",
   "commentLanguageAllowlist": "",
   "commentDuplicateCollapse": false,
+  "commentAuthorBlock": true,
+  "commentBlockedAuthors": "",
   "sponsoredContentFilter": false,
   "bulkCardActions": false,
   "feedTriageProfile": false,

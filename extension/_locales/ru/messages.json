@@ -493,6 +493,18 @@
   "closeBtnAria": {
     "message": "Закрыть"
   },
+  "commentBlockAlreadyTpl": {
+    "message": "{author} уже заблокирован"
+  },
+  "commentBlockMenuItemTpl": {
+    "message": "Заблокировать {author}"
+  },
+  "commentBlockToastTpl": {
+    "message": "{author} заблокирован. Его комментарии скрыты."
+  },
+  "commentBlockUndoneTpl": {
+    "message": "{author} разблокирован"
+  },
   "commentDuplicateHide": {
     "message": "Hide similar comments"
   },
@@ -2104,6 +2116,18 @@
   },
   "feature_colorThemeManager_name": {
     "message": "Цветовая тема"
+  },
+  "feature_commentAuthorBlock_desc": {
+    "message": "Добавляет пункт «Заблокировать» в меню каждого комментария. Комментарии и ответы заблокированного автора скрываются во всех видео."
+  },
+  "feature_commentAuthorBlock_name": {
+    "message": "Блокировка авторов комментариев"
+  },
+  "feature_commentBlockedAuthors_desc": {
+    "message": "По одному автору в строке: @никнейм, ID канала или ссылка на канал. Удалите строку, чтобы разблокировать автора."
+  },
+  "feature_commentBlockedAuthors_name": {
+    "message": "Заблокированные авторы комментариев"
   },
   "feature_commentDuplicateCollapse_desc": {
     "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."
