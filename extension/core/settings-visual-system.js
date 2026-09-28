@@ -3735,7 +3735,10 @@
 
         html.ytkit-watch-restyle body,
         html.ytkit-watch-restyle ytd-app,
-        html.ytkit-watch-restyle #content,
+        /* The page wrapper only. A bare #content also matched the content div
+           of every ytd-expander, so each comment and the description painted
+           a canvas band that showed under OLED and the color themes. */
+        html.ytkit-watch-restyle ytd-app > #content,
         html.ytkit-watch-restyle #page-manager,
         html.ytkit-watch-restyle ytd-watch-flexy {
             background: var(--ytkit-watch-canvas) !important;

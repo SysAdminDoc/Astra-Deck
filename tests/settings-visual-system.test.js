@@ -831,3 +831,17 @@ test('the surface system names no selector whose document never loads it', () =>
     assert.deepEqual(unreachable, [],
         'these surfaces are only built in a document the surface stylesheet never reaches');
 });
+
+// The watch restyle paints the page canvas on YouTube's wrapper elements. A
+// bare #content also matched the content div inside every ytd-expander, so
+// each comment and the description drew a canvas-colored band. On the default
+// palette the band matched the page; under OLED black or a color theme it
+// showed as a navy stripe behind every comment.
+test('the watch canvas rule paints only the page wrapper, not expander content', () => {
+    const { SURFACE_VISUAL_SYSTEM_CSS } = require('../extension/core/settings-visual-system.js');
+    const css = SURFACE_VISUAL_SYSTEM_CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+    const block = css.slice(css.indexOf('html.ytkit-watch-restyle body,'), css.indexOf('{', css.indexOf('html.ytkit-watch-restyle body,')));
+    assert.match(block, /html\.ytkit-watch-restyle ytd-app > #content/);
+    assert.doesNotMatch(block, /html\.ytkit-watch-restyle #content\b/,
+        'a bare #content selector reaches every ytd-expander on the page');
+});
