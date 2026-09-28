@@ -33,7 +33,7 @@ const guardSource = fs.readFileSync(
     path.join(repoRoot, 'extension', 'core', 'injection-guard.js'), 'utf8');
 
 /** A MAIN world with a fake `<html>`, wired the way the manifest wires it. */
-function mainWorld({ codec = 'auto' } = {}) {
+function mainWorld({ codec = 'auto', core = {} } = {}) {
     const attributes = new Map();
     const observers = new Set();
     const windowListeners = new Map();
@@ -87,7 +87,11 @@ function mainWorld({ codec = 'auto' } = {}) {
         clearInterval() {},
     };
     context.HTMLVideoElement.prototype = { canPlayType: originalCanPlayType };
-    context.addEventListener = (type, callback) => addListener(windowListeners, type, callback);
+    const captureFlags = new Map();
+    context.addEventListener = (type, callback, options) => {
+        addListener(windowListeners, type, callback);
+        captureFlags.set(callback, options === true || Boolean(options && options.capture));
+    };
     context.removeEventListener = () => {};
     context.dispatchEvent = (event) => {
         for (const callback of windowListeners.get(event.type) || []) callback(event);
@@ -97,6 +101,10 @@ function mainWorld({ codec = 'auto' } = {}) {
     context.self = context;
     context.globalThis = context;
 
+    Object.assign(context.YTKitCore, core);
+    // Its own JSON, so a bridge feature that hooks window.JSON.parse wraps
+    // this world's copy and not the test runner's.
+    context.JSON = { parse: JSON.parse, stringify: JSON.stringify };
     vm.createContext(context);
     vm.runInContext(guardSource, context, { filename: 'extension/core/injection-guard.js' });
 
@@ -114,6 +122,8 @@ function mainWorld({ codec = 'auto' } = {}) {
         channel,
         documentElement,
         attributes,
+        windowListeners,
+        captureOf: (callback) => captureFlags.get(callback) === true,
         originalCanPlayType,
         isPatched: () => context.HTMLVideoElement.prototype.canPlayType !== originalCanPlayType,
         canPlayType: (type) => context.HTMLVideoElement.prototype.canPlayType.call({}, type),
@@ -244,22 +254,46 @@ test('the natives are captured before anything else in the bridge runs', () => {
     assert.ok(nativeAt < observerAt, 'and the observer is the captured constructor');
 });
 
-test('the bridge publishes its reader for the other MAIN-world modules', () => {
-    // `core/audio-track.js` runs in the same world and reads three of these
-    // preferences. It has no channel of its own, so it borrows this one; if
-    // the bridge stops publishing it, that module quietly goes back to
-    // reading `<html>` where any page script can write.
+test('nothing a page script can reach holds the reader or the token', () => {
+    // YTKitCore in the MAIN world is a property of the page's own window. The
+    // reader used to be published there as `mainBridgeReader`, with a `token`
+    // getter: any script on youtube.com could read the token and seal
+    // whatever it liked, or swap the reader for one of its own.
     const world = mainWorld({ codec: 'h264' });
-    const reader = world.context.YTKitCore.mainBridgeReader;
+    assert.equal(world.context.YTKitCore.mainBridgeReader, undefined);
+    const exposed = JSON.stringify(Object.keys(world.context).concat(Object.keys(world.context.YTKitCore)));
+    assert.doesNotMatch(exposed, new RegExp(world.channel.token),
+        'the token is not a key or value on any global the page shares');
 
-    assert.ok(reader, 'the reader has to be reachable from YTKitCore');
-    assert.equal(typeof reader.get, 'function');
-    assert.equal(reader.get('data-ytkit-codec'), 'h264',
-        'and it has to be the live one, not an empty stand-in');
+    // What the page could then do with a token, shown not to be possible
+    // without one: a payload sealed under a guess is refused.
+    world.channel.forgeSealed('data-ytkit-codec', 'auto', 'f'.repeat(64));
+    assert.equal(world.canPlayType(VP9), '', 'h264 is still enforced');
+});
 
-    world.channel.forge('data-ytkit-audio-language', 'de');
-    assert.equal(reader.get('data-ytkit-audio-language'), null,
-        'a forged attribute is not readable through it either');
+test('a page listener learns nothing from a navigate it overhears', () => {
+    const world = mainWorld({ codec: 'h264' });
+    let overheard = null;
+    world.context.addEventListener(bridgeChannel.NAVIGATE_EVENT, (event) => { overheard = event; });
+    world.channel.navigate('watch');
+    assert.ok(overheard, 'the page does see the event');
+    assert.doesNotMatch(JSON.stringify(overheard.detail), new RegExp(world.channel.token));
+});
+
+test('every navigate dispatch is judged once, before any handler asks', () => {
+    // Several handlers ask `_isOwnNavigate` about the same event, so the reader
+    // keeps an admitted event admitted. A page re-dispatching that object
+    // would ride on it, unless something judges each dispatch afresh first.
+    // tests/bridge-channel.test.js drives the refusal; this pins that the
+    // bridge wires the judge in as the first listener, in the capture phase.
+    const world = mainWorld({ codec: 'h264' });
+    const listeners = world.windowListeners.get(bridgeChannel.NAVIGATE_EVENT) || [];
+    assert.ok(listeners.length >= 2, 'the gate and the handlers are all registered');
+    assert.equal(world.captureOf(listeners[0]), true, 'the gate listens in the capture phase');
+    assert.match(String(listeners[0]), /_bridgeReader\.admitNavigate\(event\)/,
+        'and it is the first navigate listener the bridge adds');
+    assert.ok(listeners.slice(1).every((callback) => !world.captureOf(callback)),
+        'the handlers run after it');
 });
 
 test('every bridge input is read through the channel, not off the document', () => {
@@ -276,6 +310,14 @@ test('every bridge input is read through the channel, not off the document', () 
     assert.doesNotMatch(mainSource, /document\.documentElement\.getAttribute\(/,
         'a read straight off the document is an input the page can write');
 
+    // Through any alias, too. `var root = document.documentElement` and then
+    // `root.getAttribute(ENABLE_ATTR)` passed the check above, and that is how
+    // the feed prefilter, Force DVR and the photosensitive guard kept reading
+    // page-writable inputs after the channel existed.
+    const anyReads = [...mainSource.matchAll(/\.getAttribute\(([^)]+)\)/g)].map((m) => m[1].trim());
+    assert.deepEqual(anyReads.filter((arg) => arg !== 'STATUS_ATTR' && arg !== 'REASON_ATTR'), [],
+        'every attribute the bridge reads back is one of its own outputs');
+
     // The two OUTPUT attributes are the deliberate exception: the bridge
     // writes them, so it reads them back through the captured native to
     // dedupe. They must not be read through the channel, which never carries
@@ -284,4 +326,32 @@ test('every bridge input is read through the channel, not off the document', () 
         .map((m) => m[1].trim());
     assert.deepEqual(nativeReads.sort(), ['REASON_ATTR', 'STATUS_ATTR'],
         'only the bridge\'s own outputs may be read back off the attribute');
+});
+
+test('a page script cannot hand the feed prefilter its own blocklist', () => {
+    // The prefilter drops videos out of YouTube's feed data before a card is
+    // built. It read its switch and its list straight off <html>, so any
+    // script on the page could make videos of its choosing vanish.
+    const filtered = [];
+    const core = {
+        filterBrowseResponse: (value, options) => {
+            filtered.push([...options.blocklist]);
+            return { removed: 0, refusedItems: 0 };
+        },
+    };
+    const world = mainWorld({ codec: null, core });
+    const status = () => world.documentElement.getAttribute('data-ytkit-feed-prefilter-status');
+
+    world.channel.forge('data-ytkit-feed-prefilter-ids', JSON.stringify(['UCforgedforgedforged0000']));
+    world.channel.forge('data-ytkit-feed-prefilter', 'on');
+    assert.match(status(), /^off;/, 'the forged switch and list are not believed');
+    world.context.JSON.parse('{"contents":{}}');
+    assert.deepEqual(filtered, [], 'and nothing is filtered on their say-so');
+
+    // The control: the same values, sealed by the isolated world, do apply.
+    world.channel.publish('data-ytkit-feed-prefilter-ids', JSON.stringify(['UCrealrealrealrealreal00']));
+    world.channel.publish('data-ytkit-feed-prefilter', 'on');
+    assert.match(status(), /^on;/);
+    world.context.JSON.parse('{"contents":{}}');
+    assert.deepEqual(filtered, [['UCrealrealrealrealreal00']]);
 });

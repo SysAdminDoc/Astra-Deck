@@ -20,7 +20,14 @@
 //     seal for a payload it made up.
 //   * Navigation is re-dispatched by the isolated world as a sealed event. The
 //     bridge no longer listens to YouTube's own, because YouTube's own is
-//     indistinguishable from a forged one.
+//     indistinguishable from a forged one. The event carries a sequence number
+//     and its seal, never the token: a page listener can read an event's
+//     detail, so a token in there was a token handed to the page.
+//   * The MAIN side verifies with primitives it took at document_start. It
+//     shares a realm with the page, and a seal computed through a
+//     `String.prototype.charCodeAt` or `Math.imul` the page has since replaced
+//     says whatever the page wants. The reader is never published on a global
+//     either, and it has no way to hand its token out.
 //
 // Honest about what this is: the seal is a keyed non-cryptographic hash, not an
 // HMAC, because both sides have to run synchronously at document_start and
@@ -43,6 +50,26 @@
     var TOKEN_GLOBAL = '__ytkitBridgeToken';
     // A payload big enough to matter is a payload something is wrong with.
     var MAX_PAYLOAD_BYTES = 64 * 1024;
+    // The highest counter a writer adopts from the page. Adding 1 to 2^53 gives
+    // 2^53 back, so a planted counter at that height froze the channel: every
+    // later payload carried the same number and the reader refused it as stale.
+    var MAX_ADOPTED_COUNTER = Math.pow(2, 52);
+
+    // Taken now, while this file is evaluated at document_start and no page
+    // script exists yet. `FnCall.bind(fn)` is bound to the real `call`, so a
+    // page replacing Function.prototype.call later changes nothing here.
+    var FnCall = Function.prototype.call;
+    var charCodeAt = FnCall.bind(String.prototype.charCodeAt);
+    var numberToString = FnCall.bind(Number.prototype.toString);
+    var hasOwn = FnCall.bind(Object.prototype.hasOwnProperty);
+    var imul = Math.imul;
+    var toText = String;
+    var isArray = Array.isArray;
+    var isFiniteNumber = isFinite;
+    var isSafeInteger = Number.isSafeInteger;
+    var createObject = Object.create;
+    var nativeParse = JSON.parse;
+    var nativeNow = Date.now;
 
     function randomToken(cryptoRef) {
         var source = cryptoRef || root.crypto;
@@ -71,25 +98,31 @@
         var h1 = 0x811c9dc5;
         var h2 = 0x01000193;
         for (var i = 0; i < text.length; i += 1) {
-            var code = text.charCodeAt(i);
+            var code = charCodeAt(text, i);
             h1 ^= code;
-            h1 = Math.imul(h1, 0x01000193) >>> 0;
-            h2 = Math.imul(h2 ^ (code + i), 0x85ebca6b) >>> 0;
+            h1 = imul(h1, 0x01000193) >>> 0;
+            h2 = imul(h2 ^ (code + i), 0x85ebca6b) >>> 0;
             h2 = (h2 ^ (h2 >>> 13)) >>> 0;
         }
-        return (h1 >>> 0).toString(16) + '-' + (h2 >>> 0).toString(16);
+        return numberToString(h1 >>> 0, 16) + '-' + numberToString(h2 >>> 0, 16);
+    }
+
+    // What a navigate event's seal covers. The prefix keeps a state payload's
+    // seal from ever doubling as a navigate seal.
+    function navigateText(seq, reason) {
+        return 'navigate ' + seq + ' ' + reason;
     }
 
     // Constant-time-ish compare. The seal is short and the attacker has no
     // oracle here, but an early return on the first differing character is a
     // habit worth not forming.
     function sealsMatch(a, b) {
-        var left = String(a || '');
-        var right = String(b || '');
-        if (left.length !== right.length) return false;
+        var left = typeof a === 'string' ? a : '';
+        var right = typeof b === 'string' ? b : '';
+        if (!left || left.length !== right.length) return false;
         var diff = 0;
         for (var i = 0; i < left.length; i += 1) {
-            diff |= left.charCodeAt(i) ^ right.charCodeAt(i);
+            diff |= charCodeAt(left, i) ^ charCodeAt(right, i);
         }
         return diff === 0;
     }
@@ -129,12 +162,18 @@
             try {
                 var existing = parse(element.getAttribute(STATE_ATTR) || 'null');
                 if (existing && typeof existing.n === 'number' && isFinite(existing.n)) {
-                    counter = Math.max(0, Math.floor(existing.n));
+                    counter = Math.min(MAX_ADOPTED_COUNTER, Math.max(0, Math.floor(existing.n)));
                 }
             } catch (error) {
                 void error;
             }
         }
+
+        // Navigate events carry their own forward-only number. It starts at
+        // the clock so a writer rebuilt after an extension update is already
+        // past every number its predecessor sent (that would take one
+        // navigation per millisecond to catch up with).
+        var navigateSeq = Math.floor(Number((opts.now || nativeNow)()) || 0);
 
         function publish() {
             if (!element || typeof element.setAttribute !== 'function') return null;
@@ -182,10 +221,15 @@
                 // channel was silently dead in a browser until this was
                 // added, and no fixture caught it because the fixtures
                 // dispatched straight at the listeners.
+                //
+                // The detail is readable by every listener on the page, so it
+                // carries a sealed sequence number and never the token.
+                navigateSeq += 1;
+                var why = String(reason || 'navigate');
                 send.call(target, new CustomEventRef(NAVIGATE_EVENT, {
                     bubbles: true,
                     composed: true,
-                    detail: { token: token, reason: String(reason || 'navigate') }
+                    detail: { seq: navigateSeq, reason: why, seal: seal(token, navigateText(navigateSeq, why)) }
                 }));
                 return true;
             }
@@ -200,26 +244,36 @@
         var opts = options || {};
         var element = opts.documentElement
             || (opts.documentRef || root.document || {}).documentElement;
-        var parse = opts.parse || JSON.parse;
+        var parse = opts.parse || nativeParse;
         var token = opts.token;
+        // The element's own getAttribute, taken now. Element.prototype is the
+        // page's to rewrite later.
+        var readAttribute = typeof opts.getAttribute === 'function'
+            ? opts.getAttribute
+            : (element && typeof element.getAttribute === 'function'
+                ? FnCall.bind(element.getAttribute, element)
+                : null);
 
-        if (!token && element && typeof element.getAttribute === 'function') {
-            token = element.getAttribute(TOKEN_ATTR);
+        if (!token && readAttribute) {
+            token = readAttribute(TOKEN_ATTR);
             // Taken, not shared. This runs at document_start, so the value is
             // out of the DOM before the first page script can look at it.
-            if (typeof element.removeAttribute === 'function') {
+            if (element && typeof element.removeAttribute === 'function') {
                 element.removeAttribute(TOKEN_ATTR);
             }
         }
+        if (typeof token !== 'string') token = '';
 
-        var accepted = Object.create(null);
+        var accepted = createObject(null);
         var acceptedCounter = 0;
         var rejected = 0;
+        var lastNavigateSeq = -1;
+        var admittedNavigate = null;
 
         function readSealed() {
-            if (!token || !element || typeof element.getAttribute !== 'function') return false;
-            var payload = element.getAttribute(STATE_ATTR);
-            var claimed = element.getAttribute(SEAL_ATTR);
+            if (!token || !readAttribute) return false;
+            var payload = readAttribute(STATE_ATTR);
+            var claimed = readAttribute(SEAL_ATTR);
             if (typeof payload !== 'string' || payload.length > MAX_PAYLOAD_BYTES) {
                 rejected += 1;
                 return false;
@@ -238,9 +292,9 @@
             // `typeof [] === 'object'`, so the array checks are not
             // decoration: a sealed `{"n":1,"v":[]}` would otherwise be adopted
             // as a state map with no keys.
-            if (!decoded || typeof decoded !== 'object' || Array.isArray(decoded)
-                || typeof decoded.n !== 'number' || !isFinite(decoded.n)
-                || !decoded.v || typeof decoded.v !== 'object' || Array.isArray(decoded.v)) {
+            if (!decoded || typeof decoded !== 'object' || isArray(decoded)
+                || typeof decoded.n !== 'number' || !isFiniteNumber(decoded.n)
+                || !decoded.v || typeof decoded.v !== 'object' || isArray(decoded.v)) {
                 rejected += 1;
                 return false;
             }
@@ -252,18 +306,39 @@
                 return false;
             }
             acceptedCounter = decoded.n;
-            var next = Object.create(null);
+            var next = createObject(null);
             for (var key in decoded.v) {
-                if (Object.prototype.hasOwnProperty.call(decoded.v, key)) {
-                    next[key] = String(decoded.v[key]);
+                if (hasOwn(decoded.v, key)) {
+                    next[key] = toText(decoded.v[key]);
                 }
             }
             accepted = next;
             return true;
         }
 
+        /**
+         * Decide once per dispatch whether a navigate event is ours. Call it
+         * from the first listener the event reaches (a capture listener on
+         * window, registered at document_start) so a replay of an event object
+         * that was already admitted is judged again, and refused, before any
+         * other listener asks `isOwnNavigate`.
+         */
+        function admitNavigate(event) {
+            admittedNavigate = null;
+            if (!token || !event) return false;
+            var detail = event.detail;
+            if (!detail || typeof detail !== 'object') return false;
+            var seq = detail.seq;
+            if (typeof seq !== 'number' || !isSafeInteger(seq) || seq <= lastNavigateSeq) return false;
+            var reason = typeof detail.reason === 'string' ? detail.reason : '';
+            if (!sealsMatch(detail.seal, seal(token, navigateText(seq, reason)))) return false;
+            lastNavigateSeq = seq;
+            admittedNavigate = event;
+            return true;
+        }
+
         return {
-            get token() { return token || null; },
+            get hasToken() { return token !== ''; },
             get rejectedCount() { return rejected; },
             get counter() { return acceptedCounter; },
             /** Pull the sealed state. Returns true when it moved. */
@@ -274,14 +349,18 @@
              * can write.
              */
             get: function (name) {
-                return Object.prototype.hasOwnProperty.call(accepted, name)
-                    ? accepted[name]
-                    : null;
+                return hasOwn(accepted, name) ? accepted[name] : null;
             },
-            /** True only for a navigate event this channel's token sealed. */
+            admitNavigate: admitNavigate,
+            /**
+             * True only for a navigate event this channel sealed, with a number
+             * higher than any it accepted before. Several listeners ask about
+             * the same event, so an event already admitted stays admitted until
+             * the next `admitNavigate`.
+             */
             isOwnNavigate: function (event) {
-                if (!token || !event || !event.detail) return false;
-                return sealsMatch(event.detail.token, token);
+                if (event && event === admittedNavigate) return true;
+                return admitNavigate(event);
             }
         };
     }

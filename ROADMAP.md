@@ -59,18 +59,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   that card focused, and SHALL report false when no card exists.
   Complexity: M
 
-- [ ] P2 — Page script can read the MAIN-world bridge token
-  Why: 2026-09-28 audit, confirmed by PoC. `YTKitCore.mainBridgeReader` (with a `token` getter)
-  sits on the page's `window`; the navigate event carries `detail.token`; `seal()` calls
-  `String.prototype.charCodeAt` and `Math.imul` at verify time; `audio-track.js` looks the
-  reader up on every call. A page can forge codec, quality, audio track, volume boost and EQ,
-  or freeze the bridge with a huge counter. Tab-local, but the CHANGELOG claims otherwise.
-  Where: `extension/ytkit-main.js` ~67, `extension/core/bridge-channel.js` (~69-95, ~185, ~266,
-  ~338), `extension/core/audio-track.js` ~166, `tests/bridge-forgery.test.js`.
-  Acceptance: the reader SHALL not be published, the token SHALL not leave the closure, primitives
-  SHALL be bound at document_start, and the forgery test SHALL model page-script access.
-  Complexity: M
-
 - [ ] P3 — Selector asset hardening
   Why: 2026-09-28 audit, confirmed. The stored `ytkit-selector-asset` is never re-verified and
   outlives upgrades (the disable feed got a `-v2` key bump for this; the asset didn't). Any old

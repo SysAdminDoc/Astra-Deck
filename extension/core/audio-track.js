@@ -160,14 +160,14 @@
     // YouTube's own scripts. Reading these three preferences straight off
     // `<html>` meant one `setAttribute` from any page script could pick the
     // audio track the player switched to. They come from the sealed channel
-    // now, the same as every other bridge input; `read` is injectable so a
-    // test can drive it without a whole channel.
+    // now, the same as every other bridge input. The bridge hands its reader
+    // in as `options.read`; it is no longer looked up on YTKitCore, which in
+    // this world a page script can read and overwrite.
     function bridgeRead(documentRef, name) {
-        const reader = core.mainBridgeReader;
-        if (reader && typeof reader.get === 'function') return reader.get(name);
         // No channel means no trusted input. Failing closed is the point: the
         // feature stays off rather than run on whatever the page put there.
         void documentRef;
+        void name;
         return null;
     }
 
@@ -187,6 +187,7 @@
     function createAudioTrackBridge(options = {}) {
         const documentRef = options.document || globalThis.document;
         const taskManager = options.taskManager || core.playerTaskManager;
+        const read = typeof options.read === 'function' ? options.read : bridgeRead;
         const getPlayer = options.getPlayer || (() => (
             documentRef?.getElementById?.('movie_player')
             || documentRef?.querySelector?.('.html5-video-player')
@@ -205,7 +206,7 @@
         }
 
         function apply(context = {}) {
-            const preference = readPreference(documentRef);
+            const preference = readPreference(documentRef, read);
             if (!preference) return true;
             const player = context.player || getPlayer();
             if (!player || typeof player.getAvailableAudioTracks !== 'function'
@@ -250,7 +251,7 @@
         }
 
         function sync(reason = 'attribute') {
-            const preference = readPreference(documentRef);
+            const preference = readPreference(documentRef, read);
             if (!preference) {
                 taskManager?.cancel?.(TASK_ID);
                 writeBridgeStatus('off');
@@ -274,7 +275,7 @@
             taskManager?.cancel?.(TASK_ID);
         }
 
-        return { apply, sync, destroy, readPreference: () => readPreference(documentRef) };
+        return { apply, sync, destroy, readPreference: () => readPreference(documentRef, read) };
     }
 
     const audioTrackSelection = Object.freeze({

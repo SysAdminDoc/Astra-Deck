@@ -56,16 +56,16 @@
     var _bridgeReader = (globalThis.YTKitCore && globalThis.YTKitCore.createBridgeReader)
         ? globalThis.YTKitCore.createBridgeReader({
             documentElement: document.documentElement,
+            getAttribute: _NATIVE.getAttribute,
             parse: _NATIVE.jsonParse
         })
         : null;
 
-    // Other MAIN-world modules need the same sealed view. `core/audio-track.js`
-    // read three of these attributes straight off `<html>`, which left one
-    // `setAttribute` from a page script able to choose the audio track.
-    if (globalThis.YTKitCore && _bridgeReader) {
-        globalThis.YTKitCore.mainBridgeReader = _bridgeReader;
-    }
+    // The reader stays in this closure. It used to be published as
+    // `YTKitCore.mainBridgeReader` for `core/audio-track.js`, but YTKitCore in
+    // this world is a property of the page's own window: a page script could
+    // read the token off it or swap in a reader of its own. The audio-track
+    // bridge is handed `_bridgeGet` directly instead.
 
     /** The isolated world's value for `name`, or null. */
     function _bridgeGet(name) {
@@ -95,6 +95,16 @@
         ? _createInjectionGuard({ key: '__ytkitMainRuntime', owner: 'main-world-bridge' })
         : null;
     if (_mainRuntimeGuard && !_mainRuntimeGuard.claimed) return;
+
+    // The first listener every navigate reaches: capture on window, registered
+    // at document_start, ahead of anything a page script can add. It judges
+    // each dispatch once, so an event object the page re-dispatches is refused
+    // here before the listeners below ask `_isOwnNavigate` about it.
+    if (_bridgeReader && typeof _NATIVE.addEventListener === 'function') {
+        _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+            _bridgeReader.admitNavigate(event);
+        }, true);
+    }
 
     var _ObsHandlers = [];
     var _ObsAttrs = new Set();
@@ -244,13 +254,14 @@
         }
 
         function readBlocklist() {
-            var raw = root.getAttribute(IDS_ATTR);
+            var raw = _bridgeGet(IDS_ATTR);
             if (!raw) return null;
             var parsed;
             try {
-                // The original parse, not the hooked one: this is our own
+                // The parse taken at document_start, not the hooked one and not
+                // whatever the page has put on JSON since: this is our own
                 // bridge payload and must never re-enter the filter.
-                parsed = (originalParse || JSON.parse).call(JSON, raw);
+                parsed = _NATIVE.jsonParse(raw);
             } catch (error) {
                 return null;
             }
@@ -297,7 +308,7 @@
         }
 
         function sync() {
-            enabled = root.getAttribute(ENABLE_ATTR) === 'on';
+            enabled = _bridgeGet(ENABLE_ATTR) === 'on';
             blocklist = enabled ? readBlocklist() : null;
             if (enabled && blocklist) installParseHook();
             writeStatus();
@@ -495,7 +506,7 @@
         }
 
         function syncFromAttributes() {
-            var next = root.getAttribute(ENABLE_ATTR) === 'on';
+            var next = _bridgeGet(ENABLE_ATTR) === 'on';
             if (!next) {
                 enabled = false;
                 writeStatus('off');
@@ -820,8 +831,9 @@
         // `yt-navigate-finish` and `yt-page-data-updated` are CustomEvents
         // YouTube dispatches, which makes them indistinguishable from ones a
         // page script dispatches — same type, same isTrusted, same everything.
-        // The isolated world re-dispatches its own carrying the token, so a
-        // forged navigate is just an event with the wrong detail on it.
+        // The isolated world re-dispatches its own with a sealed sequence
+        // number, so a forged navigate is just an event with the wrong detail
+        // on it.
         _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
             if (!ON || !_isOwnNavigate(event)) return;
             if (event.detail.reason === 'page-data') schedule(200, 'page-data');
@@ -921,7 +933,8 @@
 
     var bridge = selection.createAudioTrackBridge({
         document: document,
-        taskManager: globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager
+        taskManager: globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager,
+        read: function(_documentRef, name) { return _bridgeGet(name); }
     });
     var attrs = selection.ATTRS;
     _obsRegister([attrs.language, attrs.descriptive, attrs.original], function() {
@@ -1931,7 +1944,7 @@
     var statusTimer = null;
 
     function numberAttr(name, fallback, min, max) {
-        var value = parseFloat(root.getAttribute(name));
+        var value = parseFloat(_bridgeGet(name));
         if (!isFinite(value)) value = fallback;
         return Math.max(min, Math.min(max, value));
     }
@@ -2063,7 +2076,7 @@
     }
 
     function syncFromAttributes() {
-        var next = root.getAttribute(ENABLE_ATTR) === 'on';
+        var next = _bridgeGet(ENABLE_ATTR) === 'on';
         if (next === enabled) {
             if (enabled) scheduleSampler('attribute-refresh');
             return;

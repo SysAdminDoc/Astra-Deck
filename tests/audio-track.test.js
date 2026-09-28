@@ -42,12 +42,12 @@ function sealPreferences(document, attributes) {
     });
     reader.sync();
 
-    const previous = globalThis.YTKitCore.mainBridgeReader;
-    globalThis.YTKitCore.mainBridgeReader = reader;
     return {
         channel,
         reader,
-        restore() { globalThis.YTKitCore.mainBridgeReader = previous; },
+        /** How ytkit-main.js hands the module its reader. */
+        read: (_documentRef, name) => reader.get(name),
+        restore() {},
         /** What a page script can do, and what must not reach the module. */
         forge(name, value) { channel.forge(name, value); }
     };
@@ -72,7 +72,7 @@ function makeBridgeFixture(attributes, tracks, current = null) {
         },
         cancel() {}
     };
-    const bridge = audio.createAudioTrackBridge({ document, taskManager, getPlayer: () => player });
+    const bridge = audio.createAudioTrackBridge({ document, taskManager, getPlayer: () => player, read: sealed.read });
     return {
         bridge,
         calls,
@@ -276,18 +276,35 @@ test('a MAIN world with no channel reads no preference at all', () => {
         },
     };
 
+    const bridge = audio.createAudioTrackBridge({
+        document,
+        taskManager: { schedule() {}, cancel() {} },
+        getPlayer: () => null,
+    });
+    assert.equal(bridge.readPreference(), null,
+        'no channel means no trusted input, and failing closed is the point');
+    assert.equal(bridge.sync('init'), false, 'and nothing is scheduled off it');
+});
+
+test('a reader a page script plants on YTKitCore is not consulted', () => {
+    // The module used to look up `YTKitCore.mainBridgeReader` on every read.
+    // In the MAIN world that object belongs to the page, so a script could
+    // put its own reader there and choose the audio track.
+    const document = makeDocument();
     const previous = globalThis.YTKitCore.mainBridgeReader;
-    globalThis.YTKitCore.mainBridgeReader = null;
+    globalThis.YTKitCore.mainBridgeReader = {
+        get: (name) => (name === audio.ATTRS.language ? 'de' : null),
+    };
     try {
         const bridge = audio.createAudioTrackBridge({
             document,
             taskManager: { schedule() {}, cancel() {} },
             getPlayer: () => null,
         });
-        assert.equal(bridge.readPreference(), null,
-            'no channel means no trusted input, and failing closed is the point');
-        assert.equal(bridge.sync('init'), false, 'and nothing is scheduled off it');
+        assert.equal(bridge.readPreference(), null);
+        assert.equal(bridge.sync('init'), false);
     } finally {
-        globalThis.YTKitCore.mainBridgeReader = previous;
+        if (previous === undefined) delete globalThis.YTKitCore.mainBridgeReader;
+        else globalThis.YTKitCore.mainBridgeReader = previous;
     }
 });

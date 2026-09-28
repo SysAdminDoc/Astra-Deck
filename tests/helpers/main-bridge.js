@@ -98,6 +98,11 @@ function installBridgeChannel(documentElement, core = {}, listeners = {}) {
         forge(name, value) {
             documentElement.setAttribute(name, String(value));
         },
+        /** A page script that knows the algorithm, sealing under a guessed token. */
+        forgeSealed(name, value, guessedToken) {
+            documentElement.setAttribute(name, String(value));
+            return createBridgeWriter({ documentElement, token: guessedToken }).set(name, value);
+        },
         /**
          * Send a navigate the bridge will believe, through the real writer and
          * along the path a browser would take it.

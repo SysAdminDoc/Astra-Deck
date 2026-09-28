@@ -25,6 +25,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - In the userscript, the Thumbnail button follows you to the next video. After you clicked from one video to another it kept downloading the first video's thumbnail.
 - Userscript Quick Settings turns Fit Player to Window off when you turn Theater Split on, the same as the full settings panel. Both used to run at once.
 
+### Security and privacy
+
+- A script on the YouTube page can no longer read the key the extension uses to sign its settings for the page side. It used to be reachable two ways: on a reader object left on the page's `YTKitCore`, and inside every in-app navigation event, which any page listener can read. Navigation events now carry a signed sequence number instead, and a replayed, renumbered or relabelled one is refused.
+- The page side's signature check no longer uses built-ins a page script could replace after load (`charCodeAt`, `Math.imul`, number formatting, `Function.prototype.call`, `JSON.parse`, `getAttribute`). They're captured before YouTube's first script runs.
+- A planted counter at the top of the number range can't freeze the settings channel any more.
+- Filter Feeds Before Render, Force DVR for Live Streams and Photosensitive Flash Protection took their on switch (and the blocked channel list and flash threshold) from plain page attributes, which any script on the page can write. A page could turn Force DVR on or hand the feed filter its own blocklist. They read only the signed copy now, like the other page-side features. Audio track choice no longer looks up a reader on the page's `YTKitCore`, where a page script could plant its own.
+
 ## [4.91.0] (2026-09-28)
 
 ### Added

@@ -122,9 +122,19 @@ test('the token is taken out of the DOM as the bridge picks it up', () => {
     const element = fakeRoot({ [bridgeChannel.TOKEN_ATTR]: 'c'.repeat(64) });
     const reader = createBridgeReader({ documentElement: element });
 
-    assert.equal(reader.token, 'c'.repeat(64), 'the bridge has it');
+    assert.equal(reader.hasToken, true, 'the bridge has it');
     assert.equal(element.getAttribute(bridgeChannel.TOKEN_ATTR), null,
         'and the page cannot read it afterwards; this runs before any page script');
+    createBridgeWriter({ documentElement: element, token: 'c'.repeat(64) }).set('data-ytkit-codec', 'av01');
+    assert.equal(reader.sync(), true, 'and it is the token it was handed');
+});
+
+test('the reader has no way to hand its token out', () => {
+    // It runs in the page's realm. A `token` getter on it was a token for any
+    // script that could reach the object.
+    const { reader } = pair({ token: '9'.repeat(64) });
+    assert.equal('token' in reader, false);
+    assert.doesNotMatch(JSON.stringify(Object.getOwnPropertyDescriptors(reader)), /9{64}/);
 });
 
 test('a bridge that never received a token reads nothing at all', () => {
@@ -133,7 +143,7 @@ test('a bridge that never received a token reads nothing at all', () => {
     const reader = createBridgeReader({ documentElement: element });
     writer.set('data-ytkit-codec', 'av01');
 
-    assert.equal(reader.token, null);
+    assert.equal(reader.hasToken, false);
     assert.equal(reader.sync(), false, 'no token means no trusted channel');
     assert.equal(reader.get('data-ytkit-codec'), null,
         'failing closed is right: the features stay off rather than run on unverified input');
@@ -150,7 +160,7 @@ test('a bridge that never received a token reads nothing at all', () => {
         createBridgeWriter({ documentElement: forged, token: spelling })
             .set('data-ytkit-resource-unlock', 'on');
         const victim = createBridgeReader({ documentElement: forged });
-        assert.equal(victim.token, null, 'this bridge was never handed a token');
+        assert.equal(victim.hasToken, false, 'this bridge was never handed a token');
         assert.equal(victim.sync(), false,
             `a payload sealed with ${JSON.stringify(spelling)} must not authenticate`);
         assert.equal(victim.get('data-ytkit-resource-unlock'), null,
@@ -196,14 +206,132 @@ test('a value too large to seal is never published', () => {
     assert.ok(element.getAttribute(bridgeChannel.STATE_ATTR).length <= bridgeChannel.MAX_PAYLOAD_BYTES);
 });
 
-test('a navigate event counts only when it carries the token', () => {
-    const { writer, reader } = pair();
-    assert.equal(reader.isOwnNavigate({ detail: { token: writer.token } }), true);
-    assert.equal(reader.isOwnNavigate({ detail: { token: 'e'.repeat(64) } }), false,
+/** A writer whose navigate events land in `sent`. */
+function navigatingPair(token) {
+    const element = fakeRoot();
+    const sent = [];
+    const writer = createBridgeWriter({
+        documentElement: element,
+        token,
+        eventTarget: { dispatchEvent: (event) => { sent.push(event); return true; } },
+        CustomEvent: class {
+            constructor(type, init) { this.type = type; this.detail = (init || {}).detail; }
+        },
+    });
+    const reader = createBridgeReader({ documentElement: element, token: writer.token });
+    const navigate = (reason) => { writer.notifyNavigate(reason); return sent[sent.length - 1]; };
+    return { writer, reader, sent, navigate };
+}
+
+test('a navigate event counts only when this channel sealed it', () => {
+    const { reader, navigate } = navigatingPair();
+    assert.equal(reader.isOwnNavigate(navigate('watch')), true);
+
+    const other = navigatingPair('e'.repeat(64));
+    assert.equal(reader.isOwnNavigate(other.navigate('watch')), false,
         'a forged event is the reason the bridge stopped listening to yt-navigate-finish');
     assert.equal(reader.isOwnNavigate({ detail: {} }), false);
     assert.equal(reader.isOwnNavigate({}), false);
     assert.equal(reader.isOwnNavigate(null), false);
+});
+
+test('the navigate event does not carry the token', () => {
+    // Every listener on the page can read an event's detail. With the token in
+    // it, one navigation was enough for a page script to seal anything.
+    const token = '7'.repeat(64);
+    const { navigate } = navigatingPair(token);
+    const event = navigate('watch');
+    assert.doesNotMatch(JSON.stringify(event.detail), /7{64}/);
+    assert.equal(event.detail.reason, 'watch');
+});
+
+test('a seen navigate cannot be replayed or re-labelled', () => {
+    const { reader, navigate } = navigatingPair();
+    const first = navigate('watch');
+    assert.equal(reader.admitNavigate(first), true);
+    assert.equal(reader.isOwnNavigate(first), true, 'every listener of the same dispatch agrees');
+
+    // The page re-dispatches the object it saw. The first listener admits
+    // each dispatch afresh, and a number it already accepted is refused.
+    assert.equal(reader.admitNavigate(first), false, 'a replayed event is not a navigation');
+    assert.equal(reader.isOwnNavigate(first), false, 'and the listeners after it hear that');
+
+    // A copy with a higher number or a different reason has no valid seal.
+    const bumped = { detail: { ...first.detail, seq: first.detail.seq + 5 } };
+    assert.equal(reader.isOwnNavigate(bumped), false);
+    const relabelled = { detail: { ...navigate('home').detail, reason: 'watch' } };
+    assert.equal(reader.isOwnNavigate(relabelled), false);
+
+    assert.equal(reader.isOwnNavigate(navigate('search')), true, 'the next real navigation still lands');
+});
+
+test('a writer rebuilt after an update keeps navigating', () => {
+    const element = fakeRoot();
+    const sent = [];
+    const make = (now) => createBridgeWriter({
+        documentElement: element,
+        token: '8'.repeat(64),
+        now: () => now,
+        eventTarget: { dispatchEvent: (event) => { sent.push(event); return true; } },
+        CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init.detail; } },
+    });
+    const reader = createBridgeReader({ documentElement: element, token: '8'.repeat(64) });
+    const first = make(1000);
+    for (let i = 0; i < 20; i += 1) first.notifyNavigate('watch');
+    assert.equal(reader.isOwnNavigate(sent.at(-1)), true);
+
+    make(5000).notifyNavigate('watch');
+    assert.equal(reader.isOwnNavigate(sent.at(-1)), true,
+        'numbering starts at the clock, so the new writer is already ahead');
+});
+
+test('page-realm primitives replaced after document_start do not bend the seal', () => {
+    // The reader runs in the page's realm. If it hashed through the live
+    // String.prototype.charCodeAt, Math.imul and Number.prototype.toString, a
+    // page could make every seal come out the same and forge any payload.
+    const { element, writer, reader } = pair();
+    writer.set('data-ytkit-codec', 'h264');
+    assert.equal(reader.sync(), true);
+
+    const saved = {
+        charCodeAt: String.prototype.charCodeAt,
+        imul: Math.imul,
+        toString: Number.prototype.toString,
+        call: Function.prototype.call,
+    };
+    try {
+        String.prototype.charCodeAt = () => 0;
+        Math.imul = () => 0;
+        Number.prototype.toString = () => '0';
+        Function.prototype.call = function () { return 0; };
+
+        const forged = JSON.stringify({ n: 999, v: { 'data-ytkit-codec': 'vp9' } });
+        element.setAttribute(bridgeChannel.STATE_ATTR, forged);
+        element.setAttribute(bridgeChannel.SEAL_ATTR, '0-0');
+        assert.equal(reader.sync(), false, 'the patched primitives must not produce a matching seal');
+        assert.equal(reader.get('data-ytkit-codec'), 'h264');
+    } finally {
+        String.prototype.charCodeAt = saved.charCodeAt;
+        Math.imul = saved.imul;
+        Number.prototype.toString = saved.toString;
+        Function.prototype.call = saved.call;
+    }
+});
+
+test('a planted counter at the top of the number range cannot freeze the channel', () => {
+    // 2^53 + 1 is 2^53 again. A writer that adopted that counter published
+    // the same number forever and the reader refused all but the first.
+    const { element, writer, reader } = pair();
+    writer.set('data-ytkit-codec', 'h264');
+    reader.sync();
+
+    element.setAttribute(bridgeChannel.STATE_ATTR, JSON.stringify({ n: Number.MAX_SAFE_INTEGER, v: {} }));
+    const rebuilt = createBridgeWriter({ documentElement: element, token: writer.token });
+    for (const codec of ['vp9', 'av01', 'auto']) {
+        rebuilt.set('data-ytkit-codec', codec);
+        assert.equal(reader.sync(), true, `${codec} must land`);
+        assert.equal(reader.get('data-ytkit-codec'), codec);
+    }
 });
 
 test('the isolated world dispatches its own navigate, and it is the one that counts', () => {

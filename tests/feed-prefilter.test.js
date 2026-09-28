@@ -285,8 +285,12 @@ test('the MAIN-world hook is installed from the shared module, not a second copy
     // A duplicated rule set would drift from the tested one.
     assert.doesNotMatch(body, /playlistVideoRenderer/,
         'the filtering rules must live in core/feed-prefilter.js only');
-    // Our own bridge payload must not re-enter the filter.
-    assert.match(body, /originalParse \|\| JSON\.parse/);
+    // Our own bridge payload must not re-enter the filter: it is parsed with
+    // the JSON.parse taken at document_start, before the hook replaced it.
+    assert.match(body, /_NATIVE\.jsonParse\(raw\)/);
+    // And the switch and list come from the sealed channel, not off <html>.
+    assert.match(body, /_bridgeGet\(ENABLE_ATTR\)/);
+    assert.match(body, /_bridgeGet\(IDS_ATTR\)/);
 
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension/manifest.json'), 'utf8'));
     const mainWorld = manifest.content_scripts.find((entry) => entry.world === 'MAIN');

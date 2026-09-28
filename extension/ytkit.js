@@ -30134,13 +30134,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const root = document.documentElement;
                 if (!root) return;
                 const enabled = appState.settings.photosensitiveFlashProtection === true && !this._runtimeDisabled;
+                // The switch and threshold go through the sealed channel; the
+                // MAIN-world sampler only believes that copy. The MAIN world
+                // never reads the dim level, so it stays a plain attribute.
                 if (!enabled) {
-                    root.setAttribute('data-ytkit-photosensitive', 'off');
+                    publishBridgeAttribute('data-ytkit-photosensitive', 'off');
                     return;
                 }
-                root.setAttribute('data-ytkit-photosensitive-threshold', String(this._setting('photosensitiveFlashThreshold', 0.2)));
+                publishBridgeAttribute('data-ytkit-photosensitive-threshold', String(this._setting('photosensitiveFlashThreshold', 0.2)));
                 root.setAttribute('data-ytkit-photosensitive-dim', String(this._setting('photosensitiveDimPercent', 35)));
-                root.setAttribute('data-ytkit-photosensitive', 'on');
+                publishBridgeAttribute('data-ytkit-photosensitive', 'on');
             },
 
             _buildAlert(player) {
@@ -30313,8 +30316,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl?.remove();
                 this._styleEl = null;
                 const root = document.documentElement;
-                root?.setAttribute('data-ytkit-photosensitive', 'off');
-                root?.removeAttribute('data-ytkit-photosensitive-threshold');
+                if (root) {
+                    publishBridgeAttribute('data-ytkit-photosensitive', 'off');
+                    clearBridgeAttribute('data-ytkit-photosensitive-threshold');
+                }
                 root?.removeAttribute('data-ytkit-photosensitive-dim');
                 root?.removeAttribute('data-ytkit-photosensitive-event');
                 root?.removeAttribute('data-ytkit-photosensitive-status');
@@ -35562,12 +35567,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return [...ids].slice(0, this._MAX_BRIDGED_IDS);
             },
 
+            // Through the sealed channel. As plain attributes, any script on the
+            // page could write its own list and have the bridge drop those
+            // videos out of the feed. Unchanged lists aren't re-sent: every
+            // sealed publish wakes every MAIN-world handler, and this runs on
+            // each navigation.
+            _lastPublished: null,
             _publish() {
-                const ids = this._collectIds();
-                const root = document.documentElement;
+                const json = JSON.stringify(this._collectIds());
+                if (json === this._lastPublished) return;
                 try {
-                    root.setAttribute(this._IDS_ATTR, JSON.stringify(ids));
-                    root.setAttribute(this._ENABLE_ATTR, 'on');
+                    publishBridgeAttribute(this._IDS_ATTR, json);
+                    publishBridgeAttribute(this._ENABLE_ATTR, 'on');
+                    this._lastPublished = json;
                 } catch (error) {
                     DebugManager.log('FeedPrefilter', `Failed to publish blocklist: ${error?.message || error}`);
                 }
@@ -35591,9 +35603,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
                     this._settingsHandler = null;
                 }
-                const root = document.documentElement;
-                root.removeAttribute(this._ENABLE_ATTR);
-                root.removeAttribute(this._IDS_ATTR);
+                clearBridgeAttribute(this._ENABLE_ATTR);
+                clearBridgeAttribute(this._IDS_ATTR);
+                this._lastPublished = null;
             }
         },
         // ═══════════════════════════════════════════════════════════════════

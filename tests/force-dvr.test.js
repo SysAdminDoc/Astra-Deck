@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { installBridgeChannel } = require('./helpers/main-bridge');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');
@@ -90,9 +91,14 @@ function bootstrap({ initialResponse } = {}) {
     context.window = context;
     context.self = context;
     context.globalThis = context;
+    context.YTKitCore = {};
     if (initialResponse) context.ytInitialPlayerResponse = initialResponse;
 
     vm.createContext(context);
+    // The switch arrives through the sealed channel, as it does from the
+    // isolated world. A plain attribute write is what a page script can do,
+    // and the bridge no longer takes it.
+    const channel = installBridgeChannel(documentElement, context.YTKitCore);
     vm.runInContext(injectionGuardSource, context, { filename: 'extension/core/injection-guard.js' });
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
 
@@ -100,8 +106,11 @@ function bootstrap({ initialResponse } = {}) {
         context,
         attributes,
         setEnabled(value) {
-            if (value) documentElement.setAttribute('data-ytkit-force-dvr', 'on');
-            else documentElement.removeAttribute('data-ytkit-force-dvr');
+            if (value) channel.publish('data-ytkit-force-dvr', 'on');
+            else channel.clear('data-ytkit-force-dvr');
+        },
+        forgeEnabled() {
+            documentElement.setAttribute('data-ytkit-force-dvr', 'on');
         },
         parse(value) {
             const encoded = JSON.stringify(JSON.stringify(value));
@@ -129,6 +138,16 @@ test('Force DVR is off by default and leaves live player responses unchanged', (
     assert.equal(result.playerConfig.mediaCommonConfig.useServerDrivenAbr, true);
     assert.equal(result.streamingData.serverAbrStreamingUrl, 'https://example.test/server-abr');
     assert.deepEqual(bridge.status(), { status: 'off', reason: null });
+});
+
+test('a page script writing the Force DVR attribute cannot switch the patch on', () => {
+    const bridge = bootstrap();
+    bridge.forgeEnabled();
+    const result = bridge.parse(liveFixture);
+
+    assert.equal(result.videoDetails.isLiveDvrEnabled, false);
+    assert.equal(result.playerConfig.mediaCommonConfig.useServerDrivenAbr, true);
+    assert.equal(bridge.status().status, 'off');
 });
 
 test('opt-in JSON player responses enable DVR and remove conflicting server ABR', () => {
