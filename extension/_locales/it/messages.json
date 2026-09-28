@@ -8664,6 +8664,9 @@
   "watchFeedFullTpl": {
     "message": "Watch Feed is full ({count})"
   },
+  "watchFeedImportFullTpl": {
+    "message": "Importazione Watch Feed: {added} aggiunti, {duplicates} già presenti, {full} esclusi perché la coda ne contiene al massimo {count}"
+  },
   "watchFeedImportInvalid": {
     "message": "Import failed: not a valid Watch Feed JSON file"
   },
@@ -8699,6 +8702,9 @@
   },
   "watchFeedRemoveVideoTpl": {
     "message": "Remove {title} from Watch Feed"
+  },
+  "watchFeedRowTooltipTpl": {
+    "message": "{title} di {channel}"
   },
   "watchLaterNotInMenu": {
     "message": "«Guarda più tardi» non è stato trovato in questo menu. Usa l’azione Salva nativa di questa scheda."

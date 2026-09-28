@@ -8715,6 +8715,10 @@
   "watchFeedFullTpl": {
     "message": "Watch Feed is full ({count})"
   },
+  "watchFeedImportFullTpl": {
+    "message": "Watch Feed import: {added} added, {duplicates} already present, {full} left out because the feed holds {count}",
+    "description": "Toast after a Watch Feed import that hit the size cap. {added}, {duplicates} and {full} are counts; {count} is the cap."
+  },
   "watchFeedImportInvalid": {
     "message": "Import failed: not a valid Watch Feed JSON file"
   },
@@ -8750,6 +8754,10 @@
   },
   "watchFeedRemoveVideoTpl": {
     "message": "Remove {title} from Watch Feed"
+  },
+  "watchFeedRowTooltipTpl": {
+    "message": "{title} by {channel}",
+    "description": "Tooltip on a Watch Feed row title. {title} is the video title, {channel} its channel."
   },
   "watchLaterNotInMenu": {
     "message": "Couldn’t find Watch Later in this menu. Try the native Save action on this card."

@@ -22995,6 +22995,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 return queue;
             },
+            // String.replace reads $&, $$ and $` in a replacement string, so a
+            // title like "Top $$ tips" came out garbled in labels. A function
+            // replacement inserts the value as written.
+            _fill(template, values) {
+                return String(template).replace(/\{(\w+)\}/g, (match, key) => (
+                    Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match
+                ));
+            },
             _write(queue) {
                 const next = {
                     v: this._STORE_VERSION,
@@ -23019,7 +23027,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 if (queue.items.length >= this._MAX_ITEMS) {
                     showToast(
-                        t('watchFeedFullTpl', 'Watch Feed is full ({count})').replace('{count}', String(this._MAX_ITEMS)),
+                        this._fill(t('watchFeedFullTpl', 'Watch Feed is full ({count})'), { count: this._MAX_ITEMS }),
                         '#f59e0b',
                         { duration: 3, tone: 'warning' }
                     );
@@ -23104,8 +23112,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const next = this._read().items[0];
                 return next ? this._playItem(next.id) : false;
             },
+            // 'ended' also fires in the miniplayer, where the URL is the home,
+            // search or channel page and names no video. The watch page element
+            // stays in the DOM there and keeps the id of the video it plays.
+            _endedVideoId() {
+                const fromUrl = getVideoId();
+                if (fromUrl) return fromUrl;
+                const fromPlayer = document.querySelector('ytd-watch-flexy')?.getAttribute?.('video-id') || '';
+                return /^[\w-]{11}$/.test(fromPlayer) ? fromPlayer : null;
+            },
             _finishCurrent() {
-                const currentVideoId = getVideoId();
+                const currentVideoId = this._endedVideoId();
                 const queue = this._read();
                 const at = queue.items.findIndex(item => item.id === currentVideoId);
                 const consumed = at >= 0;
@@ -23147,19 +23164,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const queue = this._read();
                             const existing = new Set(queue.items.map(it => it.id));
                             let added = 0;
+                            let duplicates = 0;
+                            let full = 0;
+                            // _write() keeps only the first _MAX_ITEMS, so count
+                            // what fits here or the toast reports entries that
+                            // were then cut.
                             for (const it of clean) {
-                                if (existing.has(it.id)) continue;
+                                if (existing.has(it.id)) { duplicates += 1; continue; }
+                                if (queue.items.length >= this._MAX_ITEMS) { full += 1; continue; }
                                 queue.items.push(it);
                                 existing.add(it.id);
                                 added += 1;
                             }
                             this._write(queue);
+                            const counts = { added, duplicates, full, count: this._MAX_ITEMS };
                             showToast(
-                                t('watchFeedImportResultTpl', 'Watch Feed import: {added} added, {duplicates} already present')
-                                    .replace('{added}', String(added))
-                                    .replace('{duplicates}', String(clean.length - added)),
-                                '#22c55e',
-                                { duration: 4 }
+                                full
+                                    ? this._fill(t('watchFeedImportFullTpl', 'Watch Feed import: {added} added, {duplicates} already present, {full} left out because the feed holds {count}'), counts)
+                                    : this._fill(t('watchFeedImportResultTpl', 'Watch Feed import: {added} added, {duplicates} already present'), counts),
+                                full ? '#f59e0b' : '#22c55e',
+                                full ? { duration: 6, tone: 'warning' } : { duration: 4 }
                             );
                         } catch {
                             // reason: malformed user-picked JSON must fail with feedback, not a crash.
@@ -23213,6 +23237,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!list) return;
                 const items = this._read().items;
                 const currentVideoId = getVideoId();
+                // Rebuilding the rows destroys the focused button, and a
+                // keyboard user who pressed Move up or Remove was left on
+                // <body>. Remember where focus was and put it back.
+                const active = document.activeElement;
+                const focusRow = active && typeof list.contains === 'function' && list.contains(active)
+                    ? active.closest?.('.ytkit-queue-row')
+                    : null;
+                const focus = focusRow
+                    ? { id: focusRow.dataset?.videoId || '', action: active.dataset?.action || '', index: Array.prototype.indexOf.call(list.children || [], focusRow) }
+                    : null;
                 list.replaceChildren();
                 items.forEach((it, i) => {
                     const row = document.createElement('div');
@@ -23232,7 +23266,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     title.className = 'ytkit-queue-title';
                     title.href = `https://www.youtube.com/watch?v=${it.id}`;
                     title.textContent = it.title;
-                    title.title = it.channel ? `${it.title} by ${it.channel}` : it.title;
+                    title.title = it.channel
+                        ? this._fill(t('watchFeedRowTooltipTpl', '{title} by {channel}'), { title: it.title, channel: it.channel })
+                        : it.title;
                     copy.appendChild(title);
                     if (it.channel) {
                         const channel = document.createElement('span');
@@ -23248,22 +23284,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     const actions = document.createElement('div');
                     actions.className = 'ytkit-queue-row-actions';
-                    const mk = (label, aria, onClick, disabled = false) => {
+                    const mk = (action, label, aria, onClick, disabled = false) => {
                         const b = document.createElement('button');
                         b.type = 'button';
                         b.textContent = label;
+                        b.dataset.action = action;
                         b.setAttribute('aria-label', aria);
                         b.disabled = disabled;
                         b.addEventListener('click', onClick);
                         actions.appendChild(b);
                     };
-                    mk('↑', t('watchFeedMoveUpTpl', 'Move up: {title}').replace('{title}', it.title), () => this._move(i, -1, it.id), i === 0);
-                    mk('↓', t('watchFeedMoveDownTpl', 'Move down: {title}').replace('{title}', it.title), () => this._move(i, 1, it.id), i === items.length - 1);
-                    mk('✕', t('watchFeedRemoveTpl', 'Remove from Watch Feed: {title}').replace('{title}', it.title), () => this._removeAt(i, it.id));
+                    const named = { title: it.title };
+                    mk('up', '↑', this._fill(t('watchFeedMoveUpTpl', 'Move up: {title}'), named), () => this._move(i, -1, it.id), i === 0);
+                    mk('down', '↓', this._fill(t('watchFeedMoveDownTpl', 'Move down: {title}'), named), () => this._move(i, 1, it.id), i === items.length - 1);
+                    mk('remove', '✕', this._fill(t('watchFeedRemoveTpl', 'Remove from Watch Feed: {title}'), named), () => this._removeAt(i, it.id));
                     row.append(thumbnail, copy, actions);
                     list.appendChild(row);
                 });
+                if (focus) this._restoreRowFocus(list, focus);
                 _refreshCornerStack();
+            },
+            _restoreRowFocus(list, focus) {
+                const rows = Array.from(list.children || []);
+                // The same video if it is still listed (moved), otherwise the
+                // row that slid into its place (removed), otherwise the last.
+                const row = rows.find(node => node.dataset?.videoId === focus.id)
+                    || rows[Math.min(Math.max(focus.index, 0), rows.length - 1)]
+                    || null;
+                const buttons = row ? Array.from(row.querySelectorAll?.('.ytkit-queue-row-actions button') || []) : [];
+                const target = buttons.find(b => b.dataset?.action === focus.action && !b.disabled)
+                    || buttons.find(b => !b.disabled)
+                    || this._panel?.querySelector?.('.ytkit-queue-actions button');
+                try { target?.focus?.(); } catch (_) { /* reason: a detached target has nothing to focus */ }
             },
 
             _closeQueuePanel() {
@@ -23309,8 +23361,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 mk(t('queueExport', 'Export'), () => this._exportJson());
                 mk(t('queueImport', 'Import'), () => this._importJson());
                 mk(t('queueClear', 'Clear'), () => {
+                    const cleared = this._read().items;
                     this._write({ v: this._STORE_VERSION, items: [] });
-                    showToast(t('queueCleared', 'Watch Feed cleared'), '#22c55e', { duration: 2 });
+                    showToast(t('queueCleared', 'Watch Feed cleared'), '#22c55e', {
+                        duration: 6,
+                        action: {
+                            text: t('toastActionUndo', 'Undo'),
+                            onClick: () => {
+                                // Keep anything queued since the clear, after
+                                // the restored entries.
+                                const now = this._read();
+                                const restored = new Set(cleared.map(item => item.id));
+                                this._write({ v: this._STORE_VERSION, items: [...cleared, ...now.items.filter(item => !restored.has(item.id))] });
+                            }
+                        }
+                    });
                 });
                 mk(t('queueClose', 'Close'), () => this._closeQueuePanel());
                 header.appendChild(actions);
@@ -23382,6 +23447,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const href = link?.href || link?.getAttribute?.('href') || '';
                 const id = getVideoId(href);
                 if (!id) return null;
+                if (this._isCollectionCard(card, href)) return null;
 
                 const titleSelectors = [
                     '#video-title',
@@ -23411,6 +23477,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return { id, title: title || id, channel, link };
             },
 
+            // A Mix or playlist card links to its first video plus a list id.
+            // Queueing it stored that one video under the list's title
+            // ("Mix - Some Artist"). Rows of a playlist page and of the watch
+            // page's playlist panel carry a list id too, and those are single
+            // videos.
+            _isCollectionCard(card, href) {
+                if (card?.matches?.('ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer')) return false;
+                try {
+                    const url = new URL(href, 'https://www.youtube.com');
+                    return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';
+                } catch {
+                    // reason: an unparseable href is not a collection link.
+                    return false;
+                }
+            },
+
             _findThumbnailContainer(card, link) {
                 const selectors = [
                     'yt-thumbnail-view-model',
@@ -23435,8 +23517,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         ? t('watchFeedRemoveCurrent', 'Remove this video from Watch Feed')
                         : t('watchFeedAddCurrent', 'Add this video to Watch Feed')
                     : queued
-                        ? t('watchFeedRemoveVideoTpl', 'Remove {title} from Watch Feed').replace('{title}', safeTitle)
-                        : t('watchFeedAddVideoTpl', 'Add {title} to Watch Feed').replace('{title}', safeTitle);
+                        ? this._fill(t('watchFeedRemoveVideoTpl', 'Remove {title} from Watch Feed'), { title: safeTitle })
+                        : this._fill(t('watchFeedAddVideoTpl', 'Add {title} to Watch Feed'), { title: safeTitle });
                 button.setAttribute('aria-label', label);
                 button.setAttribute('aria-pressed', String(queued));
                 button.title = label;
@@ -23526,7 +23608,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // legacy renderer. Process whichever node reaches the
                     // thumbnail first, then skip the duplicate candidate.
                     const data = this._extractCardData(item);
-                    if (!data) return;
+                    if (!data) {
+                        // YouTube recycles cards, so one that shows a Mix now
+                        // can still hold the button from the video it showed.
+                        item.querySelectorAll?.('.ytkit-queue-btn')?.forEach(button => button.remove());
+                        return;
+                    }
                     const thumbnail = this._findThumbnailContainer(item, data.link);
                     if (!thumbnail || processedThumbnails.has(thumbnail)) return;
                     processedThumbnails.add(thumbnail);

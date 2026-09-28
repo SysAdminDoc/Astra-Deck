@@ -8664,6 +8664,9 @@
   "watchFeedFullTpl": {
     "message": "Watch Feed is full ({count})"
   },
+  "watchFeedImportFullTpl": {
+    "message": "Watch Feed 导入：新增 {added} 个，已存在 {duplicates} 个，因上限为 {count} 个而跳过 {full} 个"
+  },
   "watchFeedImportInvalid": {
     "message": "Import failed: not a valid Watch Feed JSON file"
   },
@@ -8699,6 +8702,9 @@
   },
   "watchFeedRemoveVideoTpl": {
     "message": "Remove {title} from Watch Feed"
+  },
+  "watchFeedRowTooltipTpl": {
+    "message": "{title}（{channel}）"
   },
   "watchLaterNotInMenu": {
     "message": "在此菜单中未找到“稍后观看”。请改用该卡片自带的保存操作。"

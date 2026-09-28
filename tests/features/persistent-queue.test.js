@@ -31,7 +31,7 @@ function byClass(node, className) {
     return descendants(node).filter((element) => element.classList?.contains?.(className));
 }
 
-function queueFixture({ items = [], claim, currentVideoId = 'abcdefghijk' } = {}) {
+function queueFixture({ items = [], claim, currentVideoId = 'abcdefghijk', flexyVideoId = null } = {}) {
     const store = new Map();
     if (items.length || claim) store.set('ytkit-queue', { v: 1, items, ...(claim ? { claim } : {}) });
     const toasts = [];
@@ -49,7 +49,14 @@ function queueFixture({ items = [], claim, currentVideoId = 'abcdefghijk' } = {}
     // destroy() sweeps the buttons it injected into feed cards; the fixture has
     // to own one so the sweep can be observed.
     const cardButton = fakeNode({ tag: 'button', attributes: { class: 'ytkit-queue-btn' } });
-    const doc = fakeDocument((selector) => (selector.includes('ytkit-queue-btn') ? [cardButton] : []));
+    // Off the watch page (the miniplayer) the URL names no video, and the
+    // hidden ytd-watch-flexy still carries the id of the one playing.
+    const flexy = flexyVideoId ? fakeNode({ tag: 'ytd-watch-flexy', attributes: { 'video-id': flexyVideoId } }) : null;
+    const doc = fakeDocument((selector) => {
+        if (selector.includes('ytkit-queue-btn')) return [cardButton];
+        if (selector === 'ytd-watch-flexy' && flexy) return [flexy];
+        return [];
+    });
     const created = [];
     const create = doc.createElement.bind(doc);
     doc.createElement = (tag) => {
@@ -274,6 +281,35 @@ test('persistentQueue consumes the finished item and auto-advances only when ena
     assert.deepEqual(navigations, [], 'auto-advance off must not navigate');
 });
 
+test('persistentQueue consumes a video that ends in the miniplayer instead of replaying it', () => {
+    const { feature, store, navigations } = queueFixture({
+        items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')],
+        currentVideoId: null,
+        flexyVideoId: 'aaaaaaaaaaa'
+    });
+    feature.init();
+
+    feature._endedHandler();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb'],
+        'the finished entry is found through the player, not the home page URL');
+    assert.deepEqual(navigations, ['https://www.youtube.com/watch?v=bbbbbbbbbbb'],
+        'auto-advance must start the next entry, never the video that just ended');
+});
+
+test('persistentQueue leaves the feed alone when an unknown video ends off the watch page', () => {
+    const { feature, store, navigations } = queueFixture({
+        items: [entry('aaaaaaaaaaa', 'Alpha')],
+        currentVideoId: null,
+        flexyVideoId: 'not-an-id'
+    });
+    feature.init();
+
+    feature._endedHandler();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa']);
+    assert.deepEqual(navigations, ['https://www.youtube.com/watch?v=aaaaaaaaaaa'],
+        'a video outside the feed ending still starts the feed, as on a watch page');
+});
+
 test('persistentQueue clears the last item without handing playback to YouTube autoplay', () => {
     const { feature, store, navigations } = queueFixture({
         items: [entry('aaaaaaaaaaa', 'Alpha')],
@@ -409,6 +445,138 @@ test('persistentQueue keeps the thumbnail action visible and follows recycled ca
     assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb'],
         'the click must use the card data that is visible now, not its first render');
     assert.equal(buttons[0].getAttribute('aria-pressed'), 'true');
+});
+
+function treeQueue(store, documentRef = fakeTreeDocument(), extra = {}) {
+    const toasts = [];
+    const feature = loadFeature('persistentQueue', {
+        document: documentRef,
+        appState: { settings: {} },
+        location: { href: '' },
+        window: { addEventListener() {}, removeEventListener() {} },
+        storageReadJSON: (key, fallback) => store.get(key) || fallback,
+        storageWriteJSON: (key, value) => store.set(key, value),
+        showToast: (message, _colour, options) => toasts.push({ message, options }),
+        injectStyle: () => fakeNode(),
+        getVideoId: (value) => (value ? new URL(value, 'https://www.youtube.com').searchParams.get('v') : null),
+        getMainVideoElement: () => null,
+        registerCornerStackElement: () => () => {},
+        _refreshCornerStack() {},
+        registerPersistentButton() {},
+        unregisterPersistentButton() {},
+        URL,
+        ...extra
+    });
+    return { feature, documentRef, toasts };
+}
+
+function lockupCard(documentRef, href, titleText, tag = 'yt-lockup-view-model') {
+    const card = documentRef.createElement(tag);
+    const thumbnail = documentRef.createElement('yt-thumbnail-view-model');
+    const link = documentRef.createElement('a');
+    link.className = 'yt-lockup-view-model__content-image';
+    link.href = href;
+    const title = documentRef.createElement('span');
+    title.id = 'video-title';
+    title.textContent = titleText;
+    thumbnail.appendChild(link);
+    card.append(thumbnail, title);
+    documentRef.body.appendChild(card);
+    return { card, thumbnail, link, title };
+}
+
+test('persistentQueue offers no button on Mix or playlist cards, but keeps playlist rows', () => {
+    const store = new Map();
+    const { feature, documentRef } = treeQueue(store);
+    const mix = lockupCard(documentRef, 'https://www.youtube.com/watch?v=aaaaaaaaaaa&list=RDaaaaaaaaaaa&start_radio=1', 'Mix - Some Artist');
+    const playlist = lockupCard(documentRef, 'https://www.youtube.com/watch?v=bbbbbbbbbbb&list=PLxxxxxxxxxxxxxxxx', 'A playlist');
+    const row = lockupCard(documentRef, 'https://www.youtube.com/watch?v=ccccccccccc&list=PLxxxxxxxxxxxxxxxx&index=2', 'Playlist entry', 'ytd-playlist-video-renderer');
+    const plain = lockupCard(documentRef, 'https://www.youtube.com/watch?v=ddddddddddd', 'Plain video');
+
+    feature._addButtons();
+    assert.equal(byClass(mix.thumbnail, 'ytkit-queue-btn').length, 0, 'a Mix is not one video');
+    assert.equal(byClass(playlist.thumbnail, 'ytkit-queue-btn').length, 0, 'a playlist card is not one video');
+    assert.equal(byClass(row.thumbnail, 'ytkit-queue-btn').length, 1, 'a row of a playlist page is a single video');
+    assert.equal(byClass(plain.thumbnail, 'ytkit-queue-btn').length, 1);
+
+    // YouTube recycles the card: the plain video's slot now shows a Mix.
+    plain.link.href = 'https://www.youtube.com/watch?v=eeeeeeeeeee&list=RDeeeeeeeeeee&start_radio=1';
+    plain.title.textContent = 'Mix - Other Artist';
+    feature._addButtons();
+    assert.equal(byClass(plain.thumbnail, 'ytkit-queue-btn').length, 0,
+        'the button from the recycled video must not stay on the Mix');
+});
+
+test('persistentQueue puts titles into labels as written, dollar signs included', () => {
+    const store = new Map([['ytkit-queue', { v: 2, items: [entry('aaaaaaaaaaa', "Save $$ and $& now $'", 'Chan $1')] }]]);
+    const { feature, documentRef } = treeQueue(store);
+    feature._togglePanel();
+    const row = byClass(documentRef.body, 'ytkit-queue-row')[0];
+    const [, , remove] = byClass(row, 'ytkit-queue-row-actions')[0].children;
+    assert.equal(remove.getAttribute('aria-label'), "Remove from Watch Feed: Save $$ and $& now $'");
+    assert.equal(byClass(row, 'ytkit-queue-title')[0].title, "Save $$ and $& now $' by Chan $1",
+        'the row tooltip comes from the catalogue template, filled literally');
+});
+
+test('persistentQueue keeps keyboard focus on the row controls after move and remove', () => {
+    const store = new Map([['ytkit-queue', { v: 2, items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta'), entry('ccccccccccc', 'Gamma')] }]]);
+    const { feature, documentRef } = treeQueue(store);
+    feature._togglePanel();
+    const buttonsOf = (id) => {
+        const row = byClass(documentRef.body, 'ytkit-queue-row').find((node) => node.dataset.videoId === id);
+        return Object.fromEntries(byClass(row, 'ytkit-queue-row-actions')[0].children.map((b) => [b.dataset.action, b]));
+    };
+
+    buttonsOf('aaaaaaaaaaa').down.focus();
+    buttonsOf('aaaaaaaaaaa').down.listeners.get('click').values().next().value();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb', 'aaaaaaaaaaa', 'ccccccccccc']);
+    assert.equal(documentRef.activeElement, buttonsOf('aaaaaaaaaaa').down,
+        'focus follows the moved video to its new row');
+
+    buttonsOf('aaaaaaaaaaa').remove.focus();
+    buttonsOf('aaaaaaaaaaa').remove.listeners.get('click').values().next().value();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['bbbbbbbbbbb', 'ccccccccccc']);
+    assert.equal(documentRef.activeElement, buttonsOf('ccccccccccc').remove,
+        'after a remove, focus lands on the row that took its place');
+
+    buttonsOf('ccccccccccc').remove.focus();
+    buttonsOf('ccccccccccc').remove.listeners.get('click').values().next().value();
+    assert.equal(documentRef.activeElement, buttonsOf('bbbbbbbbbbb').remove,
+        'removing the last row moves focus up, not to <body>');
+});
+
+test('persistentQueue import reports only what fit under the cap', () => {
+    const items = Array.from({ length: 199 }, (_, i) => entry(`v${String(i).padStart(10, '0')}`));
+    const { feature, store, toasts, created } = queueFixture({ items });
+    feature._importJson();
+    const input = created.filter((node) => node.tagName === 'INPUT').at(-1);
+    input.files = [{ text: JSON.stringify({ items: [
+        { id: 'aaaaaaaaaaa', title: 'Fits' },
+        { id: 'bbbbbbbbbbb', title: 'Over' },
+        { id: 'ccccccccccc', title: 'Over too' },
+        { id: items[0].id, title: 'Duplicate' }
+    ] }) }];
+    input.handlers.get('change')();
+    assert.equal(store.get('ytkit-queue').items.length, 200);
+    assert.equal(store.get('ytkit-queue').items.at(-1).id, 'aaaaaaaaaaa');
+    assert.equal(toasts.at(-1).message,
+        'Watch Feed import: 1 added, 1 already present, 2 left out because the feed holds 200');
+    assert.equal(toasts.at(-1).options.tone, 'warning');
+});
+
+test('persistentQueue Clear offers Undo that restores the cleared entries first', () => {
+    const store = new Map([['ytkit-queue', { v: 2, items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')] }]]);
+    const { feature, documentRef, toasts } = treeQueue(store);
+    feature._togglePanel();
+    const clear = byClass(documentRef.body, 'ytkit-queue-actions')[0].children.find((b) => b.textContent === 'Clear');
+    clear.listeners.get('click').values().next().value();
+    assert.deepEqual(Array.from(store.get('ytkit-queue').items), []);
+    assert.equal(toasts.at(-1).options.action.text, 'Undo');
+
+    feature._add('ccccccccccc', 'Gamma', '');
+    toasts.findLast((toast) => toast.options?.action).options.action.onClick();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa', 'bbbbbbbbbbb', 'ccccccccccc'],
+        'undo brings the cleared entries back and keeps what was queued since');
 });
 
 test('persistentQueue import keeps valid ids, reports duplicates, and survives a bad file', () => {

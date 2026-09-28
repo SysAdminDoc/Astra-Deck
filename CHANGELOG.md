@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Watch Feed no longer replays a video that finishes in the miniplayer. On the home, search and channel pages the URL names no video, so the finished entry was never removed and auto-advance started it again. It's now found through the player, and the next entry plays.
+- Mix and playlist cards don't get a Watch Feed button any more. It queued only the first video, under the list's name ("Mix - Some Artist"). Rows on a playlist page still get one.
+- An import that runs into Watch Feed's 200-entry limit now says how many entries were left out. It used to count them as added.
+- Titles with dollar signs ("Top $$ tips") read correctly in Watch Feed labels, and the row tooltip is translated.
+- Move up, Move down and Remove in the Watch Feed panel keep keyboard focus in the list. Clear now has Undo.
+
 ## [4.91.0] (2026-09-28)
 
 ### Added

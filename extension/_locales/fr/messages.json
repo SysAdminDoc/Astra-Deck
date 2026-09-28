@@ -8664,6 +8664,9 @@
   "watchFeedFullTpl": {
     "message": "Watch Feed is full ({count})"
   },
+  "watchFeedImportFullTpl": {
+    "message": "Import Watch Feed : {added} ajoutées, {duplicates} déjà présentes, {full} laissées de côté car la liste en contient au plus {count}"
+  },
   "watchFeedImportInvalid": {
     "message": "Import failed: not a valid Watch Feed JSON file"
   },
@@ -8699,6 +8702,9 @@
   },
   "watchFeedRemoveVideoTpl": {
     "message": "Remove {title} from Watch Feed"
+  },
+  "watchFeedRowTooltipTpl": {
+    "message": "{title} par {channel}"
   },
   "watchLaterNotInMenu": {
     "message": "« À regarder plus tard » est introuvable dans ce menu. Utilisez l’action Enregistrer native de cette carte."

@@ -8664,6 +8664,9 @@
   "watchFeedFullTpl": {
     "message": "Watch Feed is full ({count})"
   },
+  "watchFeedImportFullTpl": {
+    "message": "Watch Feed 가져오기: {added}개 추가, {duplicates}개는 이미 있음, 최대 {count}개라서 {full}개 제외"
+  },
   "watchFeedImportInvalid": {
     "message": "Import failed: not a valid Watch Feed JSON file"
   },
@@ -8699,6 +8702,9 @@
   },
   "watchFeedRemoveVideoTpl": {
     "message": "Remove {title} from Watch Feed"
+  },
+  "watchFeedRowTooltipTpl": {
+    "message": "{title} · {channel}"
   },
   "watchLaterNotInMenu": {
     "message": "이 메뉴에서 ‘나중에 볼 동영상’을 찾지 못했습니다. 이 카드의 기본 저장 기능을 사용하세요."

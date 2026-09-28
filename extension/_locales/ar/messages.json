@@ -8664,6 +8664,9 @@
   "watchFeedFullTpl": {
     "message": "Watch Feed is full ({count})"
   },
+  "watchFeedImportFullTpl": {
+    "message": "استيراد Watch Feed: أُضيف {added}، وموجود مسبقًا {duplicates}، وتُرك {full} لأن القائمة تتسع لـ {count} فقط"
+  },
   "watchFeedImportInvalid": {
     "message": "Import failed: not a valid Watch Feed JSON file"
   },
@@ -8699,6 +8702,9 @@
   },
   "watchFeedRemoveVideoTpl": {
     "message": "Remove {title} from Watch Feed"
+  },
+  "watchFeedRowTooltipTpl": {
+    "message": "{title} من {channel}"
   },
   "watchLaterNotInMenu": {
     "message": "تعذر العثور على «المشاهدة لاحقًا» في هذه القائمة. جرّب إجراء الحفظ الأصلي في هذه البطاقة."
