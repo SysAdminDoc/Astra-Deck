@@ -992,3 +992,22 @@ test('the monolith carries only a descriptor stub for stickyVideo', () => {
     assert.match(sources.ytkit, /YTKitFeatures\?\.stickyVideo\?\.createStickyVideoFeature/,
         'ytkit.js must still call the module factory');
 });
+
+test('Escape closes an open YouTube menu without collapsing the split', () => {
+    const { escapeTargetsYouTubePopup } = require('../../extension/features/sticky-video/index.js');
+    const popup = (attrs = {}, style = {}) => ({ hidden: false, style, getAttribute: (name) => attrs[name] ?? null });
+    const doc = (popups) => ({ querySelectorAll: () => popups });
+    const outside = { target: { closest: () => null } };
+    const insideMenu = { target: { closest: (selector) => (selector.includes('tp-yt-iron-dropdown') ? {} : null) } };
+
+    assert.equal(escapeTargetsYouTubePopup(insideMenu, doc([])), true, 'a key event from inside the menu belongs to the menu');
+    assert.equal(escapeTargetsYouTubePopup(outside, doc([popup()])), true, 'an open dropdown takes Escape first');
+    assert.equal(escapeTargetsYouTubePopup(outside, doc([popup({ 'aria-hidden': 'true' }, { display: 'none' })])), false,
+        'a closed dropdown leaves Escape to the split');
+    assert.equal(escapeTargetsYouTubePopup(outside, doc([])), false);
+
+    const source = fs.readFileSync(path.join(__dirname, '../../extension/features/sticky-video/index.js'), 'utf8');
+    const handler = source.slice(source.indexOf('this._keyHandler = (e) => {'), source.indexOf("document.addEventListener('keydown', this._keyHandler, true);"));
+    assert.ok(handler.indexOf('escapeTargetsYouTubePopup(e, document)') > -1 && handler.indexOf('escapeTargetsYouTubePopup') < handler.indexOf('_collapseSplit'),
+        'the split key handler checks for an open popup before collapsing');
+});

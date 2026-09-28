@@ -17141,6 +17141,7 @@ if (typeof globalThis !== "undefined") {
 
                 this._keyHandler = (e) => {
                     if (e.key !== 'Escape' || !this._isActive) return;
+                    if (escapeTargetsYouTubePopup(e, document)) return;
                     const tag = document.activeElement?.tagName;
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
                     if (this._isSplit) {
@@ -17612,6 +17613,15 @@ if (typeof globalThis !== "undefined") {
             parts.header.createStickyVideoHeaderMethods({ t, _rw, getVideoId, getFeatureById }));
     }
 
+    function escapeTargetsYouTubePopup(event, documentRef) {
+        if (event?.target?.closest?.('ytd-popup-container, tp-yt-iron-dropdown, tp-yt-paper-dialog')) return true;
+        const dropdowns = documentRef?.querySelectorAll?.('ytd-popup-container tp-yt-iron-dropdown, ytd-popup-container tp-yt-paper-dialog') || [];
+        for (const popup of dropdowns) {
+            if (popup.getAttribute?.('aria-hidden') !== 'true' && popup.style?.display !== 'none' && !popup.hidden) return true;
+        }
+        return false;
+    }
+
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.stickyVideo = Object.freeze({
         createStickyVideoFeature
@@ -17619,7 +17629,8 @@ if (typeof globalThis !== "undefined") {
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            createStickyVideoFeature
+            createStickyVideoFeature,
+            escapeTargetsYouTubePopup
         };
     }
 })();

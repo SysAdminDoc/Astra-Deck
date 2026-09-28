@@ -818,6 +818,11 @@
                 // Escape key collapses split panel (or unmounts if already collapsed)
                 this._keyHandler = (e) => {
                     if (e.key !== 'Escape' || !this._isActive) return;
+                    // Escape belongs to an open YouTube menu or dialog first.
+                    // This listener runs in the capture phase, ahead of the
+                    // popup's own handler, so without this check closing a
+                    // comment or sort menu also collapsed the split.
+                    if (escapeTargetsYouTubePopup(e, document)) return;
                     // Don't intercept escape when user is typing in an input/textarea
                     const tag = document.activeElement?.tagName;
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
@@ -1352,6 +1357,15 @@
             parts.header.createStickyVideoHeaderMethods({ t, _rw, getVideoId, getFeatureById }));
     }
 
+    function escapeTargetsYouTubePopup(event, documentRef) {
+        if (event?.target?.closest?.('ytd-popup-container, tp-yt-iron-dropdown, tp-yt-paper-dialog')) return true;
+        const dropdowns = documentRef?.querySelectorAll?.('ytd-popup-container tp-yt-iron-dropdown, ytd-popup-container tp-yt-paper-dialog') || [];
+        for (const popup of dropdowns) {
+            if (popup.getAttribute?.('aria-hidden') !== 'true' && popup.style?.display !== 'none' && !popup.hidden) return true;
+        }
+        return false;
+    }
+
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.stickyVideo = Object.freeze({
         createStickyVideoFeature
@@ -1359,7 +1373,8 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            createStickyVideoFeature
+            createStickyVideoFeature,
+            escapeTargetsYouTubePopup
         };
     }
 })();
