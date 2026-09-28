@@ -362,13 +362,15 @@ async function renderPerf(tab) {
     for (const feat of top) {
         const li = document.createElement('li');
         li.className = 'sp-perf-row';
+        const label = String(feat.name || feat.id);
         li.setAttribute('aria-label', t('spPerfRowAriaTpl', '{feature}: {ms}ms')
-            .replace('{feature}', feat.id)
+            .replace('{feature}', () => label)
             .replace('{ms}', String(feat.initMs)));
         if (feat.initMs > 50) li.classList.add('sp-perf-slow');
         const name = document.createElement('span');
         name.className = 'fp-name';
-        name.textContent = feat.id;
+        name.textContent = label;
+        name.title = String(feat.id);
         const bar = document.createElement('span');
         bar.className = 'fp-bar';
         bar.style.width = Math.max(3, (feat.initMs / maxMs) * 100) + '%';

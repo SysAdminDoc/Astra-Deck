@@ -10020,14 +10020,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
 
             _readMarkers() {
-                if (typeof parseHeatmapMarkers !== 'function') return [];
-                const fromPlayer = parseHeatmapMarkers(window.ytInitialPlayerResponse);
-                if (fromPlayer.length) return fromPlayer;
-                return parseHeatmapMarkers(window.ytInitialData);
+                // The heatmap helpers live on YTKitCore; a bare name here was
+                // never bound, so the control could not appear. Both payloads
+                // go stale after in-page navigation, so only one about the
+                // playing video counts.
+                const readFor = globalThis.YTKitCore?.heatmapMarkersFor;
+                if (typeof readFor !== 'function') return [];
+                return readFor(getVideoId(), window.ytInitialPlayerResponse, window.ytInitialData);
             },
 
             _seekToPeak() {
-                const peak = findMostReplayed(this._markers);
+                const peak = globalThis.YTKitCore?.findMostReplayed?.(this._markers);
                 const video = getMainVideoElement();
                 if (!peak || !video) return;
                 video.currentTime = peak.startSeconds;
@@ -11761,16 +11764,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _readOriginalChapters() {
                 const videoId = getVideoId();
                 if (videoId && videoId === this._chapterVideoId && this._chapters) return this._chapters;
-                if (typeof parseDescriptionChapters !== 'function') return null;
+                // The chapter helpers live on YTKitCore. The bare names this
+                // used were never bound here, so nothing was ever restored.
+                const parse = globalThis.YTKitCore?.parseDescriptionChapters;
+                if (typeof parse !== 'function') return null;
                 let description = '';
                 try {
-                    description = window.ytInitialPlayerResponse?.videoDetails?.shortDescription || '';
+                    // The page keeps its hard-load player response, which
+                    // describes the previous video after in-page navigation.
+                    const response = window.ytInitialPlayerResponse;
+                    if (videoId && response?.videoDetails?.videoId === videoId) {
+                        description = response.videoDetails.shortDescription || '';
+                    }
                 } catch {
                     // reason: without the player response there is no original
                     // text to restore from.
                     description = '';
                 }
-                const chapters = parseDescriptionChapters(description);
+                const chapters = parse(description);
                 this._chapters = chapters.length ? chapters : null;
                 this._chapterVideoId = videoId || null;
                 return this._chapters;
@@ -11791,7 +11802,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _process() {
                 const chapters = this._readOriginalChapters();
                 if (!chapters) return;
-                if (typeof planChapterRestore !== 'function') return;
+                const { planChapterRestore, findChapterTitle, parseChapterTimestamp } = globalThis.YTKitCore || {};
+                if (typeof planChapterRestore !== 'function'
+                    || typeof findChapterTitle !== 'function'
+                    || typeof parseChapterTimestamp !== 'function') return;
                 const rows = this._collectRows().filter(row => !row.titleEl.hasAttribute('ytkit-antitranslate-chapter'));
                 if (!rows.length) return;
                 const plan = planChapterRestore(rows, chapters);

@@ -136,6 +136,20 @@ test('the most-replayed peak is the highest marker, and a tie goes to the earlie
         'sending the viewer to the FIRST equally-replayed moment is the answer that skips nothing');
 });
 
+test('the opening spike where every viewer starts is not the most-replayed moment', () => {
+    const core = loadHeatmap();
+    // The shape Gangnam Style's live curve had: full intensity at 0:00,
+    // falling away, then the real peak later on.
+    const spike = core.parseHeatmapMarkers(entityBatchResponse(evenMarkers([1, 0.4, 0.2, 0.55, 0.3])));
+    assert.equal(core.findMostReplayed(spike).startSeconds, 30,
+        'jumping to 0:00 moves nobody anywhere');
+    const flat = core.parseHeatmapMarkers(entityBatchResponse(evenMarkers([1, 0.8, 0.6, 0.6, 0.2])));
+    assert.equal(core.findMostReplayed(flat).startSeconds, 0,
+        'a curve that never rises again really does peak at the start');
+    const rising = core.parseHeatmapMarkers(entityBatchResponse(evenMarkers([0.3, 1, 0.2, 0.9, 0.1])));
+    assert.equal(core.findMostReplayed(rising).startSeconds, 10);
+});
+
 test('smart speed leaves the user rate alone through hot regions and lifts it through cold ones', () => {
     const core = loadHeatmap();
     const markers = core.parseHeatmapMarkers(entityBatchResponse(evenMarkers([0.05, 0.9, 0.1, 0.8, 0.05])));
@@ -196,10 +210,14 @@ test('both heatmap features hide themselves when the video has no heatmap', () =
 
     assert.match(body, /if \(!this\._markers\.length\) \{\s*\n\s*this\._removeButton\(\);/,
         'a video without heatmap data must not get a dead button');
-    assert.match(body, /parseHeatmapMarkers\(_rw\.ytInitialPlayerResponse\)/,
-        'the player response is the primary source');
-    assert.match(body, /parseHeatmapMarkers\(_rw\.ytInitialData\)/,
-        'initial data is the fallback shape');
+    // This used to pin `parseHeatmapMarkers(_rw.ytInitialPlayerResponse)`, a
+    // call on a name ytkit.js never bound, so the pin held the bug in place.
+    assert.equal((body.match(/heatmapMarkersFor\(getVideoId\(\), _rw\.ytInitialPlayerResponse, _rw\.ytInitialData\)/g) || []).length, 2,
+        'both features read the player response first, initial data second, for the playing video only');
+    const destructure = ytkit.slice(ytkit.indexOf('const {'), ytkit.indexOf('} = globalThis.YTKitCore || {};'));
+    for (const name of ['findMostReplayed', 'heatmapMarkersFor', 'resolveHeatmapRate']) {
+        assert.match(destructure, new RegExp(`\\b${name},`), `${name} must be bound from YTKitCore`);
+    }
 });
 
 test('smart speed writes through setProgrammaticPlaybackRate so it cannot clobber a saved speed', () => {
@@ -251,10 +269,12 @@ test('the new keys are declared, defaulted off, and localizable', () => {
 
 const { loadFeature } = require('./helpers/monolith');
 
-function heatmapPayload(count = 5) {
+const PLAYING = 'abc12345678';
+
+function heatmapPayload(count = 5, videoId = PLAYING) {
     return {
         frameworkUpdates: { entityBatchUpdate: { mutations: [{
-            payload: { macroMarkersListEntity: { markersList: {
+            payload: { macroMarkersListEntity: { externalVideoId: videoId, markersList: {
                 markerType: 'MARKER_TYPE_HEATMAP',
                 markers: Array.from({ length: count }, (_, index) => ({
                     startMillis: String(index * 10000),
@@ -266,10 +286,21 @@ function heatmapPayload(count = 5) {
     };
 }
 
+// The sandbox gets the helper under the name ytkit.js binds from YTKitCore.
+// These tests used to inject `parseHeatmapMarkers` by name, which ytkit.js
+// never bound, and so passed while the shipped feature could not find a curve.
+function heatmapFeature(id, _rw, videoId = PLAYING) {
+    return loadFeature(id, {
+        heatmapMarkersFor: loadHeatmap().heatmapMarkersFor,
+        getVideoId: () => videoId,
+        _rw
+    });
+}
+
 test('the curve is read from ytInitialData when the player response has none', () => {
-    const feature = loadFeature('jumpToMostReplayed', {
-        parseHeatmapMarkers: loadHeatmap().parseHeatmapMarkers,
-        _rw: { ytInitialPlayerResponse: { videoDetails: {} }, ytInitialData: heatmapPayload() }
+    const feature = heatmapFeature('jumpToMostReplayed', {
+        ytInitialPlayerResponse: { videoDetails: { videoId: PLAYING } },
+        ytInitialData: heatmapPayload()
     });
 
     const markers = feature._readMarkers();
@@ -279,9 +310,9 @@ test('the curve is read from ytInitialData when the player response has none', (
 });
 
 test('the player response still wins when it carries the curve', () => {
-    const feature = loadFeature('jumpToMostReplayed', {
-        parseHeatmapMarkers: loadHeatmap().parseHeatmapMarkers,
-        _rw: { ytInitialPlayerResponse: heatmapPayload(6), ytInitialData: heatmapPayload(5) }
+    const feature = heatmapFeature('jumpToMostReplayed', {
+        ytInitialPlayerResponse: heatmapPayload(6),
+        ytInitialData: heatmapPayload(5)
     });
 
     assert.equal(feature._readMarkers().length, 6, 'the first source is preferred, not merged');
@@ -295,9 +326,67 @@ test('neither source carrying a curve is still no markers and no throw', () => {
         // Below the useful-marker floor: a two-point curve is noise, not a heatmap.
         { ytInitialPlayerResponse: null, ytInitialData: heatmapPayload(2) }
     ]) {
-        const feature = loadFeature('jumpToMostReplayed', { _rw, parseHeatmapMarkers: loadHeatmap().parseHeatmapMarkers });
+        const feature = heatmapFeature('jumpToMostReplayed', _rw);
         assert.deepEqual(Array.from(feature._readMarkers()), []);
     }
+});
+
+test('both features ignore a curve that belongs to the previous video', () => {
+    // After in-page navigation the inline payloads still describe the video
+    // the tab was opened on.
+    const stale = { ytInitialPlayerResponse: heatmapPayload(6, 'zzzzzzzzzzz'), ytInitialData: heatmapPayload(5, 'zzzzzzzzzzz') };
+    for (const id of ['jumpToMostReplayed', 'heatmapSmartSpeed']) {
+        assert.deepEqual(Array.from(heatmapFeature(id, stale)._readMarkers()), [],
+            `${id} must not steer playback with another video's curve`);
+    }
+    const mixed = { ytInitialPlayerResponse: heatmapPayload(6, 'zzzzzzzzzzz'), ytInitialData: heatmapPayload(5) };
+    assert.equal(heatmapFeature('heatmapSmartSpeed', mixed)._readMarkers().length, 5,
+        'a stale player response falls through to initial data about the playing video');
+});
+
+test('heatmapMarkersFor needs a payload that names the playing video', () => {
+    const { heatmapMarkersFor, heatmapPayloadVideoId } = loadHeatmap();
+    const unnamed = heatmapPayload(5);
+    delete unnamed.frameworkUpdates.entityBatchUpdate.mutations[0].payload.macroMarkersListEntity.externalVideoId;
+
+    assert.equal(heatmapPayloadVideoId({ videoDetails: { videoId: 'aaaaaaaaaaa' } }), 'aaaaaaaaaaa');
+    assert.equal(heatmapPayloadVideoId({ currentVideoEndpoint: { watchEndpoint: { videoId: 'bbbbbbbbbbb' } } }), 'bbbbbbbbbbb');
+    assert.equal(heatmapPayloadVideoId(heatmapPayload(5, 'ccccccccccc')), 'ccccccccccc');
+    assert.equal(heatmapPayloadVideoId(null), '');
+    assert.deepEqual(Array.from(heatmapMarkersFor(PLAYING, unnamed)), [],
+        'a payload that names no video cannot be trusted to be this one');
+    assert.deepEqual(Array.from(heatmapMarkersFor('', heatmapPayload(5))), [],
+        'no playing video means no curve');
+    assert.equal(heatmapMarkersFor(PLAYING, null, heatmapPayload(5)).length, 5);
+});
+
+test('the player response accessor drops a payload about another video', () => {
+    const { loadDeclarations } = require('./helpers/monolith');
+    const payload = (videoId) => JSON.stringify({ videoDetails: { videoId, shortDescription: `about ${videoId}` } });
+    const scripts = [{ textContent: `var ytInitialPlayerResponse = ${payload('aaaaaaaaaaa')};` }];
+    let scans = 0;
+    const locationRef = { href: 'https://www.youtube.com/watch?v=aaaaaaaaaaa' };
+    const { _rw } = loadDeclarations(['_rw'], {
+        document: { querySelectorAll: (sel) => { if (sel === 'script:not([src])') { scans += 1; return scripts; } return []; } },
+        location: locationRef,
+        getVideoId: () => new URL(locationRef.href).searchParams.get('v')
+    });
+
+    assert.equal(_rw.ytInitialPlayerResponse.videoDetails.videoId, 'aaaaaaaaaaa', 'the hard-loaded video reads normally');
+
+    // In-page navigation: the URL moves on and the inline script does not.
+    locationRef.href = 'https://www.youtube.com/watch?v=bbbbbbbbbbb';
+    assert.equal(_rw.ytInitialPlayerResponse, null, 'the first video\'s description must not answer for the second');
+    const scansAfterReject = scans;
+    assert.equal(_rw.ytInitialPlayerResponse, null);
+    assert.equal(scans, scansAfterReject, 'a rejected page is not rescanned on every read');
+
+    locationRef.href = 'https://www.youtube.com/watch?v=aaaaaaaaaaa';
+    assert.equal(_rw.ytInitialPlayerResponse?.videoDetails?.videoId, 'aaaaaaaaaaa', 'returning to that video trusts it again');
+
+    locationRef.href = 'https://www.youtube.com/';
+    assert.equal(_rw.ytInitialPlayerResponse?.videoDetails?.videoId, 'aaaaaaaaaaa',
+        'a page that names no video keeps the old behavior');
 });
 
 test('the runtime object really exposes ytInitialData, not just the call site', () => {

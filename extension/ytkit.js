@@ -41,6 +41,9 @@
         parseDescriptionChapters,
         planChapterRestore,
         findComplianceDialog,
+        findMostReplayed,
+        heatmapMarkersFor,
+        resolveHeatmapRate,
         isSafeToAutoClick,
         getHideAttributionCounts,
         markCardHidden,
@@ -1106,6 +1109,7 @@ return response;
     // Bridge to page context for reading ytInitialPlayerResponse from DOM
     const _rw = {
         get ytInitialPlayerResponse() {
+            if (this._prStaleHref === location.href) return null;
             if (!this._prCache || this._prCacheHref !== location.href) {
                 this._prCacheHref = location.href;
                 this._prCache = null;
@@ -1182,11 +1186,23 @@ return response;
                 } catch (_) {
                     // reason: script DOM walk is best-effort; any access error is suppressed here so callers receive null
                 }
+                // The inline scripts are written once at hard load. After an
+                // in-page navigation they still describe the first video, and
+                // readers took its description, chapters and title for the
+                // video now playing. When the URL names a video, the payload
+                // has to be about that video.
+                const expectedId = getVideoId();
+                const payloadId = this._prCache?.videoDetails?.videoId;
+                if (expectedId && typeof payloadId === 'string' && payloadId && payloadId !== expectedId) {
+                    this._prCache = null;
+                    this._prStaleHref = location.href;
+                }
             }
             return this._prCache;
         },
         _prCache: null,
         _prCacheHref: '',
+        _prStaleHref: '',
 
         // The browse payload, which carries things the player response never
         // does: the channel's real tab list, and on some A/B buckets the
@@ -7187,11 +7203,14 @@ const STORAGE_KEYS = Object.freeze({
 
                 if (message.type === 'YTKIT_GET_FEATURE_PERF') {
                     try {
-                        const lifecycle = typeof getLifecycle === 'function' ? getLifecycle() : null;
-                        const snapshot = lifecycle?.snapshot?.() || [];
+                        // initFeatureLifecycle() records each init time on the
+                        // feature's health entry. This used to ask a shared
+                        // lifecycle registry that is never bound in this file,
+                        // so the popup and side panel always showed no timings.
+                        const snapshot = typeof getFeatureHealthSnapshot === 'function' ? getFeatureHealthSnapshot() : [];
                         const entries = snapshot
-                            .filter((s) => typeof s.initMs === 'number' && s.initMs > 0)
-                            .map((s) => ({ id: s.id, initMs: Math.round(s.initMs * 100) / 100, destroyMs: s.destroyMs != null ? Math.round(s.destroyMs * 100) / 100 : null }))
+                            .filter((s) => s.initialized && typeof s.initMs === 'number' && s.initMs > 0)
+                            .map((s) => ({ id: s.id, name: typeof s.name === 'string' && s.name ? s.name : s.id, initMs: Math.round(s.initMs * 100) / 100, destroyMs: s.destroyMs != null ? Math.round(s.destroyMs * 100) / 100 : null }))
                             .sort((a, b) => b.initMs - a.initMs);
                         sendResponse?.({ ok: true, features: entries.slice(0, 20), totalFeatures: entries.length });
                     } catch (e) {
@@ -19331,12 +19350,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
 
             _readMarkers() {
-                if (typeof parseHeatmapMarkers !== 'function') return [];
+                if (typeof heatmapMarkersFor !== 'function') return [];
                 // The curve can arrive on either object depending on the A/B
-                // bucket, so both are offered and the parser picks.
-                const fromPlayer = parseHeatmapMarkers(_rw.ytInitialPlayerResponse);
-                if (fromPlayer.length) return fromPlayer;
-                return parseHeatmapMarkers(_rw.ytInitialData);
+                // bucket. Both are read from the hard-load inline scripts and
+                // go stale after in-page navigation, so only a payload about
+                // the playing video counts.
+                return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData);
             },
 
             _seekToPeak() {
@@ -19426,10 +19445,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _readMarkers() {
-                if (typeof parseHeatmapMarkers !== 'function') return [];
-                const fromPlayer = parseHeatmapMarkers(_rw.ytInitialPlayerResponse);
-                if (fromPlayer.length) return fromPlayer;
-                return parseHeatmapMarkers(_rw.ytInitialData);
+                if (typeof heatmapMarkersFor !== 'function') return [];
+                return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData);
             },
 
             _tick() {

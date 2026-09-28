@@ -9399,10 +9399,37 @@ if (typeof globalThis !== "undefined") {
         return resolved.sort((a, b) => a.startSeconds - b.startSeconds);
     }
 
+    function heatmapPayloadVideoId(source) {
+        if (!source || typeof source !== 'object') return '';
+        const direct = source.videoDetails?.videoId
+            || source.currentVideoEndpoint?.watchEndpoint?.videoId;
+        if (typeof direct === 'string' && direct) return direct;
+        const mutations = source.frameworkUpdates?.entityBatchUpdate?.mutations;
+        if (!Array.isArray(mutations)) return '';
+        for (const mutation of mutations.slice(0, MAX_MARKERS)) {
+            const id = mutation?.payload?.macroMarkersListEntity?.externalVideoId;
+            if (typeof id === 'string' && id) return id;
+        }
+        return '';
+    }
+
+    function heatmapMarkersFor(videoId, ...sources) {
+        if (typeof videoId !== 'string' || !videoId) return [];
+        for (const source of sources) {
+            if (heatmapPayloadVideoId(source) !== videoId) continue;
+            const markers = parseHeatmapMarkers(source);
+            if (markers.length) return markers;
+        }
+        return [];
+    }
+
     function findMostReplayed(markers) {
         if (!Array.isArray(markers) || markers.length === 0) return null;
+        let from = 0;
+        while (from + 1 < markers.length && markers[from + 1].intensity <= markers[from].intensity) from += 1;
+        const candidates = from < markers.length - 1 ? markers.slice(from) : markers;
         let best = null;
-        for (const marker of markers) {
+        for (const marker of candidates) {
             if (!best || marker.intensity > best.intensity) best = marker;
         }
         return best;
@@ -9449,6 +9476,8 @@ if (typeof globalThis !== "undefined") {
         HEATMAP_MIN_MARKERS: MIN_USEFUL_MARKERS,
         findMostReplayed,
         heatmapMarkerAt: markerAt,
+        heatmapMarkersFor,
+        heatmapPayloadVideoId,
         parseHeatmapMarkers,
         resolveHeatmapRate,
         summarizeHeatmap
@@ -9459,6 +9488,8 @@ if (typeof globalThis !== "undefined") {
             HEATMAP_MIN_MARKERS: MIN_USEFUL_MARKERS,
             findMostReplayed,
             heatmapMarkerAt: markerAt,
+            heatmapMarkersFor,
+            heatmapPayloadVideoId,
             parseHeatmapMarkers,
             resolveHeatmapRate,
             summarizeHeatmap

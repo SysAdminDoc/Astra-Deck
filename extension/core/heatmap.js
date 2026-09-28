@@ -114,13 +114,52 @@
         return resolved.sort((a, b) => a.startSeconds - b.startSeconds);
     }
 
+    // Which video a payload describes. The inline payloads are written once at
+    // hard load, and after YouTube's in-page navigation they still describe
+    // the video you came from.
+    function heatmapPayloadVideoId(source) {
+        if (!source || typeof source !== 'object') return '';
+        const direct = source.videoDetails?.videoId
+            || source.currentVideoEndpoint?.watchEndpoint?.videoId;
+        if (typeof direct === 'string' && direct) return direct;
+        const mutations = source.frameworkUpdates?.entityBatchUpdate?.mutations;
+        if (!Array.isArray(mutations)) return '';
+        for (const mutation of mutations.slice(0, MAX_MARKERS)) {
+            const id = mutation?.payload?.macroMarkersListEntity?.externalVideoId;
+            if (typeof id === 'string' && id) return id;
+        }
+        return '';
+    }
+
+    // The curve from the first payload that is about `videoId`. A payload
+    // naming another video, or none, is skipped: steering playback with the
+    // previous video's curve is worse than having no curve.
+    function heatmapMarkersFor(videoId, ...sources) {
+        if (typeof videoId !== 'string' || !videoId) return [];
+        for (const source of sources) {
+            if (heatmapPayloadVideoId(source) !== videoId) continue;
+            const markers = parseHeatmapMarkers(source);
+            if (markers.length) return markers;
+        }
+        return [];
+    }
+
     // The peak of the curve. Ties resolve to the EARLIER marker: when a video
     // has two equally-replayed moments, sending the viewer to the first one is
     // the answer that does not skip content.
+    //
+    // Every viewer starts at 0:00, so most curves open at full intensity and
+    // fall away. On live YouTube that opening spike beat the real peak on
+    // Gangnam Style (1.0 at 0:00 against 0.55 at 1:11), and the control
+    // "jumped" to where the viewer already was. The opening descent is
+    // skipped; if the curve never rises again, the start is the answer.
     function findMostReplayed(markers) {
         if (!Array.isArray(markers) || markers.length === 0) return null;
+        let from = 0;
+        while (from + 1 < markers.length && markers[from + 1].intensity <= markers[from].intensity) from += 1;
+        const candidates = from < markers.length - 1 ? markers.slice(from) : markers;
         let best = null;
-        for (const marker of markers) {
+        for (const marker of candidates) {
             if (!best || marker.intensity > best.intensity) best = marker;
         }
         return best;
@@ -178,6 +217,8 @@
         HEATMAP_MIN_MARKERS: MIN_USEFUL_MARKERS,
         findMostReplayed,
         heatmapMarkerAt: markerAt,
+        heatmapMarkersFor,
+        heatmapPayloadVideoId,
         parseHeatmapMarkers,
         resolveHeatmapRate,
         summarizeHeatmap
@@ -188,6 +229,8 @@
             HEATMAP_MIN_MARKERS: MIN_USEFUL_MARKERS,
             findMostReplayed,
             heatmapMarkerAt: markerAt,
+            heatmapMarkersFor,
+            heatmapPayloadVideoId,
             parseHeatmapMarkers,
             resolveHeatmapRate,
             summarizeHeatmap

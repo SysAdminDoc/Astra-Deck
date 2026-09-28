@@ -3594,7 +3594,8 @@ async function renderFeaturePerfDashboard() {
                 if (feat.initMs > 50) li.classList.add('feature-perf-slow');
                 const name = document.createElement('span');
                 name.className = 'fp-name';
-                name.textContent = feat.id;
+                name.textContent = String(feat.name || feat.id);
+                name.title = String(feat.id);
                 const bar = document.createElement('span');
                 bar.className = 'fp-bar';
                 bar.style.width = Math.max(2, (feat.initMs / maxMs) * 100) + '%';

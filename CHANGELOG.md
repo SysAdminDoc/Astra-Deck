@@ -13,6 +13,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - An import that runs into Watch Feed's 200-entry limit now says how many entries were left out. It used to count them as added.
 - Titles with dollar signs ("Top $$ tips") read correctly in Watch Feed labels, and the row tooltip is translated.
 - Move up, Move down and Remove in the Watch Feed panel keep keyboard focus in the list. Clear now has Undo.
+- Jump to Most Replayed and Heatmap Smart Speed work. Both looked for the heatmap through a helper that was never connected, so turning them on did nothing, even on videos where YouTube sends the curve. The userscript's Jump to Most Replayed had the same problem.
+- Jump to Most Replayed skips the spike at 0:00 that nearly every video's curve opens with, since that's just where everyone starts. On Gangnam Style it now goes to 1:11 instead of the start.
+- After you click from one video to another, features that read YouTube's page data no longer pick up the first video's copy. That affected the original-language description and chapter titles, chapter export, the Theater Split title and channel fallbacks, and the heatmap. The heatmap features now only run on the video you opened directly, until YouTube gives them fresh data.
+- The feature timing list in the popup and side panel shows timings again, with readable feature names. It was reading from a source that was never connected.
+- The userscript's Anti-Translate Chapters restores original chapter titles. Its helpers were never connected either.
 
 ## [4.91.0] (2026-09-28)
 
