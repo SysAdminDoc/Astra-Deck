@@ -651,6 +651,9 @@
             pointer-events: auto !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner #notification-preference-button { position: relative !important; z-index: 40 !important; }
+        /* Before you subscribe, YouTube keeps the bell laid out but invisible; in
+           the dock that reserved an empty 150px slot and pushed the row onto two lines. */
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner #notification-preference-button[invisible] { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner #subscribe-button:not(:has(*)) { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(#subscribe-button, #notification-preference-button) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost) {
             height: var(--ts-control-h) !important;
@@ -1078,15 +1081,30 @@
             line-height: 1.3 !important;
             text-decoration: none !important;
         }
-        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) :is(#pinned-comment-badge, #author-comment-badge) :is(ytd-pinned-comment-badge-renderer, ytd-author-comment-badge-renderer, #badge, .badge) {
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #pinned-comment-badge :is(ytd-pinned-comment-badge-renderer, #badge, .badge) {
             color: var(--ts-muted) !important;
             font-size: 12px !important;
         }
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) ytd-author-comment-badge-renderer { font-size: 12px !important; }
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #author-comment-badge { margin: 0 !important; }
+        /* A verified or creator author shows as a chip. Its text color and fill come
+           from here too: YouTube pairs the creator chip's dark text with its own
+           background, so recoloring one without the other made it unreadable. */
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) ytd-author-comment-badge-renderer {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
             padding: 1px 8px !important;
             border-radius: var(--ts-radius-sm) !important;
-            background: var(--ts-hover) !important;
+            background: var(--ts-control) !important;
+            color: var(--ts-text) !important;
         }
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) ytd-author-comment-badge-renderer[creator] {
+            background: var(--ts-text) !important;
+            color: var(--ts-panel) !important;
+        }
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) ytd-author-comment-badge-renderer *:not(tp-yt-paper-tooltip, tp-yt-paper-tooltip *) { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) ytd-author-comment-badge-renderer :is(yt-icon, svg, path) { color: inherit !important; fill: currentColor !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) :is(#content-text, #content-text span) {
             margin: 0 !important;
             padding: 0 !important;

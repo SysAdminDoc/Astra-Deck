@@ -497,6 +497,10 @@ test('the extension split lays metadata out title first in one flat section', ()
         'the description is one box, not a box in a box');
     assert.match(comments, /@container ytkit-split-owner \(max-width: 420px\)[\s\S]{0,600}ytkit-watch-action-btn__label[\s\S]{0,200}clip-path: inset\(50%\)/,
         'a narrow pane keeps the action row on one line and Download named for screen readers');
+    // Found on live YouTube: before you subscribe, the bell is laid out but
+    // invisible, and in the dock it held an empty 150px slot.
+    assert.ok(meta.includes('#owner #notification-preference-button[invisible] { display: none !important; }'),
+        'an invisible bell must not reserve space in the action dock');
 });
 
 test('the extension split keeps comment controls quiet, compact and stateful', () => {
@@ -531,6 +535,15 @@ test('the extension split keeps comment controls quiet, compact and stateful', (
     assert.match(comments, /#action-menu \{[\s\S]{0,160}opacity: 0 !important;[\s\S]{0,400}:is\(:hover, :focus-within\) > #body > #action-menu/,
         'the overflow menu appears with the comment it belongs to');
     assert.match(comments, /content-visibility: auto !important;/);
+    // Found on live YouTube: the creator chip's native text color is paired
+    // with its native background, so the split sets both, and a broader
+    // badge rule must not outrank the pair.
+    assert.match(comments, /ytd-author-comment-badge-renderer\[creator\] \{\n    background: var\(--ytkit-split-text\) !important;\n    color: var\(--ytkit-split-panel\) !important;/,
+        'the creator chip inverts the pane colors');
+    assert.ok(comments.includes('ytd-author-comment-badge-renderer *:not(tp-yt-paper-tooltip, tp-yt-paper-tooltip *) { color: inherit !important;'),
+        'everything inside the chip takes the chip color');
+    assert.doesNotMatch(comments, /#author-comment-badge\) :is\([^)]*ytd-author-comment-badge-renderer/,
+        'no id-weighted badge rule may repaint the chip');
 });
 
 test('stickyVideo factory returns the full Theater Split runtime surface', () => {

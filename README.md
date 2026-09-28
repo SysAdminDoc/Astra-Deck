@@ -434,14 +434,14 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 
 ### Theater Split
 
-Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. Dark and light modes follow YouTube.
+Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. The comments pane takes its colors from the page, so it follows dark and light mode, the OLED theme, the color themes and your accent color.
 
 <p align="center">
-  <img src="outputs/astra-deck-theater-split-dark-v7.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
-  <img src="outputs/astra-deck-theater-split-light-v7.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
+  <img src="outputs/astra-deck-theater-split-dark-v8.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
+  <img src="outputs/astra-deck-theater-split-light-v8.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
 </p>
 
-<p align="center"><sub>Captured from the packaged extension in a disposable offscreen Edge session.</sub></p>
+<p align="center"><sub>Captured on YouTube in an offscreen browser session running this version's Theater Split.</sub></p>
 
 - Command Deck workspace with a mission card and three live preference summaries on every category
 - Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow

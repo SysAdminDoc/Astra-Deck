@@ -637,6 +637,9 @@ ${META} #owner :is(#subscribe-button, #notification-preference-button, #notifica
     pointer-events: auto !important;
 }
 ${META} #owner #notification-preference-button { position: relative !important; z-index: 40 !important; }
+/* Before you subscribe, YouTube keeps the bell laid out but invisible; in
+   the dock that reserved an empty 150px slot and pushed the row onto two lines. */
+${META} #owner #notification-preference-button[invisible] { display: none !important; }
 ${META} #owner #subscribe-button:not(:has(*)) { display: none !important; }
 ${META} #owner :is(#subscribe-button, #notification-preference-button) ${BUTTON} {
     height: var(--ytkit-split-control-h) !important;
@@ -1080,15 +1083,30 @@ ${COMMENT} :is(#published-time-text, #published-time-text a) {
     line-height: 1.3 !important;
     text-decoration: none !important;
 }
-${COMMENT} :is(#pinned-comment-badge, #author-comment-badge) :is(ytd-pinned-comment-badge-renderer, ytd-author-comment-badge-renderer, #badge, .badge) {
+${COMMENT} #pinned-comment-badge :is(ytd-pinned-comment-badge-renderer, #badge, .badge) {
     color: var(--ytkit-split-muted) !important;
     font-size: 12px !important;
 }
+${COMMENT} ytd-author-comment-badge-renderer { font-size: 12px !important; }
+${COMMENT} #author-comment-badge { margin: 0 !important; }
+/* A verified or creator author shows as a chip. Its text color and fill come
+   from here too: YouTube pairs the creator chip's dark text with its own
+   background, so recoloring one without the other made it unreadable. */
 ${COMMENT} ytd-author-comment-badge-renderer {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
     padding: 1px 8px !important;
     border-radius: var(--ytkit-split-radius-sm) !important;
-    background: var(--ytkit-split-hover) !important;
+    background: var(--ytkit-split-control) !important;
+    color: var(--ytkit-split-text) !important;
 }
+${COMMENT} ytd-author-comment-badge-renderer[creator] {
+    background: var(--ytkit-split-text) !important;
+    color: var(--ytkit-split-panel) !important;
+}
+${COMMENT} ytd-author-comment-badge-renderer *:not(tp-yt-paper-tooltip, tp-yt-paper-tooltip *) { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
+${COMMENT} ytd-author-comment-badge-renderer :is(yt-icon, svg, path) { color: inherit !important; fill: currentColor !important; }
 ${COMMENT} :is(#content-text, #content-text span) {
     margin: 0 !important;
     padding: 0 !important;

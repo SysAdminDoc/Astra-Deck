@@ -37,6 +37,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   theme or a color theme. A page-wide rule painted the canvas color behind
   them.
 - The upload date line in the Theater Split header is translated.
+- On a channel you haven't subscribed to, the Theater Split action row no
+  longer leaves an empty gap where the hidden notification bell sits, so it
+  stays on one line.
+- The video creator's name chip in the comments is readable in every theme.
 
 ## [4.90.2] (2026-09-25)
 
