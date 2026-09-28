@@ -333,10 +333,13 @@ test('release preparation gates the Chromium, live-chat, Firefox, and real-manag
     // computed foreground against composited background in a real engine, and
     // the source-level light-theme gate was green while the Digital Wellbeing
     // card rendered at about 1.05:1.
+    // smoke:main-bridge:live joined for the same reason: every unit test
+    // passed while Chrome skipped the channel module in the MAIN world and
+    // every MAIN-world feature read nothing on real pages.
     assert.equal(
         pkg.scripts['release:browser-smokes'],
         'npm run smoke:a11y && npm run smoke:light-surfaces && npm run smoke:theme-controls'
-        + ' && npm run smoke:zero-ads:live'
+        + ' && npm run smoke:zero-ads:live && npm run smoke:main-bridge:live'
         + ' && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
     );
     assert.match(pkg.scripts['release:prepare'], /npm run release:browser-smokes/);

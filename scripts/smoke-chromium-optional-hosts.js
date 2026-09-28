@@ -277,16 +277,48 @@ async function waitForDevTools(port, timeoutMs) {
     throw new Error(`Timed out waiting for Chromium DevTools on 127.0.0.1:${port}.`);
 }
 
+// Current Chromium builds ship a component extension whose worker is also
+// `background.js`, so the URL alone can pick the wrong one. Ask each worker
+// whether it is ours: only Astra Deck's manifest carries ytkit-main.js.
+const OWN_WORKER_EXPRESSION = `(() => {
+    try {
+        return (chrome.runtime.getManifest().content_scripts || [])
+            .some((entry) => (entry.js || []).includes('ytkit-main.js'));
+    } catch (_) {
+        return false;
+    }
+})()`;
+
+/** true or false once the worker answers; null while it can't yet. */
+async function isOwnBackgroundTarget(target) {
+    let client = null;
+    try {
+        client = await connectCdp(target.webSocketDebuggerUrl);
+        await client.send('Runtime.enable');
+        return (await evaluate(client, OWN_WORKER_EXPRESSION)) === true;
+    } catch (_) {
+        return null;
+    } finally {
+        if (client) client.close();
+    }
+}
+
 async function waitForBackgroundTarget(port, timeoutMs) {
     const deadline = Date.now() + timeoutMs;
+    const notOurs = new Set();
     let lastTargets = [];
     while (Date.now() < deadline) {
         lastTargets = await fetchJsonFromDevTools(port, '/json/list');
-        const target = lastTargets.find((entry) =>
+        const candidates = lastTargets.filter((entry) =>
             entry.type === 'service_worker'
             && /^chrome-extension:\/\//.test(entry.url)
-            && /\/background\.js$/.test(entry.url));
-        if (target) return target;
+            && /\/background\.js$/.test(entry.url)
+            && !notOurs.has(entry.url));
+        for (const target of candidates) {
+            const own = await isOwnBackgroundTarget(target);
+            if (own === true) return target;
+            if (own === false) notOurs.add(target.url);
+        }
         await sleep(200);
     }
     const targetSummary = lastTargets.map((target) => `${target.type}:${target.url}`).join(', ');
