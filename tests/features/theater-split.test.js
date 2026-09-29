@@ -528,8 +528,20 @@ test('the extension split keeps comment controls quiet, compact and stateful', (
     const countRules = countStart >= 0 ? comments.slice(countStart, countStart + 1100) : '';
     assert.ok(/border: 0 !important;[\s\S]*background: transparent !important;[\s\S]*font-variant-numeric: tabular-nums !important;/.test(countRules),
         'like counts are stable inline metadata');
-    assert.ok(/#vote-count-middle::after \{\n    content: none !important;\n    display: none !important;/.test(countRules),
+    assert.ok(/#vote-count-middle::after \{\n    content: none !important;\n    display: none !important;/.test(comments),
         'the native separator after the count is gone');
+    assert.ok(countRules.includes('pointer-events: none !important;'),
+        'the count tucked under Like never takes its clicks');
+    assert.match(comments, /#like-button:hover \+ #vote-count-middle \{ color: var\(--ytkit-split-text\)/,
+        'the count brightens with its Like button');
+    assert.match(comments, /#like-button:has\([^)]*\)\[aria-pressed="true"\]\) \+ #vote-count-middle \{ color: var\(--ytkit-split-accent-ink\)/,
+        'a liked comment\'s count takes the selected ink');
+    // An id inside :is() outranked every state rule, so Like never showed
+    // hover, selected or disabled. The base selector must not carry ids.
+    assert.ok(comments.includes(':where(#like-button, #dislike-button) button {'),
+        'the Like/Dislike base selector adds no id specificity');
+    assert.ok(!/:is\(#like-button, #dislike-button\) button \{/.test(comments),
+        'no id-weighted base rule can shadow the Like states');
     assert.match(comments, /#more-replies-sub-thread[\s\S]{0,400}\{[\s\S]{0,700}background: transparent !important;\n    color: var\(--ytkit-split-accent-ink\) !important;/,
         'reply expanders are quiet accent text, not pills');
     assert.match(comments, /#action-menu \{[\s\S]{0,160}opacity: 0 !important;[\s\S]{0,400}:is\(:hover, :focus-within\) > #body > #action-menu/,

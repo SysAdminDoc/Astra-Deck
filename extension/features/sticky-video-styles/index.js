@@ -1160,8 +1160,11 @@ ${TOOLBAR} > :is(#like-button, #dislike-button, #reply-button-end) > :is(yt-butt
     height: 32px !important;
     margin: 0 !important;
 }
+/* :where() keeps the ids out of the specificity. With :is() this selector
+   outranked the :hover, [aria-pressed] and disabled rules below, so Like and
+   Dislike never showed any of those states. */
 ${TOOLBAR} ${BUTTON},
-${TOOLBAR} :is(#like-button, #dislike-button) button {
+${TOOLBAR} :where(#like-button, #dislike-button) button {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1216,7 +1219,13 @@ ${PANE} ytd-comment-engagement-bar #vote-count-middle {
     font-size: 12px !important;
     font-weight: 500 !important;
     font-variant-numeric: tabular-nums !important;
+    pointer-events: none !important;
+    transition: color 160ms var(--ytkit-split-ease) !important;
 }
+/* The count tucks 2px under the Like button, so it takes no input and reads
+   as part of that control: it brightens on hover and takes the selected ink. */
+${TOOLBAR} > #like-button:hover + #vote-count-middle { color: var(--ytkit-split-text) !important; }
+${TOOLBAR} > #like-button:has(${BUTTON}[aria-pressed="true"]) + #vote-count-middle { color: var(--ytkit-split-accent-ink) !important; }
 ${PANE} ytd-comment-engagement-bar #vote-count-middle:empty { margin: 0 !important; }
 ${PANE} ytd-comment-engagement-bar #vote-count-middle::before,
 ${PANE} ytd-comment-engagement-bar #vote-count-middle::after {

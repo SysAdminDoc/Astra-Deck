@@ -1157,8 +1157,11 @@
             height: 32px !important;
             margin: 0 !important;
         }
+        /* :where() keeps the ids out of the specificity. With :is() this selector
+           outranked the :hover, [aria-pressed] and disabled rules below, so Like and
+           Dislike never showed any of those states. */
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #toolbar#toolbar :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost),
-        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #toolbar#toolbar :is(#like-button, #dislike-button) button {
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #toolbar#toolbar :where(#like-button, #dislike-button) button {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1213,7 +1216,13 @@
             font-size: 12px !important;
             font-weight: 500 !important;
             font-variant-numeric: tabular-nums !important;
+            pointer-events: none !important;
+            transition: color 160ms var(--ts-ease) !important;
         }
+        /* The count tucks 2px under the Like button, so it takes no input and reads
+           as part of that control: it brightens on hover and takes the selected ink. */
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #toolbar#toolbar > #like-button:hover + #vote-count-middle { color: var(--ts-text) !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #toolbar#toolbar > #like-button:has(:is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost)[aria-pressed="true"]) + #vote-count-middle { color: var(--ts-accent-ink) !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #vote-count-middle:empty { margin: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #vote-count-middle::before,
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-engagement-bar #vote-count-middle::after {
