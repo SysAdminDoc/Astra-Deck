@@ -8846,6 +8846,18 @@ test('v4.28.0 humanizeSettingKey inserts spaces around digit runs', () => {
     assert.equal(humanizeSettingKey('av1ForceEnable'), 'AV1 force enable');
 });
 
+test('humanizeSettingKey keeps product names whole and correctly cased', () => {
+    const { humanizeSettingKey } = require('../extension/core/settings-schema');
+    assert.equal(humanizeSettingKey('deArrowCasualMode'),     'DeArrow casual mode');
+    assert.equal(humanizeSettingKey('dearrowPeekButton'),     'DeArrow peek button');
+    assert.equal(humanizeSettingKey('sponsorBlock'),          'SponsorBlock');
+    assert.equal(humanizeSettingKey('rectangularizeYouTube'), 'Rectangularize YouTube');
+    assert.equal(humanizeSettingKey('githubFullProfile'),     'GitHub full profile');
+    assert.equal(humanizeSettingKey('vlcMpvHandoff'),         'VLC MPV handoff');
+    assert.equal(humanizeSettingKey('forceH264'),             'Force H.264');
+    assert.equal(humanizeSettingKey('hideEndCards'),          'Hide end cards');
+});
+
 test('settings schema reports only persisted user changes from defaults', () => {
     const { getChangedSettings, settingsValuesEqual } = require('../extension/core/settings-schema');
     const schema = [
@@ -12895,8 +12907,13 @@ test('premium compact surfaces prioritize exceptional metadata and balanced layo
         'loading diagnostics must reserve a visible skeleton state');
     assert.match(popupHtml, /<details class="search-help">/,
         'advanced popup filter grammar must live behind a disclosure');
-    assert.match(popupCss, /\.stat-card:last-child \.stat-card-label/,
+    // :last-of-type, not :last-child. The transcript line after the cards is
+    // the grid's last child, so a :last-child rule matched nothing and the
+    // BOOKMARKS label ran past its card while this test still passed.
+    assert.match(popupCss, /\.stat-card:last-of-type \.stat-card-label/,
         'the longest storage label must have a compact no-clip treatment');
+    assert.match(popupCss, /\.transcript-index-line \{\s*grid-column:\s*1 \/ -1;/,
+        'the transcript line must span the stats grid instead of taking one card column');
 });
 
 test('sidepanel.css has focus-visible styles for interactive elements', () => {

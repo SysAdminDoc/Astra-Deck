@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "Padrão"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "Vazio",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "Todas as configurações usam seus padrões."
   },

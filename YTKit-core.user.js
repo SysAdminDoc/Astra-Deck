@@ -1589,6 +1589,17 @@ const HUMANISE_SHORT_FORMS = new Set([
     "vvf", "sbcat", "dw"
 ]);
 
+const HUMANISE_BRAND_NAMES = [
+    [/\byou tube\b/gi, "YouTube"],
+    [/\bde ?arrow\b/gi, "DeArrow"],
+    [/\bsponsor block\b/gi, "SponsorBlock"],
+    [/\bgithub\b/gi, "GitHub"],
+    [/\bgemini\b/gi, "Gemini"],
+    [/\bvlc\b/gi, "VLC"],
+    [/\bmpv\b/gi, "MPV"],
+    [/\bH264\b/g, "H.264"]
+];
+
 function humanizeSettingKey(rawKey) {
     if (typeof rawKey !== "string" || rawKey.length === 0) return "";
     let s = rawKey;
@@ -1601,7 +1612,9 @@ function humanizeSettingKey(rawKey) {
         if (i === 0) return lower.charAt(0).toUpperCase() + lower.slice(1);
         return lower;
     });
-    return out.join(" ");
+    let label = out.join(" ");
+    for (const [pattern, name] of HUMANISE_BRAND_NAMES) label = label.replace(pattern, name);
+    return label;
 }
 
 if (typeof module !== "undefined" && module.exports) {

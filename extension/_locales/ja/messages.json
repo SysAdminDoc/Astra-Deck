@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "既定値"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "空",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "すべての設定が既定値です。"
   },

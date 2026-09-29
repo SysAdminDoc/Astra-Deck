@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "الافتراضي"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "فارغ",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "تستخدم كل الإعدادات قيمها الافتراضية."
   },

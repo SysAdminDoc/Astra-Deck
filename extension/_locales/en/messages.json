@@ -5365,13 +5365,17 @@
     "message": "Could not copy changed settings."
   },
   "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} settings on across {categories} categories"
+    "message": "{enabled} of {total} settings on, across {categories} categories"
   },
   "schemaOverviewDiffCurrent": {
     "message": "Current"
   },
   "schemaOverviewDiffDefault": {
     "message": "Default"
+  },
+  "schemaOverviewValueEmpty": {
+    "message": "Empty",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
   },
   "schemaOverviewDiffEmpty": {
     "message": "All settings use their defaults."

@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "Predeterminado"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "Vacío",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "Todos los ajustes usan sus valores predeterminados."
   },

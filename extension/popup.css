@@ -372,11 +372,14 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* The line sits inside the five-column stats grid. Without a full-row span
+   it took the sixth cell and wrapped into a 70px column under Keys. */
 .transcript-index-line {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.4;
@@ -410,7 +413,9 @@ body {
   line-height: 1;
 }
 
-.stat-card:last-child .stat-card-label {
+/* last-of-type, not last-child: the transcript line after the cards is a <p>,
+   so last-child stopped matching and BOOKMARKS ran past its card. */
+.stat-card:last-of-type .stat-card-label {
   font-size: 8.5px;
   letter-spacing: 0.025em;
 }

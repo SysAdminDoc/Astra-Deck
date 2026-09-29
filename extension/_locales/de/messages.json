@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "Standard"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "Leer",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "Alle Einstellungen verwenden ihre Standardwerte."
   },

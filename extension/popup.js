@@ -3852,6 +3852,18 @@ function formatSchemaDiffValue(value, key) {
     }
 }
 
+// The on-screen form of a diff value. Rows read "Current: true" and
+// "Default:" with nothing after it; toggles now read on/off and an empty
+// string says so. The copied JSON keeps the raw values.
+function describeSchemaDiffValue(value, key) {
+    if (value === true) return t('switchLabelOn', 'on');
+    if (value === false) return t('switchLabelOff', 'off');
+    const text = formatSchemaDiffValue(value, key);
+    return text === '' || text === '""' || text === '[]'
+        ? t('schemaOverviewValueEmpty', 'Empty')
+        : text;
+}
+
 function sanitizeSchemaDiff(changes) {
     return changes.map((change) => ({
         key: change.key,
@@ -4303,9 +4315,16 @@ function renderSchemaDiff(changes) {
         const head = document.createElement('div');
         head.className = 'schema-overview-diff-head';
         const label = document.createElement('strong');
-        label.textContent = typeof window.__YTKIT_SETTINGS_SCHEMA__?.humanizeSettingKey === 'function'
-            ? window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey(change.key)
-            : change.key;
+        // Same name the all-settings list gives this row: the schema's own
+        // label when it has one ("GitHub-Full Profile"), the humaniser's
+        // guess ("Github full profile") only when it doesn't.
+        const scope = window.__YTKIT_SETTINGS_SCHEMA__;
+        const entry = typeof scope?.findSettingEntry === 'function'
+            ? scope.findSettingEntry(change.key)
+            : scope?.SETTINGS_SCHEMA?.find?.((candidate) => candidate.key === change.key);
+        const overrideLabel = typeof entry?.labelKey === 'string' && entry.labelKey.trim();
+        label.textContent = overrideLabel
+            || (typeof scope?.humanizeSettingKey === 'function' ? scope.humanizeSettingKey(change.key) : change.key);
         label.title = change.key;
         const category = document.createElement('span');
         category.textContent = change.category;
@@ -4317,11 +4336,11 @@ function renderSchemaDiff(changes) {
         const current = document.createElement('span');
         current.className = 'schema-overview-diff-value';
         current.textContent = t('schemaOverviewDiffCurrent', 'Current') + ': '
-            + formatSchemaDiffValue(change.currentValue, change.key);
+            + describeSchemaDiffValue(change.currentValue, change.key);
         const defaultValue = document.createElement('span');
         defaultValue.className = 'schema-overview-diff-value schema-overview-diff-default';
         defaultValue.textContent = t('schemaOverviewDiffDefault', 'Default') + ': '
-            + formatSchemaDiffValue(change.defaultValue, change.key);
+            + describeSchemaDiffValue(change.defaultValue, change.key);
         values.appendChild(current);
         values.appendChild(defaultValue);
 
@@ -4442,7 +4461,7 @@ function renderSchemaOverview() {
     // Render rolled-up counts.
     if (schemaOverviewCount) {
         const tpl = t('schemaOverviewCountTpl',
-            '{enabled}/{total} settings on across {categories} categories');
+            '{enabled} of {total} settings on, across {categories} categories');
         schemaOverviewCount.textContent = tpl
             .replace('{enabled}',    String(nonInternalEnabled))
             .replace('{total}',      String(nonInternalTotal))

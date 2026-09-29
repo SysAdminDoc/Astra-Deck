@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "기본값"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "비어 있음",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "모든 설정이 기본값을 사용합니다."
   },

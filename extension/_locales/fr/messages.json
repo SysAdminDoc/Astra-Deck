@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "Par défaut"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "Vide",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "Tous les paramètres utilisent leurs valeurs par défaut."
   },

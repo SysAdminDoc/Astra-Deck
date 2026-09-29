@@ -116,6 +116,14 @@ body {
   background: var(--astra-canvas);
 }
 
+/* Any author display rule beats the browser's own [hidden] rule. The popup
+   carried a dozen one-off `.x[hidden] { display: none }` patches and still
+   missed one: the bisect "Still happens" / "Gone" answers showed before a
+   bisect had started. One rule for both pages ends that class of bug. */
+[hidden] {
+  display: none !important;
+}
+
 ::selection {
   background: var(--astra-accent-soft);
   color: var(--astra-text);

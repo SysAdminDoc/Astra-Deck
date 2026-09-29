@@ -5345,6 +5345,10 @@
   "schemaOverviewDiffDefault": {
     "message": "默认值"
   },
+  "schemaOverviewValueEmpty": {
+    "message": "为空",
+    "description": "Settings overview, changed-settings list: shown in place of a value that is an empty string or empty list."
+  },
   "schemaOverviewDiffEmpty": {
     "message": "所有设置均使用默认值。"
   },
