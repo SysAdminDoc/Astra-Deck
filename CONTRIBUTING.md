@@ -52,10 +52,16 @@ Astra-Deck/
                        #   audit-popup-a11y, check-contrast,
                        #   build-selector-fixtures, generate-locales,
                        #   extract-i18n-keys, custom ESLint rules
-  YTKit.user.js        # Repo-tracked userscript source (legacy filename
-                       #   preserved for stable @updateURL on existing
-                       #   installs; built from extension/ytkit.js by
-                       #   sync-userscript.js)
+  userscript/host.js   # Userscript host: the GM_*-backed stand-in for
+                       #   chrome.* that runs the extension's own files
+  YTKit.user.js        # Generated userscript (legacy filename kept for a
+                       #   stable @updateURL): header, build data and
+                       #   userscript/host.js. Never hand-edit.
+  YTKit-{core,features,app}.user.js
+                       # Generated @require libraries holding every
+                       #   extension file. `node sync-userscript.js`
+                       #   writes all four; check-userscript-drift fails
+                       #   when they don't match extension/.
   YT_Reaction_Spammer.user.js  # Standalone live-chat reaction spammer
   theater-split.user.js        # Standalone theater split userscript
   CHANGELOG.md         # Public version history
@@ -65,7 +71,7 @@ Astra-Deck/
 
 ## Architecture
 
-The repo now ships both an MV3 extension and a userscript build. Most feature logic lives in `extension/ytkit.js` and follows the feature object pattern:
+The repo ships an MV3 extension, and the userscript is built from the same files, so there is one implementation to change. After editing anything under `extension/`, run `node sync-userscript.js` and commit the regenerated `YTKit*.user.js` files with it. Most feature logic lives in `extension/ytkit.js` and follows the feature object pattern:
 
 ```javascript
 {

@@ -64,12 +64,9 @@ explicitly chooses the broader profile and enables the relevant feature:
 | User-configured Video Hider filter-list host | An anonymous GET for the exact HTTPS URL the user entered. No YouTube page data, cookies, credentials, or local rules are sent. | Only after the user configures a list and grants that exact origin in GitHub-full; checks follow the selected daily, weekly, or manual cadence. |
 | User-configured self-hosted Cobalt | The canonical YouTube watch URL containing only the video ID. Cookies, credentials, playlist context, and the page's other query parameters are omitted. | Only when GitHub-full fallback is enabled, Astra Downloader is offline, and the user has configured and granted one HTTPS instance they operate or are authorized to use. Astra Deck does not use `api.cobalt.tools`. |
 
-The standalone userscript does not call Cobalt or community downloader APIs.
-Its optional web-downloader fallback navigates only to a user-configured HTTPS
-page. By default the canonical watch URL is placed in the fragment, which is
-not part of the HTTP navigation request. If the user deliberately puts the
-`{url}` placeholder in a path or query, that configured page receives the
-encoded canonical watch URL.
+The userscript runs the GitHub-full code, so the table above applies to it as
+written, and the userscript manager also asks before the first connection to
+each destination. It does not call public Cobalt or community downloader APIs.
 
 Astra Deck does not send extension telemetry, analytics, crash reports, hidden
 lists, notes, settings profiles, or diagnostic bundles to Astra Deck servers.

@@ -159,29 +159,25 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 - [ ] P3 — Surfaces the 2026-09-28 polish pass didn't reach
   Why: that pass covered the Command Deck, popup, side panel, download panel, Video Hider,
   transcript states, comment search, toasts and the Theater Split captures. These got no
-  light/dark and state review: the userscript's own Quick Settings UI (`YTKit.user.js`), the
-  live chat enhancements, the AI summary and Transcript Q&A dialogs, the Subscription Groups
+  light/dark and state review: the live chat enhancements, the AI summary and Transcript Q&A dialogs, the Subscription Groups
   manager, the player right-click menu, the SponsorBlock segment UI, and the Digital Wellbeing
   prompts.
-  Where: `YTKit.user.js`, `extension/live-chat.js` / `live-chat.css`,
-  `extension/core/userscript-ai-summary.js`, `extension/features/subscription-groups`,
+  Where: `extension/live-chat.js` / `live-chat.css`,
+  `extension/ytkit.js` (`aiVideoSummary`), `extension/features/subscription-groups`,
   `extension/features/sponsorblock`, `extension/features/digital-wellbeing`.
   Acceptance: each surface captured headless in light and dark (default, hover, focus,
   disabled, empty, error), with findings fixed or logged here.
   Complexity: M
 
 - [ ] P3 — Block Comment Authors has no entry point when the comment menu is hidden
-  Why: the Block item lives in the ⋮ menu YouTube opens from a comment. Three setups remove
-  that menu: signed-out pages (YouTube renders the menu empty and the button zero-size),
-  Studio Comments (`chatStyleComments` hides `#action-menu` outright), and the userscript,
-  whose defaults set `hideCommentActionMenu: true`. Blocking still works there by typing the
+  Why: the Block item lives in the ⋮ menu YouTube opens from a comment. Two setups remove
+  that menu: signed-out pages (YouTube renders the menu empty and the button zero-size) and
+  Studio Comments (`chatStyleComments` hides `#action-menu` outright). Blocking still works there by typing the
   handle into Blocked Comment Authors, but nothing on the comment offers it.
   Where: `extension/features/comment-author-block/index.js`,
-  `extension/features/chat-style-comments/index.js` (the `#action-menu` hide),
-  `YTKit.user.js` defaults.
+  `extension/features/chat-style-comments/index.js` (the `#action-menu` hide).
   Acceptance: WHEN the comment menu is absent or hidden, THEN each comment SHALL still offer a
-  keyboard-reachable Block control (for example in the Studio Comments hover toolbar), and the
-  userscript SHALL either show the menu by default or provide the same fallback.
+  keyboard-reachable Block control (for example in the Studio Comments hover toolbar).
   Complexity: S
 
 - [ ] P3 — Theater Split: comments header chip offset and collapsed-rail hint
@@ -203,7 +199,7 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   .macroMarkersListEntity`), which only the MAIN world sees.
   Where: `extension/ytkit-main.js` and `extension/core/bridge-channel.js` (carry the markers
   across), `extension/ytkit.js` heatmap `_readMarkers` (x2), `extension/core/heatmap.js`
-  `heatmapMarkersFor`. Userscript: `YTKit.user.js` jumpToMostReplayed.
+  `heatmapMarkersFor`. The userscript runs the same code, so one fix covers both.
   Acceptance: WHEN you click from one video to another, THEN both features SHALL use the new
   video's curve without a reload, and SHALL still refuse a curve whose id doesn't match.
   Complexity: M
@@ -218,14 +214,15 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   (for example from the feature's settings card or an empty-state pill).
   Complexity: S
 
-- [ ] P3 — Check the userscript's page-data reads under `@inject-into content`
-  Why: `YTKit.user.js` declares `@inject-into content`. Where a manager honors that (Violentmonkey,
-  and Firefox builds), `window` is the sandbox, so `window.ytInitialPlayerResponse` and
-  `window.ytInitialData` may be undefined and Anti-Translate Chapters, Jump to Most Replayed and
-  the other readers quietly do nothing. Not tested in a real manager yet.
-  Where: `YTKit.user.js` header and every `window.ytInitial*` read (grep).
-  Acceptance: each supported manager SHALL be shown to expose the payload, or the reads SHALL
-  fall back to parsing the page's inline scripts the way the extension does.
+- [ ] P3 — Firefox extension: first YouTube load after a temporary install logs "Runtime module load failed undefined"
+  Why: 2026-09-29, seen in headless Firefox during the userscript parity pass. The first
+  YouTube page after `about:debugging` loads the add-on logs the failure once, then every later
+  load is clean. It looks like a race between the runtime bootstrap and the module loader on the
+  very first page, and the error value is lost on the way to the log (`undefined`).
+  Where: `extension/runtime-bootstrap.js`, `extension/runtime-core-loader.mjs` (the catch that
+  logs it).
+  Acceptance: a fresh temporary install's first YouTube load SHALL log no module failure, and a
+  real failure SHALL log its message and the module that failed.
   Complexity: S
 
 - [ ] P3 — Finish the 2026-09-28 audit sweep

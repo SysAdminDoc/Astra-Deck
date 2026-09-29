@@ -6,6 +6,37 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- The userscript is built from the extension now. It runs the extension's own files, so it has the same features, settings panel, themes and Theater Split, and the two can't drift apart again. `YTKit.user.js` is a small host that maps the extension's browser APIs onto your userscript manager. It loads three libraries (`YTKit-core`, `YTKit-features` and `YTKit-app`) pinned to the matching release tag.
+- 53 settings that used to be extension-only work in the userscript too. That includes the audio tools (volume boost, EQ, normalization, mono to stereo), Video Insights, Zen mode, Comment Translate, Buffer / Preload and forced DVR. Settings Sync is the one setting that still needs the extension.
+- The userscript's connection list covers every site the extension can reach, plus `*` for sites you add yourself, like your own Cobalt instance or a filter list. Your manager asks the first time a feature reaches a new site, the way the extension asks for an optional permission.
+- Settings saved by the old userscript carry over the first time the new one runs. Return YouTube Dislike comes along too, even though the old userscript stored it under a different name.
+
+### Removed
+
+- The old userscript's own download buttons (MP3, VLC, MPV and the Cobalt web page) are gone. The userscript uses the extension's download panel now, which saves audio or video through Astra Downloader and has VLC / MPV handoff as a setting.
+- The userscript no longer hands your YouTube sign-in to Astra Downloader. The extension only does that after the companion proves itself through native messaging, which a userscript can't do, so members-only and age-restricted downloads need the extension.
+- The old userscript's separate AI Summary panel and its right-click key dialog are gone too. The userscript opens the same summary panel as the extension, and you set the provider key from the userscript manager's menu. Keys you saved before are still there, since the manager storage keeps them under the same names.
+
+### Fixed
+
+- Theater Split in the userscript works and looks the same as in the extension, in light and dark.
+- Userscript theme colors match the extension, including OLED, Catppuccin and Nyan Cat.
+- Toasts are readable on light YouTube. The message and buttons were white text on the white card.
+- Quick Settings switches off the other side of a conflicting pair when you turn a feature on, flips that card to Off, and says which one it turned off, the same as the settings panel. It used to leave both running.
+- Userscript: AI provider keys are kept in your userscript manager's storage, not in storage YouTube's scripts can read, and keys saved by the old userscript still work. You set them from the manager's menu (**AI provider key**), since a userscript has no toolbar popup.
+- The AI Summary button's tooltip tells you where to set the provider key in both builds.
+- Firefox: the page side of Astra Deck couldn't read the navigation notice the content side sent it, so every in-app navigation logged a permission error there. The notice is cloned into the page first now.
+- The userscript runs under Tampermonkey on Firefox, whose sandbox window has no `dispatchEvent`.
+
+### Release checks
+
+- `check-userscript-drift` fails when a file the extension runs doesn't ship in the userscript, or when the generated files don't match a fresh build.
+- `check-userscript-symbols` runs the userscript host and fails when shipped code calls a browser API the host doesn't provide.
+- `build-extension --bump` rebuilds all four userscript files, so their versions and tag links move together.
+- Release readiness, the size check and the no-eval scan cover all four userscript files, and lint covers `userscript/host.js`.
+
 ## [4.92.1] (2026-09-28)
 
 ### Fixed
