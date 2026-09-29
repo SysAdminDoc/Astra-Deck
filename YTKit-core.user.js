@@ -27422,6 +27422,7 @@ function buildSettingsPanel() {
                 const fullFeatureName = getFeatureName(feature);
                 label.textContent = fullFeatureName
                     .replace(/^(Persistent|Preferred|Initial)\s+/, '')
+                    .replace(/^Download\s+(?=Quality$)/, '')
                     .replace(/\s+(Selector|Format|Language)$/, '');
                 label.title = fullFeatureName;
                 const value = document.createElement('strong');

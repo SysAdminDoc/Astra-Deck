@@ -28019,7 +28019,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             name: 'Download Quality',
             description: 'Preferred video quality for downloads',
             group: 'Downloads',
-            icon: 'settings-2',
+            icon: 'quality',
             type: 'select',
             options: [
                 { value: 'best', label: 'Best Available' },
@@ -28038,7 +28038,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             name: 'Video Format',
             description: 'Default container format for video downloads',
             group: 'Downloads',
-            icon: 'settings-2',
+            icon: 'film',
             type: 'select',
             options: [
                 { value: 'mp4', label: 'MP4' },
@@ -28054,7 +28054,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             name: 'Audio Format',
             description: 'Default format for audio-only downloads',
             group: 'Downloads',
-            icon: 'settings-2',
+            icon: 'audio-lines',
             type: 'select',
             options: [
                 { value: 'mp3', label: 'MP3' },
@@ -42618,6 +42618,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const fullFeatureName = getFeatureName(feature);
                 label.textContent = fullFeatureName
                     .replace(/^(Persistent|Preferred|Initial)\s+/, '')
+                    .replace(/^Download\s+(?=Quality$)/, '')
                     .replace(/\s+(Selector|Format|Language)$/, '');
                 label.title = fullFeatureName;
                 const value = document.createElement('strong');
