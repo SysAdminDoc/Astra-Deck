@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "替换凭据"
   },
-  "aiCredentialReplaceHint": {
-    "message": "凭据已配置。输入新值即可替换；不会显示已存储的值。"
-  },
   "aiCredentialSaveBtn": {
     "message": "保存凭据"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "状态不可用"
   },
-  "aiCredentialStoreHint": {
-    "message": "仅存储在用户脚本管理器中，不会进入 Astra Deck 设置和导出内容。"
-  },
   "aiCredentialTitle": {
     "message": "AI 提供商凭据"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "AI 摘要（在 Astra Deck 工具栏弹窗中管理凭据）"
+    "message": "AI 摘要（在 Astra Deck 工具栏弹窗或用户脚本管理器菜单中设置提供商密钥）"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "改用你配置的自带密钥提供方。"
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "简要结论"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "AI 摘要（右键管理提供商凭据）"
   },
   "altFrontendOpenAriaTpl": {
     "message": "在 {host} 上于外部打开"

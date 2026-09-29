@@ -21,6 +21,8 @@ const path = require('node:path');
 const {
     isResolvableRequireUrl,
 } = require('../scripts/check-userscript-size');
+const { LIBRARIES: USERSCRIPT_LIBRARIES, MAX_RECORD_BYTES } = require('../sync-userscript');
+const { USERSCRIPT_FILES } = require('./helpers/source');
 
 const REPO_ROOT = path.join(__dirname, '..');
 
@@ -210,17 +212,24 @@ test('userscript-health: YT_Reaction_Spammer.user.js retains the v0.3.0 N3 500 m
 
 test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () => {
     const main = readUserscript('YTKit.user.js');
-    const core = readUserscript('YTKit-core.user.js');
-    const maxBytes = 2 * 1024 * 1024;
-    assert.ok(Buffer.byteLength(main, 'utf8') < maxBytes,
-        'YTKit.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
-    assert.ok(Buffer.byteLength(core, 'utf8') < maxBytes,
-        'YTKit-core.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
+    // Every generated file is its own Greasy Fork record: the main script and
+    // the three @require libraries that carry the extension's files.
+    for (const file of USERSCRIPT_FILES) {
+        assert.ok(Buffer.byteLength(readUserscript(file), 'utf8') < MAX_RECORD_BYTES,
+            `${file} must remain below Greasy Fork’s per-record 2 MiB limit`);
+    }
     // The raw-GitHub half of this used to accept the `main` branch. A branch
     // pointer is mutable, so the same @version could require different bytes
     // on different days; v4.88.3 pinned it to an immutable tag ref.
-    assert.match(main, /^\/\/ @require\s+(?:https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/refs\/tags\/v\d+\.\d+\.\d+\/YTKit-core\.user\.js|https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^\s]+)$/m,
-        'YTKit.user.js must load its executable dependency from a tag-pinned core URL or a numbered Greasy Fork record');
+    const block = extractMetadataBlock(main);
+    const requires = metadataValues(block, 'require');
+    assert.deepEqual(requires.map((url) => url.slice(url.lastIndexOf('/') + 1)),
+        USERSCRIPT_LIBRARIES.map(({ file }) => file),
+        'YTKit.user.js must @require each library once, in the order the host expects to find them registered');
+    for (const url of requires) {
+        assert.ok(isResolvableRequireUrl(url),
+            `${url} must be a tag-pinned raw GitHub URL or a numbered Greasy Fork record`);
+    }
     assert.doesNotMatch(main, /^\/\/ @require\s+\S*Astra-Deck\/(?:main|master|refs\/heads\/)/m,
         'and never through a mutable branch pointer');
     assert.doesNotMatch(main, /REPLACE_WITH_GREASY_FORK_CORE_ID/,
@@ -235,8 +244,13 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
         'YTKit.user.js must declare the project icon');
     assert.match(main, /@connect\s+127\.0\.0\.1/,
         'YTKit.user.js must disclose local-companion traffic');
-    assert.match(main, /YTKit Core Library[\s\S]*Astra Downloader companion/,
-        'YTKit.user.js description must disclose both dependencies');
+    // Both dependencies are disclosed where an install dialog shows them: the
+    // libraries it pulls in, and the companion app downloads need.
+    const description = metadataValue(block, 'description') || '';
+    assert.match(description, /librar(?:y|ies)/i,
+        'YTKit.user.js description must disclose the @require libraries');
+    assert.match(description, /Astra Downloader companion/,
+        'YTKit.user.js description must disclose the optional companion app');
 });
 
 test('userscript-health: core dependency gate rejects placeholders and unknown hosts', () => {

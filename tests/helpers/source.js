@@ -25,8 +25,45 @@ function readUtf8(...segments) {
     return fs.readFileSync(path.join(repoRoot, ...segments), 'utf8');
 }
 
+// The userscript is generated from extension/ by sync-userscript.js. Three
+// @require libraries hold every extension file as a registered function and
+// YTKit.user.js holds the host that runs them, so this is everything a manager
+// loads, in load order. The bundled copies are compacted (comments stripped,
+// indentation re-tabbed), so source pins read extension/ and use
+// userscriptBundles() to prove the userscript ships the same file.
+const USERSCRIPT_FILES = Object.freeze(['YTKit-core.user.js', 'YTKit-features.user.js', 'YTKit-app.user.js', 'YTKit.user.js']);
+const REGISTERED_MODULE_RE = /^__astraDeckRegistry\["([^"]+)"\] = function /gm;
+
 function readUserscriptRuntime() {
-    return readUtf8('YTKit-core.user.js') + '\n' + readUtf8('YTKit.user.js');
+    return USERSCRIPT_FILES.map((file) => readUtf8(file)).join('\n');
+}
+
+/** The ASTRA_DECK_BUILD object embedded in YTKit.user.js. */
+function readUserscriptBuild(main = readUtf8('YTKit.user.js')) {
+    const marker = 'const ASTRA_DECK_BUILD = ';
+    const start = main.indexOf(marker);
+    if (start === -1) throw new Error('readUserscriptBuild: YTKit.user.js carries no ASTRA_DECK_BUILD');
+    const end = main.indexOf(';\n', start);
+    return JSON.parse(main.slice(start + marker.length, end));
+}
+
+/**
+ * Extension paths (relative to extension/) the generated userscript ships.
+ * The MAIN-world files share one registered bundle, which the build data
+ * names file by file.
+ */
+function userscriptModulePaths(runtime = sources.userscript) {
+    const paths = new Set([...runtime.matchAll(REGISTERED_MODULE_RE)].map((match) => match[1]));
+    const build = readUserscriptBuild();
+    if (paths.has(build.mainWorldModule)) {
+        for (const file of build.modules.mainWorld || []) paths.add(file);
+    }
+    return paths;
+}
+
+/** True when the generated userscript ships this extension file. */
+function userscriptBundles(extensionPath, runtime = sources.userscript) {
+    return userscriptModulePaths(runtime).has(extensionPath);
 }
 
 const sources = Object.freeze({
@@ -34,9 +71,8 @@ const sources = Object.freeze({
     popup: readUtf8('extension', 'popup.js'),
     popupHtml: readUtf8('extension', 'popup.html'),
     background: readUtf8('extension', 'background.js'),
-    // Greasy Fork loads the core library before the main artifact. Source
-    // assertions that describe the effective userscript runtime must inspect
-    // both records, while the size/metadata gates inspect them separately.
+    // Every generated userscript record, libraries first. Size and metadata
+    // gates inspect the records separately.
     userscript: readUserscriptRuntime(),
 });
 
@@ -103,4 +139,9 @@ module.exports = {
     findNormalRuntimeEntry,
     extractFeatureBlock,
     readTheaterSplitSource,
+    USERSCRIPT_FILES,
+    readUserscriptRuntime,
+    readUserscriptBuild,
+    userscriptModulePaths,
+    userscriptBundles,
 };

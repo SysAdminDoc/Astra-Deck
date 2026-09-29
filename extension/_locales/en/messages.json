@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "Replace credential"
   },
-  "aiCredentialReplaceHint": {
-    "message": "A credential is configured. Enter a new value to replace it; the stored value is never shown."
-  },
   "aiCredentialSaveBtn": {
     "message": "Save credential"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "Status unavailable"
   },
-  "aiCredentialStoreHint": {
-    "message": "Stored only in your userscript manager, outside Astra Deck settings and exports."
-  },
   "aiCredentialTitle": {
     "message": "AI provider credential"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+    "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "Using your configured BYO-key provider instead."
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "TL;DR"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "AI Summary (right-click to manage the provider credential)"
   },
   "altFrontendOpenAriaTpl": {
     "message": "Open externally at {host}"

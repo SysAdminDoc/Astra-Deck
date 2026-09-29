@@ -13,6 +13,7 @@ const {
     collectStrictJsLiterals
 } = require('../scripts/check-localizable-ui-copy');
 const { generatePseudolocale, pseudolocalizeMessage } = require('../scripts/generate-pseudolocale');
+const { readUserscriptBuild } = require('./helpers/source');
 
 test('UI-copy ratchet rejects a newly added hardcoded literal at a rendered sink', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-i18n-copy-'));
@@ -102,8 +103,6 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         'popup.html rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/core/transcript-service.js'], undefined,
         'transcript-service rendered sink copy should stay at zero after the burn-down pass');
-    assert.equal(baseline.entries['extension/core/userscript-ai-summary.js'], undefined,
-        'userscript AI summary rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/sidepanel.js'], undefined,
         'sidepanel rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/features/dearrow/index.js'], undefined,
@@ -170,12 +169,6 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
     );
     assert.match(transcriptSource, /t\('transcriptDownloadedTpl'/);
     assert.match(transcriptSource, /i18n-static: diagnostic method identifier/);
-    const aiSummarySource = fs.readFileSync(
-        path.join(repoRoot, 'extension', 'core', 'userscript-ai-summary.js'),
-        'utf8'
-    );
-    assert.match(aiSummarySource, /t\('aiCredentialTitle'/);
-    assert.match(aiSummarySource, /t\('aiSummaryArtifactTpl'/);
     const sidepanelSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'sidepanel.js'),
         'utf8'
@@ -198,20 +191,17 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
 
 test('Comment Search keeps its rendered copy localized in every shipped locale', () => {
     const repoRoot = path.join(__dirname, '..');
-    for (const [label, file] of [
-        ['extension', path.join(repoRoot, 'extension', 'ytkit.js')],
-        ['userscript', path.join(repoRoot, 'YTKit.user.js')]
-    ]) {
-        const source = fs.readFileSync(file, 'utf8');
-        const start = source.indexOf("id: 'commentSearch'");
-        const end = source.indexOf("id: 'videoZoom'", start);
-        assert.ok(start > -1 && end > start, `${label} Comment Search boundaries must remain discoverable`);
-        const commentSearchSource = source.slice(start, end);
-        assert.deepEqual(collectJsLiterals(commentSearchSource), [],
-            `${label} Comment Search must not add rendered English outside t()`);
-        assert.deepEqual(collectStrictJsLiterals(commentSearchSource), [],
-            `${label} Comment Search strict UI sinks must remain behind locale keys`);
-    }
+    // One source: the userscript runs this same ytkit.js and ships the same
+    // catalogues (checked at the end), so it renders the same localized copy.
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf("id: 'commentSearch'");
+    const end = source.indexOf("id: 'videoZoom'", start);
+    assert.ok(start > -1 && end > start, 'Comment Search boundaries must remain discoverable');
+    const commentSearchSource = source.slice(start, end);
+    assert.deepEqual(collectJsLiterals(commentSearchSource), [],
+        'Comment Search must not add rendered English outside t()');
+    assert.deepEqual(collectStrictJsLiterals(commentSearchSource), [],
+        'Comment Search strict UI sinks must remain behind locale keys');
 
     const baseline = JSON.parse(fs.readFileSync(
         path.join(repoRoot, 'scripts', 'i18n-ui-copy-baseline.json'),
@@ -238,6 +228,10 @@ test('Comment Search keeps its rendered copy localized in every shipped locale',
                 `${locale}.${key} must not fall through to English`);
         }
     }
+    const build = readUserscriptBuild();
+    assert.deepEqual([...build.locales].sort(), ['en', ...locales].sort(),
+        'the userscript must ship every locale catalogue the extension does');
+    assert.equal(build.modules.app, 'ytkit.js', 'the userscript must run the same Comment Search');
 
     const generator = fs.readFileSync(path.join(repoRoot, 'scripts', 'generate-locales.js'), 'utf8');
     assert.match(generator, /COMMENT_SEARCH_TRANSLATIONS/,

@@ -23,7 +23,6 @@ const path = require('path');
 
 const {
     loadFeature,
-    loadUserscriptFeature,
     fakeNode,
     fakeTreeDocument,
     selectorMatches,
@@ -53,8 +52,6 @@ function player({ duration = 600, currentTime = 60 } = {}) {
     const readoutIs = { tag: 'span', className: 'ytkit-remaining-time' };
     const documentRef = fakeTreeDocument((selector) => {
         if (selectorMatches(selector, displayIs)) return timeDisplay;
-        // The userscript copy reads the video by selector rather than through
-        // getMainVideoElement.
         if (selectorMatches(selector, videoIs)) return video;
         if (selectorMatches(selector, readoutIs)) {
             return timeDisplay.children.filter((node) => String(node.className).includes('ytkit-remaining-time'));
@@ -89,103 +86,103 @@ function player({ duration = 600, currentTime = 60 } = {}) {
             removeNavigateRule: (id) => navigateRules.delete(id),
             setTimeout: () => 1,
             clearTimeout: () => {},
-            // The userscript copy polls on an interval where the extension
-            // rides timeupdate; both are driven through _update() here.
+            // The feature rides timeupdate; the tests drive _update() directly.
             setInterval: () => 1,
             clearInterval: () => {},
         },
     };
 }
 
-for (const [label, load] of [['extension', loadFeature], ['userscript', loadUserscriptFeature]]) {
-    test(`${label}: the readout adopts the span already in the player`, () => {
-        const page = player();
-        const feature = load('remainingTimeDisplay', page.globals);
+// The userscript used to carry its own copy of this feature, driven through
+// these same four tests. It now runs this same ytkit.js, so they cover both
+// vehicles.
+test('the readout adopts the span already in the player', () => {
+    const page = player();
+    const feature = loadFeature('remainingTimeDisplay', page.globals);
 
-        feature._update();
-        assert.equal(page.readouts().length, 1, 'the first update builds one readout');
-        const first = page.readouts()[0];
-        assert.ok(first.textContent, 'and fills it in');
+    feature._update();
+    assert.equal(page.readouts().length, 1, 'the first update builds one readout');
+    const first = page.readouts()[0];
+    assert.ok(first.textContent, 'and fills it in');
 
-        // SPA navigation: the player keeps its time display and the span, and
-        // only Astra's reference is dropped.
-        feature._el = null;
-        page.video.currentTime = 5;
-        feature._update();
+    // SPA navigation: the player keeps its time display and the span, and
+    // only Astra's reference is dropped.
+    feature._el = null;
+    page.video.currentTime = 5;
+    feature._update();
 
-        assert.equal(page.readouts().length, 1,
-            'appending without looking leaves one dead readout per navigation');
-        assert.equal(page.readouts()[0], first, 'the span already there is the one that gets reused');
-        assert.equal(feature._el, first);
-    });
+    assert.equal(page.readouts().length, 1,
+        'appending without looking leaves one dead readout per navigation');
+    assert.equal(page.readouts()[0], first, 'the span already there is the one that gets reused');
+    assert.equal(feature._el, first);
+});
 
-    test(`${label}: a detached span does not block re-adoption`, () => {
-        const page = player();
-        const feature = load('remainingTimeDisplay', page.globals);
-        feature._update();
+test('a detached span does not block re-adoption', () => {
+    const page = player();
+    const feature = loadFeature('remainingTimeDisplay', page.globals);
+    feature._update();
 
-        // The player was rebuilt: the old span is detached, and a fresh one is
-        // already sitting in the new time display.
-        const stale = page.readouts()[0];
-        stale.isConnected = false;
-        feature._el = stale;
-        stale.remove();
-        const existing = page.documentRef.createElement('span');
-        existing.className = 'ytkit-remaining-time';
-        page.timeDisplay.appendChild(existing);
+    // The player was rebuilt: the old span is detached, and a fresh one is
+    // already sitting in the new time display.
+    const stale = page.readouts()[0];
+    stale.isConnected = false;
+    feature._el = stale;
+    stale.remove();
+    const existing = page.documentRef.createElement('span');
+    existing.className = 'ytkit-remaining-time';
+    page.timeDisplay.appendChild(existing);
 
-        feature._update();
-        assert.equal(feature._el, existing, 'the reference must move to the live span');
-        assert.equal(page.readouts().length, 1);
-    });
+    feature._update();
+    assert.equal(feature._el, existing, 'the reference must move to the live span');
+    assert.equal(page.readouts().length, 1);
+});
 
-    test(`${label}: the readout re-adopts after navigation and releases its rule on teardown`, () => {
-        const page = player();
-        const feature = load('remainingTimeDisplay', page.globals);
-        feature.init();
-        feature._update();
+test('the readout re-adopts after navigation and releases its rule on teardown', () => {
+    const page = player();
+    const feature = loadFeature('remainingTimeDisplay', page.globals);
+    feature.init();
+    feature._update();
 
-        const rule = page.navigateRules.get('remainTime');
-        assert.ok(rule, 'the time display survives SPA navigation, so the readout has to look again');
-        assert.equal(page.readouts().length, 1);
+    const rule = page.navigateRules.get('remainTime');
+    assert.ok(rule, 'the time display survives SPA navigation, so the readout has to look again');
+    assert.equal(page.readouts().length, 1);
 
-        // A navigation that rebuilds the player. The old span is still
-        // `isConnected` — it just hangs off a time display nobody can see any
-        // more — so the adopt-on-update path has no way to tell it is stale.
-        // Dropping the reference in the navigate rule is what does.
-        const orphan = page.readouts()[0];
-        page.rebuildPlayer();
-        rule();
-        feature._update();
+    // A navigation that rebuilds the player. The old span is still
+    // `isConnected` — it just hangs off a time display nobody can see any
+    // more — so the adopt-on-update path has no way to tell it is stale.
+    // Dropping the reference in the navigate rule is what does.
+    const orphan = page.readouts()[0];
+    page.rebuildPlayer();
+    rule();
+    feature._update();
 
-        assert.notEqual(feature._el, orphan,
-            'writing the new time into the old player updates a readout nobody is looking at');
-        assert.equal(page.readouts().length, 1, 'and the new display gets exactly one readout');
-        assert.ok(page.readouts()[0].textContent, 'which is filled in');
+    assert.notEqual(feature._el, orphan,
+        'writing the new time into the old player updates a readout nobody is looking at');
+    assert.equal(page.readouts().length, 1, 'and the new display gets exactly one readout');
+    assert.ok(page.readouts()[0].textContent, 'which is filled in');
 
-        feature.destroy();
-        assert.equal(page.navigateRules.has('remainTime'), false,
-            'a rule left behind keeps rebuilding a readout for a feature that is off');
-    });
+    feature.destroy();
+    assert.equal(page.navigateRules.has('remainTime'), false,
+        'a rule left behind keeps rebuilding a readout for a feature that is off');
+});
 
-    test(`${label}: teardown sweeps every readout, not just the tracked one`, () => {
-        const page = player();
-        const feature = load('remainingTimeDisplay', page.globals);
-        feature._update();
+test('teardown sweeps every readout, not just the tracked one', () => {
+    const page = player();
+    const feature = loadFeature('remainingTimeDisplay', page.globals);
+    feature._update();
 
-        // A build before the adopt fix could have left strays behind.
-        for (let i = 0; i < 2; i += 1) {
-            const stray = page.documentRef.createElement('span');
-            stray.className = 'ytkit-remaining-time';
-            page.timeDisplay.appendChild(stray);
-        }
-        assert.equal(page.readouts().length, 3);
+    // A build before the adopt fix could have left strays behind.
+    for (let i = 0; i < 2; i += 1) {
+        const stray = page.documentRef.createElement('span');
+        stray.className = 'ytkit-remaining-time';
+        page.timeDisplay.appendChild(stray);
+    }
+    assert.equal(page.readouts().length, 3);
 
-        feature.destroy();
-        assert.equal(page.readouts().length, 0,
-            'turning the feature off must clear every readout it could have left');
-    });
-}
+    feature.destroy();
+    assert.equal(page.readouts().length, 0,
+        'turning the feature off must clear every readout it could have left');
+});
 
 // ── popup enum select ───────────────────────────────────────────────────────
 //

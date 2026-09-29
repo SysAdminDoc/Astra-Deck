@@ -3703,6 +3703,30 @@
             box-shadow: var(--ytkit-premium-shadow) !important;
         }
 
+        /* The toast's own sheet paints its text white for the old dark card.
+           On the light panel that is white on white. */
+        .ytkit-global-toast :is(.ytkit-toast-message, .ytkit-toast-badge, .ytkit-toast-action) {
+            color: var(--ytkit-premium-text) !important;
+        }
+
+        .ytkit-global-toast :is(.ytkit-toast-action--secondary, .ytkit-toast-close) {
+            color: var(--ytkit-premium-muted) !important;
+        }
+
+        .ytkit-global-toast :is(.ytkit-toast-action--secondary, .ytkit-toast-close):hover {
+            color: var(--ytkit-premium-text) !important;
+        }
+
+        html:not([dark]) .ytkit-global-toast :is(.ytkit-toast-action, .ytkit-toast-close) {
+            border-color: var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-raised) !important;
+        }
+
+        html:not([dark]) .ytkit-global-toast :is(.ytkit-toast-action, .ytkit-toast-close):hover {
+            border-color: var(--ytkit-premium-border-strong) !important;
+            background: var(--ytkit-premium-hover) !important;
+        }
+
         :is(
             .ytkit-seek-hud,
             .ytkit-volume-hud,

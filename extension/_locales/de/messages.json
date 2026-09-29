@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "Anmeldedaten ersetzen"
   },
-  "aiCredentialReplaceHint": {
-    "message": "Ein Zugangsschlüssel ist eingerichtet. Geben Sie einen neuen Wert ein, um ihn zu ersetzen; der gespeicherte Wert wird nie angezeigt."
-  },
   "aiCredentialSaveBtn": {
     "message": "Anmeldedaten speichern"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "Status nicht verfügbar"
   },
-  "aiCredentialStoreHint": {
-    "message": "Wird nur in Ihrem Userscript-Manager gespeichert, außerhalb der Astra Deck-Einstellungen und -Exporte."
-  },
   "aiCredentialTitle": {
     "message": "KI-Anbieter-Anmeldedaten"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+    "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "Stattdessen wird dein konfigurierter BYO-Key-Anbieter verwendet."
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "Kurz gesagt"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "AI Summary (right-click to manage the provider credential)"
   },
   "altFrontendOpenAriaTpl": {
     "message": "Extern auf {host} öffnen"

@@ -33,7 +33,6 @@ const DEFAULT_SETTINGS_JSON = path.join(EXT_DIR, 'default-settings.json');
 const SETTINGS_META_JSON = path.join(EXT_DIR, 'settings-meta.json');
 const USERSCRIPT = resolveUserscriptPath(__dirname);
 const USERSCRIPT_BASENAME = getUserscriptBasename(__dirname);
-const USERSCRIPT_CORE = path.join(__dirname, 'YTKit-core.user.js');
 const CRX_KEY_PATH_ENV = 'ASTRA_CRX_KEY_PATH';
 const CRX_KEY_MODE_ENV = 'ASTRA_CRX_KEY_MODE';
 const CRX_KEY_MODES = Object.freeze(['external', 'ephemeral']);
@@ -288,34 +287,12 @@ if (bumpType) {
     fs.writeFileSync(YTKIT_JS, ytkitSource, 'utf8');
     console.log('Updated YTKIT_VERSION in ytkit.js');
 
-    // Always keep the repo-tracked userscript header in sync with the extension
-    // version — `Version everything` (the project notes) requires all version strings
-    // to match across files. The `--with-userscript` flag still controls
-    // whether a *build artifact* copy is emitted into `build/` later.
-    const originalUserscript = readUtf8IfPresent(USERSCRIPT);
-    if (originalUserscript !== null) {
-        let usSrc = originalUserscript;
-        const before = usSrc;
-        const userscriptRawUrl = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
-        usSrc = usSrc.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m, '$1YTKit v' + version);
-        usSrc = usSrc.replace(/^(\/\/ @version\s+)[\d.]+/m, '$1' + version);
-        usSrc = usSrc.replace(/^(\/\/ @updateURL\s+).+$/m, '$1' + userscriptRawUrl);
-        usSrc = usSrc.replace(/^(\/\/ @downloadURL\s+).+$/m, '$1' + userscriptRawUrl);
-        usSrc = usSrc.replace(/const YTKIT_VERSION = '[^']+';/, "const YTKIT_VERSION = '" + version + "';");
-        if (usSrc !== before) {
-            fs.writeFileSync(USERSCRIPT, usSrc, 'utf8');
-            console.log('Updated userscript metadata in ' + USERSCRIPT_BASENAME);
-        }
-    }
-
-    const originalUserscriptCore = readUtf8IfPresent(USERSCRIPT_CORE);
-    if (originalUserscriptCore !== null) {
-        const updatedCore = originalUserscriptCore.replace(/^(\/\/ @version\s+)[\d.]+$/m, '$1' + version);
-        if (updatedCore !== originalUserscriptCore) {
-            fs.writeFileSync(USERSCRIPT_CORE, updatedCore, 'utf8');
-            console.log('Updated userscript core library version');
-        }
-    }
+    // The userscript records are generated from extension/, so a bump rebuilds
+    // all of them: each one's @version, the tag-pinned @require URLs and the
+    // bundled ytkit.js all move together. The `--with-userscript` flag only
+    // controls whether a *build artifact* copy lands in `build/` later.
+    const { writeUserscriptOutputs } = require('./sync-userscript');
+    writeUserscriptOutputs(__dirname, version);
 
     // Keep package.json + package-lock.json in sync. The local/CI version
     // gate validates all version surfaces, so a bump that leaves the lockfile

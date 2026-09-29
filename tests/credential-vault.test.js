@@ -5,11 +5,8 @@ const assert = require('node:assert/strict');
 
 const {
     createCredentialVault,
-    createUserscriptCredentialVault,
     validateProviderEndpoint
 } = require('../extension/core/credential-vault');
-require('../extension/core/ai-summary-artifacts');
-const { createUserscriptAiSummaryFeature } = require('../extension/core/userscript-ai-summary');
 
 function createHarness(options = {}) {
     const session = new Map();
@@ -46,22 +43,6 @@ test('credentials default to session custody and status never reveals values', a
         credentialRequired: true
     });
     assert.doesNotMatch(JSON.stringify(await harness.vault.status()), /sk-session-only/);
-});
-
-test('userscript custody stays in manager-isolated values', async () => {
-    const values = new Map();
-    const vault = createUserscriptCredentialVault({
-        getValue(key, fallback) { return values.has(key) ? values.get(key) : fallback; },
-        setValue(key, value) { values.set(key, value); },
-        deleteValue(key) { values.delete(key); }
-    });
-
-    await vault.set('gemini', 'manager-secret');
-    assert.equal(values.get('ytkit:ai-credential:gemini'), 'manager-secret');
-    assert.equal(await vault.get('gemini'), 'manager-secret');
-    assert.doesNotMatch(JSON.stringify(await vault.status('gemini')), /manager-secret/);
-    await vault.remove('gemini');
-    assert.equal(values.size, 0);
 });
 
 test('remembered credentials persist and delete clears both custody tiers', async () => {
@@ -101,106 +82,4 @@ test('provider endpoint validation binds credentials to exact approved origins',
         () => validateProviderEndpoint('gemini', 'https://generativelanguage.googleapis.com/v1beta/models/x?key=secret'),
         /Credentials are not allowed/
     );
-});
-
-test('userscript provider requests keep Gemini credentials in headers', async () => {
-    const values = new Map([['ytkit:ai-credential:gemini', 'gemini-manager-secret']]);
-    let requestDetails = null;
-    const feature = createUserscriptAiSummaryFeature({
-        document: {},
-        getSettings: () => ({
-            aiSummaryProvider: 'gemini',
-            aiSummaryEndpoint: 'https://api.openai.com/v1/chat/completions',
-            aiSummaryModel: 'gemini-2.0-flash'
-        }),
-        getVideoId: () => 'abcdefghijk',
-        transcriptService: {},
-        addNavigateRule() {},
-        removeNavigateRule() {},
-        injectStyle() {},
-        credentialStore: {
-            getValue(key, fallback) { return values.has(key) ? values.get(key) : fallback; },
-            setValue(key, value) { values.set(key, value); },
-            deleteValue(key) { values.delete(key); }
-        },
-        request(details) {
-            requestDetails = details;
-            queueMicrotask(() => details.onload({
-                status: 200,
-                responseText: JSON.stringify({ candidates: [{ content: { parts: [{ text: 'summary' }] } }] })
-            }));
-        }
-    });
-
-    assert.equal(await feature._call('Summarize this.'), 'summary');
-    assert.equal(requestDetails.url.includes('gemini-manager-secret'), false);
-    assert.equal(requestDetails.url.includes('?key='), false);
-    assert.equal(requestDetails.headers['x-goog-api-key'], 'gemini-manager-secret');
-    assert.equal(requestDetails.data.includes('gemini-manager-secret'), false);
-});
-
-test('userscript AI summary uses the local browser lane without a provider request', async () => {
-    const makeNode = (tag) => {
-        const node = {
-            tagName: String(tag).toUpperCase(),
-            children: [],
-            textContent: '',
-            append(...items) { this.children.push(...items); },
-            appendChild(item) { this.children.push(item); },
-            setAttribute() {},
-            addEventListener() {},
-            remove() { this.removed = true; }
-        };
-        return node;
-    };
-    const doc = {
-        body: makeNode('body'),
-        createElement: makeNode,
-        querySelector: () => null
-    };
-    let created = 0;
-    let destroyed = 0;
-    let requests = 0;
-    const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    core.localAi = {
-        getFactory: () => ({ create: async () => ({}) }),
-        availability: async () => 'available',
-        create: async () => {
-            created += 1;
-            return {
-                summarize: async () => 'A local summary.',
-                destroy: () => { destroyed += 1; }
-            };
-        }
-    };
-    try {
-        const feature = createUserscriptAiSummaryFeature({
-            document: doc,
-            getSettings: () => ({ aiSummaryProvider: 'openai' }),
-            getVideoId: () => 'abcdefghijk',
-            transcriptService: {
-                fetchTranscript: async () => ({
-                    status: 'ready',
-                    title: 'Local lane test',
-                    language: 'en',
-                    segments: [{ start: 0, end: 2, text: 'A sufficiently long transcript cue.' }]
-                })
-            },
-            addNavigateRule() {},
-            removeNavigateRule() {},
-            injectStyle() {},
-            credentialStore: {},
-            request() { requests += 1; }
-        });
-
-        await feature._run();
-
-        assert.equal(created, 1);
-        assert.equal(destroyed, 1);
-        assert.equal(requests, 0);
-        assert.match(feature._panel.children[1].textContent, /On-device summary/);
-        assert.match(feature._panel.children[1].textContent, /A local summary/);
-    } finally {
-        delete core.localAi;
-    }
 });

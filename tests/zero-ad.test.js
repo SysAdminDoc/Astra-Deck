@@ -29,6 +29,7 @@ const {
     parseArgs: parseFirefoxSmokeArgs
 } = require('../scripts/smoke-firefox-webext');
 const { removeTempTree } = require('../scripts/firefox-webdriver');
+const { LIBRARIES: USERSCRIPT_LIBRARIES } = require('../sync-userscript');
 
 test('zero-ad static rules cover every request captured during live desktop reconnaissance', () => {
     const { failures, rules } = auditZeroAdRules();
@@ -232,7 +233,15 @@ test('real userscript-manager smoke pins both signed managers and keeps its shel
 
     const isolated = buildIsolatedUserscript(43123);
     assert.match(isolated, /@match\s+http:\/\/127\.0\.0\.1:43123\/\*/);
-    assert.match(isolated, /@require\s+http:\/\/127\.0\.0\.1:43123\/YTKit-core\.user\.js/);
+    // The userscript loads three @require libraries now, not one core. Every
+    // one has to come from the local fixture server, or the manager fetches
+    // the published tag and the smoke tests a build other than this tree's.
+    for (const { file } of USERSCRIPT_LIBRARIES) {
+        assert.match(isolated, new RegExp(`@require\\s+http://127\\.0\\.0\\.1:43123/${file.replace(/\./g, '\\.')}\\s`),
+            `the isolated userscript must load ${file} from the fixture server`);
+    }
+    assert.doesNotMatch(isolated, /@require\s+https:\/\//,
+        'no @require may still point at the published tag');
     assert.match(isolated, /document-start-shells-only/);
     assert.doesNotMatch(isolated, /@updateURL/);
     assert.doesNotMatch(isolated, /@downloadURL/);

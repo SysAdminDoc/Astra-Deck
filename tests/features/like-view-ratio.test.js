@@ -76,6 +76,9 @@ test('an inflated view denominator only ever grades down, never up', () => {
 });
 
 test('the rendered badge reports the counts it divided and replaces itself in place', () => {
+    // A compact count on purpose: a digits-only strip read "1.5M views" as 15
+    // and produced a like rate in the hundreds of thousands of percent. The
+    // userscript runs this same feature, so this covers both vehicles.
     const view = fakeNode({ tag: 'span', text: '1.5M views' });
     const row = fakeNode({ tag: 'div', children: [view] });
     const like = fakeNode({ tag: 'button', attributes: { 'aria-label': '90,000 likes' } });
@@ -107,24 +110,6 @@ test('the rendered badge reports the counts it divided and replaces itself in pl
 
     feature.destroy();
     assert.deepEqual(row.children, [view]);
-});
-
-test('the userscript copy sizes a compact view count instead of stripping it', () => {
-    // `textContent.replace(/[^0-9]/g,'')` reads "1.2M views" as 12, so a
-    // collapsed metadata row produced a like rate in the hundreds of
-    // thousands of percent. There is no bundled module for this feature, so
-    // the userscript copy has to be fixed in place.
-    const userscript = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8');
-
-    const start = userscript.indexOf("id: 'likeViewRatio'");
-    assert.ok(start > -1, 'the userscript should still carry likeViewRatio');
-    const body = stripComments(userscript.slice(start, start + 2600));
-
-    assert.match(body, /YTKitCore\?\.parseCompactCount/,
-        'the userscript should read counts through the shared parser');
-    assert.doesNotMatch(body, /viewEl\.textContent\?\.replace\(\/\[\^0-9\]\/g/,
-        'the digits-only strip discards the compact magnitude');
 });
 
 test('the shared parser sizes the shapes the watch page actually renders', () => {

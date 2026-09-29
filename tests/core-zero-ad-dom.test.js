@@ -5,6 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { readUserscriptBuild, userscriptBundles } = require('./helpers/source');
+
 const repoRoot = path.join(__dirname, '..');
 const zeroAdDom = require(path.join(repoRoot, 'extension/core/zero-ad-dom.js'));
 
@@ -152,10 +154,15 @@ test('semantic zero-ad runtime ships in extension and userscript startup paths',
     assert.ok(resources.includes('core/zero-ad-dom.js'));
 
     const earlyCss = fs.readFileSync(path.join(repoRoot, 'extension/early.css'), 'utf8');
-    const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
-    const syncSource = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
-    for (const source of [earlyCss, userscript]) {
-        assert.match(source, /\[data-ytkit-zero-ad-semantic\]/);
-    }
-    assert.match(syncSource, /'extension\/core\/zero-ad-dom\.js'/);
+    assert.match(earlyCss, /\[data-ytkit-zero-ad-semantic\]/);
+
+    // The userscript host adds the extension's early.css at document start and
+    // runs the foundation modules in manifest order, so the semantic shell
+    // rule and the zero-ad runtime arrive exactly as they do in the extension.
+    const build = readUserscriptBuild();
+    assert.match(build.css.early, /\[data-ytkit-zero-ad-semantic\]/);
+    const foundation = build.modules.foundation;
+    assert.ok(foundation.includes('core/zero-ad-dom.js'), 'the userscript runs the zero-ad runtime at startup');
+    assert.ok(foundation.indexOf('core/zero-ad-dom.js') < foundation.indexOf('core/element-zapper.js'));
+    assert.ok(userscriptBundles('core/zero-ad-dom.js'), 'the userscript ships the zero-ad runtime');
 });

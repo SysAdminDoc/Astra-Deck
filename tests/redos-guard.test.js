@@ -14,6 +14,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const {
+    USERSCRIPT_FILES,
+    readUserscriptBuild,
+    runtimeModules,
+    userscriptBundles,
+} = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const read = (...parts) => fs.readFileSync(path.join(repoRoot, ...parts), 'utf8');
@@ -114,32 +120,38 @@ test('a missing guard refuses the pattern rather than compiling it', () => {
 
 test('the guard reaches every surface that compiles a filter regex', () => {
     // The first version of this fix put the guard in
-    // core/predicate-sandbox.js, which check-userscript-drift.js classifies as
-    // intentional-extension-only. Video Hider and the comment filter both ship
-    // in the userscript bundle, so the guard was simply absent there and the
-    // fail-closed branch silently disabled every userscript user's regex
-    // keyword filters. It lives in its own shipped module now.
+    // core/predicate-sandbox.js, which the userscript did not ship at the
+    // time. Video Hider and the comment filter both shipped there, so the
+    // guard was simply absent and the fail-closed branch silently disabled
+    // every userscript user's regex keyword filters. It lives in its own
+    // foundation module now.
+    //
+    // The runtime group lists its modules under x-ytkit-runtime-modules; its
+    // `js` holds only the bootstrap, so reading `js` alone checked nothing.
     const manifest = JSON.parse(read('extension', 'manifest.json'));
+    let checkedGroups = 0;
     for (const contentScript of manifest.content_scripts) {
-        const js = contentScript.js || [];
-        if (!js.includes('features/video-hider/index.js')) continue;
-        assert.ok(js.includes('core/regex-safety.js'),
+        const modules = runtimeModules(contentScript);
+        if (!modules.includes('features/video-hider/index.js')) continue;
+        checkedGroups += 1;
+        assert.ok(modules.includes('core/regex-safety.js'),
             'a content script running Video Hider must also load the guard');
-        assert.ok(js.indexOf('core/regex-safety.js') < js.indexOf('features/video-hider/index.js'),
+        assert.ok(modules.indexOf('core/regex-safety.js') < modules.indexOf('features/video-hider/index.js'),
             'and load it first');
     }
+    assert.ok(checkedGroups > 0, 'some content script must run Video Hider, or this checked nothing');
 
-    const bundle = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
-    assert.ok(bundle.includes("'extension/core/regex-safety.js',"),
-        'the userscript bundle must ship the guard');
-
-    const core = fs.readFileSync(path.join(repoRoot, 'YTKit-core.user.js'), 'utf8');
-    assert.ok(core.includes('function hasUnsafeRegexQuantifiers(pattern) {'),
-        'the built userscript library must contain the guard body, not just its callers');
-    // Identified by code, not by the bundled-module comment header: the
-    // generator strips comments from module bodies now.
-    assert.ok(core.includes('_hiddenReasonPlaceholders'),
-        'the built library ships Video Hider, which is why the guard has to be there');
+    // The userscript is generated from the same files, so it is enough that it
+    // ships them and that its host runs the guard in the foundation tier,
+    // which completes before any feature module or ytkit.js runs.
+    for (const file of ['core/regex-safety.js', 'features/video-hider/index.js', 'ytkit.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must ship ${file}`);
+    }
+    const { modules } = readUserscriptBuild();
+    assert.ok(modules.foundation.includes('core/regex-safety.js'),
+        'the userscript host must run the guard with the foundation modules');
+    assert.ok(modules.features.includes('features/video-hider/index.js'),
+        'and Video Hider after it, with the feature modules');
 });
 
 test('the guard has exactly one implementation in the whole tree', () => {
@@ -174,21 +186,19 @@ test('the guard has exactly one implementation in the whole tree', () => {
         "the ReDoS guard must exist in exactly one place plus its generated bundle");
 });
 
-test('the installed userscript uses the shared guard, not a private one', () => {
-    // YTKit.user.js is hand-maintained: sync-userscript.js only rewrites its
-    // metadata block, so a fix to extension/ does NOT reach it. It @requires
-    // YTKit-core.user.js, which is where the guard now lives.
+test('the installed userscript reaches the shared guard through a tag-pinned @require', () => {
+    // YTKit.user.js used to be hand-maintained and carried a third private
+    // copy of the guard. It is generated now: a host plus @require libraries
+    // that register the extension's own files, so the guard users run is
+    // core/regex-safety.js itself. What still has to hold is that the library
+    // carrying it is actually required, and from an immutable ref.
     const main = fs.readFileSync(path.join(repoRoot, "YTKit.user.js"), "utf8");
-    assert.ok(main.includes("globalThis.YTKitCore?.hasUnsafeRegexQuantifiers"),
-        "the installed userscript must read the shared guard");
-    assert.ok(main.includes("if (typeof unsafeRegex !== 'function' || unsafeRegex(regexMatch[1])) {"),
-        "and refuse the pattern when the core library did not load");
-    // The point of this assertion is that the core library is required at
-    // all, which is what makes the shared guard reachable. It used to pin the
-    // exact `main` branch URL; that ref is now version-specific (v4.88.3
-    // pinned @require to an immutable tag), so the URL itself is incidental.
-    assert.match(main, /@require\s+\S*YTKit-core\.user\.js/,
-        "which is only reachable because it requires the core library");
-    assert.doesNotMatch(main, /@require\s+\S*Astra-Deck\/(?:main|master|refs\/heads\/)/,
-        "and the requirement must not resolve through a mutable branch pointer");
+    const carrier = USERSCRIPT_FILES.find((file) => file !== "YTKit.user.js"
+        && read(file).includes('__astraDeckRegistry["core/regex-safety.js"] = function '));
+    assert.ok(carrier, "one of the userscript libraries must register core/regex-safety.js");
+    const requires = [...main.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);
+    assert.ok(requires.some((url) => url.endsWith("/" + carrier)),
+        `the installed userscript must @require ${carrier}, which carries the guard`);
+    assert.ok(requires.every((url) => !/Astra-Deck\/(?:main|master|refs\/heads\/)/.test(url)),
+        "and no requirement may resolve through a mutable branch pointer");
 });

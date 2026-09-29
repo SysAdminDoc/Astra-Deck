@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sources, extractFeatureBlock } = require('../helpers/source');
+const { sources, extractFeatureBlock, readUserscriptBuild, userscriptBundles } = require('../helpers/source');
 const { createDeArrowFeature } = require('../../extension/features/dearrow');
 const {
     findSettingEntry,
@@ -26,9 +26,6 @@ const dearrowModulePath = path.join(
     __dirname, '..', '..', 'extension', 'features', 'dearrow', 'index.js'
 );
 const dearrowModuleSource = fs.readFileSync(dearrowModulePath, 'utf8');
-const userscriptSource = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8'
-);
 
 const SURFACE_KEYS = Object.freeze([
     'daSurfaceWatch',
@@ -105,15 +102,18 @@ test('DeArrow surface masks are visible, portable settings in both vehicles', ()
         assert.equal(entry.internal, false, `${key} must remain visible in the settings panel`);
         assert.equal(defaultSettings[key], true, `${key} must round-trip through default settings`);
         assert.ok(storeSafeKeys.has(key), `${key} must survive store-safe import and export`);
+        // The userscript runs this same ytkit.js and settings panel, so one
+        // check places the mask in both vehicles' panels.
         assert.match(sources.ytkit, new RegExp(`id: '${key}'[\\s\\S]{0,320}parentId: 'deArrow'`),
-            `${key} must render under DeArrow in the extension settings panel`);
-        assert.match(userscriptSource, new RegExp(`id: '${key}'[\\s\\S]{0,320}parentId: 'deArrow'`),
-            `${key} must render under DeArrow in the userscript settings panel`);
+            `${key} must render under DeArrow in the settings panel`);
         assert.ok(englishMessages[`feature_${key}_name`]?.message,
             `${key} must have a user-facing name`);
         assert.ok(englishMessages[`feature_${key}_desc`]?.message,
             `${key} must explain what the mask excludes`);
     }
+    const { modules } = readUserscriptBuild();
+    assert.equal(modules.app, 'ytkit.js', 'the userscript must render the same settings panel');
+    assert.ok(userscriptBundles('features/dearrow/index.js'), 'the userscript must ship the DeArrow module');
 });
 
 test('DeArrow attributes all six supported surfaces structurally', () => {

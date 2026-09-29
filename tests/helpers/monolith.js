@@ -8,7 +8,7 @@
 
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
-const { sources } = require('./source');
+const { sources, userscriptBundles } = require('./source');
 
 // A feature literal closes at the array indent and is followed by a comma or
 // the array end — never by `)`, which belongs to a factory-built neighbour.
@@ -192,13 +192,11 @@ function featureSourceFrom(source, id) {
     // comments and blank lines may sit between — otherwise this is a factory's
     // `return {` (the core library builds videoNotes that way) rather than an
     // entry in the features array.
-    // Every opening that satisfies the rule, not the first. `sources.userscript`
-    // is YTKit-core.user.js followed by YTKit.user.js and nine ids live in
-    // both, so "first match wins" would quietly test one copy and leave the
-    // other unread. Today the core copies are all factory-fallback shapes the
-    // rule rejects, which is why this has never picked wrong -- but that is a
-    // property of how they happen to be written, so make the day it changes an
-    // error instead of a silent swap.
+    // Every opening that satisfies the rule, not the first. A source that
+    // carries two array entries for one id (the hand-written userscript once
+    // held a core copy and a main copy of nine features) would otherwise have
+    // "first match wins" quietly test one and leave the other unread, so the
+    // day that happens is an error instead of a silent swap.
     const opens = [];
     for (let markerAt = source.indexOf(marker); markerAt > 0; markerAt = source.indexOf(marker, markerAt + 1)) {
         const open = source.lastIndexOf('\n        {\n', markerAt);
@@ -249,9 +247,8 @@ function featureSource(id) {
 /**
  * Slice the inline fallback literal of a FACTORY-BUILT feature — the
  * `createXFeature({...}) || { id: 'x', … }` shape. The fallback no longer wins
- * in the extension now that route gating is gone from the bootstrap, but it is
- * still what userscript users run wherever the bundle does not carry the
- * module, and it is still live code that drifts. A behaviour proved only
+ * now that route gating is gone from the bootstrap, but it still runs wherever
+ * the module was not loaded, and it is still live code that drifts. A behaviour proved only
  * against the peeled module proves nothing about this copy. The literal closes
  * at the array indent followed by `)`, which is the wrapping factory call's
  * own close.
@@ -392,7 +389,7 @@ function loadFeatureFromSource(source, id, extraGlobals = {}) {
 function declarationSourceFrom(source, name) {
     const attempts = [];
     // Column 0 first: popup.js and the side panel declare at the top level,
-    // the monolith and the userscript nest theirs one or two levels in.
+    // the monolith nests its own one or two levels in.
     for (const indent of ['', '    ', '        ']) {
         for (const keyword of ['function', 'async function', 'const', 'let']) {
             const needle = `\n${indent}${keyword} ${name}`;
@@ -506,17 +503,33 @@ function loadDeclarations(names, extraGlobals = {}) {
     return loadDeclarationsFrom(sources.ytkit, names, extraGlobals);
 }
 
-/** `loadDeclarationsFrom` against the userscript runtime (core + main). */
+// The userscript no longer carries a copy of the monolith to load from. It is
+// generated from extension/, and its libraries hold ytkit.js compacted
+// (comments stripped, indentation re-tabbed), so the indentation anchors these
+// slicers depend on are gone from it. They are also unnecessary: the userscript
+// runs ytkit.js itself. So the userscript loaders prove the userscript ships
+// ytkit.js and then load from it, which is exactly the code a userscript user
+// runs. A name that only the old hand-written copy defined now fails as
+// missing, which is the truth.
+function assertUserscriptRunsMonolith() {
+    assert.ok(userscriptBundles('ytkit.js'),
+        'the generated userscript must ship extension/ytkit.js for its features to be the ones tested here');
+}
+
+/** `loadDeclarationsFrom` against ytkit.js, as the generated userscript runs it. */
 function loadUserscriptDeclarations(names, extraGlobals = {}) {
-    return loadDeclarationsFrom(sources.userscript, names, extraGlobals);
+    assertUserscriptRunsMonolith();
+    return loadDeclarationsFrom(sources.ytkit, names, extraGlobals);
 }
 
 function loadFeature(id, extraGlobals = {}) {
     return loadFeatureFromSource(sources.ytkit, id, extraGlobals);
 }
 
+/** `loadFeature`, after proving the generated userscript ships ytkit.js. */
 function loadUserscriptFeature(id, extraGlobals = {}) {
-    return loadFeatureFromSource(sources.userscript, id, extraGlobals);
+    assertUserscriptRunsMonolith();
+    return loadFeatureFromSource(sources.ytkit, id, extraGlobals);
 }
 
 /** Evaluate the inline fallback literal of a factory-built monolith feature. */

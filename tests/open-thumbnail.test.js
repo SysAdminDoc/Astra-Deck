@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { loadFeature, loadUserscriptFeature, fakeTreeDocument } = require('./helpers/monolith');
+const { loadFeature, fakeTreeDocument } = require('./helpers/monolith');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const VIDEO_ID = 'dQw4w9WgXcQ';
@@ -269,43 +269,38 @@ test('turning the View setting on or off applies without waiting for the next vi
     assert.equal(documentRef.listeners.get('ytkit-settings-changed')?.size || 0, 0, 'destroy drops the settings listener');
 });
 
-test('the userscript Thumbnail button follows the video after in-app navigation', () => {
+test('the Thumbnail button follows the video after in-app navigation', () => {
     // YouTube keeps #actions when you click from one video to another, so the
     // old button stayed in place, bound to the first video, and _create() saw
     // it and stopped. Checked live: a node appended to #actions survives the
-    // navigation.
+    // navigation. The userscript runs this same feature, so one test covers
+    // both vehicles.
     const clock = manualTimers();
-    const documentRef = fakeTreeDocument(() => null);
-    const actions = documentRef.createElement('div');
-    actions.id = 'actions';
-    documentRef.body.append(actions);
-    const locationRef = { href: 'https://www.youtube.com/watch?v=aaaaaaaaaaa' };
+    let videoId = 'aaaaaaaaaaa';
     let onNavigate = null;
-    const fetched = [];
-    const feature = loadUserscriptFeature('downloadThumbnail', {
-        document: documentRef,
-        location: locationRef,
-        URL,
-        isWatchPagePath: () => true,
-        setTimeout: clock.setTimeout,
-        clearTimeout: clock.clearTimeout,
-        addNavigateRule: (_id, fn) => { onNavigate = fn; },
-        removeNavigateRule: () => {},
-        setSafeBlankTarget: () => {},
-        fetch: async (url) => { fetched.push(url); return { ok: false }; }
+    const downloaded = [];
+    const { feature, documentRef } = build({
+        openThumbnailButton: false,
+        extra: {
+            getVideoId: () => videoId,
+            setTimeout: clock.setTimeout,
+            clearTimeout: clock.clearTimeout,
+            addNavigateRule: (_id, fn) => { onNavigate = fn; },
+            triggerDownload: async (url) => { downloaded.push(url); }
+        }
     });
 
     feature.init();
     clock.run(clock.pending()[0]);
     assert.equal(documentRef.querySelectorAll('.ytkit-dl-thumb-btn').length, 1);
 
-    locationRef.href = 'https://www.youtube.com/watch?v=bbbbbbbbbbb';
+    videoId = 'bbbbbbbbbbb';
     onNavigate();
     clock.run(clock.pending()[0]);
     const buttons = documentRef.querySelectorAll('.ytkit-dl-thumb-btn');
     assert.equal(buttons.length, 1);
     return click(buttons[0]).then(() => {
-        assert.deepEqual(fetched, ['https://i.ytimg.com/vi/bbbbbbbbbbb/maxresdefault.jpg'],
+        assert.deepEqual(downloaded, ['https://i.ytimg.com/vi/bbbbbbbbbbb/maxresdefault.jpg'],
             'the button must fetch the video on screen, not the first one');
 
         // Switching the feature off inside the two-second window must not let

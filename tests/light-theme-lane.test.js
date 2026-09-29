@@ -11,6 +11,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { checkChainText } = require('./helpers/check-chain');
+const { readUserscriptBuild } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const GATE = path.join(repoRoot, 'scripts', 'check-light-theme-lane.js');
@@ -148,16 +149,19 @@ test('the rendered light smoke checks page and host theme contexts', () => {
     }
 });
 
-test('the main userscript like-rate body uses the shared light-theme lane', () => {
-    const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
-    const featureStart = userscript.indexOf("id: 'likeViewRatio'");
-    const featureEnd = userscript.indexOf("id: 'downloadThumbnail'", featureStart);
+test('the like-rate body uses the shared light-theme lane', () => {
+    // The userscript runs this same ytkit.js, so the lane reaches both vehicles.
+    const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const featureStart = ytkit.indexOf("id: 'likeViewRatio'");
+    const featureEnd = ytkit.indexOf("id: 'downloadThumbnail'", featureStart);
     assert.ok(featureStart >= 0 && featureEnd > featureStart, 'like-rate feature body must be present');
-    const feature = userscript.slice(featureStart, featureEnd);
+    const feature = ytkit.slice(featureStart, featureEnd);
     assert.match(feature, /ytkit-meta-chip__value/);
     assert.match(feature, /ytkit-meta-chip__label/);
     assert.doesNotMatch(feature, /style\.cssText\s*=\s*['"]color:#aaa/,
-        'the userscript must not ship the legacy near-invisible inline color');
-    assert.match(userscript, /html:not\(\[dark\]\) \.ytkit-lv-ratio/);
-    assert.match(userscript, /html:not\(\[dark\]\) \.ytkit-lv-ratio \.ytkit-meta-chip__value/);
+        'the badge must not ship the legacy near-invisible inline color');
+    assert.match(ytkit, /html:not\(\[dark\]\) \.ytkit-lv-ratio/);
+    assert.match(ytkit, /html:not\(\[dark\]\) \.ytkit-lv-ratio \.ytkit-meta-chip__value/);
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must run the same ytkit.js that carries the lane');
 });

@@ -206,10 +206,10 @@
     // filter-list URL that the background worker would then have to refuse:
     // the value never survives sanitization in the first place.
     //
-    // Fails CLOSED when the scope module is absent. The only surface without
-    // it is the standalone userscript, where the filter-list URL setting does
-    // not exist (schema vehicle: 'extension'), so an empty string is the
-    // correct answer there rather than a second, weaker copy of the rules.
+    // Fails CLOSED when the scope module is absent. Both the extension and the
+    // userscript load core/remote-list-scope.js before this runs, so a missing
+    // module means a broken load, and an empty string is the correct answer
+    // there rather than a second, weaker copy of the rules.
     function normalizeFilterListUrl(value) {
         const describe = globalThis.YTKitCore?.describeRemoteListUrl;
         if (typeof describe !== 'function') return '';

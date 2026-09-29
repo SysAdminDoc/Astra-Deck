@@ -11,7 +11,7 @@
 //   2. extension/manifest.json       → "version"
 //   3. extension/ytkit.js            → const YTKIT_VERSION = '...'
 //   4. YTKit.user.js                 → // @version and @name suffix
-//   5. YTKit-core.user.js            → @version
+//   5. YTKit-core/features/app.user.js → @version (the @require libraries)
 //   6. package-lock.json             → root + packages[""].version
 //
 // SETTINGS-VERSION sources of truth (v4.47.0 NF25 — must all match):
@@ -89,15 +89,15 @@ function readUserscriptNameVersion(source = fs.readFileSync(path.join(REPO_ROOT,
     return { source: 'YTKit.user.js (@name version)', value: m ? m[1] : '' };
 }
 
-// YTKit.user.js carries no executable core of its own; it loads
-// YTKit-core.user.js through @require, pinned to the release tag. The v4.90.0
-// bump moved @version and left @require on the v4.89.0 tag, and every source
-// above still agreed, so userscript installs ran the previous release's core
-// with nothing anywhere saying so. The expected URL comes from the same
-// function sync-userscript.js writes it with.
-function findUserscriptCoreRequireDrift(productVersion, source) {
-    const { coreRequireUrl } = require('../sync-userscript.js');
-    const expected = coreRequireUrl(productVersion);
+// YTKit.user.js carries none of the extension code itself; it loads the three
+// libraries through @require, pinned to the release tag. The v4.90.0 bump
+// moved @version and left @require on the v4.89.0 tag, and every source above
+// still agreed, so userscript installs ran the previous release's code with
+// nothing anywhere saying so. The expected URLs come from the same function
+// sync-userscript.js writes them with, in the order the host needs.
+function findUserscriptRequireDrift(productVersion, source) {
+    const { LIBRARIES, tagUrl } = require('../sync-userscript.js');
+    const expected = LIBRARIES.map((library) => tagUrl(productVersion, library.file));
     // Read the lines a userscript manager reads: only those between the
     // ==UserScript== markers, and with its relaxed parsing, where anything may
     // precede the `//` (Violentmonkey matches `(.*?)//[ \t]*@key`, to agree
@@ -110,27 +110,31 @@ function findUserscriptCoreRequireDrift(productVersion, source) {
     const found = block
         .map((line) => /\/\/[ \t]*@require[ \t]+(\S+)/.exec(line)?.[1])
         .filter(Boolean);
-    return found.length === 1 && found[0] === expected ? null : { expected, found };
+    const same = found.length === expected.length && found.every((url, index) => url === expected[index]);
+    return same ? null : { expected, found };
 }
 
-function checkUserscriptCoreRequire(productVersion) {
+function checkUserscriptRequires(productVersion) {
     const source = fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8');
-    const drift = findUserscriptCoreRequireDrift(productVersion, source);
+    const drift = findUserscriptRequireDrift(productVersion, source);
     if (!drift) {
-        console.log(`[check-versions] YTKit.user.js @require loads the v${productVersion} core`);
+        console.log(`[check-versions] YTKit.user.js @require loads the v${productVersion} libraries`);
         return true;
     }
-    console.error('[check-versions] YTKit.user.js @require does not load this version\'s core:');
-    console.error(`  expected ${drift.expected}`);
+    console.error('[check-versions] YTKit.user.js @require does not load this version\'s libraries:');
+    console.error(`  expected ${drift.expected.join(', ')}`);
     console.error(`  found    ${drift.found.length ? drift.found.join(', ') : '<no @require in the header>'}`);
     console.error('Run `node sync-userscript.js`, and push the matching tag before main serves it.');
     return false;
 }
 
-function readUserscriptCoreVersion() {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'YTKit-core.user.js'), 'utf8');
-    const m = src.match(/^\/\/ @version\s+(\S+)/m);
-    return { source: 'YTKit-core.user.js (@version)', value: m ? m[1] : '' };
+function readUserscriptLibraryVersions() {
+    const { LIBRARIES } = require('../sync-userscript.js');
+    return LIBRARIES.map((library) => {
+        const src = fs.readFileSync(path.join(REPO_ROOT, library.file), 'utf8');
+        const m = src.match(/^\/\/ @version\s+(\S+)/m);
+        return { source: `${library.file} (@version)`, value: m ? m[1] : '' };
+    });
 }
 
 // v4.47.0 NF25 — SETTINGS_VERSION parity sources.
@@ -439,7 +443,7 @@ function main(argv) {
         readYtkitVersion(),
         readUserscriptVersion(),
         readUserscriptNameVersion(),
-        readUserscriptCoreVersion(),
+        ...readUserscriptLibraryVersions(),
     ];
 
     const tagOverride = parseTagFlag(argv);
@@ -496,12 +500,12 @@ function main(argv) {
     }
 
     const docsOk = productOk && checkActiveDocumentationTruth(sources[0].value);
-    const coreRequireOk = !productOk || checkUserscriptCoreRequire(sources[0].value);
+    const requiresOk = !productOk || checkUserscriptRequires(sources[0].value);
     const tagsOk = !productOk || checkProductTagSanity(sources[0].value);
     const releaseOk = !productOk
         || checkReleaseCurrency(sources[0].value, argv.includes('--require-release-current'));
 
-    process.exit(productOk && settingsOk && docsOk && coreRequireOk && tagsOk && releaseOk ? 0 : 1);
+    process.exit(productOk && settingsOk && docsOk && requiresOk && tagsOk && releaseOk ? 0 : 1);
 }
 
 if (require.main === module) {
@@ -517,7 +521,7 @@ module.exports = {
     checkReleaseCurrency,
     compareVersionSegments,
     findStrayProductTags,
-    findUserscriptCoreRequireDrift,
+    findUserscriptRequireDrift,
     newestProductTag,
     readChannelActiveVersions,
     parseProductTagSegments,

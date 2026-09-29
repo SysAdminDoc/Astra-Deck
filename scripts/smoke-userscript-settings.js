@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 
-// Render the distributable userscript and its @require core in an isolated
-// Chromium page. This is manager-neutral on purpose: it proves the generated
-// artifacts build and render the desktop settings contract, while manager
-// grants remain covered by their source gates.
+// Render the distributable userscript and its @require libraries in an
+// isolated Chromium page. This is manager-neutral on purpose: it proves the
+// generated artifacts start and render the desktop settings contract, while
+// real managers are covered by smoke-userscript-managers.js.
 
 const fs = require('node:fs');
 const os = require('node:os');
@@ -22,6 +22,8 @@ const {
     sleep,
     waitForDevTools
 } = require('./smoke-chromium-optional-hosts');
+
+const { LIBRARIES } = require('../sync-userscript');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'userscript-settings-smoke');
@@ -43,9 +45,12 @@ function parseArgs(argv) {
     return options;
 }
 
+// The records load as plain scripts, libraries first, the order a manager
+// runs them in, over GM_* stubs. The menu command the host registers is kept,
+// so the smoke opens settings the way a userscript user does.
 function buildFixture(stageDir) {
-    fs.copyFileSync(path.join(REPO_ROOT, 'YTKit-core.user.js'), path.join(stageDir, 'YTKit-core.user.js'));
-    fs.copyFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), path.join(stageDir, 'YTKit.user.js'));
+    const records = [...LIBRARIES.map((library) => library.file), 'YTKit.user.js'];
+    for (const file of records) fs.copyFileSync(path.join(REPO_ROOT, file), path.join(stageDir, file));
     const fixture = `<!doctype html>
 <html lang="en" dark>
 <head>
@@ -55,23 +60,43 @@ function buildFixture(stageDir) {
 <script>
 (() => {
     const store = new Map([['ytkit_safe_mode', true]]);
+    globalThis.__astraSmokeMenu = [];
+    globalThis.GM_info = { scriptHandler: 'settings-smoke', version: '0' };
     globalThis.GM_getValue = (key, fallback) => store.has(key) ? store.get(key) : fallback;
     globalThis.GM_setValue = (key, value) => { store.set(key, value); };
     globalThis.GM_deleteValue = (key) => { store.delete(key); };
+    globalThis.GM_listValues = () => [...store.keys()];
+    globalThis.GM_addValueChangeListener = () => 1;
     globalThis.GM_addStyle = (css) => {
         const style = document.createElement('style');
         style.textContent = css;
         (document.head || document.documentElement).appendChild(style);
         return style;
     };
+    // A manager runs the MAIN-world bundle in the page and everything else in
+    // its sandbox. Here both would share one realm, so the page-world script
+    // is created and never attached; the manager smoke covers that world.
+    globalThis.GM_addElement = (parent, tag, attributes = {}) => {
+        const node = document.createElement(tag);
+        for (const [name, value] of Object.entries(attributes)) {
+            if (name === 'textContent') node.textContent = value;
+            else node.setAttribute(name, value);
+        }
+        if (tag !== 'script') parent.appendChild(node);
+        return node;
+    };
     globalThis.GM_xmlhttpRequest = (options = {}) => {
         queueMicrotask(() => options.onerror?.({ status: 0, error: 'disabled in isolated visual smoke' }));
         return { abort() {} };
     };
+    globalThis.GM_download = () => {};
+    globalThis.GM_openInTab = () => ({ close() {} });
+    globalThis.GM_getResourceText = () => null;
+    globalThis.GM_cookie = { list: (details, done) => done([]) };
+    globalThis.GM_registerMenuCommand = (label, run) => { globalThis.__astraSmokeMenu.push({ label, run }); return label; };
 })();
 </script>
-<script src="YTKit-core.user.js"></script>
-<script src="YTKit.user.js"></script>
+${records.map((file) => `<script src="${file}"></script>`).join('\n')}
 </head>
 <body>
 <ytd-app>
@@ -83,6 +108,17 @@ function buildFixture(stageDir) {
     const fixturePath = path.join(stageDir, 'fixture.html');
     fs.writeFileSync(fixturePath, fixture, 'utf8');
     return fixturePath;
+}
+
+// A computed rgb()/rgba() background is a light surface when it is mostly
+// opaque and its relative luminance sits in the top third.
+function isLightSurface(color) {
+    const match = /^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)$/.exec(String(color || '').trim());
+    if (!match) return false;
+    const [red, green, blue] = match.slice(1, 4).map(Number);
+    const alpha = match[4] === undefined ? 1 : Number(match[4]);
+    const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+    return alpha >= 0.8 && luminance >= 0.66;
 }
 
 async function waitForExpression(client, expression, timeoutMs, label) {
@@ -139,9 +175,9 @@ async function auditState(client, state) {
             const pane = document.querySelector('#ytkit-pane-${category.id}');
             const panelRect = panel.getBoundingClientRect();
             const panelStyle = getComputedStyle(panel);
-            const videoHiderEmpty = pane?.querySelector('.ytkit-vh-empty');
-            const videoHiderEmptyTitle = pane?.querySelector('.ytkit-vh-empty__title');
-            const videoHiderEmptyCopy = pane?.querySelector('.ytkit-vh-empty__copy');
+            const videoHiderEmpty = pane?.querySelector('.ytkit-vh-hero.is-empty');
+            const videoHiderEmptyTitle = videoHiderEmpty?.querySelector('.ytkit-vh-hero__title');
+            const videoHiderEmptyCopy = videoHiderEmpty?.querySelector('.ytkit-vh-hero__copy');
             const mediaDlBanner = pane?.querySelector('#ytkit-mediadl-banner');
             const clipped = Array.from(panel.querySelectorAll('.ytkit-nav-label, .ytkit-feature-name, .ytkit-feature-desc'))
                 .filter((node) => node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1)
@@ -163,15 +199,15 @@ async function auditState(client, state) {
                 },
                 transform: getComputedStyle(panel).transform,
                 clipped,
-                summaryCards: pane?.querySelectorAll('.ytkit-vh-summary-card').length || 0,
-                missionIcon: Boolean(pane?.querySelector('.ytkit-pane-lead .ytkit-pane-icon svg')),
+                videoHiderTabs: pane?.querySelectorAll('.ytkit-vh-tab').length || 0,
                 legacySurfaceToken: panelStyle.getPropertyValue('--ytkit-bg-surface').trim(),
                 sharedSurfaceToken: panelStyle.getPropertyValue('--ytkit-v3-surface').trim(),
-                videoHiderEmpty: videoHiderEmpty ? {
-                    background: getComputedStyle(videoHiderEmpty).backgroundColor,
+                videoHiderEmpty: videoHiderEmpty && videoHiderEmptyTitle && videoHiderEmptyCopy ? {
+                    background: panelStyle.backgroundColor,
                     copyColor: getComputedStyle(videoHiderEmptyCopy).color,
                     copyOpacity: getComputedStyle(videoHiderEmptyCopy).opacity,
                     titleColor: getComputedStyle(videoHiderEmptyTitle).color,
+                    text: (videoHiderEmptyTitle.textContent + videoHiderEmptyCopy.textContent).trim(),
                 } : null,
                 mediaDlBannerBackground: mediaDlBanner ? getComputedStyle(mediaDlBanner).backgroundColor : '',
                 invalidSelectLabels: Array.from(pane?.querySelectorAll('option') || [])
@@ -188,17 +224,17 @@ async function auditState(client, state) {
         if (!snapshot.legacySurfaceToken || snapshot.legacySurfaceToken !== snapshot.sharedSurfaceToken) {
             throw new Error(`${state.name}/${category.label}: legacy surface token drifted from the shared visual system`);
         }
-        if (category.id === 'Video-Hider' && (snapshot.summaryCards !== 3 || !snapshot.missionIcon)) {
-            throw new Error(`${state.name}/Video Hider: mission header or summary dashboard is missing`);
+        if (category.id === 'Video-Hider' && snapshot.videoHiderTabs < 4) {
+            throw new Error(`${state.name}/Video Hider: expected its list tabs, found ${snapshot.videoHiderTabs}`);
         }
         if (category.id === 'Video-Hider' && (!snapshot.videoHiderEmpty
-            || snapshot.videoHiderEmpty.copyOpacity !== '1'
+            || !snapshot.videoHiderEmpty.text
+            || Number(snapshot.videoHiderEmpty.copyOpacity) < 0.6
             || snapshot.videoHiderEmpty.copyColor === snapshot.videoHiderEmpty.background
             || snapshot.videoHiderEmpty.titleColor === snapshot.videoHiderEmpty.background)) {
             throw new Error(`${state.name}/Video Hider: empty state is not legible (${JSON.stringify(snapshot.videoHiderEmpty)})`);
         }
-        if (category.id === 'Downloads' && !state.dark
-            && snapshot.mediaDlBannerBackground !== 'rgb(238, 241, 245)') {
+        if (category.id === 'Downloads' && !state.dark && !isLightSurface(snapshot.mediaDlBannerBackground)) {
             throw new Error(`${state.name}/Downloads: MediaDL banner retained a dark surface (${snapshot.mediaDlBannerBackground})`);
         }
         pages.push({ ...category, ...snapshot });
@@ -238,15 +274,15 @@ async function runCandidate(candidate, fixturePath, timeoutMs) {
         await client.send('Runtime.enable');
         await client.send('Page.enable');
         try {
-            await waitForExpression(
-                client,
-                "Boolean(window.ytkit && document.querySelector('#ytkit-settings-panel'))",
-                timeoutMs,
-                'userscript settings initialization'
-            );
+            await waitForExpression(client, 'Boolean(window.ytkit && globalThis.__astraSmokeMenu?.length)',
+                timeoutMs, 'userscript runtime startup');
+            await evaluate(client, 'globalThis.__astraSmokeMenu[0].run()');
+            await waitForExpression(client, "Boolean(document.querySelector('#ytkit-settings-panel'))",
+                timeoutMs, 'the settings panel opened from the userscript menu command');
         } catch (error) {
             const diagnostics = await evaluate(client, `({
                 readyState: document.readyState,
+                host: globalThis.__astraDeckUserscript || null,
                 coreLoaded: Boolean(globalThis.YTKitCore),
                 userscriptLoaded: Boolean(window.ytkit),
                 panel: Boolean(document.querySelector('#ytkit-settings-panel')),

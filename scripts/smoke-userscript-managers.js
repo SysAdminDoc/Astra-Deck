@@ -3,9 +3,9 @@
 
 // Installs the shipped split userscript through real, signed Firefox builds of
 // Tampermonkey and Violentmonkey in disposable profiles. The local fixture is
-// intentionally served over loopback: only @match/@require/update metadata is
-// rewritten for isolation; the executable userscript and core library remain
-// the repository artifacts. The smoke proves document-start shell suppression,
+// intentionally served over loopback: only @match/@require/@resource/update
+// metadata is rewritten for isolation; the executable userscript and its
+// libraries remain the repository artifacts. The smoke proves document-start shell suppression,
 // SPA-style reinsertion suppression, and the deliberately narrower contract:
 // an ordinary parser request still reaches the server because a userscript
 // cannot promise browser-level pre-request interception.
@@ -40,7 +40,7 @@ const {
 const REPO_ROOT = path.join(__dirname, '..');
 const FIXTURES_PATH = path.join(__dirname, 'userscript-manager-fixtures.json');
 const USERSCRIPT_PATH = path.join(REPO_ROOT, 'YTKit.user.js');
-const CORE_PATH = path.join(REPO_ROOT, 'YTKit-core.user.js');
+const LIBRARY_FILES = require('../sync-userscript').LIBRARIES.map((library) => library.file);
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'userscript-manager-smoke');
 const CONTRACT = 'document-start-shells-only';
 const MAX_MANAGER_BYTES = 4 * 1024 * 1024;
@@ -148,22 +148,26 @@ async function downloadManager(manager, downloadDir, timeoutMs) {
     return filePath;
 }
 
+// The libraries and locale resources are tag-pinned, and the tag for an
+// unreleased version doesn't exist yet, so every one of them is served from
+// the fixture server instead. The bytes are still the repository artifacts.
 function buildIsolatedUserscript(port) {
     const source = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
-    const localMatch = `// @match        http://127.0.0.1:${port}/*`;
-    const localCore = `http://127.0.0.1:${port}/YTKit-core.user.js`;
+    const origin = `http://127.0.0.1:${port}`;
+    const localMatch = `// @match        ${origin}/*`;
     const result = source
-        .replace(
-            '// @match        https://www.youtube.com/*',
-            `${localMatch}\n// @match        https://www.youtube.com/*`
-        )
-        // The require target is a version-pinned tag ref since v4.88.3, so
-        // match the metadata line rather than a literal URL.
-        .replace(/^(\/\/ @require\s+)\S+YTKit-core\.user\.js$/m, `$1${localCore}`)
+        .replace(/^\/\/ @match\s/m, `${localMatch}\n$&`)
+        .replace(/^(\/\/ @require\s+)\S+\/(YTKit-[a-z]+\.user\.js)$/gm, `$1${origin}/$2`)
+        .replace(/^(\/\/ @resource\s+\S+\s+)\S+\/(extension\/_locales\/[A-Za-z_]+\/messages\.json)$/gm, `$1${origin}/$2`)
         .replace(/^\/\/ @updateURL.*\r?\n/m, '')
         .replace(/^\/\/ @downloadURL.*\r?\n/m, '');
-    if (!result.includes(localMatch) || !result.includes(`// @require      ${localCore}`)) {
-        throw new Error('Could not isolate userscript @match/@require metadata for the manager smoke');
+    const requires = [...result.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);
+    const resources = [...result.matchAll(/^\/\/ @resource\s+\S+\s+(\S+)$/gm)].map((match) => match[1]);
+    if (!result.includes(localMatch)
+        || LIBRARY_FILES.some((file) => !requires.includes(`${origin}/${file}`))
+        || requires.length !== LIBRARY_FILES.length
+        || resources.some((url) => !url.startsWith(`${origin}/`))) {
+        throw new Error('Could not isolate userscript @match/@require/@resource metadata for the manager smoke');
     }
     if (!result.includes(`'${CONTRACT}'`)) {
         throw new Error('Shipped userscript is missing the explicit shell-only ad contract marker');
@@ -239,7 +243,7 @@ async function startFixtureServer() {
     const port = await reserveLoopbackPort();
     const requests = [];
     const userscript = buildIsolatedUserscript(port);
-    const core = fs.readFileSync(CORE_PATH);
+    const libraries = new Map(LIBRARY_FILES.map((file) => [`/${file}`, fs.readFileSync(path.join(REPO_ROOT, file))]));
     const server = http.createServer((request, response) => {
         const receivedAt = Date.now();
         requests.push({ method: request.method, receivedAt, url: request.url || '' });
@@ -252,12 +256,21 @@ async function startFixtureServer() {
             response.end(userscript);
             return;
         }
-        if (url.pathname === '/YTKit-core.user.js') {
+        if (libraries.has(url.pathname)) {
             response.writeHead(200, {
                 'Cache-Control': 'no-store',
                 'Content-Type': 'text/javascript; charset=utf-8'
             });
-            response.end(core);
+            response.end(libraries.get(url.pathname));
+            return;
+        }
+        const locale = /^\/extension\/_locales\/([A-Za-z_]+)\/messages\.json$/.exec(url.pathname);
+        if (locale && fs.existsSync(path.join(REPO_ROOT, 'extension', '_locales', locale[1], 'messages.json'))) {
+            response.writeHead(200, {
+                'Cache-Control': 'no-store',
+                'Content-Type': 'application/json; charset=utf-8'
+            });
+            response.end(fs.readFileSync(path.join(REPO_ROOT, 'extension', '_locales', locale[1], 'messages.json')));
             return;
         }
         if (url.pathname === '/fixture') {

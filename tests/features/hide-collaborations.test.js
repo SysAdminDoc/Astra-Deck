@@ -14,6 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { loadFeature, fakeNode, fakeDocument, featureSource } = require('../helpers/monolith');
+const { readUserscriptBuild } = require('../helpers/source');
 
 const FIXTURE = fs.readFileSync(
     path.join(__dirname, '..', 'fixtures', 'subs-collaboration-cards.html'), 'utf8');
@@ -147,7 +148,7 @@ test('the ratio guard does not fire on a small feed or a plausible collaboration
         'exactly at the limit the pass is still trusted');
 });
 
-test('the subscription-list scrape is gone from both copies', () => {
+test('the subscription-list scrape is gone from the one copy both vehicles run', () => {
     const source = codeOnly(featureSource('hideCollaborations'));
     for (const banned of ['/feed/channels', '_fetchSubscriptions', '_isSubscribed', 'ytInitialData']) {
         assert.ok(!source.includes(banned),
@@ -162,13 +163,10 @@ test('the subscription-list scrape is gone from both copies', () => {
             `cards are class-toggled, never removed (${removal})`);
     }
 
-    const userscript = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8');
-    const start = userscript.indexOf("id: 'hideCollaborations'");
-    assert.ok(start > 0, 'the userscript carries the feature too');
-    const block = codeOnly(userscript.slice(start, start + 6000));
-    assert.ok(!block.includes('/feed/channels'),
-        'the userscript copy must not keep the scrape');
-    assert.ok(block.includes('_COLLAB_SELECTOR'),
-        'the userscript copy uses the structural marker');
+    assert.ok(source.includes('_COLLAB_SELECTOR'), 'the feature uses the structural marker');
+
+    // The userscript kept its own copy, scrape included, after the extension
+    // was fixed. It now runs this same ytkit.js, so the fix reaches both.
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must run the same hideCollaborations, not a copy of its own');
 });

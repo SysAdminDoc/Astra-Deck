@@ -14,6 +14,7 @@ const {
     AUTO_START_RETRY_BUDGET,
 } = require('../extension/features/download-ui');
 const { waitForCondition } = require('./helpers/async');
+const { sources, userscriptBundles } = require('./helpers/source');
 const remoteListScope = require('../extension/core/remote-list-scope');
 
 const fixture = JSON.parse(fs.readFileSync(
@@ -351,18 +352,15 @@ test('all normal and recovery auto-start paths use the documented cold-start bud
     assert.match(monolithSource, /const AUTO_START_RETRY_BUDGET = 8;/);
     assert.match(monolithSource, /MediaDLManager\.tryAutoStart\(AUTO_START_RETRY_BUDGET\)/);
 
-    // The userscript ships a SEPARATE GM downloader implementation, so this
-    // fix had to be hand-ported — and the pin that was supposed to protect it
-    // deliberately excluded the file, leaving the cold-start timeout live for
-    // every userscript user. A ~12s cold start of the one-file companion exe
-    // does not fit in a 4/5-retry budget, so the retry buttons reported "still
-    // not responding" on a perfectly healthy start.
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
-    assert.match(userscriptSource, /const AUTO_START_RETRY_BUDGET = 8;/,
-        'the userscript must declare the same cold-start budget');
+    // The userscript used to ship a SEPARATE GM downloader implementation, so
+    // this fix had to be hand-ported, and the pin that was supposed to protect
+    // it excluded the file, leaving the cold-start timeout live for every
+    // userscript user. A ~12s cold start of the one-file companion exe does not
+    // fit in a 4/5-retry budget. The userscript is generated from extension/
+    // now, so the budget above is its budget as long as it ships these files.
+    for (const file of ['features/download-ui/index.js', 'ytkit.js', 'features/settings-panel/index.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must run ${file}, not a copy with its own budget`);
+    }
 
     // The settings-panel module reinstated the short budget at its own
     // "Start service" button while its ytkit.js twin had been fixed — the
@@ -373,41 +371,24 @@ test('all normal and recovery auto-start paths use the documented cold-start bud
     );
     assert.doesNotMatch(settingsPanelSource, /tryAutoStart\(\s*[45]\s*\)/,
         'the settings panel must not pass a short retry budget');
-    assert.doesNotMatch(`${moduleSource}\n${monolithSource}\n${userscriptSource}`, /tryAutoStart\(\s*[45]\s*\)/);
+    assert.doesNotMatch(`${moduleSource}\n${monolithSource}`, /tryAutoStart\(\s*[45]\s*\)/);
 });
 
-test('userscript twins carry the shipped extension fixes', () => {
-    // The drift checker is feature-ID granular: a feature present in both files
-    // counts as "in parity" no matter how stale the userscript copy is. These
-    // four fixes shipped on the extension path and were never hand-ported.
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
-
-    // 6ebf7403 — localized YouTube action hooks.
-    assert.ok(!userscriptSource.includes('_buttonAriaLabels'),
-        'exact English aria-label matching must be gone; it no-ops on every other locale');
-    assert.match(userscriptSource, /_buttonHookChains/,
-        'watch-page action hooks must resolve through structural selector chains');
-
-    // 2df33124 — resetting a channel to 1x must clear the stored speed.
-    assert.match(userscriptSource, /if \(video\.playbackRate === 1\) delete speeds\[channelId\];/,
-        'per-channel speed must be cleared when reset to 1x, not left stored');
-
-    // d2561495 — focused mode is a watch-page feature.
-    const focusedIdx = userscriptSource.indexOf("id: 'focusedMode'");
-    assert.ok(focusedIdx > -1, 'focusedMode must exist in the userscript');
-    assert.match(userscriptSource.slice(focusedIdx, focusedIdx + 400), /pages: \[PageTypes\.WATCH\]/,
-        'focused mode must not hide the masthead on every page type');
-});
+// The userscript twins of three extension fixes (localized watch-page action
+// hooks, clearing a per-channel speed reset to 1x, focused mode on watch pages
+// only) were never hand-ported, and a test here pinned the copies. There are no
+// twins now: the userscript runs ytkit.js, which the test above holds it to.
+// The fixes themselves are covered where they live, in
+// tests/selector-localization.test.js ("watch and nav hooks put structural
+// selectors before English fallbacks") and tests/ytkit-logic-fixes.test.js
+// ("perChannelSpeed removes 1x overrides ..." and "focusedMode is limited to
+// watch pages ...").
 
 test('standalone userscript never falls through to public Cobalt APIs', () => {
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
-    const metadata = userscriptSource.slice(0, userscriptSource.indexOf('// ==/UserScript=='));
+    // Every generated file: the host and the libraries that hold the code.
+    const userscriptSource = sources.userscript;
+    const main = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    const metadata = main.slice(0, main.indexOf('// ==/UserScript=='));
     const retiredHosts = [
         'cobalt-api.meowing.de',
         'cobalt-backend.canine.tools',
@@ -427,26 +408,17 @@ test('standalone userscript never falls through to public Cobalt APIs', () => {
     }
     assert.doesNotMatch(userscriptSource, /_cobaltApiInstances|_tryCobaltApiDownload|_resolveCobaltApiUrl/,
         'automatic community-instance failover must stay deleted');
-    assert.match(userscriptSource, /function _buildConfiguredWebDownloaderUrl\(/,
-        'the userscript should retain an explicit navigation-only web fallback');
-    assert.match(userscriptSource, /targetUrl\.origin !== configuredOrigin/,
-        'a placeholder must not be able to redirect the handoff to another origin');
-    assert.match(userscriptSource, /:`?\s*`\$\{described\.url\.replace\(\/#\.\*\$\/, ''\)\}#\$\{encodedUrl\}`/,
-        'the default handoff must put the canonical URL in a fragment');
-    assert.match(userscriptSource, /SETTINGS_VERSION:\s*3/,
-        'the changed fallback semantics need a one-time settings migration');
-    assert.match(userscriptSource, /3:\s*\(s\)\s*=>\s*\{[\s\S]*?s\.cobaltUrl\s*=\s*'';/,
-        'migration must clear old API-or-frontend values instead of silently reusing them');
-    assert.doesNotMatch(userscriptSource, /cobaltUrl:\s*'https:\/\//,
-        'no public or community Cobalt URL may remain a shipped default');
 
-    const downloadStart = userscriptSource.indexOf('async function ytKitDownload');
-    const downloadEnd = userscriptSource.indexOf('async function _mediaDLSendDownload', downloadStart);
-    const downloadBlock = userscriptSource.slice(downloadStart, downloadEnd);
-    assert.match(downloadBlock, /_webDownloadFallback\(videoUrl\)/,
-        'the final userscript fallback should be the configured web-page handoff');
-    assert.doesNotMatch(downloadBlock, /GM_xmlhttpRequest|Cobalt API/,
-        'the final userscript fallback must not disclose the watch URL through an API request');
+    // The hand-written userscript had its own navigation-only "Web Downloader
+    // URL" fallback (the cobaltUrl setting). The schema retired cobaltUrl with
+    // the v4.0.0 download rebuild, and the generated userscript runs the
+    // extension's Cobalt fallback instead: a self-hosted instance only, the
+    // public service refused before any request is made. The two Cobalt tests
+    // above drive exactly that path, so here the userscript is held to
+    // shipping it.
+    for (const file of ['features/download-ui/index.js', 'core/remote-list-scope.js', 'background.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must run the extension's Cobalt path, including ${file}`);
+    }
 });
 
 test('quality ladder rungs the companion cannot honor are rejected', () => {

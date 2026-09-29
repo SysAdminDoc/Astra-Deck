@@ -213,63 +213,10 @@
         return Object.freeze({ get, set, remove, status, migrateLegacy });
     }
 
-    function createUserscriptCredentialVault(options = {}) {
-        const getValue = options.getValue || root.GM_getValue;
-        const setValue = options.setValue || root.GM_setValue;
-        const deleteValue = options.deleteValue || root.GM_deleteValue;
-        const prefix = options.prefix || 'ytkit:ai-credential:';
-
-        function keyFor(provider) {
-            const normalized = normalizeProvider(provider);
-            if (!normalized || normalized === 'ollama') throw new Error('This provider has no userscript credential.');
-            return prefix + normalized;
-        }
-
-        async function get(provider) {
-            if (normalizeProvider(provider) === 'ollama') return '';
-            if (typeof getValue !== 'function') throw new Error('Userscript credential storage is unavailable.');
-            const value = await Promise.resolve(getValue(keyFor(provider), ''));
-            return typeof value === 'string' ? value.trim() : '';
-        }
-
-        async function set(provider, credential) {
-            if (typeof setValue !== 'function') throw new Error('Userscript credential storage is unavailable.');
-            const value = String(credential || '').trim();
-            if (!value || value.length > 4096 || /[\r\n\0]/.test(value)) {
-                throw new Error('Credential must be 1-4096 characters without control characters.');
-            }
-            await Promise.resolve(setValue(keyFor(provider), value));
-            return { provider: normalizeProvider(provider), configured: true, remembered: true };
-        }
-
-        async function remove(provider) {
-            const key = keyFor(provider);
-            if (typeof deleteValue === 'function') await Promise.resolve(deleteValue(key));
-            else if (typeof setValue === 'function') await Promise.resolve(setValue(key, ''));
-            else throw new Error('Userscript credential storage is unavailable.');
-            return { provider: normalizeProvider(provider), configured: false, remembered: false };
-        }
-
-        async function status(provider) {
-            if (normalizeProvider(provider) === 'ollama') {
-                return { provider: 'ollama', configured: true, remembered: false, credentialRequired: false };
-            }
-            return {
-                provider: normalizeProvider(provider),
-                configured: Boolean(await get(provider)),
-                remembered: true,
-                credentialRequired: true
-            };
-        }
-
-        return Object.freeze({ get, set, remove, status });
-    }
-
     Object.assign(core, {
         AI_PROVIDER_POLICIES: PROVIDER_POLICIES,
         createCredentialVault,
         createIndexedDbCredentialStore,
-        createUserscriptCredentialVault,
         normalizeAiProvider: normalizeProvider,
         validateAiProviderEndpoint: validateProviderEndpoint
     });
@@ -279,7 +226,6 @@
             PROVIDER_POLICIES,
             createCredentialVault,
             createIndexedDbCredentialStore,
-            createUserscriptCredentialVault,
             normalizeProvider,
             validateProviderEndpoint
         };

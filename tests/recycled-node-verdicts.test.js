@@ -120,53 +120,54 @@ function liveChat(messages, { keywords = '' } = {}) {
     };
 }
 
-for (const [label, source] of [['extension', sources.ytkit], ['userscript', sources.userscript]]) {
-    test(`${label}: a recycled node holding a new message is judged again`, () => {
-        const message = chatMessage('SomeBot', 'buy followers');
-        const api = loadDeclarationsFrom(source,
-            ['liveChatMessageFingerprint', 'applyBotFilter'], liveChat([message]));
+// The userscript used to carry its own copy of the bot filter, checked here
+// alongside this one. It now runs this same ytkit.js, so these cover both
+// vehicles.
+test('a recycled node holding a new message is judged again', () => {
+    const message = chatMessage('SomeBot', 'buy followers');
+    const api = loadDeclarationsFrom(sources.ytkit,
+        ['liveChatMessageFingerprint', 'applyBotFilter'], liveChat([message]));
 
-        api.applyBotFilter();
-        assert.equal(message.style.display, 'none', 'a bot message is hidden');
-        assert.equal(message.classList.contains('yt-suite-hidden-bot'), true);
+    api.applyBotFilter();
+    assert.equal(message.style.display, 'none', 'a bot message is hidden');
+    assert.equal(message.classList.contains('yt-suite-hidden-bot'), true);
 
-        // YouTube reuses the node for someone else entirely.
-        message.author = 'RealPerson';
-        message.text = 'hello everyone';
-        api.applyBotFilter();
+    // YouTube reuses the node for someone else entirely.
+    message.author = 'RealPerson';
+    message.text = 'hello everyone';
+    api.applyBotFilter();
 
-        assert.equal(message.style.display, '',
-            'an innocent message must not inherit a bot message display:none');
-        assert.equal(message.classList.contains('yt-suite-hidden-bot'), false);
-    });
+    assert.equal(message.style.display, '',
+        'an innocent message must not inherit a bot message display:none');
+    assert.equal(message.classList.contains('yt-suite-hidden-bot'), false);
+});
 
-    test(`${label}: a recycled node holding a bot message does not inherit an innocent pass`, () => {
-        const message = chatMessage('RealPerson', 'hello everyone');
-        const api = loadDeclarationsFrom(source,
-            ['liveChatMessageFingerprint', 'applyBotFilter'], liveChat([message]));
+test('a recycled node holding a bot message does not inherit an innocent pass', () => {
+    const message = chatMessage('RealPerson', 'hello everyone');
+    const api = loadDeclarationsFrom(sources.ytkit,
+        ['liveChatMessageFingerprint', 'applyBotFilter'], liveChat([message]));
 
-        api.applyBotFilter();
-        assert.equal(message.style.display, '', 'an innocent message is left alone');
+    api.applyBotFilter();
+    assert.equal(message.style.display, '', 'an innocent message is left alone');
 
-        message.author = 'SpamBot';
-        message.text = 'buy followers';
-        api.applyBotFilter();
-        assert.equal(message.style.display, 'none',
-            'the node was judged once; the message in it is new and must be judged again');
-    });
+    message.author = 'SpamBot';
+    message.text = 'buy followers';
+    api.applyBotFilter();
+    assert.equal(message.style.display, 'none',
+        'the node was judged once; the message in it is new and must be judged again');
+});
 
-    test(`${label}: the fingerprint distinguishes two messages from the same author`, () => {
-        const api = loadDeclarationsFrom(source, ['liveChatMessageFingerprint'], {});
-        const first = chatMessage('Someone', 'first message');
-        const second = chatMessage('Someone', 'second message');
-        assert.notEqual(api.liveChatMessageFingerprint(first), api.liveChatMessageFingerprint(second),
-            'author alone is not enough: one author posts many messages through one recycled node');
+test('the fingerprint distinguishes two messages from the same author', () => {
+    const api = loadDeclarationsFrom(sources.ytkit, ['liveChatMessageFingerprint'], {});
+    const first = chatMessage('Someone', 'first message');
+    const second = chatMessage('Someone', 'second message');
+    assert.notEqual(api.liveChatMessageFingerprint(first), api.liveChatMessageFingerprint(second),
+        'author alone is not enough: one author posts many messages through one recycled node');
 
-        const same = chatMessage('Someone', 'first message');
-        assert.equal(api.liveChatMessageFingerprint(first), api.liveChatMessageFingerprint(same),
-            'and an unchanged message must not be re-judged on every pass');
-    });
-}
+    const same = chatMessage('Someone', 'first message');
+    assert.equal(api.liveChatMessageFingerprint(first), api.liveChatMessageFingerprint(same),
+        'and an unchanged message must not be re-judged on every pass');
+});
 
 test('the keyword filter un-hides a recycled node whose verdict flipped', () => {
     const message = chatMessage('Someone', 'spoiler ahead');

@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "자격 증명 교체"
   },
-  "aiCredentialReplaceHint": {
-    "message": "자격 증명이 설정되어 있습니다. 바꿀 새 값을 입력하세요. 저장된 값은 표시되지 않습니다."
-  },
   "aiCredentialSaveBtn": {
     "message": "자격 증명 저장"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "상태를 확인할 수 없음"
   },
-  "aiCredentialStoreHint": {
-    "message": "userscript 관리자에만 저장되며 Astra Deck 설정 및 내보내기에는 포함되지 않습니다."
-  },
   "aiCredentialTitle": {
     "message": "AI 제공자 자격 증명"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+    "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "대신 설정한 BYO 키 공급자를 사용합니다."
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "요약"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "AI Summary (right-click to manage the provider credential)"
   },
   "altFrontendOpenAriaTpl": {
     "message": "{host}에서 외부로 열기"

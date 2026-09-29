@@ -16,14 +16,15 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const {
     PROVIDER_POLICIES,
     createCredentialVault,
-    createUserscriptCredentialVault,
     normalizeProvider,
     validateProviderEndpoint,
 } = require('../extension/core/credential-vault.js');
+const { userscriptBundles } = require('./helpers/source');
 
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -33,7 +34,10 @@ const popup = read('extension/popup.js');
 const popupHtml = read('extension/popup.html');
 const schema = read('extension/core/settings-schema.js');
 const defaults = JSON.parse(read('extension/default-settings.json'));
-const userscript = read('YTKit-core.user.js') + '\n' + read('YTKit.user.js');
+// The metadata block of the generated userscript. Its code is extension/
+// files registered in the three @require libraries, so claims about code read
+// extension/ and use userscriptBundles() to prove the userscript runs it.
+const userscriptHeader = read('YTKit.user.js').split('// ==/UserScript==')[0];
 
 const CREDENTIAL = 'sk-secret-value-0123456789';
 
@@ -274,65 +278,7 @@ test('each remote provider carries the credential in a header, and the local one
     }
 });
 
-// ── the userscript vault ────────────────────────────────────────────────────
-
-test('the userscript vault keeps each provider in its own manager-isolated key', async () => {
-    const store = new Map();
-    const api = createUserscriptCredentialVault({
-        getValue: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
-        setValue: (key, value) => { store.set(key, value); },
-        deleteValue: (key) => { store.delete(key); },
-    });
-
-    await api.set('openai', CREDENTIAL);
-    assert.deepEqual(Array.from(store.keys()), ['ytkit:ai-credential:openai'],
-        'the prefix is what keeps it out of the settings blob');
-
-    await api.set('gemini', 'gm-other-value');
-    assert.equal(store.get('ytkit:ai-credential:openai'), CREDENTIAL,
-        'one provider must not overwrite another');
-
-    const status = await api.status('openai');
-    assert.equal(status.configured, true);
-    assert.equal(JSON.stringify(status).includes(CREDENTIAL), false,
-        'status is what the UI shows; the value is not part of it');
-
-    await api.remove('openai');
-    assert.equal(store.has('ytkit:ai-credential:openai'), false, 'delete really deletes');
-    assert.equal(await api.get('openai'), '');
-    assert.equal(store.get('ytkit:ai-credential:gemini'), 'gm-other-value',
-        'and takes only its own provider with it');
-});
-
-test('the userscript vault blanks the key when the manager offers no delete', async () => {
-    const store = new Map();
-    const api = createUserscriptCredentialVault({
-        getValue: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
-        setValue: (key, value) => { store.set(key, value); },
-        deleteValue: undefined,
-    });
-    await api.set('openai', CREDENTIAL);
-    await api.remove('openai');
-    assert.equal(store.get('ytkit:ai-credential:openai'), '',
-        'a manager without GM_deleteValue must still end up holding nothing usable');
-    assert.equal(await api.get('openai'), '');
-});
-
-test('the userscript vault applies the same credential shape rules', async () => {
-    const store = new Map();
-    const api = createUserscriptCredentialVault({
-        getValue: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
-        setValue: (key, value) => { store.set(key, value); },
-        deleteValue: (key) => { store.delete(key); },
-    });
-    for (const value of ['', `${CREDENTIAL}\r\nX-Injected: 1`, 'x'.repeat(4097)]) {
-        assert.ok(await rejects(api.set('openai', value)));
-    }
-    assert.equal(store.size, 0, 'a refused credential must not be half-written');
-    assert.ok(await rejects(api.set('ollama', CREDENTIAL)), 'the local provider takes no key here either');
-});
-
-// ── the surfaces that stay scans ────────────────────────────────────────────
+// ── the request path ────────────────────────────────────────────────────────
 
 test('the content script sends the request, never the credential', () => {
     // _callLLM lives inside the aiVideoSummary feature and reaches the worker
@@ -355,13 +301,10 @@ test('the content script sends the request, never the credential', () => {
     assert.doesNotMatch(block, /\?key=/);
     assert.doesNotMatch(block, /encodeURIComponent\([^)]*credential/);
 
-    const userStart = userscript.indexOf('async _callLLM(prompt)');
-    assert.notEqual(userStart, -1, 'anchor: the userscript copy must exist');
-    const userEnd = userscript.indexOf('async _run(', userStart);
-    assert.ok(userEnd > userStart, 'and its window must terminate inside the file');
-    const userBlock = userscript.slice(userStart, userEnd);
-    assert.ok(userBlock.length > 100);
-    assert.doesNotMatch(userBlock, /\?key=/);
+    // The userscript kept a copy of _callLLM and needed its own scan. It runs
+    // this file now, so the block above is the userscript's request too.
+    assert.ok(userscriptBundles('ytkit.js'),
+        'the userscript must send its summary requests through extension/ytkit.js');
 });
 
 test('the worker attaches the credential by header and refuses to follow a redirect with it', () => {
@@ -397,9 +340,121 @@ test('the popup credential field is write-only and its status carries no value',
 
 test('the userscript ships the grants and the wiring its vault depends on', () => {
     // Metadata and bundle composition: there is no runtime here to ask.
-    assert.match(userscript, /@grant\s+GM_deleteValue/,
+    assert.match(userscriptHeader, /@grant\s+GM_deleteValue/,
         'without the grant the manager silently drops the delete');
-    assert.match(userscript, /createUserscriptCredentialVault/);
-    assert.match(userscript, /createUserscriptAiSummaryFeature/);
-    assert.match(userscript, /id:\s*'aiVideoSummary'/);
+    // The vault, the worker that owns it, and the feature that asks the
+    // worker for a summary. Where the vault then keeps the key is a runtime
+    // question, answered by the boot test below.
+    for (const file of ['core/credential-vault.js', 'background.js', 'ytkit.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must run the extension's ${file}`);
+    }
+});
+
+// ── the generated userscript, booted ────────────────────────────────────────
+
+/**
+ * Boots the four generated files in the order a manager loads them, over fake
+ * GM storage and a fake page-origin IndexedDB that records every write. The
+ * host's own timers are unref'd so a feature interval cannot hold the test
+ * process open once the assertions are done.
+ */
+async function bootUserscriptWithLegacyCredential(credential) {
+    const gm = new Map([['ytSuiteSettings', { aiSummaryApiKey: credential, aiSummaryProvider: 'openai' }]]);
+    const pageOriginWrites = [];
+    const databases = new Map();
+    const later = (fn) => setTimeout(fn, 0);
+    const pageIndexedDB = {
+        open(name) {
+            const request = {};
+            later(() => {
+                const upgrade = !databases.has(name);
+                if (upgrade) databases.set(name, new Map());
+                const stores = databases.get(name);
+                request.result = {
+                    objectStoreNames: { contains: (store) => stores.has(store) },
+                    createObjectStore: (store) => { stores.set(store, new Map()); },
+                    transaction(storeName) {
+                        const records = stores.get(storeName);
+                        const op = (fn) => { const r = {}; later(() => { r.result = fn(); r.onsuccess?.(); }); return r; };
+                        return {
+                            objectStore: () => ({
+                                get: (key) => op(() => records.get(key)),
+                                put: (value, key) => {
+                                    pageOriginWrites.push({ database: name, store: storeName, key, value });
+                                    return op(() => { records.set(key, value); });
+                                },
+                                delete: (key) => op(() => { records.delete(key); }),
+                            }),
+                        };
+                    },
+                    close() {},
+                };
+                if (upgrade) request.onupgradeneeded?.();
+                request.onsuccess?.();
+            });
+            return request;
+        },
+    };
+    const unref = (handle) => { handle?.unref?.(); return handle; };
+    const errors = [];
+    const page = {
+        console: { log() {}, info() {}, debug() {}, warn() {}, error: (...args) => errors.push(args.map(String).join(' ')) },
+        setTimeout: (...args) => unref(setTimeout(...args)),
+        setInterval: (...args) => unref(setInterval(...args)),
+        clearTimeout, clearInterval, queueMicrotask,
+        URL, URLSearchParams, TextEncoder, TextDecoder, AbortController, structuredClone,
+        crypto: require('node:crypto').webcrypto, performance,
+        location: {
+            href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', hostname: 'www.youtube.com',
+            pathname: '/watch', origin: 'https://www.youtube.com', search: '?v=dQw4w9WgXcQ',
+        },
+        // Still loading: the host starts the background and waits for the DOM,
+        // which is all this test needs to run.
+        document: { readyState: 'loading', documentElement: null, addEventListener() {} },
+        MutationObserver: class { observe() {} disconnect() {} },
+        CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+        Event: class { constructor(type) { this.type = type; } },
+        addEventListener() {}, removeEventListener() {}, dispatchEvent() { return true; },
+        indexedDB: pageIndexedDB,
+        GM_getValue: (key, fallback) => (gm.has(key) ? structuredClone(gm.get(key)) : fallback),
+        GM_setValue: (key, value) => { gm.set(key, structuredClone(value)); },
+        GM_deleteValue: (key) => { gm.delete(key); },
+        GM_listValues: () => [...gm.keys()],
+        GM_addValueChangeListener: () => 1,
+        GM_info: { scriptHandler: 'test', version: '0' },
+    };
+    page.window = page; page.self = page; page.top = page; page.globalThis = page;
+    vm.createContext(page);
+    for (const file of ['YTKit-core.user.js', 'YTKit-features.user.js', 'YTKit-app.user.js', 'YTKit.user.js']) {
+        vm.runInContext(read(file), page, { filename: file });
+    }
+    const settings = () => gm.get('ytSuiteSettings') || {};
+    // The migration strips the legacy setting only after the vault write has
+    // settled, so its disappearance is the signal that the write happened.
+    for (let waited = 0; Object.hasOwn(settings(), 'aiSummaryApiKey') && waited < 3000; waited += 20) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    return { errors, settings, gm, pageOriginWrites, host: page.__astraDeckUserscript };
+}
+
+test('the userscript keeps a migrated credential out of storage the page can read', async () => {
+    // The extension's vault writes to the extension origin's IndexedDB, which
+    // no web page can open. The generated userscript runs background.js inside
+    // the tab, and the host hands it the tab's own indexedDB, so the same vault
+    // writes to the youtube.com origin: readable by YouTube's scripts and by
+    // anything else that runs there. The hand-written userscript kept each
+    // provider key under a manager-isolated GM key that page script cannot
+    // reach, so this is custody the userscript used to have.
+    const run = await bootUserscriptWithLegacyCredential(CREDENTIAL);
+    assert.deepEqual(run.errors, [], 'the generated userscript must boot cleanly');
+    assert.equal(run.host?.backgroundStarted, true, 'the in-tab worker must have started');
+    assert.equal(Object.hasOwn(run.settings(), 'aiSummaryApiKey'), false,
+        'the legacy setting must still leave the settings object');
+    const leaked = run.pageOriginWrites
+        .filter((write) => JSON.stringify(write.value).includes(CREDENTIAL))
+        .map((write) => `${write.database}/${write.store}/${write.key}`);
+    assert.deepEqual(leaked, [],
+        'a provider credential must never be written to the IndexedDB of the youtube.com origin');
+    assert.ok([...run.gm.values()].some((value) => JSON.stringify(value).includes(CREDENTIAL)),
+        'and the migrated key must survive in manager-isolated storage');
 });

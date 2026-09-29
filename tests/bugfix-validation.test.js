@@ -147,19 +147,21 @@ test('customSpeedButtons rebinds to swapped videos and exposes pressed states', 
 test('player quick links edit mode keeps delete buttons on the same row', () => {
     const fs = require('fs');
     const path = require('path');
-    const playerDock = fs.readFileSync(
+    const { userscriptBundles } = require('./helpers/source');
+    const source = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
-    const core = fs.readFileSync(path.join(__dirname, '..', 'YTKit-core.user.js'), 'utf8');
 
-    for (const [label, source] of [['player-dock', playerDock], ['userscript core', core]]) {
-        const start = source.indexOf('#ytkit-po-drop .ytkit-ql-row');
-        assert.ok(start > -1, `${label}: player quick links row styles should exist`);
-        const block = source.slice(start, start + 2500);
-        assert.match(block, /display:\s*flex\s*!important/, `${label}: player quick links rows should use flex layout`);
-        assert.ok(!block.includes('display: block !important'), `${label}: player quick links rows must not stack delete buttons as separate rows`);
-        assert.match(block, /#ytkit-po-drop\.ytkit-ql-editing \.ytkit-ql-del[\s\S]*?display:\s*inline-flex\s*!important/,
-            `${label}: player quick links edit mode should show compact inline delete buttons`);
-    }
+    const start = source.indexOf('#ytkit-po-drop .ytkit-ql-row');
+    assert.ok(start > -1, 'player quick links row styles should exist');
+    const block = source.slice(start, start + 2500);
+    assert.match(block, /display:\s*flex\s*!important/, 'player quick links rows should use flex layout');
+    assert.ok(!block.includes('display: block !important'), 'player quick links rows must not stack delete buttons as separate rows');
+    assert.match(block, /#ytkit-po-drop\.ytkit-ql-editing \.ytkit-ql-del[\s\S]*?display:\s*inline-flex\s*!important/,
+        'player quick links edit mode should show compact inline delete buttons');
+    // The userscript kept its own copy of these rules. It runs the player
+    // dock module now, so the rules above are the ones it injects.
+    assert.ok(userscriptBundles('features/player-dock/index.js'),
+        'the userscript must style its quick links from the player-dock module');
 });
 
 test('hidePinnedComments defaults on and targets modern pinned comment markup', () => {
@@ -1623,14 +1625,11 @@ test('download progress reports durable queue and authentication recovery states
             `pending work must be labelled as queued in ${sourcePath}`);
     }
 
-    const userscriptPath = path.join(__dirname, '..', 'YTKit.user.js');
-    const userscript = fs.readFileSync(userscriptPath, 'utf8');
-    const userscriptStart = userscript.indexOf('function showDownloadProgress');
-    const userscriptBlock = userscript.slice(userscriptStart, userscriptStart + 9000);
-    assert.ok(userscriptBlock.includes("['pending', 'queued', 'paused', 'needs-auth']"),
-        'userscript progress must recognize durable queue states');
-    assert.match(userscriptBlock, /data\.status === 'needs-auth' \? 'Needs sign-in' : 'Waiting'/,
-        'userscript progress must distinguish authentication recovery from ordinary waiting');
+    // The userscript's own progress panel is gone. It runs this module, so
+    // the queue and sign-in states above are the ones its users see.
+    const { userscriptBundles } = require('./helpers/source');
+    assert.ok(userscriptBundles('features/download-ui/index.js'),
+        'the userscript must report download progress through the download-ui module');
 });
 
 test('handleFileImport guards against oversized files and FileReader errors', () => {
@@ -1771,24 +1770,47 @@ test('every locale defines the nothing-downloaded state and drops the retired ke
     }
 });
 
-test('the userscript download poller terminates on a skipped result', () => {
+test('the userscript download poller terminates on a skipped result', async () => {
+    // The hand-written userscript's poller once spun forever on `skipped`. It
+    // runs the extension's download UI now, so that poller is driven here:
+    // every re-poll timer fires at once, which turns a missed stop into a
+    // second status request instead of a slow test.
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    const { userscriptBundles } = require('./helpers/source');
+    const { fakeTreeDocument } = require('./helpers/monolith');
+    const { createDownloadUIFeature } = require('../extension/features/download-ui');
+    assert.ok(userscriptBundles('features/download-ui/index.js'),
+        'the userscript must poll downloads through the download-ui module');
 
-    const start = source.indexOf('function showDownloadProgress(');
-    assert.ok(start > -1, 'the userscript progress poller should exist');
-    const end = source.indexOf('pollInterval = setInterval(poll', start);
-    assert.ok(end > start, 'the poller body should be locatable');
-    const block = source.slice(start, end);
+    const statusRequests = [];
+    const originalDocument = globalThis.document;
+    const realTimeout = globalThis.setTimeout;
+    globalThis.document = fakeTreeDocument(() => null);
+    try {
+        const feature = createDownloadUIFeature({
+            getVideoId: () => 'dQw4w9WgXcQ',
+            isWatchPagePath: () => true,
+            supportsPopover: () => false,
+            showToast() {},
+            extensionFetchJson: async (request) => {
+                statusRequests.push(request.url);
+                return { data: { status: 'skipped', error: 'Every format was over the size limit.' } };
+            },
+            t: (_key, fallback) => fallback
+        });
+        globalThis.setTimeout = (fn) => { queueMicrotask(fn); return 0; };
+        feature.showDownloadProgress('job1', 'tok', false);
+        for (let i = 0; i < 10; i += 1) await new Promise((resolve) => setImmediate(resolve));
+    } finally {
+        globalThis.setTimeout = realTimeout;
+        globalThis.document = originalDocument;
+    }
+    assert.equal(statusRequests.length, 1, 'a skipped job must be the last status request');
+    assert.match(statusRequests[0], /\/status\/job1$/);
 
-    const skippedAt = block.indexOf("data.status === 'skipped'");
-    assert.ok(skippedAt > -1,
-        'the poller must handle the skipped status or it polls forever');
-    const afterSkipped = block.slice(skippedAt, skippedAt + 400);
-    assert.ok(afterSkipped.includes('clearInterval(pollInterval)'),
-        'the skipped branch must stop the poll interval');
-
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'), 'utf8');
     assert.ok(!source.includes("resp.message === 'Already downloaded'"),
         'the retired download-archive response check should be gone');
 });

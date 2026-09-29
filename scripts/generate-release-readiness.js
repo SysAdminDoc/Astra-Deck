@@ -177,72 +177,33 @@ function listBuildFiles(buildDir = BUILD_DIR) {
 }
 
 function buildBundleParityCheck(repoRoot) {
-    const syncScriptPath = path.join(repoRoot, 'sync-userscript.js');
+    const id = 'userscript-bundle-parity';
+    const label = 'Userscript records match their source modules';
+    const root = path.resolve(repoRoot);
+    const syncScriptPath = path.join(root, 'sync-userscript.js');
     if (!fs.existsSync(syncScriptPath)) {
-        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'pass',
-            'no sync-userscript.js in this tree; bundle parity does not apply');
+        return check(id, label, 'pass', 'no sync-userscript.js in this tree; bundle parity does not apply');
     }
-    let sync;
-    let buildBundleRegion;
-    let BUNDLE_BEGIN_RE;
-    try {
-        sync = require(syncScriptPath);
-        ({ buildBundleRegion, BUNDLE_BEGIN_RE } = sync);
-    } catch (error) {
-        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
-            `could not load sync-userscript.js: ${error.message}`);
-    }
-    const userscriptPath = path.join(repoRoot, 'YTKit.user.js');
-    if (!fs.existsSync(userscriptPath)) {
+    if (!fs.existsSync(path.join(root, 'YTKit.user.js'))) {
         // Nothing to be stale against. Real release trees always carry the
         // userscript; a tree without one (a fixture) has no parity to assert.
-        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'pass',
-            'no YTKit.user.js in this tree; bundle parity does not apply');
+        return check(id, label, 'pass', 'no YTKit.user.js in this tree; bundle parity does not apply');
     }
-    let userscript;
+    let outputs;
     try {
-        userscript = fs.readFileSync(userscriptPath, 'utf8');
+        outputs = require(syncScriptPath).buildUserscriptOutputs(root);
     } catch (error) {
-        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
-            `could not read YTKit.user.js: ${error.message}`);
+        return check(id, label, 'fail', `could not rebuild the userscript records: ${error.message}`);
     }
-    let expected;
-    try {
-        expected = buildBundleRegion(repoRoot);
-    } catch (error) {
-        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
-            `could not rebuild the bundle region: ${error.message}`);
+    const stale = [];
+    for (const [file, expected] of outputs) {
+        const target = path.join(root, file);
+        if (!fs.existsSync(target)) stale.push(`${file} is missing`);
+        else if (fs.readFileSync(target, 'utf8') !== expected) stale.push(`${file} is STALE`);
     }
-    const match = userscript.match(BUNDLE_BEGIN_RE);
-    if (!match) {
-        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
-            'bundle markers not found in YTKit.user.js');
-    }
-    const actual = match[0];
-    return check('userscript-bundle-parity', 'Userscript bundle matches its source modules',
-        (() => {
-            if (actual !== expected) return 'fail';
-            const corePath = sync.USERSCRIPT_CORE_SOURCE;
-            if (!fs.existsSync(corePath)) return 'fail';
-            let coreExpected;
-            try {
-                coreExpected = sync.buildCoreLibrarySource(repoRoot);
-            } catch (_) {
-                return 'fail';
-            }
-            return fs.readFileSync(corePath, 'utf8') === coreExpected ? 'pass' : 'fail';
-        })(),
-        (() => {
-            if (actual !== expected) return 'bundle manifest is STALE - run node sync-userscript.js';
-            if (!fs.existsSync(sync.USERSCRIPT_CORE_SOURCE)) return 'generated YTKit-core.user.js is missing';
-            try {
-                return fs.readFileSync(sync.USERSCRIPT_CORE_SOURCE, 'utf8') === sync.buildCoreLibrarySource(repoRoot)
-                    ? 'dependency manifest and YTKit-core.user.js are byte-identical to their source modules'
-                    : 'YTKit-core.user.js is STALE - run node sync-userscript.js';
-            } catch (error) {
-                return `could not rebuild YTKit-core.user.js: ${error.message}`;
-            }
-        })());
+    if (stale.length) return check(id, label, 'fail', `${stale.join('; ')} - run node sync-userscript.js`);
+    return check(id, label, 'pass',
+        `${[...outputs.keys()].join(', ')} are byte-identical to their source modules`);
 }
 
 function buildReadinessReport(options = {}) {

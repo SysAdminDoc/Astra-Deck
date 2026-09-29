@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sources, config, extractFeatureBlock } = require('../helpers/source');
+const { sources, config, extractFeatureBlock, userscriptBundles } = require('../helpers/source');
 
 // SponsorBlock was peeled out of ytkit.js in v4.72.0; the monolith keeps only a
 // descriptor stub, so source contracts read the module.
@@ -280,28 +280,15 @@ test('SponsorBlock renders timeline markers without adding a player-bar label', 
     }
 });
 
-test('userscript legacy SponsorBlock and DeArrow copies use the validated host resolver', () => {
-    const sponsorStart = sources.userscript.lastIndexOf("id: 'sponsorBlock'");
-    const sponsorEnd = sources.userscript.indexOf("id: 'deArrow'", sponsorStart);
-    assert.ok(sponsorStart > -1 && sponsorEnd > sponsorStart,
-        'userscript legacy SponsorBlock block should exist');
-    const sponsorBlock = sources.userscript.slice(sponsorStart, sponsorEnd);
-    assert.match(sponsorBlock, /getUserscriptSponsorBlockApiOrigins\(\)/,
-        'userscript SponsorBlock must resolve the configured allowlisted origins');
-    assert.match(sponsorBlock, /\$\{host\}\/api\/skipSegments\//,
-        'userscript SponsorBlock must build requests from the resolved host');
-    assert.doesNotMatch(sponsorBlock, /https:\/\/sponsor\.ajay\.app\/api\/skipSegments\//,
-        'userscript SponsorBlock must not retain a canonical-only endpoint');
-
-    const deArrowStart = sources.userscript.lastIndexOf("id: 'deArrow'");
-    const deArrowEnd = sources.userscript.indexOf("id: 'showStatisticsDashboard'", deArrowStart);
-    assert.ok(deArrowStart > -1 && deArrowEnd > deArrowStart,
-        'userscript legacy DeArrow block should exist');
-    const deArrowBlock = sources.userscript.slice(deArrowStart, deArrowEnd);
-    assert.match(deArrowBlock, /getUserscriptSponsorBlockApiOrigins\(\)/,
-        'userscript DeArrow must use the same host resolver');
-    assert.match(deArrowBlock, /status === 404/,
-        'userscript DeArrow must treat a 404 as a valid no-branding response');
+// The userscript used to carry its own SponsorBlock and DeArrow copies, each
+// needing the validated host resolver and the DeArrow 404 handling patched in
+// separately. It now runs the extension modules and the shared resolver, so the
+// behaviour tests above (mirror retry, unallowlisted settings) and the DeArrow
+// ones in external-api-health.test.js cover both vehicles.
+test('the userscript runs the same SponsorBlock and DeArrow modules and host resolver', () => {
+    for (const file of ['features/sponsorblock/index.js', 'features/dearrow/index.js', 'core/data-flow.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must ship ${file}`);
+    }
 });
 
 test('SponsorBlock skip detection ignores element visibility', () => {

@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { sources, config } = require('../helpers/source');
+const { sources, config, userscriptBundles } = require('../helpers/source');
 
 const MODULE_PATH = '../../extension/features/video-hider/index.js';
 const MODULE_SOURCE = fs.readFileSync(
@@ -494,42 +494,38 @@ test('Video Hider rolls back hostile payloads and drops old rules when the sourc
 });
 
 test('Video Hider processes current card hosts and keeps the thumbnail control mounted', () => {
-    for (const [label, source] of [
-        ['module', MODULE_SOURCE],
-        ['userscript', sources.userscript]
-    ]) {
-        const cardSelector = source.match(/(?:_VIDEO_SELECTORS:\s*'|const selectors = ')([^']*)'/)?.[1] || '';
-        assert.match(cardSelector, /yt-lockup-view-model/, `${label} should scan modern lockup cards`);
-        assert.match(cardSelector, /ytd-rich-grid-media/, `${label} should scan rich-grid media cards`);
-        assert.match(cardSelector, /ytd-playlist-video-renderer/, `${label} should scan playlist video cards`);
-        assert.match(
-            source,
-            /a\.ytLockupViewModelContentImage/,
-            `${label} should recognize the modern lockup thumbnail anchor`
-        );
+    const source = MODULE_SOURCE;
+    const cardSelector = source.match(/(?:_VIDEO_SELECTORS:\s*'|const selectors = ')([^']*)'/)?.[1] || '';
+    assert.match(cardSelector, /yt-lockup-view-model/, 'module should scan modern lockup cards');
+    assert.match(cardSelector, /ytd-rich-grid-media/, 'module should scan rich-grid media cards');
+    assert.match(cardSelector, /ytd-playlist-video-renderer/, 'module should scan playlist video cards');
+    assert.match(
+        source,
+        /a\.ytLockupViewModelContentImage/,
+        'module should recognize the modern lockup thumbnail anchor'
+    );
 
-        const styleStart = source.indexOf('.ytkit-video-hide-btn {');
-        const buttonStyle = source.slice(styleStart, styleStart + 1600);
-        // The control stays mounted (that is the whole point of the v4.58.6
-        // fix) and sits on the INLINE-END corner, but idles neutral: a feed of
-        // permanently red dots reads as damage rather than as a control.
-        assert.match(buttonStyle, /opacity:\s*1\s*!important/,
-            `${label} should keep the hide control visibly mounted`);
-        assert.match(buttonStyle, /inset-inline-end:\s*8px\s*!important/,
-            `${label} should place the hide control on the thumbnail's top-end corner`);
-        assert.doesNotMatch(buttonStyle, /background:\s*rgba\(220,\s*38,\s*38/,
-            `${label} should not paint the destructive tint at idle`);
+    const styleStart = source.indexOf('.ytkit-video-hide-btn {');
+    const buttonStyle = source.slice(styleStart, styleStart + 1600);
+    // The control stays mounted (that is the whole point of the v4.58.6
+    // fix) and sits on the INLINE-END corner, but idles neutral: a feed of
+    // permanently red dots reads as damage rather than as a control.
+    assert.match(buttonStyle, /opacity:\s*1\s*!important/,
+        'module should keep the hide control visibly mounted');
+    assert.match(buttonStyle, /inset-inline-end:\s*8px\s*!important/,
+        "module should place the hide control on the thumbnail's top-end corner");
+    assert.doesNotMatch(buttonStyle, /background:\s*rgba\(220,\s*38,\s*38/,
+        'module should not paint the destructive tint at idle');
 
-        const hoverStart = source.indexOf('.ytkit-video-hide-btn:hover');
-        const hoverStyle = source.slice(hoverStart, hoverStart + 400);
-        assert.match(hoverStyle, /background:\s*rgba\(220,\s*38,\s*38,\s*0\.96\)\s*!important/,
-            `${label} should reveal the destructive tint on hover/focus`);
+    const hoverStart = source.indexOf('.ytkit-video-hide-btn:hover');
+    const hoverStyle = source.slice(hoverStart, hoverStart + 400);
+    assert.match(hoverStyle, /background:\s*rgba\(220,\s*38,\s*38,\s*0\.96\)\s*!important/,
+        'module should reveal the destructive tint on hover/focus');
 
-        // The hover-reveal rules the always-visible control superseded must be
-        // gone, not left behind reading as if hover-reveal still governs.
-        assert.doesNotMatch(source, /:hover \.ytkit-video-hide-btn \{ opacity: 1; \}/,
-            `${label} should not retain dead hover-reveal rules for the hide control`);
-    }
+    // The hover-reveal rules the always-visible control superseded must be
+    // gone, not left behind reading as if hover-reveal still governs.
+    assert.doesNotMatch(source, /:hover \.ytkit-video-hide-btn \{ opacity: 1; \}/,
+        'module should not retain dead hover-reveal rules for the hide control');
 });
 
 test('Video Hider injects one top-right hide button into a modern thumbnail', () => {
@@ -600,7 +596,7 @@ test('Video Hider injects one top-right hide button into a modern thumbnail', ()
     }
 });
 
-test('Video Hider records explainable reasons for automatic hide rules in both runtimes', () => {
+test('Video Hider records explainable reasons for automatic hide rules', () => {
     const { mod } = loadModule();
     const appState = {
         settings: {
@@ -640,11 +636,10 @@ test('Video Hider records explainable reasons for automatic hide rules in both r
     assert.equal(feature._shouldHide(keywordCard), false);
     assert.equal(keywordCard.dataset.ytkitFilterReason, undefined);
 
-    for (const [label, source] of [['module', MODULE_SOURCE], ['userscript', sources.userscript]]) {
-        assert.match(source, /hideVideosShowFilterReason/, `${label} should include the explain-hidden-cards setting`);
-        assert.match(source, /ytkit-video-hidden-placeholder/, `${label} should include the hidden-card placeholder`);
-        assert.match(source, /videoHiderHiddenReason/, `${label} should localize the hidden-card reason copy`);
-    }
+    const source = MODULE_SOURCE;
+    assert.match(source, /hideVideosShowFilterReason/, 'module should include the explain-hidden-cards setting');
+    assert.match(source, /ytkit-video-hidden-placeholder/, 'module should include the hidden-card placeholder');
+    assert.match(source, /videoHiderHiddenReason/, 'module should localize the hidden-card reason copy');
 });
 
 test('Video Hider placeholder follows the opt-in setting and hidden-card lifecycle', () => {
@@ -812,21 +807,20 @@ test('Video Hider ignores live/upcoming words in titles but detects metadata row
     assert.equal(liveRow.isLive, true);
 });
 
-test('Video Hider live/upcoming regex pins read rows in module and userscript', () => {
-    for (const [label, source] of [['module', MODULE_SOURCE], ['userscript', sources.userscript]]) {
-        const start = source.indexOf('_extractVideoMetadata(element) {');
-        assert.ok(start > -1, `${label} must expose video metadata extraction`);
-        const end = source.indexOf('\n            },', start);
-        assert.ok(end > start, `${label} metadata extraction block must be bounded`);
-        const block = source.slice(start, end);
+test('Video Hider live/upcoming regex pins read metadata rows', () => {
+    const source = MODULE_SOURCE;
+    const start = source.indexOf('_extractVideoMetadata(element) {');
+    assert.ok(start > -1, 'module must expose video metadata extraction');
+    const end = source.indexOf('\n            },', start);
+    assert.ok(end > start, 'module metadata extraction block must be bounded');
+    const block = source.slice(start, end);
 
-        assert.match(block, /isLive:[\s\S]*?\.test\(normalizedRowsText\) && !hasDuration/,
-            `${label} live fallback must inspect metadata rows`);
-        assert.match(block, /isUpcoming:[\s\S]*?\.test\(normalizedRowsText\)/,
-            `${label} upcoming detection must inspect metadata rows`);
-        assert.doesNotMatch(block, /\.test\(metadataText\)/,
-            `${label} type detection must not scan the title-inclusive metadata text`);
-    }
+    assert.match(block, /isLive:[\s\S]*?\.test\(normalizedRowsText\) && !hasDuration/,
+        'module live fallback must inspect metadata rows');
+    assert.match(block, /isUpcoming:[\s\S]*?\.test\(normalizedRowsText\)/,
+        'module upcoming detection must inspect metadata rows');
+    assert.doesNotMatch(block, /\.test\(metadataText\)/,
+        'module type detection must not scan the title-inclusive metadata text');
 });
 
 test('Video Hider type predicates recognize localized metadata rows', () => {
@@ -1074,10 +1068,10 @@ test('Video Hider channel allowlist is fail-open when empty and isolated from th
 test('Video Hider strips stateful regex flags before boolean matching', () => {
     assert.match(MODULE_SOURCE, /regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
         'Video Hider module must strip global/sticky flags');
-    assert.ok(
-        (sources.userscript.match(/regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/g) || []).length >= 2,
-        'userscript module and fallback must strip global/sticky flags'
-    );
+    // The userscript once kept a module copy and an inline fallback that each
+    // needed this fix. It now runs this module and nothing else.
+    assert.ok(userscriptBundles('features/video-hider/index.js'),
+        'the userscript must ship the Video Hider module that strips the flags');
 
     const stable = new RegExp('spam', 'gi'.replace(/[gy]/g, ''));
     assert.equal(stable.global, false);
@@ -1129,12 +1123,11 @@ test('masthead quick actions synchronize without a post-paint delay', () => {
     assert.equal(feature._mutationTouchesMastheadControls([{ target: mastheadTarget }]), true);
     assert.equal(feature._mutationTouchesMastheadControls([{ target: unrelatedTarget }]), false);
 
-    for (const source of [MODULE_SOURCE, sources.userscript]) {
-        assert.doesNotMatch(source, /setTimeout\(\(\) => this\._create(?:Subs|Home)HideAllButton\(\), 1000\)/,
-            'masthead actions must not wait one second after native controls paint');
-        assert.match(source, /if \(this\._mutationTouchesMastheadControls\(mutations\)\) \{\s*this\._syncMastheadPageActions\(\);\s*\}/,
-            'the DOM observer must synchronize actions when the masthead is created or replaced');
-    }
+    const source = MODULE_SOURCE;
+    assert.doesNotMatch(source, /setTimeout\(\(\) => this\._create(?:Subs|Home)HideAllButton\(\), 1000\)/,
+        'masthead actions must not wait one second after native controls paint');
+    assert.match(source, /if \(this\._mutationTouchesMastheadControls\(mutations\)\) \{\s*this\._syncMastheadPageActions\(\);\s*\}/,
+        'the DOM observer must synchronize actions when the masthead is created or replaced');
 });
 
 test('hideVideosFromHome monolith delegates to the module and keeps only a descriptor stub', () => {
@@ -1593,12 +1586,14 @@ test('the fail-open guard also covers infinite-scroll batches, not just navigati
     assert.match(setFn, /_removedVideoNodes/, 'detached cards must be counted');
     assert.match(setFn, /!el\.isConnected/, 'only still-detached cards may be added back');
 
-    // The extension now runs the module directly. The generated userscript
-    // core carries the same runtime for userscript users.
+    // Both vehicles run the module directly: the extension through the
+    // manifest, the userscript through its generated feature library.
     assert.match(MODULE_SOURCE, /_enforceRuleHideRatioGuard\(this\._guardCardSet\(\)\)/,
         'the video-hider module observer must run the guard on mutation batches too');
-    assert.match(sources.userscript, /if \(removedIds\.length\) this\._restoreRemovedVideoNodes\(new Set\(removedIds\)\);/,
-        'the userscript runtime must restore detached cards too');
+    assert.match(MODULE_SOURCE, /if \(removedIds\.length\) this\._restoreRemovedVideoNodes\(new Set\(removedIds\)\);/,
+        'the module must restore detached cards too');
+    assert.ok(userscriptBundles('features/video-hider/index.js'),
+        'the userscript must ship the same Video Hider module');
 });
 
 // --- Collaborator channels (v4.88.3) ------------------------------------

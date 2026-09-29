@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "استبدال بيانات الاعتماد"
   },
-  "aiCredentialReplaceHint": {
-    "message": "تم إعداد بيانات اعتماد. أدخل قيمة جديدة لاستبدالها؛ لا يتم عرض القيمة المخزنة."
-  },
   "aiCredentialSaveBtn": {
     "message": "حفظ بيانات الاعتماد"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "الحالة غير متاحة"
   },
-  "aiCredentialStoreHint": {
-    "message": "يتم تخزينها فقط في مدير userscript، خارج إعدادات Astra Deck وعمليات التصدير."
-  },
   "aiCredentialTitle": {
     "message": "بيانات اعتماد مزوّد الذكاء الاصطناعي"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "ملخص بالذكاء الاصطناعي (إدارة بيانات الاعتماد من نافذة شريط أدوات Astra Deck)"
+    "message": "ملخص بالذكاء الاصطناعي (عيّن مفتاح المزوّد من نافذة شريط أدوات Astra Deck أو من قائمة مدير السكربتات)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "بدلاً من ذلك يتم استخدام مزوّدك المُعدّ بمفتاحك الخاص."
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "الخلاصة"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "ملخص بالذكاء الاصطناعي (انقر بزر الماوس الأيمن لإدارة بيانات اعتماد الموفر)"
   },
   "altFrontendOpenAriaTpl": {
     "message": "فتح خارجيًا على {host}"

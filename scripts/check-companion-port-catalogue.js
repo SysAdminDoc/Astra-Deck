@@ -137,13 +137,21 @@ for (const page of ['extension/popup.html', 'extension/sidepanel.html', 'extensi
         `${page} must load companion-ports.js before data-flow.js`);
 }
 
+// The userscript runs the extension's own companion code, so it holds no port
+// list of its own. It has to ship the files that consume the catalogue, and its
+// host has to treat every companion origin as granted and reachable.
+const { LIBRARIES, parseUserscriptBuild } = require('../sync-userscript');
 const userscript = read('YTKit.user.js');
-const bundleEnd = userscript.indexOf('// ── END v5.0.0 bundled core modules ──');
-check(bundleEnd !== -1, 'userscript bundle marker is missing');
-const legacyUserscript = userscript.slice(bundleEnd);
-check(legacyUserscript.includes('USERSCRIPT_COMPANION_PORT_CATALOGUE'),
-    'userscript legacy companion manager must consume the shared catalogue');
-check(!legacyUserscript.includes('_PORT_CANDIDATES: Object.freeze([9751, 9761, 9771, 9781, 9791, 9851])'),
-    'userscript legacy companion manager must not redeclare fallback ports');
+const libraries = LIBRARIES.map((library) => read(library.file)).join('\n');
+for (const file of ['core/companion-ports.js', 'core/data-flow.js', 'core/capability-probe.js',
+    'features/download-ui/index.js', 'background.js']) {
+    check(libraries.includes(`__astraDeckRegistry[${JSON.stringify(file)}] = function `),
+        `userscript does not ship ${file}`);
+}
+const userscriptBuild = parseUserscriptBuild(userscript);
+check(COMPANION_PORT_CATALOGUE.hostPermissions.every((value) => userscriptBuild.hostPermissions.includes(value)),
+    'userscript host permissions miss a companion origin');
+check(new RegExp(`^// @connect\\s+${COMPANION_PORT_CATALOGUE.host.replace(/\./g, '\\.')}$`, 'm').test(userscript),
+    `userscript @connect does not grant ${COMPANION_PORT_CATALOGUE.host}`);
 
 console.log(`[check-companion-port-catalogue] OK — ${COMPANION_PORT_CATALOGUE.ports.length} ports align across the extension, download-capable profiles, and the userscript; chromium-store omits loopback`);

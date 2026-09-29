@@ -97,7 +97,7 @@
                 label: 'Tampermonkey / Violentmonkey',
                 vehicle: 'Userscript on a supported desktop browser',
                 baseline: 'The host browser decides which web APIs are exposed',
-                note: 'Extension-only permissions and companion routing are unavailable unless the host exposes an equivalent bridge.'
+                note: 'Optional host permissions become userscript manager connection prompts. Settings sync and native messaging are unavailable.'
             }
         },
         platformApiPolicy: {
@@ -230,7 +230,7 @@
                 availability: {
                     chromium: 'Available when the companion is running and its loopback origin is reachable',
                     firefox: 'Available under the same companion and optional-host-permission contract',
-                    userscript: 'Unavailable without an extension bridge; use Cobalt or transcript-only paths'
+                    userscript: 'Available when the companion is running; the userscript manager asks once to allow the 127.0.0.1 request'
                 },
                 requiredPermission: ['loopback host permission', 'nativeMessaging for auto-start/update paths'],
                 executionWorld: 'Extension popup/background or userscript bridge',
@@ -286,7 +286,7 @@
                 availability: {
                     chromium: 'Chrome 138+ when Gemini Nano and the Prompt API are enabled and ready',
                     firefox: 'Unavailable; an explicitly selected configured-provider lane can answer transcript questions in GitHub-full builds',
-                    userscript: 'Not part of the userscript vehicle; extension-only feature remains unavailable'
+                    userscript: 'Same as the host browser; the userscript injects the same MAIN-world code'
                 },
                 requiredPermission: [],
                 executionWorld: 'YouTube page MAIN world',

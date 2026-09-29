@@ -3,6 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseUserscriptBuild } = require('../sync-userscript.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const MANIFEST_PATH = path.join(REPO_ROOT, 'extension', 'manifest.json');
@@ -92,12 +93,22 @@ function auditZeroAdRules() {
             failures.push(`observed request is not blocked: ${request.url}`);
         }
     }
+    // The userscript ships the extension's early.css in its build data and the
+    // host adds it at document-start, before the ISOLATED runtime is scheduled.
+    let userscriptEarlyCss = '';
+    try {
+        userscriptEarlyCss = parseUserscriptBuild(userscript).css.early;
+    } catch (error) {
+        failures.push(`userscript build data is unreadable: ${error.message}`);
+    }
     for (const selector of REQUIRED_SHELL_SELECTORS) {
         if (!earlyCss.includes(selector)) failures.push(`extension early CSS misses ${selector}`);
-        if (!userscript.includes(selector)) failures.push(`userscript early CSS misses ${selector}`);
+        if (!userscriptEarlyCss.includes(selector)) failures.push(`userscript early CSS misses ${selector}`);
     }
-    if (userscript.indexOf('const ZERO_AD_CSS') > userscript.indexOf('BEGIN v5.0.0 bundled core modules')) {
-        failures.push('userscript zero-ad CSS is not installed before bundled runtime startup');
+    const earlyStyleAt = userscript.indexOf("addStyle(BUILD.css.early, 'early')");
+    const runtimeAt = userscript.indexOf('startIsolatedRuntime().then(');
+    if (earlyStyleAt === -1 || runtimeAt === -1 || earlyStyleAt > runtimeAt) {
+        failures.push('userscript zero-ad CSS is not installed before the runtime starts');
     }
     if (!userscript.includes("'data-ytkit-userscript-ad-contract'")) {
         failures.push('userscript does not publish its shell-only ad contract');

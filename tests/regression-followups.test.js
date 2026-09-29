@@ -1,8 +1,8 @@
 'use strict';
 
-// Regression guards for the post-pass-3 follow-ups (userscript download
-// port-fallback + identity check, popup byte/count formatting, sort scoring,
-// Zen Mode and the sleep-timer popover).
+// Regression guards for the post-pass-3 follow-ups (the companion identity
+// check the userscript runs, popup byte/count formatting, sort scoring, Zen
+// Mode and the sleep-timer popover).
 //
 // The behavioural half of this file used to be single-line source patterns.
 // Those now run: the companion health gate is fed real and hostile payloads,
@@ -20,63 +20,36 @@ const fs = require('fs');
 const path = require('path');
 
 const { createSubscriptionGroupsFeature } = require('../extension/features/subscription-groups');
+const { createDownloadUIFeature } = require('../extension/features/download-ui');
 const {
     loadFeature,
-    loadUserscriptDeclarations,
     loadDeclarationsFrom,
     fakeNode,
     fakeTreeDocument,
 } = require('./helpers/monolith');
-const { sources } = require('./helpers/source');
+const { sources, userscriptBundles, userscriptModulePaths } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
-const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
 
-// The userscript reads its port catalogue off YTKitCore, which the core
-// library populates from scripts/companion-port-catalogue.json. Load the real
-// one so this proves the wiring rather than a fixture.
-const companionPorts = require('../extension/core/companion-ports.js');
+// The userscript's own companion manager, and with it the port-fallback
+// test that loaded it, are gone. The userscript runs features/download-ui's
+// MediaDLManager, whose probe order and port-following baseUrl() are driven in
+// tests/features/download-ui.test.js ("download manager probes the cached port
+// first, then the canonical fallback order"), and whose catalogue wiring is
+// pinned in tests/companion-port-catalogue.test.js.
 
-const loadMediaDLManager = () => loadUserscriptDeclarations(
-    ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
-    {
-        YTKitCore: { companionPorts },
-        fetch: () => new Promise(() => {}),
-        AbortController,
-        setTimeout: () => 0,
-        clearTimeout() {},
-        GM_xmlhttpRequest() {},
-    }
-).MediaDLManager;
-
-test('the userscript companion probes every catalogued fallback port', () => {
-    const manager = loadMediaDLManager();
-    const ports = Array.from(manager._PORT_CANDIDATES);
-    assert.ok(ports.length > 1,
-        'a single-port probe meant downloads failed silently whenever the server used a fallback');
-    assert.ok(ports.every((port) => Number.isInteger(port) && port > 0 && port < 65536),
-        'every candidate must be a real port number');
-
-    // baseUrl() has to follow the discovered port, not a compiled-in one.
-    const seen = new Set();
-    for (const port of ports) {
-        manager._port = port;
-        const base = new URL(manager.baseUrl());
-        assert.equal(Number(base.port), port, 'baseUrl() must reflect the discovered port');
-        seen.add(base.hostname);
-    }
-    assert.equal(seen.size, 1, 'the host stays fixed while the port moves');
-
-    // No endpoint may pin 9751 behind baseUrl()'s back.
-    assert.doesNotMatch(userscript, /url:\s*'http:\/\/127\.0\.0\.1:9751\//,
-        'no hardcoded 9751 endpoint URLs should remain (only @connect metadata)');
-});
-
-test('the userscript companion refuses any localhost server that is not Astra Downloader', () => {
-    const manager = loadMediaDLManager();
+test('the userscript companion refuses any localhost server that is not Astra Downloader', async () => {
+    assert.ok(userscriptBundles('features/download-ui/index.js'),
+        'the userscript must reach the companion through the download-ui manager');
+    const manager = createDownloadUIFeature({ DebugManager: { log() {} } }).MediaDLManager;
     const accepted = [
         [{ service: manager._SERVICE_ID, token: 'abc' }, 'the service id it publishes'],
+        // This gate decides identity only. The token comes from the native
+        // host or a legacy /health echo, so a server that names itself with no
+        // token passes here and check() then pairs with it or skips it, which
+        // is driven at the end of this test.
+        [{ service: manager._SERVICE_ID }, 'the service id with the token left to the native host'],
         [{ token: 'abc', token_required: true, port: 9751 }, 'a hardened pre-service-id build'],
     ];
     for (const [payload, why] of accepted) {
@@ -86,7 +59,6 @@ test('the userscript companion refuses any localhost server that is not Astra Do
     const refused = [
         [null, 'no payload at all'],
         [{}, 'an empty object'],
-        [{ service: manager._SERVICE_ID }, 'the right service with no token'],
         [{ token: 'abc' }, 'a bare {token} from any localhost server'],
         [{ token: 'abc', service: 'something-else' }, 'a different service claiming a token'],
         [{ token: 'abc', token_required: true }, 'a token with no port'],
@@ -95,6 +67,20 @@ test('the userscript companion refuses any localhost server that is not Astra Do
     for (const [payload, why] of refused) {
         assert.equal(manager._isAstraDownloaderHealth(payload), false, `must refuse ${why}`);
     }
+
+    // The right service with no token, no native host (a userscript never has
+    // one) and no pairing is never adopted as the companion.
+    const tokenless = createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'no native messaging' }),
+        extensionFetchJson: async (details) => {
+            if (/\/health$/.test(details.url)) return { data: { service: manager._SERVICE_ID, version: '1.9.0' } };
+            throw new Error('refused');
+        },
+        DebugManager: { log() {} },
+    });
+    const status = await tokenless.MediaDLManager.check(true);
+    assert.equal(status.ok, false, 'a server that hands over no token must not become the companion');
+    assert.equal(tokenless.MediaDLManager._token, null, 'and nothing may be stored as its token');
 });
 
 test('the popup byte formatter scales past MB and stays locale-aware', () => {
@@ -287,10 +273,19 @@ test('the sleep timer asks for minutes in its own popover, never a browser promp
 });
 
 test('userscript UI surfaces avoid backdrop blur filters', () => {
-    assert.doesNotMatch(userscript, /backdrop-filter\s*:\s*blur/i,
-        'YTKit.user.js must not ship backdrop blur on injected UI surfaces');
-    assert.doesNotMatch(userscript, /-webkit-backdrop-filter\s*:\s*blur/i,
-        'YTKit.user.js must not ship prefixed backdrop blur either');
+    // YTKit.user.js is only the host now. The surfaces the userscript injects
+    // come from the extension files it bundles, so those are what get read,
+    // each from extension/ rather than from its compacted copy.
+    const shipped = [...userscriptModulePaths()]
+        .map((file) => path.join(repoRoot, 'extension', file))
+        .filter((file) => fs.existsSync(file));
+    assert.ok(shipped.length > 10, 'the userscript bundle list must be readable');
+    for (const file of [...shipped, path.join(repoRoot, 'userscript', 'host.js')]) {
+        const source = fs.readFileSync(file, 'utf8');
+        const rel = path.relative(repoRoot, file);
+        assert.doesNotMatch(source, /backdrop-filter\s*:\s*blur/i,
+            `${rel} must not ship backdrop blur on injected UI surfaces`);
+    }
 });
 
 // WHEN the popup first paints, the five storage cards SHALL read a real zero

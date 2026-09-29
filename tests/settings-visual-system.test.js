@@ -9,20 +9,31 @@ const repoRoot = path.join(__dirname, '..');
 const visualSystemPath = path.join(repoRoot, 'extension', 'core', 'settings-visual-system.js');
 const visualSystemSource = fs.readFileSync(visualSystemPath, 'utf8');
 const manifest = require('../extension/manifest.json');
-const { runtimeModules } = require('./helpers/source');
-const syncUserscript = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
+const { runtimeModules, readUserscriptBuild, userscriptBundles } = require('./helpers/source');
 const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema.js');
 const settingsPanel = fs.readFileSync(
     path.join(repoRoot, 'extension', 'features', 'settings-panel', 'index.js'),
     'utf8'
 );
 const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
-const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
 const a11ySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-headless-a11y.js'), 'utf8');
 const commandDeckCss = visualSystemSource.slice(
     visualSystemSource.indexOf('/* v5 command-deck parity overrides')
 );
+
+// The userscript used to carry its own settings panel, pinned beside these
+// sources. It is generated from extension/ now and runs this settings-panel
+// module and this ytkit.js, so pins on those two cover it; this proves it
+// ships them.
+function assertUserscriptRunsSettingsPanel() {
+    assert.ok(userscriptBundles('features/settings-panel/index.js'),
+        'the userscript must ship the settings-panel module');
+    assert.ok(userscriptBundles('core/settings-visual-system.js'),
+        'the userscript must ship the settings visual system');
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must run the same ytkit.js panel shell and definitions');
+}
 
 test('settings visual system renders the flat command-deck hierarchy', () => {
     assert.match(visualSystemSource, /settings visual system v5 — imagegen-matched command deck/);
@@ -125,6 +136,25 @@ test('Theater Split light mode keeps disabled action descendants legible', () =>
     );
 });
 
+test('toast text follows the themed panel instead of the old dark card white', () => {
+    // The toast sheet in ytkit.js paints message, badge and buttons white.
+    // The visual system turns the card white in light mode, so every text
+    // part has to be re-pointed at the theme text colors.
+    assert.match(shell, /\.ytkit-toast-message \{[^}]*color: rgba\(255,255,255/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-global-toast :is\(\.ytkit-toast-message, \.ytkit-toast-badge, \.ytkit-toast-action\) \{\s*color: var\(--ytkit-premium-text\) !important;/
+    );
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-global-toast :is\(\.ytkit-toast-action--secondary, \.ytkit-toast-close\) \{\s*color: var\(--ytkit-premium-muted\) !important;/
+    );
+    assert.match(
+        visualSystemSource,
+        /html:not\(\[dark\]\) \.ytkit-global-toast :is\(\.ytkit-toast-action, \.ytkit-toast-close\) \{\s*border-color: var\(--ytkit-premium-border\) !important;\s*background: var\(--ytkit-premium-raised\) !important;/
+    );
+});
+
 test('every shell and subtitle setting renders a real settings card', () => {
     const visualSettingKeys = SETTINGS_SCHEMA
         .filter(({ category }) => category === 'shell' || category === 'subtitles')
@@ -137,21 +167,21 @@ test('every shell and subtitle setting renders a real settings card', () => {
     assert.deepEqual(visualSettingKeys.filter((key) => !featureIds.has(key)), []);
     assert.match(settingsPanel, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
     assert.match(shell, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
-    assert.match(userscript, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
+    assertUserscriptRunsSettingsPanel();
     assert.match(overlaySmoke, /visual-settings[\s\S]*?desktop-dark[\s\S]*?desktop-light/);
 });
 
 test('visual controls use live categories and master toggles own their value controls', () => {
-    for (const source of [shell, userscript]) {
-        assert.doesNotMatch(source, /cssFeature\('noFrostedGlass'[^\n]*'Appearance'/);
-        assert.doesNotMatch(source, /cssFeature\('nyanCatProgressBar'[^\n]*'Appearance'/);
-        for (const [parentId, childId] of [
-            ['customCssInjection', 'customCssCode'],
-            ['titleCaseTransform', 'titleCaseMode'],
-            ['customSelectionColor', 'selectionColor']
-        ]) {
-            assert.match(source, new RegExp(`id: '${childId}'[\\s\\S]{0,420}?parentId: '${parentId}'`));
-        }
+    // The userscript renders these same ytkit.js definitions.
+    assertUserscriptRunsSettingsPanel();
+    assert.doesNotMatch(shell, /cssFeature\('noFrostedGlass'[^\n]*'Appearance'/);
+    assert.doesNotMatch(shell, /cssFeature\('nyanCatProgressBar'[^\n]*'Appearance'/);
+    for (const [parentId, childId] of [
+        ['customCssInjection', 'customCssCode'],
+        ['titleCaseTransform', 'titleCaseMode'],
+        ['customSelectionColor', 'selectionColor']
+    ]) {
+        assert.match(shell, new RegExp(`id: '${childId}'[\\s\\S]{0,420}?parentId: '${parentId}'`));
     }
     assert.doesNotMatch(shell, /group:\s*'Theming'/);
     for (const childId of [
@@ -163,9 +193,7 @@ test('visual controls use live categories and master toggles own their value con
         'subStyleBottomOffset',
         'subStyleTextShadow'
     ]) {
-        for (const source of [shell, userscript]) {
-            assert.match(source, new RegExp(`id: '${childId}'[\\s\\S]{0,420}?parentId: 'subtitleStyling'`));
-        }
+        assert.match(shell, new RegExp(`id: '${childId}'[\\s\\S]{0,420}?parentId: 'subtitleStyling'`));
     }
 });
 
@@ -201,12 +229,13 @@ test('v6 desktop settings parity keeps labels readable and gives Video Hider a s
         assert.match(source, /paneIcon\.appendChild\(\(ICONS\['eye-off'\]/);
         assert.match(source, /paneHeader\.appendChild\(paneLead\)/);
         assert.match(source, /pane\.appendChild\(paneSummary\)/);
+        // These used to be pinned in the userscript's own panel copy. It now
+        // runs this module and this ytkit.js, so they are pinned here instead.
+        assert.match(source, /globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);/);
+        assert.match(source, /makeNavBtn\(\s*VIDEO_HIDER_PANE_CATEGORY/);
+        assert.match(source, /if \(cat === 'Content'\) content\.appendChild\(buildVideoHiderPane\(config\)\);/);
     }
-    assert.match(userscript, /globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);/);
-    assert.match(userscript, /makeNavBtn\(\s*'Video Hider'/);
-    assert.match(userscript, /if \(cat === 'Content'\) content\.appendChild\(buildVideoHiderPane\(config\)\);/);
-    assert.match(userscript, /paneSummary\.className = 'ytkit-vh-summary'/);
-    assert.match(userscript, /addSummaryCard\('filters', 'filter', 'Active Filters'/);
+    assertUserscriptRunsSettingsPanel();
     assert.match(overlaySmoke, /name:\s*'desktop-dark',\s*width:\s*1440,\s*height:\s*900/);
     assert.match(overlaySmoke, /name:\s*'desktop-wide',\s*width:\s*1920,\s*height:\s*1080/);
     assert.match(overlaySmoke, /--desktop-only/);
@@ -512,14 +541,13 @@ test('settings brand lockup cannot collapse into stacked oversized labels', () =
 test('settings version is passive text without a dismiss-only notification badge', () => {
     for (const [label, source] of [
         ['settings module', settingsPanel],
-        ['fallback shell', shell],
-        ['userscript', userscript]
+        ['fallback shell', shell]
     ]) {
         assert.doesNotMatch(source, /ytkit-whats-new-badge/, `${label} must not render the obsolete badge`);
     }
     assert.doesNotMatch(settingsPanel, /versionSpan\.(?:onclick|style\.cursor)/);
     assert.doesNotMatch(shell, /versionSpan\.(?:onclick|style\.cursor)/);
-    assert.doesNotMatch(userscript, /versionSpan\.(?:onclick|style\.cursor)/);
+    assertUserscriptRunsSettingsPanel();
     assert.match(overlaySmoke, /obsolete version notification badge is visible/);
 });
 
@@ -534,10 +562,16 @@ test('extension and userscript load the shared settings visual system before the
     assert.ok(stylesIndex >= 0);
     assert.equal(visualIndex, stylesIndex + 1);
     assert.ok(visualIndex < panelIndex);
-    assert.match(
-        syncUserscript,
-        /'extension\/core\/styles\.js',\s*(?:'extension\/core\/trusted-html\.js',\s*)?'extension\/core\/settings-visual-system\.js',/
-    );
+
+    // The userscript host runs the foundation group (manifest order) before
+    // the feature group, so the visual system is registered before the panel.
+    const { modules } = readUserscriptBuild();
+    const usStylesIndex = modules.foundation.indexOf('core/styles.js');
+    const usVisualIndex = modules.foundation.indexOf('core/settings-visual-system.js');
+    assert.ok(usStylesIndex >= 0 && usVisualIndex > usStylesIndex,
+        'the userscript must load the visual system after core/styles.js');
+    assert.ok(modules.features.includes('features/settings-panel/index.js'),
+        'the userscript must load the settings panel in its feature group, after the foundation');
     assert.match(settingsPanel, /ensurePanelStyles\?\.\(\);\s*globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);/);
     assert.match(
         shell,

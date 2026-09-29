@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createStickyChatFeature, sanitizeStickyChatLayout } = require('../../extension/features/sticky-chat/index.js');
+const { readUserscriptBuild, userscriptBundles } = require('../helpers/source');
 
 class FakeClassList {
     constructor() { this.values = new Set(); }
@@ -185,10 +186,16 @@ test('sticky chat module is canonical in extension and generated userscript vehi
         assert.ok(entry.js.indexOf('features/sticky-chat/index.js') < entry.js.indexOf('ytkit.js'));
     }
     const ytkit = fs.readFileSync(path.join(root, 'extension', 'ytkit.js'), 'utf8');
-    const userscript = fs.readFileSync(path.join(root, 'YTKit.user.js'), 'utf8');
     assert.match(ytkit, /YTKitFeatures\?\.stickyChat\?\.createStickyChatFeature/);
-    assert.match(userscript, /bundled module: extension\/features\/sticky-chat\/index\.js/);
     assert.doesNotMatch(ytkit, /ytd-live-chat-frame \{ position: sticky/);
+
+    // The userscript host runs its feature group before the app module, as the
+    // manifest does, so ytkit.js finds the same factory there.
+    const { modules } = readUserscriptBuild();
+    assert.ok(modules.features.includes('features/sticky-chat/index.js'),
+        'the userscript must load the canonical sticky chat module with the other features');
+    assert.equal(modules.app, 'ytkit.js');
+    assert.ok(userscriptBundles('features/sticky-chat/index.js'), 'the userscript must ship the sticky chat module');
 });
 
 // WHEN the floating chat's drag handle has focus, the arrow keys SHALL move the

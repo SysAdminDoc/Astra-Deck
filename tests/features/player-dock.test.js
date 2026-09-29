@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sources } = require('../helpers/source');
+const { sources, userscriptBundles } = require('../helpers/source');
 const fs = require('fs');
 const path = require('path');
 const { fakeNode, fakeTreeDocument } = require('../helpers/monolith');
@@ -89,13 +89,12 @@ test('Player Dock renders one accessible control group and tears it down', () =>
     }
 });
 
-test('the userscript Player Dock keeps its CC mirror contract', () => {
-    const coreSrc = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
-    assert.match(coreSrc, /ytkit-po-cc/);
-    assert.match(coreSrc, /\.ytp-subtitles-button/);
-    assert.match(coreSrc, /nativeButton\.click\(\)/);
-    assert.match(coreSrc, /aria-pressed/);
+// The userscript used to carry its own Player Dock copy, so its CC mirror
+// contract was pinned separately. It now runs this module, so the render and
+// aria-pressed tests here cover both vehicles.
+test('the userscript runs the same Player Dock, CC mirror included', () => {
+    assert.ok(userscriptBundles('features/player-dock/index.js'),
+        'the userscript must ship the Player Dock module');
 });
 
 test('Player Dock speed picker wakes persistent speed reapply task', () => {
@@ -135,22 +134,16 @@ test('CC mirror prefers the watch player over an earlier inline preview player',
 });
 
 test('CC observer does not attach before the mirror button exists', () => {
-    const coreSrc = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
-    for (const [label, source] of [
-        ['module', fs.readFileSync(
-            path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8')],
-        ['userscript core', coreSrc]
-    ]) {
-        const watchStart = source.indexOf('_watchCcState()');
-        const watchBody = source.slice(watchStart, watchStart + 1400);
-        assert.match(watchBody, /if \(!this\._ccButton\) return;/,
-            `${label} must bail out of the CC observer when no mirror button is mounted`);
-        assert.ok(
-            watchBody.indexOf('if (!this._ccButton) return;') < watchBody.indexOf('new MutationObserver'),
-            `${label} must bail out before constructing the observer`
-        );
-    }
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+    const watchStart = source.indexOf('_watchCcState()');
+    const watchBody = source.slice(watchStart, watchStart + 1400);
+    assert.match(watchBody, /if \(!this\._ccButton\) return;/,
+        'module must bail out of the CC observer when no mirror button is mounted');
+    assert.ok(
+        watchBody.indexOf('if (!this._ccButton) return;') < watchBody.indexOf('new MutationObserver'),
+        'module must bail out before constructing the observer'
+    );
 });
 
 test('CC mirror follows native aria-pressed state in both directions', () => {

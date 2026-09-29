@@ -138,6 +138,40 @@ module.exports = [
         },
     },
     {
+        // The userscript host: the body of YTKit.user.js after its generated
+        // build data. It stands in for chrome.* with the manager's GM_* grants.
+        files: ['userscript/host.js'],
+        plugins: { local: localPlugin },
+        rules: {
+            'local/require-catch-reason': 'error',
+            'no-constant-binary-expression': ['error', { checkRelationalComparisons: true }],
+        },
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'script',
+            globals: {
+                ...sharedBrowserGlobals,
+                ASTRA_DECK_BUILD: 'readonly',
+                GM_info: 'readonly',
+                GM_getValue: 'readonly',
+                GM_setValue: 'readonly',
+                GM_deleteValue: 'readonly',
+                GM_listValues: 'readonly',
+                GM_addValueChangeListener: 'readonly',
+                GM_addStyle: 'readonly',
+                GM_addElement: 'readonly',
+                GM_xmlhttpRequest: 'readonly',
+                GM_download: 'readonly',
+                GM_openInTab: 'readonly',
+                GM_registerMenuCommand: 'readonly',
+                GM_getResourceText: 'readonly',
+                GM_cookie: 'readonly',
+                unsafeWindow: 'readonly',
+                cloneInto: 'readonly',
+            },
+        },
+    },
+    {
         // ESM: the runtime core loader is a module, not a script.
         files: ['extension/runtime-core-loader.mjs'],
         plugins: { local: localPlugin },

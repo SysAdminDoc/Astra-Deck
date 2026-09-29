@@ -1,171 +1,208 @@
 #!/usr/bin/env node
 'use strict';
 
-// scripts/check-userscript-symbols.js — CI guard for cross-boundary symbol
-// resolution between the userscript's required core library and its monolith.
+// scripts/check-userscript-symbols.js: every extension API the userscript's
+// shipped code reaches for has to exist on the userscript host's adapter.
 //
-// check-userscript-drift.js proves the bundled modules are byte-identical to
-// their extension sources. That is necessary but not sufficient: a bundled
-// module can call a method on a monolith singleton that the *extension*
-// defines and the *userscript* does not. The bundle is then perfectly
-// faithful and the shipped control still throws TypeError on click.
+// The userscript runs the extension's own files, so a feature can't drift
+// between the two builds any more. The seam that can still break is the one
+// between that code and userscript/host.js, which stands in for chrome.* with
+// GM_* grants. A background or content call to a member the adapter doesn't
+// provide throws TypeError for userscript users only, past every extension
+// test. The old version of this gate caught the same class of bug at the
+// previous seam (v4.50.7 shipped five dead controls to every Tampermonkey
+// user).
 //
-// That is not hypothetical. v4.50.7 shipped five such calls — Import,
-// import-Undo, Takeout import, companion install-assist and
-// copy-install-command — every one of them dead for every Tampermonkey user
-// since 2026-07-09, past a byte-for-byte parity gate, a 1,446-test suite and
-// a 20-gate `npm run check`.
+// How: run the generated YTKit.user.js host in a vm with stub modules and
+// read the adapter it hands to content and background code, then scan the
+// files it ships for `<api>.<namespace>.<member>` and storage area calls.
+// A member the adapter lacks must be listed in GUARDED with the reason every
+// call site already copes with it missing, and a listed member that nothing
+// references any more fails too, so the list can't rot.
 //
-// What this checks: every `<singleton>.<method>(` call inside the generated
-// core library resolves to a member the main userscript monolith defines.
-//
-// Scope is DERIVED, not listed. The singleton set is read out of the monolith
-// itself (every top-level `const X = {` object literal below the bundle), so
-// adding a new singleton puts it under the gate automatically. A hand-listed
-// scope goes stale exactly when new work makes it matter.
-//
-// Exit 0: every call resolves. Exit 1: unresolved call(s). Exit 2: parse failure.
+// Exit 0: every reference resolves. Exit 1: unresolved or stale. Exit 2: the
+// host could not be run.
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { parseUserscriptBuild } = require('../sync-userscript');
 
 const REPO_ROOT = path.join(__dirname, '..');
+const EXTENSION_ROOT = path.join(REPO_ROOT, 'extension');
 const USERSCRIPT_PATH = path.join(REPO_ROOT, 'YTKit.user.js');
-const CORE_LIBRARY_PATH = path.join(REPO_ROOT, 'YTKit-core.user.js');
 
-const BEGIN_MARKER = /── BEGIN v5\.0\.0 bundled core modules ──/;
-const END_MARKER = /── END v5\.0\.0 bundled core modules ──/;
+// Names the shipped code binds the extension API to.
+const API_RECEIVERS = ['chrome', 'browser', 'ext', 'ns', 'extensionApi'];
+const NAMESPACES = [
+    'runtime', 'storage', 'tabs', 'downloads', 'alarms', 'permissions', 'cookies', 'action', 'i18n',
+    'declarativeNetRequest', 'sidePanel', 'sidebarAction', 'contextMenus', 'scripting', 'webNavigation',
+    'notifications', 'offscreen', 'identity', 'management', 'commands', 'windows', 'webRequest',
+    'browserAction', 'userScripts', 'extension', 'privacy', 'history', 'bookmarks', 'sessions', 'idle',
+];
+const MEMBER_RE = new RegExp(
+    `\\b(${API_RECEIVERS.join('|')})\\??\\.(${NAMESPACES.join('|')})\\??\\.([A-Za-z_$][\\w$]*)`, 'g');
+const STORAGE_AREA_RE = /\bstorage\??\.(local|session|sync)\??\.([A-Za-z_$][\w$]*)/g;
 
-// Top-level singleton object literals live at exactly 4-space indent inside the
-// userscript's IIFE and close on a bare `    };` line.
-const SINGLETON_DEF_RE = /^ {4}(?:const|let|var) ([A-Za-z_$][\w$]*) = \{$/;
-const SINGLETON_CLOSE = '    };';
-// Members sit one level deeper. Covers `name(`, `async name(`, `get name(`,
-// `*name(` and `name:` value properties.
-const MEMBER_RE = /^ {8}(?:async\s+)?(?:get\s+|set\s+)?\*?\s*(?:([A-Za-z_$][\w$]*)|'([^']+)'|"([^"]+)")\s*[(:]/;
+const GUARDED = Object.freeze({
+    content: Object.freeze({
+        'runtime.getContexts': 'capability-probe.js only tests typeof, to report the capability',
+        'tabs.sendMessage': 'core/browser-api.js returns null when ns?.tabs?.sendMessage is missing',
+    }),
+    background: Object.freeze({
+        'runtime.connectNative': 'background.js checks ext.runtime?.connectNative first; the companion is reached over HTTP instead',
+        'storage.sync': 'background.js reads ext.storage?.sync; with no sync area, settings sync stays off',
+    }),
+});
 
-// Members attached after definition (`settingsManager.foo = function ...`).
-// Counted as defined so a legitimate dynamic attachment is not a false positive.
-const DYNAMIC_ASSIGN_RE = /(?<![.\w$])([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\s*=(?!=)/g;
-
-// Known-dynamic members that genuinely cannot be resolved statically. Keep this
-// empty unless there is a real one; every entry is a hole in the gate and must
-// carry the reason it cannot be proven.
-const ALLOWED_UNRESOLVED = new Set([
-    // 'Singleton.method', // reason
-]);
-
-function fail(msg) {
-    console.error(`[check-userscript-symbols] ${msg}`);
-    process.exit(2);
+function fail(message, code = 1) {
+    console.error(`[check-userscript-symbols] ${message}`);
+    process.exit(code);
 }
 
-const source = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
-const lines = source.split(/\r?\n/);
-if (!fs.existsSync(CORE_LIBRARY_PATH)) {
-    fail('Generated YTKit-core.user.js is missing — run `node sync-userscript.js`');
-}
-const coreSource = fs.readFileSync(CORE_LIBRARY_PATH, 'utf8');
-const coreLines = coreSource.split(/\r?\n/);
-const monolithEndIdx = lines.findIndex((l) => END_MARKER.test(l));
-if (monolithEndIdx < 0) {
-    fail('Cannot locate the v5.0.0 dependency manifest end marker in YTKit.user.js');
-}
-
-const beginIdx = coreLines.findIndex((l) => BEGIN_MARKER.test(l));
-const endIdx = coreLines.findIndex((l) => END_MARKER.test(l));
-if (beginIdx < 0 || endIdx < 0 || endIdx <= beginIdx) {
-    fail('Cannot locate the v5.0.0 bundle markers in YTKit-core.user.js');
-}
-
-// ── 1. Derive the singleton set and its members from the monolith body ──
-
-const singletons = new Map(); // name -> Set(member)
-
-for (let i = monolithEndIdx + 1; i < lines.length; i++) {
-    const def = lines[i].match(SINGLETON_DEF_RE);
-    if (!def) continue;
-
-    let close = -1;
-    for (let j = i + 1; j < lines.length; j++) {
-        if (lines[j] === SINGLETON_CLOSE) { close = j; break; }
-        // A new definition before a close means our indentation assumption
-        // broke; skip rather than silently mis-scoping the member set.
-        if (SINGLETON_DEF_RE.test(lines[j])) break;
+// Only what the host touches before it hands the adapter to the first module.
+// The tests reuse this runner: `options.modules` replaces a stub module with a
+// real function, and `options.prompts` answers window.prompt in order.
+function captureAdapters(mainSource, build, initialValues = {}, options = {}) {
+    const captured = {};
+    const registry = {};
+    for (const modulePath of build.requiredModules) {
+        registry[modulePath] = function (globalThisArg, selfArg, windowArg, chromeArg) {
+            if (modulePath === build.modules.background) captured.background = chromeArg;
+            if (modulePath === build.modules.app) captured.content = chromeArg;
+            if (options.modules?.[modulePath]) options.modules[modulePath].apply(this, arguments);
+        };
     }
-    if (close < 0) continue;
+    const noop = () => {};
+    const element = () => ({ setAttribute: noop, getAttribute: () => null, removeAttribute: noop, appendChild: noop, remove: noop });
+    const values = new Map(Object.entries(initialValues));
+    const pending = [];
+    const menu = [];
+    const prompts = [...(options.prompts || [])];
+    const sandbox = {
+        __astraDeckUserscriptModules: registry,
+        location: { hostname: 'www.youtube.com', pathname: '/watch', href: 'https://www.youtube.com/watch?v=symbols', origin: 'https://www.youtube.com' },
+        document: { documentElement: element(), head: element(), readyState: 'complete', addEventListener: noop, removeEventListener: noop, createElement: element },
+        navigator: { language: 'en-US', languages: ['en-US'] },
+        console: { log: noop, info: noop, debug: noop, warn: noop, error: noop },
+        setTimeout: (run) => { pending.push(run); return pending.length; }, clearTimeout: noop, setInterval: () => 0, clearInterval: noop,
+        queueMicrotask, performance: { now: () => 0 }, crypto: globalThis.crypto,
+        CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+        MutationObserver: class { observe() {} disconnect() {} },
+        URL, TextEncoder, TextDecoder, AbortController, Blob, Response, Headers,
+        addEventListener: noop, removeEventListener: noop, dispatchEvent: () => true,
+        GM_info: { scriptHandler: 'check-userscript-symbols', version: '0' },
+        GM_getValue: (key, fallback) => (values.has(key) ? values.get(key) : fallback),
+        GM_setValue: (key, value) => values.set(key, value), GM_deleteValue: (key) => values.delete(key),
+        GM_listValues: () => [...values.keys()], GM_addValueChangeListener: () => 1, GM_addStyle: element,
+        GM_addElement: element, GM_xmlhttpRequest: noop, GM_download: noop, GM_openInTab: noop,
+        GM_registerMenuCommand: (label, run) => menu.push({ label, run }),
+        prompt: () => (prompts.length ? prompts.shift() : null), GM_getResourceText: () => '{}', GM_cookie: { list: (details, done) => done([]) },
+    };
+    sandbox.globalThis = sandbox;
+    sandbox.window = sandbox;
+    sandbox.self = sandbox;
+    sandbox.top = sandbox;
+    vm.createContext(sandbox);
+    vm.runInContext(mainSource, sandbox, { filename: 'YTKit.user.js' });
+    // The ISOLATED runtime is scheduled with setTimeout; run it by hand.
+    const drain = () => { while (pending.length) pending.shift()(); };
+    drain();
+    return { captured, state: sandbox.__astraDeckUserscript, values, menu, drain };
+}
 
+function surfaceOf(api) {
     const members = new Set();
-    for (let j = i + 1; j < close; j++) {
-        const m = lines[j].match(MEMBER_RE);
-        if (m) members.add(m[1] || m[2] || m[3]);
+    const areas = {};
+    for (const [namespace, value] of Object.entries(api || {})) {
+        if (!value || typeof value !== 'object') continue;
+        for (const member of Object.keys(value)) members.add(`${namespace}.${member}`);
     }
-    singletons.set(def[1], members);
-}
-
-if (singletons.size === 0) {
-    fail('Derived zero monolith singletons — the extraction is broken, not the code');
-}
-
-// Scope is DERIVED by matching a source shape, so drift in that shape (a
-// trailing comment on the definition line, a re-indented close) silently drops
-// a singleton and every bundle call into it goes unchecked. A zero-check alone
-// cannot see that. Pin the floor and the singletons whose missing members have
-// actually shipped dead controls before.
-const MIN_DERIVED_SINGLETONS = 12;
-if (singletons.size < MIN_DERIVED_SINGLETONS) {
-    fail(`Derived only ${singletons.size} monolith singletons (expected at least ${MIN_DERIVED_SINGLETONS}) — `
-        + 'the extraction lost scope; check for formatting drift on a singleton definition');
-}
-for (const required of ['settingsManager', 'StorageManager', 'DebugManager']) {
-    if (!singletons.has(required)) {
-        fail(`Singleton "${required}" fell out of the derived scope — its bundle calls would go unchecked`);
+    for (const area of ['local', 'session', 'sync']) {
+        const target = api?.storage?.[area];
+        if (target) areas[area] = new Set(Object.keys(target));
     }
+    return { members, areas };
 }
 
-// ── 2. Fold in members attached dynamically anywhere in the file ──
-
-let dyn;
-DYNAMIC_ASSIGN_RE.lastIndex = 0;
-while ((dyn = DYNAMIC_ASSIGN_RE.exec(source)) !== null) {
-    const bucket = singletons.get(dyn[1]);
-    if (bucket) bucket.add(dyn[2]);
-}
-
-// ── 3. Resolve every singleton call inside the bundle region ──
-
-const names = [...singletons.keys()].join('|');
-const callRe = new RegExp(`(?<![.\\w$])(${names})\\.([A-Za-z_$][\\w$]*)\\s*\\(`, 'g');
-
-const unresolved = [];
-let callCount = 0;
-
-for (let i = beginIdx; i <= endIdx; i++) {
-    const line = coreLines[i];
-    let m;
-    callRe.lastIndex = 0;
-    while ((m = callRe.exec(line)) !== null) {
-        callCount++;
-        const [, singleton, method] = m;
-        if (singletons.get(singleton).has(method)) continue;
-        if (ALLOWED_UNRESOLVED.has(`${singleton}.${method}`)) continue;
-        unresolved.push({ line: i + 1, singleton, method });
+function referencesIn(files) {
+    const members = new Map();
+    const areaCalls = new Map();
+    const note = (map, key, file) => {
+        if (!map.has(key)) map.set(key, new Set());
+        map.get(key).add(file);
+    };
+    for (const file of new Set(files)) {
+        const source = fs.readFileSync(path.join(EXTENSION_ROOT, file), 'utf8');
+        for (const match of source.matchAll(MEMBER_RE)) note(members, `${match[2]}.${match[3]}`, file);
+        for (const match of source.matchAll(STORAGE_AREA_RE)) note(areaCalls, `${match[1]}.${match[2]}`, file);
     }
+    return { members, areaCalls };
 }
 
-// ── 4. Report ──
-
-if (unresolved.length > 0) {
-    console.error('[check-userscript-symbols] Unresolved cross-boundary call(s) —');
-    console.error('  a required core module calls a monolith method that YTKit.user.js does not define.');
-    console.error('  These throw TypeError on click for every userscript user.\n');
-    for (const u of unresolved) {
-        const defined = singletons.get(u.singleton).size;
-        console.error(`  YTKit.user.js:${u.line}  ${u.singleton}.${u.method}()  — not among ${defined} members of ${u.singleton}`);
+async function main() {
+    const mainSource = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
+    const build = parseUserscriptBuild(mainSource);
+    let adapters;
+    try {
+        adapters = captureAdapters(mainSource, build);
+    } catch (error) {
+        fail(`the host did not run in the vm: ${error.stack || error}`, 2);
     }
-    console.error('\n  Fix: port the method into the monolith singleton, or stop calling it from the bundle.');
-    process.exit(1);
+    await new Promise((resolve) => setImmediate(resolve));
+    const { captured, state } = adapters;
+    if (!captured.content || !captured.background) {
+        fail(`the host never handed an adapter to ${captured.content ? 'background' : 'content'} code (phase ${state?.phase}, errors ${JSON.stringify(state?.errors || [])})`, 2);
+    }
+
+    const groups = {
+        content: [build.modules.bridgeToken, ...build.modules.foundation, ...build.modules.features, build.modules.app, ...build.modules.liveChat],
+        background: [build.modules.background, ...build.modules.backgroundCore],
+    };
+    // Positive control for the tests: `content:runtime.madeUp` adds a reference
+    // no file makes, which has to fail.
+    const injected = String(process.env.ASTRA_USERSCRIPT_SYMBOLS_INJECT || '').split(/[,\s]+/).filter(Boolean)
+        .map((entry) => entry.split(':'));
+    const problems = [];
+    let checked = 0;
+    for (const [world, files] of Object.entries(groups)) {
+        const surface = surfaceOf(captured[world]);
+        const { members, areaCalls } = referencesIn(files);
+        for (const [injectedWorld, member] of injected) {
+            if (injectedWorld === world && member) members.set(member, new Set(['(injected)']));
+        }
+        const guarded = GUARDED[world];
+        for (const [member, sites] of members) {
+            checked += 1;
+            if (surface.members.has(member) || guarded[member]) continue;
+            problems.push(`${world}: ${member} is not on the userscript adapter (used in ${[...sites].join(', ')})`);
+        }
+        for (const [call, sites] of areaCalls) {
+            const [area, method] = call.split('.');
+            if (!surface.areas[area]) continue; // a missing area is judged as storage.<area> above
+            checked += 1;
+            if (!surface.areas[area].has(method)) {
+                problems.push(`${world}: storage.${call} is not on the userscript adapter (used in ${[...sites].join(', ')})`);
+            }
+        }
+        for (const member of Object.keys(guarded)) {
+            if (!members.has(member)) problems.push(`${world}: GUARDED lists ${member}, which no shipped file references any more; remove it`);
+            else if (surface.members.has(member)) problems.push(`${world}: GUARDED lists ${member}, which the adapter now provides; remove it`);
+        }
+    }
+
+    if (problems.length) {
+        console.error(`[check-userscript-symbols] ${problems.length} problem(s):`);
+        for (const problem of problems) console.error(`  - ${problem}`);
+        console.error('  Add the member to userscript/host.js, or guard every call site and list it in GUARDED with the reason.');
+        process.exit(1);
+    }
+    const guardedCount = Object.values(GUARDED).reduce((sum, list) => sum + Object.keys(list).length, 0);
+    console.log(`[check-userscript-symbols] OK: ${checked} extension API reference(s) in shipped files resolve on the userscript adapter (${guardedCount} guarded absence(s))`);
 }
 
-console.log(`[check-userscript-symbols] OK — ${callCount} singleton call(s) in the core library all resolve`);
-console.log(`[check-userscript-symbols] Scope derived from the monolith: ${singletons.size} singleton(s), ${[...singletons.values()].reduce((n, s) => n + s.size, 0)} member(s)`);
+if (require.main === module) {
+    main().catch((error) => fail(error.stack || String(error), 2));
+}
+
+module.exports = { GUARDED, captureAdapters, surfaceOf };

@@ -134,7 +134,9 @@ test('every converted file routes its failure surfaces through the shared copy',
     assert.match(popup, /function failureText\(context, error, labelKey, labelFallback\)/,
         'popup.js must keep the single conversion helper');
     const { scanFile, CONVERTED_FILES } = require('../scripts/check-raw-error-copy.js');
-    assert.ok(CONVERTED_FILES.length >= 6, 'the converted list only grows');
+    // Five since core/userscript-ai-summary.js was deleted with the
+    // hand-written userscript. A file leaves the list only by leaving the tree.
+    assert.ok(CONVERTED_FILES.length >= 5, 'the converted list only grows');
     for (const file of CONVERTED_FILES) {
         assert.deepEqual(scanFile(file), [], `no ${file} surface may concatenate raw failure text`);
     }

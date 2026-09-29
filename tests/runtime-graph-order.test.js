@@ -17,6 +17,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { readUserscriptBuild } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const extensionDir = path.join(repoRoot, 'extension');
@@ -111,30 +112,38 @@ test('the lifecycle route bridge is installed by every vehicle, and never by its
     const bridge = fs.readFileSync(path.join(extensionDir, 'core', 'lifecycle-route-bridge.js'), 'utf8');
     const bootstrap = fs.readFileSync(path.join(extensionDir, 'runtime-bootstrap.js'), 'utf8');
     const monolith = fs.readFileSync(path.join(extensionDir, 'ytkit.js'), 'utf8');
-    const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
-    const userscriptCore = fs.readFileSync(path.join(repoRoot, 'YTKit-core.user.js'), 'utf8');
+    const host = fs.readFileSync(path.join(repoRoot, 'userscript', 'host.js'), 'utf8');
 
     // Self-installing on load is what made this module order-dependent, and it
     // no-ops silently (the installer returns false, it does not throw), so the
-    // failure would be invisible: SPA route tokens simply stop advancing.
-    for (const [label, source] of [['module', bridge], ['userscript core bundle', userscriptCore]]) {
-        assert.doesNotMatch(source, /^\s{4}installLifecycleRouteBridge\(\);$/m,
-            `${label} must not self-install the route bridge on load`);
-    }
+    // failure would be invisible: SPA route tokens simply stop advancing. The
+    // userscript runs this same file, so one check covers both vehicles.
+    assert.doesNotMatch(bridge, /^\s{4}installLifecycleRouteBridge\(\);$/m,
+        'the module must not self-install the route bridge on load');
 
     // The extension arms it as soon as the foundation graph resolves...
-    assert.match(bootstrap, /installLifecycleRouteBridge\?\.\(\) === true/,
-        'the bootstrap must install the route bridge and check that it succeeded');
-    assert.match(bootstrap, /routeBridgeInstalled/,
-        'a failed install must be observable, not silent');
-    // ...and both monolith copies cover the userscript, which has no bootstrap.
-    for (const [label, source] of [['monolith', monolith], ['userscript', userscript]]) {
-        const mainIndex = source.indexOf('_mainRan = true;');
-        assert.ok(mainIndex > 0, `${label} must have a main() entry point`);
-        const block = source.slice(mainIndex, mainIndex + 900);
-        assert.match(block, /installLifecycleRouteBridge\?\.\(\)/,
-            `${label} main() must install the route bridge`);
+    for (const [label, source] of [['bootstrap', bootstrap], ['userscript host', host]]) {
+        assert.match(source, /installLifecycleRouteBridge\?\.\(\) === true/,
+            `the ${label} must install the route bridge and check that it succeeded`);
+        assert.match(source, /routeBridgeInstalled/,
+            `a failed install in the ${label} must be observable, not silent`);
     }
+    // ...the userscript host does the same, right after its foundation loop...
+    const foundationLoop = host.indexOf('for (const path of BUILD.modules.foundation) runModule(path, contentScope);');
+    const hostInstall = host.indexOf('installLifecycleRouteBridge?.()');
+    assert.ok(foundationLoop > 0 && hostInstall > foundationLoop,
+        'the userscript host must install the route bridge after the foundation modules run');
+    const { modules } = readUserscriptBuild();
+    assert.ok(modules.foundation.includes('core/lifecycle-route-bridge.js'),
+        'the userscript foundation group must carry the route bridge module');
+
+    // ...and main() backs both up. The userscript runs this same ytkit.js.
+    const mainIndex = monolith.indexOf('_mainRan = true;');
+    assert.ok(mainIndex > 0, 'monolith must have a main() entry point');
+    const block = monolith.slice(mainIndex, mainIndex + 900);
+    assert.match(block, /installLifecycleRouteBridge\?\.\(\)/,
+        'monolith main() must install the route bridge');
+    assert.equal(modules.app, 'ytkit.js', 'the userscript app module is the same ytkit.js');
 });
 
 test('a module that calls a sibling at evaluation time is caught', () => {

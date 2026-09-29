@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { readUserscriptBuild, userscriptBundles } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(
@@ -185,10 +186,18 @@ test('CPU Tamer owns the MAIN-world bridge opt-in in extension and userscript bu
 
     const mainSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');
     const extensionSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
-    const userscriptSource = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
     assert.match(mainSource, /data-ytkit-resource-unlock/);
     assert.match(mainSource, /data-ytkit-resource-lock-stats/);
     assert.match(extensionSource, /publishBridgeAttribute\('data-ytkit-resource-unlock', 'on'\)/);
     assert.match(extensionSource, /clearBridgeAttribute\('data-ytkit-resource-unlock'\)/);
-    assert.match(userscriptSource, /createResourceUnlockBridge\(\{ root: win, document \}\)/);
+
+    // The userscript injects the manifest's MAIN-world files as one bundle in
+    // the same order, and runs the same ytkit.js that publishes the opt-in, so
+    // the bridge and its CPU Tamer switch are the extension's own code.
+    const { modules } = readUserscriptBuild();
+    assert.deepEqual(modules.mainWorld, mainEntry.js,
+        'the userscript page-world bundle must follow the manifest MAIN-world order');
+    assert.ok(userscriptBundles('core/resource-unlock.js'), 'the userscript ships the resource unlock bridge');
+    assert.ok(userscriptBundles('ytkit-main.js'), 'the userscript ships the MAIN-world reader of the opt-in');
+    assert.equal(modules.app, 'ytkit.js', 'the userscript publishes the opt-in from the same ytkit.js');
 });

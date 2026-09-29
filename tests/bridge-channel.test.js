@@ -354,6 +354,28 @@ test('the isolated world dispatches its own navigate, and it is the one that cou
     assert.equal(reader.isOwnNavigate(sent[0]), true);
 });
 
+test('on Firefox the navigate detail is cloned into the page before it is sent', () => {
+    // A detail object made in a content script is unreadable from the page on
+    // Firefox ("Permission denied to access property 'seq'"), which dropped
+    // every navigate event there.
+    const element = fakeRoot();
+    const sent = [];
+    const pageWindow = { name: 'page' };
+    const clones = [];
+    const writer = createBridgeWriter({
+        documentElement: element,
+        eventTarget: { dispatchEvent: (event) => { sent.push(event); return true; } },
+        CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init.detail; } },
+        pageWindow,
+        cloneInto: (value, target) => { clones.push(target); return { ...value, cloned: true }; },
+    });
+    const reader = createBridgeReader({ documentElement: element, token: writer.token });
+    writer.notifyNavigate('watch');
+    assert.deepEqual(clones, [pageWindow]);
+    assert.equal(sent[0].detail.cloned, true);
+    assert.equal(reader.isOwnNavigate(sent[0]), true);
+});
+
 test('a payload that is not an object, or not JSON at all, is refused', () => {
     const { element, writer, reader } = pair();
     writer.set('data-ytkit-codec', 'av01');

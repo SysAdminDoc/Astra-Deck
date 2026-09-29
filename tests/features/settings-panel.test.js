@@ -12,14 +12,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readUserscriptBuild, userscriptBundles } = require('../helpers/source');
 
 const MODULE_PATH = '../../extension/features/settings-panel/index.js';
 const PANEL_OPEN_CLASS = 'ytkit-panel-open';
-const userscriptRuntime = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8'
-) + '\n' + fs.readFileSync(
-    path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8'
-);
 
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -214,11 +210,14 @@ test('settingsPanel refuses to open when the host says this is not the primary U
 test('Video Hider pane uses its own toggle and shared settings reconciliation', () => {
     const moduleSource = fs.readFileSync(
         require.resolve(MODULE_PATH), 'utf8');
+    // The userscript used to carry a third copy of this pane. It now runs the
+    // settings-panel module and ytkit.js below, so those two are the contract.
+    assert.ok(userscriptBundles('features/settings-panel/index.js'),
+        'the userscript must ship the settings-panel module');
     for (const [label, source] of [
         ['settings-panel module', moduleSource],
         ['extension inline fallback', fs.readFileSync(
-            require.resolve('../../extension/ytkit.js'), 'utf8')],
-        ['userscript runtime', userscriptRuntime]
+            require.resolve('../../extension/ytkit.js'), 'utf8')]
     ]) {
         assert.match(source, /ytkit-video-hider-enabled/,
             `${label} must give the dedicated Video Hider toggle a unique id`);
@@ -264,11 +263,12 @@ test('Video Hider channels tab follows Channel Allowlist mode in both panes', ()
 });
 
 test('page quick controls reconcile feature settings without in-place mutation', () => {
+    // The userscript runs this same ytkit.js rather than a copy of its own.
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must run the same page quick-controls runtime');
     for (const [label, source] of [
         ['extension runtime', fs.readFileSync(
-            require.resolve('../../extension/ytkit.js'), 'utf8')],
-        ['userscript runtime', fs.readFileSync(
-            path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8')]
+            require.resolve('../../extension/ytkit.js'), 'utf8')]
     ]) {
         const start = source.indexOf('const PAGE_MODAL_CONFIG =');
         const end = source.indexOf('function injectPageModalButton', start);
@@ -280,9 +280,8 @@ test('page quick controls reconcile feature settings without in-place mutation',
             `${label} quick controls must snapshot settings before toggling`);
         assert.match(block, /const nextSettings = \{[\s\S]{0,120}\[fid\]: !previousSettings\[fid\]/,
             `${label} quick controls must build a replacement settings object`);
-        // The userscript passes no source label (it had only fed a reconciler
-        // the userscript never defined); tests/guarded-name-binding.test.js
-        // drives its rollback for real.
+        // Either rollback shape is accepted; tests/guarded-name-binding.test.js
+        // drives the rollback for real.
         assert.match(block, /quick-settings-rollback|reconcile\(result\.settings \|\| previousSettings\)/,
             `${label} quick controls must restore the prior setting after a failed write`);
         assert.doesNotMatch(block, /appState\.settings\[fid\] = newVal/,

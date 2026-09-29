@@ -1,125 +1,76 @@
 #!/usr/bin/env node
 'use strict';
 
+// Builds the userscript from the extension's own sources.
+//
+// The userscript is not a second implementation. YTKit.user.js is a small
+// host (userscript/host.js) that stands in for the chrome.* APIs with GM_*
+// grants, and three @require libraries carry the extension's files verbatim
+// apart from whitespace and comments:
+//
+//   YTKit-core.user.js      foundation modules, the background worker and the
+//                           modules it imports, the MAIN-world scripts, the
+//                           live-chat group, core/bridge-token.js
+//   YTKit-features.user.js  the peeled feature modules
+//   YTKit-app.user.js       extension/ytkit.js
+//
+// Libraries only REGISTER each file as a function. The host runs them in the
+// order and world the manifest gives them. Every file here is generated: edit
+// extension/ or userscript/host.js and run `node sync-userscript.js`.
+//
+// Greasy Fork caps a script record at 2 MiB, which is why the code is split in
+// three and why every file is compacted: comments go, CSS templates are
+// tightened, and indentation outside string and template literals becomes
+// tabs. Each step is checked (CSS token order, JS token stream) and the sync
+// stops rather than write a library that differs from its source.
+
 const fs = require('fs');
 const acorn = require('acorn');
 const path = require('path');
-const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
+const { getUserscriptBasename } = require('./scripts/repo-paths');
 
 const REPO_ROOT = __dirname;
-const EXTENSION_SOURCE = path.join(REPO_ROOT, 'extension', 'ytkit.js');
-const USERSCRIPT_SOURCE = resolveUserscriptPath(REPO_ROOT);
+const EXTENSION_DIR = path.join(REPO_ROOT, 'extension');
+const HOST_SOURCE = path.join(REPO_ROOT, 'userscript', 'host.js');
 const USERSCRIPT_BASENAME = getUserscriptBasename(REPO_ROOT);
 const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
 const USERSCRIPT_CORE_SOURCE = path.join(REPO_ROOT, 'YTKit-core.user.js');
-// The @require target. Pinned to the release TAG, not to `main`.
+const MAX_RECORD_BYTES = 2 * 1024 * 1024;
+const REGISTRY_GLOBAL = '__astraDeckUserscriptModules';
+const REGISTRY_LOCAL = '__astraDeckRegistry';
+const MAIN_WORLD_MODULE = '@main-world';
+const LOCALE_RESOURCE_PREFIX = 'astra-locale-';
+const RUNTIME_ID = 'astra-deck-userscript';
+const MODULE_PARAMS = 'globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes';
+
+// The @require targets. Pinned to the release TAG, not to `main`.
 //
 // Until v4.88.3 this pointed at `main`, so every userscript install pulled
-// 1.9 MB of executable code from a mutable branch pointer — in a script that
-// also grants GM_xmlhttpRequest to OpenAI, Anthropic, Gemini and loopback.
-// Anything able to move `main` moved every install at once, with no version
-// to notice it by. A tag is immutable once pushed, so a given @version always
-// requires the same bytes and the release advances both together.
+// executable code from a mutable branch pointer, in a script that also grants
+// GM_xmlhttpRequest to OpenAI, Anthropic, Gemini and loopback. Anything able
+// to move `main` moved every install at once, with no version to notice it
+// by. A tag is immutable once pushed, so a given @version always requires the
+// same bytes and the release advances both together. The main file itself
+// still updates from `main`, which is what moves an install to a new tag.
 //
-// ASTRA_GREASY_FORK_CORE_URL still overrides for a Greasy Fork or mirrored host.
-const CORE_URL_BASE = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck';
+// ASTRA_USERSCRIPT_LIBRARY_BASE overrides the base for a mirrored host.
+const LIBRARY_URL_BASE = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck';
+
+function tagUrl(version, relativePath) {
+    const base = process.env.ASTRA_USERSCRIPT_LIBRARY_BASE;
+    if (base) return `${base.replace(/\/+$/, '')}/${relativePath}`;
+    return `${LIBRARY_URL_BASE}/refs/tags/v${version}/${relativePath}`;
+}
 
 function coreRequireUrl(version) {
-    if (process.env.ASTRA_GREASY_FORK_CORE_URL) return process.env.ASTRA_GREASY_FORK_CORE_URL;
-    return `${CORE_URL_BASE}/refs/tags/v${version}/YTKit-core.user.js`;
+    return tagUrl(version, 'YTKit-core.user.js');
 }
-const CORE_BEGIN_MARKER = '// ── BEGIN v5.0.0 bundled core modules ──';
-const CORE_END_MARKER = '// ── END v5.0.0 bundled core modules ──';
-const EXTERNAL_BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
 
-// v4.20.0: keep the v5.0.0 core modules in the userscript distribution so the
-// userscript path reaches feature parity with the MV3 extension. Each listed
-// module is an IIFE that attaches to globalThis.YTKitCore or
-// globalThis.YTKitFeatures — safe to concatenate in this order. The main
-// artifact carries an ordered dependency manifest; executable bodies are
-// generated into YTKit-core.user.js, a separate Greasy Fork library record.
-// If a manifest feature cannot ship in the userscript, classify the feature ID
-// in scripts/check-userscript-drift.js instead of leaving silent parity drift.
-const V5_BUNDLE_MODULES = [
-    'extension/core/regex-safety.js',
-    'extension/core/styles.js',
-    'extension/core/trusted-html.js',
-    'extension/core/settings-visual-system.js',
-    'extension/core/settings-schema.js',
-    'extension/core/injection-guard.js',
-    'extension/core/feature-lifecycle.js',
-    'extension/core/policy-profile.js',
-    'extension/core/settings-controller.js',
-    // Bundled so the monolith settingsManager can run imports through the same
-    // snapshot/rollback/undo transaction the extension uses, instead of
-    // carrying a second implementation. Pure JS, no chrome.* and no DOM.
-    // NOTE: no apostrophes in comments inside this array — check-userscript-drift.js
-    // scans it with a bare quote regex and one stray quote truncates the list.
-    'extension/core/settings-import-transaction.js',
-    // Bundled so the userscript filters an authenticated cookie handoff
-    // through the SAME reviewed contract the extension uses (four yt-dlp
-    // auth cookie names, domain/path/Secure/size validation) instead of
-    // posting the whole YouTube jar. Pure JS, no chrome.* and no DOM.
-    'extension/core/cookie-handoff.js',
-    'extension/core/transcript-service.js',
-    'extension/core/transcript-index.js',
-    'extension/core/ai-summary-artifacts.js',
-    'extension/core/credential-vault.js',
-    'extension/core/local-ai.js',
-    'extension/core/userscript-ai-summary.js',
-    'extension/core/external-api-health.js',
-    'extension/core/selector-health.js',
-    'extension/core/feature-health.js',
-    'extension/core/chapters.js',
-    'extension/core/csv.js',
-    'extension/core/dialog-guard.js',
-    'extension/core/zero-ad-dom.js',
-    'extension/core/element-zapper.js',
-    'extension/features/element-zapper/index.js',
-    'extension/core/hide-attribution.js',
-    'extension/core/heatmap.js',
-    'extension/core/youtube-thumbnails.js',
-    'extension/core/feature-schedule.js',
-    'extension/core/feed-prefilter.js',
-    'extension/core/companion-ports.js',
-    'extension/core/data-flow.js',
-    'extension/core/toast.js',
-    'extension/core/toast-dom.js',
-    'extension/core/navigation.js',
-    'extension/core/player.js',
-    'extension/core/resource-unlock.js',
-    'extension/core/text-metrics.js',
-    'extension/core/date-time.js',
-    'extension/core/failure-copy.js',
-    'extension/core/runtime-flags.js',
-    'extension/core/capability-probe.js',
-    'extension/features/subtitles/index.js',
-    'extension/features/video-filters/index.js',
-    'extension/features/blue-light-filter/index.js',
-    'extension/features/theme-css/index.js',
-    'extension/features/wave-8-css/index.js',
-    'extension/features/home-subs-css/index.js',
-    'extension/features/chat-style-comments/index.js',
-    'extension/features/comment-author-block/index.js',
-    'extension/features/sticky-video-styles/index.js',
-    'extension/features/sticky-video-autoscroll/index.js',
-    'extension/features/sticky-video-chat/index.js',
-    'extension/features/sticky-video-header/index.js',
-    'extension/features/sticky-video/index.js',
-    'extension/features/sticky-chat/index.js',
-    'extension/features/video-hider/index.js',
-    'extension/features/video-notes/index.js',
-    'extension/features/subscription-groups/index.js',
-    'extension/features/digital-wellbeing/index.js',
-    'extension/features/settings-panel/index.js',
-    'extension/features/player-dock/index.js',
-    'extension/features/return-dislike/index.js',
-    'extension/features/sponsorblock/index.js',
-    'extension/features/dearrow/index.js',
-    'extension/core/lifecycle-route-bridge.js'
-];
-
-const BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
+const LIBRARIES = Object.freeze([
+    { id: 'core', file: 'YTKit-core.user.js', title: 'Astra Deck YTKit Core Library' },
+    { id: 'features', file: 'YTKit-features.user.js', title: 'Astra Deck YTKit Feature Library' },
+    { id: 'app', file: 'YTKit-app.user.js', title: 'Astra Deck YTKit App Library' },
+]);
 
 // Greasy Fork caps each script record at 2 MiB, and most of this repo's CSS is
 // written as indented template literals. Every bundled module goes through one
@@ -578,7 +529,10 @@ function stripCommentsByParser(body, relativePath) {
             out += body.slice(cursor, lineStart);
             cursor = newline === -1 ? body.length : newline + 1;
         } else if (comment.block) {
-            out += body.slice(cursor, comment.start) + ' ';
+            // A block comment that spans lines is a line terminator to
+            // automatic semicolon insertion, so it has to leave one behind.
+            const spansLines = /[\n\r\p{Zl}\p{Zp}]/u.test(body.slice(comment.start, comment.end));
+            out += body.slice(cursor, comment.start) + (spansLines ? '\n' : ' ');
             cursor = comment.end;
         } else {
             out += body.slice(cursor, comment.start).replace(/[ \t]+$/, '');
@@ -596,187 +550,472 @@ function stripCommentsByParser(body, relativePath) {
     return out;
 }
 
-function bundledModuleHeader(rel) {
-    return '    // ── bundled module: ' + rel + ' ──';
+// Leading indentation outside string and template literals becomes tabs, and
+// blank lines and trailing spaces outside them go. A line that starts inside a
+// multi-line template or string is data and is left exactly as written. The
+// result must tokenize exactly like the input or the sync stops.
+function reindentOutsideLiterals(source, relativePath) {
+    const literalSpans = [];
+    acorn.parse(source, {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+        onToken: (token) => {
+            const label = token.type.label;
+            if ((label === 'template' || label === 'invalidTemplate' || label === 'string')
+                && source.slice(token.start, token.end).includes('\n')) {
+                literalSpans.push([token.start, token.end]);
+            }
+        }
+    });
+    let spanIndex = 0;
+    const insideLiteral = (offset) => {
+        while (spanIndex < literalSpans.length && literalSpans[spanIndex][1] <= offset) spanIndex += 1;
+        const span = literalSpans[spanIndex];
+        return Boolean(span && span[0] < offset && offset < span[1]);
+    };
+
+    const lines = source.split('\n');
+    const out = [];
+    let offset = 0;
+    for (const line of lines) {
+        const start = offset;
+        const end = offset + line.length;
+        offset = end + 1;
+        const startsInside = insideLiteral(start);
+        const endsInside = insideLiteral(end);
+        let text = endsInside ? line : line.replace(/[ \t]+$/, '');
+        if (!startsInside) {
+            const indent = /^ +/.exec(text);
+            if (indent) {
+                const width = indent[0].length;
+                text = '\t'.repeat(Math.floor(width / 4)) + ' '.repeat(width % 4) + text.slice(width);
+            }
+            if (!text) continue;
+        }
+        out.push(text);
+    }
+    const result = out.join('\n');
+
+    const before = codeTokens(source);
+    const after = codeTokens(result);
+    const at = before.findIndex((token, index) => token !== after[index]);
+    if (at !== -1 || before.length !== after.length) {
+        throw new Error(`Re-indenting changed the code of ${relativePath} at token ${at === -1 ? before.length : at}`);
+    }
+    return result;
 }
 
-function coreModuleHeader(rel) {
-    const index = V5_BUNDLE_MODULES.indexOf(rel);
-    if (index < 0) throw new Error('Unknown core module: ' + rel);
-    return '//m:' + index.toString(36);
+function compactForUserscript(source, relativePath) {
+    let out = source.replace(/\r\n/g, '\n').replace(/\s+$/, '');
+    out = compactBundledCssTemplates(out, relativePath);
+    out = stripCommentsByParser(out, relativePath);
+    out = reindentOutsideLiterals(out, relativePath);
+    return out;
 }
 
-function buildExternalBundleRegion() {
+function readText(repoRoot, relativePath) {
+    const full = path.join(repoRoot, relativePath);
+    if (!fs.existsSync(full)) {
+        const error = new Error('Userscript source not found: ' + relativePath);
+        error.modulePath = relativePath;
+        throw error;
+    }
+    return fs.readFileSync(full, 'utf8');
+}
+
+function readExtensionVersion(repoRoot) {
+    const match = readText(repoRoot, 'extension/ytkit.js').match(/const YTKIT_VERSION = '([^']+)'/);
+    if (!match) throw new Error('Could not find YTKIT_VERSION in extension/ytkit.js');
+    return match[1];
+}
+
+// Everything the userscript runs is read from the manifest, the generated
+// runtime bootstrap and the worker's importScripts list, so a file added to
+// the extension reaches the userscript without anyone listing it here.
+function readBuildPlan(repoRoot = REPO_ROOT) {
+    const manifest = JSON.parse(readText(repoRoot, 'extension/manifest.json'));
+    const groups = manifest.content_scripts || [];
+    const isLiveChatGroup = (group) => (group.matches || []).some((match) => match.includes('/live_chat'));
+    const mainGroup = groups.find((group) => group.world === 'MAIN');
+    const runtimeGroup = groups.find((group) => Array.isArray(group['x-ytkit-runtime-modules']));
+    const startGroup = groups.find((group) => group.world !== 'MAIN' && group.run_at === 'document_start' && !isLiveChatGroup(group));
+    const liveChatGroup = groups.find(isLiveChatGroup);
+    if (!mainGroup || !runtimeGroup || !startGroup || !liveChatGroup) {
+        throw new Error('manifest.json no longer has the four content-script groups the userscript host mirrors');
+    }
+    const runtimeModules = runtimeGroup['x-ytkit-runtime-modules'];
+    if (runtimeModules.at(-1) !== 'ytkit.js') throw new Error('ytkit.js must stay the last runtime module');
+    const firstFeature = runtimeModules.findIndex((modulePath) => modulePath.startsWith('features/'));
+    const criticalFeature = 'features/download-ui/index.js';
+    const foundation = [...runtimeModules.slice(0, firstFeature), criticalFeature];
+    const features = runtimeModules.slice(firstFeature, -1).filter((modulePath) => modulePath !== criticalFeature);
+    if (!runtimeModules.includes(criticalFeature)) throw new Error(`Runtime modules must include ${criticalFeature}`);
+    if (startGroup.js?.length !== 1) throw new Error('The document_start ISOLATED group must hold exactly core/bridge-token.js');
+
+    const background = manifest.background?.service_worker;
+    const backgroundSource = readText(repoRoot, `extension/${background}`);
+    const imported = /importScripts\(\s*\.\.\.\[([\s\S]*?)\]\s*\.map\(/.exec(backgroundSource);
+    if (!imported) throw new Error('Could not find the importScripts list in the background worker');
+    const backgroundCore = [...imported[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
+    if (!backgroundCore.length) throw new Error('The background importScripts list is empty');
+
+    const { FEATURE_SETTINGS } = require(path.join(repoRoot, 'scripts', 'generate-runtime-bootstrap.js'));
+    const liveChat = liveChatGroup.js || [];
+    const locales = fs.readdirSync(path.join(repoRoot, 'extension', '_locales'))
+        .filter((locale) => fs.existsSync(path.join(repoRoot, 'extension', '_locales', locale, 'messages.json')))
+        .sort();
+
+    const coreFiles = unique([
+        ...startGroup.js,
+        ...foundation.filter((modulePath) => modulePath !== criticalFeature),
+        ...backgroundCore,
+        ...liveChat,
+        background,
+    ]).filter((modulePath) => !modulePath.startsWith('features/') || liveChat.includes(modulePath));
+
+    return {
+        manifest,
+        mainWorld: mainGroup.js,
+        bridgeToken: startGroup.js[0],
+        earlyCss: startGroup.css || [],
+        liveChat,
+        liveChatCss: liveChatGroup.css || [],
+        foundation,
+        features,
+        app: 'ytkit.js',
+        background,
+        backgroundCore,
+        featureSettings: FEATURE_SETTINGS,
+        locales,
+        libraries: {
+            core: coreFiles,
+            features: unique([criticalFeature, ...features]),
+            app: ['ytkit.js'],
+        },
+    };
+}
+
+function unique(list) {
+    return [...new Set(list)];
+}
+
+// ISOLATED files are imported as modules by the extension, so they run
+// strict here too. The background worker is a classic script and keeps its
+// own mode, as do the MAIN-world scripts.
+function wrapRegisteredFile(relativePath, body, strict) {
+    return [
+        `${REGISTRY_LOCAL}[${JSON.stringify(relativePath)}] = function (${MODULE_PARAMS}) {`,
+        strict ? '\'use strict\';' : 'void 0;',
+        body,
+        '};'
+    ].join('\n');
+}
+
+function wrapMainWorld(files, bodies) {
     const parts = [
-        '    ' + CORE_BEGIN_MARKER,
-        '    // The v5.0.0 modules are delivered by the configured @require dependency.',
-        '    // This manifest keeps the dependency order visible in the main artifact;',
-        '    // the generated YTKit-core.user.js contains the executable module bodies.',
-        ''
+        `${REGISTRY_LOCAL}[${JSON.stringify(MAIN_WORLD_MODULE)}] = function () {`,
+        // Not a directive: the page-world scripts keep their own modes.
+        'void 0;'
     ];
-    for (const rel of V5_BUNDLE_MODULES) parts.push(bundledModuleHeader(rel));
-    parts.push('', '    ' + CORE_END_MARKER);
+    files.forEach((file, index) => {
+        parts.push(bodies[index], ';');
+    });
+    parts.push('};');
     return parts.join('\n');
 }
 
-// Build the bundled-module region exactly as the userscript must contain it.
-// check-userscript-drift.js recomputes this and compares it against the
-// shipped bundle, so this function is the single source of truth for the
-// transform. A fingerprint-substring check cannot see a stale module body —
-// v4.51.2's settings-schema shipped stale through three releases that way.
-function buildBundleRegion(repoRoot = REPO_ROOT) {
-    // Keep the historical function name as the main-artifact contract. The
-    // executable bodies now live in the separately published library below;
-    // the main file retains an ordered manifest so stale dependency changes
-    // remain visible without paying for a second copy of the code.
-    void repoRoot;
-    return buildExternalBundleRegion();
+function libraryHeader(library, version) {
+    return [
+        '// ==UserScript==',
+        `// @name         ${library.title}`,
+        '// @namespace    https://github.com/SysAdminDoc/Astra-Deck',
+        `// @version      ${version}`,
+        '// @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.',
+        '// @author       Matthew Parker',
+        '// @homepageURL  https://github.com/SysAdminDoc/Astra-Deck',
+        '// @supportURL   https://github.com/SysAdminDoc/Astra-Deck/issues',
+        '// @license      MIT',
+        '// @grant        none',
+        '// ==/UserScript==',
+        '',
+        '// Generated by sync-userscript.js from the extension sources in extension/.',
+        '// Do not edit: change extension/ and run `node sync-userscript.js`.',
+        '// Each file below is registered as a function and run later by the host in',
+        '// YTKit.user.js, in the order and world the extension manifest gives it.',
+    ].join('\n');
+}
+
+function buildLibrarySource(library, plan, version, repoRoot = REPO_ROOT) {
+    const parts = [
+        libraryHeader(library, version),
+        `(function (${REGISTRY_LOCAL}) {`,
+    ];
+    for (const relativePath of plan.libraries[library.id]) {
+        const source = readText(repoRoot, `extension/${relativePath}`);
+        const body = compactForUserscript(source, `extension/${relativePath}`);
+        parts.push(wrapRegisteredFile(relativePath, body, relativePath !== plan.background));
+    }
+    if (library.id === 'core') {
+        const bodies = plan.mainWorld.map((relativePath) =>
+            compactForUserscript(readText(repoRoot, `extension/${relativePath}`), `extension/${relativePath}`));
+        parts.push(wrapMainWorld(plan.mainWorld, bodies));
+    }
+    parts.push(`})(globalThis.${REGISTRY_GLOBAL} || (globalThis.${REGISTRY_GLOBAL} = Object.create(null)));`, '');
+    const text = parts.join('\n');
+    acorn.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
+    return text;
+}
+
+function flattenMessages(json) {
+    const flat = {};
+    for (const [key, entry] of Object.entries(json)) {
+        if (entry && typeof entry.message === 'string') flat[key] = entry.message;
+    }
+    return flat;
+}
+
+function dataUrl(repoRoot, relativePath, mime) {
+    return `data:${mime};base64,${fs.readFileSync(path.join(repoRoot, 'extension', relativePath)).toString('base64')}`;
+}
+
+// The manifest as runtime.getManifest() reports it: the GitHub build's
+// profile, since GitHub is where the userscript is published, and none of
+// the packaging lists the userscript has no use for.
+function runtimeManifest(manifest, version) {
+    const out = {};
+    for (const key of ['manifest_version', 'name', 'short_name', 'description', 'default_locale', 'homepage_url',
+        'permissions', 'host_permissions', 'optional_host_permissions', 'minimum_chrome_version']) {
+        if (manifest[key] !== undefined) out[key] = manifest[key];
+    }
+    out.version = version;
+    out['x-ytkit-build-profile'] = 'github-full';
+    out['x-ytkit-host'] = 'userscript';
+    return out;
+}
+
+function buildHostData(plan, version, repoRoot = REPO_ROOT) {
+    const defaultLocale = plan.manifest.default_locale || 'en';
+    const messages = flattenMessages(JSON.parse(readText(repoRoot, `extension/_locales/${defaultLocale}/messages.json`)));
+    const requiredModules = unique([
+        plan.bridgeToken,
+        ...plan.foundation,
+        ...plan.features,
+        plan.app,
+        plan.background,
+        ...plan.backgroundCore,
+        ...plan.liveChat,
+        MAIN_WORLD_MODULE,
+    ]);
+    return {
+        version,
+        runtimeId: RUNTIME_ID,
+        menuLabel: 'Open Astra Deck settings',
+        credentialMenuLabel: 'AI provider key',
+        defaultLocale,
+        locales: plan.locales,
+        localeResourcePrefix: LOCALE_RESOURCE_PREFIX,
+        manifest: runtimeManifest(plan.manifest, version),
+        permissions: plan.manifest.permissions || [],
+        hostPermissions: plan.manifest.host_permissions || [],
+        optionalHostPermissions: plan.manifest.optional_host_permissions || [],
+        featureSettings: plan.featureSettings,
+        mainWorldModule: MAIN_WORLD_MODULE,
+        requiredModules,
+        modules: {
+            bridgeToken: plan.bridgeToken,
+            foundation: plan.foundation,
+            features: plan.features,
+            app: plan.app,
+            background: plan.background,
+            backgroundCore: plan.backgroundCore,
+            liveChat: plan.liveChat,
+            // Informational: these run inside the one mainWorldModule bundle.
+            mainWorld: plan.mainWorld,
+        },
+        css: {
+            early: plan.earlyCss.map((file) => readText(repoRoot, `extension/${file}`)).join('\n'),
+            liveChat: plan.liveChatCss.map((file) => readText(repoRoot, `extension/${file}`)).join('\n'),
+        },
+        assets: {
+            'icons/32.png': dataUrl(repoRoot, 'icons/32.png', 'image/png'),
+            'assets/cat.gif': dataUrl(repoRoot, 'assets/cat.gif', 'image/gif'),
+        },
+        messages,
+    };
+}
+
+// @connect follows the extension's host permissions: what the worker may
+// reach there, GM_xmlhttpRequest may reach here. `https://*/*` (the optional
+// grant for a self-hosted AI or Cobalt endpoint) becomes `*`, which makes
+// Tampermonkey ask before the first request to any host not listed.
+function connectHosts(manifest) {
+    const hosts = [];
+    for (const pattern of [...(manifest.host_permissions || []), ...(manifest.optional_host_permissions || [])]) {
+        const match = /^[a-z*]+:\/\/([^/]+)\//.exec(pattern);
+        if (!match) continue;
+        const host = match[1].replace(/:\d+$/, '');
+        if (host === '*') hosts.push('*');
+        else hosts.push(host.replace(/^\*\./, ''));
+    }
+    const ordered = unique(hosts).filter((host) => host !== '*');
+    if (hosts.includes('*')) ordered.push('*');
+    return ordered;
+}
+
+function matchPatterns(manifest) {
+    const runtimeGroup = manifest.content_scripts.find((group) => Array.isArray(group['x-ytkit-runtime-modules']));
+    const liveChatGroup = manifest.content_scripts.find((group) => (group.matches || []).some((match) => match.includes('/live_chat')));
+    const matches = unique([
+        'https://youtube.com/*',
+        ...runtimeGroup.matches,
+        ...liveChatGroup.matches,
+    ]);
+    const excludes = (runtimeGroup.exclude_matches || []).filter((pattern) => !pattern.includes('/live_chat'));
+    return { matches, excludes };
+}
+
+const USERSCRIPT_GRANTS = Object.freeze([
+    'GM_getValue',
+    'GM_setValue',
+    'GM_deleteValue',
+    'GM_listValues',
+    'GM_addValueChangeListener',
+    'GM_addStyle',
+    'GM_addElement',
+    'GM_xmlhttpRequest',
+    'GM_download',
+    'GM_openInTab',
+    'GM_registerMenuCommand',
+    'GM_getResourceText',
+    'GM_cookie',
+]);
+
+function metaLine(key, value) {
+    return `// @${key.padEnd(12)} ${value}`;
+}
+
+function buildUserscriptHeader(plan, version) {
+    const { matches, excludes } = matchPatterns(plan.manifest);
+    const lines = [
+        '// ==UserScript==',
+        metaLine('name', `YTKit v${version}`),
+        metaLine('namespace', 'https://github.com/SysAdminDoc/Astra-Deck'),
+        metaLine('version', version),
+        metaLine('description', 'The Astra Deck YouTube extension as a userscript, with the same features, settings panel and themes. Loads its three YTKit libraries through @require, and downloads use the optional Astra Downloader companion app.'),
+        metaLine('author', 'Matthew Parker'),
+        metaLine('homepageURL', 'https://github.com/SysAdminDoc/Astra-Deck'),
+        metaLine('supportURL', 'https://github.com/SysAdminDoc/Astra-Deck/issues'),
+        metaLine('updateURL', USERSCRIPT_RAW_URL),
+        metaLine('downloadURL', USERSCRIPT_RAW_URL),
+        metaLine('license', 'MIT'),
+        metaLine('icon', 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/extension/icons/128.png'),
+        ...matches.map((pattern) => metaLine('match', pattern)),
+        ...excludes.map((pattern) => metaLine('exclude', pattern)),
+        metaLine('run-at', 'document-start'),
+        metaLine('inject-into', 'content'),
+        ...USERSCRIPT_GRANTS.map((grant) => metaLine('grant', grant)),
+        ...connectHosts(plan.manifest).map((host) => metaLine('connect', host)),
+        ...LIBRARIES.map((library) => metaLine('require', tagUrl(version, library.file))),
+        ...plan.locales
+            .filter((locale) => locale !== (plan.manifest.default_locale || 'en'))
+            .map((locale) => metaLine('resource', `${LOCALE_RESOURCE_PREFIX}${locale} ${tagUrl(version, `extension/_locales/${locale}/messages.json`)}`)),
+        '// ==/UserScript==',
+    ];
+    return lines.join('\n');
+}
+
+function buildUserscriptSource(plan, version, repoRoot = REPO_ROOT) {
+    const host = readText(repoRoot, path.relative(repoRoot, HOST_SOURCE));
+    const data = buildHostData(plan, version, repoRoot);
+    const text = [
+        buildUserscriptHeader(plan, version),
+        '',
+        '// Generated by sync-userscript.js. Do not edit: the code that runs is the',
+        '// extension\'s own, packed into the @require libraries above, and the host',
+        '// below (userscript/host.js) stands in for the chrome.* APIs with GM_* grants.',
+        '//',
+        '// localhost is deliberately not in @connect. The companion is always reached',
+        '// by literal IP, and Firefox still resolves localhost through DNS, so a',
+        '// hostile resolver could rebind it to an internal address and use the grant',
+        '// to probe the LAN. The extension refuses it for the same reason.',
+        '',
+        `${BUILD_MARKER}${JSON.stringify(data, null, '\t')};`,
+        '',
+        host.replace(/\r\n/g, '\n').replace(/\s+$/, ''),
+        '',
+    ].join('\n');
+    acorn.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
+    return text;
+}
+
+const BUILD_MARKER = 'const ASTRA_DECK_BUILD = ';
+
+// The build data embedded in a generated YTKit.user.js, for gates that check
+// what shipped rather than what the plan says.
+function parseUserscriptBuild(text) {
+    const start = String(text).indexOf(BUILD_MARKER);
+    if (start === -1) throw new Error('YTKit.user.js carries no ASTRA_DECK_BUILD block');
+    const end = text.indexOf(';\n', start);
+    return JSON.parse(text.slice(start + BUILD_MARKER.length, end));
+}
+
+// Every file this writes, keyed by repo-relative path. check-userscript-drift
+// rebuilds this and compares, so it is the single source of truth.
+function buildUserscriptOutputs(repoRoot = REPO_ROOT, version = null) {
+    const targetVersion = version || readExtensionVersion(repoRoot);
+    const plan = readBuildPlan(repoRoot);
+    const outputs = new Map();
+    for (const library of LIBRARIES) {
+        outputs.set(library.file, buildLibrarySource(library, plan, targetVersion, repoRoot));
+    }
+    outputs.set(USERSCRIPT_BASENAME, buildUserscriptSource(plan, targetVersion, repoRoot));
+    for (const [file, text] of outputs) {
+        const bytes = Buffer.byteLength(text, 'utf8');
+        if (bytes > MAX_RECORD_BYTES) {
+            throw new Error(`${file} is ${bytes} bytes, over the ${MAX_RECORD_BYTES}-byte script record limit`);
+        }
+    }
+    return outputs;
 }
 
 function buildCoreLibrarySource(repoRoot = REPO_ROOT, version = null) {
-    const extensionText = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
-    const versionMatch = extensionText.match(/const YTKIT_VERSION = '([^']+)'/);
-    if (!versionMatch && !version) {
-        throw new Error('Could not find YTKIT_VERSION while building the userscript core library');
-    }
-    const targetVersion = version || versionMatch[1];
-    const parts = [
-        '// ==UserScript==',
-        '// @name         Astra Deck YTKit Core Library',
-        '// @namespace    https://github.com/SysAdminDoc/Astra-Deck',
-        `// @version      ${targetVersion}`,
-        '// @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js',
-        '// @author       Matthew Parker',
-        '// @homepageURL  https://github.com/SysAdminDoc/Astra-Deck',
-        '// @supportURL    https://github.com/SysAdminDoc/Astra-Deck/issues',
-        '// @license      MIT',
-        '// @grant         none',
-        '// @run-at        document-start',
-        '// ==/UserScript==',
-        '',
-        CORE_BEGIN_MARKER,
-        '// Generated by sync-userscript.js.',
-        ''
-    ];
-    for (const rel of V5_BUNDLE_MODULES) {
-        const full = path.join(repoRoot, rel);
-        if (!fs.existsSync(full)) {
-            const error = new Error('Module not found: ' + rel);
-            error.modulePath = rel;
-            throw error;
-        }
-        const moduleBody = shrinkModuleBody(compactStandaloneLineComments(
-            compactBundledCssTemplates(
-                fs.readFileSync(full, 'utf8').replace(/\s+$/, ''),
-                rel
-            ),
-            rel
-        ), rel);
-        // A module containing either bundle marker would truncate the region
-        // the next sync run's regex matches, silently corrupting the
-        // userscript. Refuse to bundle rather than write a poisoned bundle.
-        if (/── (?:BEGIN|END) v5\.0\.0 bundled core modules ──/.test(moduleBody)) {
-            const error = new Error('Refusing to bundle ' + rel + ': module source contains a v5.0.0 bundle marker, which would corrupt the next sync run.');
-            error.modulePath = rel;
-            throw error;
-        }
-        parts.push(coreModuleHeader(rel));
-        parts.push(moduleBody);
-    }
-    parts.push(CORE_END_MARKER, '');
-    return parts.join('\n');
+    return buildUserscriptOutputs(repoRoot, version).get('YTKit-core.user.js');
 }
 
-function upsertMetadataLine(headerText, key, value) {
-    const line = `// @${key}      ${value}`;
-    const re = new RegExp(`^// @${key}\\s+.*$`, 'm');
-    if (re.test(headerText)) return headerText.replace(re, line);
-    return headerText.replace(/^\/\/ ==\/UserScript==$/m, `${line}\n// ==/UserScript==`);
+// No exists-then-read: a file that vanishes between the two is a race CodeQL
+// flags (js/file-system-race).
+function readUtf8IfPresent(filePath) {
+    try {
+        return fs.readFileSync(filePath, 'utf8');
+    } catch (error) {
+        if (error && error.code === 'ENOENT') return null;
+        throw error;
+    }
+}
+
+// Writes the records that changed and returns their paths. build-extension.js
+// calls this on --bump so every record carries the new version and tag URLs.
+function writeUserscriptOutputs(repoRoot = REPO_ROOT, version = null, log = console.log) {
+    const written = [];
+    for (const [file, text] of buildUserscriptOutputs(repoRoot, version)) {
+        const target = path.join(repoRoot, file);
+        if (readUtf8IfPresent(target) === text) continue;
+        fs.writeFileSync(target, text, 'utf8');
+        written.push(file);
+        log(`Wrote ${file} (${Buffer.byteLength(text, 'utf8')} bytes)`);
+    }
+    return written;
 }
 
 function main() {
-    const extensionText = fs.readFileSync(EXTENSION_SOURCE, 'utf8');
-    const versionMatch = extensionText.match(/const YTKIT_VERSION = '([^']+)'/);
-    if (!versionMatch) {
-        console.error('Could not find YTKIT_VERSION in extension/ytkit.js');
-        process.exit(1);
-    }
-
-    const targetVersion = versionMatch[1];
-    let userscriptText = fs.readFileSync(USERSCRIPT_SOURCE, 'utf8');
-    const before = userscriptText;
-
-    const headerEnd = userscriptText.indexOf('// ==/UserScript==');
-    if (headerEnd === -1) {
-        console.error('Could not find userscript metadata header terminator');
-        process.exit(1);
-    }
-    const headerCloseEnd = headerEnd + '// ==/UserScript=='.length;
-    let headerText = userscriptText.slice(0, headerCloseEnd);
-    const bodyText = userscriptText.slice(headerCloseEnd);
-    headerText = headerText.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m,
-        (_match, prefix) => `${prefix}YTKit v${targetVersion}`);
-    headerText = headerText.replace(/^(\/\/ @version\s+)[\d.]+/m,
-        (_match, prefix) => `${prefix}${targetVersion}`);
-    headerText = headerText.replace(/^(\/\/ @updateURL\s+).+$/m,
-        (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
-    headerText = headerText.replace(/^(\/\/ @downloadURL\s+).+$/m,
-        (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
-    headerText = upsertMetadataLine(headerText, 'require', coreRequireUrl(targetVersion));
-    for (const [key, value] of [
-        ['homepageURL', 'https://github.com/SysAdminDoc/Astra-Deck'],
-        ['supportURL', 'https://github.com/SysAdminDoc/Astra-Deck/issues'],
-        ['license', 'MIT'],
-        ['icon', 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/extension/icons/128.png'],
-    ]) {
-        headerText = upsertMetadataLine(headerText, key, value);
-    }
-    headerText = headerText.replace(/^(\/\/ @description\s+).*$/m,
-        '$1YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion');
-    userscriptText = headerText + bodyText;
-    userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
-        () => `const YTKIT_VERSION = '${targetVersion}';`);
-
-
-    if (BUNDLE_BEGIN_RE.test(userscriptText)) {
-        let bundleRegion;
-        try {
-            bundleRegion = buildBundleRegion(REPO_ROOT);
-        } catch (error) {
-            console.error(error.message);
-            process.exit(1);
-        }
-        userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, () => bundleRegion);
-    } else if (!EXTERNAL_BUNDLE_BEGIN_RE.test(userscriptText)) {
-        // Fail loudly: this tool's whole job is refreshing the bundle region, so
-        // silently rewriting only the header and reporting success let a stale
-        // bundle reach packaging with a green run.
-        console.error('Userscript bundle markers not found — cannot refresh the bundle region.');
-        process.exit(1);
-    }
-
-    let coreLibraryText;
+    let written;
     try {
-        coreLibraryText = buildCoreLibrarySource(REPO_ROOT, targetVersion);
+        written = writeUserscriptOutputs(REPO_ROOT);
     } catch (error) {
         console.error(error.message);
         process.exit(1);
     }
-    const previousCore = fs.existsSync(USERSCRIPT_CORE_SOURCE)
-        ? fs.readFileSync(USERSCRIPT_CORE_SOURCE, 'utf8')
-        : null;
-    if (previousCore !== coreLibraryText) {
-        fs.writeFileSync(USERSCRIPT_CORE_SOURCE, coreLibraryText, 'utf8');
-        console.log(`Userscript core library synced to v${targetVersion} (${path.basename(USERSCRIPT_CORE_SOURCE)})`);
-    }
-
-    if (userscriptText === before) {
-        console.log(`Userscript already aligned to v${targetVersion}`);
-        process.exit(0);
-    }
-
-    fs.writeFileSync(USERSCRIPT_SOURCE, userscriptText, 'utf8');
-    console.log(`Userscript metadata synced to v${targetVersion} (${path.basename(USERSCRIPT_SOURCE)})`);
+    if (!written.length) console.log('Userscript already up to date');
 }
 
 if (require.main === module) {
@@ -784,19 +1023,25 @@ if (require.main === module) {
 }
 
 module.exports = {
-    V5_BUNDLE_MODULES,
-    buildBundleRegion,
-    buildCoreLibrarySource,
-    assertCssSurvives,
-    compactBundledCssTemplates,
-    compactStandaloneLineComments,
-    stripSafeLineComments,
-    stripCommentsByParser,
-    shrinkModuleBody,
-    bundledModuleHeader,
-    coreModuleHeader,
-    BUNDLE_BEGIN_RE,
-    EXTERNAL_BUNDLE_BEGIN_RE,
+    LIBRARIES,
+    MAX_RECORD_BYTES,
+    USERSCRIPT_GRANTS,
     USERSCRIPT_CORE_SOURCE,
+    assertCssSurvives,
+    buildCoreLibrarySource,
+    buildUserscriptOutputs,
+    buildUserscriptHeader,
+    compactBundledCssTemplates,
+    compactForUserscript,
+    compactStandaloneLineComments,
+    connectHosts,
     coreRequireUrl,
+    parseUserscriptBuild,
+    readBuildPlan,
+    reindentOutsideLiterals,
+    shrinkModuleBody,
+    stripCommentsByParser,
+    stripSafeLineComments,
+    tagUrl,
+    writeUserscriptOutputs,
 };

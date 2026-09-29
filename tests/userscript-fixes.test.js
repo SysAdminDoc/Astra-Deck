@@ -8,18 +8,24 @@
 // single-flight probe guard is driven by concurrent callers, and the Innertube
 // failover is called and its rejection observed.
 //
-// Nine assertions stay textual, in two groups. "The artifact must not contain
+// YTKit.user.js no longer carries its own MediaDLManager or transcript
+// service. It is generated from extension/ and runs features/download-ui and
+// core/transcript-service.js, so the behavioural tests drive those, after
+// proving the userscript ships them.
+//
+// A few assertions stay textual, in two groups. "The artifact must not contain
 // X" (a deleted installer path, an `irm | iex` command, a poison API-key
-// literal) has no executable form, because absence is the whole claim. And
-// `@match`, `@updateURL`, `@downloadURL`, `@namespace` and `@description` are
-// metadata the userscript MANAGER parses out of the header comment, so the
-// header itself is the contract. Nothing else here is a scan: an earlier pass
-// pinned the install-prompt copy by scanning the file, which matched a comment
-// above the code and two tooltips 15k lines away.
+// literal) has no executable form, because absence is the whole claim, and it
+// is checked across every generated userscript file. And `@match`,
+// `@updateURL`, `@downloadURL`, `@namespace` and `@description` are metadata
+// the userscript MANAGER parses out of the header comment, so the header itself
+// is the contract. Nothing else here is a scan: an earlier pass pinned the
+// install-prompt copy by scanning the file, which matched a comment above the
+// code and two tooltips 15k lines away.
 //
 // Findings covered:
 //  1. MediaDL install flow pointed at the deleted Install-YTYT.ps1 (HTTP 404).
-//  2. @description claimed SponsorBlock, which the userscript does not ship.
+//  2. @description claimed SponsorBlock, which the userscript did not ship.
 //  3. _method2_InnertubeAPI sent a placeholder API key, guaranteeing a 400.
 //  4. MediaDLManager.check() multiplied the 6-port probe storm.
 //  5. theater-split.user.js fought YTKit's own split over one scroll gesture.
@@ -31,12 +37,16 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
 
-const { loadUserscriptDeclarations, fakeTreeDocument, collectFakeTree } = require('./helpers/monolith');
+const { fakeTreeDocument, collectFakeTree } = require('./helpers/monolith');
+const { sources, userscriptBundles } = require('./helpers/source');
+const { createDownloadUIFeature } = require('../extension/features/download-ui');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const readRepoFile = (name) => fs.readFileSync(path.join(REPO_ROOT, name), 'utf8');
 
-const userscriptSource = readRepoFile('YTKit.user.js');
+// Everything a manager installs: the host and its three @require libraries.
+const userscriptSource = sources.userscript;
+const userscriptHeader = readRepoFile('YTKit.user.js').split('// ==/UserScript==')[0];
 const theaterSplitSource = readRepoFile('theater-split.user.js');
 const reactionSpammerSource = readRepoFile('YT_Reaction_Spammer.user.js');
 
@@ -128,108 +138,104 @@ function loadCoreModule(relativePath, extras = {}) {
 
 // ── 1. MediaDL install flow: release EXE, not the deleted .ps1 ──
 
-test('YTKit.user.js carries no reference to the deleted Install-YTYT installer script', () => {
-    // Absence, so a scan is the only possible form of this assertion.
+test('the generated userscript carries no reference to the deleted Install-YTYT installer script', () => {
+    // Absence, so a scan is the only possible form of this assertion, and it
+    // covers the libraries too: that is where the install flow lives now.
     assert.doesNotMatch(userscriptSource, /Install-YTYT/,
-        'YTKit.user.js must not reference Install-YTYT.ps1/.bat — the installer script was deleted (raw URL is HTTP 404)');
+        'the userscript must not reference Install-YTYT.ps1/.bat — the installer script was deleted (raw URL is HTTP 404)');
     assert.doesNotMatch(userscriptSource, /\birm\b[^\n]*\|\s*iex/,
-        'YTKit.user.js must not offer an `irm <url> | iex` command — piping a remote script to iex is a broken (404) and unsafe install path');
-    assert.doesNotMatch(userscriptSource, /INSTALLER_COMMAND/,
-        'YTKit.user.js must not define INSTALLER_COMMAND — the install flow is download-the-release-exe, not copy-paste-to-PowerShell');
+        'the userscript must not offer an `irm <url> | iex` command — piping a remote script to iex is a broken (404) and unsafe install path');
+    // The hand-written userscript also refused to define INSTALLER_COMMAND.
+    // It runs the extension's install assist now, whose primary action
+    // downloads the release exe and whose "Copy fallback command" copies a
+    // command that downloads that same exe; neither pipes a remote script.
 });
 
-test('the MediaDL install flow resolves a floating AstraDownloader release asset', () => {
-    const { MediaDLManager } = loadUserscriptDeclarations(
-        ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
-        { fetch: () => new Promise(() => {}), AbortController, setTimeout: () => 0, clearTimeout() {} }
-    );
+// The floating release URL and its file name are pinned against the same
+// MediaDLManager in tests/features/next-monolith-peel.test.js ("downloadUI
+// Settings installer downloads the real GitHub release asset").
 
-    // A pinned tag went stale once already; /latest/ cannot.
-    const url = new URL(MediaDLManager.INSTALLER_URL);
-    assert.equal(url.origin, 'https://github.com');
-    assert.equal(url.pathname, '/SysAdminDoc/AstraDownloader/releases/latest/download/AstraDownloader.exe');
-    assert.equal(MediaDLManager.INSTALLER_FILE_NAME, 'AstraDownloader.exe');
-    assert.ok(url.pathname.endsWith(`/${MediaDLManager.INSTALLER_FILE_NAME}`),
-        'the download URL must end in the file name the prompt names');
-
-});
-
-test('the install prompt renders the download action and says what to do with it', () => {
+test('the install prompt renders the download action and says what to do with it', async () => {
     // Scanning the source for these strings matched a comment above the code
     // and unrelated tooltips 15k lines away, so the prompt is built for real
     // and read out of the tree it produced.
+    assert.ok(userscriptBundles('features/download-ui/index.js'),
+        'the userscript must ship the download module that builds this prompt');
     const documentRef = fakeTreeDocument(() => null);
-    documentRef.getElementById = () => null;
     const toasts = [];
     const downloads = [];
+    const opened = [];
+    const { MediaDLManager } = createDownloadUIFeature({
+        showToast: (message) => toasts.push(String(message)),
+        triggerDownload: async (url, name) => { downloads.push([url, name]); },
+        openExternalUrl: async (url) => { opened.push(url); },
+    });
 
-    const { MediaDLManager } = loadUserscriptDeclarations(
-        ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
-        {
-            document: documentRef,
-            fetch: () => new Promise(() => {}),
-            AbortController,
-            setTimeout: () => 0,
-            clearTimeout() {},
-            GM_xmlhttpRequest() {},
-            showToast: (message) => toasts.push(message),
-            triggerDownload: async (url, name) => { downloads.push([url, name]); },
-            openExternalWindow: (url) => downloads.push(['window', url]),
-        }
-    );
+    const previousDocument = globalThis.document;
+    const previousNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    globalThis.document = documentRef;
+    // A manager that grants no clipboard: the setup download still has to work.
+    Object.defineProperty(globalThis, 'navigator', { value: {}, configurable: true, writable: true });
+    try {
+        MediaDLManager.showInstallPrompt('install');
+        const prompt = documentRef.body.children.find((node) => node.id === 'ytkit-mediadl-install-prompt');
+        assert.ok(prompt, 'the prompt must mount');
 
-    MediaDLManager.showInstallPrompt('install');
-    const prompt = documentRef.body.children.find((node) => node.id === 'ytkit-mediadl-install-prompt');
-    assert.ok(prompt, 'the prompt must mount');
+        // The prompt wires its buttons with .onclick, not addEventListener.
+        const downloadButton = collectFakeTree(prompt, 'button').find((node) =>
+            typeof node.onclick === 'function'
+            && String(node.textContent || '').includes('Download setup'));
+        assert.ok(downloadButton, 'the prompt must offer a "Download setup" action');
 
-    // The prompt wires its buttons with .onclick, not addEventListener.
-    const downloadButton = collectFakeTree(prompt, '*').find((node) =>
-        typeof node.onclick === 'function'
-        && String(node.textContent || '').includes('Download Astra Downloader (.exe)'));
-    assert.ok(downloadButton, 'the prompt must offer a "Download Astra Downloader (.exe)" action');
-
-    downloadButton.onclick({ preventDefault() {} });
-    assert.deepEqual(downloads, [[MediaDLManager.INSTALLER_URL, MediaDLManager.INSTALLER_FILE_NAME]],
-        'clicking it downloads the release asset the manager names');
-    assert.match(String(downloadButton.textContent || ''), /open the file to install/,
-        'the button then tells the user what to do with the file');
-    assert.equal(toasts.length, 1);
-    assert.match(toasts[0], /open the file to install/, 'and so does the toast beside it');
+        await downloadButton.onclick({ preventDefault() {} });
+        assert.deepEqual(downloads, [[MediaDLManager.INSTALLER_URL, MediaDLManager.INSTALLER_FILE_NAME]],
+            'clicking it downloads the release asset the manager names');
+        assert.deepEqual(opened, [], 'a download that worked needs no URL fallback');
+        const note = collectFakeTree(prompt, '.ytkit-install-prompt__note')[0];
+        assert.match(String(note?.textContent || ''), /Open the file/,
+            'the prompt then tells the user what to do with the file');
+        assert.equal(toasts.length, 1);
+        assert.match(toasts[0], /double-click the setup file to install/, 'and so does the toast beside it');
+    } finally {
+        if (previousDocument === undefined) delete globalThis.document;
+        else globalThis.document = previousDocument;
+        if (previousNavigator) Object.defineProperty(globalThis, 'navigator', previousNavigator);
+        else delete globalThis.navigator;
+    }
 });
 
 // ── 2. @description must not claim features the userscript does not ship ──
 
-test('YTKit.user.js @description does not claim SponsorBlock', () => {
-    // Header metadata: the userscript manager reads this line verbatim.
-    const descMatch = userscriptSource.match(/^\/\/ @description\s+(.+)$/m);
+test('YTKit.user.js @description claims no feature the userscript does not ship', () => {
+    // Header metadata: the userscript manager reads this line verbatim. The
+    // hand-written build claimed SponsorBlock without shipping it. The build
+    // is generated now and does ship it, so the claim is checked against what
+    // the generated userscript actually carries rather than banned outright.
+    const descMatch = userscriptHeader.match(/^\/\/ @description\s+(.+)$/m);
     assert.ok(descMatch, 'YTKit.user.js must declare @description');
-    assert.doesNotMatch(descMatch[1], /sponsorblock/i,
-        'the userscript build has no SponsorBlock implementation (only DeArrow uses sponsor.ajay.app) — the description must not claim it');
+    const claims = [
+        [/sponsorblock/i, 'features/sponsorblock/index.js'],
+        [/dearrow/i, 'features/dearrow/index.js'],
+        [/dislike/i, 'features/return-dislike/index.js'],
+    ];
+    for (const [claim, module] of claims) {
+        if (!claim.test(descMatch[1])) continue;
+        assert.ok(userscriptBundles(module),
+            `the description names ${claim.source}, so the userscript must ship ${module}`);
+    }
 });
 
 // ── 3. Innertube transcript method: no placeholder API key ──
 
-test('the userscript Innertube method fails over instead of sending a placeholder key', async () => {
+test('the userscript runs the extension transcript service and ships no placeholder key', () => {
+    // Absence is the claim for the poison literal: it guaranteed a 400 from
+    // youtubei/v1/player.
     assert.doesNotMatch(userscriptSource, /REDACTED_GOOGLE_API_KEY/,
         'the poison literal guaranteed a 400 from youtubei/v1/player');
-
-    // The userscript carries its own copy, so testing the extension's module
-    // says nothing about the artifact this file is named for.
-    let requests = 0;
-    const { LegacyTranscriptService } = loadUserscriptDeclarations(['LegacyTranscriptService'], {
-        fetch: async () => { requests += 1; return { ok: true, json: async () => ({}) }; },
-        document: { querySelector: () => null, querySelectorAll: () => [] },
-        window: {},
-        DebugManager: { log() {} },
-    });
-
-    LegacyTranscriptService._getInnertubeApiKey = () => null;
-    await assert.rejects(
-        () => LegacyTranscriptService._method2_InnertubeAPI('dQw4w9WgXcQ'),
-        /Innertube API key unavailable/,
-        'a missing key must fail over so _getCaptionTracks tries the next method'
-    );
-    assert.equal(requests, 0, 'and must not spend a request finding out');
+    // The hand-written userscript carried its own LegacyTranscriptService. It
+    // runs core/transcript-service.js now, whose failover the next test calls.
+    assert.ok(userscriptBundles('core/transcript-service.js'),
+        'the userscript must ship the transcript service the next test drives');
 });
 
 test('the extension Innertube method refuses a missing or malformed key', async () => {
@@ -263,10 +269,9 @@ test('the extension Innertube method refuses a missing or malformed key', async 
 // ── 4. MediaDLManager.check() single-flight guard ──
 
 test('MediaDLManager.check() shares one in-flight probe sweep across concurrent callers', async () => {
-    const { MediaDLManager } = loadUserscriptDeclarations(
-        ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
-        { fetch: () => new Promise(() => {}), AbortController, setTimeout: () => 0, clearTimeout() {}, DebugManager: { log() {} } }
-    );
+    // The MediaDLManager the userscript runs is the download module's.
+    assert.ok(userscriptBundles('features/download-ui/index.js'));
+    const { MediaDLManager } = createDownloadUIFeature();
 
     let sweeps = 0;
     MediaDLManager._checkImpl = async () => {

@@ -442,9 +442,15 @@ function main() {
     fs.writeFileSync(LOADER_OUTPUT_PATH, expectedLoader);
 }
 
-try {
-    main();
-} catch (error) {
-    console.error(error.message);
-    process.exitCode = 1;
+// sync-userscript.js reads FEATURE_SETTINGS so the userscript gates feature
+// modules on exactly the keys the extension bootstrap does.
+if (require.main === module) {
+    try {
+        main();
+    } catch (error) {
+        console.error(error.message);
+        process.exitCode = 1;
+    }
 }
+
+module.exports = { FEATURE_SETTINGS, readRuntimeModules };

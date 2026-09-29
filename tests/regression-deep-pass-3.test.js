@@ -250,11 +250,24 @@ test('the userscript CPU tamer only restores timers it actually replaced', () =>
             if (String(tag).toLowerCase() === 'canvas') node.getContext = () => (webgl ? {} : null);
             return node;
         };
+        // The re-entry flag lives on the page window through the real
+        // runtime-flags module, so each fixture gets its own.
+        const flagsSandbox = { window: host };
+        flagsSandbox.globalThis = flagsSandbox;
+        require('vm').runInNewContext(
+            fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'runtime-flags.js'), 'utf8'),
+            flagsSandbox
+        );
         const feature = loadUserscriptFeature('enableCPU_Tamer', {
             window: host,
             document: documentRef,
             appState: { settings: {} },
             Promise,
+            RuntimeFlags: flagsSandbox.YTKitCore.runtimeFlags,
+            // The userscript host hands its content scripts a chrome.runtime
+            // with an id, so this is the lane userscript users run: the
+            // MAIN-world bridge owns the resource unlock, not an inline twin.
+            hasExtensionContext: () => true,
         });
         return { feature, host };
     };

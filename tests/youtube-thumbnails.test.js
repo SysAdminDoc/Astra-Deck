@@ -16,6 +16,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { readUserscriptBuild } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 
@@ -437,45 +438,24 @@ test('a hung lookup times out without waiting for teardown', async () => {
     feature.destroy();
 });
 
-// WHEN the extension fixes a leak in a feature the userscript also ships, the
-// userscript's own copy SHALL get the same fix. YTKit.user.js is
-// hand-maintained rather than generated from the monolith, so nothing carries
-// a change across on its own — its copy of this feature still had both the
-// missing abort AND the older post-teardown TypeError the extension had
-// already fixed.
-test('the hand-maintained userscript aborts its oEmbed lookups too', () => {
-    const source = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
-    const start = source.indexOf("id: 'antiTranslateThumbnails'");
-    assert.ok(start > -1, 'the userscript must still ship this feature');
-    const end = source.indexOf("id: 'thumbnailQualityUpgrade'", start);
-    assert.ok(end > start, 'the feature must still be followed by its neighbour');
-    const body = source.slice(start, end);
-
-    assert.match(body, /signal: controller\.signal/,
-        'the lookup must carry an abort signal');
-    assert.match(body, /setTimeout\(\(\) => controller\.abort\(\), this\._OEMBED_TIMEOUT_MS\)/,
-        'a hung lookup must abort on its own');
-    assert.match(body, /this\._oEmbedControllers\?\.forEach\(\(controller\) => controller\.abort\(\)\)/,
-        'destroy must abort what is still outstanding');
-    assert.match(body, /if \(error\?\.name !== 'AbortError'\)/,
-        'an abort must not be cached as a miss');
-    // The older teardown fix never reached this copy either: destroy() nulls
-    // the cache while lookups are still awaiting, so every touch after an
-    // await has to tolerate it being gone.
-    //
-    // Asserted against BOTH bodies. Checking only the userscript pinned that
-    // build's shape and called it parity, and the two drifted on exactly this
-    // line: the extension kept a bare .set() on the 404 path, which throws a
-    // TypeError into an uncaught promise when a 404 resolves across a destroy.
+// WHEN destroy() nulls the cache while lookups are still awaiting, every touch
+// after an await SHALL tolerate it being gone. The hand-maintained userscript
+// once carried its own copy of this feature that missed both the abort and this
+// teardown fix; it now runs this same ytkit.js, so the behaviour tests above
+// cover it and this pins the remaining teardown shape. The extension once kept
+// a bare .set() on the 404 path, which throws a TypeError into an uncaught
+// promise when a 404 resolves across a destroy.
+test('lookups tolerate teardown in every vehicle', () => {
     const extension = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
     const extStart = extension.indexOf("id: 'antiTranslateThumbnails'");
     const extEnd = extension.indexOf("id: 'antiTranslateTranscript'", extStart);
+    assert.ok(extStart > -1 && extEnd > extStart, 'the feature must still be followed by its neighbour');
     const extensionBody = extension.slice(extStart, extEnd);
 
-    for (const [label, text] of [['userscript', body], ['extension', extensionBody]]) {
-        assert.ok(!/this\._oEmbedCache\.set\(/.test(text),
-            `${label}: writes after an await must tolerate teardown having nulled the cache`);
-        assert.ok(!/this\._inFlight\.delete\(/.test(text),
-            `${label}: the in-flight release runs in a finally that can outlive destroy`);
-    }
+    assert.ok(!/this\._oEmbedCache\.set\(/.test(extensionBody),
+        'writes after an await must tolerate teardown having nulled the cache');
+    assert.ok(!/this\._inFlight\.delete\(/.test(extensionBody),
+        'the in-flight release runs in a finally that can outlive destroy');
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must run this same feature rather than a copy of its own');
 });

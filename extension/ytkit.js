@@ -5695,8 +5695,8 @@ const STORAGE_KEYS = Object.freeze({
     let _persistCrashCounts = () => {};
 
 
-    // Companion UI is extension-only and preloaded by the companion-capable
-    // normal-page manifest group. Download-free Chromium store artifacts omit
+    // Companion UI is preloaded by the companion-capable normal-page manifest
+    // group, which the userscript also loads. Download-free Chromium store artifacts omit
     // that module; the no-op surface below keeps the rest of the runtime
     // healthy while policy-profile hides its settings and feature entries.
     const createDownloadUIFeature = globalThis.YTKitFeatures?.createDownloadUIFeature;
@@ -18242,9 +18242,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         unavailableDomains: ['transcriptIndex']
                     });
                 }
-                // The userscript intentionally omits the extension-only
-                // persisted-domain module, but its JSON remains consumable by
-                // the popup because it uses the same current backup envelope.
+                // Only reached when the persisted-domain module failed to
+                // load. The JSON stays consumable by the popup because it
+                // uses the same current backup envelope.
                 return {
                     astraDeckBackup: true,
                     astraDeckHighlightExport: true,
@@ -31872,7 +31872,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!controls || controls.querySelector('.ytkit-aisum-btn')) return;
                 const btn = document.createElement('button');
                 btn.className = 'ytp-button ytkit-player-btn ytkit-aisum-btn';
-                btn.title = t('aiSummaryButtonTitle', 'AI Summary (manage credentials in the Astra Deck toolbar popup)');
+                btn.title = t('aiSummaryButtonTitle', 'AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)');
                 btn.setAttribute('aria-label', t('aiSummaryTitle', 'AI Summary'));
                 TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z"/></svg>');
                 btn.onclick = (e) => { e.stopPropagation(); this._run(); };
@@ -46435,6 +46435,17 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             grid.appendChild(emptyState);
         }
 
+        // One repaint for every card, so a conflict switched off by another
+        // card reads exactly like a card that was clicked.
+        const cardsById = new Map();
+        const paintCard = ({ card, cardState, featureName }, on) => {
+            card.classList.toggle('on', on);
+            card.setAttribute('aria-checked', String(on));
+            card.setAttribute('aria-label', `${featureName}. ${on ? 'Enabled' : 'Disabled'}.`);
+            cardState.classList.toggle('on', on);
+            cardState.textContent = on ? 'On' : 'Off';
+        };
+
         availableFeatures.forEach(({ id: fid, label, feature: feat }) => {
             const isOn = !!appState.settings[fid];
             const featureName = label || getFeatureName(feat);
@@ -46476,6 +46487,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             textWrap.appendChild(cardLabel);
             if (desc) textWrap.appendChild(cardDesc);
             textWrap.appendChild(cardState);
+            cardsById.set(fid, { card, cardState, featureName });
 
             // Toggle indicator
             const toggle = document.createElement('div');
@@ -46499,6 +46511,12 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                     ...previousSettings,
                     [fid]: !previousSettings[fid]
                 };
+                // Turning a feature on switches off the other side of each
+                // conflict pair, the same as the settings panel toggle.
+                const conflictsOff = nextSettings[fid] && CONFLICT_MAP[fid]
+                    ? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => previousSettings[cid])
+                    : [];
+                for (const cid of conflictsOff) nextSettings[cid] = false;
                 const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
                 const reconcile = (settings, source) => {
                     if (useSharedReconciliation) {
@@ -46507,6 +46525,12 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                     }
                     appState.settings = settings;
                     try {
+                        for (const cid of conflictsOff) {
+                            const conflicting = getFeatureById(cid);
+                            if (!conflicting) continue;
+                            if (settings[cid]) initFeatureLifecycle(conflicting, source);
+                            else if (conflicting._initialized) destroyFeatureLifecycle(conflicting, 'conflict');
+                        }
                         if (settings[fid]) initFeatureLifecycle(feat, source);
                         else destroyFeatureLifecycle(feat, source);
                     } catch (err) {
@@ -46529,16 +46553,26 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                     // card still disabled, leaving the control dead until the
                     // panel is rebuilt.
                     const finalValue = appState.settings[fid] === true;
-                    card.classList.toggle('on', finalValue);
-                    card.setAttribute('aria-checked', String(finalValue));
-                    card.setAttribute('aria-label', `${featureName}. ${finalValue ? 'Enabled' : 'Disabled'}.`);
-                    cardState.classList.toggle('on', finalValue);
-                    cardState.textContent = finalValue ? 'On' : 'Off';
+                    paintCard({ card, cardState, featureName }, finalValue);
+                    for (const cid of conflictsOff) {
+                        const other = cardsById.get(cid);
+                        if (other) paintCard(other, appState.settings[cid] === true);
+                    }
                     const nextEnabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;
                     updatePageModalEnabledCount(nextEnabledCount);
                     // Update all matching dock pills if any remain
                     document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
                     card.disabled = false;
+                }
+                // After the save settles, outside the try: a toast that fails
+                // must not roll a saved change back.
+                const switchedOff = conflictsOff.filter((cid) => appState.settings[cid] === false);
+                if (appState.settings[fid] === true && switchedOff.length) {
+                    const names = switchedOff.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', ');
+                    const reason = CONFLICT_MAP[fid].reason || t('settingsConflictWithTpl', 'conflicts with {featureName}')
+                        .replace('{featureName}', () => featureName);
+                    showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
+                        .replace('{features}', () => names).replace('{reason}', () => reason), '#f59e0b', { duration: 5 });
                 }
             });
 

@@ -11,7 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { sources, config, extractFeatureBlock, readTheaterSplitSource } = require('../helpers/source');
+const { sources, config, extractFeatureBlock, readTheaterSplitSource, userscriptBundles } = require('../helpers/source');
 const { fakeTreeDocument } = require('../helpers/monolith');
 
 const MODULE_PATH = '../../extension/features/sticky-video/index.js';
@@ -901,8 +901,9 @@ test('the comments pane collapses only after being pushed past its top', () => {
 test('the Quick Links footer renders compact icon buttons, not half-width slabs', () => {
     const playerDock = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
-    const userscriptCore = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
+    // The userscript runs this same module, so its footer is this footer.
+    assert.ok(userscriptBundles('features/player-dock/index.js'),
+        'the userscript must ship the Player Dock module that owns the footer styles');
     const iconLibrary = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'core', 'icons.js'), 'utf8');
 
@@ -926,18 +927,17 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
     assert.doesNotMatch(footerBuild, /TrustedHTML\.setHTML\((?:editBtn|gear)/,
         'footer controls must not carry handwritten inline SVG markup');
 
-    // The userscript bundle ships these stylesheets whitespace-compacted, so
-    // every lookup below is written against `selector{...}` with optional
+    // Every lookup below is written against `selector{...}` with optional
     // spacing rather than the source formatting. Splitting on a literal
-    // "selector {" silently found nothing once compaction reached player-dock,
-    // and a loop over zero blocks asserts nothing at all.
+    // "selector {" once silently found nothing after a whitespace change, and a
+    // loop over zero blocks asserts nothing at all, hence the >= 1 checks.
     const declarationsFor = (source, selector) => {
         const literal = selector.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
         const pattern = new RegExp(`${literal}${String.raw`\s*\{([^}]*)\}`}`, 'g');
         return [...source.matchAll(pattern)].map(match => match[1]);
     };
 
-    for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
+    for (const [label, source] of [['player-dock', playerDock]]) {
         // No footer row may still be a stretched two-column grid.
         const rows = declarationsFor(source, '.ytkit-ql-bottom');
         assert.ok(rows.length >= 1, `${label}: stylesheet must define the footer row`);
@@ -950,7 +950,7 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
     }
 
     // And the buttons must opt out of the .ytkit-ql-item flex grow they inherit.
-    for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
+    for (const [label, source] of [['player-dock', playerDock]]) {
         const btnBlocks = declarationsFor(source, '.ytkit-ql-bottom-btn');
         assert.ok(btnBlocks.length >= 1, `${label}: stylesheet must define the button`);
         for (const decl of btnBlocks) {

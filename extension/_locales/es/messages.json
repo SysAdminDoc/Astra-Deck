@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "Reemplazar credencial"
   },
-  "aiCredentialReplaceHint": {
-    "message": "Se ha configurado una credencial. Introduce un valor nuevo para reemplazarla; el valor guardado nunca se muestra."
-  },
   "aiCredentialSaveBtn": {
     "message": "Guardar credencial"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "Estado no disponible"
   },
-  "aiCredentialStoreHint": {
-    "message": "Solo se guarda en tu gestor de userscripts, fuera de la configuración y las exportaciones de Astra Deck."
-  },
   "aiCredentialTitle": {
     "message": "Credencial del proveedor de IA"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+    "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "Se usará el proveedor con tu propia clave que configuraste."
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "En resumen"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "AI Summary (right-click to manage the provider credential)"
   },
   "altFrontendOpenAriaTpl": {
     "message": "Abrir fuera en {host}"

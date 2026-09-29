@@ -121,44 +121,56 @@ test('a missing git is a failure, not a silent pass', () => {
 
 // The v4.90.0 bump rewrote @version and left @require on the v4.89.0 tag, so
 // userscript installs ran the previous release's core while every version
-// string in the repo agreed.
-test('the main userscript @require loads the core of its own version', () => {
-    const { findUserscriptCoreRequireDrift } = require('../scripts/check-versions.js');
-    const { coreRequireUrl } = require('../sync-userscript.js');
+// string in the repo agreed. The userscript loads three libraries now (core,
+// features, app), and every one has to come from the tag of its own version,
+// in the order the host expects to find them registered.
+test('the main userscript @require loads the libraries of its own version', () => {
+    const { findUserscriptRequireDrift } = require('../scripts/check-versions.js');
+    const { LIBRARIES, tagUrl } = require('../sync-userscript.js');
+    const libraries = (version) => LIBRARIES.map(({ file }) => tagUrl(version, file));
     const header = (...requires) => [
         '// ==UserScript==',
         '// @version      4.90.0',
         ...requires.map((url) => `// @require      ${url}`),
         '// ==/UserScript==',
-        `    // @require      ${coreRequireUrl('1.0.0')} is only a body comment`
+        `    // @require      ${tagUrl('1.0.0', LIBRARIES[0].file)} is only a body comment`
     ].join('\n');
+    const current = libraries('4.90.0');
+    const stale = libraries('4.89.0');
 
-    assert.equal(findUserscriptCoreRequireDrift('4.90.0', header(coreRequireUrl('4.90.0'))), null);
-    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', header(coreRequireUrl('4.89.0'))), {
-        expected: coreRequireUrl('4.90.0'),
-        found: [coreRequireUrl('4.89.0')]
+    assert.equal(findUserscriptRequireDrift('4.90.0', header(...current)), null);
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header(...stale)), {
+        expected: current,
+        found: stale
     });
-    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', header()).found, []);
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header(current[0], stale[1], current[2])).found,
+        [current[0], stale[1], current[2]],
+        'one library left on the previous tag is drift, even when the core moved');
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header()).found, []);
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header(current[0])).found, [current[0]],
+        'the core alone is not the userscript: features and app would never load');
+    assert.notEqual(findUserscriptRequireDrift('4.90.0', header(current[2], current[1], current[0])), null,
+        'the libraries must be required in order');
     assert.deepEqual(
-        findUserscriptCoreRequireDrift('4.90.0', header(coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0'))).found,
-        [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
+        findUserscriptRequireDrift('4.90.0', header(...current, stale[0])).found,
+        [...current, stale[0]],
         'a second core @require would load two cores'
     );
-    const tabbed = header(coreRequireUrl('4.90.0')).replace('// ==/UserScript==',
-        `//\t@require\t${coreRequireUrl('4.89.0')}\n// ==/UserScript==`);
-    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', tabbed).found,
-        [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
+    const tabbed = header(...current).replace('// ==/UserScript==',
+        `//\t@require\t${stale[0]}\n// ==/UserScript==`);
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', tabbed).found,
+        [...current, stale[0]],
         'a tab after // still declares a @require');
-    const indented = header(coreRequireUrl('4.90.0')).replace('// ==/UserScript==',
-        `  \t// @require      ${coreRequireUrl('4.89.0')}\n// ==/UserScript==`);
-    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', indented).found,
-        [coreRequireUrl('4.90.0'), coreRequireUrl('4.89.0')],
+    const indented = header(...current).replace('// ==/UserScript==',
+        `  \t// @require      ${stale[0]}\n// ==/UserScript==`);
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', indented).found,
+        [...current, stale[0]],
         'managers accept anything before the //, so an indented @require loads a second core');
-    const aboveBlock = `// @require      ${coreRequireUrl('4.90.0')}\n` + header();
-    assert.deepEqual(findUserscriptCoreRequireDrift('4.90.0', aboveBlock).found, [],
-        'a @require above the metadata block is not metadata, so no core loads');
+    const aboveBlock = current.map((url) => `// @require      ${url}\n`).join('') + header();
+    assert.deepEqual(findUserscriptRequireDrift('4.90.0', aboveBlock).found, [],
+        'a @require above the metadata block is not metadata, so nothing loads');
 
     const committed = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
-    assert.equal(findUserscriptCoreRequireDrift(pkg.version, committed), null,
-        'YTKit.user.js must @require the core tagged with its own version');
+    assert.equal(findUserscriptRequireDrift(pkg.version, committed), null,
+        'YTKit.user.js must @require the libraries tagged with its own version');
 });

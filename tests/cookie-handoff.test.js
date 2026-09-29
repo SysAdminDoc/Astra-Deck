@@ -3,8 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const cookieHandoff = require('../extension/core/cookie-handoff');
-const fs = require('node:fs');
-const path = require('node:path');
+const { sources, userscriptBundles } = require('./helpers/source');
 
 function cookie(name, value, overrides = {}) {
     return {
@@ -75,49 +74,40 @@ test('cookie handoff rejects unknown, malformed, insecure, and oversized credent
     assert.equal(JSON.stringify(result).includes(unknown), false);
 });
 
-test('the userscript only hands cookies to a companion that proved its identity', () => {
-    // The userscript posted ALL .youtube.com cookies — including the httpOnly
-    // SID/SAPISID sign-in cookies — to whichever local server answered /health
-    // in a shape it accepted. The legacy {token_required, port} shape proves
-    // nothing about who is listening, so any local process on a catalogued
-    // port could obtain a full Google session, defeating Chrome's app-bound
-    // cookie encryption.
-    const src = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
-
-    const start = src.indexOf('async function _mediaDLSendDownload');
-    assert.ok(start > -1, '_mediaDLSendDownload must exist');
-    const fn = src.slice(start, src.indexOf('\n    // Aggressive button injection', start));
-    assert.ok(fn.length > 0, 'the download sender must be extractable');
-
-    assert.match(fn, /_lastHealth\?\.service === MediaDLManager\._SERVICE_ID/,
-        'cookies require an exact service id, not merely a reachable port');
-    assert.match(fn, /if \(!identityProven \|\| !handoff\)/,
-        'an unproven companion must skip the handoff entirely');
-    assert.ok(
-        fn.indexOf('identityProven') < fn.indexOf('GM_cookie.list'),
-        'identity must be proven before any cookie is read'
-    );
-    assert.match(fn, /sanitizeCookieHandoff\(cookies\)/,
-        'cookies must pass through the reviewed allowlist contract');
-    assert.doesNotMatch(fn, /domain: c\.domain, name: c\.name, value: c\.value/,
-        'the raw jar must never be mapped into the payload');
-
-    // The legacy health shape still authorizes ordinary downloads.
-    assert.match(src, /return data\.token_required === true && Number\.isInteger\(data\.port\);/,
-        'the backward-compatible health shape must still allow plain downloads');
+test('the userscript runs the extension handoff, which proves the companion before any cookie is read', () => {
+    // The hand-written userscript once posted ALL .youtube.com cookies —
+    // including the httpOnly SID/SAPISID sign-in cookies — to whichever local
+    // server answered /health in a shape it accepted, and later gated them on
+    // the service id that /health reports. Neither proves who is listening, so
+    // any local process on a catalogued port could obtain a Google session.
+    //
+    // That sender is gone. The userscript runs features/download-ui's
+    // _mediaDLSendDownload, which reads cookies only after a fresh native-host
+    // proof and an endpoint proof, and hands them over only through this
+    // contract. Those gates are driven in tests/features/next-monolith-peel.test.js
+    // ("downloadUI never requests cookies for a legacy-health token" and
+    // "downloadUI uses a fresh native capability ..."), and the contract itself
+    // above. A userscript has no native messaging channel, so in practice its
+    // downloads go out without cookies rather than to an unproven listener.
+    for (const file of ['features/download-ui/index.js', 'core/cookie-handoff.js', 'background.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must run the extension's ${file}`);
+    }
 });
 
 test('the userscript ships no third-party download destination', () => {
-    // y2mate / savefrom / ssyoutube received the canonical watch URL, existed
-    // nowhere under extension/, and skipped the _buildConfiguredWebDownloaderUrl
-    // boundary the Cobalt branch goes through.
-    const src = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    // y2mate / savefrom / ssyoutube received the canonical watch URL and
+    // existed nowhere under extension/. Absence is the claim, so every
+    // generated file is scanned: the host and the libraries that hold the code.
     for (const host of ['y2mate.com', 'savefrom.net', 'ssyoutube.com']) {
-        assert.equal(src.includes(host), false,
+        assert.equal(sources.userscript.includes(host), false,
             `${host} must not appear as a download destination`);
     }
-    assert.doesNotMatch(src, /id: 'downloadProvider'/,
-        'the provider selector must be gone with its third-party choices');
-    assert.match(src, /_getDownloadUrl\(videoUrl\) \{\s*\n\s*const configuredUrl = _buildConfiguredWebDownloaderUrl/,
-        'the only web destination must go through the configured-URL boundary');
+    // The provider selector went with its third-party choices, and the schema
+    // keeps its key only on the retired list so an old value is dropped.
+    const { SETTINGS_SCHEMA, isRetiredShippedId } = require('../extension/core/settings-schema');
+    assert.equal(SETTINGS_SCHEMA.some((entry) => entry.key === 'downloadProvider'), false,
+        'downloadProvider must not come back as a live setting');
+    assert.equal(isRetiredShippedId('downloadProvider'), true);
+    assert.doesNotMatch(sources.ytkit, /id: 'downloadProvider'/,
+        'and no settings row may offer it');
 });

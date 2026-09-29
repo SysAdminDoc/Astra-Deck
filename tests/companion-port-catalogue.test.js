@@ -13,6 +13,7 @@ const {
     buildExtensionPagesCsp,
     getManifestProfileHostPermissions,
 } = require('../build-extension');
+const { readUserscriptBuild, userscriptBundles } = require('./helpers/source');
 
 function read(relativePath) {
     return fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
@@ -57,9 +58,25 @@ test('base and github-full manifests carry every canonical companion permission'
     }
 });
 
-test('extension-side probes and userscript manager consume the catalogue', () => {
+test('extension-side probes consume the catalogue, and the userscript runs those same probes', () => {
     assert.match(read('extension/features/download-ui/index.js'), /_PORT_CANDIDATES: COMPANION_PORTS/);
     assert.match(read('extension/core/capability-probe.js'), /Array\.isArray\(companionPorts\?\.ports\)/);
     assert.match(read('extension/background.js'), /\.\.\.COMPANION_ORIGINS/);
-    assert.match(read('YTKit.user.js'), /USERSCRIPT_COMPANION_PORT_CATALOGUE\?\.ports/);
+
+    // The userscript used to carry its own companion manager, which had to be
+    // pinned to the catalogue separately. It is generated from extension/ now,
+    // so it holds no port list at all: it has to ship the files above, and its
+    // host has to treat every companion origin as granted and reachable.
+    for (const file of ['core/companion-ports.js', 'core/data-flow.js', 'core/capability-probe.js',
+        'features/download-ui/index.js', 'background.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must ship ${file}`);
+    }
+    const build = readUserscriptBuild();
+    for (const permission of COMPANION_PORT_CATALOGUE.hostPermissions) {
+        assert.ok(build.hostPermissions.includes(permission),
+            `the userscript host must report ${permission} as granted`);
+    }
+    const connect = [...read('YTKit.user.js').matchAll(/^\/\/ @connect\s+(\S+)$/gm)].map((match) => match[1]);
+    assert.ok(connect.includes(COMPANION_PORT_CATALOGUE.host),
+        `the userscript @connect must grant ${COMPANION_PORT_CATALOGUE.host}, or GM_xmlhttpRequest cannot reach the companion`);
 });

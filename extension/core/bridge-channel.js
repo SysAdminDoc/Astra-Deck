@@ -142,6 +142,12 @@
             || (opts.documentRef || root.document || {}).dispatchEvent;
         var eventTarget = opts.eventTarget || opts.documentRef || root.document;
         var CustomEventRef = opts.CustomEvent || root.CustomEvent;
+        // Firefox keeps an object made in a content script out of the page's
+        // reach, so the MAIN listener reading `detail.seq` threw "Permission
+        // denied" and every navigate event was dropped. cloneInto hands the
+        // page a copy it owns. Chromium has no cloneInto and needs none.
+        var cloneDetail = opts.cloneInto || root.cloneInto;
+        var pageWindow = opts.pageWindow || (opts.documentRef || root.document || {}).defaultView;
 
         // The authoritative map. Sealing reads THIS, never the DOM: sealing
         // over whatever the DOM currently holds would bless a page script's
@@ -226,10 +232,12 @@
                 // carries a sealed sequence number and never the token.
                 navigateSeq += 1;
                 var why = String(reason || 'navigate');
+                var detail = { seq: navigateSeq, reason: why, seal: seal(token, navigateText(navigateSeq, why)) };
+                if (typeof cloneDetail === 'function' && pageWindow) detail = cloneDetail(detail, pageWindow);
                 send.call(target, new CustomEventRef(NAVIGATE_EVENT, {
                     bubbles: true,
                     composed: true,
-                    detail: { seq: navigateSeq, reason: why, seal: seal(token, navigateText(navigateSeq, why)) }
+                    detail: detail
                 }));
                 return true;
             }

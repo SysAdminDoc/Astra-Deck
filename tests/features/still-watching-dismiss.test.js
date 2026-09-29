@@ -14,11 +14,16 @@
 // was paused. Unsubscribe, delete playlist and clear watch history all render
 // that same element, so on any page reached from a watch page they were
 // auto-confirmed.
+//
+// The userscript used to carry its own, further-drifted copy of this feature
+// (no debounce, no compliance guard, a bare popup-button selector) with its own
+// tests. It now runs this same ytkit.js, so the tests below cover both.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { loadFeature, loadUserscriptFeature, fakeNode, fakeTreeDocument } = require('../helpers/monolith');
+const { loadFeature, fakeNode, fakeTreeDocument } = require('../helpers/monolith');
+const { readUserscriptBuild } = require('../helpers/source');
 
 const PLAYER_CONTROL_SELECTOR = '.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]';
 const CONFIRM_SELECTOR = 'ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button';
@@ -164,74 +169,6 @@ test('an off-screen player control is never the thing that gets clicked', () => 
     assert.equal(confirmButton.clicked, 1, 'the dialog control answers instead');
 });
 
-// The userscript carries its own copy of this feature and had drifted further:
-// no debounce, no compliance guard, and a selector list that included the bare
-// `.ytd-popup-container tp-yt-paper-button#button`, so it clicked whatever
-// button a freshly opened popup happened to contain.
-function userscriptScenario({ dialogText = null, hasCancelButton = false, video = null, playerControl = null } = {}) {
-    const confirmButton = onScreen(fakeNode({ tag: 'button', attributes: { id: 'confirm-button' } }));
-    const cancelButton = onScreen(fakeNode({ tag: 'button', attributes: { id: 'cancel-button' } }));
-    const dialog = dialogText === null
-        ? null
-        : fakeNode({ tag: 'yt-confirm-dialog-renderer', text: dialogText });
-    if (dialog) {
-        dialog.querySelector = (selector) => (hasCancelButton && selector.includes('cancel') ? cancelButton : null);
-    }
-
-    const documentRef = fakeTreeDocument((selector) => {
-        if (selector === 'ytmusic-you-there-renderer') return null;
-        if (selector === DIALOG_SELECTOR) return dialog;
-        if (selector === PLAYER_CONTROL_SELECTOR) return playerControl;
-        if (selector === CONFIRM_SELECTOR) return confirmButton;
-        if (selector === 'video.html5-main-video') return video;
-        return null;
-    });
-
-    const feature = loadUserscriptFeature('autoDismissStillWatching', {
-        document: documentRef,
-        YTKitCore: {}
-    });
-    return { feature, confirmButton };
-}
-
-test('userscript: no prompt on the page means no click at all', () => {
-    const leftoverPlay = onScreen(fakeNode({
-        tag: 'button',
-        attributes: { class: 'ytp-play-button', 'data-title-no-tooltip': 'Play' }
-    }));
-    const video = offScreen(fakeNode({ tag: 'video' }));
-    video.paused = true;
-    const { feature, confirmButton } = userscriptScenario({ playerControl: leftoverPlay, video });
-    feature._dismiss();
-    assert.equal(leftoverPlay.clicked, 0);
-    assert.equal(confirmButton.clicked, 0);
-});
-
-test('userscript: a cancellable confirm dialog is not auto-answered', () => {
-    const video = onScreen(fakeNode({ tag: 'video' }));
-    video.paused = true;
-    video.ended = false;
-    const { feature, confirmButton } = userscriptScenario({
-        dialogText: 'Unsubscribe from this channel?',
-        hasCancelButton: true,
-        video
-    });
-    feature._dismiss();
-    assert.equal(confirmButton.clicked, 0);
-});
-
-test('userscript: the real prompt is still dismissed', () => {
-    const video = onScreen(fakeNode({ tag: 'video' }));
-    video.paused = true;
-    video.ended = false;
-    const { feature, confirmButton } = userscriptScenario({
-        dialogText: 'Video paused. Continue watching?',
-        video
-    });
-    feature._dismiss();
-    assert.equal(confirmButton.clicked, 1);
-});
-
 test('a visible player control is preferred when the prompt is up', () => {
     const video = onScreen(fakeNode({ tag: 'video' }));
     video.paused = true;
@@ -248,4 +185,8 @@ test('a visible player control is preferred when the prompt is up', () => {
     feature._dismiss();
     assert.equal(play.clicked, 1);
     assert.equal(confirmButton.clicked, 0);
+});
+
+test('the userscript runs this same feature rather than a copy of its own', () => {
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js');
 });

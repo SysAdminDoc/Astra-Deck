@@ -32,9 +32,6 @@
   "aiCredentialReplaceBtn": {
     "message": "Заменить учётные данные"
   },
-  "aiCredentialReplaceHint": {
-    "message": "Учетные данные настроены. Введите новое значение для замены; сохраненное значение никогда не показывается."
-  },
   "aiCredentialSaveBtn": {
     "message": "Сохранить учётные данные"
   },
@@ -59,17 +56,11 @@
   "aiCredentialStatusUnavailable": {
     "message": "Статус недоступен"
   },
-  "aiCredentialStoreHint": {
-    "message": "Хранится только в менеджере userscript, отдельно от настроек и экспортов Astra Deck."
-  },
   "aiCredentialTitle": {
     "message": "Учётные данные провайдера ИИ"
   },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
   "aiSummaryButtonTitle": {
-    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+    "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "Вместо этого используется настроенный вами провайдер с собственным ключом."
@@ -142,9 +133,6 @@
   },
   "aiSummaryTldr": {
     "message": "Кратко"
-  },
-  "aiSummaryUserscriptButtonTitle": {
-    "message": "AI Summary (right-click to manage the provider credential)"
   },
   "altFrontendOpenAriaTpl": {
     "message": "Открыть во внешнем сервисе на {host}"

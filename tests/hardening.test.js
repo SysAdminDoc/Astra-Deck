@@ -10,7 +10,14 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
-const { extractFeatureBlock, runtimeModules } = require('./helpers/source');
+const {
+    extractFeatureBlock,
+    runtimeModules,
+    readUserscriptBuild,
+    userscriptBundles,
+    userscriptModulePaths,
+    USERSCRIPT_FILES,
+} = require('./helpers/source');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'ytkit.js'),
@@ -705,13 +712,12 @@ test('extension bundle no longer ships a standalone options page', () => {
 });
 
 test('runtime settings guidance does not point users at the retired options page', () => {
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
+    // YTKit.user.js used to carry its own copy of this guidance. It runs
+    // ytkit.js itself now, and the generated file holds only the host and a
+    // locale table, where a match would be a coincidence rather than proof.
+    assert.ok(userscriptBundles('ytkit.js'), 'the userscript must ship ytkit.js and so its guidance');
     for (const [name, source] of [
-        ['extension/ytkit.js', ytkitSource],
-        ['YTKit.user.js', userscriptSource]
+        ['extension/ytkit.js', ytkitSource]
     ]) {
         assert.doesNotMatch(
             source,
@@ -1812,6 +1818,11 @@ test('storageQuotaLRU sweeps real note/bookmark/watch stores, not the timestampB
 // - extension/background.js (EXT_COOKIE_LIST handler, ~line 620)
 // - YTKit.user.js (GM_cookie fallback, ~line 1851)
 //
+// The third site is gone: the userscript runs background.js itself now, and
+// its host only hands GM_cookie's raw list to that worker, which filters it
+// through core/cookie-handoff.js like the extension does. The three
+// definitions left are download-ui, background.js and the handoff contract.
+//
 // The contract was implicit — null/undefined/negative/NaN/strings all
 // happened to coerce to 0 because of JavaScript's truthiness rules. A
 // future wire-format change (or a future Chrome cookies API that returns
@@ -1839,14 +1850,14 @@ function extractNormalizeFn(source, label) {
 }
 
 test('normalizeCookieExpiry is defined identically in all three sites', () => {
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
+    const cookieHandoffSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'cookie-handoff.js'),
         'utf8'
     );
 
     const fnYtkit = extractNormalizeFn(downloadUiSource, 'extension/features/download-ui/index.js');
     const fnBg = extractNormalizeFn(backgroundSource, 'extension/background.js');
-    const fnUser = extractNormalizeFn(userscriptSource, 'YTKit.user.js');
+    const fnHandoff = extractNormalizeFn(cookieHandoffSource, 'extension/core/cookie-handoff.js');
 
     // Parity check: every input shape must produce the same output across
     // all three implementations. If a site drifts, this test trips.
@@ -1871,26 +1882,30 @@ test('normalizeCookieExpiry is defined identically in all three sites', () => {
     for (const [label, input, expected] of cases) {
         const a = fnYtkit(input);
         const b = fnBg(input);
-        const c = fnUser(input);
+        const c = fnHandoff(input);
         assert.equal(a, expected, `ytkit.js: ${label} must return ${expected}, got ${a}`);
         assert.equal(b, expected, `background.js: ${label} must return ${expected}, got ${b}`);
-        assert.equal(c, expected, `YTKit.user.js: ${label} must return ${expected}, got ${c}`);
+        assert.equal(c, expected, `cookie-handoff.js: ${label} must return ${expected}, got ${c}`);
+    }
+    for (const file of ['features/download-ui/index.js', 'background.js', 'core/cookie-handoff.js']) {
+        assert.ok(userscriptBundles(file), `the userscript must ship ${file}, so it runs the same contract`);
     }
 });
 
 test('normalizeCookieExpiry replaces every prior c.expirationDate || 0 site', () => {
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
+    const hostSource = fs.readFileSync(
+        path.join(__dirname, '..', 'userscript', 'host.js'),
         'utf8'
     );
 
     // The legacy `c.expirationDate || 0` pattern must be gone everywhere
     // we ship. Catches the case where a future PR adds back a fourth
-    // inlined site.
+    // inlined site. The userscript host is the one hand-written file the
+    // userscript adds to the extension's, so it is the one to check.
     for (const [label, src] of [
         ['extension/features/download-ui/index.js', downloadUiSource],
         ['extension/background.js', backgroundSource],
-        ['YTKit.user.js', userscriptSource],
+        ['userscript/host.js', hostSource],
     ]) {
         assert.doesNotMatch(
             src,
@@ -1910,14 +1925,20 @@ test('normalizeCookieExpiry replaces every prior c.expirationDate || 0 site', ()
         );
     }
 
-    // The userscript no longer maps cookies by hand at all: it delegates to
-    // the same reviewed contract the extension uses, which normalizes expiry
+    // The userscript no longer maps cookies by hand at all: its host hands
+    // GM_cookie's list to background.js, which filters it through the same
+    // reviewed contract the extension uses. That contract normalizes expiry
     // itself while also enforcing the allowed names, domains, and size caps.
-    // Hand-mapping there is what shipped the whole YouTube jar.
-    assert.match(userscriptSource, /handoff\.sanitizeCookieHandoff\(cookies\)/,
-        'YTKit.user.js must filter cookies through the shared handoff contract');
-    assert.doesNotMatch(userscriptSource, /payload\.cookies = cookies\.map/,
-        'YTKit.user.js must not hand-map the raw cookie jar into the payload');
+    // Hand-mapping in the old userscript is what shipped the whole YouTube jar.
+    assert.match(backgroundSource, /COOKIE_HANDOFF\.sanitizeCookieHandoff\(rawCookies\)/,
+        'background.js must filter cookies through the shared handoff contract');
+    const cookiesAt = hostSource.indexOf('const cookiesApi = {');
+    assert.ok(cookiesAt > -1, 'userscript/host.js must define its chrome.cookies adapter');
+    const cookiesApi = hostSource.slice(cookiesAt, hostSource.indexOf('\n    };', cookiesAt));
+    assert.doesNotMatch(cookiesApi, /expirationDate|\.map\(/,
+        'the userscript cookie adapter must hand over the raw list, not map the jar itself');
+    assert.ok(userscriptBundles('background.js') && userscriptBundles('core/cookie-handoff.js'),
+        'the userscript must ship the worker and the handoff contract it filters through');
 });
 
 // ── v1.0.7 H7: theater-split divider-drag mid-SPA-nav cleanup ──
@@ -2299,14 +2320,12 @@ test('local static security gates replace remote CodeQL workflow', () => {
 });
 
 test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
-
+    // These used to be checked against YTKit.user.js as well, which carried
+    // its own copy of every one of these call sites. The userscript runs
+    // ytkit.js itself now, so the extension source is the only copy.
+    assert.ok(userscriptBundles('ytkit.js'), 'the userscript must ship ytkit.js, so these guardrails reach it');
     for (const [label, source] of [
-        ['extension/ytkit.js', ytkitSource],
-        ['YTKit.user.js', userscriptSource]
+        ['extension/ytkit.js', ytkitSource]
     ]) {
         assert.match(source, /function\s+isYouTubeHostname\(/,
             `${label} must centralize exact YouTube host validation`);
@@ -2367,23 +2386,23 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
     assert.match(ytkitSource, /window\.removeEventListener\('pagehide', this\._flushHandler\)/,
         'extension resume playback must remove its pagehide handler on destroy');
 
-    assert.doesNotMatch(userscriptSource, /const TrustedHTML = \(\(\) => \{/,
-        'YTKit.user.js must not ship a userscript-local markup parser helper');
-    assert.doesNotMatch(userscriptSource, /TrustedHTML\.setHTML/,
-        'YTKit.user.js static fragments must be built with DOM APIs');
-    assert.doesNotMatch(userscriptSource, /parseFromString/,
-        'YTKit.user.js must not reinterpret text as HTML through DOMParser');
-    assert.match(userscriptSource, /function\s+createFilledPathIcon\(/,
-        'YTKit.user.js must keep DOM SVG helpers for static icon fragments');
-    assert.match(userscriptSource, /appendTextSpan\(badge,/,
-        'YTKit.user.js dynamic badge text must be written with textContent');
+    // The old userscript was held to "no markup parser of its own": its
+    // static fragments were built with DOM helpers (createFilledPathIcon,
+    // appendTextSpan) and it never called DOMParser. Those helpers belonged to
+    // the hand-written copy and went with it. The userscript now renders
+    // through the extension's TrustedHTML path, whose sanitiser and Trusted
+    // Types policy are covered by tests/trusted-types-enforcement.test.js.
+    // The host itself still adds no parser.
+    const hostSource = fs.readFileSync(path.join(__dirname, '..', 'userscript', 'host.js'), 'utf8');
+    assert.doesNotMatch(hostSource, /const TrustedHTML = \(\(\) => \{/,
+        'the userscript host must not add a userscript-local markup parser helper');
+    assert.doesNotMatch(hostSource, /parseFromString|\.innerHTML\s*=/,
+        'the userscript host must not reinterpret text as HTML');
+    assert.ok(userscriptBundles('core/trusted-html.js'),
+        'the userscript must ship the extension markup sanitiser it renders through');
 });
 
 test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity order', () => {
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
     const transcriptServiceSource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'core', 'transcript-service.js'),
         'utf8'
@@ -2397,9 +2416,12 @@ test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity ord
         'utf8'
     );
 
+    // YTKit.user.js carried its own transcript parser and was checked here
+    // too. The userscript ships core/transcript-service.js itself now.
+    assert.ok(userscriptBundles('core/transcript-service.js'),
+        'the userscript must ship the transcript service these guardrails cover');
     for (const [label, source] of [
-        ['extension/core/transcript-service.js', transcriptServiceSource],
-        ['YTKit.user.js', userscriptSource]
+        ['extension/core/transcript-service.js', transcriptServiceSource]
     ]) {
         assert.match(source, /_decodeHTMLEntities\(this\._stripXmlTags\(match\[/,
             `${label} must strip XML tags before entity decoding`);
@@ -2435,8 +2457,17 @@ test('branch CodeQL file-race guardrails stay fixed', () => {
     );
     assert.match(buildSource, /function\s+readUtf8IfPresent\(filePath\)/,
         'version bump reads must use one read helper instead of existsSync/read races');
-    assert.match(buildSource, /const originalUserscript = readUtf8IfPresent\(USERSCRIPT\)/,
-        'userscript version bump must read through readUtf8IfPresent');
+    // The bump rebuilds the userscript records through sync-userscript.js,
+    // which compares against the file on disk through the same kind of helper.
+    assert.match(buildSource, /writeUserscriptOutputs\(__dirname, version\)/,
+        'userscript version bump must rebuild the records through sync-userscript.js');
+    const syncSource = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
+    const writer = syncSource.slice(syncSource.indexOf('function writeUserscriptOutputs('));
+    assert.match(syncSource, /function\s+readUtf8IfPresent\(filePath\)/);
+    assert.match(writer.slice(0, writer.indexOf('\n}\n')), /readUtf8IfPresent\(target\) === text/,
+        'userscript record writes must read through readUtf8IfPresent');
+    assert.doesNotMatch(writer.slice(0, writer.indexOf('\n}\n')), /existsSync/,
+        'userscript record writes must not check existence before reading');
     assert.match(buildSource, /const pkgRaw = readUtf8IfPresent\(pkgPath\)/,
         'package.json version bump must read through readUtf8IfPresent');
     assert.match(buildSource, /const pkgLockRaw = readUtf8IfPresent\(pkgLockPath\)/,
@@ -4127,12 +4158,8 @@ test('returnDislike discloses estimated accuracy in the rendered count UI', () =
     assert.match(block, /document\.querySelectorAll\('\.ytkit-ryd-pill, \.ytkit-ryd-estimate, \.ytkit-ryd-ratio'\)/,
         'destroy cleanup must remove every RYD-owned render node');
 
-    const userscriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'),
-        'utf8'
-    );
-    assert.match(userscriptSource, /_estimateDisclosureText\(\)/,
-        'userscript build must carry the same RYD estimate disclosure');
+    assert.ok(userscriptBundles('features/return-dislike/index.js'),
+        'userscript build must carry the same RYD estimate disclosure, by shipping the feature module');
 
     const localesRoot = path.join(__dirname, '..', 'extension', '_locales');
     for (const locale of fs.readdirSync(localesRoot)) {
@@ -7893,60 +7920,90 @@ test('v4.19.0 features/theme-css loads before ytkit.js in both content_script en
 });
 
 // ── v4.20.0 NX1: userscript bundle of v5.0.0 core modules ──
+//
+// v4.20.0 bundled a hand-kept list of core modules into a hand-maintained
+// YTKit.user.js between BEGIN/END markers. The userscript is generated whole
+// now: YTKit.user.js is the host (userscript/host.js) plus its build data, and
+// three @require libraries register every extension file as a function the
+// host runs. These pin that shape, what ships, and the run order.
 
-test('v4.20.0 userscript carries the v5.0.0 bundle markers', () => {
-    const userscript = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
-    );
-    assert.match(userscript, /\/\/ ── BEGIN v5\.0\.0 bundled core modules ──/,
-        'userscript must declare a v5.0.0 BEGIN bundle marker');
-    assert.match(userscript, /\/\/ ── END v5\.0\.0 bundled core modules ──/,
-        'userscript must declare a v5.0.0 END bundle marker');
+test('v4.20.0 the userscript is a generated host plus three @require libraries', () => {
+    const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
+    const main = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    const requires = [...main.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);
+    assert.deepEqual(requires.map((url) => url.slice(url.lastIndexOf('/') + 1)),
+        sync.LIBRARIES.map(({ file }) => file),
+        'YTKit.user.js must @require each library once, core first');
+    const build = readUserscriptBuild(main);
+    assert.equal(build.version,
+        JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version,
+        'the embedded build data must carry the product version');
+    for (const { file } of sync.LIBRARIES) {
+        const library = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+        assert.equal((library.match(/^\/\/ ==UserScript==$/gm) || []).length, 1,
+            `${file} must carry exactly one metadata header`);
+        assert.match(library, /^\/\/ @grant\s+none$/m,
+            `${file} runs nothing by itself, so it must request no grants`);
+        assert.match(library, /^__astraDeckRegistry\["[^"]+"\] = function /m,
+            `${file} must register extension files for the host to run`);
+    }
 });
 
-test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
-    const userscript = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
-    );
-    const expectedModules = [
-        'extension/core/styles.js',
-        'extension/core/settings-schema.js',
-        'extension/core/feature-lifecycle.js',
-        'extension/core/policy-profile.js',
-        'extension/core/selector-health.js',
-        'extension/core/data-flow.js',
-        'extension/core/toast.js',
-        'extension/core/toast-dom.js',
-        'extension/core/navigation.js',
-        'extension/core/player.js',
-        'extension/core/resource-unlock.js',
-        'extension/core/text-metrics.js',
-        'extension/core/date-time.js',
-        'extension/core/failure-copy.js',
-        'extension/core/runtime-flags.js',
-        'extension/core/capability-probe.js',
-        'extension/features/subtitles/index.js',
-        'extension/features/video-filters/index.js',
-        'extension/features/blue-light-filter/index.js',
-        'extension/features/theme-css/index.js',
-        'extension/features/wave-8-css/index.js',
-        'extension/features/home-subs-css/index.js',
-        'extension/features/chat-style-comments/index.js',
-        'extension/features/comment-author-block/index.js',
-        'extension/features/sticky-video-styles/index.js',
-        'extension/features/sticky-video-autoscroll/index.js',
-        'extension/features/sticky-video-chat/index.js',
-        'extension/features/sticky-video-header/index.js',
-        'extension/features/sticky-video/index.js',
-        'extension/features/sticky-chat/index.js',
-        'extension/features/video-hider/index.js',
-        'extension/features/video-notes/index.js',
-        'extension/features/player-dock/index.js',
-        'extension/core/lifecycle-route-bridge.js'
-    ];
-    for (const mod of expectedModules) {
-        assert.match(userscript, new RegExp('// ── bundled module: ' + escapeRegExp(mod) + ' ──'),
-            'userscript must include bundle marker for ' + mod);
+test('v4.20.0 userscript ships every file the extension runs in a page or its worker', () => {
+    const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    const plan = sync.readBuildPlan(path.join(__dirname, '..'));
+    const expected = new Set([manifest.background.service_worker, ...plan.backgroundCore]);
+    for (const entry of manifest.content_scripts) {
+        for (const file of runtimeModules(entry)) expected.add(file);
+    }
+    assert.ok(expected.has('ytkit.js') && expected.has('ytkit-main.js') && expected.has('live-chat.js'),
+        'the manifest walk must reach the ISOLATED, MAIN-world and live-chat groups');
+    const shipped = userscriptModulePaths();
+    const missing = [...expected].filter((file) => !shipped.has(file));
+    assert.deepEqual(missing, [], 'the userscript must ship every file the extension runs');
+
+    // The modules the v4.20.0 bundle was built around, named so the list
+    // above cannot quietly shrink to nothing and still pass.
+    for (const mod of [
+        'core/styles.js',
+        'core/settings-schema.js',
+        'core/feature-lifecycle.js',
+        'core/policy-profile.js',
+        'core/selector-health.js',
+        'core/data-flow.js',
+        'core/toast.js',
+        'core/toast-dom.js',
+        'core/navigation.js',
+        'core/player.js',
+        'core/resource-unlock.js',
+        'core/text-metrics.js',
+        'core/date-time.js',
+        'core/failure-copy.js',
+        'core/runtime-flags.js',
+        'core/capability-probe.js',
+        'features/subtitles/index.js',
+        'features/video-filters/index.js',
+        'features/blue-light-filter/index.js',
+        'features/theme-css/index.js',
+        'features/wave-8-css/index.js',
+        'features/home-subs-css/index.js',
+        'features/chat-style-comments/index.js',
+        'features/comment-author-block/index.js',
+        'features/sticky-video-styles/index.js',
+        'features/sticky-video-autoscroll/index.js',
+        'features/sticky-video-chat/index.js',
+        'features/sticky-video-header/index.js',
+        'features/sticky-video/index.js',
+        'features/sticky-chat/index.js',
+        'features/video-hider/index.js',
+        'features/video-notes/index.js',
+        'features/player-dock/index.js',
+        'core/lifecycle-route-bridge.js'
+    ]) {
+        assert.ok(userscriptBundles(mod), 'userscript must ship extension/' + mod);
     }
 });
 
@@ -8054,36 +8111,22 @@ test('userscript core strips schema comments while preserving executable source'
     );
 });
 
-test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () => {
-    // Rebuild the bundle region with the same transform
-    // sync-userscript.js applies and compare it to the shipped bundle. The
-    // fingerprint assertions below are kept as a fast, readable canary, but
-    // they are NOT the contract — a module edit that misses its one
+test('v4.20.0 committed userscript records are byte-identical to a fresh build', () => {
+    // Rebuild every record with the transforms sync-userscript.js applies and
+    // compare it to what is committed. Fingerprint lines used to stand in for
+    // this, and they are NOT a contract: a module edit that missed its one
     // fingerprint line passed them while shipping stale to every Tampermonkey
     // install (v4.51.2's settings-schema.js did, through three releases).
     const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
-    const shipped = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
-    const region = shipped.match(sync.BUNDLE_BEGIN_RE);
-    assert.ok(region, 'bundle region must be extractable');
-    assert.equal(region[0], sync.buildBundleRegion(path.join(__dirname, '..')),
-        'YTKit.user.js dependency manifest is stale — run `node sync-userscript.js`');
-
-    const corePath = path.join(__dirname, '..', 'YTKit-core.user.js');
-    const core = fs.readFileSync(corePath, 'utf8');
-    assert.equal(core, sync.buildCoreLibrarySource(path.join(__dirname, '..')),
-        'YTKit-core.user.js is stale — run `node sync-userscript.js`');
-
-    const userscript = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
-    );
-    const beginIdx = userscript.indexOf('// ── BEGIN v5.0.0 bundled core modules ──');
-    const endIdx = userscript.indexOf('// ── END v5.0.0 bundled core modules ──');
-    assert.ok(beginIdx > -1 && endIdx > beginIdx, 'bundle markers must be present and ordered');
-    const bundle = userscript.slice(beginIdx, endIdx);
-    assert.equal((userscript.match(/^\/\/ ==UserScript==$/gm) || []).length, 1,
-        'userscript must contain exactly one metadata header');
-    assert.equal((bundle.match(/^\/\/ ==UserScript==$/gm) || []).length, 0,
-        'bundle must not contain a second userscript metadata header');
+    const outputs = sync.buildUserscriptOutputs(path.join(__dirname, '..'));
+    assert.deepEqual([...outputs.keys()].sort(), [...USERSCRIPT_FILES].sort(),
+        'the generator must write exactly the records a manager loads');
+    for (const [file, expected] of outputs) {
+        const committed = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+        assert.ok(committed === expected, `${file} is stale — run \`node sync-userscript.js\``);
+        assert.equal((committed.match(/^\/\/ ==UserScript==$/gm) || []).length, 1,
+            `${file} must contain exactly one metadata header`);
+    }
     // The old witness for this was a comment in policy-profile.js. Bundled
     // modules no longer carry comments, so a dollar-backtick inside one cannot
     // reach the library at all; the hazard only remains for CODE. Exercise the
@@ -8111,212 +8154,143 @@ test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () 
         'generation must preserve a dollar-backtick sequence in code');
     assert.ok(stripped.includes('// this line is DATA, not a comment'),
         'a comment-looking line inside a template literal must survive');
-    const fingerprints = {
-        'core/styles.js':                    'function createCssLifecycleSpec(options',
-        'core/settings-schema.js':              'const SETTINGS_SCHEMA = Object.freeze(',
-        'core/feature-lifecycle.js':            'function createLifecycle(options',
-        'core/policy-profile.js':               'function createPolicyProfile(options',
-        'core/selector-health.js':              'function createSelectorHealth(options',
-        'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
-        'core/toast.js':                        'function inferToastTone(color)',
-        'core/toast-dom.js':                    'function createToastSystem(deps',
-        'core/navigation.js':                   'function runBudgetedElementBatch(items',
-        'core/text-metrics.js':                 'function parseCompactCount(text',
-        'core/runtime-flags.js':                'core.runtimeFlags = flags;',
-        'core/capability-probe.js':             'core.capabilityProbe = surface;',
-        'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
-        'features/video-filters/index.js':      'function buildVideoFilterCss(settings)',
-        'features/blue-light-filter/index.js':  'function buildBlueLightRgba(settings)',
-        'features/theme-css/index.js':          'function buildProgressBarCss(settings)',
-        'features/wave-8-css/index.js':         'function buildHideNotificationButtonCss()',
-        'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
-        'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
-        'features/comment-author-block/index.js': 'function createCommentAuthorBlockFeatures',
-        'features/sticky-video-styles/index.js': 'function buildSplitShellCss()',
-        'features/sticky-video-autoscroll/index.js': 'function createStickyVideoAutoscrollMethods',
-        'features/sticky-video-chat/index.js': 'function createStickyVideoChatMethods',
-        'features/sticky-video-header/index.js': 'function createStickyVideoHeaderMethods',
-        'features/sticky-video/index.js':       'function createStickyVideoFeature',
-        'features/sticky-chat/index.js':        'function createStickyChatFeature',
-        'features/video-hider/index.js':        'function createHideVideosFromHomeFeature',
-        'features/video-notes/index.js':        'function createVideoNotesFeature',
-        'features/subscription-groups/index.js': 'function createSubscriptionGroupsFeature',
-        'features/digital-wellbeing/index.js':  'function createDigitalWellbeingFeature',
-        'features/settings-panel/index.js':     'function createSettingsPanelRuntime',
-        'features/player-dock/index.js':        'function createFloatingLogoOnWatchFeature',
-        'core/external-api-health.js':          'function createExternalApiHealth(options',
-        'core/transcript-service.js':           'function createTranscriptService(options',
-        'core/transcript-index.js':             'function prepareTranscriptRecord(raw)',
-        'features/return-dislike/index.js':     'function createReturnDislikeFeature',
-        'features/sponsorblock/index.js':       'function createSponsorBlockFeature',
-        'features/dearrow/index.js':            'function createDeArrowFeature',
-        'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
-    };
-    for (const [mod, fingerprint] of Object.entries(fingerprints)) {
-        assert.ok(core.includes(fingerprint),
-            'userscript core library missing fingerprint from ' + mod + ': "' + fingerprint + '"');
-    }
+    const compacted = sync.compactForUserscript(hazard, 'fixture.js');
+    assert.ok(compacted.includes('holds a $' + escaped + ' escape and stays')
+        && compacted.includes('// this line is DATA, not a comment'),
+        'the full compaction pass must keep template data too');
 });
 
-test('v4.20.0 userscript bundle order matches the manifest content_scripts run order', () => {
-    const userscript = fs.readFileSync(
-        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
-    );
-    // Pull the module declaration order out of the bundle.
-    const markerRe = /\/\/ ── bundled module: ([^\s]+) ──/g;
-    const bundleOrder = [];
-    let m;
-    while ((m = markerRe.exec(userscript)) !== null) {
-        bundleOrder.push(m[1]);
-    }
-    // The bundle must mirror the order sync-userscript.js declares in
-    // V5_BUNDLE_MODULES. That order in turn mirrors the manifest's
-    // content_scripts.js load order for these modules.
-    const expectedOrder = [
-        // The shared ReDoS guard loads before anything that compiles a filter
-        // regex. It has its own module because predicate-sandbox.js, where it
-        // used to live, is intentional-extension-only while Video Hider and the
-        // comment filter also ship here.
-        'extension/core/regex-safety.js',
-        'extension/core/styles.js',
-        'extension/core/trusted-html.js',
-        'extension/core/settings-visual-system.js',
-        'extension/core/settings-schema.js',
-        'extension/core/injection-guard.js',
-        'extension/core/feature-lifecycle.js',
-        'extension/core/policy-profile.js',
-        'extension/core/settings-controller.js',
-        'extension/core/settings-import-transaction.js',
-        'extension/core/cookie-handoff.js',
-        'extension/core/transcript-service.js',
-        'extension/core/transcript-index.js',
-        'extension/core/ai-summary-artifacts.js',
-        'extension/core/credential-vault.js',
-        'extension/core/local-ai.js',
-        'extension/core/userscript-ai-summary.js',
-        'extension/core/external-api-health.js',
-        'extension/core/selector-health.js',
-        'extension/core/feature-health.js',
-        'extension/core/chapters.js',
-        'extension/core/csv.js',
-        'extension/core/dialog-guard.js',
-        'extension/core/zero-ad-dom.js',
-        'extension/core/element-zapper.js',
-        'extension/features/element-zapper/index.js',
-        'extension/core/hide-attribution.js',
-        'extension/core/heatmap.js',
-        'extension/core/youtube-thumbnails.js',
-        'extension/core/feature-schedule.js',
-        'extension/core/feed-prefilter.js',
-        'extension/core/companion-ports.js',
-        'extension/core/data-flow.js',
-        'extension/core/toast.js',
-        'extension/core/toast-dom.js',
-        'extension/core/navigation.js',
-        'extension/core/player.js',
-        'extension/core/resource-unlock.js',
-        'extension/core/text-metrics.js',
-        'extension/core/date-time.js',
-        'extension/core/failure-copy.js',
-        'extension/core/runtime-flags.js',
-        'extension/core/capability-probe.js',
-        'extension/features/subtitles/index.js',
-        'extension/features/video-filters/index.js',
-        'extension/features/blue-light-filter/index.js',
-        'extension/features/theme-css/index.js',
-        'extension/features/wave-8-css/index.js',
-        'extension/features/home-subs-css/index.js',
-        'extension/features/chat-style-comments/index.js',
-        'extension/features/comment-author-block/index.js',
-        'extension/features/sticky-video-styles/index.js',
-        'extension/features/sticky-video-autoscroll/index.js',
-        'extension/features/sticky-video-chat/index.js',
-        'extension/features/sticky-video-header/index.js',
-        'extension/features/sticky-video/index.js',
-        'extension/features/sticky-chat/index.js',
-        'extension/features/video-hider/index.js',
-        'extension/features/video-notes/index.js',
-        'extension/features/subscription-groups/index.js',
-        'extension/features/digital-wellbeing/index.js',
-        'extension/features/settings-panel/index.js',
-        'extension/features/player-dock/index.js',
-        'extension/features/return-dislike/index.js',
-        'extension/features/sponsorblock/index.js',
-        'extension/features/dearrow/index.js',
-        'extension/core/lifecycle-route-bridge.js'
-    ];
-    assert.deepEqual(bundleOrder, expectedOrder,
-        'bundle module order must match V5_BUNDLE_MODULES in sync-userscript.js');
+test('v4.20.0 userscript host runs the extension files in the extension order', () => {
+    // The host stands in for runtime-bootstrap.js and the manifest, so each
+    // group has to match what the extension itself runs, read here from the
+    // extension's own files rather than from the generator.
+    const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', 'extension', ...parts), 'utf8');
+    const manifest = JSON.parse(read('manifest.json'));
+    const { modules } = readUserscriptBuild();
+
+    // The runtime-core loader imports the foundation, download-ui included, and
+    // runtime-bootstrap.js leaves download-ui out of the deferred features.
+    const loader = read('runtime-core-loader.mjs');
+    const foundationAt = loader.indexOf('export const FOUNDATION_MODULES = Object.freeze(');
+    assert.ok(foundationAt > -1, 'runtime-core-loader.mjs must declare FOUNDATION_MODULES');
+    const foundation = JSON.parse(loader.slice(loader.indexOf('[', foundationAt), loader.indexOf(']', foundationAt) + 1));
+    assert.deepEqual(modules.foundation, foundation,
+        'the userscript foundation must be the extension core loader list, in order');
+
+    const runtime = runtimeModules(manifest.content_scripts.find((entry) =>
+        Array.isArray(entry['x-ytkit-runtime-modules'])));
+    const firstFeature = runtime.findIndex((file) => file.startsWith('features/'));
+    assert.deepEqual(modules.features,
+        runtime.slice(firstFeature, -1).filter((file) => !foundation.includes(file)),
+        'the userscript feature modules must follow the manifest runtime order');
+    assert.equal(modules.app, runtime.at(-1), 'ytkit.js runs last, after every feature module');
+    assert.equal(modules.app, 'ytkit.js');
+
+    const mainWorld = manifest.content_scripts.find((entry) => entry.world === 'MAIN');
+    assert.deepEqual(modules.mainWorld, mainWorld.js, 'the page-world scripts keep their manifest order');
+    const liveChat = manifest.content_scripts.find((entry) =>
+        (entry.matches || []).some((pattern) => pattern.includes('/live_chat')));
+    assert.deepEqual(modules.liveChat, liveChat.js, 'the live chat scripts keep their manifest order');
+    const earlyIsolated = manifest.content_scripts.find((entry) =>
+        entry.world !== 'MAIN' && entry.run_at === 'document_start' && entry !== liveChat);
+    assert.equal(modules.bridgeToken, earlyIsolated.js[0], 'the bridge token runs at document start');
+
+    const imported = /importScripts\(\s*\.\.\.\[([\s\S]*?)\]\s*\.map\(/.exec(read('background.js'));
+    assert.ok(imported, 'background.js must load its core through importScripts');
+    assert.deepEqual(modules.backgroundCore, [...imported[1].matchAll(/'([^']+)'/g)].map((match) => match[1]),
+        'the worker core loads in the order background.js imports it');
+    assert.equal(modules.background, manifest.background.service_worker);
+
+    // The shared ReDoS guard loads before anything that compiles a filter
+    // regex, which the foundation tier guarantees for every feature module.
+    assert.ok(modules.foundation.includes('core/regex-safety.js'));
 });
 
-test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the userscript shows', () => {
-    // Static check that the V5_BUNDLE_MODULES array in sync-userscript.js
-    // is the source of truth. Lets the user audit the list by reading the
-    // sync script + this test only.
-    const sync = fs.readFileSync(
-        path.join(__dirname, '..', 'sync-userscript.js'), 'utf8'
-    );
-    assert.match(sync, /const V5_BUNDLE_MODULES = \[/,
-        'sync-userscript.js must declare V5_BUNDLE_MODULES');
-    assert.ok(sync.includes('const BUNDLE_BEGIN_RE = /^[ \\t]*\\/\\/ ── BEGIN v5\\.0\\.0 bundled core modules ──\\r?\\n[\\s\\S]*?^[ \\t]*\\/\\/ ── END v5\\.0\\.0 bundled core modules ──/m;'),
-        'sync-userscript.js must define the BEGIN/END marker regex');
-    assert.match(sync, /userscriptText = userscriptText\.replace\(BUNDLE_BEGIN_RE,\s*\(\) => bundleRegion\);/,
-        'bundle replacement must use a callback so literal $ sequences are preserved');
-    assert.match(sync, /module\.exports = \{[^}]*buildBundleRegion[^}]*\}/,
-        'buildBundleRegion must be exported so the drift gate can recompute the bundle');
+// The drift checker used to classify every extension feature the userscript
+// did not carry (chrome-api, native-companion, not-yet-ported, …) and cap the
+// not-yet-ported count. The userscript runs the extension's own files now, so
+// there is no such list: a file the extension runs and the userscript does not
+// ship is drift, and so is a record that differs from a fresh build.
+
+test('v4.46.12 userscript drift checker passes on a clean tree and reports what it checked', () => {
+    const result = runNodeCommand(['scripts/check-userscript-drift.js']);
+    assert.equal(result.status, 0, result.stderr.toString());
+    const output = result.stdout.toString();
+
+    assert.match(output, new RegExp(`OK: ${USERSCRIPT_FILES.length} generated record\\(s\\) match a fresh build`),
+        'drift check must compare every generated record against a fresh build');
+    const shipped = /(\d+) manifest script\(s\), (\d+) worker file\(s\) and (\d+) stylesheet\(s\) ship in the userscript/
+        .exec(output);
+    assert.ok(shipped, 'drift check must report the manifest, worker and stylesheet coverage');
+    assert.ok(Number(shipped[1]) > 100 && Number(shipped[2]) > 1 && Number(shipped[3]) > 0,
+        'the coverage counts must be real, not an empty walk');
+    assert.match(output, /\d+ locale\(s\) reach the userscript/,
+        'drift check must cover the locales');
+});
+
+test('v4.46.16 userscript drift checker finds every extension feature id shipped', () => {
+    // The successor of the not-yet-ported ceiling: it is zero by construction
+    // now, and the checker has to prove it rather than trust it.
+    const result = runNodeCommand(['scripts/check-userscript-drift.js']);
+    assert.equal(result.status, 0, result.stderr.toString());
+    const match = /feature ids (\d+)\/(\d+) shipped/.exec(result.stdout.toString());
+    assert.ok(match, 'drift output must report the shipped feature ids');
+    assert.equal(match[1], match[2], 'every feature id the extension declares must ship in the userscript');
+
+    // Counted here independently, so a checker that walked fewer files would
+    // report a smaller pair that still agreed with itself.
+    const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+    const ids = new Set();
+    for (const entry of manifest.content_scripts) {
+        for (const file of runtimeModules(entry)) {
+            if (file !== 'ytkit.js' && !/^features\/[^/]+\/index\.js$/.test(file)) continue;
+            const text = fs.readFileSync(path.join(__dirname, '..', 'extension', file), 'utf8');
+            for (const id of text.matchAll(/^\s+id:\s*'([a-zA-Z][a-zA-Z0-9]*)'/gm)) ids.add(id[1]);
+        }
+    }
+    assert.ok(ids.size > 100, `expected the extension to declare its feature ids, found ${ids.size}`);
+    assert.equal(Number(match[2]), ids.size, 'the checker must count every feature id the extension declares');
+});
+
+test('v4.46.12 userscript drift checker fails on a record that differs from a fresh build', () => {
+    // Positive control, on a copy: the checker reads its repository from its
+    // own location, so tampering has to happen in a scratch tree, never in the
+    // tracked files.
+    const repoRoot = path.join(__dirname, '..');
+    const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-userscript-drift-'));
+    try {
+        for (const entry of ['extension', 'userscript', 'sync-userscript.js', 'package.json', ...USERSCRIPT_FILES]) {
+            fs.cpSync(path.join(repoRoot, entry), path.join(scratch, entry), { recursive: true });
+        }
+        fs.mkdirSync(path.join(scratch, 'scripts'));
+        for (const script of ['check-userscript-drift.js', 'generate-runtime-bootstrap.js', 'repo-paths.js']) {
+            fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(scratch, 'scripts', script));
+        }
+        const run = () => require('child_process').spawnSync(process.execPath,
+            [path.join(scratch, 'scripts', 'check-userscript-drift.js')], {
+                cwd: scratch,
+                stdio: 'pipe',
+                // The copy has no node_modules; the generator's parser comes
+                // from the real tree.
+                env: { ...process.env, NODE_PATH: path.join(repoRoot, 'node_modules') }
+            });
+
+        const clean = run();
+        assert.equal(clean.status, 0, 'the untouched copy must pass, or the tamper below proves nothing: '
+            + clean.stderr.toString());
+
+        const tampered = path.join(scratch, 'YTKit-app.user.js');
+        fs.appendFileSync(tampered, '\n// a hand edit\n');
+        const result = run();
+        assert.notEqual(result.status, 0, 'a hand-edited record must fail the drift check');
+        assert.match(result.stderr.toString(), /YTKit-app\.user\.js differs from a fresh build/,
+            'the failure must name the record that drifted');
+    } finally {
+        fs.rmSync(scratch, { recursive: true, force: true });
+    }
 });
 
 // ── v4.21.0 NX1: theme-css extended with forceDark + accentColor builders ──
-
-test('v4.46.12 userscript drift checker reports extension-only feature classifications', () => {
-    const result = runNodeCommand(['scripts/check-userscript-drift.js']);
-    assert.equal(result.status, 0, result.stderr.toString());
-    const output = result.stdout.toString();
-
-    assert.match(output, /Extension-only classifications:/,
-        'drift check must print the extension-only parity breakdown');
-    for (const parityClass of [
-        'chrome-api',
-        'native-companion',
-        'unsafe-in-userscript',
-        'intentional-extension-only',
-        'not-yet-ported'
-    ]) {
-        assert.match(output, new RegExp(`${parityClass}=\\d+`),
-            `drift check must count ${parityClass} extension-only features`);
-    }
-});
-
-test('v4.46.16 userscript drift checker caps not-yet-ported parity gaps', () => {
-    const driftSource = fs.readFileSync(
-        path.join(__dirname, '..', 'scripts', 'check-userscript-drift.js'), 'utf8'
-    );
-    assert.match(driftSource, /MAX_NOT_YET_PORTED_FEATURES\s*=\s*19/,
-        'drift checker must pin the remaining not-yet-ported ceiling');
-
-    const result = runNodeCommand(['scripts/check-userscript-drift.js']);
-    assert.equal(result.status, 0, result.stderr.toString());
-    const output = result.stdout.toString();
-    const match = output.match(/not-yet-ported=(\d+)/);
-    assert.ok(match, 'drift output must include the not-yet-ported count');
-    assert.ok(Number(match[1]) <= 19,
-        'not-yet-ported userscript parity gaps must stay at or below the current ceiling');
-});
-
-test('v4.46.12 userscript drift checker fails on unclassified extension-only feature IDs', () => {
-    const result = runNodeCommand(['scripts/check-userscript-drift.js'], {
-        env: { ASTRA_USERSCRIPT_DRIFT_INJECT_EXTENSION_IDS: 'unclassifiedTestFeature' }
-    });
-    assert.notEqual(result.status, 0, 'injected extension-only feature must fail without a classification');
-    const errorOutput = result.stderr.toString();
-
-    assert.match(errorOutput, /Unclassified extension-only feature ID/,
-        'failure must name the unclassified-feature class of error');
-    assert.match(errorOutput, /unclassifiedTestFeature/,
-        'failure must name the unclassified feature ID');
-    assert.match(errorOutput, /chrome-api\|native-companion\|unsafe-in-userscript\|intentional-extension-only\|not-yet-ported/,
-        'failure must list the allowed parity classes');
-});
 
 test('v4.21.0 features/theme-css exports the two new builders', () => {
     delete require.cache[require.resolve('../extension/features/theme-css/index.js')];
@@ -9628,13 +9602,17 @@ test('v4.38.0 wave-8-css module exports five pure builders', () => {
 test('noFrostedGlass avoids a universal selector in both distributions', () => {
     const wave8 = loadWave8CssModule();
     const css = wave8.buildNoFrostedGlassCss();
-    const userscript = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
     assert.doesNotMatch(css, /^\s*\*/, 'extension CSS must not rematch every DOM element');
     assert.match(css, /ytd-masthead/);
     assert.match(css, /tp-yt-iron-dropdown/);
-    assert.doesNotMatch(userscript,
+    // The userscript used to carry its own fallback for this feature. It runs
+    // the extension's module and the ytkit.js fallback beside it now, so the
+    // fallback to hold to the same rule is that one.
+    assert.doesNotMatch(ytkitSource,
         /`\* \{ backdrop-filter: none !important; -webkit-backdrop-filter: none !important; \}`/,
-        'userscript feature fallback must avoid the universal selector too');
+        'the ytkit.js feature fallback must avoid the universal selector too');
+    assert.ok(userscriptBundles('features/wave-8-css/index.js') && userscriptBundles('ytkit.js'),
+        'the userscript must ship the module and the fallback');
 });
 
 test('v4.38.0 wave-8-css helpers return byte-identical CSS to the monolith fallback', () => {
@@ -9697,10 +9675,9 @@ test('v4.38.0 manifest content_scripts loads features/wave-8-css/index.js before
     }
 });
 
-test('v4.38.0 sync-userscript V5_BUNDLE_MODULES includes features/wave-8-css', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
-    assert.ok(src.includes('extension/features/wave-8-css/index.js'),
-        'sync-userscript.js V5_BUNDLE_MODULES must include features/wave-8-css/index.js');
+test('v4.38.0 userscript ships features/wave-8-css', () => {
+    assert.ok(userscriptBundles('features/wave-8-css/index.js'),
+        'the userscript must ship features/wave-8-css/index.js');
 });
 
 // ── v4.39.0 NX1: profile-badge integration in schema overview ──
@@ -9841,10 +9818,9 @@ test('v4.43.0 manifest content_scripts loads features/home-subs-css/index.js bef
     }
 });
 
-test('v4.43.0 sync-userscript V5_BUNDLE_MODULES includes features/home-subs-css', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
-    assert.ok(src.includes('extension/features/home-subs-css/index.js'),
-        'sync-userscript.js V5_BUNDLE_MODULES must include features/home-subs-css/index.js');
+test('v4.43.0 userscript ships features/home-subs-css', () => {
+    assert.ok(userscriptBundles('features/home-subs-css/index.js'),
+        'the userscript must ship features/home-subs-css/index.js');
 });
 
 test('v4.40.0 popup honours entry.labelKey + entry.descriptionKey when present', () => {
@@ -10059,14 +10035,14 @@ test('v4.42.0 manifest loads core/toast-dom.js after core/toast.js and before yt
     }
 });
 
-test('v4.42.0 sync-userscript V5_BUNDLE_MODULES includes core/toast-dom.js after core/toast.js', () => {
-    const sync = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
-    const toastIdx = sync.indexOf("'extension/core/toast.js'");
-    const toastDomIdx = sync.indexOf("'extension/core/toast-dom.js'");
+test('v4.42.0 userscript runs core/toast-dom.js after core/toast.js', () => {
+    const { foundation } = readUserscriptBuild().modules;
+    const toastIdx = foundation.indexOf('core/toast.js');
+    const toastDomIdx = foundation.indexOf('core/toast-dom.js');
     assert.notEqual(toastDomIdx, -1,
-        'sync-userscript.js V5_BUNDLE_MODULES must include core/toast-dom.js');
-    assert.ok(toastIdx < toastDomIdx,
-        'core/toast-dom.js must follow core/toast.js in V5_BUNDLE_MODULES');
+        'the userscript foundation must run core/toast-dom.js');
+    assert.ok(toastIdx > -1 && toastIdx < toastDomIdx,
+        'core/toast-dom.js must run after core/toast.js (it depends on the pure helpers)');
 });
 
 test('v4.41.0 settings-schema has ≥1 array-typed AND ≥1 object-typed entry (coverage canary)', () => {
@@ -10927,15 +10903,10 @@ test('v4.47.0 NF12 — runtime-flags module exposes typed accessors and ytkit.js
 });
 
 test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
-    // sync-userscript.js bundles the v5.0.0 core modules into the
-    // userscript build. runtime-flags.js must ride alongside the
-    // existing core helpers so the userscript vehicle stays at parity
-    // with the MV3 extension.
-    const syncSrc = fs.readFileSync(
-        path.join(__dirname, '..', 'sync-userscript.js'), 'utf8'
-    );
-    assert.match(syncSrc, /'extension\/core\/runtime-flags\.js'/,
-        'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
+    // runtime-flags.js must ride alongside the other core helpers so the
+    // userscript vehicle stays at parity with the MV3 extension.
+    assert.ok(userscriptBundles('core/runtime-flags.js'),
+        'the userscript must ship extension/core/runtime-flags.js');
 });
 
 test('v4.47.0 NF23 — nyan-cat theme asset resolves via getRepoAssetUrl, not a hardcoded GitHub raw URL', () => {
@@ -11942,8 +11913,8 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'check-versions.js must define readSettingsMetaVersion');
     assert.match(checkSrc, /SETTINGS_VERSION drift detected/,
         'check-versions.js must emit a SETTINGS_VERSION-specific drift message');
-    assert.match(checkSrc, /process\.exit\(productOk && settingsOk && docsOk && coreRequireOk && tagsOk && releaseOk \? 0 : 1\)/,
-        'check-versions.js must require product, settings, active-doc truth, the userscript core @require, product-tag sanity, and release currency to exit 0');
+    assert.match(checkSrc, /process\.exit\(productOk && settingsOk && docsOk && requiresOk && tagsOk && releaseOk \? 0 : 1\)/,
+        'check-versions.js must require product, settings, active-doc truth, the userscript library @requires, product-tag sanity, and release currency to exit 0');
 
     // 3. The popup-side fallback comment names the parity invariant
     // so a future code reviewer sees the invariant at the constant.

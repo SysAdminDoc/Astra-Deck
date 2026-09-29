@@ -28,9 +28,20 @@ const downloadUiSource = read('extension', 'features', 'download-ui', 'index.js'
 const settingsPanelModuleSource = read('extension', 'features', 'settings-panel', 'index.js');
 const settingsVisualSystemSource = read('extension', 'core', 'settings-visual-system.js');
 const settingsOverlaySmokeSource = read('scripts', 'smoke-settings-overlay.js');
-const userscriptSource = read('YTKit-core.user.js') + '\n' + read('YTKit.user.js');
 const defaultSettings = JSON.parse(read('extension', 'default-settings.json'));
 const schemaModule = require('../extension/core/settings-schema.js');
+const { readUserscriptBuild, userscriptBundles } = require('./helpers/source');
+
+// The userscript used to carry its own settings panel copy, pinned alongside
+// the module and the monolith below. It is generated from extension/ now and
+// runs the same settings-panel module and ytkit.js, so those two sources are
+// the whole contract; these checks prove the userscript ships them.
+function assertUserscriptRunsSettingsPanel() {
+    assert.ok(userscriptBundles('features/settings-panel/index.js'),
+        'the userscript must ship the settings-panel module');
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must run the same ytkit.js panel fallback and CSS');
+}
 
 const LOCALES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'];
 
@@ -145,8 +156,7 @@ test('masthead trigger focus ring alpha raised to 0.8', () => {
 test('settings panel search indexes metadata beyond visible name and description', () => {
     for (const [label, source] of [
         ['module', settingsPanelModuleSource],
-        ['monolith', ytkitSource],
-        ['userscript', userscriptSource]
+        ['monolith', ytkitSource]
     ]) {
         assert.ok(source.includes('card.dataset.searchText = ['),
             `${label} settings panel must build a searchable metadata index`);
@@ -157,20 +167,20 @@ test('settings panel search indexes metadata beyond visible name and description
         assert.match(source, /const haystack = card\.dataset\.searchText \|\| `\$\{name\} \$\{desc\}`/,
             `${label} settings search must filter against the metadata index`);
     }
+    assertUserscriptRunsSettingsPanel();
 });
 
 test('settings panel exposes persistent live status feedback for save/import/export/reset', () => {
     for (const [label, source] of [
         ['module', settingsPanelModuleSource],
-        ['monolith', ytkitSource],
-        ['userscript', userscriptSource]
+        ['monolith', ytkitSource]
     ]) {
         assert.ok(source.includes("footerStatus.id = 'ytkit-panel-status'"),
             `${label} settings panel must render the footer status live region`);
         assert.ok(source.includes("footerStatus.setAttribute('role', 'status')"),
             `${label} footer status must announce changes to assistive tech`);
         // The module routes this copy through a locale key; the monolith
-        // fallback and the userscript panel still carry the English literal.
+        // fallback still carries the English literal.
         assert.ok(source.includes(label === 'module'
             ? "setPanelStatus(t('settingsExportedStatus', 'Settings exported. The download is ready.'), 'success')"
             : "setPanelStatus('Settings exported. The download is ready.', 'success')"),
@@ -180,8 +190,7 @@ test('settings panel exposes persistent live status feedback for save/import/exp
     }
     assert.match(ytkitSource, /\.ytkit-panel-status\[data-tone="success"\]/,
         'monolith CSS must style successful footer status');
-    assert.match(userscriptSource, /\.ytkit-panel-status\[data-tone="success"\]/,
-        'userscript CSS must style successful footer status');
+    assertUserscriptRunsSettingsPanel();
 });
 
 test('extension Takeout import keeps large-file and undo recovery parity', () => {
@@ -217,12 +226,13 @@ test('settings panel search copy matches the expanded filter behavior', () => {
     assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, controls…');
     assert.equal(en.panelSearchAria.message, 'Search settings by name, page, category, or control type');
     assert.equal(en.panelSearchHint.message, 'Search by name, page, category, control type, or description.');
-    for (const source of [settingsPanelModuleSource, ytkitSource, userscriptSource]) {
+    for (const source of [settingsPanelModuleSource, ytkitSource]) {
         assert.ok(source.includes('Search by name, page, category, control type, or description.'),
             'settings panel search hint must describe every indexed field');
         assert.ok(source.includes("mark.className = 'ytkit-search-mark'"),
             'settings panel search highlights must use the themed mark style');
     }
+    assertUserscriptRunsSettingsPanel();
 });
 
 test('settings close tooltip avoids shortcut copy in every locale', () => {
@@ -517,9 +527,9 @@ test('blue light filter stays opt-in with a master toggle and nested intensity c
     assert.equal(defaultSettings.blueLightIntensity, 30,
         'Blue Light Filter must retain its conservative default intensity');
 
+    // The userscript runs this same ytkit.js definition, so one check covers it.
     for (const [label, source] of [
-        ['extension', ytkitSource],
-        ['userscript', userscriptSource]
+        ['extension', ytkitSource]
     ]) {
         const masterStart = source.indexOf("id: 'blueLightFilter'");
         const intensityStart = source.indexOf("id: 'blueLightIntensity'", masterStart);
@@ -538,6 +548,10 @@ test('blue light filter stays opt-in with a master toggle and nested intensity c
         assert.match(intensityBlock, /min:\s*10[\s\S]*max:\s*80[\s\S]*step:\s*5/,
             `${label} intensity control must keep the audited 10-80 range`);
     }
+    assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
+        'the userscript must render the same Blue Light Filter controls');
+    assert.ok(userscriptBundles('features/blue-light-filter/index.js'),
+        'the userscript must ship the Blue Light Filter module');
 });
 
 test('fallback Takeout import exposes the same Undo toast contract as the module', () => {

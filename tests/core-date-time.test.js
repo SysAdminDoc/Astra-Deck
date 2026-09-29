@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
-const { runtimeModules } = require('./helpers/source');
+const { runtimeModules, readUserscriptBuild, userscriptBundles } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'date-time.js'), 'utf8');
@@ -94,6 +94,11 @@ test('date-time core loads before ytkit and is bundled for userscript parity', (
         assert.ok(dateIndex < ytkitIndex);
     }
 
-    const syncSource = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
-    assert.match(syncSource, /'extension\/core\/date-time\.js'/);
+    // The userscript host runs every foundation module before the app module,
+    // mirroring the manifest, so the same order holds there by construction.
+    const { modules } = readUserscriptBuild();
+    assert.ok(modules.foundation.includes('core/date-time.js'),
+        'the userscript runs the date-time core with the other foundation modules');
+    assert.equal(modules.app, 'ytkit.js', 'ytkit.js runs after the foundation group in the userscript');
+    assert.ok(userscriptBundles('core/date-time.js'), 'the userscript ships the date-time core');
 });
