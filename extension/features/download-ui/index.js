@@ -2524,7 +2524,7 @@
             const probeBtn = document.createElement('button');
             probeBtn.type = 'button';
             probeBtn.className = 'ytkit-dl-popup__dir-btn';
-            probeBtn.textContent = t('dlPopupFormatsProbe', 'Check available');
+            probeBtn.textContent = t('dlPopupFormatsProbe', "Check what's available");
             qualityActions.appendChild(probeBtn);
             qualityRow.appendChild(qualityActions);
             const qualityStatus = document.createElement('div');
@@ -2544,18 +2544,22 @@
                     if (!chip) return;
                     const estimate = summary?.qualitySizes?.[option.value];
                     const size = estimate?.bytes ? formatByteSize(estimate.bytes) : '';
-                    const sizeText = size
-                        ? `${estimate.approximate ? '~' : ''}${size}`
-                        : t('dlPopupQualitySizeUnavailable', 'Size unavailable');
+                    // No estimate (nothing asked yet, or no size for that rung)
+                    // shows the plain quality. Every chip used to read "Size
+                    // unavailable" before the downloader had been asked at all.
+                    if (!size) {
+                        chip.textContent = option.label;
+                        chip.title = '';
+                        chip.setAttribute('aria-label', option.label);
+                        return;
+                    }
+                    const sizeText = `${estimate.approximate ? '~' : ''}${size}`;
                     const label = t('dlPopupQualitySizeTpl', '{quality} · {size}')
                         .replace('{quality}', option.label)
-                        .replace('{size}', sizeText);
-                    const title = size
-                        ? t('dlPopupQualitySizeTitleTpl', 'Estimated download size: {size}')
-                            .replace('{size}', sizeText)
-                        : t('dlPopupQualitySizeUnavailable', 'Size unavailable');
+                        .replace('{size}', () => sizeText);
                     chip.textContent = label;
-                    chip.title = title;
+                    chip.title = t('dlPopupQualitySizeTitleTpl', 'Estimated download size: {size}')
+                        .replace('{size}', () => sizeText);
                     chip.setAttribute('aria-label', label);
                 });
             };
@@ -2676,7 +2680,13 @@
             dirWrap.setAttribute('aria-labelledby', dirLabel.id);
             const dirDisplay = document.createElement('span');
             dirDisplay.className = 'ytkit-dl-popup__dir-path';
-            dirDisplay.textContent = t('dlPopupLoading', 'Loading…');
+            // A folder path reads in monospace; a status ("Downloader not
+            // running", "Default") keeps the panel font.
+            const setDirText = (text, isPath) => {
+                dirDisplay.textContent = text;
+                dirDisplay.dataset.kind = isPath ? 'path' : 'status';
+            };
+            setDirText(t('dlPopupLoading', 'Loading…'), false);
             let serverDefaultPath = '';
             const dirToggle = document.createElement('button');
             dirToggle.type = 'button';
@@ -2685,7 +2695,7 @@
             dirToggle.setAttribute('aria-label', t('dlPopupChangeAria', 'Choose a download folder'));
             const setDirState = (path, isCustom) => {
                 customDir = isCustom ? (path || '') : '';
-                dirDisplay.textContent = path || t('dlPopupDefault', 'Default');
+                setDirText(path || t('dlPopupDefault', 'Default'), Boolean(path));
                 dirDisplay.title = path || '';
                 if (isCustom) {
                     dirToggle.textContent = t('dlPopupReset', 'Reset');
@@ -2706,7 +2716,7 @@
                 try {
                     const mdl = await MediaDLManager.check();
                     if (!mdl.ok) {
-                        dirDisplay.textContent = t('dlPopupDownloaderOffline', 'Downloader not running');
+                        setDirText(t('dlPopupDownloaderOffline', 'Downloader not running'), false);
                         return;
                     }
                     const { data } = await extensionFetchJson({
@@ -2725,10 +2735,10 @@
                             showToast(t('dlPopupOutsideRoots', 'That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path.'), '#f59e0b', { duration: 8 });
                         }
                     } else if (data?.error) {
-                        dirDisplay.textContent = data.error;
+                        setDirText(data.error, false);
                     }
                 } catch (_) {
-                    dirDisplay.textContent = t('dlPopupPickerUnavailable', 'Folder picker unavailable');
+                    setDirText(t('dlPopupPickerUnavailable', 'Folder picker unavailable'), false);
                 } finally {
                     dirToggle.disabled = false;
                     if (dirToggle.textContent === t('dlPopupPicking', 'Picking…')) dirToggle.textContent = prevLabel;
@@ -3147,17 +3157,17 @@
             (async () => {
                 const mdl = await MediaDLManager.check();
                 if (!mdl.ok) {
-                    if (dirDisplay.isConnected) dirDisplay.textContent = t('dlPopupDownloaderOffline', 'Downloader not running');
+                    if (dirDisplay.isConnected) setDirText(t('dlPopupDownloaderOffline', 'Downloader not running'), false);
                     return;
                 }
                 const cfg = await _fetchServerConfig(mdl.token);
                 const path = cfg?.downloadPath || cfg?.DownloadPath || '';
                 if (path && dirDisplay.isConnected && !customDir) {
                     serverDefaultPath = path;
-                    dirDisplay.textContent = path;
+                    setDirText(path, true);
                     dirDisplay.title = path;
                 } else if (!path && dirDisplay.isConnected) {
-                    dirDisplay.textContent = t('dlPopupDefault', 'Default');
+                    setDirText(t('dlPopupDefault', 'Default'), false);
                 }
             })();
         }

@@ -1137,7 +1137,7 @@
     "message": "Astra Downloader はこの URL に動画ストリームがないと報告しました。"
   },
   "dlPopupFormatsProbe": {
-    "message": "Check available"
+    "message": "Check what's available"
   },
   "dlPopupFormatsRecheck": {
     "message": "Check again"
@@ -1204,9 +1204,6 @@
   },
   "dlPopupQualitySizeTpl": {
     "message": "{quality} · {size}"
-  },
-  "dlPopupQualitySizeUnavailable": {
-    "message": "Size unavailable"
   },
   "dlPopupReset": {
     "message": "リセット"

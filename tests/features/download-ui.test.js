@@ -235,3 +235,20 @@ test('every documented downloader error code keeps its recovery branch and copy'
         assert.ok(failure.duration > 0);
     }
 });
+
+test('download panel labels read as what is known, not as failures', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const source = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'download-ui', 'index.js'), 'utf8');
+    const css = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    // Every quality chip read "Size unavailable" before the downloader had
+    // been asked anything. With no estimate a chip is just its quality.
+    assert.doesNotMatch(source, /dlPopupQualitySizeUnavailable/);
+    assert.match(source, /if \(!size\) \{\s*chip\.textContent = option\.label;/);
+    // "Downloader not running" and "Default" are statuses, not folder paths,
+    // so only a real path takes the monospace face.
+    assert.equal((source.match(/dirDisplay\.textContent\s*=/g) || []).length, 1,
+        'every save-to write goes through setDirText so it carries its kind');
+    assert.match(source, /dirDisplay\.dataset\.kind = isPath \? 'path' : 'status'/);
+    assert.match(css, /\.ytkit-dl-popup__dir-path\[data-kind="status"\]\s*\{\s*font-family:\s*inherit;/);
+});

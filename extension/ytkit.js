@@ -50249,6 +50249,10 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace;
         }
 
+        .ytkit-dl-popup__dir-path[data-kind="status"] {
+            font-family: inherit;
+        }
+
         .ytkit-dl-popup__dir-input {
             flex: 1;
             min-width: 0;
