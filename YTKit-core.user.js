@@ -11897,8 +11897,9 @@ if (typeof globalThis !== "undefined") {
                     if (lastSampleMs > budgetMs) {
                         overBudgetFrames += 1;
                         if (overBudgetFrames >= MAX_CONSECUTIVE_OVER_BUDGET_FRAMES) {
+                            const exceededMs = lastSampleMs;
                             stop();
-                            onBudgetExceeded(lastSampleMs, video);
+                            onBudgetExceeded(exceededMs, video);
                             return;
                         }
                     } else {

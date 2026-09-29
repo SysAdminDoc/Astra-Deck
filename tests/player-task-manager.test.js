@@ -235,6 +235,7 @@ test('video frame sampler fails closed after three consecutive over-budget callb
     let nextId = 0;
     let clock = 0;
     let budgetFailures = 0;
+    let reported = null;
     const video = {
         requestVideoFrameCallback(callback) {
             const id = ++nextId;
@@ -250,7 +251,7 @@ test('video frame sampler fails closed after three consecutive over-budget callb
         budgetMs: 1,
         now: () => clock,
         onFrame: () => { clock += 2; },
-        onBudgetExceeded: () => { budgetFailures += 1; }
+        onBudgetExceeded: (duration) => { budgetFailures += 1; reported = duration; }
     });
     const deliver = () => {
         const callback = pending.values().next().value;
@@ -263,6 +264,9 @@ test('video frame sampler fails closed after three consecutive over-budget callb
     deliver();
     deliver();
     assert.equal(budgetFailures, 1);
+    // The failure notice quotes this number. It used to be read after stop()
+    // had zeroed it, so every notice said the sample took 0.00ms.
+    assert.equal(reported, 2, 'the handler gets the sample time that tripped the budget');
     assert.equal(sampler.isRunning(), false);
     assert.equal(pending.size, 0);
 });
