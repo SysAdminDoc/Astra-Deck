@@ -89,6 +89,12 @@ function bootstrapBufferBridge(options = {}) {
             querySelector(selector) {
                 if (selector === '.html5-main-video') return currentVideo;
                 if (selector === '.html5-video-player') return player;
+                // A selector list matches its first listed selector that exists,
+                // close enough to the DOM's document-order rule for one node each.
+                for (const part of String(selector).split(',')) {
+                    const node = options.nodes && options.nodes[part.trim()];
+                    if (node) return node;
+                }
                 return null;
             },
             querySelectorAll() { return []; },
@@ -108,8 +114,10 @@ function bootstrapBufferBridge(options = {}) {
         Date,
         Infinity,
         setTimeout(callback) { callback(); return 1; },
-        clearTimeout() {}
+        clearTimeout() {},
+        getComputedStyle: (element) => element.style || { display: 'block', visibility: 'visible' }
     };
+    if (options.initialResponse) context.ytInitialPlayerResponse = options.initialResponse;
     context.HTMLVideoElement.prototype = { canPlayType() { return 'probably'; } };
     context.addEventListener = (type, callback) => addListener(windowListeners, type, callback);
     context.removeEventListener = () => {};
@@ -211,6 +219,58 @@ test('buffer preload never calls the player for a live stream', () => {
     assert.deepEqual(bridge.calls, []);
     assert.deepEqual(bridge.status(), { status: 'skipped', reason: 'live-stream' });
     assert.deepEqual(bridgeCalls, []);
+});
+
+test('the hidden live badge every player carries does not make an upload live', () => {
+    // YouTube's player keeps a .ytp-live-badge on every video and hides it on
+    // uploads. Matching the selector alone skipped Buffer / Preload on every
+    // video there is; found on live YouTube once the bridge ran again.
+    const bridge = bootstrapBufferBridge({
+        nodes: {
+            '.ytp-live-badge': { getClientRects: () => [], style: { display: 'none', visibility: 'visible' } }
+        }
+    });
+
+    bridge.setEnabled(true);
+
+    assert.deepEqual(bridge.calls, [20]);
+    assert.deepEqual(bridge.status(), { status: 'applied', reason: 'setBufferingGoal:20' });
+});
+
+test('a live badge that is showing still marks a live stream', () => {
+    const bridge = bootstrapBufferBridge({
+        nodes: {
+            '.ytp-live-badge': { getClientRects: () => [{}], style: { display: 'inline-flex', visibility: 'visible' } }
+        }
+    });
+
+    bridge.setEnabled(true);
+
+    assert.deepEqual(bridge.calls, []);
+    assert.deepEqual(bridge.status(), { status: 'skipped', reason: 'live-stream' });
+});
+
+test('the hard-load response of a live stream does not follow you to an upload', () => {
+    const liveResponse = { videoDetails: { videoId: 'live-first', isLiveContent: true } };
+    const upload = bootstrapBufferBridge({
+        initialResponse: liveResponse,
+        player: {
+            getVideoData: () => ({ isLive: false, video_id: 'upload-next' }),
+            setBufferingGoal: (seconds) => upload.calls.push(seconds)
+        }
+    });
+    upload.setEnabled(true);
+    assert.deepEqual(upload.status(), { status: 'applied', reason: 'setBufferingGoal:20' });
+
+    const same = bootstrapBufferBridge({
+        initialResponse: liveResponse,
+        player: {
+            getVideoData: () => ({ isLive: false, video_id: 'live-first' }),
+            setBufferingGoal: () => {}
+        }
+    });
+    same.setEnabled(true);
+    assert.deepEqual(same.status(), { status: 'skipped', reason: 'live-stream' });
 });
 
 test('buffer preload reapplies once for the next VOD after SPA navigation', () => {

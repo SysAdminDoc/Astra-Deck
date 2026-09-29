@@ -1011,25 +1011,44 @@
         return value === true || value === 1 || value === '1' || value === 'true';
     }
 
+    function isShowing(element) {
+        if (!element) return false;
+        try {
+            if (typeof element.getClientRects === 'function' && element.getClientRects().length === 0) return false;
+            var style = typeof globalThis.getComputedStyle === 'function' ? globalThis.getComputedStyle(element) : null;
+            return !style || (style.display !== 'none' && style.visibility !== 'hidden');
+        } catch (_) {
+            return false;
+        }
+    }
+
     function isLiveVideo(video, player) {
+        var currentId = '';
         try {
             if (player && typeof player.getVideoData === 'function') {
                 var data = player.getVideoData();
                 if (data && (isTruthyFlag(data.isLive) || isTruthyFlag(data.isLivePlayback))) return true;
+                currentId = (data && typeof data.video_id === 'string') ? data.video_id : '';
             }
         } catch (_) {
             // reason: player metadata is optional and may be unavailable during route changes
         }
         try {
+            // The hard-load response keeps describing the first video after
+            // an in-app navigation, so it only counts for the video playing.
             var response = globalThis.ytInitialPlayerResponse;
             var details = response && response.videoDetails;
-            if (details && (isTruthyFlag(details.isLive) || isTruthyFlag(details.isLiveContent))) return true;
+            if (details && (!currentId || details.videoId === currentId)
+                && (isTruthyFlag(details.isLive) || isTruthyFlag(details.isLiveContent))) return true;
         } catch (_) {
             // reason: page response globals are not stable across SPA routes
         }
         if (video && video.duration === Infinity) return true;
         try {
-            return !!document.querySelector('ytd-watch-flexy[is-live], .ytp-live-badge');
+            if (document.querySelector('ytd-watch-flexy[is-live]')) return true;
+            // The player carries a live badge on every video and hides it on
+            // uploads, so only one that's actually showing means live.
+            return isShowing(document.querySelector('.ytp-live-badge'));
         } catch (_) {
             return false;
         }
