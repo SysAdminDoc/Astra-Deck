@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.92.1] (2026-09-28)
+
+### Fixed
+
+- Theater Split: Like and Dislike on comments show their hover, liked and disabled states again. One of the base button rules outweighed all three, so a comment you'd liked looked exactly like one you hadn't. The like count next to the button now brightens with it, takes the liked color, and no longer catches clicks meant for the button.
+
+### Release checks
+
+- The live desktop smoke checks the redesigned Theater Split comment actions (flat 32px buttons, no card behind a comment) instead of the older boxed design, and it now fails when Like has no hover or liked state.
+- The theme-control probe loads the Theater Split stylesheets through their own builders. Since the redesign it had been testing without them.
+- The live chat smoke passes again. YouTube's chat frame now turns away a headless browser with "Please update it to use live chat", so the smoke presents the same build as regular Chrome, and a missing chat app now reports what the frame showed instead.
+- The social preview image shows the current Command Deck and Theater Split.
+
 ## [4.92.0] (2026-09-28)
 
 ### Changed
