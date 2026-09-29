@@ -827,6 +827,22 @@ test('popup root is a modal dialog with focus trapping and Escape close semantic
         /focusInitialPopupControl\s*\(\s*\)/,
         'Popup boot must move focus into the dialog after controls render'
     );
+    // Focusing the first focusable meant focusing the skip link, which then
+    // painted over the brand on every open, mouse users included.
+    const initialFocus = popupSource.slice(
+        popupSource.indexOf('function focusInitialPopupControl'),
+        popupSource.indexOf('function handlePopupDialogKeydown')
+    );
+    assert.match(
+        initialFocus,
+        /getElementById\('popup-workspace'\)[\s\S]*?\.focus\(\{\s*preventScroll:\s*true\s*\}\)[\s\S]*?return;[\s\S]*?getFocusableElements/,
+        'Popup boot must focus the workspace (the skip link target) before any fallback, not the skip link'
+    );
+    assert.match(initialFocus, /dataset\.quietFocus = 'true'[\s\S]*?'blur'[\s\S]*?delete workspace\.dataset\.quietFocus/,
+        'boot focus must be quiet only until focus first leaves the workspace');
+    assert.match(popupCssSource,
+        /\.options-workspace\[data-quiet-focus\]:focus-visible\s*\{\s*box-shadow:\s*none;/,
+        'the quiet boot focus must not frame the whole workspace');
 });
 
 // ── v3.16+ Audit Pass: SponsorBlock destroy is race-proof ──

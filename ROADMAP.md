@@ -137,13 +137,11 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Complexity: M
 
 - [ ] P3 — Smaller audit leftovers
-  Why: 2026-09-28 audit. (1) The popup skip link shows on every open for mouse users:
-  `focusInitialPopupControl()` focuses it and `.skip-link:focus` (not `:focus-visible`) paints it
-  (`popup.js` ~1799, `popup.css` ~112). Needs a real popup render to confirm. (2) Channel
-  landing tab: non-Videos tabs only work on a hard load; after in-app navigation the embedded
-  page data belongs to the previous page (`ytkit.js` ~10892). (3) Plausible: a dismissed "Still
-  watching?" dialog stays in the DOM and keeps the gate open, so the auto-dismiss clicks Play
-  when the user opens Save or Share (`_isYouTherePrompt`, ~15705). (4) The audio track status
+  Why: 2026-09-28 audit. (1) Channel landing tab: non-Videos tabs only work on a hard load;
+  after in-app navigation the embedded page data belongs to the previous page (`ytkit.js`
+  ~10892). (2) Plausible: a dismissed "Still watching?" dialog stays in the DOM and keeps the
+  gate open, so the auto-dismiss clicks Play when the user opens Save or Share
+  (`_isYouTherePrompt`, ~15705). (3) The audio track status
   attribute keeps the previous video's `selected:<id>` after an in-app navigation to a video with
   no alternate tracks, and that video retries the whole ladder every time
   (`core/audio-track.js` `apply`, the `tracks.length === 0` return). Diagnostic only today.

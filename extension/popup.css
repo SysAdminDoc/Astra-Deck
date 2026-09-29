@@ -129,6 +129,12 @@ body {
   box-shadow: var(--focus-ring);
 }
 
+/* Boot focus lands here too (popup.js focusInitialPopupControl). Only a
+   skip-link arrival should frame the whole workspace. */
+.options-workspace[data-quiet-focus]:focus-visible {
+  box-shadow: none;
+}
+
 .page-shell {
   display: flex;
   flex-direction: column;

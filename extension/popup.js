@@ -1825,6 +1825,23 @@ function getActiveFocusRoot() {
 function focusInitialPopupControl() {
     requestAnimationFrame(() => {
         if (document.activeElement && document.activeElement !== document.body) return;
+        // Land on the workspace, the skip link's own target. The first
+        // focusable is the skip link, and focusing it painted "Skip to
+        // settings" over the brand on every open, mouse or keyboard. The
+        // workspace is a programmatic-only stop; the next Tab reaches its
+        // first control and Shift+Tab still finds the link. Chrome counts
+        // focus at load as focus-visible, so data-quiet-focus holds back the
+        // ring the workspace draws when the skip link sends a keyboard user
+        // there, until focus leaves once.
+        const workspace = document.getElementById('popup-workspace');
+        if (workspace) {
+            workspace.dataset.quietFocus = 'true';
+            workspace.addEventListener('blur', () => {
+                delete workspace.dataset.quietFocus;
+            }, { once: true });
+            workspace.focus({ preventScroll: true });
+            return;
+        }
         const firstControl = getFocusableElements(document.body)[0];
         firstControl?.focus?.();
     });
