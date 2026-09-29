@@ -6,6 +6,7 @@
      tokens belong here; see the same note in popup.css. */
   --accent-on: #1a0b06;
   --info-soft: rgba(106, 169, 255, 0.1);
+  --info-border: rgba(106, 169, 255, 0.24);
   --warning-soft: rgba(255, 190, 122, 0.1);
   --success-soft: rgba(53, 199, 127, 0.1);
   --error-soft: rgba(255, 116, 128, 0.1);
@@ -387,16 +388,19 @@ button {
   text-align: start;
 }
 
+/* Idle states ("open YouTube to measure this") are information, not trouble.
+   They used the coral accent, which sat one step from the error state's red
+   and made every empty card on a fresh panel look like a warning. */
 .sp-empty-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 9px;
-  border: 1px solid rgba(255, 107, 74, 0.18);
-  background: rgba(255, 107, 74, 0.08);
-  color: var(--astra-accent-200);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--info-border);
+  background: var(--info-soft);
+  color: var(--astra-info-100);
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
@@ -421,18 +425,19 @@ button {
   line-height: 1.45;
 }
 
+/* A button label, so it reads like the panel's other buttons: sentence case
+   at 11px. It was 9px capitals, the smallest text on the page. */
 .sp-empty-action {
   min-height: 28px;
-  padding: 0 9px;
+  padding: 0 10px;
   border-radius: var(--radius-chip);
-  border: 1px solid rgba(255, 107, 74, 0.25);
-  background: rgba(255, 107, 74, 0.08);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-softer);
   color: var(--astra-accent-100);
-  font-size: 9px;
-  font-weight: 850;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
   line-height: 1;
-  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -443,8 +448,8 @@ button {
 }
 
 .sp-empty-action:hover {
-  background: rgba(255, 107, 74, 0.14);
-  border-color: rgba(255, 107, 74, 0.38);
+  background: var(--accent-soft);
+  border-color: var(--accent);
   color: var(--astra-accent-050);
 }
 
