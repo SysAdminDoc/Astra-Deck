@@ -4,20 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P0 — Ship the page-side bridge fix
-  Why: from 4.89.0 to 4.91.0 every feature that runs inside YouTube's page (Force H.264, Codec
-  Selector, Always Best Quality, audio track, Audio-Only Mode, the audio effects, Buffer /
-  Preload, Force DVR, Filter Feeds Before Render, CPU Tamer, Photosensitive Flash Protection)
-  received no settings, because `core/bridge-channel.js` never loaded in the MAIN world. Fixed on
-  main in 5fe1afe1, but users only get it with a release. The deep audit's single version bump
-  (to 4.92.0) wasn't done because the pass was stopped early.
-  Where: release procedure in the repo `CLAUDE.md` (build-extension `--bump minor --profile both`,
-  sync-userscript, docs/architecture.md and tests/project-facts.test.js version lines,
-  generate:selector-asset, sign:feeds, project-facts, shipped-identity baseline, CHANGELOG
-  heading, tag then main). Run `npm run smoke:main-bridge:live` against the built extension.
-  Acceptance: a tagged release whose built extension passes `smoke:main-bridge:live`.
-  Complexity: S
-
 - [ ] P1 — Photosensitive Flash Protection switches itself off on GPU machines
   Why: 2026-09-28, measured live. The frame sampler fails closed after three samples over
   `FRAME_BUDGET_MS = 1`. A 2x2 `drawImage` + `getImageData` of a hardware-decoded YouTube frame

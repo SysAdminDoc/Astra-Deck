@@ -57,7 +57,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.91.0` |
+| Release | `v4.92.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `488` entries across `18` categories |
@@ -242,7 +242,7 @@ Astra removes it at the handoff and opens the next one. When the final video
 ends, the feed is empty. If auto-advance is off, a finished queued video is
 still cleared and the next one waits for you.
 
-![Watch Feed with thumbnail controls and a two-video lineup](outputs/astra-deck-watch-feed-dark-v1.png)
+![Watch Feed with thumbnail controls and a three-video lineup](outputs/astra-deck-watch-feed-dark-v2.png)
 
 ### Interface
 
@@ -430,7 +430,7 @@ Toggle individual elements on/off through the settings panel:
 Click the gear icon in the YouTube masthead or player controls, or use the toolbar popup's **Open Full Settings** action.
 
 <p align="center">
-  <img src="outputs/astra-deck-command-deck-dark-v7.png" alt="Astra Deck Command Deck showing searchable playback controls" width="900">
+  <img src="outputs/astra-deck-command-deck-dark-v8.png" alt="Astra Deck Command Deck showing searchable playback controls" width="900">
 </p>
 
 ### Theater Split

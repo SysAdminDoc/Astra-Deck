@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.92.0] (2026-09-28)
+
 ### Changed
 
 - A visual pass over the settings panel, popup, side panel and the in-page panels, in light and dark.
