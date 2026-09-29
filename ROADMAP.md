@@ -156,6 +156,20 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   a11y smoke's contrast and focus checks in light and dark.
   Complexity: M
 
+- [ ] P3 — Surfaces the 2026-09-28 polish pass didn't reach
+  Why: that pass covered the Command Deck, popup, side panel, download panel, Video Hider,
+  transcript states, comment search, toasts and the Theater Split captures. These got no
+  light/dark and state review: the userscript's own Quick Settings UI (`YTKit.user.js`), the
+  live chat enhancements, the AI summary and Transcript Q&A dialogs, the Subscription Groups
+  manager, the player right-click menu, the SponsorBlock segment UI, and the Digital Wellbeing
+  prompts.
+  Where: `YTKit.user.js`, `extension/live-chat.js` / `live-chat.css`,
+  `extension/core/userscript-ai-summary.js`, `extension/features/subscription-groups`,
+  `extension/features/sponsorblock`, `extension/features/digital-wellbeing`.
+  Acceptance: each surface captured headless in light and dark (default, hover, focus,
+  disabled, empty, error), with findings fixed or logged here.
+  Complexity: M
+
 - [ ] P3 — Block Comment Authors has no entry point when the comment menu is hidden
   Why: the Block item lives in the ⋮ menu YouTube opens from a comment. Three setups remove
   that menu: signed-out pages (YouTube renders the menu empty and the button zero-size),
