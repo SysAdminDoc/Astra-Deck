@@ -896,6 +896,10 @@ async function configureRenderedState(client, surface, theme, mode) {
     const reflow = mode === 'reflow-320';
     const width = reflow ? REFLOW_CSS_WIDTH : (zoomed ? Math.max(200, Math.floor(surface.width / 2)) : surface.width);
     const height = reflow ? Math.min(surface.height, 640) : (zoomed ? Math.max(320, Math.floor(surface.height / 2)) : surface.height);
+    // A headless page can lose window focus between states. The focused element
+    // stays document.activeElement but :focus stops matching, so the skip link
+    // sat at -9999px and the focus-indicator check failed on about half the runs.
+    await client.send('Emulation.setFocusEmulationEnabled', { enabled: true });
     await client.send('Emulation.setDeviceMetricsOverride', {
         width,
         height,
