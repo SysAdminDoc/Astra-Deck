@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- A visual pass over the settings panel, popup, side panel and the in-page panels, in light and dark.
+- Each setting in the panel shows its own icon. Most rows used to draw the same gear, because 95 of the icon names the features asked for were never in the icon set. A test now fails when a feature names an icon that doesn't exist.
+- Light mode controls are easier to see. Select boxes, the search field and other control borders were barely darker than the page. Switches that are off now have a visible track and outline in both themes, and the thumb reads clearly against it.
+- The settings search draws one focus ring, and the thin second line under the box is gone.
+- Corners follow one scale (4, 6, 8, 10 or 12px) across the extension. About 60 odd 3, 5, 7, 9 and 11px corners were snapped to it.
+- Small Clear buttons in the side panel search and the color settings read at 11px in sentence case instead of 9px capitals.
+- Toasts are sized to their message (344px to 620px) instead of always 620px wide, so "@name blocked" no longer stretches across the page and into cards pinned to the corner.
+- The download panel shows each quality as just "1080p" until Astra Downloader reports a size. It used to say "Size unavailable" on all six before anything had been checked. The button that asks is now "Check what's available", and statuses like "Downloader not running" no longer use the monospace font meant for folder paths.
+- The Downloads header card says "Quality", to match "Video" and "Audio" next to it.
+- The popup's settings diff names each setting the way the panel does and shows values as on, off or Empty instead of `true`, `false`, `""` or `[]`.
+- Setting names built from their keys spell brands right: YouTube, DeArrow, SponsorBlock, GitHub, Gemini, VLC, MPV and H.264.
+- The side panel's empty states use a calmer tone, and their buttons aren't tiny capitals any more.
+- An empty Video Hider pane uses a dashed outline instead of looking like a populated card, and its tabs share one row.
+
 ### Fixed
 
 - Features that run inside YouTube's own page did nothing from 4.89.0 on. That's Force H.264 Codec, Codec Selector, Always Best Quality, Preferred Audio Track Language, Audio-Only Mode, Volume Boost, Mono to Stereo, Audio Normalization, Audio Pan and the other audio effects, Buffer / Preload, Force DVR for Live Streams, Filter Feeds Before Render, CPU Tamer and Photosensitive Flash Protection. Chrome loads a script file only once per page, even when two content script entries list it, and the file these features need was listed twice. So it only ever loaded on the extension's side, and the page side never received a single setting. They work again. With Force H.264 on, YouTube is now actually refused VP9 and AV1.
@@ -30,6 +46,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The Thumbnail and View buttons under a video each keep their own labels now. After a View click, View announced itself as "Download thumbnail" and stopped the Download button from resetting. The Download button's labels and error notice are translated, a slow download no longer flips back to "Thumbnail" halfway through, and turning View on or off takes effect right away instead of on the next video.
 - In the userscript, the Thumbnail button follows you to the next video. After you clicked from one video to another it kept downloading the first video's thumbnail.
 - Userscript Quick Settings turns Fit Player to Window off when you turn Theater Split on, the same as the full settings panel. Both used to run at once.
+- With Channel Allowlist on, the Video Hider channels tab shows and edits the allowlist. It kept showing the blocklist and a Block form, so the list the feature was actually using couldn't be managed there. The tab and summary card are labeled to match the mode.
+- Three Video Hider notices (channel blocked, channel allowed, allowlist cleared) were English in every language, because their messages were never added to the translations. They're in all 11 now. In right-to-left languages a channel handle in those notices keeps its @ in front.
+- The popup no longer shows "Skip to settings" over the logo every time it opens. It's still the first stop when you press Shift+Tab.
+- The transcript panel's error and empty messages no longer split their title and text about 40px apart.
+- The category reorder arrows grey out correctly at the top and bottom after you pick a different category.
+- In the popup, the transcript store line spans the full width under the stats, and the feature bisect answers stay hidden until a bisect is running.
 
 ### Security and privacy
 

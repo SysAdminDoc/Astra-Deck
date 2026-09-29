@@ -458,6 +458,6 @@ The `feed-signatures` gate fails until you do, and names the file.
 
 **Rotation.** Generate a new key, update the JWK in both files, re-sign both
 feeds, and ship all four changes in one release. Installs running the previous
-release will refuse the newly signed feeds until they update — which is the
-intended failure mode: they keep their last-known-good copy and their shipped
+release will refuse the newly signed feeds until they update. That's the
+intended failure mode. They keep their last-known-good copy and their shipped
 selector packs.

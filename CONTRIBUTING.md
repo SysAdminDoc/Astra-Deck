@@ -79,6 +79,8 @@ The repo now ships both an MV3 extension and a userscript build. Most feature lo
 }
 ```
 
+The icon name has to exist in `extension/core/icons.js`. If it doesn't, copy the glyph from [Lucide](https://lucide.dev) into that map. `tests/icon-coverage.test.js` fails on a name the map doesn't have, because the panel would otherwise draw the settings gear in its place.
+
 ### Key patterns:
 - **CSS-only features**: Use `cssFeature()` factory
 - **DOM observation**: Use `addMutationRule()` / `removeMutationRule()`

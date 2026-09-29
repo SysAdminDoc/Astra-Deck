@@ -148,6 +148,28 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: each item fixed with a regression test, or closed with evidence it can't happen.
   Complexity: M
 
+- [ ] P3 — Popup Settings Overview shows internal category slugs
+  Why: 2026-09-28 polish pass. Each overview row is headed with the schema's raw category
+  ("playback-audio", "watch-player", "shell", "a11y-perf", "dev-diagnostics" and 13 more), in
+  every locale. These 18 buckets don't line up with the settings panel's 13 categories, so the
+  panel's translated names can't simply be reused.
+  Where: `extension/popup.js` ~4526 (`nameSpan.textContent = cat`), the free-text match at
+  ~4437, `extension/core/settings-schema.js` `category`, `extension/_locales/*/messages.json`.
+  Acceptance: WHEN the overview renders, each row SHALL show a localized category name from
+  keys present in all 11 locales, and a search for that name SHALL still match its rows.
+  Complexity: S
+
+- [ ] P3 — Popup and side panel have no light theme
+  Why: 2026-09-28 polish pass. Both pages are dark only (`surface-system.css` tokens have no
+  `prefers-color-scheme: light` set), while the in-page settings panel follows YouTube's theme.
+  Someone on a light YouTube gets a dark popup next to a light page.
+  Where: `extension/surface-system.css` `--astra-*` tokens, `extension/popup.css`,
+  `extension/sidepanel.css`; `scripts/smoke-headless-a11y.js` already captures a light variant
+  for in-page surfaces and would need one for these two.
+  Acceptance: both pages follow `prefers-color-scheme` with a light token set that passes the
+  a11y smoke's contrast and focus checks in light and dark.
+  Complexity: M
+
 - [ ] P3 — Block Comment Authors has no entry point when the comment menu is hidden
   Why: the Block item lives in the ⋮ menu YouTube opens from a comment. Three setups remove
   that menu: signed-out pages (YouTube renders the menu empty and the button zero-size),
