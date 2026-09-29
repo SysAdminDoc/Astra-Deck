@@ -2612,9 +2612,11 @@
             overflow-wrap: anywhere !important;
         }
 
+        /* Five tabs since Filters & Limits joined; a fixed four-column grid
+           left that one alone on a second row at every width. */
         #ytkit-settings-panel .ytkit-vh-tabs {
             display: grid !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
             gap: 0 !important;
             margin-bottom: 16px !important;
             border: 1px solid var(--ytkit-v3-border) !important;
@@ -2678,6 +2680,16 @@
             justify-items: center !important;
             min-height: 150px !important;
             text-align: center !important;
+        }
+
+        /* "No hidden videos yet" is where every new user starts, not a
+           problem. It wore the amber warning wash in both themes; it now
+           matches the panel's other empty states. */
+        #ytkit-settings-panel #ytkit-vh-content > .ytkit-vh-hero.is-empty,
+        html:not([dark]) #ytkit-settings-panel #ytkit-vh-content > .ytkit-vh-hero.is-empty {
+            border: 1px dashed var(--ytkit-v3-border-strong) !important;
+            background: var(--ytkit-v3-panel) !important;
+            box-shadow: none !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-vh-summary-card {

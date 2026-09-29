@@ -267,7 +267,9 @@ test('sidepanel locale keys exist in every bundled locale', () => {
 });
 
 test('side dashboard uses logical layout and reverses switch travel for RTL', () => {
-    assert.match(sidepanelCss, /\.sp-search[\s\S]*padding-inline:\s*32px 58px/,
+    // The clear action reads at 11px sentence case (it was 9px caps), so the
+    // end padding grew from 58px to keep typed text clear of the button.
+    assert.match(sidepanelCss, /\.sp-search[\s\S]*padding-inline:\s*32px 64px/,
         'search reserves logical start/end space for its icon and clear action');
     assert.match(sidepanelCss, /\.sp-search-icon[\s\S]*inset-inline-start:\s*10px/,
         'search icon must anchor to inline-start');

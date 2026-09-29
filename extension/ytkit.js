@@ -47679,10 +47679,11 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             background: rgba(255,255,255,0.04);
             color: var(--ytkit-text-secondary);
             font-family: var(--ytkit-font);
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            /* A button label: sentence case at 11px, like the panel's other
+               buttons. It was 9px capitals. */
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
             cursor: pointer;
             transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
         }

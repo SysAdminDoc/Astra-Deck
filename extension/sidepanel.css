@@ -582,7 +582,7 @@ button {
   width: 100%;
   min-height: 34px;
   padding-block: 0;
-  padding-inline: 32px 58px;
+  padding-inline: 32px 64px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
   background: var(--surface-raised);
@@ -638,10 +638,9 @@ button {
   border: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.035);
   color: var(--text-muted);
-  font-size: 9px;
-  font-weight: 850;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
   cursor: pointer;
   transition:
     border-color var(--dur-quick) var(--ease-out),
