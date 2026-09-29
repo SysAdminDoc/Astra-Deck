@@ -39,12 +39,12 @@
 
   <g filter="url(#shadow)">
     <rect x="48" y="228" width="740" height="470" rx="20" fill="#091522" stroke="#ff5148" stroke-opacity="0.56"/>
-    <image href="../outputs/astra-deck-command-deck-dark-v7.png" xlink:href="../outputs/astra-deck-command-deck-dark-v7.png" x="58" y="238" width="720" height="450" preserveAspectRatio="xMidYMid slice" clip-path="url(#commandClip)"/>
+    <image href="../outputs/astra-deck-command-deck-dark-v8.png" xlink:href="../outputs/astra-deck-command-deck-dark-v8.png" x="58" y="238" width="720" height="450" preserveAspectRatio="xMidYMid slice" clip-path="url(#commandClip)"/>
   </g>
 
   <g filter="url(#shadow)">
     <rect x="796" y="242" width="436" height="280" rx="18" fill="#091522" stroke="#39d98a" stroke-opacity="0.48"/>
-    <image href="../outputs/astra-deck-theater-split-dark-v7.png" xlink:href="../outputs/astra-deck-theater-split-dark-v7.png" x="806" y="252" width="416" height="260" preserveAspectRatio="xMidYMid slice" clip-path="url(#splitClip)"/>
+    <image href="../outputs/astra-deck-theater-split-dark-v8.png" xlink:href="../outputs/astra-deck-theater-split-dark-v8.png" x="806" y="252" width="416" height="260" preserveAspectRatio="xMidYMid slice" clip-path="url(#splitClip)"/>
   </g>
 
   <g font-family="Segoe UI, Arial, sans-serif">
