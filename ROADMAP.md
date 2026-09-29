@@ -4,6 +4,71 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
+- [ ] P0 — Ship the page-side bridge fix
+  Why: from 4.89.0 to 4.91.0 every feature that runs inside YouTube's page (Force H.264, Codec
+  Selector, Always Best Quality, audio track, Audio-Only Mode, the audio effects, Buffer /
+  Preload, Force DVR, Filter Feeds Before Render, CPU Tamer, Photosensitive Flash Protection)
+  received no settings, because `core/bridge-channel.js` never loaded in the MAIN world. Fixed on
+  main in 5fe1afe1, but users only get it with a release. The deep audit's single version bump
+  (to 4.92.0) wasn't done because the pass was stopped early.
+  Where: release procedure in the repo `CLAUDE.md` (build-extension `--bump minor --profile both`,
+  sync-userscript, docs/architecture.md and tests/project-facts.test.js version lines,
+  generate:selector-asset, sign:feeds, project-facts, shipped-identity baseline, CHANGELOG
+  heading, tag then main). Run `npm run smoke:main-bridge:live` against the built extension.
+  Acceptance: a tagged release whose built extension passes `smoke:main-bridge:live`.
+  Complexity: S
+
+- [ ] P1 — Photosensitive Flash Protection switches itself off on GPU machines
+  Why: 2026-09-28, measured live. The frame sampler fails closed after three samples over
+  `FRAME_BUDGET_MS = 1`. A 2x2 `drawImage` + `getImageData` of a hardware-decoded YouTube frame
+  took 4.6ms median, 5.8ms p90, 15.4ms max on an RTX 4070 SUPER (headless Chromium, D3D11), so
+  every frame is over budget and the guard shuts off within a tenth of a second of starting.
+  Software rendering sits right at the line (1.1ms median). With the budget at 8ms (what Video
+  Hider and Subscription Groups already use) the guard stayed on `monitoring` across an in-app
+  navigation and caught real flashes. At ~5ms a frame it also costs real main-thread time, so
+  look at a capped sample rate or an off-thread read (`VideoFrame.copyTo`) at the same time.
+  Where: `extension/ytkit-main.js` `FRAME_BUDGET_MS`, `extension/features/video-filters/index.js`
+  `PHOTOSENSITIVE_FRAME_BUDGET_MS`, the `|| 1` fallback in `ytkit.js` `_startFallbackSampler`,
+  `scripts/bench-startup.js` `PHOTOSENSITIVE_FRAME_BUDGET_MS`. Tests that pin 1ms:
+  `tests/startup-performance.test.js` and two in `tests/features/video-filters.test.js`.
+  Acceptance: on a GPU-accelerated headless run the guard stays on `monitoring` for a full
+  minute of playback, and the three budget copies are held together by one test.
+  Complexity: M
+
+- [ ] P2 — Buffer / Preload has no player API to drive
+  Why: 2026-09-28, checked live. The feature calls `movie_player.setBufferingGoal()`, which
+  isn't in the player's public or internal API any more (245 methods listed; the only
+  buffer-related ones are `preloadVideoById` and `preloadVideoByPlayerVars`). With the bridge
+  fixed it now reports `degraded: player-api-missing` on every video, which is honest but
+  means the feature does nothing.
+  Where: `extension/ytkit-main.js` "Feature 3.5: Bounded VOD buffer target", `ytkit.js`
+  `bufferPreload`.
+  Acceptance: either a working lever (for example player config read at startup) verified
+  live, or the feature retired with a CHANGELOG note.
+  Complexity: M
+
+- [ ] P2 — Live-check the other page-side features the bridge fix revived
+  Why: these hadn't run for users since 4.89.0, so their live paths are untested against
+  today's YouTube. Checked live on 2026-09-28 and working: codec filter, Always Best Quality,
+  CPU Tamer's resource unlock, Force DVR (skips uploads), Filter Feeds Before Render (idle),
+  audio track selection (after the fix in this pass). Not yet checked: Audio-Only Mode, Volume
+  Boost, Mono to Stereo, Audio Normalization, Audio Pan, the EQ, auto gain, high-pass and audio
+  sync offset.
+  Where: `extension/ytkit-main.js` audio sections; probe pattern in
+  `scripts/smoke-main-bridge-live.js`.
+  Acceptance: each feature turned on in a live headless run with its effect observed (a Web
+  Audio node in the graph, a status attribute, or the media element state), findings fixed or
+  logged here.
+  Complexity: M
+
+- [ ] P2 — Adversarial review of the 2026-09-28 bridge commits
+  Why: the deep audit's closing self-audit (a fresh-context reviewer that sees only the diff and
+  the CHANGELOG) wasn't run because the pass was stopped early. The bridge commits change a
+  security boundary and the content script layout.
+  Where: eb95e4d6, 5fe1afe1, cc2a6f39 and the three fixes after them.
+  Acceptance: the review's confirmed objections fixed or logged here.
+  Complexity: S
+
 - [ ] P3 — Finish the English UI strings built outside the copy gate's sinks
   Why: the 2026-09-23 audit swept every untagged template literal with `${}` in extension
   code and found user-facing English the UI-copy gate cannot see (copy built in a `return`,
@@ -78,7 +143,12 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   landing tab: non-Videos tabs only work on a hard load; after in-app navigation the embedded
   page data belongs to the previous page (`ytkit.js` ~10892). (3) Plausible: a dismissed "Still
   watching?" dialog stays in the DOM and keeps the gate open, so the auto-dismiss clicks Play
-  when the user opens Save or Share (`_isYouTherePrompt`, ~15705).
+  when the user opens Save or Share (`_isYouTherePrompt`, ~15705). (4) The audio track status
+  attribute keeps the previous video's `selected:<id>` after an in-app navigation to a video with
+  no alternate tracks, and that video retries the whole ladder every time
+  (`core/audio-track.js` `apply`, the `tracks.length === 0` return). Diagnostic only today.
+  (5) `tests/feed-prefilter.test.js` ~28 carries an `eslint-disable-next-line no-eval` that
+  ESLint reports as unused.
   Acceptance: each item fixed with a regression test, or closed with evidence it can't happen.
   Complexity: M
 
