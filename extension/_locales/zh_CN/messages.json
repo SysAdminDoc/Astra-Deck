@@ -7957,9 +7957,6 @@
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
-  "videoHiderAllowedCountTpl": {
-    "message": "已允许 {count} 个视频"
-  },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "允许的视频 {videoId} 的预览缩略图"
   },
@@ -7980,6 +7977,18 @@
   },
   "videoHiderAlreadyBlockedChannelToast": {
     "message": "{name} 已经屏蔽"
+  },
+  "videoHiderBlockedChannelAddedToast": {
+    "message": "已屏蔽 {name}",
+    "description": "Video Hider channels tab: toast after a pasted channel is added to the blocklist. {name} is the channel name."
+  },
+  "videoHiderAllowedChannelAddedToast": {
+    "message": "已允许 {name}",
+    "description": "Video Hider channels tab, allowlist mode: toast after a pasted channel is added to the allowlist. {name} is the channel name."
+  },
+  "videoHiderClearedAllowedChannelsToast": {
+    "message": "已清除 {count} 个允许的频道",
+    "description": "Video Hider channels tab, allowlist mode: toast after the allowlist is cleared. {count} is how many channels were removed."
   },
   "videoHiderAlreadyHiddenVideoToast": {
     "message": "视频已隐藏"
@@ -8004,9 +8013,6 @@
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
-  },
-  "videoHiderBlockedCountTpl": {
-    "message": "已屏蔽 {count} 个频道"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -8112,9 +8118,6 @@
   },
   "videoHiderFiltersLimitsTab": {
     "message": "筛选器和限制"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "已隐藏 {count} 个视频"
   },
   "videoHiderHiddenListRestored": {
     "message": "隐藏列表已恢复"

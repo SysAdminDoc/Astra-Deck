@@ -7957,9 +7957,6 @@
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
-  "videoHiderAllowedCountTpl": {
-    "message": "동영상 {count}개 허용"
-  },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "허용한 동영상 {videoId} 미리보기 썸네일"
   },
@@ -7980,6 +7977,18 @@
   },
   "videoHiderAlreadyBlockedChannelToast": {
     "message": "{name}은(는) 이미 차단됨"
+  },
+  "videoHiderBlockedChannelAddedToast": {
+    "message": "{name}을(를) 차단함",
+    "description": "Video Hider channels tab: toast after a pasted channel is added to the blocklist. {name} is the channel name."
+  },
+  "videoHiderAllowedChannelAddedToast": {
+    "message": "{name}을(를) 허용함",
+    "description": "Video Hider channels tab, allowlist mode: toast after a pasted channel is added to the allowlist. {name} is the channel name."
+  },
+  "videoHiderClearedAllowedChannelsToast": {
+    "message": "허용한 채널 {count}개 지움",
+    "description": "Video Hider channels tab, allowlist mode: toast after the allowlist is cleared. {count} is how many channels were removed."
   },
   "videoHiderAlreadyHiddenVideoToast": {
     "message": "동영상이 이미 숨겨져 있습니다"
@@ -8004,9 +8013,6 @@
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
-  },
-  "videoHiderBlockedCountTpl": {
-    "message": "채널 {count}개 차단"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -8112,9 +8118,6 @@
   },
   "videoHiderFiltersLimitsTab": {
     "message": "필터 및 제한"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "동영상 {count}개 숨김"
   },
   "videoHiderHiddenListRestored": {
     "message": "숨김 목록 복원됨"

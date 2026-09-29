@@ -7957,9 +7957,6 @@
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
-  "videoHiderAllowedCountTpl": {
-    "message": "{count} video consentiti"
-  },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "Miniatura di anteprima del video consentito {videoId}"
   },
@@ -7980,6 +7977,18 @@
   },
   "videoHiderAlreadyBlockedChannelToast": {
     "message": "{name} è già bloccato"
+  },
+  "videoHiderBlockedChannelAddedToast": {
+    "message": "{name} bloccato",
+    "description": "Video Hider channels tab: toast after a pasted channel is added to the blocklist. {name} is the channel name."
+  },
+  "videoHiderAllowedChannelAddedToast": {
+    "message": "{name} consentito",
+    "description": "Video Hider channels tab, allowlist mode: toast after a pasted channel is added to the allowlist. {name} is the channel name."
+  },
+  "videoHiderClearedAllowedChannelsToast": {
+    "message": "Cancellati {count} canali consentiti",
+    "description": "Video Hider channels tab, allowlist mode: toast after the allowlist is cleared. {count} is how many channels were removed."
   },
   "videoHiderAlreadyHiddenVideoToast": {
     "message": "Il video è già nascosto"
@@ -8004,9 +8013,6 @@
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
-  },
-  "videoHiderBlockedCountTpl": {
-    "message": "{count} canali bloccati"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -8112,9 +8118,6 @@
   },
   "videoHiderFiltersLimitsTab": {
     "message": "Filtri e limiti"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "{count} video nascosti"
   },
   "videoHiderHiddenListRestored": {
     "message": "Elenco dei nascosti ripristinato"

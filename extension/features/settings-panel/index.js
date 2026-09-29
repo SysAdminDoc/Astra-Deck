@@ -998,7 +998,9 @@ function buildSettingsPanel() {
             return {
                 hidden: feature?._getHiddenVideos?.()?.length || 0,
                 allowed: feature?._getAllowedVideos?.()?.length || 0,
-                channels: feature?._getBlockedChannels?.()?.length || 0
+                channels: appState.settings.hideVideosChannelAllowlist === true
+                    ? (feature?._getAllowedChannels?.()?.length || 0)
+                    : (feature?._getBlockedChannels?.()?.length || 0)
             };
         }
 
@@ -1230,7 +1232,7 @@ function buildSettingsPanel() {
                 t('videoHiderAllowedVideosTab', 'Allowed Videos'),
                 paneAllowedChip
             );
-            createPaneSummaryCard(
+            const paneChannelsLabel = createPaneSummaryCard(
                 'channels',
                 'lock',
                 t('videoHiderBlockedChannelsTab', 'Blocked Channels'),
@@ -1327,12 +1329,31 @@ function buildSettingsPanel() {
             const tabButtons = new Map();
             let activeTabId = tabs[0].id;
 
+            // Channel Allowlist mode swaps which list the channels tab manages.
+            // This pane always showed the blocklist, so in allowlist mode it
+            // listed, counted and cleared the wrong channels. Same helpers as
+            // the ytkit.js fallback pane.
+            const isChannelAllowlistMode = () => appState.settings.hideVideosChannelAllowlist === true;
+            const getManagedChannels = () => isChannelAllowlistMode()
+                ? (videoHiderFeature?._getAllowedChannels?.() || [])
+                : (videoHiderFeature?._getBlockedChannels?.() || []);
+            const setManagedChannels = channels => {
+                if (isChannelAllowlistMode()) videoHiderFeature?._setAllowedChannels?.(channels);
+                else videoHiderFeature?._setBlockedChannels?.(channels);
+            };
+            const removeManagedChannel = channel => isChannelAllowlistMode()
+                ? (videoHiderFeature?._removeAllowedChannel?.(channel) || [])
+                : (videoHiderFeature?._removeBlockedChannel?.(channel) || []);
+            const getChannelModeLabel = () => isChannelAllowlistMode()
+                ? t('videoHiderAllowedChannelsTab', 'Allowed Channels')
+                : t('videoHiderBlockedChannelsTab', 'Blocked Channels');
+
             function getVideoCount() {
                 return videoHiderFeature?._getHiddenVideos()?.length || 0;
             }
 
             function getChannelCount() {
-                return videoHiderFeature?._getBlockedChannels()?.length || 0;
+                return getManagedChannels().length;
             }
 
             function getAllowedCount() {
@@ -1384,12 +1405,16 @@ function buildSettingsPanel() {
                 paneStateChip.textContent = isEnabled
                     ? t('videoHiderFeatureOn', 'Feature On')
                     : t('videoHiderFeatureOff', 'Feature Off');
-                paneHiddenChip.textContent = t('videoHiderHiddenCountTpl', '{count} videos hidden')
-                    .replace('{count}', getVideoCount());
-                paneAllowedChip.textContent = t('videoHiderAllowedCountTpl', '{count} videos allowed')
-                    .replace('{count}', getAllowedCount());
-                paneChannelsChip.textContent = t('videoHiderBlockedCountTpl', '{count} channels blocked')
-                    .replace('{count}', getChannelCount());
+                // Bare counts: the card's label already names the list, and
+                // "{count} videos hidden" over "Hidden Videos" said it twice
+                // (and read "1 videos hidden").
+                paneHiddenChip.textContent = String(getVideoCount());
+                paneAllowedChip.textContent = String(getAllowedCount());
+                paneChannelsChip.textContent = String(getChannelCount());
+                const channelModeLabel = getChannelModeLabel();
+                paneChannelsLabel.textContent = channelModeLabel;
+                const channelTabLabel = tabButtons.get('channels')?.querySelector('.ytkit-vh-tab__label');
+                if (channelTabLabel) channelTabLabel.textContent = channelModeLabel;
 
                 const videoBadge = tabButtons.get('videos')?.querySelector('.ytkit-vh-tab__badge');
                 const allowedBadge = tabButtons.get('allowed')?.querySelector('.ytkit-vh-tab__badge');
@@ -1526,6 +1551,80 @@ function buildSettingsPanel() {
                     }
                     status.textContent = '';
                     onSubmit(videoId);
+                });
+                section.appendChild(form);
+                return section;
+            }
+
+            // Paste a channel URL, handle or ID straight into whichever list
+            // the current mode manages. The fallback pane had this; this one
+            // could only add channels from a thumbnail's right-click menu.
+            function createChannelEntryForm() {
+                const allowlist = isChannelAllowlistMode();
+                const section = createVideoHiderSection(
+                    allowlist
+                        ? t('videoHiderAddAllowedChannelTitle', 'Add Allowed Channel')
+                        : t('videoHiderAddBlockedChannelTitle', 'Add Blocked Channel'),
+                    allowlist
+                        ? t('videoHiderAddAllowedChannelCopy', 'Paste a channel URL, handle, or channel ID. Only channels in this list are filtered by allowlist mode; an empty list is safe and applies no channel filter.')
+                        : t('videoHiderAddBlockedChannelCopy', 'Paste a channel URL, handle, or channel ID to add it to the channel blocklist.'),
+                );
+                const form = document.createElement('form');
+                form.className = 'ytkit-vh-inline-form';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = allowlist ? 'ytkit-vh-add-allowed-channel' : 'ytkit-vh-add-blocked-channel';
+                input.className = 'ytkit-vh-text-input';
+                input.placeholder = allowlist
+                    ? t('videoHiderChannelAllowlistPlaceholder', 'https://youtube.com/@channel or @handle')
+                    : t('videoHiderChannelBlocklistPlaceholder', 'https://youtube.com/@channel or @handle');
+                input.setAttribute('aria-label', allowlist
+                    ? t('videoHiderAddAllowedChannelTitle', 'Add Allowed Channel')
+                    : t('videoHiderAddBlockedChannelTitle', 'Add Blocked Channel'));
+                input.autocomplete = 'off';
+                input.spellcheck = false;
+                input.inputMode = 'url';
+                const button = document.createElement('button');
+                button.type = 'submit';
+                button.className = 'ytkit-vh-list-btn';
+                button.textContent = allowlist
+                    ? t('videoHiderAllowChannelButton', 'Allow Channel')
+                    : t('videoHiderBlockChannelButton', 'Block Channel');
+                const status = document.createElement('span');
+                status.className = 'ytkit-vh-form-status';
+                status.setAttribute('role', 'status');
+                status.setAttribute('aria-live', 'polite');
+                form.appendChild(input);
+                form.appendChild(button);
+                form.appendChild(status);
+                form.addEventListener('submit', event => {
+                    event.preventDefault();
+                    const channel = videoHiderFeature?._normalizeChannelInput?.(input.value);
+                    if (!channel) {
+                        status.textContent = t('videoHiderInvalidChannelInput', 'Enter a valid YouTube channel URL, handle, or channel ID.');
+                        input.focus();
+                        return;
+                    }
+                    status.textContent = '';
+                    const result = allowlist
+                        ? videoHiderFeature?._addAllowedChannel?.(channel)
+                        : videoHiderFeature?._addBlockedChannel?.(channel);
+                    videoHiderFeature?._restoreRemovedVideoNodes?.();
+                    videoHiderFeature?._processAllVideos?.();
+                    renderTabContent('channels');
+                    updateVideoHiderMeta();
+                    const record = result?.record || channel;
+                    const name = record.name || record.id;
+                    const message = result?.added
+                        ? (allowlist
+                            ? t('videoHiderAllowedChannelAddedToast', '{name} allowed')
+                            : t('videoHiderBlockedChannelAddedToast', '{name} blocked'))
+                        : (allowlist
+                            ? t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed')
+                            : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked'));
+                    // Isolate the handle so an Arabic sentence doesn't move its @ to the far end.
+                    const isolated = String.fromCharCode(0x2068) + name + String.fromCharCode(0x2069);
+                    showToast(message.replace('{name}', () => isolated), '#6b7280');
                 });
                 section.appendChild(form);
                 return section;
@@ -1970,21 +2069,31 @@ function buildSettingsPanel() {
                         tabContent.appendChild(clearBtn);
                     }
                 } else if (tab === 'channels') {
-                    const channels = videoHiderFeature?._getBlockedChannels() || [];
+                    const allowlist = isChannelAllowlistMode();
+                    const channels = getManagedChannels();
+                    tabContent.appendChild(createChannelEntryForm());
                     if (channels.length === 0) {
                         tabContent.appendChild(createVideoHiderLead(
-                            'Channel Blocks',
-                            'No blocked channels yet',
-                            'Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks.',
+                            allowlist
+                                ? t('videoHiderChannelAllowlistEmptyEyebrow', 'Allowlist is empty')
+                                : t('videoHiderChannelBlocklistEmptyEyebrow', 'Channel Blocks'),
+                            allowlist
+                                ? t('videoHiderChannelAllowlistEmptyTitle', 'No allowed channels yet')
+                                : t('videoHiderChannelBlocklistEmptyTitle', 'No blocked channels yet'),
+                            allowlist
+                                ? t('videoHiderChannelAllowlistEmptyCopy', 'Add channels here or right-click the thumbnail X button to allow a channel. An empty allowlist is safe and applies no channel filter.')
+                                : t('videoHiderChannelBlocklistEmptyCopy', 'Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks.'),
                             true
                         ));
                     } else {
                         const list = document.createElement('div');
                         list.className = 'ytkit-vh-stack';
                         tabContent.appendChild(createVideoHiderLead(
-                            'Blocklist',
-                            `${countLabel(channels.length, 'Blocked Channel')} in Your List`,
-                            'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.'
+                            allowlist ? t('videoHiderChannelAllowlistEyebrow', 'Allowlist') : t('videoHiderChannelBlocklistEyebrow', 'Blocklist'),
+                            t('videoHiderChannelListCount', '{count} in Your List').replace('{count}', countLabel(channels.length, allowlist ? t('videoHiderAllowedChannelSingular', 'Allowed Channel') : t('videoHiderBlockedChannelSingular', 'Blocked Channel'))),
+                            allowlist
+                                ? t('videoHiderChannelAllowlistCopy', 'Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
+                                : t('videoHiderChannelBlocklistCopy', 'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
                         ));
                         channels.forEach(ch => {
                             const item = document.createElement('article');
@@ -2000,7 +2109,9 @@ function buildSettingsPanel() {
                             info.className = 'ytkit-vh-item-main';
                             const label = document.createElement('div');
                             label.className = 'ytkit-vh-item-label';
-                            label.textContent = t('videoHiderBlockedChannelLabel', 'Blocked Channel');
+                            label.textContent = allowlist
+                                ? t('videoHiderAllowedChannelLabel', 'Allowed Channel')
+                                : t('videoHiderBlockedChannelLabel', 'Blocked Channel');
                             const name = document.createElement('div');
                             name.className = 'ytkit-vh-item-title';
                             name.textContent = ch.name || ch.id;
@@ -2023,16 +2134,18 @@ function buildSettingsPanel() {
                             const removeBtn = document.createElement('button');
                             removeBtn.type = 'button';
                             removeBtn.className = 'ytkit-vh-list-btn';
-                            removeBtn.textContent = t('videoHiderUnblockChannel', 'Unblock');
-                            removeBtn.setAttribute('aria-label', t(
-                                'videoHiderUnblockChannelAriaTpl',
-                                'Unblock channel {channelName}'
-                            ).replace('{channelName}', () => ch.name || ch.id));
+                            removeBtn.textContent = allowlist
+                                ? t('videoHiderRemoveAllowedChannel', 'Remove from Allowlist')
+                                : t('videoHiderUnblockChannel', 'Unblock');
+                            removeBtn.setAttribute('aria-label', allowlist
+                                ? `${t('videoHiderRemoveAllowedChannel', 'Remove from Allowlist')} ${ch.name || ch.id}`
+                                : t('videoHiderUnblockChannelAriaTpl', 'Unblock channel {channelName}').replace('{channelName}', () => ch.name || ch.id));
                             removeBtn.onclick = () => {
-                                videoHiderFeature._removeBlockedChannel?.(ch);
+                                removeManagedChannel(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
+                                updateVideoHiderMeta();
                             };
                             info.appendChild(label);
                             info.appendChild(name);
@@ -2047,21 +2160,21 @@ function buildSettingsPanel() {
                         const clearBtn = document.createElement('button');
                         clearBtn.type = 'button';
                         clearBtn.className = 'ytkit-vh-clear-btn';
-                        clearBtn.textContent = t(
-                            'videoHiderClearBlockedChannelsTpl',
-                            'Unblock All Channels ({count})'
-                        ).replace('{count}', channels.length);
+                        clearBtn.textContent = allowlist
+                            ? `${t('videoHiderClearAllowedChannels', 'Clear Allowed Channels')} (${channels.length})`
+                            : t('videoHiderClearBlockedChannelsTpl', 'Unblock All Channels ({count})').replace('{count}', channels.length);
                         clearBtn.onclick = () => {
-                            const backup = [...videoHiderFeature._getBlockedChannels()];
-                            videoHiderFeature._setBlockedChannels([]);
+                            const backup = [...getManagedChannels()];
+                            setManagedChannels([]);
                             videoHiderFeature._restoreRemovedVideoNodes?.();
                             videoHiderFeature._processAllVideos();
                             renderTabContent('channels');
-                            showToast(t(
-                                'videoHiderUnblockedChannelsTpl',
-                                'Unblocked {count} channels'
-                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
-                                videoHiderFeature._setBlockedChannels(backup);
+                            updateVideoHiderMeta();
+                            showToast((allowlist
+                                ? t('videoHiderClearedAllowedChannelsToast', 'Cleared {count} allowed channels')
+                                : t('videoHiderUnblockedChannelsTpl', 'Unblocked {count} channels')
+                            ).replace('{count}', String(backup.length)), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
+                                setManagedChannels(backup);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
                                 updateVideoHiderMeta();
@@ -2533,10 +2646,10 @@ function buildSettingsPanel() {
                     statsGrid.className = 'ytkit-vh-stat-grid';
                     const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
                     const allowedCount = videoHiderFeature?._getAllowedVideos()?.length || 0;
-                    const channelCount = videoHiderFeature?._getBlockedChannels()?.length || 0;
+                    const channelCount = getChannelCount();
                     [{ label: t('videoHiderHiddenVideosTab', 'Hidden Videos'), value: videoCount },
                         { label: t('videoHiderAllowedVideosTab', 'Allowed Videos'), value: allowedCount },
-                        { label: t('videoHiderBlockedChannelsTab', 'Blocked Channels'), value: channelCount }].forEach(stat => {
+                        { label: getChannelModeLabel(), value: channelCount }].forEach(stat => {
                         const statEl = document.createElement('div');
                         statEl.className = 'ytkit-vh-stat-card';
                         const val = document.createElement('div');

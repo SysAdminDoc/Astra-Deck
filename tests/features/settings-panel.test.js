@@ -233,6 +233,36 @@ test('Video Hider pane uses its own toggle and shared settings reconciliation', 
     }
 });
 
+test('Video Hider channels tab follows Channel Allowlist mode in both panes', () => {
+    // The peeled pane always listed, counted and cleared the blocklist, so
+    // in allowlist mode it managed the wrong channels, had no paste-a-channel
+    // form, and its summary cards read "0 videos hidden" over "Hidden Videos".
+    const channelsTab = (source) => source.slice(
+        source.indexOf("} else if (tab === 'channels') {"),
+        source.indexOf("} else if (tab === 'keywords') {")
+    );
+    for (const [label, source] of [
+        ['settings-panel module', fs.readFileSync(require.resolve(MODULE_PATH), 'utf8')],
+        ['extension inline fallback', fs.readFileSync(require.resolve('../../extension/ytkit.js'), 'utf8')]
+    ]) {
+        assert.match(source, /const isChannelAllowlistMode = \(\) => appState\.settings\.hideVideosChannelAllowlist === true;/,
+            `${label} must read Channel Allowlist mode`);
+        assert.match(source, /function createChannelEntryForm\(\)/,
+            `${label} must offer the paste-a-channel form`);
+        assert.match(source, /paneChannelsLabel\.textContent = /,
+            `${label} must relabel the channels summary card for the active mode`);
+        const tab = channelsTab(source);
+        assert.ok(tab.length > 500, `${label} channels tab must be present`);
+        assert.match(tab, /getManagedChannels\(\)/, `${label} channels tab must list the managed channels`);
+        assert.match(tab, /removeManagedChannel\(ch\)/, `${label} channels tab must remove from the managed list`);
+        assert.match(tab, /setManagedChannels\(\[\]\)/, `${label} channels tab must clear the managed list`);
+        assert.doesNotMatch(tab, /_getBlockedChannels|_setBlockedChannels|_removeBlockedChannel/,
+            `${label} channels tab must not reach for the blocklist directly`);
+        assert.doesNotMatch(source, /videoHiderHiddenCountTpl|videoHiderAllowedCountTpl|videoHiderBlockedCountTpl/,
+            `${label} summary cards must show bare counts under their labels`);
+    }
+});
+
 test('page quick controls reconcile feature settings without in-place mutation', () => {
     for (const [label, source] of [
         ['extension runtime', fs.readFileSync(

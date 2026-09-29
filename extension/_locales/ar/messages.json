@@ -7957,9 +7957,6 @@
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
-  "videoHiderAllowedCountTpl": {
-    "message": "{count} فيديو مسموح"
-  },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "صورة معاينة للفيديو المسموح {videoId}"
   },
@@ -7980,6 +7977,18 @@
   },
   "videoHiderAlreadyBlockedChannelToast": {
     "message": "{name} محظور بالفعل"
+  },
+  "videoHiderBlockedChannelAddedToast": {
+    "message": "تم حظر {name}",
+    "description": "Video Hider channels tab: toast after a pasted channel is added to the blocklist. {name} is the channel name."
+  },
+  "videoHiderAllowedChannelAddedToast": {
+    "message": "تم السماح بـ {name}",
+    "description": "Video Hider channels tab, allowlist mode: toast after a pasted channel is added to the allowlist. {name} is the channel name."
+  },
+  "videoHiderClearedAllowedChannelsToast": {
+    "message": "تم مسح {count} من القنوات المسموح بها",
+    "description": "Video Hider channels tab, allowlist mode: toast after the allowlist is cleared. {count} is how many channels were removed."
   },
   "videoHiderAlreadyHiddenVideoToast": {
     "message": "الفيديو مخفي بالفعل"
@@ -8004,9 +8013,6 @@
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
-  },
-  "videoHiderBlockedCountTpl": {
-    "message": "{count} قناة محظورة"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -8112,9 +8118,6 @@
   },
   "videoHiderFiltersLimitsTab": {
     "message": "الفلاتر والحدود"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "{count} فيديو مخفي"
   },
   "videoHiderHiddenListRestored": {
     "message": "تمت استعادة قائمة المخفي"

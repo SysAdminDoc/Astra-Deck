@@ -7957,9 +7957,6 @@
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
-  "videoHiderAllowedCountTpl": {
-    "message": "{count}本の動画を許可"
-  },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "許可した動画 {videoId} のプレビューサムネイル"
   },
@@ -7980,6 +7977,18 @@
   },
   "videoHiderAlreadyBlockedChannelToast": {
     "message": "{name} はすでにブロックされています"
+  },
+  "videoHiderBlockedChannelAddedToast": {
+    "message": "{name} をブロックしました",
+    "description": "Video Hider channels tab: toast after a pasted channel is added to the blocklist. {name} is the channel name."
+  },
+  "videoHiderAllowedChannelAddedToast": {
+    "message": "{name} を許可しました",
+    "description": "Video Hider channels tab, allowlist mode: toast after a pasted channel is added to the allowlist. {name} is the channel name."
+  },
+  "videoHiderClearedAllowedChannelsToast": {
+    "message": "許可したチャンネル {count} 件を消去しました",
+    "description": "Video Hider channels tab, allowlist mode: toast after the allowlist is cleared. {count} is how many channels were removed."
   },
   "videoHiderAlreadyHiddenVideoToast": {
     "message": "動画はすでに非表示です"
@@ -8004,9 +8013,6 @@
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
-  },
-  "videoHiderBlockedCountTpl": {
-    "message": "{count}チャンネルをブロック"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -8112,9 +8118,6 @@
   },
   "videoHiderFiltersLimitsTab": {
     "message": "フィルターと上限"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "{count}本の動画を非表示"
   },
   "videoHiderHiddenListRestored": {
     "message": "非表示リストを復元しました"

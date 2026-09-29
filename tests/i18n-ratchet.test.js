@@ -140,7 +140,10 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         'utf8'
     );
     assert.match(settingsSource, /t\('settingsPanelContentControls'/);
-    assert.match(settingsSource, /t\('videoHiderHiddenCountTpl'/);
+    // The summary cards show bare counts now, so the old "{count} videos
+    // hidden" template is gone; the channels tab's list heading is the
+    // localized count this panel still renders.
+    assert.match(settingsSource, /t\('videoHiderChannelListCount'/);
     assert.match(settingsSource, /t\(\s*['"]videoHiderRestoreAllTpl/);
     assert.match(settingsSource, /t\(\s*['"]videoHiderOpenHiddenVideoAriaTpl/);
     const videoHiderSource = fs.readFileSync(
@@ -271,4 +274,31 @@ test('generated pseudolocale expands copy and isolates interpolation tokens for 
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     assert.match(packageJson.scripts['i18n:pseudolocale'] || '', /generate-pseudolocale\.js/);
     assert.match(fs.readFileSync(path.join(__dirname, '..', 'scripts', 'generate-pseudolocale.js'), 'utf8'), /build.*i18n-pseudolocale/);
+});
+
+test('every key picked by a t(cond ? a : b) call exists in the English catalogue', () => {
+    // A ternary inside t() hides both keys from the literal-key gates. Four
+    // Video Hider channel toasts were written that way and never added to any
+    // catalogue, so every locale fell back to the inline English.
+    const en = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+    const skip = new Set(['_locales', '_metadata', 'icons', 'rules', 'assets']);
+    const files = [];
+    (function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) { if (!skip.has(entry.name)) walk(full); }
+            else if (entry.name.endsWith('.js')) files.push(full);
+        }
+    })(path.join(__dirname, '..', 'extension'));
+    const pattern = /\bt\(\s*[^'"()]+?\?\s*'([A-Za-z0-9_]+)'\s*:\s*'([A-Za-z0-9_]+)'/g;
+    const missing = [];
+    for (const file of files) {
+        const source = fs.readFileSync(file, 'utf8');
+        for (const match of source.matchAll(pattern)) {
+            for (const key of [match[1], match[2]]) {
+                if (!Object.prototype.hasOwnProperty.call(en, key)) missing.push(`${path.basename(file)}: ${key}`);
+            }
+        }
+    }
+    assert.deepEqual(missing, []);
 });

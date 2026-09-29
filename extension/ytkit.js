@@ -41507,10 +41507,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     updateVideoHiderMeta();
                     const record = result?.record || channel;
                     const name = record.name || record.id;
+                    // Static keys: a t(cond ? a : b) call hides both keys from the
+                    // catalogue gates, which is how two of them never got added.
                     const message = result?.added
-                        ? t(allowlist ? 'videoHiderAllowedChannelAddedToast' : 'videoHiderBlockedChannelAddedToast', '{name} added to the channel list')
-                        : t(allowlist ? 'videoHiderAlreadyAllowedChannelToast' : 'videoHiderAlreadyBlockedChannelToast', '{name} is already in the channel list');
-                    showToast(message.replace('{name}', () => name), '#6b7280');
+                        ? (allowlist
+                            ? t('videoHiderAllowedChannelAddedToast', '{name} allowed')
+                            : t('videoHiderBlockedChannelAddedToast', '{name} blocked'))
+                        : (allowlist
+                            ? t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed')
+                            : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked'));
+                    // Isolate the handle so an Arabic sentence doesn't move its @ to the far end.
+                    const isolated = String.fromCharCode(0x2068) + name + String.fromCharCode(0x2069);
+                    showToast(message.replace('{name}', () => isolated), '#6b7280');
                 });
                 section.appendChild(form);
                 return section;
@@ -42008,12 +42016,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             videoHiderFeature._restoreRemovedVideoNodes?.();
                             videoHiderFeature._processAllVideos();
                             renderTabContent('channels');
-                            showToast(t(allowlist ? 'videoHiderClearedAllowedChannelsToast' : 'videoHiderClearedBlockedChannelsToast', 'Cleared {count} channels').replace('{count}', String(backup.length)), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
+                            showToast((allowlist
+                                ? t('videoHiderClearedAllowedChannelsToast', 'Cleared {count} allowed channels')
+                                : t('videoHiderUnblockedChannelsTpl', 'Unblocked {count} channels')
+                            ).replace('{count}', String(backup.length)), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                 setManagedChannels(backup);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
                                 updateVideoHiderMeta();
-                                showToast(t(allowlist ? 'videoHiderAllowedChannelsRestoredToast' : 'videoHiderBlockedChannelsRestoredToast', 'Channels restored'), '#22c55e');
+                                showToast(t('videoHiderChannelsRestored', 'Channels restored'), '#22c55e');
                             }}});
                         };
                         tabContent.appendChild(clearBtn);
@@ -42461,8 +42472,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     statsGrid.className = 'ytkit-vh-stat-grid';
                     const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
                     const allowedCount = videoHiderFeature?._getAllowedVideos()?.length || 0;
-                    const channelCount = videoHiderFeature?._getBlockedChannels()?.length || 0;
-                    [{ label: 'Hidden Videos', value: videoCount }, { label: 'Allowed Videos', value: allowedCount }, { label: 'Blocked Channels', value: channelCount }].forEach(stat => {
+                    const channelCount = getChannelCount();
+                    const channelLabel = isChannelAllowlistMode()
+                        ? t('videoHiderAllowedChannelsTab', 'Allowed Channels')
+                        : t('videoHiderBlockedChannelsTab', 'Blocked Channels');
+                    [{ label: t('videoHiderHiddenVideosTab', 'Hidden Videos'), value: videoCount },
+                        { label: t('videoHiderAllowedVideosTab', 'Allowed Videos'), value: allowedCount },
+                        { label: channelLabel, value: channelCount }].forEach(stat => {
                         const statEl = document.createElement('div');
                         statEl.className = 'ytkit-vh-stat-card';
                         const val = document.createElement('div');
