@@ -70,7 +70,9 @@ function validateLiveChatSnapshot(snapshot) {
         failures.push(`chat frame URL is ${JSON.stringify(snapshot?.frameUrl || '')}`);
     }
     if (!snapshot?.sameOrigin) failures.push('chat frame document is not reachable from the watch page');
-    if (!snapshot?.chatRootPresent) failures.push('live-chat document has no chat application root');
+    if (!snapshot?.chatRootPresent) {
+        failures.push(`live-chat document has no chat application root (body: ${JSON.stringify(snapshot?.bodyTags || [])}, text: ${JSON.stringify(snapshot?.bodyText || '')})`);
+    }
     if (snapshot?.runtimeState !== 'active') {
         failures.push(`Astra live-chat runtime marker is ${JSON.stringify(snapshot?.runtimeState || '')}`);
     }
@@ -122,6 +124,8 @@ function liveChatSnapshotExpression() {
         }
         return {
             chatRootPresent: Boolean(doc?.querySelector('yt-live-chat-app, yt-live-chat-renderer')),
+            bodyTags: Array.from(doc?.body?.children || []).slice(0, 8).map((node) => node.tagName.toLowerCase() + (node.id ? '#' + node.id : '')),
+            bodyText: String(doc?.body?.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 160),
             framePresent: Boolean(frame?.isConnected),
             frameMode: frame?.id === 'astra-live-chat-smoke-frame' ? 'probe' : 'native',
             frameUrl,
@@ -262,6 +266,14 @@ async function runCandidate(candidate, stageDir, options) {
             deviceScaleFactor: 1,
             mobile: false,
         });
+        // YouTube's live-chat frame answers a HeadlessChrome user agent with
+        // "Please update it to use live chat", so present the same build as Chrome.
+        const userAgent = String(version['User-Agent'] || '');
+        if (userAgent.includes('HeadlessChrome/')) {
+            await client.send('Network.setUserAgentOverride', {
+                userAgent: userAgent.replace('HeadlessChrome/', 'Chrome/'),
+            });
+        }
         const candidates = await discoverLiveCandidates(client, options.timeoutMs);
         const snapshot = await openLiveChatFrame(client, candidates, options.timeoutMs);
         await capture(client);

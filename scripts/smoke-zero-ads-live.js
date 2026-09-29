@@ -1071,7 +1071,8 @@ async function splitEngagementSnapshot(client) {
                 disabled: node.matches(':disabled'),
                 focusVisible: node.matches(':focus-visible'),
                 iconWidth: iconRect?.width || 0,
-                iconHeight: iconRect?.height || 0
+                iconHeight: iconRect?.height || 0,
+                iconRight: iconRect?.right || 0
             };
         };
         const describePseudo = (node, pseudo) => {
@@ -1136,33 +1137,31 @@ async function splitEngagementSnapshot(client) {
     })()`);
 }
 
+// The split's comment actions are ghost buttons (v4.90.3): 32px, no surface or
+// border until hovered, --ytkit-split-radius corners, and a flat comment row.
 function splitEngagementFailures(states, theme) {
     const failures = [];
     const base = states.default;
-    const expectedBackground = theme === 'dark'
-        ? 'rgba(151, 178, 208, 0.08)'
-        : 'rgba(30, 53, 78, 0.055)';
-    const expectedCommentHover = theme === 'dark' ? 'rgb(23, 42, 66)' : 'rgb(232, 237, 243)';
+    const transparent = 'rgba(0, 0, 0, 0)';
     if (!base?.available || !base.like || !base.reply) {
         return [`${theme}: native Like and Reply controls are unavailable`];
     }
     if (base.colorScheme !== theme) failures.push(`${theme}: color-scheme is ${base.colorScheme}`);
-    if (base.toolbarGap !== '8px') failures.push(`${theme}: toolbar gap is ${base.toolbarGap || 'unset'}`);
+    // Spacing along the row comes from the count's margins, not a column gap.
+    if (base.toolbarGap !== '0px') failures.push(`${theme}: toolbar column gap is ${base.toolbarGap || 'unset'}`);
     if (base.toolbarHeight < 31 || base.toolbarHeight > 33) {
         failures.push(`${theme}: toolbar height is ${base.toolbarHeight}px`);
     }
     for (const [name, control] of [['Like', base.like], ['Reply', base.reply]]) {
-        if (control.height < 29 || control.height > 31) failures.push(`${theme} ${name}: height is ${control.height}px`);
-        if (control.background !== expectedBackground) failures.push(`${theme} ${name}: surface is ${control.background}`);
-        if (control.borderStyle === 'none') failures.push(`${theme} ${name}: border is missing`);
-        if (control.borderColor !== 'rgba(0, 0, 0, 0)') failures.push(`${theme} ${name}: default outline is ${control.borderColor}`);
+        if (control.height < 31 || control.height > 33) failures.push(`${theme} ${name}: height is ${control.height}px`);
+        if (control.background !== transparent) failures.push(`${theme} ${name}: resting surface is ${control.background}`);
+        if (control.borderStyle !== 'none') failures.push(`${theme} ${name}: ghost button has a ${control.borderStyle} border`);
         if (control.boxShadow !== 'none') failures.push(`${theme} ${name}: default elevation is ${control.boxShadow}`);
-        if (Number.parseInt(control.fontWeight, 10) < 600) failures.push(`${theme} ${name}: label weight is ${control.fontWeight}`);
     }
-    const expectedLikeRadius = '6px';
-    if (base.like.borderRadius !== expectedLikeRadius) failures.push(`${theme} Like: radius is ${base.like.borderRadius}`);
-    if (base.reply.borderRadius !== '6px') failures.push(`${theme} Reply: radius is ${base.reply.borderRadius}`);
-    if (base.like.width < 29 || base.like.width > 31) failures.push(`${theme} Like: width is ${base.like.width}px`);
+    if (Number.parseInt(base.reply.fontWeight, 10) < 600) failures.push(`${theme} Reply: label weight is ${base.reply.fontWeight}`);
+    if (base.like.borderRadius !== '8px') failures.push(`${theme} Like: radius is ${base.like.borderRadius}`);
+    if (base.reply.borderRadius !== '8px') failures.push(`${theme} Reply: radius is ${base.reply.borderRadius}`);
+    if (base.like.width < 31 || base.like.width > 33) failures.push(`${theme} Like: width is ${base.like.width}px`);
     if (base.reply.width < 47 || base.reply.width > 62) failures.push(`${theme} Reply: width is ${base.reply.width}px`);
     for (const [name, host] of [['Like host', base.likeHost], ['Reply host', base.replyHost]]) {
         if (!host || host.height < 31 || host.height > 33) {
@@ -1172,23 +1171,29 @@ function splitEngagementFailures(states, theme) {
     if (base.heartHost && (base.heartHost.height < 31 || base.heartHost.height > 33)) {
         failures.push(`${theme} creator heart host: wrapper height is ${base.heartHost.height}px`);
     }
-    if (base.heart && (base.heart.width < 29 || base.heart.width > 31
-        || base.heart.height < 29 || base.heart.height > 31
-        || base.heart.background === 'rgba(0, 0, 0, 0)')) {
-        failures.push(`${theme} creator heart: geometry or surface is incomplete`);
+    // The creator heart keeps YouTube's 36px box inside the 32px row; what the
+    // eye checks is that it sits on the same center line as Like.
+    if (base.heart && (base.heart.height > 36
+        || Math.abs(base.heart.centerY - base.like.centerY) > 1)) {
+        failures.push(`${theme} creator heart: ${base.heart.height}px tall, ${Math.abs(base.heart.centerY - base.like.centerY)}px off the row center`);
     }
     if (base.like.iconWidth && (base.like.iconWidth < 16 || base.like.iconWidth > 18)) {
         failures.push(`${theme} Like: icon width is ${base.like.iconWidth}px`);
     }
     if (base.count) {
-        if (base.count.height < 29 || base.count.height > 31) failures.push(`${theme}: like count height is ${base.count.height}px`);
-        if (base.count.background !== 'rgba(0, 0, 0, 0)') failures.push(`${theme}: like count surface is ${base.count.background}`);
+        if (base.count.height < 31 || base.count.height > 33) failures.push(`${theme}: like count height is ${base.count.height}px`);
+        if (base.count.background !== transparent) failures.push(`${theme}: like count surface is ${base.count.background}`);
         if (base.count.borderStyle !== 'none') failures.push(`${theme}: like count should not have a box border`);
         if (base.count.boxShadow !== 'none') failures.push(`${theme}: like count shadow is ${base.count.boxShadow}`);
         if (base.count.borderRadius !== '0px') failures.push(`${theme}: like count radius is ${base.count.borderRadius}`);
         if (base.count.fontVariantNumeric !== 'tabular-nums') failures.push(`${theme}: like count is not tabular`);
         if (base.count.pointerEvents !== 'none') failures.push(`${theme}: like count intercepts button input`);
-        if (base.likeCountGap < 3 || base.likeCountGap > 5) failures.push(`${theme}: Like/count gap is ${base.likeCountGap}px`);
+        // The count tucks under the icon-only Like button, so measure from the
+        // thumb glyph, which is what the eye pairs it with.
+        const iconCountGap = base.like.iconRight ? base.count.left - base.like.iconRight : null;
+        if (iconCountGap === null || iconCountGap < 3 || iconCountGap > 7) {
+            failures.push(`${theme}: Like icon/count gap is ${iconCountGap ?? 'unmeasurable'}px`);
+        }
         if (base.likeCountCenterDelta > 1) failures.push(`${theme}: Like/count vertical delta is ${base.likeCountCenterDelta}px`);
         for (const [side, pseudo] of [['before', base.count.before], ['after', base.count.after]]) {
             if (!pseudo || pseudo.display !== 'none' || !['none', 'normal'].includes(pseudo.content)) {
@@ -1196,18 +1201,18 @@ function splitEngagementFailures(states, theme) {
             }
         }
     }
-    if (base.count && (states.likeHover?.like?.background === base.like.background
-        || states.likeHover?.count?.background !== 'rgba(0, 0, 0, 0)'
+    if (!states.likeHover?.like || states.likeHover.like.background === base.like.background) {
+        failures.push(`${theme} Like: hover state is not visually distinct`);
+    }
+    if (base.count && (states.likeHover?.count?.background !== transparent
         || states.likeHover?.count?.color === base.count.color)) {
         failures.push(`${theme} Like: inline-count hover state is not visually cohesive`);
     }
-    if (states.hover?.reply?.background === base.reply.background
-        || states.hover?.reply?.transform === base.reply.transform
-        || states.hover?.reply?.boxShadow === base.reply.boxShadow) {
+    if (!states.hover?.reply || states.hover.reply.background === base.reply.background) {
         failures.push(`${theme} Reply: hover state is not visually distinct`);
     }
-    if (states.hover?.commentBackground !== expectedCommentHover) {
-        failures.push(`${theme}: comment hover surface is ${states.hover?.commentBackground || 'unset'}`);
+    if (states.hover?.commentBackground !== transparent) {
+        failures.push(`${theme}: comment row painted a hover surface ${states.hover?.commentBackground || 'unset'}`);
     }
     if (!states.focus?.reply?.focusVisible || Number.parseFloat(states.focus.reply.outlineWidth || '0') < 2) {
         failures.push(`${theme} Reply: keyboard focus ring is missing`);
@@ -1217,16 +1222,16 @@ function splitEngagementFailures(states, theme) {
     }
     if (states.selected?.like?.ariaPressed !== 'true'
         || states.selected.like.background === base.like.background
-        || states.selected.like.borderColor === base.like.borderColor) {
+        || states.selected.like.color === base.like.color) {
         failures.push(`${theme} Like: selected state is not visually distinct`);
     }
-    if (base.count && (states.selected?.count?.background !== 'rgba(0, 0, 0, 0)'
+    if (base.count && (states.selected?.count?.background !== transparent
         || states.selected?.count?.color !== states.selected?.like?.color)) {
         failures.push(`${theme} Like: selected inline count does not follow the selected text color`);
     }
     if (!states.disabled?.reply?.disabled
         || states.disabled.reply.opacity > 0.65
-        || states.disabled.reply.cursor !== 'not-allowed'
+        || states.disabled.reply.cursor === 'pointer'
         || states.disabled.reply.boxShadow !== 'none') {
         failures.push(`${theme} Reply: disabled state is incomplete`);
     }
@@ -1834,8 +1839,13 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         && (!splitLight.contentColor.includes(lightTextChannel) || !splitLight.contentFill.includes(lightTextChannel))) {
         failures.push('watch themes: light Theater Split comment text is not using the light ink token');
     }
-    if (!splitLight.ownerBackground.includes('243, 246, 249') || splitLight.ownerBackgroundImage !== 'none') {
-        failures.push('watch themes: light Theater Split owner card retained the dark decorative surface');
+    // The redesigned metadata is one flat section, so the owner row may be
+    // transparent over the light panel; what it must never be is dark or decorated.
+    const ownerChannels = (splitLight.ownerBackground.match(/[\d.]+/g) || []).map(Number);
+    const ownerIsClear = ownerChannels.length === 4 && ownerChannels[3] === 0;
+    const ownerIsLight = ownerChannels.length >= 3 && ownerChannels.slice(0, 3).every((channel) => channel >= 200);
+    if (!(ownerIsClear || ownerIsLight) || splitLight.ownerBackgroundImage !== 'none') {
+        failures.push(`watch themes: light Theater Split owner row painted ${splitLight.ownerBackground} / ${splitLight.ownerBackgroundImage}`);
     }
     if (splitLight.metadataIconControls.length < 3) {
         failures.push(`watch themes: light Theater Split exposes only ${splitLight.metadataIconControls.length} visible metadata icon controls`);

@@ -51,6 +51,16 @@ function inlineScript(source) {
     return String(source).replace(/<\/script/gi, '<\\/script');
 }
 
+// The split sheets build every selector from `${PANE}`-style prefixes, which
+// extractCss's source scan cannot see (it drops any selector without a literal
+// ytkit class), so load them through the module's own builders.
+function splitSheets() {
+    const modulePath = path.join(REPO_ROOT, 'extension', 'features', 'sticky-video-styles', 'index.js');
+    delete require.cache[require.resolve(modulePath)];
+    const styles = require(modulePath);
+    return [styles.buildSplitShellCss(), styles.buildSplitMetaCss(), styles.buildSplitCommentsCss()];
+}
+
 function buildFixture(outDir) {
     fs.rmSync(outDir, { recursive: true, force: true });
     fs.mkdirSync(outDir, { recursive: true });
@@ -58,7 +68,7 @@ function buildFixture(outDir) {
         ...extractCss('extension/core/settings-visual-system.js', 'SURFACE_VISUAL_SYSTEM_CSS'),
         ...extractCss('extension/features/player-dock/index.js', null),
         ...extractCss('extension/features/sticky-video/index.js', null),
-        ...extractCss('extension/features/sticky-video-styles/index.js', null),
+        ...splitSheets(),
         ...extractCss('extension/ytkit.js', null)
     ].map((css) => `<style>${css}</style>`).join('\n');
     const iconLibrary = inlineScript(fs.readFileSync(
