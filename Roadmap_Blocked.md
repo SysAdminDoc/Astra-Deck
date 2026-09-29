@@ -48,16 +48,16 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   already work would make readers compete. Retire the item or restate what it
   should deliver.
 
-## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14)
+## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14, again 2026-09-28)
 
 - [ ] P0: Make release currency a blocking gate and promote the current release
-  Why: v4.89.0 is the latest public GitHub release while every active channel
+  Why: v4.92.1 is the latest public GitHub release while every active channel
   still serves 4.82.0. `npm run check` reports the channel lag as a notice
   rather than a failure.
   Evidence: `scripts/run-checks.js` calls `check-versions.js` without
   `--require-release-current`; `release-channels.json` shows `active: 4.82.0`
-  on all five channels; `git tag --sort=-v:refname` starts at `v4.89.0`; and
-  GitHub reports v4.89.0 as Latest with 15 public assets.
+  on all five channels; `git tag --sort=-v:refname` starts at `v4.92.1`; and
+  GitHub reports v4.92.1 as Latest with 15 public assets.
   Touches: `scripts/run-checks.js`, `release-channels.json`, `CHANGELOG.md`.
   Acceptance: `npm run check` fails while any channel trails the newest tag; the GitHub-full and userscript channels are promoted to the current version with digests verified by `npm run release:channels`. Store channels stay governed by the submission items in `Roadmap_Blocked.md`.
   Complexity: M
@@ -76,6 +76,12 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   complete 15-file package set. `npm run release:verify-digests -- --tag
   v4.89.0` confirms every public asset matches the local build. Publication is
   complete; channel promotion has not occurred.
+
+  v4.92.1 was published on 2026-09-28 from release commit `e89222f4` the same
+  way: no-CRX build, the same 15 files, `release:verify-digests -- --tag
+  v4.92.1` matched all 15. `release:readiness -- --require-pass` failed only on
+  `screen-reader-evidence` (signature is a warning), so the channels still sit
+  at 4.82.0. v4.90.0 through v4.92.0 were tagged but never published.
 
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
