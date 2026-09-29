@@ -102,7 +102,6 @@ test('stripping leaves quoted and block-commented regions alone', () => {
 
 function evaluateModule(source) {
     const shim = { exports: {} };
-    // eslint-disable-next-line no-new-func
     new Function('module', 'exports', source)(shim, shim.exports);
     return JSON.stringify(shim.exports, (key, value) =>
         (value instanceof RegExp ? value.source : value));
@@ -257,7 +256,6 @@ test('every bundled module compacts with its CSS intact and still parses', () =>
         // compactBundledCssTemplates runs the rule-fragment round trip on every
         // template it rewrites and throws on a loss, so not throwing is the check.
         const compacted = sync.compactBundledCssTemplates(source, rel);
-        // eslint-disable-next-line no-new-func
         assert.doesNotThrow(() => new Function(compacted), `${rel} must still parse after compaction`);
         saved += source.length - compacted.length;
     }

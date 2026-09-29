@@ -20,10 +20,8 @@ function loadFeatureModule() {
     globalThis.YTKitCore = {};
     globalThis.YTKitFeatures = {};
     for (const file of ['extension/core/hide-attribution.js', 'extension/core/element-zapper.js']) {
-        // eslint-disable-next-line no-eval
         (0, eval)(fs.readFileSync(path.join(repoRoot, file), 'utf8'));
     }
-    // eslint-disable-next-line no-eval
     (0, eval)(moduleSource);
     return globalThis.YTKitFeatures.createElementZapperFeature;
 }

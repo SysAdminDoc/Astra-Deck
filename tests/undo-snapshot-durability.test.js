@@ -50,7 +50,6 @@ function extractUndoPointerHelpers() {
     assert.ok(availStart > -1, 'popup.js must declare undoPointerStorageAvailable');
     const availBlock = popupSource.slice(availStart, availEnd);
 
-    // eslint-disable-next-line no-new-func
     return new Function('ext', 'callExtensionApi', 'discardCoordinatedSnapshot',
         keysBlock + retentionBlock + availBlock + fnBlock
         + '; return { readImportSnapshot, writeImportSnapshot, clearImportSnapshot,'

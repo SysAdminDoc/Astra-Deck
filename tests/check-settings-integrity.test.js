@@ -38,7 +38,6 @@ function loadStripper() {
     }
     const body = gateSource.slice(start, index + 1);
     assert.ok(open > 0);
-    // eslint-disable-next-line no-new-func
     return new Function(`${body}; return stripJsComments;`)();
 }
 

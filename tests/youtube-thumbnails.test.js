@@ -22,7 +22,6 @@ const repoRoot = path.join(__dirname, '..');
 function loadThumbnails() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(path.join(repoRoot, 'extension/core/youtube-thumbnails.js'), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }
@@ -299,7 +298,6 @@ function loadAntiTranslateThumbnails(deps) {
     assert.ok(literal.includes('_lookupOEmbed'), 'the extraction must have caught the lookup');
 
     const names = Object.keys(deps);
-    // eslint-disable-next-line no-new-func
     const make = new Function(...names, 'return (' + literal + ');');
     return make(...names.map((name) => deps[name]));
 }

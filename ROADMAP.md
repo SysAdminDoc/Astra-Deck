@@ -147,8 +147,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   attribute keeps the previous video's `selected:<id>` after an in-app navigation to a video with
   no alternate tracks, and that video retries the whole ladder every time
   (`core/audio-track.js` `apply`, the `tracks.length === 0` return). Diagnostic only today.
-  (5) `tests/feed-prefilter.test.js` ~28 carries an `eslint-disable-next-line no-eval` that
-  ESLint reports as unused.
   Acceptance: each item fixed with a regression test, or closed with evidence it can't happen.
   Complexity: M
 

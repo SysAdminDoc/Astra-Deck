@@ -18,7 +18,6 @@ const repoRoot = path.join(__dirname, '..');
 function loadCsv() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(path.join(repoRoot, 'extension/core/csv.js'), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }

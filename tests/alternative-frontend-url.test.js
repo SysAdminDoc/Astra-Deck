@@ -32,7 +32,6 @@ function featureLiteral(featureId) {
 }
 
 function loadFeature(settings) {
-    // eslint-disable-next-line no-new-func
     return Function('appState', 'getVideoId', 'PageTypes', 'addNavigateRule', 'removeNavigateRule',
         '"use strict"; return (' + featureLiteral('openInAlternativeFrontend') + ');')(
         { settings }, () => 'dQw4w9WgXcQ', { WATCH: 'watch' }, () => {}, () => {}

@@ -37,7 +37,6 @@ function loadIconsIntoFreshGlobal() {
     installSvgDom();
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(corePath, 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     if (typeof globalThis.YTKitCore.createSVG !== 'function') {
         throw new Error('createSVG not attached to YTKitCore');

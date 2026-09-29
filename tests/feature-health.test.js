@@ -25,7 +25,6 @@ const repoRoot = path.join(__dirname, '..');
 function loadCoreModule(relPath, primeCore) {
     if (primeCore) globalThis.YTKitCore = primeCore;
     const src = fs.readFileSync(path.join(repoRoot, relPath), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }

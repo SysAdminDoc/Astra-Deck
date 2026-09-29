@@ -46,7 +46,6 @@ function extractMigrationHelpers() {
         'popup.js must declare the shared-helper block (deepClone … migrateImportedSettings)');
     const fnBlock = popupSource.slice(fnStart, fnEnd);
 
-    // eslint-disable-next-line no-new-func
     return new Function(
         constBlock + '\n' + fnBlock +
         '; return { migrateImportedSettings, SETTINGS_IMPORT_MIGRATIONS, SETTINGS_VERSION_FALLBACK };'
@@ -1010,7 +1009,6 @@ test('side panel byte formatting scales past MB and matches the popup', () => {
     const fn = sidepanel.slice(start, sidepanel.indexOf('function formatHumanName', start));
 
     // Evaluate the real function rather than pinning its text.
-    // eslint-disable-next-line no-new-func
     const formatBytes = new Function(
         "const BYTE_UNITS = ['B','KB','MB','GB','TB'];" + fn + '; return formatBytes;')();
     assert.equal(formatBytes(0), '0 B');

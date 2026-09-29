@@ -269,7 +269,6 @@ test('the popup and the monolith agree on which keys are retired', () => {
     const extract = (source) => {
         const match = source.match(/const\s+RETIRED_SETTING_KEYS\s*=\s*new Set\(\s*(\[[\s\S]*?\])\s*\);/);
         assert.ok(match, 'RETIRED_SETTING_KEYS must be extractable');
-        // eslint-disable-next-line no-new-func
         return new Set(Function(`"use strict"; return (${match[1]});`)());
     };
     const popupRetired = extract(fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8'));
@@ -296,6 +295,5 @@ function loadSchemaWithAliases(aliases) {
     const block = source.slice(start, end)
         .replace('const SETTING_ALIASES = Object.freeze({});',
             `const SETTING_ALIASES = Object.freeze(${JSON.stringify(aliases)});`);
-    // eslint-disable-next-line no-new-func
     return new Function(block + '; return { resolveSettingKey, applySettingAliases };')();
 }

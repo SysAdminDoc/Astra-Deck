@@ -29,7 +29,6 @@ const repoRoot = path.join(__dirname, '..');
 function loadSchedule() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(path.join(repoRoot, 'extension/core/feature-schedule.js'), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }

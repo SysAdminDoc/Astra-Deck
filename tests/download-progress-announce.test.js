@@ -43,7 +43,6 @@ function buildAnnouncer() {
         }
     };
 
-    // eslint-disable-next-line no-new-func
     const make = new Function(
         'panel', 'statePill', 'statusCopy', 'actions', 'progressAnnouncer',
         body + '\nreturn setProgressState;'

@@ -23,7 +23,6 @@ const { runtimeModules } = require('./helpers/source');
 function loadFactoryIntoFreshGlobal() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(corePath, 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     if (typeof globalThis.YTKitCore.createStorageCache !== 'function') {
         throw new Error('createStorageCache not attached to YTKitCore');

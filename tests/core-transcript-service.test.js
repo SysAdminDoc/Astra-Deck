@@ -24,7 +24,6 @@ function loadFactoryIntoFreshGlobal() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(corePath, 'utf8');
     // The module is an IIFE that mutates globalThis.YTKitCore — eval it.
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     if (typeof globalThis.YTKitCore.createTranscriptService !== 'function') {
         throw new Error('createTranscriptService not attached to YTKitCore');

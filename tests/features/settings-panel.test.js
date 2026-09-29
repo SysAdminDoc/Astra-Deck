@@ -492,7 +492,6 @@ test('the health badge states the classified cause, not the thrown text', () => 
     const previousCore = globalThis.YTKitCore;
     delete globalThis.YTKitCore;
     try {
-        // eslint-disable-next-line no-new-func
         new Function(fs.readFileSync(failureCopy, 'utf8')).call(globalThis);
         const card = buildCardWith(null, [{
             id: 'returnDislike',

@@ -12,7 +12,6 @@ const fs = require('node:fs');
 function loadChapters() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'chapters.js'), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }

@@ -140,7 +140,6 @@ test('the runtime writers keep the channel the user just blocked', () => {
 
     // Run the real thing rather than trusting the shape.
     const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
-    // eslint-disable-next-line no-new-func
     const build = new Function('IMPORT_LIMITS', 'VIDEO_ID_PATTERN',
         'normalizeBlockedChannelRecord', 'getBlockedChannelDedupeKey',
         '"use strict";'

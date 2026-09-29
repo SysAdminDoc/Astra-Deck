@@ -24,7 +24,6 @@ const repoRoot = path.join(__dirname, '..');
 function loadZapper() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(path.join(repoRoot, 'extension/core/element-zapper.js'), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }

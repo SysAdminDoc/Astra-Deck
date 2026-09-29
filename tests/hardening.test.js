@@ -1819,7 +1819,6 @@ function extractNormalizeFn(source, label) {
     const body = source.slice(startIdx, i);
     // eval is safe here — body is a vetted, repo-tracked function literal,
     // and the test runs in node:test sandboxes already.
-    // eslint-disable-next-line no-new-func
     return new Function(body + '; return normalizeCookieExpiry;')();
 }
 
@@ -3639,7 +3638,6 @@ test('commentFilterManager strips stateful regex flags from cached rules', () =>
     try {
         // The guard lives in its own module so the userscript bundle can ship
         // it too; predicate-sandbox.js is intentional-extension-only.
-        // eslint-disable-next-line no-new-func
         Function(fs.readFileSync(
             path.join(__dirname, '..', 'extension', 'core', 'regex-safety.js'), 'utf8'
         )).call(globalThis);
@@ -8087,7 +8085,6 @@ test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () 
         '// a second top-level comment, which also goes'
     ].join('\n');
     // The fixture has to be valid on its own, or it tests the fixture.
-    // eslint-disable-next-line no-new-func
     assert.doesNotThrow(() => new Function(hazard), 'the hazard fixture must be valid JavaScript');
     const stripped = sync.stripSafeLineComments(hazard);
     assert.ok(!stripped.includes('a top-level comment, which goes'),

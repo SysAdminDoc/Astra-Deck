@@ -18,7 +18,6 @@ const repoRoot = path.join(__dirname, '..');
 function loadHeatmap() {
     globalThis.YTKitCore = {};
     const src = fs.readFileSync(path.join(repoRoot, 'extension/core/heatmap.js'), 'utf8');
-    // eslint-disable-next-line no-eval
     (0, eval)(src);
     return globalThis.YTKitCore;
 }
