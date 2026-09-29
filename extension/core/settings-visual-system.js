@@ -1819,7 +1819,7 @@
             top: 0 !important;
             bottom: 0 !important;
             width: 3px !important;
-            border-radius: 0 3px 3px 0 !important;
+            border-radius: 0 4px 4px 0 !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active {

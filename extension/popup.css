@@ -1480,7 +1480,7 @@ body {
 }
 .feature-perf-row .fp-bar {
   height: 6px;
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--accent, #ff5d4a);
   min-width: 2px;
 }
@@ -1848,7 +1848,7 @@ body {
   gap: 4px;
   padding: 2px 6px;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--surface-raised);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   cursor: pointer;
@@ -2086,8 +2086,8 @@ body {
 }
 
 .schema-overview-list .so-key-color::-webkit-color-swatch-wrapper { padding: 0; }
-.schema-overview-list .so-key-color::-webkit-color-swatch { border: 1px solid var(--border-subtle); border-radius: 5px; }
-.schema-overview-list .so-key-color::-moz-color-swatch    { border: 1px solid var(--border-subtle); border-radius: 5px; }
+.schema-overview-list .so-key-color::-webkit-color-swatch { border: 1px solid var(--border-subtle); border-radius: 6px; }
+.schema-overview-list .so-key-color::-moz-color-swatch    { border: 1px solid var(--border-subtle); border-radius: 6px; }
 
 .schema-overview-list .so-key-color:focus-visible {
   outline: none;
@@ -2273,7 +2273,7 @@ body {
   gap: 5px 8px;
   padding: 7px 8px;
   border: 1px solid rgba(255, 184, 77, 0.2);
-  border-radius: 7px;
+  border-radius: 8px;
   background: rgba(255, 184, 77, 0.045);
 }
 
@@ -2373,7 +2373,7 @@ body {
   width: 100%;
   min-height: 36px;
   border: 1px solid var(--border-subtle);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--surface-sunken);
   color: var(--text-primary);
 }
@@ -3002,7 +3002,7 @@ button:focus-visible {
 .toggles::-webkit-scrollbar-track { background: transparent; }
 .toggles::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .toggles::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
 

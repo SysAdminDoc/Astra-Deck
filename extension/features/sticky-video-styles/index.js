@@ -253,7 +253,7 @@ ${ROOT} #ytkit-split-collapse-strip::after {
     width: 36px !important;
     height: 4px !important;
     margin: 8px auto 0 !important;
-    border-radius: 2px !important;
+    border-radius: 0 !important;
     background: var(--ytkit-split-border-strong) !important;
     transition: background-color 160ms var(--ytkit-split-ease), width 160ms var(--ytkit-split-ease) !important;
 }

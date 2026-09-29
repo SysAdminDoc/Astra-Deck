@@ -371,7 +371,7 @@
                 .ytkit-sub-view-toolbar{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:8px 10px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.12));border-radius:10px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.05));color:var(--yt-spec-text-primary,#f4f6fb);font:12px/1.3 system-ui;}
                 .ytkit-sub-view-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;}
                 .ytkit-sub-view-label{color:var(--yt-spec-text-secondary,#aaa);font-weight:700;}
-                .ytkit-sub-view-controls button,.ytkit-sub-view-controls select{min-height:36px;box-sizing:border-box;padding:6px 10px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.14));border-radius:7px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.07));color:inherit;font:600 12px/1 system-ui;cursor:pointer;}
+                .ytkit-sub-view-controls button,.ytkit-sub-view-controls select{min-height:36px;box-sizing:border-box;padding:6px 10px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.14));border-radius:8px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.07));color:inherit;font:600 12px/1 system-ui;cursor:pointer;}
                 .ytkit-sub-view-controls button[aria-pressed="true"]{border-color:var(--yt-spec-call-to-action,#3ea6ff);background:var(--yt-spec-call-to-action,#3ea6ff);color:#081018;}
                 html:not([dark]) .ytkit-sub-view-controls button[aria-pressed="true"]{color:#fff;}
                 .ytkit-sub-view-controls button:focus-visible,.ytkit-sub-view-controls select:focus-visible{outline:3px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px;}

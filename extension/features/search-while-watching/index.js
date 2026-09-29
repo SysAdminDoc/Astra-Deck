@@ -524,7 +524,7 @@
                 .ytkit-search-watch-item+ .ytkit-search-watch-item{border-top:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.1));}
                 .ytkit-search-watch-link{display:grid;grid-template-columns:160px minmax(0,1fr);gap:12px;padding:10px 4px;color:inherit;text-decoration:none;border-radius:8px;}
                 .ytkit-search-watch-link:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.07));}
-                .ytkit-search-watch-media{position:relative;display:flex;align-items:center;justify-content:center;width:160px;aspect-ratio:16/9;overflow:hidden;border-radius:7px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.08));color:var(--yt-spec-text-secondary,#aaa);font-size:22px;font-weight:700;}
+                .ytkit-search-watch-media{position:relative;display:flex;align-items:center;justify-content:center;width:160px;aspect-ratio:16/9;overflow:hidden;border-radius:8px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.08));color:var(--yt-spec-text-secondary,#aaa);font-size:22px;font-weight:700;}
                 .ytkit-search-watch-media img{display:block;width:100%;height:100%;object-fit:cover;}
                 .ytkit-search-watch-duration{position:absolute;right:4px;bottom:4px;padding:2px 4px;border-radius:4px;background:rgba(0,0,0,.82);color:#fff;font:700 11px/1.2 system-ui;}
                 .ytkit-search-watch-copy{min-width:0;display:flex;flex-direction:column;gap:6px;align-self:center;}

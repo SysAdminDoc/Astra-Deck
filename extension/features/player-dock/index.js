@@ -350,7 +350,7 @@
                     #ytkit-po-logo-wrap .ytkit-ql-toggle {
                         position: relative !important;
                         isolation: isolate !important;
-                        border-radius: 11px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.085) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
@@ -456,7 +456,7 @@
                     #ytkit-player-controls .ytkit-po-dl,
                     #ytkit-player-controls .ytkit-po-cc,
                     #ytkit-player-controls .ytkit-po-gear {
-                        border-radius: 11px !important;
+                        border-radius: 10px !important;
                     }
 
                     #ytkit-player-controls .ytkit-po-cc {
@@ -587,7 +587,7 @@
                         gap: 7px !important;
                         padding: 5px 7px !important;
                         min-height: 28px !important;
-                        border-radius: 9px !important;
+                        border-radius: 8px !important;
                         font-size: 10.5px !important;
                         line-height: 1.05 !important;
                         color: rgba(235, 241, 250, 0.88) !important;

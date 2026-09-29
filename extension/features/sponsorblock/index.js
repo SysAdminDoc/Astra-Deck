@@ -946,7 +946,7 @@
             init() {
                 const self = this;
                 this._styleEl = injectStyle(`
-                    .ytkit-sb-segment { border-radius: 1px; }
+                    .ytkit-sb-segment { border-radius: 0; }
                     .ytkit-anti-adblock-recovery {
                         position: fixed !important;
                         right: max(18px, env(safe-area-inset-right)) !important;
@@ -1013,7 +1013,7 @@
                         min-height: 38px !important;
                         padding: 0 15px !important;
                         border: 1px solid rgba(255, 255, 255, 0.12) !important;
-                        border-radius: 11px !important;
+                        border-radius: 10px !important;
                         background: #ff684f !important;
                         color: #fff !important;
                         box-shadow: 0 8px 22px rgba(255, 80, 56, 0.24) !important;

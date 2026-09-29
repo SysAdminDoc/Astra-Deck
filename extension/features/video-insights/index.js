@@ -282,7 +282,7 @@
                 .ytkit-video-insights dd{min-width:0;margin:0;color:var(--yt-spec-text-primary,#f1f1f1);overflow-wrap:anywhere;}
                 .ytkit-video-insights a{display:inline-block;color:var(--yt-spec-call-to-action,#3ea6ff);text-decoration:none;outline:none;}
                 .ytkit-video-insights a:hover{text-decoration:underline;}
-                .ytkit-video-insights a:focus-visible{border-radius:3px;box-shadow:0 0 0 2px var(--yt-spec-base-background,#0f0f0f),0 0 0 4px var(--yt-spec-call-to-action,#3ea6ff);}
+                .ytkit-video-insights a:focus-visible{border-radius:4px;box-shadow:0 0 0 2px var(--yt-spec-base-background,#0f0f0f),0 0 0 4px var(--yt-spec-call-to-action,#3ea6ff);}
                 .ytkit-video-insights__tags{display:flex;flex-wrap:wrap;gap:6px;}
                 .ytkit-video-insights__tag{max-width:100%;padding:3px 7px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.12));border-radius:6px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.06));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
                 .ytkit-video-insights[data-tone="unavailable"] dd{color:var(--yt-spec-text-secondary,#aaa);}
