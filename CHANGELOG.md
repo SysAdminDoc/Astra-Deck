@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.93.0] (2026-09-29)
+
 ### Changed
 
 - The userscript is built from the extension now. It runs the extension's own files, so it has the same features, settings panel, themes and Theater Split, and the two can't drift apart again. `YTKit.user.js` is a small host that maps the extension's browser APIs onto your userscript manager. It loads three libraries (`YTKit-core`, `YTKit-features` and `YTKit-app`) pinned to the matching release tag.

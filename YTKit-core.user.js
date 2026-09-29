@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.92.1
+// @version      4.93.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
