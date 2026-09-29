@@ -453,9 +453,18 @@ test('settings visual system restores focus rings after command-deck resets', ()
 test('settings visual system covers hidden controls, narrow reflow, and forced-color focus', () => {
     assert.match(
         visualSystemSource,
-        /#ytkit-settings-panel \.ytkit-footer-actions \.ytkit-btn:focus-visible[\s\S]*?rgba\(255,90,79,0\.75\)/,
+        /#ytkit-settings-panel \.ytkit-footer-actions \.ytkit-btn:focus-visible[\s\S]*?rgba\(var\(--ytkit-v3-accent-rgb\),0\.75\)/,
         'footer actions must retain a visible focus ring after the late reset rules'
     );
+    // The final focus lane used to hardcode the dark ground and dark coral, so
+    // light mode drew a navy ring around every focused control.
+    const focusLane = visualSystemSource.slice(
+        visualSystemSource.indexOf('Keep this final focus lane'),
+        visualSystemSource.indexOf('#ytkit-settings-panel [hidden]')
+    );
+    assert.ok(focusLane.length > 200, 'final focus lane must be present');
+    assert.doesNotMatch(focusLane, /#0b1421|255,90,79|#ff5a4f/,
+        'the final focus lane must use theme tokens, not dark-only colors');
     assert.match(
         visualSystemSource,
         /#ytkit-settings-panel \[hidden\]\s*\{\s*display:\s*none !important;/,

@@ -47568,8 +47568,10 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             right: 15px;
             width: 6px;
             height: 6px;
-            border-right: 1.5px solid rgba(255,255,255,0.52);
-            border-bottom: 1.5px solid rgba(255,255,255,0.52);
+            /* Was white at 52% in both themes, which all but vanished on the
+               light panel's pale field. */
+            border-right: 1.5px solid var(--ytkit-v3-muted, rgba(255,255,255,0.52));
+            border-bottom: 1.5px solid var(--ytkit-v3-muted, rgba(255,255,255,0.52));
             transform: translateY(-2px) rotate(45deg);
             pointer-events: none;
         }
@@ -49018,16 +49020,23 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         #ytkit-settings-panel textarea:focus-visible,
         #ytkit-settings-panel a:focus-visible {
             outline: 0 !important;
-            box-shadow: 0 0 0 2px var(--ytkit-v3-bg, #0b1421), 0 0 0 4px rgba(255,90,79,0.75) !important;
-            border-color: rgba(255,90,79,0.9) !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg, #0b1421), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb, 255,90,79),0.75) !important;
+            border-color: rgba(var(--ytkit-v3-accent-rgb, 255,90,79),0.9) !important;
         }
 
+        /* The search box clips its children, so an outer ring on the input
+           gets cut off at the bottom. Inset ring on the input, glow on the box. */
         #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
-            box-shadow: inset 0 0 0 1px rgba(255,90,79,0.8), 0 0 0 3px rgba(255,90,79,0.75) !important;
+            border-radius: inherit !important;
+            box-shadow: inset 0 0 0 2px rgba(var(--ytkit-v3-accent-rgb, 255,90,79),0.85) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-command-search:focus-within {
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb, 255,90,79),0.85), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb, 255,90,79),0.30) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active:focus-visible {
-            box-shadow: 0 0 0 2px var(--ytkit-v3-bg, #0b1421), 0 0 0 4px rgba(255,90,79,0.75) !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg, #0b1421), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb, 255,90,79),0.75) !important;
         }
 
         .ytkit-trigger-btn:hover .ytkit-trigger-btn__glyph svg,

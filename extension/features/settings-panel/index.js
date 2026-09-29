@@ -424,6 +424,21 @@ function syncPanelCategorySelection(activeButton) {
             pane.setAttribute('aria-hidden', String(!selected));
             pane.setAttribute('aria-labelledby', `ytkit-tab-${pane.id.replace('ytkit-pane-', '')}`);
         });
+        syncCategoryReorderButtons();
+    }
+
+// The move up / move down pair acts on the selected category. It used to
+// resync only on a click or focus inside the rail, so a freshly opened panel
+// (first category selected) offered an enabled "move up" that did nothing.
+function syncCategoryReorderButtons() {
+        const buttons = document.querySelectorAll('#ytkit-settings-panel .ytkit-nav-reorder-btn');
+        if (!buttons.length) return;
+        const tabs = Array.from(document.querySelectorAll('#ytkit-settings-panel .ytkit-nav-btn'));
+        const index = tabs.findIndex((tab) => tab.classList.contains('active'));
+        buttons.forEach((button) => {
+            const up = Number(button.dataset.direction) < 0;
+            button.disabled = index < 0 || (up ? index <= 0 : index >= tabs.length - 1);
+        });
     }
 
 function updatePanelInsightState() {
@@ -735,7 +750,7 @@ function buildSettingsPanel() {
                 min-width: 28px;
                 min-height: 28px;
                 padding: 0 6px;
-                border-radius: 7px;
+                border-radius: 6px;
                 border: 1px solid var(--ytkit-premium-border, rgba(255,255,255,0.14));
                 background: var(--ytkit-premium-raised, rgba(255,255,255,0.06));
                 color: var(--ytkit-premium-text, #e8ecf4);
@@ -765,8 +780,8 @@ function buildSettingsPanel() {
                 cursor: pointer;
             }
             #ytkit-settings-panel .ytkit-search-changed.is-active {
-                background: color-mix(in srgb, var(--ytkit-accent, #a78bfa) 22%, transparent);
-                border-color: var(--ytkit-accent, #a78bfa);
+                background: color-mix(in srgb, var(--ytkit-v3-accent, #ff5a4f) 22%, transparent);
+                border-color: var(--ytkit-v3-accent, #ff5a4f);
                 color: var(--ytkit-premium-text, #fff);
             }
             html:not([dark]) #ytkit-settings-panel .ytkit-search-changed {
@@ -799,11 +814,11 @@ function buildSettingsPanel() {
                 color: #0f172a;
             }
             #ytkit-settings-panel .ytkit-feature-card.ytkit-deep-linked {
-                outline: 2px solid var(--ytkit-accent, #a78bfa);
+                outline: 2px solid var(--ytkit-v3-accent, #ff5a4f);
                 outline-offset: 2px;
             }
             #ytkit-settings-panel .ytkit-nav-reorder-btn:focus-visible {
-                box-shadow: var(--ytkit-premium-focus, 0 0 0 2px #0f0f0f, 0 0 0 4px #7c3aed);
+                box-shadow: var(--ytkit-premium-focus, 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75));
                 outline: none;
             }
             html:not([dark]) #ytkit-settings-panel .ytkit-nav-reorder-btn {

@@ -190,6 +190,12 @@
             --ytkit-v3-danger: #ff7a86;
             /* Known-breakage notices. 10.77:1 on --ytkit-v3-bg. */
             --ytkit-v3-warning: #f6b863;
+            /* Toggle parts. The off thumb is what tells you the state, so it
+               has to stand off its track (11.2:1 here). */
+            --ytkit-v3-switch-track-off: var(--ytkit-v3-surface-raised);
+            --ytkit-v3-switch-stroke-off: rgba(151,178,208,0.30);
+            --ytkit-v3-switch-thumb-off: #e8edf2;
+            --ytkit-v3-switch-thumb-on: #ffffff;
             /* Userscript-only panes still consume the original settings token
                names through inline styles. Keep them on the same semantic lane
                so a light panel cannot retain a dark card or low-contrast copy. */
@@ -329,15 +335,15 @@
             height: 42px !important;
             min-height: 42px !important;
             margin: 0 !important;
+            /* An older sheet left 6px of bottom padding here, so the input
+               (height: 100%) stopped 6px short of the box and its focus ring
+               drew a second line above the box's own bottom edge. */
+            padding: 0 !important;
             border: 0 !important;
             border-radius: 8px !important;
             background: var(--ytkit-v3-surface) !important;
             box-shadow: inset 0 0 0 1px var(--ytkit-v3-border) !important;
             overflow: hidden !important;
-        }
-
-        #ytkit-settings-panel .ytkit-command-search:focus-within {
-            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.72), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.12) !important;
         }
 
         #ytkit-settings-panel .ytkit-command-search .ytkit-search-input {
@@ -596,7 +602,11 @@
             background: transparent !important;
         }
 
-        #ytkit-settings-panel .ytkit-github {
+        /* html:not([dark]) repeats the rule: an older light sheet in ytkit.js
+           paints these two icon links as grey tiles with a higher-specificity
+           selector, so the rail footer looked different in each theme. */
+        #ytkit-settings-panel .ytkit-github,
+        html:not([dark]) #ytkit-settings-panel .ytkit-github {
             width: 36px !important;
             min-width: 36px !important;
             height: 36px !important;
@@ -605,6 +615,12 @@
             border-radius: 8px !important;
             background: transparent !important;
             color: var(--ytkit-v3-subtle) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-github:hover,
+        html:not([dark]) #ytkit-settings-panel .ytkit-github:hover {
+            background: var(--ytkit-v3-hover) !important;
+            color: var(--ytkit-v3-text) !important;
         }
 
         #ytkit-settings-panel .ytkit-version {
@@ -1060,8 +1076,8 @@
             inset: 0 !important;
             border: 0 !important;
             border-radius: 6px !important;
-            background: var(--ytkit-v3-surface-raised) !important;
-            box-shadow: none !important;
+            background: var(--ytkit-v3-switch-track-off) !important;
+            box-shadow: inset 0 0 0 1px var(--ytkit-v3-switch-stroke-off) !important;
         }
 
         #ytkit-settings-panel .ytkit-switch .ytkit-switch-thumb {
@@ -1072,7 +1088,7 @@
             height: 20px !important;
             border: 0 !important;
             border-radius: 4px !important;
-            background: #e8edf2 !important;
+            background: var(--ytkit-v3-switch-thumb-off) !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.32) !important;
             transform: none !important;
         }
@@ -1086,7 +1102,7 @@
         #ytkit-settings-panel .ytkit-switch.active .ytkit-switch-thumb {
             inset-inline-start: 23px !important;
             inset-inline-end: auto !important;
-            background: #fff !important;
+            background: var(--ytkit-v3-switch-thumb-on) !important;
             transform: none !important;
         }
 
@@ -1359,7 +1375,9 @@
             --ytkit-v3-hover: rgba(15,23,42,0.045);
             --ytkit-v3-border: rgba(15,23,42,0.10);
             --ytkit-v3-border-strong: rgba(15,23,42,0.16);
-            --ytkit-v3-control-stroke: rgba(15,23,42,0.07);
+            /* 0.07 left selects and text fields with no visible edge on the
+               white card; this matches the dark lane's relative weight. */
+            --ytkit-v3-control-stroke: rgba(15,23,42,0.16);
             --ytkit-v3-text: #17202b;
             --ytkit-v3-muted: #5f6b79;
             /* #7d8997 on #f7f8fa was 3.36:1 — below AA for the placeholder,
@@ -1371,6 +1389,13 @@
             --ytkit-v3-danger: #b3261e;
             /* The dark lane's amber is 1.36:1 on this ground. 6.01:1 here. */
             --ytkit-v3-warning: #8a5200;
+            /* A white thumb on the pale off track was 1.20:1 and the track
+               1.15:1 against the card, so an off toggle read as blank space.
+               Stroke 3.73:1 on the card, grey thumb 4.17:1 on its track. */
+            --ytkit-v3-switch-track-off: #dde2e9;
+            --ytkit-v3-switch-stroke-off: #7b8594;
+            --ytkit-v3-switch-thumb-off: #5f6b79;
+            --ytkit-v3-switch-thumb-on: #ffffff;
             color-scheme: light !important;
             background: var(--ytkit-v3-bg) !important;
             color: var(--ytkit-v3-text) !important;
@@ -1393,10 +1418,6 @@
 
         html:not([dark]) #ytkit-settings-panel .ytkit-insights {
             background: rgba(15,23,42,0.012) !important;
-        }
-
-        html:not([dark]) #ytkit-settings-panel .ytkit-switch .ytkit-switch-thumb {
-            background: #fff !important;
         }
 
         /* Legacy panel classes still ship in the fallback renderer. Keep
@@ -2678,21 +2699,31 @@
         #ytkit-settings-panel textarea:focus-visible,
         #ytkit-settings-panel a:focus-visible {
             outline: 0 !important;
-            box-shadow: 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75) !important;
-            border-color: #ff5a4f !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb),0.75) !important;
+            border-color: var(--ytkit-v3-accent) !important;
         }
 
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:focus-visible {
-            box-shadow: 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75) !important;
-            border-color: #ff5a4f !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb),0.75) !important;
+            border-color: var(--ytkit-v3-accent) !important;
         }
 
+        /* The search box clips its children (overflow: hidden), so the
+           input's old outer ring was cut off along the bottom edge and drew
+           a red bar under the field, on top of the box's own ring. The input
+           keeps an inset ring the clip can't touch, rounded with the box, and
+           the box adds only the outer glow. */
         #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
-            box-shadow: inset 0 0 0 1px rgba(255,90,79,0.80), 0 0 0 3px rgba(255,90,79,0.75) !important;
+            border-radius: inherit !important;
+            box-shadow: inset 0 0 0 2px rgba(var(--ytkit-v3-accent-rgb),0.85) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-command-search:focus-within {
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.85), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.30) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active:focus-visible {
-            box-shadow: 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75) !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb),0.75) !important;
         }
 
         /* Author display rules can override the browser's hidden UA rule;
