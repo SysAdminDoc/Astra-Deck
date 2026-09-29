@@ -90,6 +90,49 @@ test('language selection prefers an exact BCP-47 match before a primary-subtag m
     assert.equal(audio.selectLanguageTrack([primary], 'fr-CA'), primary);
 });
 
+/**
+ * A track the way YouTube's player hands it out today: minified fields, and
+ * getLanguageInfo() as the only readable accessor. Shapes and ids copied from
+ * a live multi-language upload.
+ */
+class LiveAudioTrack {
+    constructor(name, id, isDefault = false) {
+        // The object's own id is an itag and an encoded tag blob, not the
+        // language id.
+        this.id = `251;Cg8KBWFjb250EgZkdWJiZWQ${id.length}`;
+        this.Lp = {};
+        this.captionTracks = [];
+        this._info = { name, id, isDefault, isAutoDubbed: false };
+    }
+    getLanguageInfo() { return { ...this._info }; }
+    isAutoDubbed() { return false; }
+}
+
+test('YouTube\'s current track objects are matched through getLanguageInfo()', () => {
+    // Every track here used to read as language '' with no id, so a
+    // 24-language upload reported no-match for every preference.
+    const original = new LiveAudioTrack('English (US) original', 'en-US.4', true);
+    const spanish = new LiveAudioTrack('Spanish', 'es.3');
+    const chinese = new LiveAudioTrack('Chinese (Traditional)', 'zh-Hant.3');
+    const tracks = [new LiveAudioTrack('Arabic', 'ar.3'), chinese, original, spanish];
+
+    assert.equal(audio.selectLanguageTrack(tracks, 'es'), spanish);
+    assert.equal(audio.selectLanguageTrack(tracks, 'es-MX'), spanish, 'a regional preference falls back to the language');
+    assert.equal(audio.selectLanguageTrack(tracks, 'zh-hant'), chinese);
+    assert.equal(audio.selectLanguageTrack(tracks, 'en'), original);
+    assert.equal(audio.selectOriginalTrack(tracks), original);
+
+    const fixture = makeBridgeFixture({ [audio.ATTRS.language]: 'es' }, tracks, original);
+    fixture.bridge.sync('init');
+    assert.equal(fixture.scheduled.callback({ reason: 'navigate', player: fixture.player }), true);
+    assert.deepEqual(fixture.calls, [spanish]);
+    assert.equal(fixture.document.documentElement.getAttribute(audio.ATTRS.status), 'selected:es.3');
+
+    // Already on it: no second switch.
+    assert.equal(fixture.scheduled.callback({ reason: 'navigate', player: fixture.player }), true);
+    assert.deepEqual(fixture.calls, [spanish]);
+});
+
 test('audio sync offset is shared and clamped to the bounded bridge range', () => {
     assert.equal(audio.ATTRS.syncOffset, 'data-ytkit-audio-sync-offset');
     assert.equal(audio.ATTRS.autoGain, 'data-ytkit-audio-auto-gain');

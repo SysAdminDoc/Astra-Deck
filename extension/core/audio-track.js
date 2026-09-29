@@ -64,25 +64,51 @@
         return '';
     }
 
+    // YouTube's player hands out track objects with minified fields and one
+    // readable accessor, getLanguageInfo(), which returns
+    // { name, id: 'es.3', isDefault, isAutoDubbed }. Read that when it's
+    // there; the plain fields stay for older player builds and fixtures.
+    function getTrackInfo(track) {
+        if (!track || typeof track.getLanguageInfo !== 'function') return null;
+        try {
+            const info = track.getLanguageInfo();
+            return info && typeof info === 'object' ? info : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
     function getTrackLabel(track) {
         return getText(track?.displayName)
             || getText(track?.name)
             || getText(track?.label)
+            || getText(getTrackInfo(track)?.name)
             || '';
     }
 
+    function getTrackId(track) {
+        // The info id ('es.3') goes first: the object's own `id` on a live
+        // player is an itag plus an encoded tag blob ('251;Cg8K...').
+        const info = getTrackInfo(track);
+        if (info && typeof info.id === 'string' && info.id) return info.id;
+        return String(track?.id || track?.audioTrackId || track?.key || '');
+    }
+
     function getTrackLanguage(track) {
-        return normalizeLanguageTag(
+        const info = getTrackInfo(track);
+        const direct = normalizeLanguageTag(
             track?.languageCode
             || track?.langCode
             || track?.language
             || track?.languageTag
+            || info?.languageCode
             || ''
         );
-    }
-
-    function getTrackId(track) {
-        return String(track?.id || track?.audioTrackId || track?.key || '');
+        if (direct) return direct;
+        // The id is '<language>.<kind>': 'es.3' for a dub, 'en-US.4' for the
+        // original.
+        const idMatch = /^([a-z]{2,3}(?:-[a-z0-9]{1,8})*)\.\d+$/i.exec(getTrackId(track));
+        return idMatch ? normalizeLanguageTag(idMatch[1]) : '';
     }
 
     function isDescriptiveTrack(track) {
@@ -103,6 +129,7 @@
         if (track.isOriginal === true || track.isDefault === true || track.audioIsDefault === true) {
             return true;
         }
+        if (getTrackInfo(track)?.isDefault === true) return true;
         return /(?:^|\W)original(?:\W|$)/i.test(getTrackLabel(track))
             || /\.4(?=\.|$)/.test(getTrackId(track));
     }
