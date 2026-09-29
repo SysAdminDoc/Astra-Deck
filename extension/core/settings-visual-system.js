@@ -3543,6 +3543,9 @@
         .ytkit-transcript-state {
             gap: 8px !important;
             min-height: 112px !important;
+            /* Keeps title and copy together. The grid's default stretch split
+               a two-line message across the whole min-height. */
+            align-content: center !important;
             margin: 14px !important;
             padding: 16px !important;
             border-color: var(--ytkit-premium-border) !important;

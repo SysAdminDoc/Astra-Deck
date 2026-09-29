@@ -2680,7 +2680,11 @@ const STORAGE_KEYS = Object.freeze({
             grid-template-columns: auto minmax(0, 1fr) auto;
             align-items: center;
             gap: 12px;
-            width: min(620px, calc(100vw - 24px));
+            /* Fits its message: a two-word notice spanned 620px and ran into
+               cards pinned to the page corners. */
+            width: max-content;
+            min-width: min(344px, calc(100vw - 24px));
+            max-width: min(620px, calc(100vw - 24px));
             min-height: 56px;
             padding: 12px 14px 12px 16px;
             border-radius: 12px;
@@ -2847,6 +2851,7 @@ const STORAGE_KEYS = Object.freeze({
 
         @media (max-width: 680px) {
             .ytkit-global-toast {
+                width: calc(100vw - 24px);
                 grid-template-columns: minmax(0, 1fr);
                 justify-items: stretch;
                 gap: 10px;

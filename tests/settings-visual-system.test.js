@@ -590,6 +590,8 @@ test('shared surface system covers the polished YouTube and injected UI families
         'Transcript Q&A must use the shared structured dialog shell');
     assert.match(css, /\.ytkit-transcript-state--error[\s\S]*?--ytkit-premium-danger/,
         'transcript failures must retain a semantic error treatment');
+    assert.match(css, /\.ytkit-transcript-state \{[^}]*min-height:\s*112px !important;[^}]*align-content:\s*center !important;/,
+        'a two-line transcript state must not spread its title and copy across the min-height');
     assert.doesNotMatch(css, /ytkit-service-state-(?:strip|pill|action|dismiss)/,
         'the visual system must not retain styles for unsolicited health overlays');
     assert.match(css, /html\.ytkit-split-active:not\(\[dark\]\)[\s\S]*?:is\(yt-icon, svg, path\)[\s\S]*?fill:\s*currentColor/,

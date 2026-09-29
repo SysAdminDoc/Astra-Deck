@@ -13424,6 +13424,17 @@ test('motion and forced-colors sheets target the real toast root class', () => {
         'the reduced-motion and forced-colors lists must include the toast root');
 });
 
+// A fixed 620px toast spanned half the page for "@name blocked" and ran into
+// the ad-block recovery card pinned to the bottom corner.
+test('toast fits its message between 344px and 620px, full width on narrow screens', () => {
+    const base = ytkitSource.slice(ytkitSource.indexOf('        .ytkit-global-toast {'));
+    const rule = base.slice(0, base.indexOf('}'));
+    assert.match(rule, /width:\s*max-content;/);
+    assert.match(rule, /min-width:\s*min\(344px, calc\(100vw - 24px\)\);/);
+    assert.match(rule, /max-width:\s*min\(620px, calc\(100vw - 24px\)\);/);
+    assert.match(ytkitSource, /@media \(max-width: 680px\) \{\s*\.ytkit-global-toast \{\s*width:\s*calc\(100vw - 24px\);/);
+});
+
 // ── WCAG 1.4.10 reflow, every surface, every tracked locale ──
 
 test('the a11y smoke proves 320px reflow on every primary surface in every tracked locale', () => {
