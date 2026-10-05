@@ -576,16 +576,21 @@
                             rgba(255, 255, 255, 0.045) !important;
                     }
 
-                    html:not([dark]) #ytkit-player-controls .ytkit-po-cc--active {
-                        color: var(--yt-spec-text-primary, #0f0f0f) !important;
-                    }
-
                     /* The player chrome remains dark while the YouTube page
                        changes theme. Declare that host-grounded state in the
                        light lane so the source gate can see the same context. */
                     html:not([dark]) #ytkit-player-controls .ytkit-po-cc {
                         color: rgba(191, 219, 254, 0.94) !important;
                         background: #06090e !important;
+                    }
+
+                    /* After the base rule: same specificity, so the later
+                       rule wins and the on state keeps its blue fill. */
+                    html:not([dark]) #ytkit-player-controls .ytkit-po-cc--active {
+                        color: #fff !important;
+                        background:
+                            linear-gradient(180deg, rgba(96, 165, 250, 0.24), rgba(96, 165, 250, 0.08)),
+                            #06090e !important;
                     }
 
                     #ytkit-player-controls .ytkit-po-repeat--active {
