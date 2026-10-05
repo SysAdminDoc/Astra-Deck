@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "{brand} の設定"
   },
+  "playerRepeatAria": {
+    "message": "リピートのオン/オフ"
+  },
+  "playerRepeatOffToast": {
+    "message": "リピート: オフ"
+  },
+  "playerRepeatOnToast": {
+    "message": "リピート: オン"
+  },
+  "playerRepeatTitle": {
+    "message": "リピート"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

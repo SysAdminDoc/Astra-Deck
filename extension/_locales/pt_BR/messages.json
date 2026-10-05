@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "Configurações de {brand}"
   },
+  "playerRepeatAria": {
+    "message": "Ativar ou desativar a repetição"
+  },
+  "playerRepeatOffToast": {
+    "message": "Repetição desativada"
+  },
+  "playerRepeatOnToast": {
+    "message": "Repetição ativada"
+  },
+  "playerRepeatTitle": {
+    "message": "Repetir"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

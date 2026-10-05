@@ -4817,6 +4817,18 @@
   "playerGearTitleTpl": {
     "message": "{brand} Settings"
   },
+  "playerRepeatAria": {
+    "message": "Toggle repeat"
+  },
+  "playerRepeatOffToast": {
+    "message": "Repeat off"
+  },
+  "playerRepeatOnToast": {
+    "message": "Repeat on"
+  },
+  "playerRepeatTitle": {
+    "message": "Repeat"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

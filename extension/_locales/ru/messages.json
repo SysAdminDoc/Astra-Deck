@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "Настройки {brand}"
   },
+  "playerRepeatAria": {
+    "message": "Включить или выключить повтор"
+  },
+  "playerRepeatOffToast": {
+    "message": "Повтор выключен"
+  },
+  "playerRepeatOnToast": {
+    "message": "Повтор включён"
+  },
+  "playerRepeatTitle": {
+    "message": "Повтор"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

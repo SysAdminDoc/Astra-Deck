@@ -18,8 +18,16 @@
     const defaultIcons = Object.freeze({
         list: createEmptySvg,
         download: createEmptySvg,
+        repeat: createEmptySvg,
         settings: createEmptySvg
     });
+
+    function getMainVideoElementFallback() {
+        if (typeof document === 'undefined' || !document.querySelector) return null;
+        return document.querySelector('video.html5-main-video')
+            || document.querySelector('#movie_player video')
+            || null;
+    }
 
     function appendStyleSheetFallback(css) {
         if (typeof document === 'undefined' || !document.createElement) return { remove() {} };
@@ -37,6 +45,8 @@
             t = (_key, fallback) => fallback,
             showDownloadPopup = () => {},
             showSpeedPopup = () => {},
+            showToast = () => {},
+            getMainVideoElement = getMainVideoElementFallback,
             toggleSettingsPanel = () => {},
             BRAND = { name: 'Astra Deck' },
             appendStyleSheet = appendStyleSheetFallback,
@@ -106,10 +116,80 @@
                     attributeFilter: ['class', 'aria-pressed']
                 });
             },
+            // Repeat is a mode for this tab, like a music player's repeat-one:
+            // it stays on across the videos you open until it is clicked off,
+            // and a reload starts with it off.
+            _repeatOn: false,
+            _repeatButton: null,
+            _repeatVideo: null,
+            _repeatApplied: null,
+            _repeatObserver: null,
+            _isAdShowing(video) {
+                // Ads play in the same <video> as the watch content, so a loop
+                // left on during one would replay the ad forever.
+                const player = video?.closest?.('.html5-video-player');
+                return !!player && (
+                    player.classList.contains('ad-showing')
+                    || player.classList.contains('ad-interrupting')
+                );
+            },
+            _watchRepeatTarget(video) {
+                if (video === this._repeatVideo) return;
+                this._repeatObserver?.disconnect();
+                this._repeatObserver = null;
+                this._repeatVideo = video;
+                if (!video || typeof MutationObserver !== 'function') return;
+                // YouTube's player owns this element and can clear `loop` when
+                // it loads the next video; it marks ads with a class on the
+                // player. Either change re-runs the check.
+                this._repeatObserver = new MutationObserver(() => this._applyRepeat());
+                this._repeatObserver.observe(video, { attributes: true, attributeFilter: ['loop'] });
+                const player = video.closest?.('.html5-video-player');
+                if (player) this._repeatObserver.observe(player, { attributes: true, attributeFilter: ['class'] });
+            },
+            _applyRepeat() {
+                if (!this._repeatOn && !this._repeatApplied) {
+                    this._watchRepeatTarget(null);
+                    return;
+                }
+                const video = getMainVideoElement();
+                if (this._repeatApplied && this._repeatApplied !== video) {
+                    this._repeatApplied.loop = false;
+                    this._repeatApplied = null;
+                }
+                this._watchRepeatTarget(this._repeatOn ? video : null);
+                if (!video) return;
+                if (this._repeatOn) {
+                    const loop = !this._isAdShowing(video);
+                    if (video.loop !== loop) video.loop = loop;
+                    this._repeatApplied = video;
+                } else if (this._repeatApplied === video) {
+                    video.loop = false;
+                    this._repeatApplied = null;
+                }
+            },
+            _syncRepeatButton() {
+                const button = this._repeatButton;
+                if (!button) return;
+                button.classList.toggle('ytkit-po-repeat--active', this._repeatOn);
+                if (button.getAttribute('aria-pressed') !== String(this._repeatOn)) {
+                    button.setAttribute('aria-pressed', String(this._repeatOn));
+                }
+            },
+            _toggleRepeat() {
+                this._repeatOn = !this._repeatOn;
+                this._applyRepeat();
+                this._syncRepeatButton();
+                if (this._repeatOn) showToast(t('playerRepeatOnToast', 'Repeat on'), '#22c55e');
+                else showToast(t('playerRepeatOffToast', 'Repeat off'), '#6b7280');
+            },
             _cleanup() {
                 this._ccObserver?.disconnect();
                 this._ccObserver = null;
                 this._ccButton = null;
+                this._repeatOn = false;
+                this._applyRepeat();
+                this._repeatButton = null;
                 const quickLinks = getFeatureById('quickLinkMenu');
                 const logoWrap = document.getElementById('ytkit-po-logo-wrap');
                 quickLinks?._teardownMenuInteractions?.(logoWrap);
@@ -127,6 +207,7 @@
                     this._ccObserver?.disconnect();
                     this._ccObserver = null;
                     this._ccButton = null;
+                    this._repeatButton = null;
                     return;
                 }
                 const rightControls = document.querySelector('.ytp-right-controls');
@@ -134,8 +215,10 @@
                 const existingControls = document.getElementById('ytkit-player-controls');
                 if (existingControls) {
                     this._ccButton = existingControls.querySelector('.ytkit-po-cc') || this._ccButton;
+                    this._repeatButton = existingControls.querySelector('.ytkit-po-repeat') || this._repeatButton;
                     this._watchCcState();
                     this._syncCcButton();
+                    this._syncRepeatButton();
                     return;
                 }
 
@@ -208,6 +291,25 @@
                 });
                 this._ccButton = ccBtn;
                 wrap.appendChild(ccBtn);
+
+                // Repeat toggle: while on, the video starts over when it ends
+                // instead of stopping or autoplaying the next one.
+                const repeatBtn = document.createElement('button');
+                repeatBtn.type = 'button';
+                repeatBtn.className = 'ytp-button ytkit-player-btn ytkit-po-repeat';
+                repeatBtn.title = t('playerRepeatTitle', 'Repeat');
+                repeatBtn.setAttribute('aria-label', t('playerRepeatAria', 'Toggle repeat'));
+                repeatBtn.setAttribute('aria-pressed', 'false');
+                const repeatIcon = ICONS.repeat();
+                repeatIcon.setAttribute('aria-hidden', 'true');
+                repeatBtn.appendChild(repeatIcon);
+                repeatBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._toggleRepeat();
+                });
+                this._repeatButton = repeatBtn;
+                this._syncRepeatButton();
+                wrap.appendChild(repeatBtn);
 
                 // Speed control — sits between Download and Settings.
                 // Drives the existing persistentSpeed feature so the chosen
@@ -455,6 +557,7 @@
 
                     #ytkit-player-controls .ytkit-po-dl,
                     #ytkit-player-controls .ytkit-po-cc,
+                    #ytkit-player-controls .ytkit-po-repeat,
                     #ytkit-player-controls .ytkit-po-gear {
                         border-radius: 10px !important;
                     }
@@ -483,6 +586,21 @@
                     html:not([dark]) #ytkit-player-controls .ytkit-po-cc {
                         color: rgba(191, 219, 254, 0.94) !important;
                         background: #06090e !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-repeat--active {
+                        color: rgba(191, 219, 254, 0.98) !important;
+                        border-color: rgba(96, 165, 250, 0.42) !important;
+                        background:
+                            linear-gradient(180deg, rgba(96, 165, 250, 0.24), rgba(96, 165, 250, 0.08)),
+                            rgba(255, 255, 255, 0.045) !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-repeat--active:hover {
+                        border-color: rgba(96, 165, 250, 0.56) !important;
+                        background:
+                            linear-gradient(180deg, rgba(96, 165, 250, 0.3), rgba(96, 165, 250, 0.11)),
+                            rgba(255, 255, 255, 0.05) !important;
                     }
 
                     #ytkit-player-controls .ytkit-po-dl {
@@ -516,6 +634,7 @@
                     }
 
                     #ytkit-player-controls .ytkit-po-dl svg,
+                    #ytkit-player-controls .ytkit-po-repeat svg,
                     #ytkit-player-controls .ytkit-po-gear svg {
                         width: 16px !important;
                         height: 16px !important;
@@ -525,6 +644,8 @@
 
                     #ytkit-player-controls .ytkit-po-dl svg,
                     #ytkit-player-controls .ytkit-po-dl svg *,
+                    #ytkit-player-controls .ytkit-po-repeat svg,
+                    #ytkit-player-controls .ytkit-po-repeat svg *,
                     #ytkit-player-controls .ytkit-po-gear svg,
                     #ytkit-player-controls .ytkit-po-gear svg * {
                         fill: none !important;
@@ -702,6 +823,8 @@
                     self._inject();
                     self._watchCcState();
                     self._syncCcButton();
+                    self._applyRepeat();
+                    self._syncRepeatButton();
                 });
             },
             destroy() {

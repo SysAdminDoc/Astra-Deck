@@ -6705,6 +6705,8 @@ const STORAGE_KEYS = Object.freeze({
 			t,
 			showDownloadPopup,
 			showSpeedPopup,
+			showToast,
+			getMainVideoElement,
 			toggleSettingsPanel,
 			BRAND,
 			appendStyleSheet,

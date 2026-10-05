@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "{brand} Einstellungen"
   },
+  "playerRepeatAria": {
+    "message": "Wiederholung ein- oder ausschalten"
+  },
+  "playerRepeatOffToast": {
+    "message": "Wiederholung aus"
+  },
+  "playerRepeatOnToast": {
+    "message": "Wiederholung an"
+  },
+  "playerRepeatTitle": {
+    "message": "Wiederholen"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

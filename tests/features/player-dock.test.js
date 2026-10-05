@@ -62,7 +62,7 @@ test('Player Dock renders one accessible control group and tears it down', () =>
         assert.equal(rightControls.children.length, 1, 'repeat injection reuses the control group');
         const controls = rightControls.children[0];
         assert.equal(controls.id, 'ytkit-player-controls');
-        assert.equal(controls.children.length, 5);
+        assert.equal(controls.children.length, 6);
         const download = controls.querySelector('.ytkit-po-dl');
         assert.equal(download.getAttribute('aria-haspopup'), 'dialog');
         assert.equal(download.getAttribute('aria-expanded'), 'false');
@@ -70,6 +70,9 @@ test('Player Dock renders one accessible control group and tears it down', () =>
         assert.equal(cc.textContent, 'CC');
         assert.equal(cc.getAttribute('aria-label'), 'Toggle closed captions');
         assert.equal(cc.getAttribute('aria-pressed'), 'true');
+        const repeat = controls.querySelector('.ytkit-po-repeat');
+        assert.equal(repeat.getAttribute('aria-label'), 'Toggle repeat');
+        assert.equal(repeat.getAttribute('aria-pressed'), 'false');
         const speed = controls.querySelector('.ytkit-po-speed');
         assert.match(speed.textContent, /1\.5/);
         assert.equal(speed.getAttribute('aria-haspopup'), 'menu');
@@ -187,5 +190,121 @@ test('CC mirror follows native aria-pressed state in both directions', () => {
         assert.equal(mirror.classList.contains('ytkit-po-cc--active'), false);
     } finally {
         globalThis.document = originalDocument;
+    }
+});
+
+function fakeRepeatPlayer() {
+    const classes = new Set();
+    const player = {
+        classList: {
+            contains: (name) => classes.has(name),
+            add: (name) => classes.add(name),
+            remove: (name) => classes.delete(name)
+        }
+    };
+    const makeVideo = () => ({ loop: false, closest: (selector) => (selector === '.html5-video-player' ? player : null) });
+    return { player, makeVideo };
+}
+
+function withFakeMutationObserver(run) {
+    const original = globalThis.MutationObserver;
+    const observers = [];
+    globalThis.MutationObserver = class {
+        constructor(callback) { this.callback = callback; this.targets = []; this.connected = true; observers.push(this); }
+        observe(target, options) { this.targets.push({ target, options }); }
+        disconnect() { this.connected = false; }
+    };
+    const live = () => observers.filter((o) => o.connected);
+    const fire = () => live().forEach((o) => o.callback([]));
+    try {
+        return run({ fire, live });
+    } finally {
+        if (original === undefined) delete globalThis.MutationObserver;
+        else globalThis.MutationObserver = original;
+    }
+}
+
+test('Repeat keeps the main video looping, steps aside for ads, and lets go when turned off', () => {
+    const mod = require('../../extension/features/player-dock/index.js');
+    withFakeMutationObserver(({ fire, live }) => {
+        const { player, makeVideo } = fakeRepeatPlayer();
+        let video = makeVideo();
+        const toasts = [];
+        const feature = mod.createFloatingLogoOnWatchFeature({
+            appState: { settings: {} },
+            t: (_key, fallback) => fallback,
+            getMainVideoElement: () => video,
+            showToast: (message) => toasts.push(message)
+        });
+
+        feature._toggleRepeat();
+        assert.equal(video.loop, true, 'turning repeat on loops the main video');
+        assert.deepEqual(toasts, ['Repeat on']);
+        const observed = live()[0].targets.map((entry) => entry.target);
+        assert.ok(observed.includes(video) && observed.includes(player),
+            'repeat watches the video loop flag and the player ad class');
+
+        video.loop = false;
+        fire();
+        assert.equal(video.loop, true, 'repeat re-asserts loop when the player clears it for the next video');
+
+        player.classList.add('ad-showing');
+        fire();
+        assert.equal(video.loop, false, 'an ad in the same element must never loop');
+        player.classList.remove('ad-showing');
+        fire();
+        assert.equal(video.loop, true, 'repeat comes back once the ad ends');
+
+        const previous = video;
+        video = makeVideo();
+        feature._applyRepeat();
+        assert.equal(previous.loop, false, 'a replaced element is released');
+        assert.equal(video.loop, true, 'the new main video picks up repeat');
+
+        feature._toggleRepeat();
+        assert.equal(video.loop, false, 'turning repeat off stops the loop');
+        assert.equal(live().length, 0, 'no observer survives repeat being off');
+        assert.deepEqual(toasts, ['Repeat on', 'Repeat off']);
+
+        video.loop = true;
+        feature._applyRepeat();
+        assert.equal(video.loop, true, 'with repeat off, a loop YouTube set itself is left alone');
+    });
+});
+
+test('Repeat button mirrors the mode and the dock teardown releases the loop', () => {
+    const originalDocument = globalThis.document;
+    const originalWindow = globalThis.window;
+    const rightControls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    const documentRef = fakeTreeDocument((selector) => (selector === '.ytp-right-controls' ? rightControls : null));
+    documentRef.body.appendChild(rightControls);
+    globalThis.document = documentRef;
+    globalThis.window = { location: { pathname: '/watch' } };
+    try {
+        const { makeVideo } = fakeRepeatPlayer();
+        const video = makeVideo();
+        const module = require('../../extension/features/player-dock/index.js');
+        const feature = module.createFloatingLogoOnWatchFeature({
+            appState: { settings: {} },
+            ICONS: new Proxy({}, { get: () => () => fakeNode({ tag: 'svg' }) }),
+            t: (_key, fallback) => fallback,
+            getMainVideoElement: () => video
+        });
+        feature._inject();
+        const repeat = rightControls.children[0].querySelector('.ytkit-po-repeat');
+        const click = [...repeat.listeners.get('click')][0];
+
+        click({ stopPropagation() {} });
+        assert.equal(repeat.getAttribute('aria-pressed'), 'true');
+        assert.equal(repeat.classList.contains('ytkit-po-repeat--active'), true);
+        assert.equal(video.loop, true);
+
+        feature.destroy();
+        assert.equal(video.loop, false, 'disabling the dock must not leave the video looping');
+        assert.equal(feature._repeatOn, false);
+        assert.equal(feature._repeatButton, null);
+    } finally {
+        globalThis.document = originalDocument;
+        globalThis.window = originalWindow;
     }
 });

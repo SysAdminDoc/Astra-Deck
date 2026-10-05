@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "{brand} 设置"
   },
+  "playerRepeatAria": {
+    "message": "开启或关闭循环播放"
+  },
+  "playerRepeatOffToast": {
+    "message": "已关闭循环播放"
+  },
+  "playerRepeatOnToast": {
+    "message": "已开启循环播放"
+  },
+  "playerRepeatTitle": {
+    "message": "循环播放"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "{brand} 설정"
   },
+  "playerRepeatAria": {
+    "message": "반복 켜기/끄기"
+  },
+  "playerRepeatOffToast": {
+    "message": "반복 꺼짐"
+  },
+  "playerRepeatOnToast": {
+    "message": "반복 켜짐"
+  },
+  "playerRepeatTitle": {
+    "message": "반복"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

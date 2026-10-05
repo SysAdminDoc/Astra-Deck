@@ -11230,6 +11230,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             t,
             showDownloadPopup,
             showSpeedPopup,
+            showToast,
+            getMainVideoElement,
             toggleSettingsPanel,
             BRAND,
             appendStyleSheet,

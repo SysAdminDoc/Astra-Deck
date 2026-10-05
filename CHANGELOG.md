@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- The Player Dock has a Repeat button next to CC. Click it and the video starts over when it ends instead of stopping or playing the next one. It stays on for the videos you open in that tab until you click it again, and a reload starts with it off. Ads never loop: repeat steps aside while one plays and comes back after.
+
 ## [4.93.0] (2026-09-29)
 
 ### Changed

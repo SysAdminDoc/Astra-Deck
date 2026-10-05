@@ -4800,6 +4800,18 @@
   "playerGearTitleTpl": {
     "message": "إعدادات {brand}"
   },
+  "playerRepeatAria": {
+    "message": "تبديل التكرار"
+  },
+  "playerRepeatOffToast": {
+    "message": "التكرار متوقف"
+  },
+  "playerRepeatOnToast": {
+    "message": "التكرار مفعّل"
+  },
+  "playerRepeatTitle": {
+    "message": "تكرار"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },
