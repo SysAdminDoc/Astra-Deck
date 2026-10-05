@@ -113,6 +113,25 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   `--require-release-current` to the `versions` gate in
   `scripts/run-checks.js` and confirm `npm run check` is green.
 
+## P1 — Dev audit waits on an upstream node-forge fix (2026-10-05)
+
+- [ ] P1: Clear the node-forge advisory from the development audit
+  Why: the `deps` gate requires a zero-finding dev audit and has no exception
+  path. GHSA-86w9-cpqp-85rv (high, RSA PKCS#1 v1.5 signature verification
+  accepts extra nested DigestAlgorithm elements, published 2026-09-03) covers
+  `node-forge <= 1.4.0`, and 1.4.0 is the newest release. It reaches this tree
+  only as `web-ext 10.7.0 -> @devicefarmer/adbkit 3.3.9 -> node-forge`, the
+  Firefox-for-Android path of `web-ext run`. Nothing here runs that path and
+  none of it ships in an artifact. npm's suggested fix is a downgrade to
+  web-ext 5.1.0. brace-expansion was cleared the same day by raising its
+  override to `^5.0.12`.
+  Blocker: no patched node-forge release exists (`first_patched_version` is
+  null), and web-ext declares adbkit as a hard dependency.
+  Acceptance: `npm run audit:deps` passes after taking a patched node-forge
+  (override) or a web-ext release that drops or updates adbkit. Recheck with
+  `gh api advisories/GHSA-86w9-cpqp-85rv` and `npm view node-forge version`.
+  Complexity: S
+
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
 - [ ] P1 — Publish the release signing key so `SHA256SUMS` carries a verifiable signature
