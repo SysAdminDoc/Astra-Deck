@@ -1,185 +1,268 @@
 # Research: Astra Deck
 
-Current delivery note: 2026-09-05. The engineering review below remains as a
-dated snapshot of the findings that informed v4.88.5.
+Date: 2026-10-05. Replaces all prior research (the last pass was 2026-09-04 at v4.88.4).
 
-## 2026-09-05 Delivery Update
+Confidence labels: **Verified** (read in source, tracker or a fetched page), **Likely** (strong evidence, not reproduced), **Needs live validation** (only a signed-in or live YouTube session can settle it).
 
-Astra Deck v4.88.5 has 485 settings across 18 categories, 303 declared feature
-IDs, 117 runtime modules, and 35 selector surfaces. All 38 local checks pass.
-The test suite covers 2,768 JavaScript tests, and the complete browser matrix
-passes in Chromium and Firefox. That matrix includes live YouTube, live chat,
-dark and light surfaces, keyboard and reflow states, plus real installs through
-Tampermonkey and Violentmonkey.
+## Executive Summary
 
-The repository now leads with the product rather than its test inventory. A
-new social card and three current screenshots show Command Deck and Theater
-Split in both themes. The existing Astra glyph remains because it is distinct,
-consistent across browser sizes, and readable at 16 pixels.
+Astra Deck v4.94.0 (released 2026-10-05) is a local-first YouTube control suite: an MV3 extension for Chromium 120+ and Firefox 142+, and, since v4.93.0, a userscript generated from the same files. It has 483 settings and 304 feature IDs, and every release passes 3,320 tests and 38 of 39 gates. On breadth it is ahead of every open-source peer. Each 2026-09-25 Control Panel addition and each 2026-09 HN request already has an Astra setting, except the two below. The 2026-09-04 recommendations mostly shipped: the channel landing tab, the open-thumbnail button, a monolith-peel ratchet, the steady-state gate in `release:prepare`, player-rollout naming in feature health, and tests for Video Notes and Digital Wellbeing.
 
-Release publication is still waiting on observed NVDA results. The v4.88.5
-artifact set, SBOM, manifest, and checksums are complete, but release readiness
-correctly fails while `docs/screen-reader-evidence.json` is absent. All five
-active update channels still serve 4.82.0, the newest tag is v4.88.3, and the
-latest GitHub release is v4.84.3.
-
-## 2026-09-04 Executive Summary (Historical Snapshot)
-
-Astra Deck is a local-first YouTube control suite for Chromium, Firefox, Tampermonkey and Violentmonkey, now at v4.88.4 with 484 settings, 303 feature IDs, 117 runtime modules, 35 selector surfaces, **37** check gates and **3,067** tests (`npm run test:fast`, 21.8 s, 3,066 pass / 1 skip). The 2026-08-27 pass found ten problems and nine of them are closed: `npm test` now runs inside `release:prepare` (`package.json:16`), both remote feeds carry detached ECDSA signatures with a `feed-signatures` gate, Trusted Types are enforced on extension pages, selector evidence has a freshness gate, stable-chain erosion is now observable (`core/feature-health.js:108` reads `lastTier`), offline listeners exist, the `@require` is pinned to an immutable tag (`sync-userscript.js:14-24`), and the MAIN↔ISOLATED bridge became a sealed, token-authenticated channel (`core/bridge-channel.js`). Dependencies are clean against every 2026 advisory checked: `ws` 8.21.3 (> 8.20.1, CVE-2026-45736), `brace-expansion` 5.0.9, `shell-quote` 1.10.0 (> 1.8.4, CVE-2026-9277), `adm-zip` 0.6.0, Node 24.19.0.
-
-One item did not close, and it is still the largest single loss of value in the project: **all five release channels serve 4.82.0** while `package.json` says 4.88.4 and the newest tag is v4.88.3. Six versions of shipped security work reach nobody. That is owned by a P0 in `Roadmap_Blocked.md` and has been re-dated at least 13 times, so it needs a decision rather than another roadmap line.
-
-Below that, the new ground this pass found is not features either. It is that the codebase's own verification tools are aimed at things the code no longer does, while the two structural debts that actually generate bug reports are unmeasured. `extension/ytkit.js` is 52,320 lines and holds roughly 334 inline feature entries against 27 peeled modules, with **no gate tracking the remainder** — the peel has no finish line and no ratchet, unlike every other invariant in the repo. Inside that file, `injectPanelStyles()` spans 1,410 lines of panel CSS that `docs/architecture.md:157` §9 states outright is overridden and inert ("editing them changes nothing you can see"), and seven of the last 200 commits are light-theme and surface repair. And `check:steady-state` exists in `package.json:96` but appears in neither the 37-gate list nor `release:prepare`, so long-session leaks are benchmarked by nobody, against 659 `addEventListener` calls and 217 `removeEventListener` calls.
+What this pass found is mostly about trust in what already ships. The project's only open user report (#51) came from a userscript user on Firefox, and it exposed two gaps. The live smokes run signed out, and the userscript has no way to produce the diagnostics bundle the bug template asks for. Meanwhile YouTube changed its feed cards on 2026-09-24/25, and Astra's view-count and duration parsing still reads only the older containers. That puts the feed filters at risk of silently letting every card through.
 
 Top opportunities, in priority order:
 
-1. Delete the inert panel stylesheets in `ytkit.js` after porting whatever still wins into `settings-visual-system.js`. It is the source of the repeating light-theme regression class and `probe:panel-colors` can prove the deletion safe.
-2. Gate `check:steady-state`. The tool is built; nothing runs it.
-3. Give the monolith peel a tracked remainder and a ratchet, in the shape the repo already uses for `MIN_GATES` and `check-userscript-drift`.
-4. Confirm OS media controls survive the Web Audio graph at `ytkit-main.js:1549`, and set Media Session metadata. Zero `mediaSession` references exist anywhere in the repo.
-5. Name the resolved player variant in feature health and diagnostics. YouTube's 2026 refresh varies per account and device, so one selector pack is not correct for all users, and diagnostics is the only intake this project has.
-6. Behavioural tests for `video-notes` (408 lines) and `digital-wellbeing` (606 lines), the two peeled modules with no test file of their own.
-7. Two small competitor-sourced features with live demand and no equivalent in the schema: a channel-page landing tab, and opening a thumbnail at full size.
-8. Say in the README that Astra restores the pre-Delhi player and classic layouts. It ships `classicLayoutProfile` with `classic-2020` and `classic-2016`, which is the single most-asked-for thing in the 2026 YouTube ecosystem, and the README never mentions it.
+1. Reproduce and fix #51, the invisible account avatar in the userscript on Firefox, with a signed-in fixture so the class can't recur unseen.
+2. Give userscript users a diagnostics bundle (a manager menu command plus an in-panel action) and fix the bug template.
+3. Re-verify Video Hider's view-count and duration parsing against YouTube's 2026-09-25 card layout, and make unreadable metadata visible instead of passing.
+4. Stop the `deps` gate from being permanently red while node-forge has no fix, with an exact-path allowance that expires.
+5. Hide thumbnail badges ("New", "4K"): three other projects' trackers asked for it in September, and Control Panel shipped it on 2026-09-25.
+6. Hide videos YouTube labels "Made with AI": the highest-signal request of the window, and the only implementation that uses YouTube's own label costs $1.99.
+7. SRI hashes on the userscript's three `@require` URLs, for integrity and Greasy Fork eligibility.
+8. Small adoption work: carry the popup's What's New note into the in-page panel for userscript users, and get listed on awesome-userscripts.
 
 ## Product Map
 
-- **Core workflows:** control playback, player chrome and layout on the native site; restyle watch, native Theater, Theater Split, feeds, comments and chat; filter or group content; enrich with SponsorBlock, DeArrow and Return YouTube Dislike; search, export, summarize and question transcripts; hand downloads to a separately versioned companion. Evidence: `extension/core/settings-schema.js`, `extension/features/**/index.js`.
-- **Recovery workflows:** import/export with rollback, IndexedDB snapshots, feature bisect, selector health with a build-aware canary, signed remote feature-disable feed, release-channel rollback. Evidence: `core/persisted-domains.js`, `core/feature-bisect.js`, `core/selector-health.js`, `core/feature-disable-feed.js`, `scripts/release-channels.js`.
-- **Personas:** privacy-conscious power users; accessibility and focus users; transcript-based researchers; users managing large subscription sets; users who want local downloads or media-player handoff; and, newly relevant in 2026, users trying to undo YouTube's player and layout redesign.
-- **Platforms and distribution:** MV3 for Chromium and Firefox plus Tampermonkey/Violentmonkey. Profiles `store-safe`, `chromium-store`, `github-full` (`build-extension.js:47-70`); `chromium-store` drops `cookies`/`downloads`/`nativeMessaging` and excludes `features/download-ui/index.js`. Chrome 120+ / Firefox 142+ floors, Node 24 toolchain. Not listed on the Chrome Web Store, AMO or Greasy Fork; the released XPI is unsigned.
-- **Data flows:** ISOLATED runtime → sealed MAIN-world bridge (256-bit token handed over at `document_start`, keyed hash seal, 64 KB payload cap — `core/bridge-channel.js`); one background `onMessage` listener behind a `sender.id` check; optional third-party enrichment through an `EXT_FETCH` proxy with a separate credentialed-origin set; YouTube-origin IndexedDB for transcripts; capability-token-gated loopback to Astra Downloader.
+- **Core workflows:**
+  - Restyle or restore YouTube's layout and player: `classicLayoutProfile`, `newPlayerUiRestore`, Theater Split, the Player Dock.
+  - Filter and organize feeds: Video Hider, Subscription Groups, Watch Feed, Feed Triage.
+  - Enrich playback: SponsorBlock, DeArrow, Return YouTube Dislike, the audio graph, Repeat, A-B loop.
+  - Work with transcripts: search, export, BYO-key AI summary and Q&A.
+  - Hand downloads to the separate Astra Downloader companion.
+  - Evidence: `extension/core/settings-schema.js`, `extension/features/*/index.js`.
+- **Personas:**
+  - People undoing the 2025-10-14 redesign. This is still the biggest public complaint, and there is no official rollback ([piunikaweb 2025-10-14](https://piunikaweb.com/2025/10/14/youtube-new-desktop-ui-rollout-complaints/)).
+  - Focus and wellbeing users.
+  - Subscription power users.
+  - Transcript researchers.
+  - Local-download users.
+  - Userscript-only users, a first-class vehicle since v4.93.0. The reporter of #51 is one, and they get no popup at all.
+- **Platforms and distribution:** GitHub Releases only (15 assets per release, no CRX because the signing key isn't on the build machine, unsigned XPI) plus the userscript, auto-updated from `main` via `@updateURL`. There are no Chrome Web Store, AMO or Greasy Fork listings, and all five release channels still serve 4.82.0 (`release-channels.json`, Roadmap_Blocked P0). The repo has 20 stars and 2 forks, up from 13 on 2026-09-04.
+- **Data flows:**
+  - The ISOLATED content runtime talks to the sealed MAIN-world bridge (`core/bridge-channel.js`).
+  - The background worker handles `EXT_FETCH` with origin allowlists.
+  - Loopback to the companion and Ollama runs from extension origins only. `core/capability-probe.js` runs in the popup, and download traffic goes through messaging.
+  - The userscript maps `chrome.*` onto GM APIs (`userscript/host.js`).
 
 ## Competitive Landscape
 
-Activity re-verified 2026-09-04 via `gh api repos/<owner>/<repo>`.
+Activity checked 2026-10-05 with `gh` and the fetched pages listed under Sources.
 
-- **[YouTube Enhancer](https://github.com/YouTube-Enhancer/extension)** (MIT, 377★, pushed 2026-09-05, v1.34.2 on 2026-08-21). Still the fastest patch cadence in the field. Its open [#1389](https://github.com/YouTube-Enhancer/extension/issues/1389) (2026-08-26) is an RFC to extract a mini-player seek-bar and **storyboard** engine, which independently corroborates the storyboard-thumbnail item already in `ROADMAP.md`. Learn: days-not-weeks turnaround after YouTube changes. Avoid: it needed two patch releases to stabilise a global Trusted Types policy.
-- **[ImprovedTube](https://github.com/code-charity/youtube)** (NOASSERTION — study only, 4,563★, pushed 2026-09-04). Broadest catalogue and a free YouTube-drift feed. Fresh open issues worth reading as drift signal: [#4305](https://github.com/code-charity/youtube/issues/4305) Watch Later button throws, [#4308](https://github.com/code-charity/youtube/issues/4308) settings not reapplied across internal navigation, [#4314](https://github.com/code-charity/youtube/issues/4314) backups broken. Its [#4304](https://github.com/code-charity/youtube/issues/4304) thread has a collaborator proposing "a rule builder to allow setting every condition for every feature, without overwhelming the majority of quick users" — the same settings-sprawl problem Astra has at 484 keys, and an argument for the overlay filtering item already on the roadmap rather than more toggles. Avoid: its tracker is dominated by drive-by "I'd like to work on this" comments that never land.
-- **[Control Panel for YouTube](https://github.com/insin/control-panel-for-youtube)** (no license file — study only, 368★). **Now stalled two months**: last push 2026-07-06, v1.35.2. Two fresh feature requests name things Astra does not have: [#328](https://github.com/insin/control-panel-for-youtube/issues/328) open thumbnail in a new tab (Astra has `downloadThumbnail` but no view action) and [#329](https://github.com/insin/control-panel-for-youtube/issues/329) open a channel page on Videos instead of Home (no `channelDefaultTab` key exists). Both are small and both are on the roadmap below. Third-party coverage ([tbreak](https://tbreak.com/control-panel-for-youtube-extension/)) positions it primarily as the fix for the new player UI — which is what Astra should be saying about itself.
-- **[FilterTube](https://github.com/varshneydevansh/FilterTube)** (MIT, 107★, v3.3.7 on 2026-08-29). The most instructive tracker in the set right now, because three consecutive releases each broke something worse: [#75](https://github.com/varshneydevansh/FilterTube/issues/75) over-blocks unrelated videos, [#76](https://github.com/varshneydevansh/FilterTube/issues/76) "new update breaks YouTube site completely", [#77](https://github.com/varshneydevansh/FilterTube/issues/77) the **global Disabled state is ignored on watch pages** and queued callbacks still fire after the user turns filtering off. Learn: a kill switch that does not actually stop scheduled work is worse than no kill switch — Astra's `destroy()` contract (`docs/architecture.md:157` §4) is the right answer and is worth keeping enforced. Avoid: shipping filter changes without a disabled-state regression test.
-- **[SponsorBlock](https://github.com/ajayyy/SponsorBlock)** (GPL-3.0, 13,746★, pushed 2026-09-03). Its open [#2543](https://github.com/ajayyy/SponsorBlock/issues/2543) (2026-09-01) reports a YouTube extension breaking Windows System Media Transport Controls on Firefox. Astra routes the `<video>` through a Web Audio graph at `ytkit-main.js:1549` and has zero `mediaSession` references, so this failure class is unexamined here. Also still open: [#649](https://github.com/ajayyy/SponsorBlock/issues/649) hide sponsored comments and [#1963](https://github.com/ajayyy/SponsorBlock/issues/1963) community-flagged AI-slop segments.
-- **[Return YouTube Dislike](https://github.com/Anarios/return-youtube-dislike)** (13,729★) shipped userscript v3.2.0 on 2026-09-02 adding Shorts support and voting, after months of near-silence on the extension (v4.0.4, 2026-05-02). The lesson from the last pass holds and sharpens: the userscript line is where that project is alive, and Astra's own userscript vehicle is its most-installable artifact.
-- **[ChannelSieve](https://github.com/825i/channelsieve)** (GPL-3.0, 9★, v0.5.1 2026-08-14) is the live MV3 successor to the dead BlockTube. Small, but it is where BlockTube's multi-channel-collaboration blocking gap will get solved first if anyone solves it.
-- **[ZeroDelay](https://github.com/joaogfc/ZeroDelay)** (GPL-3.0, 433★, last release 2026-07-14). Still the positioning lesson: one sharply-defined problem out-adopts 300 toggles. Astra has 13 stars with strictly more capability, which is a distribution and framing problem, not a product one.
-- **Commercial:** PocketTube ($3.99/mo) paywalls nested subscription groups and deck view; Glasp meters free users at 3 YouTube summaries a day; NoteGPT and Harpa meter tokens. Astra gives away all of it and routes around metering entirely with BYO-key and Ollama lanes. This remains absent from the README, which is a marketing gap the last pass also flagged and which nothing has acted on.
-- **The 2026 redesign backlash is the field's biggest untapped demand.** Third-party guides through 2026 ([itechguides](https://www.itechguides.com/how-to-undo-youtubes-terrible-new-layout-what-actually-works-in-2026/)) report there is no official rollback for the player and layout redesign and that users are relying on fragile extensions and userscripts. Astra already ships `classicLayoutProfile` with `modern` / `classic-2020` / `classic-2016` (`core/settings-schema.js:785`) plus a one-toggle pre-Delhi player restoration (`ytkit.js:38424`) that is CSS-only with no DOM rebuild — which is a *better* implementation than the projects being recommended, and it is invisible in the README.
+- **Control Panel for YouTube** (390 stars, no license file, so study only; v1.36.0 on 2026-09-25 after a gap since v1.35.2 on 2026-07-06).
+  - Strength: the fastest turnaround on YouTube drift in this window. The subscriptions list view broke on 2026-09-24 (#336) and was fixed the next day. The same release added hiding for the new views icon and thumbnail badges, and coped with a "play icon" views layout that had broken its low-view hiding of related videos.
+  - Learn: treat its release notes as a free drift feed. Each line is a YouTube change Astra probably also has to handle.
+  - Avoid: long release gaps. Two months of silence preceded this burst.
+- **YouTube Enhancer** (MIT, 390 stars, v1.35.0 on 2026-09-06).
+  - Strength: monthly cadence, with fixes for autoplay toggle folding, the captions button and original-audio-track selection.
+  - Learn: its top open request is a hold-to-speed gesture with a configurable rate ([#661](https://github.com/YouTube-Enhancer/extension/issues/661), +7). Astra lacks it.
+  - Avoid: unreleased zip builds handed out in issues (#1442).
+- **ImprovedTube** (`code-charity/youtube`, 4,615 stars, NOASSERTION license, so study only).
+  - Strength: the broadest catalogue, with merges almost daily.
+  - Learn: its 2026-09 breakage reports show where drift lands: speed-adjusted remaining time (#4340), Firefox fit-to-window (#4356), Cinema Mode blackout (#4354).
+  - Avoid: drive-by PRs merged with little review, which shows up in regressions. Its GitHub tag (v4.2027, May) also lags its store build (4.2081).
+- **FilterTube** (MIT, 107 stars, v3.4.1 on 2026-10-01).
+  - Strength: 38 bundled UI languages, plus a timed allow-only session ("Hard Timer Whitelist").
+  - Avoid: its BlockTube import shipped with a Firefox Android white-screen bug (#79, #80).
+- **Return YouTube Dislike** (13,788 stars, v4.0.6 on 2026-09-07).
+  - #1329 (2026-10-01) traced a broken ratio bar to YouTube changing where page data stores the like count.
+  - Not affected: Astra's `likeViewRatio` reads the Like button's DOM (`extension/ytkit.js` ~25566), not page data. **Verified.**
+  - Avoid: #1314 drew 80 reactions over an unexplained Firefox data-consent prompt. Any new permission Astra asks for needs a plain explanation.
+- **SponsorBlock / DeArrow** (GPL-3.0; no release since 2026-07-13).
+  - Open Shorts drift: DeArrow [#525](https://github.com/ajayyy/DeArrow/issues/525).
+  - SponsorBlock [#2556](https://github.com/ajayyy/SponsorBlock/issues/2556) (2026-09-25) notes YouTube's A/B testing of video content, which breaks the one-ID-one-segment-set assumption. That is upstream data, not Astra code.
+- **Weedout** (Safari only, $1.99, source MIT at [masteranza/weedout-for-youtube](https://github.com/masteranza/weedout-for-youtube)).
+  - Strength: it hides videos YouTube labels "Made with AI" across feed, search, related, playlists and Shorts. Its Show HN reached 185 points on 2026-09-01.
+  - Its source documents the mechanism. The label exists only in watch-page data (`videoPrimaryInfoRenderer.badges[].metadataBadgeRenderer`). Feeds need one masked InnerTube `next` lookup per card, with the verdict cached.
+  - Learn: the signal is YouTube's own label, not AI detection.
+  - Avoid: per-card network lookups as a default, given Astra's local-first stance.
+- **Remove YouTube Suggestions** (MPL-2.0, 584 stars, v4.3.83 on 2026-09-06). Moved its premium features back to free or donation (#231, 2026-09-10). That supports Astra's no-paywall position.
+- **ZeroDelay** (GPL-3.0, 433 stars, v1.5.0 on 2026-07-14). A "Copy diagnostics" JSON button and an in-popup what's-new chip. Both are cheap and both are things Astra's userscript lacks.
+- **Enhancer for YouTube** (closed source, about 2M Chrome users, CWS 3.0.19 updated 2026-07-15). Free, so it's the trust and distribution benchmark rather than a feature one.
+- **Commercial metering.**
+  - PocketTube Premium is $3.99/mo, for nested groups, tags and Deck view. Astra ships groups, AI tags and new-since-visit badges free.
+  - Glasp is free at 3 summaries a day, Pro is $12.50/mo.
+  - Eightify is about $4.95/mo (secondary source).
+  - Maxxmod (Show HN 2026-09-24) lists 60+ features with a "Pro coming soon" waitlist, and Astra has every one it names.
+  - Astra's BYO-key and Ollama lanes avoid all metering. **Verified** against the inventory.
+- **Greasy Fork tier** (by-site list, fetched 2026-10-05).
+  - Downloaders and ad skippers lead on installs: HTML5 Video Playing Tools has 1.29M, YouTube Ultimate Downloader 457K.
+  - Single-purpose CPU tamers still draw 30 to 50 installs a day. Astra has `enableCPU_Tamer`.
+  - New 2026-10-05 scripts mirror Astra features (Hide Watched Videos, subscription categories), which shows demand without showing gaps.
+  - The candidates the 2026-08-06 pass couldn't read (Greasy Fork returned 403 then) are all covered. Method: Greasy Fork search sorted by total installs, each script's feature list checked against `SETTINGS_SCHEMA`.
+    - Better Youtube Shorts (3,950 installs, last updated 2024-12-25) offers Shorts redirect, volume, speed, a progress bar and auto-scroll. Astra has `redirectShorts`, `shortsSpeedControl`, `shortsAutoAdvance` and `shortsAsRegularVideo`, which gives Shorts the full player.
+    - YouTube Improvements: Layout & Video Enhancer (59,397 installs, updated 2026-10-02) offers layout, download, screenshot, theme and speed controls. Astra has `watchPageTabs`, the downloader, `videoScreenshot`, `colorTheme` and the speed family.
+    - Tabview YouTube Totara's Info/Comments/Videos tabs are `watchPageTabs`.
+    - h5player is mostly keyboard shortcuts, which this project doesn't ship.
+    - Surveyed, nothing new. **Verified.**
+
+**YouTube changes in the window that touch Astra:**
+
+- **Custom Feeds** (AI-prompted home tabs, US "this fall") and **Ask YouTube for Shopping** were announced at Made on YouTube on 2026-09-23. Neither is visible on desktop web yet. The Ask surfaces belong to the existing Roadmap_Blocked item "Hide the new AI surfaces".
+- **Shorts Series on web**, rolling out from 2026-09-23 ([droid-life](https://www.droid-life.com/2026/09/23/youtube-teases-3-neat-new-features/)).
+- **AI labels moved below the player**, with an overlay on Shorts (2026-05-27, [9to5Google](https://9to5google.com/2026/05/27/youtube-updating-ai-content-labels/)).
+- **"New" thumbnail badges** (from about 2026-09-18).
+- **New views icon and "play icon" views layout** (2026-09-24/25).
+- **Ad-block enforcement** with "content isn't available" errors (2026-01-23). Astra is not an ad blocker and should keep out of that fight.
 
 ## Reported Issues
 
-The repository tracker carries no demand signal, verified 2026-09-04 with `gh`.
-
-- **0 open issues, 0 open pull requests.** The only closed issue, [#1](https://github.com/SysAdminDoc/Astra-Deck/issues/1), was a feature request satisfied on 2026-05-10. Every one of the last 30 merged PRs was authored by the maintainer; there has never been an outside-contributor PR. Three Dependabot PRs (#37, #38, #39) were closed unmerged, consistent with project policy.
-- **2 discussions, still 0 comments** five weeks after being opened. [#43](https://github.com/SysAdminDoc/Astra-Deck/discussions/43) sets the bug-intake contract and [#44](https://github.com/SysAdminDoc/Astra-Deck/discussions/44) asks users which features they use. Nothing has arrived. There is no data on which of the 484 settings anyone touches.
-- **13 stars, 1 fork, 0 watchers.** Not a fork, so there is no parent tracker.
-- **No `KNOWN_ISSUES.md`, no `BUGS.md`, no README troubleshooting section.** The nearest thing is the Compatibility table at `README.md:1171`.
-
-The substitute intake is therefore (a) competitor trackers, mined above, and (b) commit-history pressure. The last 200–400 commits show five repeating classes: **test-quality remediation** (~45 commits converting source-shape pins into executed behaviour, the dominant theme), **adversarial-review loops** (`7814255b`, `02df21c6`, `0e662bc2`, `77a42cbb` — four rounds on one release), **light-theme and surface repair** (`84b95890`, `9f9ae66f`, `9ed81851`, `42ad587a`, `b5a4950d`, `89660ce7`, `749f4eea`), **Theater Split geometry**, and **selector drift**. `extension/ytkit.js` was touched in 100 of the last 300 commits, always dragging `YTKit.user.js` and `YTKit-core.user.js` with it.
-
-**Judged not actionable.** ImprovedTube's "I'd like to work on this" comment traffic carries no signal. Competitor requests for a settings search box, settings import/export, subscription list view, anti-translation, hide auto-dubbed and hide-watched are all already shipped in Astra and are marketing gaps rather than product gaps. FilterTube's own regressions are not reproducible here because Astra's filters are default-off. The `pesach/Astra-Deck` fork (last pushed 2026-07-28) carries no commits ahead worth reading.
+- **#51, "[Bug] Account button is invisible"** (opened 2026-10-01 by Aiakio, no replies, label `bug`).
+  - Environment: LibreWolf 157.0-1 on CachyOS, Violentmonkey, Astra v4.93.0, a fresh userscript install with default settings, signed in.
+  - The screenshot shows Astra's masthead buttons and the bell, then an empty square with a blue outline where the avatar should be.
+  - Trace: no default-on rule hides the avatar.
+    - `hideOwnAvatar` (`extension/ytkit.js` ~7581) is default off.
+    - `squareAvatars` (~28688, default on) only sets `border-radius: 0`.
+    - The `rectangularize` carve-out (~39213) only sets radius on avatars.
+  - Root cause is undetermined. **Needs live validation.**
+  - The candidates are the MAIN-world bundle or the GM adapter under Violentmonkey on Firefox, or a LibreWolf default unrelated to Astra.
+  - Every live smoke runs signed out, and signed out YouTube renders "Sign in" instead of the avatar. That is why no gate could see this.
+- **The same report exposes a support gap. Verified.**
+  - The reporter wrote "could not find any diagonstics or toolbar popup".
+  - `.github/ISSUE_TEMPLATE/bug_report.md:24-29` sends everyone to "toolbar popup → Diagnostics → Save log", which exists only in the extension (`extension/popup.js` ~2417).
+  - `userscript/host.js` `registerMenu()` (~1505) registers only "Open Astra Deck settings" and the AI-key command.
+- **Feature requests:** none open.
+- **Closed:** #1 (2026-05-10), a feature request that was satisfied.
+- **Pull requests:** none from outside contributors.
+- **Discussions:** #43 and #44 (both 2026-07-30) still have 0 comments after 67 days. There is still no data on which settings people use, and #51 is the only intake signal.
 
 ## Security, Privacy, and Reliability
 
-- **Dependencies are clean against every 2026 advisory checked.** `npm ls` on 2026-09-04 resolves `ws` 8.21.3 (CVE-2026-45736 fixed in 8.20.1), `brace-expansion` 5.0.9 (above the 5.0.5 fix for CVE-2026-33750 and its predecessors), `shell-quote` 1.10.0 (CVE-2026-9277 fixed in 1.8.4), `adm-zip` 0.6.0 (CVE-2026-39244), on Node 24.19.0 (past the July 2026 security release). The `overrides` block in `package.json` is what is holding three of those, so it must not be removed. **Verified.**
-- **Remote-config parsing is already hardened against the obvious shape attack.** `core/selectors.js:257` declares `UNSAFE_ASSET_KEYS = new Set(['__proto__', 'prototype', 'constructor'])` and `:392` uses `Object.prototype.hasOwnProperty.call`, so a signed-but-malformed selector asset cannot poison globals. The feature-disable feed is line-oriented CSV parsed by `splitRow` (`core/feature-disable-feed.js:109`), not JSON, so it has no prototype-pollution surface at all. Both feeds now carry detached signatures verified in the worker. **Verified — no action needed; recorded so the next pass does not re-flag it.**
-- **The Web Audio graph is unexamined against OS media integration.** `ytkit-main.js:1549` calls `createMediaElementSource(video)` and keeps a single `AudioContext` for six features (mono-to-stereo, volume boost, normalization, auto-gain, high-pass, sync offset). `grep -ri "mediaSession\|media key\|SMTC"` returns **zero hits** across `extension/`, `docs/`, `ROADMAP.md` and `Roadmap_Blocked.md`. SponsorBlock [#2543](https://github.com/ajayyy/SponsorBlock/issues/2543) (2026-09-01) is a live report of this failure class in a YouTube extension on Firefox. Whether Astra reproduces it is unknown. **Needs live validation** — and either outcome is worth pinning, because an untested negative is how the next audio change breaks it silently.
-- **Long-session leak detection is built and unused.** `scripts/bench-startup.js` implements a full steady-state lane (`STEADY_STATE_MS = 10000`, `STEADY_STATE_KEYS`, a `steadyStateBudget` baseline and a `--check` mode) and `package.json:96` exposes it as `check:steady-state`. It appears in **neither** the 37-gate list (`scripts/run-checks.js:22-59`) **nor** `release:prepare` (`package.json:16`). Meanwhile `extension/` carries 659 `addEventListener` calls against 217 `removeEventListener` calls and 22 `new MutationObserver` against 50 `.disconnect()`, and every feature is contractually required to unwind all of it in `destroy()` (`docs/architecture.md:157` §4). Nothing checks that contract over time. **Verified.**
-- **Release currency is still the largest live risk and it is not new.** `release-channels.json` points all five channels at 4.82.0; `package.json` is 4.88.4; the newest tag is v4.88.3. `scripts/run-checks.js:33` invokes `check-versions.js` without `--require-release-current`, so `npm run check` stays green through all of it, and the `check:release-current` variant at `package.json:73` is run by nothing. Six versions of security work — signed feeds, enforced Trusted Types, the sealed bridge, sender-origin checks — reach no user. `Roadmap_Blocked.md:53` owns this as a P0 blocked on a dated screen-reader evidence record, and the commit log shows it re-dated at least 13 times. **Verified. No duplicate roadmap item created; this needs the blocker cleared, not another line.**
-- **Distribution is the binding constraint on everything else.** There is no Chrome Web Store listing, no AMO listing, and no Greasy Fork listing. Chrome users must extract a ZIP and Load unpacked because no CRX signing key exists. Firefox Release and Beta reject the unsigned XPI outright. One correction to how the blocked AMO item is scoped: **unlisted (self-distributed) signing does not require a public listing and is automated** — files submitted through `web-ext sign --channel=unlisted` go through automated review and are signed within seconds, and the resulting XPI installs on Release Firefox and works with the `updates.json` the build already emits ([Extension Workshop](https://extensionworkshop.com/documentation/publish/self-distribution/)). The only prerequisite is an AMO API key pair, and the `data_collection_permissions` key AMO now requires is already emitted by `scripts/manifest-patch.js:47`. That makes the Firefox half of the distribution problem materially cheaper than the blocked file implies.
-- **Two Firefox platform changes are already handled.** Firefox 152 removed `scripting`/`tabs` injection into `moz-extension://` documents; `docs/firefox-executescript-preflight.md` audited it on 2026-06-04 and `scripts/check-firefox-injection.js` gates it. Firefox 153's `data_collection_permissions` requirement is satisfied. **Verified.**
-- **Trust boundaries remain stronger than the comparison set.** The bridge is now token-sealed with a monotonic counter and a payload cap rather than page-writable attributes (`core/bridge-channel.js`), the background listener keeps one closed message allowlist, the `EXT_FETCH` proxy strips credentials across origins, remote-list URLs pass an SSRF denylist, and cookie handoff is bounded to four names behind a 20-second capability token. Zero `eval`, `new Function`, `document.write` or string-arg `setTimeout` in shipped code.
+- **The dev audit is red on an unfixable advisory. Verified.**
+  - GHSA-86w9-cpqp-85rv (node-forge `<= 1.4.0`, `first_patched_version: null`, published 2026-09-03) reaches the tree only as web-ext 10.7.0 → `@devicefarmer/adbkit` 3.3.9 → node-forge 1.4.0. That is web-ext's Firefox-for-Android path, which nothing here runs.
+  - brace-expansion GHSA-q2hr-2g5m-vwhr was cleared on 2026-10-05 by raising the override to `^5.0.12`.
+  - The `deps` gate has no allowance mechanism by design (`scripts/audit-dependencies.js:108-112`), so `npm run check` stays 38/39 until upstream ships a fix. A second, real advisory would land unseen in an already-red gate.
+  - web-ext 10.7.0 (2026-09-21) is still the newest release and still pulls adbkit.
+- **The userscript libraries carry no integrity hash. Verified.**
+  - `sync-userscript.js:46-62` pins the three `@require` URLs to `refs/tags/v<version>` on `raw.githubusercontent.com`. A tag that is moved or re-pushed changes the code every install runs.
+  - Greasy Fork's external-script rules accept `@require` URLs that carry SRI hashes ([greasyfork help](https://greasyfork.org/en/help/external-scripts)). That also removes one obstacle for the blocked Greasy Fork listing.
+- **Feed filters can fail open on the 2026-09-25 card layout. Likely.**
+  - `features/video-hider/index.js:1628` `_extractViewCount` reads `#metadata-line, ytd-video-meta-block, .metadata, #meta` or text carrying "view"/"watching". It falls back to whole-card text without `allowBare`.
+  - `:1609` `_extractDuration` reads `ytd-thumbnail-overlay-time-status-renderer` or an `aria-label` containing ":".
+  - Neither reads `yt-content-metadata-view-model`, which `features/subscription-view/index.js` already knows.
+  - When YouTube replaces the word "views" with an icon, as Control Panel v1.36.0 describes, the low-view, low-signal and cadence filters would see `null` and let the card through. The user can't tell.
+- **Supply chain context.** Socket disclosed 23 Chrome extensions bought through ExtensionHub and turned into malware (2026-08-30, [SecurityWeek](https://www.securityweek.com/several-chrome-extensions-compromised-in-supply-chain-attack/)). Island showed an 11M-user YouTube ad blocker could run arbitrary JS from a config change (2026-06-25). Astra's signed feeds, SBOM and release manifest are the right answer. The unpublished signing key (Roadmap_Blocked P1) is the remaining hole.
+- **Checked and fine. Verified 2026-10-05:**
+  - Chrome 150 rejects alarm names over 1024 bytes, and Astra calls no `alarms.create`.
+  - Local Network Access gates page origins. Astra's loopback calls run from the popup or worker, and the existing blocked LNA item stands.
+  - Chrome 154 (2026-09-22) and Firefox 154 (2026-08-18) change nothing Astra uses.
+  - Firefox ESR moved to 153, and the 142 floor is unaffected.
+- **Companion ecosystem.** This lives in the AstraDownloader repo, not here.
+  - yt-dlp stable is still 2026.08.19, with nightlies to 2026.09.27.
+  - The bgutil PO-token provider 2.0.0 now binds to localhost by default and patched an RCE.
+  - The companion should require yt-dlp at 2026.07.04 or later (CVE fixes) and bgutil 2.0.0 or later.
 
 ## Architecture Assessment
 
-- **The peel has no finish line.** `extension/ytkit.js` is 52,320 lines; its feature array spans `:7218-38820` and still holds roughly **334** inline feature entries (bare object literals at the array's indentation plus `cssFeature(` calls in that range), against 27 peeled modules totalling 32,778 lines. Roughly half the feature code is still inline. Peeling is active (`19b87b45` Video Hider, `b3216164` Player Dock, and a 1,753-line `tests/features/next-monolith-peel.test.js`), but **no gate counts what is left**. The only structural enforcement is `scripts/check-userscript-drift.js:11`, which requires a *newly peeled* feature to be registered — it says nothing about the remainder. Every other invariant in this repo has a ratchet: `MIN_GATES = 37` (`scripts/run-checks.js:64`), the shipped-identity baseline, the light-theme lane baseline, the i18n placeholder baseline. This one does not.
-- **1,410 lines of panel CSS in the monolith are inert, and the repo knows it.** `injectPanelStyles()` spans `ytkit.js:43790-45199`. `docs/architecture.md:157` §9 states that `core/settings-visual-system.js` "is the SSOT, it prefixes every selector with `#ytkit-settings-panel` and marks every declaration `!important`, and it wins", that the older sheets "are legacy and are overridden for almost every selector the v4 system covers, so editing them changes nothing you can see", and that cascade order is not source order so "do not reason about panel CSS by reading it". Seven of the last 200 commits are light-theme and surface repair. `npm run probe:panel-colors` already reports, per surface, the computed value **and the sheet index that supplied it** (`scripts/probe-panel-colors.js:101-147`), so the set of declarations that still win from the legacy sheets is measurable rather than guessed. This is distinct from the blocked item "Establish one canonical implementation per extracted extension feature", which concerns the duplicate `buildSettingsPanel()` DOM builder and is blocked on a live Tampermonkey session; the CSS half is verifiable headlessly today.
-- **A peeled module became its own monolith.** `extension/features/sticky-video/index.js` is 6,217 lines with one test file, the worst ratio in the tree. Splitting it along its own feature boundaries (mini player, Document PiP pop-out, scroll behaviour, wheel gestures) is the natural next peel and would give the new tests somewhere to attach.
-- **Two peeled modules have no test file of their own.** `features/video-notes/index.js` (408 lines) and `features/digital-wellbeing/index.js` (606 lines) appear only in cross-cutting gates — the i18n ratchet, the light-theme lane, `hardening.test.js`, and `next-monolith-peel.test.js`. By contrast `element-zapper` has three dedicated files. Given that ~45 recent commits were spent replacing source-shape pins with executed behaviour, leaving two modules with no behavioural test at all is the same debt in a different shape.
-- **Selector resolution is version-aware but not variant-aware.** `core/feature-health.js:108` now records `lastTier`, so stable-chain erosion is observable — that gap is closed. What is not modelled is that YouTube's 2026 refresh **varies by account and device**: reporting through 2026 describes different control sets for different users rather than one uniform redesign. `core/selector-packs/playerChrome.js:41` records a single 2026-06-04 capture confirming "Delhi shell, overflow panel, and time-wrapper selectors", with action-pill entries still on a fallback watchlist. With zero issues filed, the diagnostics bundle is this project's only intake, and it cannot currently say which player the user is actually looking at.
-- **The tree carries no unfinished-work markers.** Zero `TODO`/`FIXME`/`HACK`/`XXX` across `extension/`, `scripts/` and `tests/`. The only genuine deferred-refactor comment is `core/toast.js:13` (the dismiss timer still lives in the monolith; toast CSS is duplicated per `Roadmap_Blocked.md:474`). The backlog lives in `ROADMAP.md` and `Roadmap_Blocked.md`, not in comments.
-- **Corrections to earlier readings.** `tests/feature-disable-feed.test.js` and `tests/feature-bisect.test.js` both `require()` and execute their modules (`:28` and `:26` respectively) alongside their source assertions; an initial read of this pass suspected they were vacuous pins and that is wrong. `PALETTE_CSS` at `ytkit.js:43680` is eager and load-bearing, not part of the inert block — it was deliberately moved out of `injectPanelStyles()` on 2026-08-20 and the comment there explains why.
-- **Genuine strengths not to disturb:** the 37-gate runner that reports every gate instead of failing fast, zero orphaned settings-schema entries across 484 keys, zero feature IDs without a module, profile-derived manifests refusing to build when the companion origin catalogue fails to load (`build-extension.js:629`), and a bridge design whose own header is honest that its seal is a keyed hash rather than an HMAC and says why.
+- **`extension/ytkit.js` keeps growing.**
+  - It is 53,255 lines, up from 52,320 on 2026-09-04, and was touched in 40 of the 124 commits since.
+  - The peel ratchet (`scripts/check-monolith-peel.js`, remainder 279) counts feature IDs, not bytes, so new code inside existing inline features passes it.
+  - `YTKit-app.user.js` is that file plus wrapping. It has 282 KB of headroom under Greasy Fork's 2 MiB cap, so this growth eats the Greasy Fork path.
+- **`extension/popup.js` is 7,856 lines** and holds the only copy of diagnostics bundle assembly. Moving that to a core module serves both vehicles, which is the #51 support fix.
+- **Coverage blind spots.**
+  - All live smokes (`smoke-main-bridge-live.js`, `smoke-userscript-managers.js`, `capture-theater-split.js`) run signed out, so signed-in-only surfaces are untested: the avatar menu, subscriptions feed, notifications and Watch Later.
+  - A signed-in capture sits in the working tree (`Subscriptions - YouTube.mhtml`, 6.5 MB, gitignored by `*.mhtml`). It carries the maintainer's account data, so a fixture cut from it has to be trimmed to the masthead and scrubbed before it's committed.
+- **Checked this pass with nothing new to add:**
+  - Accessibility: the open work is still Roadmap_Blocked P0 (screen-reader evidence) and P1 (a live region for settings operations), and neither moved.
+  - Offline: everything runs locally except the opt-in AI, companion and enrichment lookups. The AI-label lookup mode would be the first new network path, so it ships opt-in.
+  - Migration from other tools: Roadmap_Blocked P2 "Competitor migration documentation" still stands.
+  - Upgrades: the extension popup already shows a What's New banner (`extension/popup.js` ~5592). Only userscript users miss it.
+- **Strengths not to disturb:** the 39-gate runner that reports every gate, the strict `init()`/`destroy()` contract, the peel ratchet, signed feeds, and generated userscript parity with drift and symbol gates.
 
 ## Rejected Ideas
 
-- **Adopt `chrome.userScripts`, the native `browser.*` namespace (Chrome 148), `browser.publicSuffix` (Chrome 153), or `structured_clone` messaging.** All sit above the declared Chrome 120 floor, and `docs/platform-api-adoption.md` already records the `browser` namespace as retained-with-fallback. Revisit when the floor moves.
-- **WebNN for local inference.** The W3C Candidate Recommendation was updated 2026-01-22 but Chrome ships CPU-backend-only behind an experimental flag and the spec is explicitly not production-ready. The built-in Summarizer/Translator/Prompt APIs Astra already uses are the shipped path.
-- **Prototype-pollution hardening for remote config.** Already implemented at `core/selectors.js:257`; the feed is CSV and has no such surface.
-- **Bump dependencies for the 2026 CVE wave.** Every advisory checked is already satisfied by the current lockfile and `overrides` block.
-- **Media Session as a feature.** Setting artwork and metadata for its own sake duplicates what YouTube already does. The item on the roadmap is scoped to *not regressing* what the audio graph may be breaking, which is a different claim.
-- **A rule builder for per-condition feature configuration** (ImprovedTube [#4304](https://github.com/code-charity/youtube/issues/4304)). At 484 settings the problem is finding an existing control, not composing new ones; the overlay filtering and deep-link item already on the roadmap addresses the real complaint.
-- **Restore engaged views, hide-watched management, settings search, anti-translation, hide auto-dubbed, subscription list view, settings import/export.** Unchanged from the 2026-08-27 pass: either not publicly implementable or already shipped.
-- **Vision-LLM or self-healing selector repair, a remote plugin marketplace, aggregate telemetry, full mobile support, cloud multi-user workspaces.** Unchanged: each is incompatible with the local-first model, the no-telemetry promise (`README.md:1101`), or the reviewable package boundary.
-- **`--external-downloader` / aria2c support.** Already refused on security grounds in `Roadmap_Blocked.md`; CVE-2026-50574 allowed RCE through manifest downloads.
-- **New accessibility items.** Considered and left where they are: `<dialog>`/`showModal()` for the 22 hand-rolled modals and the four separate focus traps is blocked on a live browser session, live regions for settings operations is blocked with its premise disproven, and the screen-reader evidence gate shipped in `67fe0630` and now blocks release promotion. `smoke:a11y`, `audit:popup-a11y`, `audit:overlays` and `audit:contrast` all run inside `npm run check`. There is no unowned accessibility gap to add.
-- **New migration or upgrade work.** `core/persisted-domains.js` declares per-domain migration strategies with credential scrubbing, `extension/settings-meta.json` pins `settingsVersion`, `core/settings-import-transaction.js` provides snapshot, rollback and a durable undo, and `scripts/generate-shipped-identity-baseline.js` keeps setting keys and feature IDs monotonic across 75 tags. The upgrade-side problem is delivery, not machinery, and that is the release-currency P0 in `Roadmap_Blocked.md`.
+- **Configurable hold-to-speed gesture** ([YouTube Enhancer #661](https://github.com/YouTube-Enhancer/extension/issues/661), +7). Deferred: one tracker, and it overlaps YouTube's own press-and-hold. Revisit if a second tracker asks.
+- **Hide auto-generated chapters** ([Control Panel #342](https://github.com/insin/control-panel-for-youtube/issues/342)). One reaction, and its maintainer couldn't reproduce it.
+- **Block the Opus audio codec** ([ImprovedTube #4363](https://github.com/code-charity/youtube/issues/4363)). One requester. Astra's codec paths are video-only by design (`codecSelector`, `forceH264`).
+- **More UI locales to match FilterTube's 38.** The existing 10 non-English locales are about 70% translated (`docs/i18n-coverage.md`), so finishing them, which is an existing P3 item, comes first.
+- **Listing in awesome-privacy.** The list collects privacy alternatives to services. Astra is an enhancer, and the fit is weak. awesome-userscripts is the right list.
+- **Hide Custom Feeds or Ask YouTube for Shopping now.** Neither is visible on desktop web yet. The Ask surfaces fold into Roadmap_Blocked "Hide the new AI surfaces".
+- **Ad blocking or anti-adblock countermeasures.** These are outside Astra's charter, and YouTube's 2026-01-23 enforcement makes it a moving fight.
+- **Raise the Firefox floor to ESR 153, or adopt `browser.publicSuffix` (Chrome 153) or the Firefox `sandbox` key (154).** No feature needs them.
+- **Per-card AI-label lookups on by default.** Each card would cost one request to YouTube, so it is opt-in only (see the roadmap item).
+- **Carried unchanged from 2026-09-04:**
+  - vision-LLM selector repair;
+  - telemetry;
+  - a plugin marketplace;
+  - mobile or multi-user support;
+  - aria2c.
+  - The reasons are the no-telemetry promise, the local-first model, the reviewable package boundary, and CVE-2026-50574.
 
 ## Sources
 
-### Repository and tracker
-- https://github.com/SysAdminDoc/Astra-Deck/issues/1
+### Repository
+- https://github.com/SysAdminDoc/Astra-Deck/issues/51
 - https://github.com/SysAdminDoc/Astra-Deck/discussions/43
 - https://github.com/SysAdminDoc/Astra-Deck/discussions/44
 
 ### Direct OSS competitors
-- https://github.com/YouTube-Enhancer/extension/issues/1389
-- https://github.com/code-charity/youtube/issues/4304
-- https://github.com/code-charity/youtube/issues/4305
-- https://github.com/code-charity/youtube/issues/4308
-- https://github.com/code-charity/youtube/issues/4314
-- https://github.com/insin/control-panel-for-youtube/issues/328
-- https://github.com/insin/control-panel-for-youtube/issues/329
-- https://github.com/varshneydevansh/FilterTube/issues/75
-- https://github.com/varshneydevansh/FilterTube/issues/76
-- https://github.com/varshneydevansh/FilterTube/issues/77
-- https://github.com/ajayyy/SponsorBlock/issues/2543
-- https://github.com/ajayyy/SponsorBlock/issues/649
-- https://github.com/ajayyy/SponsorBlock/issues/1963
-- https://github.com/Anarios/return-youtube-dislike/releases/tag/userscript-v3.2.0
-- https://github.com/825i/channelsieve
-- https://github.com/joaogfc/ZeroDelay
+- https://github.com/insin/control-panel-for-youtube/releases/tag/v1.36.0
+- https://github.com/insin/control-panel-for-youtube/issues/335
+- https://github.com/insin/control-panel-for-youtube/issues/336
+- https://github.com/insin/control-panel-for-youtube/issues/337
+- https://github.com/insin/control-panel-for-youtube/issues/342
+- https://github.com/YouTube-Enhancer/extension/releases/tag/v1.35.0
+- https://github.com/YouTube-Enhancer/extension/issues/661
+- https://github.com/YouTube-Enhancer/extension/issues/1425
+- https://github.com/code-charity/youtube/issues/4340
+- https://github.com/code-charity/youtube/issues/4356
+- https://github.com/code-charity/youtube/issues/4358
+- https://github.com/code-charity/youtube/issues/4363
+- https://github.com/varshneydevansh/FilterTube/releases
+- https://github.com/Anarios/return-youtube-dislike/issues/1314
+- https://github.com/Anarios/return-youtube-dislike/issues/1329
+- https://github.com/ajayyy/DeArrow/issues/525
+- https://github.com/ajayyy/SponsorBlock/issues/2556
+- https://github.com/joaogfc/ZeroDelay/releases/tag/v1.5.0
+- https://github.com/lawrencehook/remove-youtube-suggestions/issues/231
+- https://github.com/masteranza/weedout-for-youtube
 
-### Platform and standards
-- https://developer.chrome.com/docs/extensions/whats-new
-- https://developer.chrome.com/blog/chrome-userscript
-- https://developer.chrome.com/blog/longer-esw-lifetimes
-- https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest
-- https://developer.chrome.com/docs/ai/built-in-apis
-- https://developer.chrome.com/blog/chrome-two-week-release
-- https://blog.mozilla.org/addons/2026/07/23/firefox-153-webextensions-api-updates/
-- https://blog.mozilla.org/addons/2026/04/23/webextensions-api-changes-firefox-149-152/
-- https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/152
-- https://developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API
-- https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API
-- https://www.w3.org/news/2026/updated-candidate-recommendation-web-neural-network-webnn-api
-
-### Distribution and store policy
-- https://extensionworkshop.com/documentation/publish/self-distribution/
-- https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/
-- https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/
-- https://developer.chrome.com/blog/cws-policy-updates-2026
-- https://developer.chrome.com/docs/webstore/program-policies/policies
+### Userscript tier and lists
+- https://greasyfork.org/en/scripts/by-site/youtube.com?sort=total_installs
 - https://greasyfork.org/en/help/external-scripts
-- https://github.com/Tampermonkey/tampermonkey/issues/2607
+- https://greasyfork.org/en/scripts?q=Better+YouTube+Shorts&sort=total_installs
+- https://greasyfork.org/en/scripts?q=YouTube+Improvements+Layout+Video+Enhancer&sort=total_installs
+- https://github.com/awesome-scripts/awesome-userscripts/blob/main/CONTRIBUTING.md
+- https://github.com/violentmonkey/violentmonkey/releases
 
-### YouTube product and ecosystem
-- https://www.itechguides.com/how-to-undo-youtubes-terrible-new-layout-what-actually-works-in-2026/
-- https://tbreak.com/control-panel-for-youtube-extension/
-- https://adguard.com/en/blog/youtube-server-side-ad-insertion.html
-- https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
-- https://github.com/yt-dlp/yt-dlp/issues/14390
+### Commercial
+- https://masteranza.github.io/weedout/
+- https://chromewebstore.google.com/detail/enhancer-for-youtube/ponfpcnoihfmfllpaingbgckeeldkhle
+- https://pockettube.io/pricing.html
+- https://glasp.co/pricing
+- https://maxxmod.com/
 
-### Dependencies and security
-- https://github.com/websockets/ws/security/advisories/GHSA-58qx-3vcg-4xpx
-- https://github.com/advisories/GHSA-w7jw-789q-3m8p
-- https://github.com/advisories/GHSA-7h2j-956f-4vf2
-- https://nodejs.org/en/blog/vulnerability/july-2026-security-releases
-- https://www.aikido.dev/blog/browser-extensions-supply-chain-attack
-- https://cheatsheetseries.owasp.org/cheatsheets/Browser_Extension_Vulnerabilities_Cheat_Sheet.html
+### Community
+- https://news.ycombinator.com/item?id=49528895
+- https://news.ycombinator.com/item?id=49829812
+- https://piunikaweb.com/2025/10/14/youtube-new-desktop-ui-rollout-complaints/
+- https://piunikaweb.com/2026/02/03/youtube-subscriptions-list-view-removed/
+
+### YouTube product
+- https://www.socialmediatoday.com/news/youtube-presents-new-ai-and-engagement-features-at-made-on-2026/831216/
+- https://www.droid-life.com/2026/09/23/youtube-teases-3-neat-new-features/
+- https://9to5google.com/2026/05/27/youtube-updating-ai-content-labels/
+- https://www.androidauthority.com/youtube-embed-player-redesign-3652875/
+- https://www.howtogeek.com/youtube-is-breaking-ad-blockers-again/
+- https://blog.youtube/news-and-events/youtube-premium-lite-background-play-downloads/
+
+### Platform
+- https://developer.chrome.com/blog/new-in-chrome-154
+- https://developer.chrome.com/docs/extensions/whats-new
+- https://developer.chrome.com/blog/cws-policy-updates-2026
+- https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/154
+- https://blog.mozilla.org/addons/
+- https://endoflife.date/firefox
+
+### Security and dependencies
+- https://github.com/advisories/GHSA-86w9-cpqp-85rv
+- https://github.com/advisories/GHSA-q2hr-2g5m-vwhr
+- https://www.securityweek.com/several-chrome-extensions-compromised-in-supply-chain-attack/
+- https://www.island.io/blog/badblocker-11-million-users-one-server-call-away-from-compromise
+- https://github.com/yt-dlp/yt-dlp/releases
+- https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases
 
 ## Open Questions
 
-- **Does the Web Audio graph at `ytkit-main.js:1549` break OS media controls?** Chrome's Global Media Controls and Windows SMTC both depend on the browser attributing playback to the media element. Routing that element through `createMediaElementSource` is exactly the pattern SponsorBlock [#2543](https://github.com/ajayyy/SponsorBlock/issues/2543) reports as breaking SMTC. This cannot be settled headlessly — it needs a human pressing a media key with `volumeBoost` on and off, in Chrome and in Firefox. The roadmap item below is written so that either answer produces a durable artifact.
-- **Is `raw.githubusercontent.com` on Greasy Fork's `@require` allowlist?** `https://greasyfork.org/en/help/external-scripts` returns HTTP 403 to automated fetching and must be read in a browser. The answer decides whether the blocked Greasy Fork listing can ship the current two-artifact split unchanged or needs the core library rehosted.
-- **Does Chrome's Local Network Access enforcement apply to an extension's background fetch to `127.0.0.1`?** Unchanged from 2026-08-27 and still unanswered by reading. `Roadmap_Blocked.md` owns it; it needs a live Chrome 152+ test, and Chrome is now on 153 with a two-week cadence, so the window for finding out before it bites has narrowed.
-- **Which of the 484 settings do users actually touch?** Discussion [#44](https://github.com/SysAdminDoc/Astra-Deck/discussions/44) asked and got nothing in five weeks. With telemetry rejected by design, the only remaining honest answer is to make the export/diagnostics bundle carry a non-default settings summary the user chooses to send — which the overlay filtering item already on the roadmap would produce as a side effect.
+- **Does #51 reproduce without Astra in LibreWolf 157?** Only the reporter's browser can say that quickly. A signed-in reproduction here settles the Astra side, but not a LibreWolf default.
+- **Do Tampermonkey and Violentmonkey both honor a `#sha256=` hash on `@require`, and refuse a mismatch?** The SRI item's acceptance depends on it, and `smoke:userscript-managers` can answer it.
+- **What rate limit applies to masked InnerTube `next` lookups at feed scale?** Weedout ships the approach but publishes no numbers. The opt-in lookup mode needs a concurrency cap chosen from a measured run.

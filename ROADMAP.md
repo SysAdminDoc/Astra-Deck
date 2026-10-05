@@ -252,4 +252,166 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`.
+Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
+
+- [ ] P1 — Account avatar is invisible in the userscript on Firefox (Refs #51)
+  Why: the project's only open user report. On 2026-10-01 a LibreWolf 157 user running the
+  v4.93.0 userscript in Violentmonkey with default settings saw an empty outlined square where
+  the signed-in avatar belongs. Every live smoke runs signed out, and signed out YouTube shows
+  "Sign in" instead of the avatar, so no gate has ever rendered it.
+  Evidence: https://github.com/SysAdminDoc/Astra-Deck/issues/51. The default-on avatar rules
+  only set a radius (`extension/ytkit.js` `squareAvatars` ~28688, the `rectangularize` carve-out
+  ~39213), and `hideOwnAvatar` (~7581) is default off. Root cause not found by reading.
+  Confidence: Needs live validation.
+  Touches: `scripts/smoke-userscript-managers.js`, a trimmed and scrubbed signed-in masthead
+  fixture (the local `Subscriptions - YouTube.mhtml` carries account data and is gitignored),
+  `extension/core/feature-bisect.js`, whichever rule or adapter path turns out to be at fault.
+  Acceptance: WHEN the userscript runs under Violentmonkey on Firefox with default settings on a
+  signed-in masthead, THEN `#avatar-btn img` SHALL have a loaded `src`, a nonzero box and visible
+  opacity, and a test SHALL pin that. If Astra isn't the cause, record how that was shown. The
+  issue stays open until the reporter confirms; commits say `Refs #51`.
+  Complexity: M
+
+- [ ] P1 — Userscript users can't produce a diagnostics bundle
+  Why: the #51 reporter "could not find any diagonstics or toolbar popup". The bug template
+  sends everyone to the popup's Diagnostics → Save log, which only the extension has. Userscript
+  installs have no popup at all.
+  Evidence: `.github/ISSUE_TEMPLATE/bug_report.md:24-29`; `userscript/host.js` `registerMenu()`
+  (~1505) registers only the settings and AI-key commands; bundle assembly lives in
+  `extension/popup.js` (~682 payload, ~2417 `summarizeDiagnostics`) with redaction in
+  `extension/background.js` (~797). ZeroDelay v1.5.0 ships a one-click "Copy diagnostics".
+  Confidence: Verified.
+  Touches: a core module that builds the redacted bundle (moved out of `popup.js`),
+  `userscript/host.js` and `sync-userscript.js` (menu label), the in-page settings panel,
+  `.github/ISSUE_TEMPLATE/bug_report.md`, `extension/_locales/**`, tests.
+  Acceptance: WHEN a userscript user picks the new manager menu command or the panel action,
+  THEN a bundle with the popup's fields and redaction SHALL be copied. The template SHALL name
+  both routes. A test SHALL feed one fixture holding an API key and a token through both
+  vehicles and get identical redacted output.
+  Complexity: M
+
+- [ ] P1 — Feed filters can't read view counts or durations on YouTube's 2026-09-25 cards
+  Why: Control Panel v1.36.0 (2026-09-25) had to handle a new views icon and a "play icon" views
+  layout that broke its low-view hiding, and its #336 and #337 show the subscriptions list view and
+  Home breaking on 2026-09-24. Astra's parsers read only the older containers. Once the word
+  "views" becomes an icon they return null, and the low-view, duration and cadence filters pass
+  every card without telling anyone.
+  Evidence: `extension/features/video-hider/index.js:1609` `_extractDuration` and `:1628`
+  `_extractViewCount`. Neither reads `yt-content-metadata-view-model`, which
+  `features/subscription-view/index.js:67` already handles. Confidence: Likely, needs live
+  validation.
+  Touches: `extension/features/video-hider/index.js`, `tests/features/video-hider*.test.js`, a
+  fixture captured from a live 2026-10 feed, feature health reporting.
+  Acceptance: WHEN a card uses the current metadata layout, THEN both extractors SHALL return the
+  right numbers, with fixture tests for the old and new layouts. WHEN a filter that needs a value
+  can't read one on a whole page of cards, THEN feature health SHALL say so instead of passing.
+  Complexity: M
+
+- [ ] P2 — Let the deps gate allow a known, unfixable advisory without going blind
+  Why: `npm run check` has been 38/39 since 2026-10-05 because node-forge GHSA-86w9-cpqp-85rv has
+  no patched release, and a gate that's always red will hide the next real advisory. The gate
+  refuses allowances on purpose (`scripts/audit-dependencies.js:108-112`), so this changes that
+  policy and needs an explicit yes in review. The upstream fix itself is Roadmap_Blocked P1
+  "Clear the node-forge advisory from the development audit".
+  Evidence: https://github.com/advisories/GHSA-86w9-cpqp-85rv (`first_patched_version: null`);
+  path web-ext 10.7.0 → @devicefarmer/adbkit 3.3.9 → node-forge 1.4.0, the Firefox-for-Android
+  path nothing here runs. Confidence: Verified.
+  Touches: `scripts/audit-dependencies.js`, `scripts/dependency-overrides.json` (or a sibling key
+  in it), the audit script's tests.
+  Acceptance: an allowance names the advisory ID, the exact dependency path, a reason and an
+  expiry date. WHEN only allowed findings remain, THEN the gate SHALL pass and print each one.
+  WHEN any other finding appears, the path changes or the date passes, THEN it SHALL fail.
+  Tests cover all four cases.
+  Complexity: S
+
+- [ ] P2 — Hide thumbnail badges ("New", "4K")
+  Why: YouTube started stamping "New" on thumbnails around 2026-09-18, and three other projects'
+  trackers asked for a way to hide the badges that month. Control Panel shipped it in v1.36.0.
+  Evidence: https://github.com/insin/control-panel-for-youtube/issues/335,
+  https://github.com/code-charity/youtube/issues/4358,
+  https://github.com/YouTube-Enhancer/extension/issues/1425, Control Panel v1.36.0 notes.
+  Confidence: Verified demand; selectors need a live capture.
+  Touches: `extension/core/settings-schema.js` (new key through the nine-places checklist), the
+  feed CSS in `extension/ytkit.js` or a feature module, `extension/_locales/**`, tests.
+  Acceptance: WHEN enabled, THEN the badge row SHALL be hidden on Home, Subscriptions, search,
+  related and channel cards while the duration overlay and watched progress bar stay, using
+  selectors taken from a live page. Default off.
+  Complexity: S
+
+- [ ] P2 — Hide videos YouTube labels "Made with AI"
+  Why: the strongest request of the window (Weedout's Show HN reached 185 points on
+  2026-09-01), and YouTube made the label more visible on 2026-05-27. Astra's
+  `hideVideosSyntheticNarrationFilter` matches text markers, not YouTube's own label. The other
+  existing AI item (Roadmap_Blocked "Hide the new AI surfaces") covers Ask and search carousels,
+  not this.
+  Evidence: https://github.com/masteranza/weedout-for-youtube (MIT). The label exists only in
+  watch-page data at `videoPrimaryInfoRenderer.badges[].metadataBadgeRenderer` (icon `INFO`,
+  label "AI"). Feed cards carry nothing, so Weedout makes one InnerTube `next` call per card with
+  a `fields` mask and caches the verdict. Confidence: Verified mechanism, Likely for Astra.
+  Touches: a new module under `extension/features/`, the MAIN-world bridge for watch-page data, a
+  `storage.local` verdict cache, `extension/core/settings-schema.js` (two keys),
+  `extension/_locales/**`, `docs/privacy-policy.md` for the lookup mode, tests, license notices
+  if Weedout code is adapted.
+  Acceptance: stage one sends nothing. WHEN a watch page carries the label, THEN its video ID
+  SHALL be cached and its cards hidden everywhere after, with hide-attribution. Stage two is
+  opt-in and default off: masked lookups behind a concurrency cap chosen from a measured live run.
+  Complexity: L
+
+- [ ] P2 — Pin the userscript's `@require` libraries with SRI hashes
+  Why: the three libraries load from `raw.githubusercontent.com/.../refs/tags/v<version>/`, so a
+  moved or re-pushed tag changes the code every install runs and nothing checks it. Greasy Fork
+  accepts `@require` URLs that carry SRI hashes, which also helps the blocked Greasy Fork listing.
+  Evidence: `sync-userscript.js:46,62`; https://greasyfork.org/en/help/external-scripts.
+  Confidence: Verified gap; manager behavior on a mismatch needs the smoke run.
+  Touches: `sync-userscript.js`, `YTKit.user.js`, the userscript drift gate,
+  `scripts/smoke-userscript-managers.js`.
+  Acceptance: every `@require` URL carries a `#sha256=` hash of the exact bytes sync writes, and a
+  gate fails when a hash and its file disagree. The manager smoke shows Tampermonkey and
+  Violentmonkey load the real hash and refuse a tampered one.
+  Complexity: S
+
+- [ ] P3 — Bring the What's New note to userscript users
+  Why: the extension popup shows a What's New banner after an update, but the userscript has no
+  popup and the in-page panel shows nothing. Userscript installs update themselves from main, so
+  new settings like v4.94.0's Repeat arrive unseen. ZeroDelay v1.5.0 does the same kind of note.
+  Evidence: `extension/popup.js` ~5592-5861 (`showWhatsNew`, `ytkit_last_seen_version`, declared
+  in `extension/core/persisted-domains.js:125`); no reference in `extension/ytkit.js`,
+  `extension/features/` or `userscript/`. Confidence: Verified.
+  Touches: the in-page settings panel header, a shared last-seen check moved out of `popup.js`,
+  `extension/_locales/**` (reuse `whatsNewDetailTpl` and `whatsNewDetailFromTpl`), tests.
+  Acceptance: WHEN the userscript's version is newer than the stored last-seen one, THEN the
+  panel SHALL show the same dismissible note once, linking the release notes, with no network
+  request and no toast on page load. The extension popup's behavior stays the same.
+  Complexity: S
+
+- [ ] P3 — List Astra Deck on awesome-userscripts
+  Why: users browse that list (3,548 stars) for scripts, and Astra isn't on it. Its rules ask for
+  a stable install URL, docs, an issue tracker and tested browser and manager pairs, and v4.93.0
+  meets all of them.
+  Evidence: https://github.com/awesome-scripts/awesome-userscripts/blob/main/CONTRIBUTING.md.
+  Confidence: Verified.
+  Touches: `README.md` (a tested-pairs line), then a pull request to that list.
+  Acceptance: README names the browser and manager pairs the smokes cover, and a pull request
+  following that CONTRIBUTING.md is open.
+  Complexity: S
+
+- [ ] P3 — Bump eslint to 10.12 and acorn to 8.19
+  Why: eslint 10.12.0 shipped 2026-10-02 and acorn 8.19.0 is out. `package.json` pins acorn at
+  exactly 8.16.0 and eslint at `^10.9.1`. Updates here are manual by policy.
+  Evidence: `package.json:117-118`; `npm view eslint version` and `npm view acorn version` on
+  2026-10-05. Confidence: Verified.
+  Touches: `package.json`, `package-lock.json`, any lint or parse output that shifts.
+  Acceptance: both bumped, and `npm run check` and `npm test` give the same results as before
+  apart from the known deps finding.
+  Complexity: S
+
+- [ ] P3 — Check the Shorts settings against Shorts Series on desktop web
+  Why: YouTube began rolling Shorts Series out to the web on 2026-09-23. If series shelves or the
+  series player use new renderers, `removeAllShorts`, `redirectShorts` and
+  `shortsAsRegularVideo` may miss them.
+  Evidence: https://www.droid-life.com/2026/09/23/youtube-teases-3-neat-new-features/.
+  Confidence: Needs live validation (not yet seen on desktop web on 2026-10-05).
+  Touches: the Shorts selectors in `extension/ytkit.js` and selector packs, tests.
+  Acceptance: once a series surface shows on desktop web, capture it. Each of the three settings
+  either covers it, with a fixture test, or gets the selector it needs.
+  Complexity: S
