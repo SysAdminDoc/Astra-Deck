@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- The research notes and roadmap were refreshed on 2026-10-05. That pass also compared the most-installed YouTube userscripts on Greasy Fork with Astra's settings, and none of them does anything Astra can't already do.
+
 ## [4.94.0] (2026-10-05)
 
 ### Added
