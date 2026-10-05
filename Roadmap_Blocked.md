@@ -89,6 +89,11 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Userscript installs update through `@updateURL` on main regardless, so the
   channel lag only affects the channel feeds.
 
+  v4.94.0 (Player Dock Repeat) was published on 2026-10-05 from release
+  commit `bdf9de5e` the same way. All 15 digests matched, readiness failed only
+  on `screen-reader-evidence`, and `npm run check` was 38/39 with `deps` red on
+  the node-forge advisory logged below.
+
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
   measured again on 2026-09-14:
