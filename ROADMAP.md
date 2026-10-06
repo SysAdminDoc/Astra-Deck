@@ -307,23 +307,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   can't read one on a whole page of cards, THEN feature health SHALL say so instead of passing.
   Complexity: M
 
-- [ ] P2 — Let the deps gate allow a known, unfixable advisory without going blind
-  Why: `npm run check` has been 38/39 since 2026-10-05 because node-forge GHSA-86w9-cpqp-85rv has
-  no patched release, and a gate that's always red will hide the next real advisory. The gate
-  refuses allowances on purpose (`scripts/audit-dependencies.js:108-112`), so this changes that
-  policy and needs an explicit yes in review. The upstream fix itself is Roadmap_Blocked P1
-  "Clear the node-forge advisory from the development audit".
-  Evidence: https://github.com/advisories/GHSA-86w9-cpqp-85rv (`first_patched_version: null`);
-  path web-ext 10.7.0 → @devicefarmer/adbkit 3.3.9 → node-forge 1.4.0, the Firefox-for-Android
-  path nothing here runs. Confidence: Verified.
-  Touches: `scripts/audit-dependencies.js`, `scripts/dependency-overrides.json` (or a sibling key
-  in it), the audit script's tests.
-  Acceptance: an allowance names the advisory ID, the exact dependency path, a reason and an
-  expiry date. WHEN only allowed findings remain, THEN the gate SHALL pass and print each one.
-  WHEN any other finding appears, the path changes or the date passes, THEN it SHALL fail.
-  Tests cover all four cases.
-  Complexity: S
-
 - [ ] P2 — Hide thumbnail badges ("New", "4K")
   Why: YouTube started stamping "New" on thumbnails around 2026-09-18, and three other projects'
   trackers asked for a way to hide the badges that month. Control Panel shipped it in v1.36.0.

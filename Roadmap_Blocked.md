@@ -92,7 +92,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   v4.94.0 (Player Dock Repeat) was published on 2026-10-05 from release
   commit `bdf9de5e` the same way. All 15 digests matched, readiness failed only
   on `screen-reader-evidence`, and `npm run check` was 38/39 with `deps` red on
-  the node-forge advisory logged below.
+  node-forge GHSA-86w9-cpqp-85rv, which v4.95.0 cleared.
 
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
@@ -117,25 +117,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   run `npm run release:health` and `npm run release:promote`. Add
   `--require-release-current` to the `versions` gate in
   `scripts/run-checks.js` and confirm `npm run check` is green.
-
-## P1 — Dev audit waits on an upstream node-forge fix (2026-10-05)
-
-- [ ] P1: Clear the node-forge advisory from the development audit
-  Why: the `deps` gate requires a zero-finding dev audit and has no exception
-  path. GHSA-86w9-cpqp-85rv (high, RSA PKCS#1 v1.5 signature verification
-  accepts extra nested DigestAlgorithm elements, published 2026-09-03) covers
-  `node-forge <= 1.4.0`, and 1.4.0 is the newest release. It reaches this tree
-  only as `web-ext 10.7.0 -> @devicefarmer/adbkit 3.3.9 -> node-forge`, the
-  Firefox-for-Android path of `web-ext run`. Nothing here runs that path and
-  none of it ships in an artifact. npm's suggested fix is a downgrade to
-  web-ext 5.1.0. brace-expansion was cleared the same day by raising its
-  override to `^5.0.12`.
-  Blocker: no patched node-forge release exists (`first_patched_version` is
-  null), and web-ext declares adbkit as a hard dependency.
-  Acceptance: `npm run audit:deps` passes after taking a patched node-forge
-  (override) or a web-ext release that drops or updates adbkit. Recheck with
-  `gh api advisories/GHSA-86w9-cpqp-85rv` and `npm view node-forge version`.
-  Complexity: S
 
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
