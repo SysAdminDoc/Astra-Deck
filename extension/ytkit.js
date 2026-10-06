@@ -3146,11 +3146,18 @@ const STORAGE_KEYS = Object.freeze({
         return tone !== 'error' && tone !== 'warning';
     }
 
+    // A newer notice has always replaced the one on screen, at once. Keep
+    // that when the newer one is quiet, or a warning about a step the user
+    // has since fixed stays up after the fix.
+    function showQuietToast(message) {
+        announceA11y(String(message ?? ''));
+        const current = document.querySelector?.('.ytkit-global-toast');
+        if (current) dismissToast(current, true);
+        return null;
+    }
+
     function showToast(message, color = '#22c55e', options = {}) {
-        if (isQuietToast(color, options)) {
-            announceA11y(String(message ?? ''));
-            return null;
-        }
+        if (isQuietToast(color, options)) return showQuietToast(message);
         // v4.42.0: delegate to core/toast-dom.js when available; the
         // inline body below is the byte-identical fallback for the
         // userscript / module-unavailable path.

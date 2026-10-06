@@ -21,13 +21,17 @@ const TONE_OF = {
     '#22c55e': 'success',
 };
 
-function harness({ actionToasts, panelOpen = false } = {}) {
+function harness({ actionToasts, panelOpen = false, onScreen = null } = {}) {
     const shown = [];
     const announced = [];
+    const dismissed = [];
     const settings = actionToasts === undefined ? {} : { actionToasts };
-    const api = loadDeclarations(['isQuietToast', 'showToast'], {
+    const api = loadDeclarations(['isQuietToast', 'showQuietToast', 'showToast'], {
         appState: { settings },
-        document: { body: { classList: { contains: (name) => panelOpen && name === 'ytkit-panel-open' } } },
+        document: {
+            body: { classList: { contains: (name) => panelOpen && name === 'ytkit-panel-open' } },
+            querySelector: (selector) => (selector === '.ytkit-global-toast' ? onScreen : null),
+        },
         inferToastTone: (color) => TONE_OF[String(color).toLowerCase()] || 'neutral',
         normalizeToastTone: (tone) => tone || 'neutral',
         announceA11y: (message) => announced.push(message),
@@ -37,8 +41,9 @@ function harness({ actionToasts, panelOpen = false } = {}) {
                 return { message };
             },
         }),
+        dismissToast: (toast, immediate) => { dismissed.push([toast, immediate]); },
     });
-    return { showToast: api.showToast, shown, announced };
+    return { showToast: api.showToast, shown, announced, dismissed };
 }
 
 test('action notices default to off in the schema and the shipped defaults', () => {
@@ -88,4 +93,16 @@ test('turning notices on restores every toast', () => {
     h.showToast('Marked as watched', '#22c55e');
     assert.deepEqual(h.shown, ['Video hidden', 'Marked as watched']);
     assert.deepEqual(h.announced, []);
+});
+
+test('a quiet notice still clears the toast it would have replaced', () => {
+    const warning = { text: 'Astra Downloader is not paired yet' };
+    const h = harness({ actionToasts: false, onScreen: warning });
+    h.showToast('Astra Downloader connected', '#22c55e');
+    assert.deepEqual(h.shown, []);
+    assert.deepEqual(h.dismissed, [[warning, true]], 'removed at once, the way a new toast replaces it');
+
+    const empty = harness({ actionToasts: false });
+    empty.showToast('Video hidden', '#6b7280');
+    assert.deepEqual(empty.dismissed, [], 'nothing on screen, nothing to clear');
 });

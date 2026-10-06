@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-09-05",
-  "reason": "First recording of the peel remainder.",
-  "inlineOnlyFeatureIdCount": 279,
-  "featureModuleCount": 27,
+  "recordedAt": "2026-10-06",
+  "reason": "Accepted actionToasts inline: it is a setting showToast reads at call time, with no behavior a module could hold.",
+  "inlineOnlyFeatureIdCount": 280,
+  "featureModuleCount": 31,
   "inlineOnlyFeatureIds": [
     "abLoop",
+    "actionToasts",
     "adaptiveLiveLayout",
     "ageRestrictionBypass",
     "aiVideoSummary",
