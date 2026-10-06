@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "A-B ループ"
   },
+  "feature_actionToasts_desc": {
+    "message": "動画の非表示、視聴済みにする、チャプターのスキップなどの操作のあとに短いポップアップを表示します。既定ではオフです。警告とエラーは引き続き表示され、スクリーンリーダーはすべての通知を読み上げ、設定パネルは独自の確認を表示します。"
+  },
+  "feature_actionToasts_name": {
+    "message": "操作の通知"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "ライブ配信のチャットを横並びに表示するようレイアウトを自動調整"
   },

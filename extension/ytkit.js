@@ -3134,7 +3134,23 @@ const STORAGE_KEYS = Object.freeze({
         }
     }
 
+    // Action notices are off unless the user turns them on: confirmations
+    // ("Video hidden", "Marked as watched") stay quiet, while warnings and
+    // errors still pop up because they explain why a click did nothing.
+    // The open settings panel keeps its feedback, since import, export and
+    // reset have no other visible result.
+    function isQuietToast(color, options = {}) {
+        if (appState?.settings?.actionToasts === true) return false;
+        if (document.body?.classList.contains('ytkit-panel-open')) return false;
+        const tone = normalizeToastTone(options.tone || inferToastTone(color));
+        return tone !== 'error' && tone !== 'warning';
+    }
+
     function showToast(message, color = '#22c55e', options = {}) {
+        if (isQuietToast(color, options)) {
+            announceA11y(String(message ?? ''));
+            return null;
+        }
         // v4.42.0: delegate to core/toast-dom.js when available; the
         // inline body below is the byte-identical fallback for the
         // userscript / module-unavailable path.
@@ -4306,6 +4322,7 @@ const STORAGE_KEYS = Object.freeze({
             sbPerChannelProfilesData: {},      // { channelId: { categories: { sponsor: true, intro: false, ... }, updatedAt: ts } }
             showStatisticsDashboard: false,
             settingsProfiles: false,
+            actionToasts: false,
             debugMode: false,
             nyanCatProgressBar: false,
             fitPlayerToWindow: false,
@@ -17620,7 +17637,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pointB = null;
                 this._removeMarkers();
                 this._updateBtn();
-                showToast('A-B Loop cleared', '#f97316');
+                showToast('A-B Loop cleared', '#6b7280');
             },
 
             _updateBtn() {
@@ -19168,7 +19185,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             this._skippedAt = ch.time;
                             video.currentTime = nextTime;
                             if (!ch.title.includes('sponsor')) {
-                                showToast(`Skipped: "${ch.title}"`, '#f97316', { duration: 3 });
+                                showToast(`Skipped: "${ch.title}"`, '#6b7280', { duration: 3 });
                             }
                             DebugManager.log('AutoSkipChapter', `Skipped "${ch.title}" at ${ch.time}s`);
                         }
@@ -28661,6 +28678,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 delete window.__ytkitProfiles;
             }
+        },
+
+        // ── Action Notices ──
+        // Read by showToast() at call time; there is nothing to set up.
+        {
+            id: 'actionToasts',
+            name: 'Action Notices',
+            description: 'Show a short popup after actions like hiding a video, marking one as watched or skipping a chapter. Off by default. Warnings and errors still pop up, screen readers still hear every notice, and the settings panel keeps its own confirmations.',
+            group: 'Advanced',
+            icon: 'bell-ring',
+            init() {},
+            destroy() {}
         },
 
         // ── Debug Mode ──

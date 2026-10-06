@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "A-B 循环"
   },
+  "feature_actionToasts_desc": {
+    "message": "在隐藏视频、标记为已看或跳过章节等操作后显示简短弹窗。默认关闭。警告和错误仍会弹出，屏幕阅读器仍会朗读每条提示，设置面板保留自己的确认信息。"
+  },
+  "feature_actionToasts_name": {
+    "message": "操作提示"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "自动调整布局以支持直播聊天并排显示"
   },

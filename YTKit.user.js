@@ -1116,6 +1116,8 @@ const ASTRA_DECK_BUILD = {
 		"feature_abHide_thanks_name": "Thanks Button",
 		"feature_abLoop_desc": "Set two points on the video timeline and loop between them. Visual markers on the progress bar.",
 		"feature_abLoop_name": "A-B Loop",
+		"feature_actionToasts_desc": "Show a short popup after actions like hiding a video, marking one as watched or skipping a chapter. Off by default. Warnings and errors still pop up, screen readers still hear every notice, and the settings panel keeps its own confirmations.",
+		"feature_actionToasts_name": "Action Notices",
 		"feature_adaptiveLiveLayout_desc": "Automatically adjust layout for live stream chat side-by-side",
 		"feature_adaptiveLiveLayout_name": "Adaptive Live Layout",
 		"feature_ageRestrictionBypass_desc": "Bypass age verification by fetching video data from YouTube’s embed endpoint. No sign-in required.",

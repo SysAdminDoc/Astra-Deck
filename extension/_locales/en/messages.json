@@ -1674,6 +1674,12 @@
   "feature_abLoop_name": {
     "message": "A-B Loop"
   },
+  "feature_actionToasts_desc": {
+    "message": "Show a short popup after actions like hiding a video, marking one as watched or skipping a chapter. Off by default. Warnings and errors still pop up, screen readers still hear every notice, and the settings panel keeps its own confirmations."
+  },
+  "feature_actionToasts_name": {
+    "message": "Action Notices"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "Automatically adjust layout for live stream chat side-by-side"
   },

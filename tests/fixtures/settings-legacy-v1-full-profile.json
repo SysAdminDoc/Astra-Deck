@@ -445,6 +445,7 @@
   },
   "expectedDefaulted": [
     "_scheduleRestore",
+    "actionToasts",
     "antiTranslateChapters",
     "antiTranslateThumbnails",
     "audioAutoGain",

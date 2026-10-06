@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "Repetição A-B"
   },
+  "feature_actionToasts_desc": {
+    "message": "Mostra um aviso rápido depois de ações como ocultar um vídeo, marcá-lo como assistido ou pular um capítulo. Desativado por padrão. Alertas e erros continuam aparecendo, leitores de tela continuam anunciando cada aviso e o painel de configurações mantém as próprias confirmações."
+  },
+  "feature_actionToasts_name": {
+    "message": "Avisos de ações"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "Ajustar automaticamente o layout para chat de transmissão ao vivo lado a lado"
   },

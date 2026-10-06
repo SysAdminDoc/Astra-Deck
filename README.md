@@ -59,8 +59,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.94.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `488` entries across `18` categories |
-| Runtime graph | `121` modules, including `31` peeled feature modules and `304` declared feature IDs |
+| Settings schema | `489` entries across `18` categories |
+| Runtime graph | `121` modules, including `31` peeled feature modules and `305` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -470,12 +470,12 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **483 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **484 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
 <details>
-<summary><strong>Shell and appearance</strong>: 48 settings</summary>
+<summary><strong>Shell and appearance</strong>: 49 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -507,6 +507,7 @@ This generated knowledgebase documents all **483 user-facing settings** in the c
 | <a id="setting-grayscaleThumbnails"></a><strong>Grayscale Thumbnails</strong><br><code>grayscaleThumbnails</code> | Shows thumbnails in grayscale to reduce visual distraction. Color comes back on hover. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-noFrostedGlass"></a><strong>Disable Frosted Glass</strong><br><code>noFrostedGlass</code> | Remove blur effects from UI elements | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-themeAccentColor"></a><strong>Accent Color</strong><br><code>themeAccentColor</code> | Custom accent color for highlights, progress bar, and active UI elements | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-actionToasts"></a><strong>Action Notices</strong><br><code>actionToasts</code> | Show a short popup after actions like hiding a video, marking one as watched or skipping a chapter. Off by default. Warnings and errors still pop up, screen readers still hear every notice, and the settings panel keeps its own confirmations. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.95.0</code> |
 | <a id="setting-nyanCatProgressBar"></a><strong>Nyan Cat Progress Bar</strong><br><code>nyanCatProgressBar</code> | Replace the video progress bar with a Nyan Cat animation | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-oledTheme"></a><strong>OLED Theme</strong><br><code>oledTheme</code> | True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-denseMode"></a><strong>Dense Mode</strong><br><code>denseMode</code> | Tightens row spacing, padding, and font metrics across Astra-injected surfaces. It doesn't change YouTube's native layout, only our own panels, chips, pills, and toolbars. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

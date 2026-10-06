@@ -8,6 +8,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Astra no longer pops up a notice after everyday actions. Hiding a video, marking one as watched, toggling Repeat or skipping a chapter now just happens, with no "Video hidden" box in the corner. Warnings and errors still show, because they're how you find out a click didn't work. The settings panel keeps its confirmations too, and screen readers still hear every notice. If you liked the popups, turn on Action Notices in Advanced settings.
 - The research notes and roadmap were refreshed on 2026-10-05. That pass also compared the most-installed YouTube userscripts on Greasy Fork with Astra's settings, and none of them does anything Astra can't already do.
 
 ## [4.94.0] (2026-10-05)

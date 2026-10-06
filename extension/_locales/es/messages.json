@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "Bucle A-B"
   },
+  "feature_actionToasts_desc": {
+    "message": "Muestra un aviso breve tras acciones como ocultar un video, marcarlo como visto u omitir un capítulo. Desactivado de forma predeterminada. Las advertencias y los errores siguen apareciendo, los lectores de pantalla siguen anunciando cada aviso y el panel de ajustes conserva sus propias confirmaciones."
+  },
+  "feature_actionToasts_name": {
+    "message": "Avisos de acciones"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "Ajustar automáticamente el diseño para chat en vivo lado a lado"
   },

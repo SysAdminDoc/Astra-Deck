@@ -2029,7 +2029,17 @@ const STORAGE_KEYS = Object.freeze({
 			DebugManager?.log?.('A11y', `announce skipped: ${e?.message || e}`);
 		}
 	}
+	function isQuietToast(color, options = {}) {
+		if (appState?.settings?.actionToasts === true) return false;
+		if (document.body?.classList.contains('ytkit-panel-open')) return false;
+		const tone = normalizeToastTone(options.tone || inferToastTone(color));
+		return tone !== 'error' && tone !== 'warning';
+	}
 	function showToast(message, color = '#22c55e', options = {}) {
+		if (isQuietToast(color, options)) {
+			announceA11y(String(message ?? ''));
+			return null;
+		}
 		const sys = _getToastSystem();
 		if (sys) return sys.showToast(message, color, options);
 		const existingToast = document.querySelector('.ytkit-global-toast');
@@ -2957,6 +2967,7 @@ const STORAGE_KEYS = Object.freeze({
 			sbPerChannelProfilesData: {},
 			showStatisticsDashboard: false,
 			settingsProfiles: false,
+			actionToasts: false,
 			debugMode: false,
 			nyanCatProgressBar: false,
 			fitPlayerToWindow: false,
@@ -11104,7 +11115,7 @@ const STORAGE_KEYS = Object.freeze({
 				this._pointB = null;
 				this._removeMarkers();
 				this._updateBtn();
-				showToast('A-B Loop cleared', '#f97316');
+				showToast('A-B Loop cleared', '#6b7280');
 			},
 			_updateBtn() {
 				if (!this._btn) return;
@@ -12445,7 +12456,7 @@ const STORAGE_KEYS = Object.freeze({
 							this._skippedAt = ch.time;
 							video.currentTime = nextTime;
 							if (!ch.title.includes('sponsor')) {
-								showToast(`Skipped: "${ch.title}"`, '#f97316', { duration: 3 });
+								showToast(`Skipped: "${ch.title}"`, '#6b7280', { duration: 3 });
 							}
 							DebugManager.log('AutoSkipChapter', `Skipped "${ch.title}" at ${ch.time}s`);
 						}
@@ -20296,6 +20307,15 @@ const STORAGE_KEYS = Object.freeze({
 			destroy() {
 				delete window.__ytkitProfiles;
 			}
+		},
+		{
+			id: 'actionToasts',
+			name: 'Action Notices',
+			description: 'Show a short popup after actions like hiding a video, marking one as watched or skipping a chapter. Off by default. Warnings and errors still pop up, screen readers still hear every notice, and the settings panel keeps its own confirmations.',
+			group: 'Advanced',
+			icon: 'bell-ring',
+			init() {},
+			destroy() {}
 		},
 		{
 			id: 'debugMode',

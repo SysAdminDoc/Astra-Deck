@@ -5810,10 +5810,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // the opt-in scheduled selector refresh, the channel landing tab, and the
     // open-thumbnail button (487). Retiring YouTube Music compatibility leaves 486.
     // Block Comment Authors adds its toggle and the blocked-author list (488).
+    // Action Notices adds the switch that quiets confirmation toasts (489).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 488,
-        'SETTINGS_SCHEMA must cover all 488 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 489,
+        'SETTINGS_SCHEMA must cover all 489 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

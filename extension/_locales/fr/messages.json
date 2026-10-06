@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "Boucle A-B"
   },
+  "feature_actionToasts_desc": {
+    "message": "Affiche une brève notification après des actions comme masquer une vidéo, la marquer comme vue ou passer un chapitre. Désactivé par défaut. Les avertissements et les erreurs s'affichent toujours, les lecteurs d'écran annoncent chaque notification, et le panneau des paramètres garde ses propres confirmations."
+  },
+  "feature_actionToasts_name": {
+    "message": "Notifications d'action"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "Ajuster automatiquement la mise en page pour le chat en direct côte à côte"
   },

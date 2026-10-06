@@ -335,6 +335,7 @@
   "sbPerChannelProfilesData": {},
   "showStatisticsDashboard": false,
   "settingsProfiles": false,
+  "actionToasts": false,
   "debugMode": false,
   "nyanCatProgressBar": false,
   "fitPlayerToWindow": false,

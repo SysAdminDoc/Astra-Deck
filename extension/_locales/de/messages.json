@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "A-B-Schleife"
   },
+  "feature_actionToasts_desc": {
+    "message": "Zeigt nach Aktionen wie dem Ausblenden eines Videos, dem Markieren als gesehen oder dem Überspringen eines Kapitels kurz einen Hinweis an. Standardmäßig aus. Warnungen und Fehler erscheinen weiterhin, Screenreader lesen jeden Hinweis vor, und das Einstellungsfenster behält seine eigenen Bestätigungen."
+  },
+  "feature_actionToasts_name": {
+    "message": "Aktionshinweise"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "Layout automatisch für Live-Stream-Chat nebeneinander anpassen"
   },

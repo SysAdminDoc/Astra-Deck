@@ -142,7 +142,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // `false`. Enabling fullTitles trims another for the same reason.
     // Retiring the YouTube Music toggle trims another 27 bytes.
     // Block Comment Authors adds 53: its toggle and the empty author list.
-    assert.equal(assessment.totalBytes, 186466);
+    // Action Notices adds 21 for its toggle, off by default.
+    assert.equal(assessment.totalBytes, 186487);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

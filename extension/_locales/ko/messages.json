@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "A-B 반복"
   },
+  "feature_actionToasts_desc": {
+    "message": "동영상 숨기기, 시청함으로 표시, 챕터 건너뛰기 같은 작업 후 짧은 팝업을 표시합니다. 기본값은 꺼짐입니다. 경고와 오류는 계속 표시되고, 화면 낭독기는 모든 알림을 읽어 주며, 설정 패널은 자체 확인 메시지를 유지합니다."
+  },
+  "feature_actionToasts_name": {
+    "message": "작업 알림"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "실시간 스트림 채팅을 나란히 배치하도록 레이아웃을 자동 조정"
   },

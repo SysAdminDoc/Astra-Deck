@@ -1664,6 +1664,12 @@
   "feature_abLoop_name": {
     "message": "Ciclo A-B"
   },
+  "feature_actionToasts_desc": {
+    "message": "Mostra un breve avviso dopo azioni come nascondere un video, segnarlo come visto o saltare un capitolo. Disattivato per impostazione predefinita. Avvertenze ed errori compaiono comunque, gli screen reader annunciano ogni avviso e il pannello delle impostazioni mantiene le proprie conferme."
+  },
+  "feature_actionToasts_name": {
+    "message": "Avvisi sulle azioni"
+  },
   "feature_adaptiveLiveLayout_desc": {
     "message": "Regola automaticamente il layout per la chat delle dirette affiancata"
   },

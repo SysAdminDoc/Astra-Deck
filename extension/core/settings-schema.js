@@ -630,6 +630,9 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── privacy-profiles ───
     Object.freeze({ key: "settingsProfiles", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
+    // ─── shell ───
+    Object.freeze({ key: "actionToasts", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.95.0" }),
+
     // ─── dev-diagnostics ───
     Object.freeze({ key: "debugMode", category: "dev-diagnostics", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
