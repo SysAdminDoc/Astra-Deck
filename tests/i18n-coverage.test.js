@@ -21,9 +21,10 @@ const {
     REVIEWED_EXACT_MESSAGES,
     missingProtectedTerms
 } = require('../scripts/i18n-policy');
+const { makeTempDir } = require('./helpers/temp');
 
 function writeLocaleFixture() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-i18n-coverage-'));
+    const root = makeTempDir('astra-i18n-coverage-');
     const localesDir = path.join(root, 'extension', '_locales');
     fs.mkdirSync(path.join(localesDir, 'en'), { recursive: true });
     fs.mkdirSync(path.join(localesDir, 'de'), { recursive: true });
@@ -130,7 +131,7 @@ test('i18n coverage freshness gate fails on stale markdown reports', () => {
     const { localesDir } = writeLocaleFixture();
     const report = buildCoverageReport({ localesDir });
     const markdown = renderMarkdown(report, { warnFeatureIdenticalAbove: 0 });
-    const reportPath = path.join(os.tmpdir(), `astra-i18n-report-${Date.now()}.md`);
+    const reportPath = path.join(makeTempDir('astra-i18n-report-'), 'report.md');
 
     fs.writeFileSync(reportPath, '# stale\n', 'utf8');
     const captured = [];

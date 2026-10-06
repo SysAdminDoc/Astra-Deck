@@ -4,7 +4,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 
 const {
@@ -13,13 +12,14 @@ const {
     parseArgs,
     parseDigest
 } = require('../scripts/compare-release-digests');
+const { makeTempDir } = require('./helpers/temp');
 
 function sha256(filePath) {
     return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
 function writeDigestFixture() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-release-digests-'));
+    const root = makeTempDir('astra-release-digests-');
     const buildDir = path.join(root, 'build');
     fs.mkdirSync(buildDir, { recursive: true });
 

@@ -13,9 +13,10 @@ const {
     renderCsv,
     writeProofingExport
 } = require('../scripts/export-i18n-proofing');
+const { makeTempDir } = require('./helpers/temp');
 
 function writeLocaleFixture() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-i18n-proofing-'));
+    const root = makeTempDir('astra-i18n-proofing-');
     const localesDir = path.join(root, 'extension', '_locales');
     fs.mkdirSync(path.join(localesDir, 'en'), { recursive: true });
     fs.mkdirSync(path.join(localesDir, 'de'), { recursive: true });

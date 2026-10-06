@@ -5,7 +5,6 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
-const os = require('node:os');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
@@ -24,13 +23,14 @@ const {
     assertHealthAllowsPromotion
 } = require('../scripts/release-channels');
 const { buildHealthReport, sha256 } = require('../scripts/release-health');
+const { makeTempDir } = require('./helpers/temp');
 
 function digest(text) {
     return crypto.createHash('sha256').update(text).digest('hex');
 }
 
 function fixtureBuild(version = '1.2.3') {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-release-channels-'));
+    const tempRoot = makeTempDir('astra-release-channels-');
     const buildDir = path.join(tempRoot, 'build');
     fs.mkdirSync(buildDir, { recursive: true });
     const assets = [];

@@ -3,7 +3,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const {
     buildUiCopyBaseline,
@@ -14,9 +13,10 @@ const {
 } = require('../scripts/check-localizable-ui-copy');
 const { generatePseudolocale, pseudolocalizeMessage } = require('../scripts/generate-pseudolocale');
 const { readUserscriptBuild } = require('./helpers/source');
+const { makeTempDir } = require('./helpers/temp');
 
 test('UI-copy ratchet rejects a newly added hardcoded literal at a rendered sink', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-i18n-copy-'));
+    const root = makeTempDir('astra-i18n-copy-');
     const extensionDir = path.join(root, 'extension');
     fs.mkdirSync(extensionDir, { recursive: true });
     const filePath = path.join(extensionDir, 'panel.js');
@@ -70,7 +70,7 @@ test('strict UI-copy sinks reject direct literals while allowing t() and reviewe
 });
 
 test('strict UI-copy sink changes identify a new direct literal separately from the legacy ratchet', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-i18n-strict-'));
+    const root = makeTempDir('astra-i18n-strict-');
     const extensionDir = path.join(root, 'extension');
     fs.mkdirSync(extensionDir, { recursive: true });
     const filePath = path.join(extensionDir, 'panel.js');

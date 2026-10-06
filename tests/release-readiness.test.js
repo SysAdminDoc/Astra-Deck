@@ -4,7 +4,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 
 const { execFileSync } = require('child_process');
@@ -19,13 +18,14 @@ const {
     parseSha256Sums,
     renderMarkdown
 } = require('../scripts/generate-release-readiness');
+const { makeTempDir } = require('./helpers/temp');
 
 function sha256(filePath) {
     return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
 function writeFixtureRepo({ crxSigningMode = 'external', validationBuild = false } = {}) {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-release-ready-'));
+    const root = makeTempDir('astra-release-ready-');
     const buildDir = path.join(root, 'build');
     fs.mkdirSync(path.join(root, 'extension'), { recursive: true });
     fs.mkdirSync(buildDir, { recursive: true });
@@ -205,7 +205,7 @@ test('release manifest module reads CRX signing provenance and validation labels
 
     assert.equal(CRX_SIGNING_PROVENANCE_NAME, 'crx-signing-provenance.json');
 
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-crx-prov-'));
+    const tmp = makeTempDir('astra-crx-prov-');
     assert.equal(readCrxSigningProvenance(tmp), 'unknown', 'missing provenance file must read as unknown');
     fs.writeFileSync(path.join(tmp, CRX_SIGNING_PROVENANCE_NAME), JSON.stringify({ schemaVersion: 1, mode: 'ephemeral' }));
     assert.equal(readCrxSigningProvenance(tmp), 'ephemeral');
