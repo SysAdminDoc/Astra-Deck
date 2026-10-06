@@ -15488,9 +15488,19 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 'use strict';
 (() => {
 	'use strict';
+	const PANEL_CATEGORY_FOR_GROUP = Object.freeze({
+		Research: 'Watch Page',
+		Ratings: 'Watch Page',
+		Integrations: 'Watch Page',
+		Subscriptions: 'Home / Subscriptions',
+		Accessibility: 'Theme',
+		Playlists: 'Content',
+		Navigation: 'Playback'
+	});
 	function resolveSettingsPresentationCategory(feature, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
 		if (shortsSettingKeys.includes(feature?.id)) return 'Content';
-		return feature?.group || '';
+		const group = feature?.group || '';
+		return PANEL_CATEGORY_FOR_GROUP[group] || group;
 	}
 	function groupFeaturesBySettingsPresentation(featureList, categoryOrder, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
 		const grouped = categoryOrder.reduce((acc, category) => ({ ...acc, [category]: [] }), {});
@@ -17857,7 +17867,8 @@ function buildSettingsPanel() {
 			const parentFeatures = categoryFeatures.filter(f => !f.isSubFeature);
 			const subFeatures = categoryFeatures.filter(f => f.isSubFeature);
 			const promotedSubFeatures = subFeatures.filter((feature) =>
-				resolveSettingsPresentationCategory(feature, shortsPanelSettingKeys) !== feature.group
+				resolveSettingsPresentationCategory(feature, shortsPanelSettingKeys)
+					!== resolveSettingsPresentationCategory({ group: feature.group }, shortsPanelSettingKeys)
 			);
 			const sortedParentFeatures = [...parentFeatures].sort((a, b) => {
 				const aIsDropdown = a.type === 'select';

@@ -1330,11 +1330,11 @@ __astraDeckRegistry["core/settings-visual-system.js"] = function (globalThis, se
 			{ labelKey: 'settingsSectionFilters', fallback: 'Filters', match: /.*/ }
 		],
 		'Watch Page': [
-			{ labelKey: 'settingsSectionTranscriptAi', fallback: 'Transcript & AI', match: /^(transcriptAiHandoff|transcriptViewer|aiVideoSummary|keyMoments|copyChapterMarkdown)$/ },
+			{ labelKey: 'settingsSectionTranscriptAi', fallback: 'Transcript & AI', match: /^(transcriptAiHandoff|transcriptViewer|aiVideoSummary|keyMoments|copyChapterMarkdown|localAiSummary|localAiTranscriptQa|transcriptQaLane|researchTranscriptIndex|researchTranscriptSearchPanel|researchSpacedReview)$/ },
 			{ labelKey: 'settingsSectionPlayerChrome', fallback: 'Player chrome', match: /^(removeScrubber|softBottomGradient|alwaysShowProgressBar|autoSkipChapters|chapterNavButtons|hideAutoplayToggle|floatingLogoOnWatch|stickyVideo|scrollToPlayer|playlistEnhancer|playlistSearch|watchPageTabs|focusedMode|zenMode)$/ },
 			{ labelKey: 'settingsSectionAiContent', fallback: 'AI content', match: /^(hideAskAi|hideGeminiButtons|hideAiSummary)$/ },
 			{ labelKey: 'settingsSectionPageElements', fallback: 'Page elements', match: /^(hiddenWatchElementsManager|hidePaidContentOverlay|hideInfoPanels|hideRelatedVideos|hideDescription|hideMerch|hideAsk|hideGemini|hideAi|hideHashtags|hideComment|condenseComments|hidePaidPromotionWatch|hideChannelJoinButton|hideFundraiser|hiddenActionButtonsManager|hideInfoCards)/ },
-			{ labelKey: 'settingsSectionInsightsNotes', fallback: 'Insights & notes', match: /^(preciseViewCounts|videoInsights|showChannelVideoCount|timestampBookmarks|videoNotes|watchTimeTracker|likeViewRatio|channelAgeDisplay|channelSubCount|redditComments|watchHistoryAnalytics)$/ },
+			{ labelKey: 'settingsSectionInsightsNotes', fallback: 'Insights & notes', match: /^(preciseViewCounts|videoInsights|showChannelVideoCount|timestampBookmarks|videoNotes|watchTimeTracker|likeViewRatio|channelAgeDisplay|channelSubCount|redditComments|watchHistoryAnalytics|returnDislike|returnDislikeOnCards|monetizationIndicator)$/ },
 			{ labelKey: 'settingsSectionSharingActions', fallback: 'Sharing & actions', match: /.*/ }
 		],
 		Content: [

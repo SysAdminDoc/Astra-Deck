@@ -8,6 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- 22 features were missing from the settings panel entirely, with no switch and no search result: Return YouTube Dislike and dislikes on thumbnails, the monetization indicator, the local AI summary and transcript questions, transcript search and the research tools, Subscription Groups and its view controls, the accessibility options (reduced motion, forced colors, the screen reader announcer, low power mode), the Watch Later and playlist tools, the right-click menu, Open in alternative frontend, VLC/mpv handoff, and Bypass playlist mode. Their groups had no page in the panel. They now sit on Watch Page, Home / Subscriptions, Theme, Content and Playback. The toolbar popup's Subscription Groups links land on its card now too.
+
 - The settings links in the toolbar popup land on the setting now. Its "in-page panel" buttons for lists and saved data (hidden Guide, chat, player and watch page items, video notes, per-channel SponsorBlock and intro/outro skips, DeArrow channel overrides, watch time) matched no row, so the panel opened on whatever page it showed last. It now opens on the right page with that setting's switch focused, clears a search that would hide it, and keeps focus there instead of jumping to the search box. A link that opens a new YouTube tab opens the panel too; before, it waited for you to open the panel yourself.
 
 ## [4.96.0] (2026-10-06)

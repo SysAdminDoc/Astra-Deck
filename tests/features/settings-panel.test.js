@@ -165,6 +165,36 @@ test('settingsPanel promotes every actionable Shorts control into Content withou
     }
 });
 
+// The grouping keeps a feature only when its group resolves to one of the
+// panel's categories. Seven groups didn't, and the 22 features in them,
+// Return YouTube Dislike among them, had no card and no search hit.
+test('every group a feature declares lands in a panel category', () => {
+    const { resolveSettingsPresentationCategory } = loadModule();
+    const extensionRoot = path.join(__dirname, '..', '..', 'extension');
+    const panelSource = fs.readFileSync(path.join(extensionRoot, 'features', 'settings-panel', 'index.js'), 'utf8');
+    const categoryOrder = JSON.parse(panelSource.match(/const categoryOrder = (\[[^\]]+\]);/)[1].replace(/'/g, '"'));
+    const sources = [path.join(extensionRoot, 'ytkit.js'),
+        ...fs.readdirSync(path.join(extensionRoot, 'features'))
+            .map((dir) => path.join(extensionRoot, 'features', dir, 'index.js'))
+            .filter((file) => fs.existsSync(file))];
+    const groups = new Set();
+    for (const file of sources) {
+        for (const [, group] of fs.readFileSync(file, 'utf8').matchAll(/group:\s*'([^']+)'/g)) groups.add(group);
+    }
+    assert.ok(groups.has('Ratings') && groups.size >= 17, 'the scan has to see the groups this test was written for');
+    const lost = [...groups].filter((group) => !categoryOrder.includes(resolveSettingsPresentationCategory({ group }, [])));
+    assert.deepEqual(lost, [], 'give each a category in PANEL_CATEGORY_FOR_GROUP');
+});
+
+test('a sub-feature stays under its parent when their group moves to another category', () => {
+    const { groupFeaturesBySettingsPresentation } = loadModule();
+    const grouped = groupFeaturesBySettingsPresentation([
+        { id: 'returnDislike', group: 'Ratings' },
+        { id: 'returnDislikeOnCards', group: 'Ratings', isSubFeature: true, parentId: 'returnDislike' }
+    ], ['Watch Page'], []);
+    assert.deepEqual(grouped['Watch Page'].map((feature) => feature.id), ['returnDislike', 'returnDislikeOnCards']);
+});
+
 test('settingsPanel does not count a feature whose setting is absent from the sparse bag', () => {
     // Only changed keys are persisted, so an untouched default is `undefined`
     // in appState.settings. Counting it as enabled would overstate every

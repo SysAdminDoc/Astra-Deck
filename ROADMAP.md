@@ -4,25 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P1 — 22 features have no card in the settings panel
-  Why: found 2026-10-06 while checking deep links. `groupFeaturesBySettingsPresentation` keeps a
-  feature only when its `group` is one of the ten panel categories, and seven groups aren't:
-  Research, Ratings, Subscriptions, Accessibility, Playlists, Integrations, Navigation. Checked in
-  the live panel, these have no card, so no switch and no search hit: localAiSummary,
-  localAiTranscriptQa, researchSpacedReview, researchTranscriptIndex,
-  researchTranscriptSearchPanel, transcriptQaLane, monetizationIndicator, returnDislike,
-  returnDislikeOnCards, subscriptionGroups, subscriptionViewControls, forcedColorsSupport,
-  globalAriaLiveRegion, lowPowerProfile, reducedMotion, playlistQuickRemove, watchLaterCleanup,
-  watchLaterWorkbench, astraContextMenu, openInAlternativeFrontend, vlcMpvHandoff,
-  bypassPlaylistMode. The filter predates 7fe69465, which kept it.
-  Where: `extension/features/settings-panel/index.js` (`resolveSettingsPresentationCategory`,
-  `groupFeaturesBySettingsPresentation`, `categoryOrder` ~591), the drifted copy in
-  `extension/ytkit.js` (~40557).
-  Acceptance: every feature in the live feature list that isn't internal SHALL render a card in
-  one of the panel categories (a test over the real feature list), and the 22 above SHALL be
-  found by the panel search in a headless check.
-  Complexity: M
-
 - [ ] P3 — Two popup "in-page panel" settings have no editor anywhere
   Why: found 2026-10-06. `featureSchedules` and `syncSafePrefsAllowlist` show the popup's
   "in-page panel" button, which promises the panel edits them, but nothing does. The panel now

@@ -8,9 +8,23 @@
     // delegated UI listeners, and toggle state refresh path; ytkit.js keeps
     // the inline functions as a compatibility fallback.
 
+    // Groups a feature can declare that the panel has no category for. The
+    // grouping below keeps only the panel's ten, so the 22 features in these
+    // (Return YouTube Dislike among them) never had a card or a search hit.
+    const PANEL_CATEGORY_FOR_GROUP = Object.freeze({
+        Research: 'Watch Page',
+        Ratings: 'Watch Page',
+        Integrations: 'Watch Page',
+        Subscriptions: 'Home / Subscriptions',
+        Accessibility: 'Theme',
+        Playlists: 'Content',
+        Navigation: 'Playback'
+    });
+
     function resolveSettingsPresentationCategory(feature, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
         if (shortsSettingKeys.includes(feature?.id)) return 'Content';
-        return feature?.group || '';
+        const group = feature?.group || '';
+        return PANEL_CATEGORY_FOR_GROUP[group] || group;
     }
 
     function groupFeaturesBySettingsPresentation(featureList, categoryOrder, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
@@ -2792,8 +2806,11 @@ function buildSettingsPanel() {
             const catId = cat.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
             const parentFeatures = categoryFeatures.filter(f => !f.isSubFeature);
             const subFeatures = categoryFeatures.filter(f => f.isSubFeature);
+            // Moved by the Shorts rule, not by its group's category mapping,
+            // which moves the parent with it.
             const promotedSubFeatures = subFeatures.filter((feature) =>
-                resolveSettingsPresentationCategory(feature, shortsPanelSettingKeys) !== feature.group
+                resolveSettingsPresentationCategory(feature, shortsPanelSettingKeys)
+                    !== resolveSettingsPresentationCategory({ group: feature.group }, shortsPanelSettingKeys)
             );
             // Keep the established preference-first ordering, then use the
             // first three select controls as a compact category snapshot.
