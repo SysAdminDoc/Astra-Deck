@@ -213,8 +213,10 @@ html:not(.ytkit-restore-native-ui) ytd-continuation-item-renderer.style-scope.yt
  * watch-page owner-row avatar is handled by the same rule. Opt-out via
  * the `html.ytkit-restore-native-ui` guard (see above). The signed-in
  * account button keeps its picture: hiding it left an empty outlined
- * square in the masthead (#51); `hideOwnAvatar` removes that button. */
-html:not(.ytkit-restore-native-ui) img.style-scope.yt-img-shadow:not(ytd-topbar-menu-button-renderer img),
+ * square in the masthead (#51); `hideOwnAvatar` removes that button.
+ * Product pictures use the same wrapper and aren't avatars, so the merch
+ * shelf and the Products panel keep theirs. */
+html:not(.ytkit-restore-native-ui) img.style-scope.yt-img-shadow:not(ytd-topbar-menu-button-renderer img):not(ytd-product-list-item-renderer img):not(ytd-merch-shelf-item-renderer img),
 html:not(.ytkit-restore-native-ui) yt-img-shadow.style-scope.ytd-video-owner-renderer.no-transition {
     display: none !important;
 }

@@ -151,6 +151,11 @@ test('early.css avatar hide leaves the signed-in account button its picture (#51
             selector.includes(':not(ytd-topbar-menu-button-renderer img)'),
             `avatar hide must spare the masthead account button: ${selector.trim()}`
         );
+        // Same wrapper, not avatars: a signed-in watch page capture had the
+        // merch shelf's and the Products panel's pictures display:none.
+        for (const host of ['ytd-product-list-item-renderer', 'ytd-merch-shelf-item-renderer']) {
+            assert.ok(selector.includes(`:not(${host} img)`), `avatar hide must spare product pictures in ${host}`);
+        }
     }
 });
 
