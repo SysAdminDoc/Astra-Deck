@@ -4457,11 +4457,14 @@ function attachUIEventListeners() {
                     // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
                         const conflicts = CONFLICT_MAP[featureId].conflicts || [];
-                        const activeConflicts = conflicts.filter(cid => appState.settings[cid]);
+                        // Value-aware, so codecSelector counts only while it names a codec and
+                        // is switched back to "auto", never to false (which fails validation).
+                        const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+                        const activeConflicts = conflicts.filter(cid => conflictRules?.isSettingConflictOn?.(cid, appState.settings) ?? !!appState.settings[cid]);
                         if (activeConflicts.length > 0) {
                             activeConflicts.forEach(cid => {
                                 const cf = getFeatureById(cid);
-                                appState.settings[cid] = false;
+                                appState.settings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
                                 settingsManager.save(appState.settings);
                                 if (cf?._initialized) {
                                     try { destroyFeatureLifecycle(cf, 'conflict'); } catch(err) {
@@ -4475,6 +4478,8 @@ function attachUIEventListeners() {
                                     const switchEl = toggle.closest('.ytkit-switch');
                                     if (switchEl) switchEl.classList.remove('active');
                                 }
+                                const select = document.getElementById(`ytkit-select-${cid}`);
+                                if (select) select.value = String(appState.settings[cid]);
                             });
                             const conflictNames = activeConflicts.map(cid => {
                                 const cf = getFeatureById(cid);
@@ -4637,6 +4642,28 @@ function attachUIEventListeners() {
                     : rawValue;
 
                 appState.settings[settingKey] = newValue;
+                // Naming a codec switches Force H.264 off, like a toggle's conflict pair.
+                const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+                const selectConflicts = conflictRules?.resolveSettingConflicts?.(appState.settings, settingKey)?.switchedOff || [];
+                for (const cid of selectConflicts) {
+                    appState.settings[cid] = conflictRules.settingConflictOffValue(cid);
+                    const cf = getFeatureById(cid);
+                    if (cf?._initialized) {
+                        try { destroyFeatureLifecycle(cf, 'conflict'); } catch (err) {
+                            DebugManager.log('Conflict', `Destroy failed for "${cid}": ${err.message}`);
+                        }
+                    }
+                    const toggle = document.querySelector(`[data-feature-id="${cid}"] input[type="checkbox"]`);
+                    if (toggle) {
+                        toggle.checked = false;
+                        toggle.closest('.ytkit-switch')?.classList.remove('active');
+                    }
+                }
+                if (selectConflicts.length) {
+                    showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
+                        .replace('{features}', () => selectConflicts.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', '))
+                        .replace('{reason}', () => CONFLICT_MAP[settingKey]?.reason || ''), '#f59e0b', { duration: 5 });
+                }
                 settingsManager.save(appState.settings);
 
                 // Reinitialize the feature to apply changes immediately

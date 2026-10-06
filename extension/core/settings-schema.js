@@ -1171,6 +1171,81 @@ function applySettingAliases(settings) {
     return { settings: out, renamed };
 }
 
+// ─── Conflicting settings ───
+// Only pairs that are mutually exclusive in the underlying mechanism.
+// Turning one side on switches the other off, on every surface: the in-page
+// panel and Quick Settings, and the worker's single-key write that the popup
+// and side panel use. The shape is pinned by tests/hardening.test.js.
+const SETTING_CONFLICTS = Object.freeze({
+    hideRelatedVideos: Object.freeze({ conflicts: Object.freeze([]), note: 'expandVideoWidth depends on this' }),
+    listFeedLayout: Object.freeze({ conflicts: Object.freeze(['videosPerRow']), reason: 'Row feed layout and fixed grid columns cannot control the same cards' }),
+    videosPerRow: Object.freeze({ conflicts: Object.freeze(['listFeedLayout']), reason: 'Fixed grid columns and row feed layout cannot control the same cards' }),
+    hideSidebar: Object.freeze({ conflicts: Object.freeze(['hiddenChatElementsManager', 'hiddenGuideElementsManager']), reason: 'Sidebar hidden removes chat access and makes per-Guide-item hiding moot' }),
+    removeAllShorts: Object.freeze({ conflicts: Object.freeze(['redirectShorts']), reason: 'Removed shorts cannot be redirected' }),
+    persistentSpeed: Object.freeze({ conflicts: Object.freeze(['perChannelSpeed']), reason: 'Global speed overrides per-channel speed' }),
+    perChannelSpeed: Object.freeze({ conflicts: Object.freeze(['persistentSpeed']), reason: 'Per-channel speed overrides global speed' }),
+    // forceH264 silently overrides codecSelector via _syncMainWorldCodec():
+    // codecSelector=AV1 still plays H.264 with no UI feedback. codecSelector is
+    // a select, so it only conflicts while it names a codec; "auto" is its off.
+    forceH264: Object.freeze({ conflicts: Object.freeze(['codecSelector']), reason: 'forceH264 silently overrides codecSelector, so it is disabled for predictability' }),
+    codecSelector: Object.freeze({ conflicts: Object.freeze(['forceH264']), reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' }),
+    fitPlayerToWindow: Object.freeze({ conflicts: Object.freeze(['stickyVideo']), reason: 'Both control player positioning on watch pages' }),
+    // Audio-only pins the CHEAPEST stream; every quality-raising feature pins
+    // the opposite through the same MAIN-world call, so whichever ran last won.
+    audioOnlyPlayback: Object.freeze({ conflicts: Object.freeze(['autoMaxResolution', 'qualityProfileMatrix']), reason: 'Audio-only pins the lowest quality, and a best-quality or per-context target would fight it through the same player API' }),
+    autoMaxResolution: Object.freeze({ conflicts: Object.freeze(['audioOnlyPlayback']), reason: 'Best quality and audio-only pin opposite ends of the same quality API' }),
+    qualityProfileMatrix: Object.freeze({ conflicts: Object.freeze(['audioOnlyPlayback']), reason: 'Per-context quality targets and audio-only pin opposite ends of the same quality API' }),
+    stickyVideo: Object.freeze({ conflicts: Object.freeze(['fitPlayerToWindow']), reason: 'Both control player positioning on watch pages' })
+    // The following pairs LOOK like conflicts but were intentionally
+    // decoupled and now cooperate. Do not re-add them without also undoing
+    // the mechanism that made them safe:
+    //   • focusedMode now hides only related videos, not all of #secondary,
+    //     so it cooperates with transcriptViewer / timestampBookmarks / stickyVideo.
+    //   • autoPauseOnSwitch and pauseOtherTabs tag pause reasons, so both can
+    //     fire on the same media element without competing.
+    //   • popOutPlayer sets __ytkit_videoPopped; pipButton and
+    //     fullscreenOnDoubleClick check it before activating.
+    //   • hideEndCards is a *sub-feature* of hideVideoEndContent (see
+    //     `{ isSubFeature: true, parentId: 'hideVideoEndContent' }` on the
+    //     hideEndCards definition), redundant when the parent is on, never
+    //     conflicting.
+});
+
+// The value that switches a conflict partner off: false for a toggle, the
+// schema default for anything else (codecSelector's "auto"). Writing false
+// into a string setting failed validation and rolled the whole save back.
+function settingConflictOffValue(key) {
+    const entry = findSettingEntry(key);
+    return !entry || entry.type === "boolean" ? false : entry.defaultValue;
+}
+
+// Whether a setting is on for conflict purposes. The stored bag is sparse, so
+// an absent key reads as its schema default (Always Best Quality is on by
+// default and usually absent).
+function isSettingConflictOn(key, settings) {
+    const entry = findSettingEntry(key);
+    const bag = settings && typeof settings === "object" ? settings : {};
+    const value = Object.prototype.hasOwnProperty.call(bag, key) ? bag[key] : entry?.defaultValue;
+    if (!entry || entry.type === "boolean") return !!value;
+    return !settingsValuesEqual(value, settingConflictOffValue(key));
+}
+
+// Switches off every partner of `key` that is on, when `key` itself is on.
+// Returns a new bag and the keys it switched off; the input is not mutated.
+function resolveSettingConflicts(settings, key) {
+    const bag = settings && typeof settings === "object" ? settings : {};
+    const rule = Object.prototype.hasOwnProperty.call(SETTING_CONFLICTS, key) ? SETTING_CONFLICTS[key] : null;
+    if (!rule || !isSettingConflictOn(key, bag)) return { settings: bag, switchedOff: [] };
+    const next = { ...bag };
+    const switchedOff = [];
+    for (const other of rule.conflicts) {
+        if (!isSettingConflictOn(other, next)) continue;
+        next[other] = settingConflictOffValue(other);
+        switchedOff.push(other);
+    }
+    return { settings: switchedOff.length ? next : bag, switchedOff };
+}
+
 const HUMANISE_SHORT_FORMS = new Set([
     "api", "ai", "url", "osd", "rgb", "rgba", "css", "bg", "fps",
     "hd", "id", "ids", "ip", "json", "kb", "lru", "nsfw",
@@ -1232,7 +1307,8 @@ if (typeof module !== "undefined" && module.exports) {
         settingsValuesEqual, getChangedSettings,
         isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
         humanizeSettingKey, resolveSettingKey, applySettingAliases,
-        isRetiredShippedId
+        isRetiredShippedId,
+        SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts
     };
 }
 if (typeof globalThis !== "undefined") {
@@ -1244,6 +1320,7 @@ if (typeof globalThis !== "undefined") {
         settingsValuesEqual, getChangedSettings,
         isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
         humanizeSettingKey, resolveSettingKey, applySettingAliases,
-        isRetiredShippedId
+        isRetiredShippedId,
+        SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts
     };
 }

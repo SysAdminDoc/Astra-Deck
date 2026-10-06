@@ -284,6 +284,12 @@
                 const value = clampValue(requestedValue, entry);
                 let next = { ...current, [key]: value };
                 next = normalizeProfileModel(next, key, value);
+                // A single-key write is someone flipping one control (the popup
+                // and the side panel), so it switches off the other side of a
+                // conflict pair the way the in-page panel does.
+                const resolved = schemaScope?.resolveSettingConflicts?.(next, key);
+                const switchedOff = resolved?.switchedOff || [];
+                if (switchedOff.length) next = resolved.settings;
                 const blockedDefault = entry.type === 'boolean' ? false : entry.defaultValue;
                 if (isEntryBlockedByArtifact(entry)
                     && !sameValue(value, blockedDefault)) {
@@ -304,6 +310,7 @@
                     key,
                     previous: cloneValue(current[key]),
                     value: cloneValue(next[key]),
+                    switchedOff: [...switchedOff],
                     settings: copySettings(next)
                 };
                 if (typeof options.onPersisted === 'function') await options.onPersisted(result);

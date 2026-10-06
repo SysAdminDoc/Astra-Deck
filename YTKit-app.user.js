@@ -5458,22 +5458,7 @@ const STORAGE_KEYS = Object.freeze({
 			hasComments() { return true; },
 			getChatEl() { return document.querySelector('ytd-live-chat-frame#chat, ytd-live-chat-frame, #chat'); }
 		};
-	const CONFLICT_MAP = {
-		hideRelatedVideos: { conflicts: [], note: 'expandVideoWidth depends on this' },
-		listFeedLayout: { conflicts: ['videosPerRow'], reason: 'Row feed layout and fixed grid columns cannot control the same cards' },
-		videosPerRow: { conflicts: ['listFeedLayout'], reason: 'Fixed grid columns and row feed layout cannot control the same cards' },
-		hideSidebar: { conflicts: ['hiddenChatElementsManager', 'hiddenGuideElementsManager'], reason: 'Sidebar hidden removes chat access and makes per-Guide-item hiding moot' },
-		removeAllShorts: { conflicts: ['redirectShorts'], reason: 'Removed shorts cannot be redirected' },
-		persistentSpeed: { conflicts: ['perChannelSpeed'], reason: 'Global speed overrides per-channel speed' },
-		perChannelSpeed: { conflicts: ['persistentSpeed'], reason: 'Per-channel speed overrides global speed' },
-		forceH264: { conflicts: ['codecSelector'], reason: 'forceH264 silently overrides codecSelector, so it is disabled for predictability' },
-		codecSelector: { conflicts: ['forceH264'], reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' },
-		fitPlayerToWindow: { conflicts: ['stickyVideo'], reason: 'Both control player positioning on watch pages' },
-		audioOnlyPlayback: { conflicts: ['autoMaxResolution', 'qualityProfileMatrix'], reason: 'Audio-only pins the lowest quality, and a best-quality or per-context target would fight it through the same player API' },
-		autoMaxResolution: { conflicts: ['audioOnlyPlayback'], reason: 'Best quality and audio-only pin opposite ends of the same quality API' },
-		qualityProfileMatrix: { conflicts: ['audioOnlyPlayback'], reason: 'Per-context quality targets and audio-only pin opposite ends of the same quality API' },
-		stickyVideo: { conflicts: ['fitPlayerToWindow'], reason: 'Both control player positioning on watch pages' },
-	};
+	const CONFLICT_MAP = globalThis.__YTKIT_SETTINGS_SCHEMA__?.SETTING_CONFLICTS || {};
 	const FEATURE_PREVIEWS = {
 			logoToSubscriptions: 'Logo click goes to /feed/subscriptions instead of homepage',
 		widenSearchBar: 'Search bar expands ~480px wider to fill header space',
@@ -33575,11 +33560,12 @@ const STORAGE_KEYS = Object.freeze({
 					}
 					if (isEnabled && CONFLICT_MAP[featureId]) {
 						const conflicts = CONFLICT_MAP[featureId].conflicts || [];
-						const activeConflicts = conflicts.filter(cid => appState.settings[cid]);
+						const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+						const activeConflicts = conflicts.filter(cid => conflictRules?.isSettingConflictOn?.(cid, appState.settings) ?? !!appState.settings[cid]);
 						if (activeConflicts.length > 0) {
 							activeConflicts.forEach(cid => {
 								const cf = getFeatureById(cid);
-								appState.settings[cid] = false;
+								appState.settings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
 								settingsManager.save(appState.settings);
 								if (cf?._initialized) {
 									try { destroyFeatureLifecycle(cf, 'conflict'); } catch(err) {
@@ -33592,6 +33578,8 @@ const STORAGE_KEYS = Object.freeze({
 									const switchEl = toggle.closest('.ytkit-switch');
 									if (switchEl) switchEl.classList.remove('active');
 								}
+								const select = document.getElementById(`ytkit-select-${cid}`);
+								if (select) select.value = String(appState.settings[cid]);
 							});
 							const conflictNames = activeConflicts.map(cid => {
 								const cf = getFeatureById(cid);
@@ -33708,6 +33696,27 @@ const STORAGE_KEYS = Object.freeze({
 				const settingKey = feature?.settingKey || featureId;
 				const newValue = e.target.value;
 				appState.settings[settingKey] = newValue;
+				const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+				const selectConflicts = conflictRules?.resolveSettingConflicts?.(appState.settings, settingKey)?.switchedOff || [];
+				for (const cid of selectConflicts) {
+					appState.settings[cid] = conflictRules.settingConflictOffValue(cid);
+					const cf = getFeatureById(cid);
+					if (cf?._initialized) {
+						try { destroyFeatureLifecycle(cf, 'conflict'); } catch (err) {
+							DebugManager.log('Conflict', `Destroy failed for "${cid}": ${err.message}`);
+						}
+					}
+					const toggle = document.querySelector(`[data-feature-id="${cid}"] input[type="checkbox"]`);
+					if (toggle) {
+						toggle.checked = false;
+						toggle.closest('.ytkit-switch')?.classList.remove('active');
+					}
+				}
+				if (selectConflicts.length) {
+					showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
+						.replace('{features}', () => selectConflicts.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', '))
+						.replace('{reason}', () => CONFLICT_MAP[settingKey]?.reason || ''), '#f59e0b', { duration: 5 });
+				}
 				settingsManager.save(appState.settings);
 				if (feature) {
 					if (typeof feature.destroy === 'function') {
@@ -34129,10 +34138,12 @@ const STORAGE_KEYS = Object.freeze({
 					...previousSettings,
 					[fid]: !previousSettings[fid]
 				};
+				const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+				const isConflictOn = (cid, settings) => conflictRules?.isSettingConflictOn?.(cid, settings) ?? !!settings[cid];
 				const conflictsOff = nextSettings[fid] && CONFLICT_MAP[fid]
-					? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => previousSettings[cid])
+					? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => isConflictOn(cid, previousSettings))
 					: [];
-				for (const cid of conflictsOff) nextSettings[cid] = false;
+				for (const cid of conflictsOff) nextSettings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
 				const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
 				const reconcile = (settings, source) => {
 					if (useSharedReconciliation) {
@@ -34144,7 +34155,7 @@ const STORAGE_KEYS = Object.freeze({
 						for (const cid of conflictsOff) {
 							const conflicting = getFeatureById(cid);
 							if (!conflicting) continue;
-							if (settings[cid]) initFeatureLifecycle(conflicting, source);
+							if (isConflictOn(cid, settings)) initFeatureLifecycle(conflicting, source);
 							else if (conflicting._initialized) destroyFeatureLifecycle(conflicting, 'conflict');
 						}
 						if (settings[fid]) initFeatureLifecycle(feat, source);
@@ -34175,7 +34186,7 @@ const STORAGE_KEYS = Object.freeze({
 					document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
 					card.disabled = false;
 				}
-				const switchedOff = conflictsOff.filter((cid) => appState.settings[cid] === false);
+				const switchedOff = conflictsOff.filter((cid) => !isConflictOn(cid, appState.settings));
 				if (appState.settings[fid] === true && switchedOff.length) {
 					const names = switchedOff.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', ');
 					const reason = CONFLICT_MAP[fid].reason || t('settingsConflictWithTpl', 'conflicts with {featureName}')
@@ -34441,14 +34452,15 @@ const STORAGE_KEYS = Object.freeze({
 				if (f._arrayKey) return;
 				if (!shouldFeatureBeActive(f, appState.settings, appState.currentPage)) return;
 				if (f._initialized) return;
-				if (CONFLICT_MAP[f.id]) {
+				const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+				if (CONFLICT_MAP[f.id] && (conflictRules?.isSettingConflictOn?.(f.id, appState.settings) ?? true)) {
 					const activeConflicts = (CONFLICT_MAP[f.id].conflicts || []).filter(cid => {
 						const cf = getFeatureById(cid);
-						return cf && cf._initialized;
+						return cf && cf._initialized && (conflictRules?.isSettingConflictOn?.(cid, appState.settings) ?? true);
 					});
 					if (activeConflicts.length > 0) {
 						DebugManager.log('Init', `Skipping "${f.id}" — conflicts with already-initialized: ${activeConflicts.join(', ')}`);
-						appState.settings[f.id] = false;
+						appState.settings[f.id] = conflictRules?.settingConflictOffValue?.(f.id) ?? false;
 						settingsManager.save(appState.settings);
 						return;
 					}

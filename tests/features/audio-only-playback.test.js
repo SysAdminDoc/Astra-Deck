@@ -41,11 +41,10 @@ test('audio-only is a real setting, off by default, and declares its conflicts',
     // It pins the CHEAPEST stream; the quality-raising features pin the
     // opposite through the same player call, so the conflict must be declared
     // in both directions or whichever ran last silently wins.
-    const start = sources.ytkit.indexOf('const CONFLICT_MAP');
-    const map = sources.ytkit.slice(start, start + 3500);
-    assert.match(map, /audioOnlyPlayback: \{ conflicts: \['autoMaxResolution', 'qualityProfileMatrix'\]/);
-    assert.match(map, /autoMaxResolution: \{ conflicts: \['audioOnlyPlayback'\]/);
-    assert.match(map, /qualityProfileMatrix: \{ conflicts: \['audioOnlyPlayback'\]/);
+    // The map lives in the schema module now, shared with the popup and side panel.
+    assert.deepEqual([...schema.SETTING_CONFLICTS.audioOnlyPlayback.conflicts], ['autoMaxResolution', 'qualityProfileMatrix']);
+    assert.deepEqual([...schema.SETTING_CONFLICTS.autoMaxResolution.conflicts], ['audioOnlyPlayback']);
+    assert.deepEqual([...schema.SETTING_CONFLICTS.qualityProfileMatrix.conflicts], ['audioOnlyPlayback']);
 });
 
 test('the cheapest-quality picker walks the ladder the player actually offers', () => {

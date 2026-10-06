@@ -688,3 +688,115 @@ test('a choice for a number setting is saved as a number', async () => {
         globalThis.document = originalDocument;
     }
 });
+
+// Force H.264 and the codec selector are a conflict pair, but the selector is
+// a string setting. The panel switched it "off" by writing false, which the
+// worker rejected, so the whole save rolled back behind an error. And picking
+// a codec while Force H.264 was on changed nothing: H.264 kept playing.
+function codecPanelHarness(settings) {
+    const { SETTING_CONFLICTS } = require('../../extension/core/settings-schema');
+    const events = new Map();
+    const appState = { settings: { ...settings } };
+    const saved = [];
+    const toasts = [];
+    const destroyed = [];
+    const features = {
+        forceH264: { id: 'forceH264', name: 'Force H.264 Codec', _initialized: settings.forceH264 === true },
+        codecSelector: { id: 'codecSelector', type: 'select', name: 'Codec Selector', _initialized: true }
+    };
+    const panel = { contains: () => true };
+    const originalDocument = globalThis.document;
+    globalThis.document = {
+        body: { classList: { contains: () => true, toggle() {} } },
+        documentElement: { classList: { toggle() {} }, style: {} },
+        activeElement: null,
+        getElementById: (id) => (id === 'ytkit-settings-panel' ? panel : null),
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener(type, handler) { events.set(type, handler); },
+        removeEventListener() {}
+    };
+    const api = loadModule().createSettingsPanelRuntime({
+        PANEL_OPEN_CLASS,
+        CONFLICT_MAP: SETTING_CONFLICTS,
+        appState,
+        DebugManager: { log() {} },
+        StorageManager: { get: (_key, fallback) => fallback, set() {}, setSync: async () => ({ ok: true }) },
+        shouldBuildPrimaryUI: () => true,
+        buildSettingsPanel: () => panel,
+        createToast() {},
+        injectStyle: () => ({ remove() {} }),
+        isBooleanFeature: (feature) => feature?.id === 'forceH264',
+        getFeatureById: (id) => features[id],
+        getFeatureName: (feature) => feature?.name,
+        getFeatureDescription: () => '',
+        getFocusableUiElements: () => [],
+        liveFeatureList: [],
+        requestFeatureOptionalHosts: async () => true,
+        safeInitFeature() {},
+        safeDestroyFeature() {},
+        initFeatureLifecycle(feature) { feature._initialized = true; },
+        destroyFeatureLifecycle(feature) { destroyed.push(feature.id); feature._initialized = false; },
+        settingsManager: {
+            defaults: { forceH264: false, codecSelector: 'auto' },
+            save(nextSettings) {
+                saved.push({ ...nextSettings });
+                return Promise.resolve({ ok: true, settings: { ...nextSettings } });
+            }
+        },
+        showToast: (message) => toasts.push(message),
+        t: (_key, fallback) => fallback
+    });
+    api.attachUIEventListeners();
+    const restore = () => { globalThis.document = originalDocument; };
+    return { events, appState, saved, toasts, destroyed, restore };
+}
+
+test('naming a codec while Force H.264 is on switches Force H.264 off and says so', async () => {
+    const h = codecPanelHarness({ forceH264: true, codecSelector: 'auto' });
+    try {
+        const card = { dataset: { featureId: 'codecSelector' } };
+        await h.events.get('input')({ target: {
+            value: 'av1',
+            selectedIndex: 0,
+            options: [{ text: 'Force AV1' }],
+            matches: (selector) => selector === '.ytkit-select',
+            closest: (selector) => (selector === '[data-feature-id]' ? card : null)
+        } });
+        assert.equal(h.appState.settings.codecSelector, 'av1');
+        assert.equal(h.appState.settings.forceH264, false);
+        assert.deepEqual({ codec: h.saved.at(-1).codecSelector, h264: h.saved.at(-1).forceH264 }, { codec: 'av1', h264: false });
+        assert.ok(h.destroyed.includes('forceH264'));
+        assert.match(h.toasts.join('\n'), /Auto-disabled Force H\.264 Codec/);
+    } finally {
+        h.restore();
+    }
+});
+
+test('turning Force H.264 on sends a chosen codec back to auto, never to false', async () => {
+    for (const [codec, expected, toasted] of [['av1', 'auto', true], ['auto', 'auto', false]]) {
+        const h = codecPanelHarness({ forceH264: false, codecSelector: codec });
+        try {
+            const card = {
+                dataset: { featureId: 'forceH264' },
+                classList: { toggle() {}, contains: () => false, add() {}, remove() {} },
+                querySelector: () => null
+            };
+            const switchEl = { classList: { toggle() {}, add() {}, remove() {} } };
+            await h.events.get('change')({ target: {
+                checked: true,
+                disabled: false,
+                setAttribute() {},
+                removeAttribute() {},
+                matches: (selector) => selector === '.ytkit-feature-cb',
+                closest: (selector) => (selector === '[data-feature-id]' ? card : selector === '.ytkit-switch' ? switchEl : null)
+            } });
+            assert.equal(h.appState.settings.forceH264, true, codec);
+            assert.equal(h.appState.settings.codecSelector, expected, codec);
+            assert.ok(h.saved.every((entry) => typeof entry.codecSelector === 'string'), `${codec}: a string setting is never saved as false`);
+            assert.equal(/Auto-disabled/.test(h.toasts.join('\n')), toasted, `${codec}: toast only when a codec was switched back`);
+        } finally {
+            h.restore();
+        }
+    }
+});

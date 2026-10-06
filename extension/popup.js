@@ -1643,6 +1643,19 @@ function formatPermissionCleanupFailure(cleanup) {
         .replace('{host}', cleanup.hostname || t('optionalHostPrevious', 'the previous host'));
 }
 
+// The worker switches off the other side of a conflict pair; name what it
+// turned off, with the same wording the in-page panel uses.
+function conflictNoticeText(key, switchedOff) {
+    const schema = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+    const nameOf = (other) => {
+        const label = schema?.findSettingEntry?.(other)?.labelKey;
+        return (typeof label === 'string' && label.trim()) || schema?.humanizeSettingKey?.(other) || other;
+    };
+    return t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
+        .replace('{features}', () => switchedOff.map(nameOf).join(', '))
+        .replace('{reason}', () => schema?.SETTING_CONFLICTS?.[key]?.reason || '');
+}
+
 async function writeSetting(key, value) {
     const previousSettings = popupState.settings;
     await requestOptionalHostsForSetting(key, value);
@@ -1654,6 +1667,7 @@ async function writeSetting(key, value) {
         throw error;
     }
     popupState.settings = result.settings;
+    if (result.switchedOff?.length) showStatus(conflictNoticeText(key, result.switchedOff), 'info', 6000);
     let permissionCleanup = { ok: true, removed: false, hostname: '' };
     if (key === 'hideVideosFilterListUrl') {
         permissionCleanup = await reconcileFilterListGrantTransition(previousSettings, result.settings);
@@ -2389,11 +2403,12 @@ function installToggleClickDelegation() {
         row.disabled = true;
         try {
             const next = !isQuickToggleOn(popupState.settings, key);
-            await writeSetting(key, next);
+            const written = await writeSetting(key, next);
             render(popupState.settings, q.value);
             const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
             if (refocus) refocus.focus();
-            showStatus(t('toggleStatusTpl', '{name} {state}.')
+            // writeSetting already named what a conflict switched off.
+            if (!written.switchedOff?.length) showStatus(t('toggleStatusTpl', '{name} {state}.')
                 .replace('{name}', () => tName)
                 .replace('{state}', next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')), 'success');
         } catch (error) {
@@ -5205,11 +5220,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             resetBtn.addEventListener('click', async () => {
                 resetBtn.disabled = true;
                 try {
-                    await writeSetting(entry.key, entry.defaultValue);
+                    const written = await writeSetting(entry.key, entry.defaultValue);
                     // Tpl + token: the catalogue wins over this fallback in the
                     // extension, and the old tokenless message meant every
                     // reset toasted the same context-free "… reset to default."
-                    showStatus(t('statusPerKeyResetTpl', '{key} reset to default.')
+                    if (!written.switchedOff?.length) showStatus(t('statusPerKeyResetTpl', '{key} reset to default.')
                         .replace('{key}', () => visibleLabel), 'ok', 2400);
                     renderSchemaOverview();
                     // The rebuild removed this reset button (value is back

@@ -296,7 +296,9 @@ test('userscript Quick Settings turns off the other side of a conflict pair', as
             },
             showToast: (message) => toasts.push(message),
             t: (key, fallback) => fallback,
-            DebugManager: { log() {} }
+            DebugManager: { log() {} },
+            // Loaded before ytkit.js in every build; it holds the conflict map.
+            __YTKIT_SETTINGS_SCHEMA__: require('../extension/core/settings-schema')
         });
         api.openPageModal();
         const [card, fitCard] = documentRef.querySelectorAll('.ytkit-pm-card');

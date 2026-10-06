@@ -4,22 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P2 — Popup and side panel toggles skip the conflict pairs
-  Why: `CONFLICT_MAP` lives only in `ytkit.js`. The in-page panel and quick settings switch the
-  other side of a pair off, but the popup's settings list and the side panel write one key
-  through the worker. Turning on Audio-Only from the popup while Always Best Quality is on
-  (the default) leaves both running in open tabs, and the next page load keeps whichever comes
-  first in feature order and saves the other off, so the popup choice quietly reverts. Pairs
-  reachable from the popup include persistentSpeed/perChannelSpeed and
-  removeAllShorts/redirectShorts too.
-  Where: `CONFLICT_MAP` in `extension/ytkit.js` (~7367), `writeSetting` in `extension/popup.js`
-  (~1646), `extension/sidepanel.js` (~690). The map is needed in a third place, so it moves to a
-  shared core module.
-  Acceptance: a test where the popup turns Audio-Only on with Always Best Quality on, and the
-  stored settings end with Always Best Quality off and a notice naming it; the same for the
-  side panel; one map shared by all three surfaces.
-  Complexity: M
-
 - [ ] P2 — Adversarial review of the 2026-09-28 bridge commits
   Why: the deep audit's closing self-audit (a fresh-context reviewer that sees only the diff and
   the CHANGELOG) wasn't run because the pass was stopped early. The bridge commits change a

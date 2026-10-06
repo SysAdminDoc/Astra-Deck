@@ -7380,47 +7380,9 @@ const STORAGE_KEYS = Object.freeze({
         };
 
     // ─── Conflict Detection Map ───
-    // INVARIANT: this map enumerates only pairs that are *mutually exclusive*
-    // in the underlying mechanism. Pairs that look like conflicts but were
-    // decoupled to cooperate are listed in the comments below so future
-    // audits don't accidentally re-add them. The shape is pinned by
-    // `v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs`
-    // in tests/hardening.test.js.
-    const CONFLICT_MAP = {
-        hideRelatedVideos: { conflicts: [], note: 'expandVideoWidth depends on this' },
-        listFeedLayout: { conflicts: ['videosPerRow'], reason: 'Row feed layout and fixed grid columns cannot control the same cards' },
-        videosPerRow: { conflicts: ['listFeedLayout'], reason: 'Fixed grid columns and row feed layout cannot control the same cards' },
-        hideSidebar: { conflicts: ['hiddenChatElementsManager', 'hiddenGuideElementsManager'], reason: 'Sidebar hidden removes chat access and makes per-Guide-item hiding moot' },
-        removeAllShorts: { conflicts: ['redirectShorts'], reason: 'Removed shorts cannot be redirected' },
-        persistentSpeed: { conflicts: ['perChannelSpeed'], reason: 'Global speed overrides per-channel speed' },
-        perChannelSpeed: { conflicts: ['persistentSpeed'], reason: 'Per-channel speed overrides global speed' },
-        // forceH264 silently overrides codecSelector via _syncMainWorldCodec() —
-        // user sets codecSelector=AV1 but gets H.264 with no UI feedback. Declared
-        // as a hard conflict so the popup toast surfaces the silent override.
-        forceH264: { conflicts: ['codecSelector'], reason: 'forceH264 silently overrides codecSelector, so it is disabled for predictability' },
-        codecSelector: { conflicts: ['forceH264'], reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' },
-        fitPlayerToWindow: { conflicts: ['stickyVideo'], reason: 'Both control player positioning on watch pages' },
-        // Audio-only pins the CHEAPEST stream; every quality-raising
-        // feature pins the opposite through the same MAIN-world call, so
-        // whichever ran last silently won.
-        audioOnlyPlayback: { conflicts: ['autoMaxResolution', 'qualityProfileMatrix'], reason: 'Audio-only pins the lowest quality, and a best-quality or per-context target would fight it through the same player API' },
-        autoMaxResolution: { conflicts: ['audioOnlyPlayback'], reason: 'Best quality and audio-only pin opposite ends of the same quality API' },
-        qualityProfileMatrix: { conflicts: ['audioOnlyPlayback'], reason: 'Per-context quality targets and audio-only pin opposite ends of the same quality API' },
-        stickyVideo: { conflicts: ['fitPlayerToWindow'], reason: 'Both control player positioning on watch pages' },
-        // The following pairs LOOK like conflicts but were intentionally
-        // decoupled and now cooperate. Do not re-add to the map without
-        // also undoing the mechanism that made them safe:
-        //   • focusedMode now hides only related videos, not all of #secondary —
-        //     cooperates with transcriptViewer / timestampBookmarks / stickyVideo.
-        //   • autoPauseOnSwitch and pauseOtherTabs tag pause reasons — both can
-        //     fire on the same media element without competing.
-        //   • popOutPlayer sets __ytkit_videoPopped; pipButton and
-        //     fullscreenOnDoubleClick check it before activating.
-        //   • hideEndCards is a *sub-feature* of hideVideoEndContent (see
-        //     `{ isSubFeature: true, parentId: 'hideVideoEndContent' }` on the
-        //     hideEndCards definition) — redundant when the parent is on,
-        //     never conflicting.
-    };
+    // One map for every surface, kept in core/settings-schema.js with the
+    // value-aware helpers the popup and side panel (through the worker) use too.
+    const CONFLICT_MAP = globalThis.__YTKIT_SETTINGS_SCHEMA__?.SETTING_CONFLICTS || {};
 
 
 
@@ -44385,11 +44347,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
                         const conflicts = CONFLICT_MAP[featureId].conflicts || [];
-                        const activeConflicts = conflicts.filter(cid => appState.settings[cid]);
+                        // Value-aware, so codecSelector counts only while it names a codec and
+                        // is switched back to "auto", never to false (which fails validation).
+                        const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+                        const activeConflicts = conflicts.filter(cid => conflictRules?.isSettingConflictOn?.(cid, appState.settings) ?? !!appState.settings[cid]);
                         if (activeConflicts.length > 0) {
                             activeConflicts.forEach(cid => {
                                 const cf = getFeatureById(cid);
-                                appState.settings[cid] = false;
+                                appState.settings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
                                 settingsManager.save(appState.settings);
                                 if (cf?._initialized) {
                                     try { destroyFeatureLifecycle(cf, 'conflict'); } catch(err) {
@@ -44403,6 +44368,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     const switchEl = toggle.closest('.ytkit-switch');
                                     if (switchEl) switchEl.classList.remove('active');
                                 }
+                                const select = document.getElementById(`ytkit-select-${cid}`);
+                                if (select) select.value = String(appState.settings[cid]);
                             });
                             const conflictNames = activeConflicts.map(cid => {
                                 const cf = getFeatureById(cid);
@@ -44547,6 +44514,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const newValue = e.target.value;
 
                 appState.settings[settingKey] = newValue;
+                // Naming a codec switches Force H.264 off, like a toggle's conflict pair.
+                const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+                const selectConflicts = conflictRules?.resolveSettingConflicts?.(appState.settings, settingKey)?.switchedOff || [];
+                for (const cid of selectConflicts) {
+                    appState.settings[cid] = conflictRules.settingConflictOffValue(cid);
+                    const cf = getFeatureById(cid);
+                    if (cf?._initialized) {
+                        try { destroyFeatureLifecycle(cf, 'conflict'); } catch (err) {
+                            DebugManager.log('Conflict', `Destroy failed for "${cid}": ${err.message}`);
+                        }
+                    }
+                    const toggle = document.querySelector(`[data-feature-id="${cid}"] input[type="checkbox"]`);
+                    if (toggle) {
+                        toggle.checked = false;
+                        toggle.closest('.ytkit-switch')?.classList.remove('active');
+                    }
+                }
+                if (selectConflicts.length) {
+                    showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
+                        .replace('{features}', () => selectConflicts.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', '))
+                        .replace('{reason}', () => CONFLICT_MAP[settingKey]?.reason || ''), '#f59e0b', { duration: 5 });
+                }
                 settingsManager.save(appState.settings);
 
                 // Reinitialize the feature to apply changes immediately
@@ -46591,10 +46580,13 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                 };
                 // Turning a feature on switches off the other side of each
                 // conflict pair, the same as the settings panel toggle.
+                // Value-aware, so codecSelector goes back to "auto", never false.
+                const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+                const isConflictOn = (cid, settings) => conflictRules?.isSettingConflictOn?.(cid, settings) ?? !!settings[cid];
                 const conflictsOff = nextSettings[fid] && CONFLICT_MAP[fid]
-                    ? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => previousSettings[cid])
+                    ? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => isConflictOn(cid, previousSettings))
                     : [];
-                for (const cid of conflictsOff) nextSettings[cid] = false;
+                for (const cid of conflictsOff) nextSettings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
                 const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
                 const reconcile = (settings, source) => {
                     if (useSharedReconciliation) {
@@ -46606,7 +46598,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                         for (const cid of conflictsOff) {
                             const conflicting = getFeatureById(cid);
                             if (!conflicting) continue;
-                            if (settings[cid]) initFeatureLifecycle(conflicting, source);
+                            if (isConflictOn(cid, settings)) initFeatureLifecycle(conflicting, source);
                             else if (conflicting._initialized) destroyFeatureLifecycle(conflicting, 'conflict');
                         }
                         if (settings[fid]) initFeatureLifecycle(feat, source);
@@ -46644,7 +46636,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                 }
                 // After the save settles, outside the try: a toast that fails
                 // must not roll a saved change back.
-                const switchedOff = conflictsOff.filter((cid) => appState.settings[cid] === false);
+                const switchedOff = conflictsOff.filter((cid) => !isConflictOn(cid, appState.settings));
                 if (appState.settings[fid] === true && switchedOff.length) {
                     const names = switchedOff.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', ');
                     const reason = CONFLICT_MAP[fid].reason || t('settingsConflictWithTpl', 'conflicts with {featureName}')
@@ -53173,15 +53165,19 @@ html:not([dark]) .ytkit-sb-channel-chip {
                 if (f._arrayKey) return;
                 if (!shouldFeatureBeActive(f, appState.settings, appState.currentPage)) return;
                 if (f._initialized) return;
-                // Conflict enforcement at init time — skip if a conflicting feature already initialized
-                if (CONFLICT_MAP[f.id]) {
+                // Conflict enforcement at init time — skip if a conflicting feature already initialized.
+                // Value-aware: codecSelector is a select and always initialized, but it only
+                // conflicts while it names a codec, and it goes back to "auto", never to false
+                // (the worker rejected that save on every page load with Force H.264 on).
+                const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+                if (CONFLICT_MAP[f.id] && (conflictRules?.isSettingConflictOn?.(f.id, appState.settings) ?? true)) {
                     const activeConflicts = (CONFLICT_MAP[f.id].conflicts || []).filter(cid => {
                         const cf = getFeatureById(cid);
-                        return cf && cf._initialized;
+                        return cf && cf._initialized && (conflictRules?.isSettingConflictOn?.(cid, appState.settings) ?? true);
                     });
                     if (activeConflicts.length > 0) {
                         DebugManager.log('Init', `Skipping "${f.id}" — conflicts with already-initialized: ${activeConflicts.join(', ')}`);
-                        appState.settings[f.id] = false;
+                        appState.settings[f.id] = conflictRules?.settingConflictOffValue?.(f.id) ?? false;
                         settingsManager.save(appState.settings);
                         return;
                     }

@@ -680,6 +680,16 @@ async function requestOptionalHostsForToggle(key, value) {
     }
 }
 
+// The worker switches off the other side of a conflict pair; name what it
+// turned off, with the same wording the in-page panel uses.
+function conflictNoticeText(key, switchedOff) {
+    const reason = globalThis.__YTKIT_SETTINGS_SCHEMA__?.SETTING_CONFLICTS?.[key]?.reason || '';
+    return t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
+        .replace('{features}', () => switchedOff.map(formatHumanName).join(', '))
+        .replace('{reason}', () => reason);
+}
+
+// Resolves to the worker's result on success (it carries `switchedOff`), or false.
 async function writeSetting(key, value) {
     try {
         if (!_settingsMutationController) {
@@ -690,7 +700,7 @@ async function writeSetting(key, value) {
         const result = await _settingsMutationController.mutate(key, value);
         if (!result.ok) return false;
         _settingsState = result.settings;
-        return true;
+        return result;
     } catch (_) {
         return false;
     }
@@ -909,6 +919,11 @@ function renderSettings(filter) {
                     const refocusTarget = settingsList?.querySelector(`[title^="${CSS.escape(entry.key)} "]`);
                     if (refocusTarget) refocusTarget.focus();
                 } catch (_) { /* reason: CSS.escape or querySelector may fail */ }
+                const switchedOff = saved.switchedOff || [];
+                if (switchedOff.length) {
+                    setRefreshStatus(conflictNoticeText(entry.key, switchedOff), 'warn');
+                    return;
+                }
                 setRefreshStatus(
                     t(next ? 'spStatusEnabledTpl' : 'spStatusDisabledTpl', next ? '{name} enabled' : '{name} disabled')
                         .replace('{name}', () => humanName),

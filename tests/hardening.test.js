@@ -10742,10 +10742,16 @@ test('v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs', () => 
     // hideEndCards parent/sub of hideVideoEndContent). The test pins the
     // current shape so a future audit doesn't silently re-add pairs that
     // would undo the cooperative mechanism.
-    const mapStart = ytkitSource.indexOf('const CONFLICT_MAP = {');
-    assert.ok(mapStart > -1, 'ytkit.js must declare CONFLICT_MAP');
-    const mapEnd = ytkitSource.indexOf('};', mapStart);
-    const mapSrc = ytkitSource.slice(mapStart, mapEnd + 2);
+    //
+    // The map moved to core/settings-schema.js so the popup and side panel
+    // (through the worker) share it; ytkit.js must take it from there.
+    assert.match(ytkitSource, /const CONFLICT_MAP = globalThis\.__YTKIT_SETTINGS_SCHEMA__\?\.SETTING_CONFLICTS/,
+        'ytkit.js must use the shared conflict map');
+    const { SETTING_CONFLICTS } = require('../extension/core/settings-schema');
+    const schemaSource = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
+    const mapStart = schemaSource.indexOf('const SETTING_CONFLICTS = Object.freeze({');
+    assert.ok(mapStart > -1, 'settings-schema.js must declare SETTING_CONFLICTS');
+    const mapSrc = schemaSource.slice(mapStart, schemaSource.indexOf('\n});', mapStart) + 4);
 
     // Each canonical pair must be present in both directions (X conflicts
     // with Y, Y conflicts with X) so the auto-disable lookup at settings-
@@ -10757,20 +10763,18 @@ test('v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs', () => 
         ['listFeedLayout', 'videosPerRow'],
     ];
     for (const [a, b] of symmetricPairs) {
-        const aBlock = mapSrc.match(new RegExp(`${a}:\\s*\\{[^}]*\\}`));
-        const bBlock = mapSrc.match(new RegExp(`${b}:\\s*\\{[^}]*\\}`));
-        assert.ok(aBlock, `${a} must be a CONFLICT_MAP key`);
-        assert.ok(bBlock, `${b} must be a CONFLICT_MAP key`);
-        assert.match(aBlock[0], new RegExp(`'${b}'`),
+        assert.ok(SETTING_CONFLICTS[a], `${a} must be a CONFLICT_MAP key`);
+        assert.ok(SETTING_CONFLICTS[b], `${b} must be a CONFLICT_MAP key`);
+        assert.ok(SETTING_CONFLICTS[a].conflicts.includes(b),
             `${a}.conflicts must include '${b}' for symmetric auto-disable`);
-        assert.match(bBlock[0], new RegExp(`'${a}'`),
+        assert.ok(SETTING_CONFLICTS[b].conflicts.includes(a),
             `${b}.conflicts must include '${a}' for symmetric auto-disable`);
     }
 
     // Asymmetric / one-direction pairs.
-    assert.match(mapSrc, /hideSidebar:.*'hiddenChatElementsManager'/,
+    assert.ok(SETTING_CONFLICTS.hideSidebar.conflicts.includes('hiddenChatElementsManager'),
         'hideSidebar -> hiddenChatElementsManager conflict must remain');
-    assert.match(mapSrc, /removeAllShorts:.*'redirectShorts'/,
+    assert.ok(SETTING_CONFLICTS.removeAllShorts.conflicts.includes('redirectShorts'),
         'removeAllShorts -> redirectShorts conflict must remain');
 
     // The cooperative-pair comment block must remain so future readers see

@@ -16,6 +16,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Turning a setting on from the toolbar popup or the side panel now switches off the one it can't run alongside, the way the settings panel always has, and tells you which. Turning on Audio-Only from the popup used to leave Always Best Quality running too, and the next page load quietly switched Audio-Only back off.
+- Force H.264 and the codec picker get along again. Turning Force H.264 on in the settings panel came back with a "could not be saved" error, and every page load with it on retried a save that couldn't succeed. Picking a codec while Force H.264 is on now switches Force H.264 off and says so, where before H.264 kept playing anyway.
 - Features no longer flick on and back off when Astra saves two settings changes close together. A YouTube tab couldn't recognize its own saves coming back from storage, so an older save that landed late briefly undid the newer one. With Audio-Only and Always Best Quality both on, every page load dropped the video to 144p for a moment before Audio-Only shut off again.
 - The Subscriptions page's live and "Streamed" filters hide those videos again. YouTube's newer cards dropped the markers both filters looked for, so neither hid anything, and the live one could catch a normal video with "LIVE" in capitals in its title.
 - Disable Infinite Scroll actually stops the endless loading now. On search it kept pulling in the next page as you scrolled, with the Load More button sitting there doing nothing useful. Scrolling to the bottom now stops at the button, and each click loads one more page.

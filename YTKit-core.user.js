@@ -13103,6 +13103,46 @@ function applySettingAliases(settings) {
 	}
 	return { settings: out, renamed };
 }
+const SETTING_CONFLICTS = Object.freeze({
+	hideRelatedVideos: Object.freeze({ conflicts: Object.freeze([]), note: 'expandVideoWidth depends on this' }),
+	listFeedLayout: Object.freeze({ conflicts: Object.freeze(['videosPerRow']), reason: 'Row feed layout and fixed grid columns cannot control the same cards' }),
+	videosPerRow: Object.freeze({ conflicts: Object.freeze(['listFeedLayout']), reason: 'Fixed grid columns and row feed layout cannot control the same cards' }),
+	hideSidebar: Object.freeze({ conflicts: Object.freeze(['hiddenChatElementsManager', 'hiddenGuideElementsManager']), reason: 'Sidebar hidden removes chat access and makes per-Guide-item hiding moot' }),
+	removeAllShorts: Object.freeze({ conflicts: Object.freeze(['redirectShorts']), reason: 'Removed shorts cannot be redirected' }),
+	persistentSpeed: Object.freeze({ conflicts: Object.freeze(['perChannelSpeed']), reason: 'Global speed overrides per-channel speed' }),
+	perChannelSpeed: Object.freeze({ conflicts: Object.freeze(['persistentSpeed']), reason: 'Per-channel speed overrides global speed' }),
+	forceH264: Object.freeze({ conflicts: Object.freeze(['codecSelector']), reason: 'forceH264 silently overrides codecSelector, so it is disabled for predictability' }),
+	codecSelector: Object.freeze({ conflicts: Object.freeze(['forceH264']), reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' }),
+	fitPlayerToWindow: Object.freeze({ conflicts: Object.freeze(['stickyVideo']), reason: 'Both control player positioning on watch pages' }),
+	audioOnlyPlayback: Object.freeze({ conflicts: Object.freeze(['autoMaxResolution', 'qualityProfileMatrix']), reason: 'Audio-only pins the lowest quality, and a best-quality or per-context target would fight it through the same player API' }),
+	autoMaxResolution: Object.freeze({ conflicts: Object.freeze(['audioOnlyPlayback']), reason: 'Best quality and audio-only pin opposite ends of the same quality API' }),
+	qualityProfileMatrix: Object.freeze({ conflicts: Object.freeze(['audioOnlyPlayback']), reason: 'Per-context quality targets and audio-only pin opposite ends of the same quality API' }),
+	stickyVideo: Object.freeze({ conflicts: Object.freeze(['fitPlayerToWindow']), reason: 'Both control player positioning on watch pages' })
+});
+function settingConflictOffValue(key) {
+	const entry = findSettingEntry(key);
+	return !entry || entry.type === "boolean" ? false : entry.defaultValue;
+}
+function isSettingConflictOn(key, settings) {
+	const entry = findSettingEntry(key);
+	const bag = settings && typeof settings === "object" ? settings : {};
+	const value = Object.prototype.hasOwnProperty.call(bag, key) ? bag[key] : entry?.defaultValue;
+	if (!entry || entry.type === "boolean") return !!value;
+	return !settingsValuesEqual(value, settingConflictOffValue(key));
+}
+function resolveSettingConflicts(settings, key) {
+	const bag = settings && typeof settings === "object" ? settings : {};
+	const rule = Object.prototype.hasOwnProperty.call(SETTING_CONFLICTS, key) ? SETTING_CONFLICTS[key] : null;
+	if (!rule || !isSettingConflictOn(key, bag)) return { settings: bag, switchedOff: [] };
+	const next = { ...bag };
+	const switchedOff = [];
+	for (const other of rule.conflicts) {
+		if (!isSettingConflictOn(other, next)) continue;
+		next[other] = settingConflictOffValue(other);
+		switchedOff.push(other);
+	}
+	return { settings: switchedOff.length ? next : bag, switchedOff };
+}
 const HUMANISE_SHORT_FORMS = new Set([
 	"api", "ai", "url", "osd", "rgb", "rgba", "css", "bg", "fps",
 	"hd", "id", "ids", "ip", "json", "kb", "lru", "nsfw",
@@ -13147,7 +13187,8 @@ if (typeof module !== "undefined" && module.exports) {
 		settingsValuesEqual, getChangedSettings,
 		isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
 		humanizeSettingKey, resolveSettingKey, applySettingAliases,
-		isRetiredShippedId
+		isRetiredShippedId,
+		SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts
 	};
 }
 if (typeof globalThis !== "undefined") {
@@ -13159,7 +13200,8 @@ if (typeof globalThis !== "undefined") {
 		settingsValuesEqual, getChangedSettings,
 		isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
 		humanizeSettingKey, resolveSettingKey, applySettingAliases,
-		isRetiredShippedId
+		isRetiredShippedId,
+		SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts
 	};
 }
 };
@@ -13968,6 +14010,9 @@ __astraDeckRegistry["core/settings-controller.js"] = function (globalThis, self,
 				const value = clampValue(requestedValue, entry);
 				let next = { ...current, [key]: value };
 				next = normalizeProfileModel(next, key, value);
+				const resolved = schemaScope?.resolveSettingConflicts?.(next, key);
+				const switchedOff = resolved?.switchedOff || [];
+				if (switchedOff.length) next = resolved.settings;
 				const blockedDefault = entry.type === 'boolean' ? false : entry.defaultValue;
 				if (isEntryBlockedByArtifact(entry)
 					&& !sameValue(value, blockedDefault)) {
@@ -13988,6 +14033,7 @@ __astraDeckRegistry["core/settings-controller.js"] = function (globalThis, self,
 					key,
 					previous: cloneValue(current[key]),
 					value: cloneValue(next[key]),
+					switchedOff: [...switchedOff],
 					settings: copySettings(next)
 				};
 				if (typeof options.onPersisted === 'function') await options.onPersisted(result);
