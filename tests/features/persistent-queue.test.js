@@ -520,9 +520,17 @@ test('persistentQueue keeps the button on a plain video linked into a radio', ()
     mixBadge.textContent = 'Mix';
     mix.thumbnail.appendChild(mixBadge);
 
+    // A live stream has no running time either; its LIVE badge says it's one video.
+    const live = lockupCard(documentRef, 'https://www.youtube.com/watch?v=hhhhhhhhhhh&list=RDhhhhhhhhhhh&start_radio=1', 'Live radio');
+    const liveBadge = documentRef.createElement('badge-shape');
+    liveBadge.className = 'ytBadgeShapeHost ytBadgeShapeThumbnailLive';
+    liveBadge.textContent = 'LIVE';
+    live.thumbnail.appendChild(liveBadge);
+
     feature._addButtons();
     assert.equal(byClass(video.thumbnail, 'ytkit-queue-btn').length, 1, 'a radio-linked video is still one video');
     assert.equal(byClass(mix.thumbnail, 'ytkit-queue-btn').length, 0);
+    assert.equal(byClass(live.thumbnail, 'ytkit-queue-btn').length, 1, 'a radio-linked live stream is one video');
 });
 
 test('persistentQueue puts titles into labels as written, dollar signs included', () => {

@@ -260,10 +260,9 @@ test('the Load More button is built next to the continuation and releases it on 
     const button = wrapper.children[0];
     assert.equal(button.textContent, 'Load More');
     assert.equal(button.className, 'ytkit-load-more-btn');
-    assert.equal(continuation.getAttribute('ytkit-load-more'), '1');
-    // Chrome reports a laid-out zero-height target as intersecting, so only
-    // display:none keeps YouTube's observer from loading the next page.
-    assert.equal(continuation.style.display, 'none', 'the continuation must leave layout');
+    assert.equal(continuation.getAttribute('ytkit-load-more'), '1', 'the hiding rule keys on "1"');
+    // Inline display belongs to Video Hider's Subscriptions load blocker.
+    assert.equal(continuation.style.display, '', 'hidden by the rule, never inline');
 
     button.onclick();
 
@@ -271,14 +270,13 @@ test('the Load More button is built next to the continuation and releases it on 
     assert.equal(continuation.getAttribute('ytkit-load-more'), 'released',
         'the value the !important rule keys on must change');
     assert.equal(feed.children.length, 1, 'the wrapper is removed once it has been used');
-    assert.equal(continuation.style.display, '', 'the continuation is back in layout for YouTube to load');
     assert.equal(continuation.scrolled, true);
 
     // Removing the wrapper fires the mutation rule. Hiding the clicked
     // continuation again there cancelled the load the click asked for.
     feature._process();
     assert.equal(feed.children.length, 1, 'the released continuation stays in layout');
-    assert.equal(continuation.style.display, '');
+    assert.equal(continuation.getAttribute('ytkit-load-more'), 'released');
 
     // YouTube renders a fresh continuation element for the next page.
     continuation.remove();
@@ -286,7 +284,34 @@ test('the Load More button is built next to the continuation and releases it on 
     feed.appendChild(next);
     feature._process();
     assert.equal(feed.children.length, 2, "the next page's continuation gets a fresh button");
-    assert.equal(next.style.display, 'none');
+    assert.equal(next.getAttribute('ytkit-load-more'), '1');
+});
+
+test("Load More leaves the Subscriptions load blocker's hide alone", () => {
+    const feed = fakeNode({ tag: 'div' });
+    const continuation = fakeNode({ tag: 'ytd-continuation-item-renderer' });
+    continuation.scrollIntoView = () => {};
+    feed.appendChild(continuation);
+    const feature = loadFeature('disableInfiniteScroll', {
+        document: fakeDocument((selector) => {
+            if (selector.startsWith('ytd-continuation-item-renderer')) {
+                return feed.children.filter((node) => node.tagName === 'YTD-CONTINUATION-ITEM-RENDERER' && !node.hasAttribute('ytkit-load-more'));
+            }
+            if (selector === '[ytkit-load-more]') return feed.children.filter((node) => node.hasAttribute?.('ytkit-load-more'));
+            if (selector === '.ytkit-load-more-wrapper') return feed.children.filter((node) => node.className === 'ytkit-load-more-wrapper');
+            return [];
+        })
+    });
+    feature._process();
+    // Video Hider blocks Subscriptions loading with an inline display:none.
+    continuation.style.display = 'none';
+    feed.children[0].children[0].onclick();
+    assert.equal(continuation.style.display, 'none', 'a click must not undo the blocker');
+
+    feature._process();
+    feature.destroy();
+    assert.equal(continuation.style.display, 'none', 'turning the feature off must not undo the blocker');
+    assert.equal(continuation.hasAttribute('ytkit-load-more'), false);
 });
 
 test('the Load More hiding rule takes the continuation out of layout', () => {

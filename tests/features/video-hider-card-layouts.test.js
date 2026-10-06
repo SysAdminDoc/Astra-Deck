@@ -399,6 +399,59 @@ test('feature health clears its report once no filter needs the input', () => {
     assert.equal(calls.length, 2, 'and it says so once');
 });
 
+test('feature health holds its report while a card that needs no input goes by', () => {
+    const calls = [];
+    const hider = feature(
+        { hideVideosDurationFilter: 2 },
+        { setFeatureHealth: (id, patch) => calls.push(patch.status), getCurrentPath: () => '/results' }
+    );
+    const blank = () => parseCard('<ytd-video-renderer><a id="video-title" href="/watch?v=abcdefghijk">Untitled</a></ytd-video-renderer>');
+    const short = () => parseCard('<ytd-video-renderer><a id="video-title" href="/shorts/abcdefghijk">A Short</a></ytd-video-renderer>');
+    for (let i = 0; i < 12; i += 1) hider._matchesMetadataFilters(blank());
+    hider._matchesMetadataFilters(short());
+    hider._matchesMetadataFilters(blank());
+    assert.equal(calls.includes('initialized'), false, 'a Short has no running time, which says nothing about the page');
+    assert.equal(calls.at(-1), 'degraded');
+});
+
+test('feature health drops an input whose filter was switched off while another stays on', () => {
+    const calls = [];
+    const settings = { hideVideosLowViewFilter: true, hideVideosLowViewThreshold: 10, hideVideosDurationFilter: 2 };
+    const hider = createHideVideosFromHomeFeature({
+        appState: { settings },
+        setFeatureHealth: (id, patch) => calls.push(patch),
+        getCurrentPath: () => '/results'
+    });
+    const viewsOnly = () => parseCard('<ytd-video-renderer><a id="video-title" href="/watch?v=abcdefghijk">Untitled</a><div id="metadata-line"><span class="inline-metadata-item">1.2K views</span></div></ytd-video-renderer>');
+    for (let i = 0; i < 12; i += 1) hider._matchesMetadataFilters(viewsOnly());
+    assert.equal(calls.at(-1).status, 'degraded');
+    assert.match(calls.at(-1).lastError, /durations/);
+
+    settings.hideVideosDurationFilter = 0;
+    hider._matchesMetadataFilters(viewsOnly());
+    assert.equal(calls.at(-1).status, 'initialized', 'views still read, and nothing needs durations any more');
+});
+
+test('a channel-page lockup keeps its views and date row when a badge row follows', () => {
+    // Channel pages print no byline, so the first row is the views and date.
+    const html = CURRENT['lockup: channel videos grid'].replace('</div></yt-content-metadata-view-model>',
+        '</div><div class="ytContentMetadataViewModelMetadataRow"><span class="ytAttributedStringHost ytContentMetadataViewModelMetadataText">New</span></div></yt-content-metadata-view-model>');
+    const card = parseCard(html);
+    assert.equal(card.querySelectorAll('.ytContentMetadataViewModelMetadataRow').length, 2, 'fixture really has two rows');
+    const metadata = feature()._extractVideoMetadata(card);
+    assert.equal(metadata.ageDays, 6);
+    assert.equal(metadata.views, 1_100_000);
+});
+
+test('a live stream linked into a radio is live, not a Mix', () => {
+    const card = parseCard(CURRENT['lockup: channel live tab, live now']
+        .replaceAll('href="/watch?v=1-LpQekNa9g"', 'href="/watch?v=1-LpQekNa9g&amp;list=RD1-LpQekNa9g&amp;start_radio=1"'));
+    assert.match(card.querySelector('a').getAttribute('href'), /start_radio=1/, 'fixture really is radio-linked');
+    const metadata = feature()._extractVideoMetadata(card);
+    assert.equal(metadata.isLive, true);
+    assert.equal(metadata.isMix, false);
+});
+
 test('a new search starts a fresh count even though the path stays /results', () => {
     const source = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
     const start = source.indexOf("addNavigateRule('hideVideosFromHomeNav'");

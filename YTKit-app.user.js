@@ -11982,7 +11982,6 @@ const STORAGE_KEYS = Object.freeze({
 				const continuations = document.querySelectorAll('ytd-continuation-item-renderer:not([ytkit-load-more])');
 				continuations.forEach(cont => {
 					cont.setAttribute('ytkit-load-more', '1');
-					cont.style.display = 'none';
 					const spinner = cont.querySelector('tp-yt-paper-spinner, yt-next-continuation');
 					if (spinner) spinner.style.display = 'none';
 					const wrapper = document.createElement('div');
@@ -11995,7 +11994,6 @@ const STORAGE_KEYS = Object.freeze({
 					btn.onclick = () => {
 						wrapper.remove();
 						cont.setAttribute('ytkit-load-more', 'released');
-						cont.style.display = '';
 						if (spinner) spinner.style.display = '';
 						cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
 					};
@@ -12019,7 +12017,6 @@ const STORAGE_KEYS = Object.freeze({
 				document.querySelectorAll('.ytkit-load-more-wrapper').forEach(el => el.remove());
 				document.querySelectorAll('[ytkit-load-more]').forEach(el => {
 					el.removeAttribute('ytkit-load-more');
-					el.style.display = '';
 					const spinner = el.querySelector('tp-yt-paper-spinner, yt-next-continuation');
 					if (spinner) spinner.style.display = '';
 				});
@@ -16287,6 +16284,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (card?.matches?.('ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer')) return false;
 				const badges = card?.querySelectorAll?.('ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model') || [];
 				if (Array.from(badges).some((badge) => /\d+:\d{2}/.test(badge.textContent || ''))) return false;
+				if (card?.querySelector?.('.ytBadgeShapeThumbnailLive, .ytBadgeShapeLive, ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]')) return false;
 				try {
 					const url = new URL(href, 'https://www.youtube.com');
 					return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';

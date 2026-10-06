@@ -18605,11 +18605,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _process() {
                 const continuations = document.querySelectorAll('ytd-continuation-item-renderer:not([ytkit-load-more])');
                 continuations.forEach(cont => {
+                    // Hidden by the injected [ytkit-load-more="1"] rule. Inline
+                    // display stays untouched: Video Hider's Subscriptions load
+                    // blocker owns that, and clearing it on click or teardown
+                    // brought infinite scroll back under its banner.
                     cont.setAttribute('ytkit-load-more', '1');
-                    // display:none, not visibility:hidden or height:0: Chrome still
-                    // reports a laid-out zero-height target as intersecting, so
-                    // YouTube kept auto-loading under the old hide.
-                    cont.style.display = 'none';
 
                     const spinner = cont.querySelector('tp-yt-paper-spinner, yt-next-continuation');
                     if (spinner) spinner.style.display = 'none';
@@ -18631,7 +18631,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         // and that one gets its own button.
                         wrapper.remove();
                         cont.setAttribute('ytkit-load-more', 'released');
-                        cont.style.display = '';
                         if (spinner) spinner.style.display = '';
                         // Scroll it into view to trigger YouTube's intersection observer
                         cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -18642,6 +18641,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                // display:none, not visibility:hidden or height:0: Chrome still
+                // reports a laid-out zero-height target as intersecting, so
+                // YouTube kept auto-loading under the old hide.
                 this._styleEl = injectStyle('ytd-continuation-item-renderer[ytkit-load-more="1"] { display: none !important; }', this.id, true);
                 this._process();
                 this._scheduleProcess(2000);
@@ -18657,7 +18659,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-load-more-wrapper').forEach(el => el.remove());
                 document.querySelectorAll('[ytkit-load-more]').forEach(el => {
                     el.removeAttribute('ytkit-load-more');
-                    el.style.display = '';
                     const spinner = el.querySelector('tp-yt-paper-spinner, yt-next-continuation');
                     if (spinner) spinner.style.display = '';
                 });
@@ -23543,10 +23544,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _isCollectionCard(card, href) {
                 if (card?.matches?.('ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer')) return false;
                 // Music watch pages link plain sidebar videos into a radio
-                // too. A video shows its running time; a Mix or playlist
-                // never does.
+                // too. A video shows its running time, or a live or upcoming
+                // badge instead; a Mix or playlist shows neither.
                 const badges = card?.querySelectorAll?.('ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model') || [];
                 if (Array.from(badges).some((badge) => /\d+:\d{2}/.test(badge.textContent || ''))) return false;
+                if (card?.querySelector?.('.ytBadgeShapeThumbnailLive, .ytBadgeShapeLive, ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]')) return false;
                 try {
                     const url = new URL(href, 'https://www.youtube.com');
                     return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';

@@ -659,12 +659,15 @@
                         'ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"],' +
                         '.badge-style-type-live-now, .ytBadgeShapeThumbnailLive, .ytBadgeShapeLive'
                     );
-                    // A lockup's first row of two or more is the channel name.
-                    // Its spans run together ("129MStreamed 4y ago"), so each
-                    // span's aria-label ("Streamed 4 years ago") rides along.
+                    // A lockup's first row is the channel name when its spans
+                    // carry no spelled-out aria-label; the views and date spans
+                    // always do. Those spans run together ("129MStreamed 4y
+                    // ago"), so each aria-label ("Streamed 4 years ago") rides along.
                     const lockupRows = Array.from(card.querySelectorAll('.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row'));
+                    const bylineFirst = lockupRows.length > 1
+                        && !lockupRows[0].querySelector('.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]');
                     const metadataText = lockupRows.length
-                        ? lockupRows.slice(lockupRows.length > 1 ? 1 : 0)
+                        ? lockupRows.slice(bylineFirst ? 1 : 0)
                             .map(row => `${row.textContent} ${Array.from(row.querySelectorAll('[aria-label]'), node => node.getAttribute('aria-label')).join(' ')}`)
                             .join(' ')
                         : card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || '';

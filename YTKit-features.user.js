@@ -8262,6 +8262,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 	]);
 	const CARD_ROW_SKIP_SELECTOR = '#video-title, #title-wrapper, ytd-channel-name';
 	const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
+	const LOCKUP_LABELLED_TEXT_SELECTOR = '.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]';
 	const INPUT_HEALTH_MIN_CARDS = 12;
 	const INPUT_HEALTH_NAMES = Object.freeze({ views: 'view counts', ages: 'upload ages', durations: 'durations' });
 	function filterListError(code, message) {
@@ -9738,7 +9739,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						let parts = [node];
 						if (node.tagName === 'YT-CONTENT-METADATA-VIEW-MODEL') {
 							const rows = Array.from(node.querySelectorAll(LOCKUP_ROW_SELECTOR));
-							if (rows.length > 1) parts = rows.slice(1);
+							if (rows.length > 1 && !rows[0].querySelector(LOCKUP_LABELLED_TEXT_SELECTOR)) parts = rows.slice(1);
 						}
 						let text = parts.map(part => part.textContent || '').join(' ');
 						if (node.tagName === 'YTD-VIDEO-META-BLOCK' || node.getAttribute('id') === 'meta') {
@@ -9759,7 +9760,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const isMembersOnly = element.querySelector('[aria-label="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
 				const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive, .ytBadgeShapeThumbnailLive');
 				const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
-				const hasRadioLink = !hasDuration && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
+				const radioCandidate = !hasDuration && !hasLiveMarker && !hasUpcomingMarker;
+				const hasRadioLink = radioCandidate && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
 				const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
 				const hasPlaylistMarker = !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer, ytd-playlist-video-renderer, [is-playlist], [data-list-type="playlist"]');
 				return {
@@ -9781,7 +9783,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						|| /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i.test(normalizedRowsText),
 					isMix: hasMixMarker
 						|| /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
-						|| (!hasDuration && /(?:start_radio=1|list=rd)/i.test(hrefText)),
+						|| (radioCandidate && /(?:start_radio=1|list=rd)/i.test(hrefText)),
 					isPlaylist: hasPlaylistMarker
 						|| /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
 					isMovie: /(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)/i.test(normalizedRowsText),
@@ -9794,22 +9796,24 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			_inputHealthDegraded: false,
 			_noteFilterInputs(element, metadata) {
 				const settings = appState.settings;
-				const observed = [];
-				if (settings.hideVideosLowViewFilter || settings.hideVideosLowSignalFilter === true) {
-					observed.push(['views', metadata.views !== null]);
-				}
-				if (settings.hideVideosLowSignalFilter === true) observed.push(['ages', metadata.ageDays !== null]);
-				if ((settings.hideVideosDurationFilter || 0) > 0 && !metadata.isLive && !metadata.isUpcoming
-					&& !metadata.isShort && !metadata.isPlaylist && !metadata.isMix) {
-					observed.push(['durations', this._extractDuration(element) > 0]);
-				}
-				if (!observed.length) {
+				const lowSignal = settings.hideVideosLowSignalFilter === true;
+				const needed = [];
+				if (settings.hideVideosLowViewFilter || lowSignal) needed.push('views');
+				if (lowSignal) needed.push('ages');
+				if ((settings.hideVideosDurationFilter || 0) > 0) needed.push('durations');
+				if (!needed.length) {
 					if (this._inputHealthDegraded) {
 						this._inputHealthDegraded = false;
 						setFeatureHealth(this.id, { status: 'initialized', source: 'video-hider-inputs', initialized: true, lastError: null });
 					}
 					return;
 				}
+				const durationExempt = metadata.isLive || metadata.isUpcoming || metadata.isShort || metadata.isPlaylist || metadata.isMix;
+				const observed = needed
+					.filter(input => input !== 'durations' || !durationExempt)
+					.map(input => [input, input === 'views' ? metadata.views !== null
+						: input === 'ages' ? metadata.ageDays !== null
+							: this._extractDuration(element) > 0]);
 				const route = getCurrentPath();
 				if (this._inputReadability?.route !== route) this._inputReadability = { route, seen: {}, read: {}, cards: new WeakMap() };
 				const state = this._inputReadability;
@@ -9825,8 +9829,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						state.read[input] = (state.read[input] || 0) + 1;
 					}
 				}
-				const unreadable = Object.keys(state.seen)
-					.filter(input => state.seen[input] >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
+				const unreadable = needed
+					.filter(input => (state.seen[input] || 0) >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
 				if (unreadable.length) {
 					const names = unreadable.map(input => INPUT_HEALTH_NAMES[input]);
 					const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
@@ -9837,7 +9841,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						initialized: true,
 						lastError: `Can't read ${list} on this page's cards, so the filters that need them aren't hiding anything.`
 					});
-				} else if (this._inputHealthDegraded && Object.keys(state.read).length) {
+				} else if (this._inputHealthDegraded) {
 					this._inputHealthDegraded = false;
 					setFeatureHealth(this.id, {
 						status: 'initialized',
@@ -12896,8 +12900,10 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 						'.badge-style-type-live-now, .ytBadgeShapeThumbnailLive, .ytBadgeShapeLive'
 					);
 					const lockupRows = Array.from(card.querySelectorAll('.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row'));
+					const bylineFirst = lockupRows.length > 1
+						&& !lockupRows[0].querySelector('.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]');
 					const metadataText = lockupRows.length
-						? lockupRows.slice(lockupRows.length > 1 ? 1 : 0)
+						? lockupRows.slice(bylineFirst ? 1 : 0)
 							.map(row => `${row.textContent} ${Array.from(row.querySelectorAll('[aria-label]'), node => node.getAttribute('aria-label')).join(' ')}`)
 							.join(' ')
 						: card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || '';

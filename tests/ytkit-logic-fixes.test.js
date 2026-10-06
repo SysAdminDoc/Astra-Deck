@@ -625,7 +625,9 @@ test('subscriptionGroups ships a unified health/action center in its canonical m
 });
 
 test('subscriptionGroups ships an Edit Channels membership editor with empty-state notice', () => {
-    const block = featureBlock('subscriptionGroups');
+    // The module is this one feature, so read all of it: the fixed window
+    // fell 95 characters short of _writeGroups once the module grew.
+    const block = featureBlock('subscriptionGroups', Infinity);
     assert.ok(!block.includes('drag channels in'),
         'feature description must not promise drag-in membership (no drag path exists)');
     assert.match(block, /Edit Channels panel/,

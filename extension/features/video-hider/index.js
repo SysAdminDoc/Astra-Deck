@@ -121,11 +121,15 @@
     ]);
     // Titles and channel names sit inside some metadata containers (a search
     // card's #meta holds the title, meta blocks hold the byline, and a
-    // lockup's first row of two or more is the channel). The type checks
-    // must not see them: "How to mix audio" read as a Mix and a channel
-    // called "Film Theory" as a movie.
+    // lockup's first row is the channel when the sidebar, Home and
+    // Subscriptions print one). The type checks must not see them: "How to
+    // mix audio" read as a Mix and a channel called "Film Theory" as a movie.
+    // The byline row is told apart by its spans: the views and date spans
+    // carry spelled-out aria-labels, the channel name doesn't. Channel pages
+    // print no byline, so their first row is the views and date.
     const CARD_ROW_SKIP_SELECTOR = '#video-title, #title-wrapper, ytd-channel-name';
     const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
+    const LOCKUP_LABELLED_TEXT_SELECTOR = '.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]';
     const INPUT_HEALTH_MIN_CARDS = 12;
     const INPUT_HEALTH_NAMES = Object.freeze({ views: 'view counts', ages: 'upload ages', durations: 'durations' });
 
@@ -1758,7 +1762,7 @@
                         let parts = [node];
                         if (node.tagName === 'YT-CONTENT-METADATA-VIEW-MODEL') {
                             const rows = Array.from(node.querySelectorAll(LOCKUP_ROW_SELECTOR));
-                            if (rows.length > 1) parts = rows.slice(1);
+                            if (rows.length > 1 && !rows[0].querySelector(LOCKUP_LABELLED_TEXT_SELECTOR)) parts = rows.slice(1);
                         }
                         let text = parts.map(part => part.textContent || '').join(' ');
                         if (node.tagName === 'YTD-VIDEO-META-BLOCK' || node.getAttribute('id') === 'meta') {
@@ -1789,8 +1793,10 @@
                 const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
                 // Music watch pages link plain videos into a radio as well, so
                 // a radio link marks a Mix only on a card with no running
-                // time. A Mix has none; a video always shows one.
-                const hasRadioLink = !hasDuration && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
+                // time. A Mix has none; a video always shows one, except a
+                // live stream or premiere, which carries its own badge.
+                const radioCandidate = !hasDuration && !hasLiveMarker && !hasUpcomingMarker;
+                const hasRadioLink = radioCandidate && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
                 const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
                 const hasPlaylistMarker = !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer, ytd-playlist-video-renderer, [is-playlist], [data-list-type="playlist"]');
                 return {
@@ -1818,7 +1824,7 @@
                     // "movie review", or "top 5 videos".
                     isMix: hasMixMarker
                         || /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
-                        || (!hasDuration && /(?:start_radio=1|list=rd)/i.test(hrefText)),
+                        || (radioCandidate && /(?:start_radio=1|list=rd)/i.test(hrefText)),
                     isPlaylist: hasPlaylistMarker
                         || /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
                     // Localised like their four siblings above: Latin terms are
@@ -1843,23 +1849,29 @@
 
             _noteFilterInputs(element, metadata) {
                 const settings = appState.settings;
-                const observed = [];
-                if (settings.hideVideosLowViewFilter || settings.hideVideosLowSignalFilter === true) {
-                    observed.push(['views', metadata.views !== null]);
-                }
-                if (settings.hideVideosLowSignalFilter === true) observed.push(['ages', metadata.ageDays !== null]);
-                if ((settings.hideVideosDurationFilter || 0) > 0 && !metadata.isLive && !metadata.isUpcoming
-                    && !metadata.isShort && !metadata.isPlaylist && !metadata.isMix) {
-                    observed.push(['durations', this._extractDuration(element) > 0]);
-                }
-                if (!observed.length) {
-                    // The filter that needed the input was switched off.
+                const lowSignal = settings.hideVideosLowSignalFilter === true;
+                // What the enabled filters need, decided by the settings and
+                // never by the card in hand: a Short with the duration filter
+                // on needs nothing, but that says nothing about the page.
+                const needed = [];
+                if (settings.hideVideosLowViewFilter || lowSignal) needed.push('views');
+                if (lowSignal) needed.push('ages');
+                if ((settings.hideVideosDurationFilter || 0) > 0) needed.push('durations');
+                if (!needed.length) {
+                    // Every filter that needed an input was switched off.
                     if (this._inputHealthDegraded) {
                         this._inputHealthDegraded = false;
                         setFeatureHealth(this.id, { status: 'initialized', source: 'video-hider-inputs', initialized: true, lastError: null });
                     }
                     return;
                 }
+                // Live, upcoming, Shorts, playlists and Mixes have no running time.
+                const durationExempt = metadata.isLive || metadata.isUpcoming || metadata.isShort || metadata.isPlaylist || metadata.isMix;
+                const observed = needed
+                    .filter(input => input !== 'durations' || !durationExempt)
+                    .map(input => [input, input === 'views' ? metadata.views !== null
+                        : input === 'ages' ? metadata.ageDays !== null
+                            : this._extractDuration(element) > 0]);
                 const route = getCurrentPath();
                 if (this._inputReadability?.route !== route) this._inputReadability = { route, seen: {}, read: {}, cards: new WeakMap() };
                 const state = this._inputReadability;
@@ -1877,8 +1889,10 @@
                         state.read[input] = (state.read[input] || 0) + 1;
                     }
                 }
-                const unreadable = Object.keys(state.seen)
-                    .filter(input => state.seen[input] >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
+                // Only inputs a filter still needs: one switched off since
+                // must not keep the report alive.
+                const unreadable = needed
+                    .filter(input => (state.seen[input] || 0) >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
                 if (unreadable.length) {
                     const names = unreadable.map(input => INPUT_HEALTH_NAMES[input]);
                     const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
@@ -1889,7 +1903,7 @@
                         initialized: true,
                         lastError: `Can't read ${list} on this page's cards, so the filters that need them aren't hiding anything.`
                     });
-                } else if (this._inputHealthDegraded && Object.keys(state.read).length) {
+                } else if (this._inputHealthDegraded) {
                     this._inputHealthDegraded = false;
                     setFeatureHealth(this.id, {
                         status: 'initialized',
