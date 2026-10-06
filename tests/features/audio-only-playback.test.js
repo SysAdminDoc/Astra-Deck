@@ -94,9 +94,8 @@ test('the bridge publishes what it did, never an unearned audio-only claim', () 
 
     assert.match(block, /writeStatus\('applied', \(audioQuality \? 'audio-stream:' : 'lowest-quality:'\) \+ target\)/,
         'the reason string must distinguish a real audio stream from the fallback');
-    // Live is NOT excluded. bufferPreload skips it because changing the
-    // buffering goal breaks live latency; pinning a quality has no such
-    // hazard, and a multi-hour stream is where the saving is largest.
+    // Live is NOT excluded. Pinning a quality has no live-latency hazard,
+    // and a multi-hour stream is where the saving is largest.
     assert.doesNotMatch(block, /writeStatus\('skipped'/,
         'audio-only must apply to live streams, not skip them');
     assert.doesNotMatch(block, /function isLive/,

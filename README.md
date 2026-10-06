@@ -59,8 +59,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.95.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `489` entries across `18` categories |
-| Runtime graph | `121` modules, including `31` peeled feature modules and `305` declared feature IDs |
+| Settings schema | `487` entries across `18` categories |
+| Runtime graph | `121` modules, including `31` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -472,7 +472,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **484 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **482 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -598,7 +598,7 @@ This generated knowledgebase documents all **484 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Watch page and player controls</strong>: 75 settings</summary>
+<summary><strong>Watch page and player controls</strong>: 73 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -662,8 +662,6 @@ This generated knowledgebase documents all **484 user-facing settings** in the c
 | <a id="setting-disableMiniPlayer"></a><strong>Disable Mini Player</strong><br><code>disableMiniPlayer</code> | Prevent the mini player from appearing when navigating away | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-adaptiveLiveLayout"></a><strong>Adaptive Live Layout</strong><br><code>adaptiveLiveLayout</code> | Automatically adjust layout for live stream chat side-by-side | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-theaterAutoScroll"></a><strong>Theater Auto-Scroll</strong><br><code>theaterAutoScroll</code> | Scroll video into full view when theater mode activates | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-bufferPreload"></a><strong>Buffer / Preload</strong><br><code>bufferPreload</code> | Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
-| <a id="setting-bufferPreloadSeconds"></a><strong>Buffer Target</strong><br><code>bufferPreloadSeconds</code> | How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos. | Default: <code>20</code><br>Range: <code>5 to 600</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.54.0</code> |
 | <a id="setting-audioOnlyPlayback"></a><strong>Audio-Only Mode</strong><br><code>audioOnlyPlayback</code> | Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.54.0</code> |
 | <a id="setting-preloadComments"></a><strong>Preload Comments</strong><br><code>preloadComments</code> | Eagerly load the comment section so it is ready when you scroll down | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-playbackSpeedOSD"></a><strong>Speed Change OSD</strong><br><code>playbackSpeedOSD</code> | Show speed overlay on the video player (like VLC) instead of corner toast | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -1069,7 +1067,7 @@ This generated knowledgebase documents all **484 user-facing settings** in the c
 | <a id="setting-safeStoreProfile"></a><strong>Safe store profile</strong><br><code>safeStoreProfile</code> | Keeps the effective profile store-safe, hides GitHub-full controls, and scrubs full-profile values from exports. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-githubFullProfile"></a><strong>GitHub full profile</strong><br><code>githubFullProfile</code> | Unlocks GitHub-full settings and their explicitly granted optional network capabilities in a compatible build. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-syncSafePrefs"></a><strong>Sync safe prefs</strong><br><code>syncSafePrefs</code> | Includes the approved safe preference subset in safe-store profile exports and browser sync. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-syncSafePrefsAllowlist"></a><strong>Sync safe prefs allowlist</strong><br><code>syncSafePrefsAllowlist</code> | Lists the schema keys eligible for the bounded safe-preference sync payload; unknown and unsafe keys are discarded. | Default: 87 selected entries | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-syncSafePrefsAllowlist"></a><strong>Sync safe prefs allowlist</strong><br><code>syncSafePrefsAllowlist</code> | Lists the schema keys eligible for the bounded safe-preference sync payload; unknown and unsafe keys are discarded. | Default: 85 selected entries | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-storageQuotaLRU"></a><strong>Storage Quota Management</strong><br><code>storageQuotaLRU</code> | LRU-cap growing settings and stores (ytkit-hidden-videos, ytkit-blocked-channels, videoNotesData, ytkit-bookmarks, ytkit-watch-progress, ytkit-watch-time, da_branding_cache, sb_segments_cache) to prevent quota exhaustion | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 
 </details>

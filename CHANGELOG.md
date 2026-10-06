@@ -10,6 +10,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Userscript users can now send a diagnostics bundle with a bug report. Pick **Copy Astra Deck diagnostics** in your Tampermonkey or Violentmonkey menu, or click the new bug button at the bottom of the settings sidebar, and paste what it copies into the issue. It's the same bundle the extension's popup saves, with API keys, tokens, custom CSS, your own filter code and endpoint URLs redacted the same way, and it also says which userscript manager ran it. Copying it from a YouTube page doesn't try to reach Astra Downloader or Ollama on your computer, so it won't set off a local network prompt. Those two show as unchecked there, and the popup's Save still checks them. The bug button works in the extension too. If the clipboard won't take it, the bundle downloads as a file instead.
 
+### Removed
+
+- Buffer / Preload and its Buffer Target slider are gone. YouTube's player no longer lets an extension set how far ahead it buffers. It decides that itself, with YouTube's servers pacing the download, so the setting had stopped doing anything. If you had it on, your other settings carry over untouched and the old value is simply dropped.
+
 ### Fixed
 
 - The Subscriptions page's live and "Streamed" filters hide those videos again. YouTube's newer cards dropped the markers both filters looked for, so neither hid anything, and the live one could catch a normal video with "LIVE" in capitals in its title.

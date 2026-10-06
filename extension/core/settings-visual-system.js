@@ -92,7 +92,7 @@
         'Video Player': [
             { labelKey: 'settingsSectionPlaybackQuality', fallback: 'Playback & quality', match: /^(persistentSpeed|codecSelector|autoMaxResolution|forceH264|forceStandardFps|musicVideoSpeedLock|qualityProfileMatrix|perChannelSpeed|fineSpeedControl|customSpeedButtons|speedIndicatorOverlay)$/ },
             { labelKey: 'settingsSectionTransformDisplay', fallback: 'Transform & display', match: /^(videoRotation|videoFlip|videoZoom|videoVisualFilters|photosensitiveFlashProtection|cinemaAmbientGlow|fitPlayerToWindow|adaptiveLiveLayout|fullscreenScroll|fullscreenOnDoubleClick|autoTheaterMode|miniPlayerBar|popOutPlayer|disableMiniPlayer|hideVideoEndContent|hideJumpAheadButton|hiddenPlayerControlsManager|playbackStatsOverlay|pipButton|frameByFrameButtons|chapterJumpButtons|hideAirplayButton|videoLoopButton|abLoop|sleepTimer)$/ },
-            { labelKey: 'settingsSectionAudio', fallback: 'Audio', match: /^(audio|volume|mono|disableLoudness|preferDescriptive|notifyAutoDubbed|bufferPreload)/ },
+            { labelKey: 'settingsSectionAudio', fallback: 'Audio', match: /^(audio|volume|mono|disableLoudness|preferDescriptive|notifyAutoDubbed)/ },
             { labelKey: 'settingsSectionCaptureSubtitles', fallback: 'Capture & subtitles', match: /^(downloadScreenshotFormat|videoScreenshot|downloadSubtitlesWithScreenshot|subtitleStyling|dualLanguageSubtitles)$/ },
             { labelKey: 'settingsSectionPlayerStateControls', fallback: 'Player state & controls', match: /.*/ }
         ],
@@ -3732,7 +3732,6 @@
             .ytkit-volume-hud,
             .ytkit-speed-osd,
             .ytkit-audio-only-status,
-            .ytkit-buffer-status,
             .ytkit-photosensitive-status,
             .ytkit-live-latency-readout
         ) {

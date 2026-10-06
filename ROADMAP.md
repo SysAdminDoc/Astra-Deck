@@ -4,18 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P2 — Buffer / Preload has no player API to drive
-  Why: 2026-09-28, checked live. The feature calls `movie_player.setBufferingGoal()`, which
-  isn't in the player's public or internal API any more (245 methods listed; the only
-  buffer-related ones are `preloadVideoById` and `preloadVideoByPlayerVars`). With the bridge
-  fixed it now reports `degraded: player-api-missing` on every video, which is honest but
-  means the feature does nothing.
-  Where: `extension/ytkit-main.js` "Feature 3.5: Bounded VOD buffer target", `ytkit.js`
-  `bufferPreload`.
-  Acceptance: either a working lever (for example player config read at startup) verified
-  live, or the feature retired with a CHANGELOG note.
-  Complexity: M
-
 - [ ] P2 — Live-check the other page-side features the bridge fix revived
   Why: these hadn't run for users since 4.89.0, so their live paths are untested against
   today's YouTube. Checked live on 2026-09-28 and working: codec filter, Always Best Quality,

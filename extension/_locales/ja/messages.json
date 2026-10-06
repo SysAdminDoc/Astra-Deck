@@ -281,10 +281,6 @@
   "brandName": {
     "message": "Astra Deck"
   },
-  "bufferTargetMinutesTpl": {
-    "message": "{count} 分",
-    "description": "Buffer target slider value rendered in minutes"
-  },
   "bufferTargetSecondsTpl": {
     "message": "{count} 秒",
     "description": "Buffer target slider value rendered in seconds"
@@ -1921,18 +1917,6 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
-  },
-  "feature_bufferPreloadSeconds_desc": {
-    "message": "オンデマンド動画を何秒先までバッファするか。値を大きくすると長い接続切断にも耐えられます。長時間の動画では、プレーヤーが大きな目標値を制限する場合があります。"
-  },
-  "feature_bufferPreloadSeconds_name": {
-    "message": "バッファ目標"
-  },
-  "feature_bufferPreload_desc": {
-    "message": "オンデマンド動画で YouTube プレーヤーにより大きなバッファを保持させ、短い接続切断で再生が止まらないようにします。既定はオフで、ライブ配信は変更されません。"
-  },
-  "feature_bufferPreload_name": {
-    "message": "Buffer / Preload"
   },
   "feature_bulkCardActions_desc": {
     "message": "選択モードに切り替えてフィードカードを複数選択し、一括で非表示・許可・URL コピーが可能。選択中はフローティングアクションバーが表示されます。"

@@ -2643,6 +2643,8 @@ const STORAGE_KEYS = Object.freeze({
 		'youtubeMusicCompat',
 		'lowPowerProfileBackup',
 		'aiSummaryApiKey',
+		'bufferPreload',
+		'bufferPreloadSeconds',
 		'adblockFilterAutoUpdate',
 		'adblockFilterUrl',
 		'audioEqPreset',
@@ -2928,8 +2930,6 @@ const STORAGE_KEYS = Object.freeze({
 			theaterAutoScroll: false,
 			scrollWheelSpeed: false,
 			speedStep: 0.25,
-			bufferPreload: false,
-			bufferPreloadSeconds: 20,
 			audioOnlyPlayback: false,
 			preloadComments: false,
 			playbackSpeedOSD: false,
@@ -3013,7 +3013,7 @@ const STORAGE_KEYS = Object.freeze({
 				'watchPageRestyle', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
 				'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
 				'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
-				'videosPerRow', 'listFeedLayout', 'bufferPreload', 'bufferPreloadSeconds', 'liveLatencyCatchup', 'liveLatencyTargetSeconds', 'liveLatencyMaxRate', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+				'videosPerRow', 'listFeedLayout', 'liveLatencyCatchup', 'liveLatencyTargetSeconds', 'liveLatencyMaxRate', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
 				'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
 				'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
 				'hideVideosRemoveHiddenCards', 'hideVideosShowFilterReason', 'hideVideosShowQuickHideButton',
@@ -20804,108 +20804,6 @@ const STORAGE_KEYS = Object.freeze({
 				this._remove();
 				removeNavigateRule('audioSyncOffsetMs');
 			}
-		},
-		{
-			id: 'bufferPreload',
-			name: t('feature_bufferPreload_name', 'Buffer / Preload'),
-			description: t('feature_bufferPreload_desc', 'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.'),
-			group: 'Video Player',
-			icon: 'download',
-			pages: [PageTypes.WATCH],
-			_statusObserver: null,
-			_lastStatusKey: '',
-			_syncStatus() {
-				const root = document.documentElement;
-				if (!root) return;
-				const status = root.getAttribute('data-ytkit-buffer-status') || '';
-				const reason = root.getAttribute('data-ytkit-buffer-reason') || '';
-				if (!status || status === 'off' || status === 'retry') return;
-				const detail = reason || (status === 'degraded'
-					? 'The page player does not expose a compatible buffer API.'
-					: status === 'skipped' ? 'Live streams are intentionally excluded.' : '');
-				const key = `${status}:${detail}`;
-				if (status === 'degraded') {
-					setFeatureHealth(this.id, {
-						status: 'degraded',
-						source: 'buffer-preload',
-						initialized: true,
-						lastError: detail
-					});
-					if (this._lastStatusKey !== key) {
-						this._lastStatusKey = key;
-						DiagnosticLog?.record?.('buffer-preload', detail);
-					}
-					return;
-				}
-				setFeatureHealth(this.id, {
-					status: 'initialized',
-					source: 'buffer-preload',
-					initialized: true,
-					lastError: null
-				});
-				if (status === 'skipped' && this._lastStatusKey !== key) {
-					this._lastStatusKey = key;
-					DiagnosticLog?.record?.('buffer-preload', detail);
-				} else if (status === 'applied') {
-					this._lastStatusKey = '';
-				}
-			},
-			_apply() {
-				publishBridgeAttribute('data-ytkit-buffer-seconds', String(this._targetSeconds()));
-				publishBridgeAttribute('data-ytkit-buffer-preload', 'on');
-				this._syncStatus();
-			},
-			_targetSeconds() {
-				const raw = Number(appState.settings.bufferPreloadSeconds);
-				if (!Number.isFinite(raw) || raw <= 0) return 20;
-				return Math.min(600, Math.max(5, Math.round(raw)));
-			},
-			init() {
-				this._lastStatusKey = '';
-				this._statusObserver = new MutationObserver(() => this._syncStatus());
-				this._statusObserver.observe(document.documentElement, {
-					attributes: true,
-					attributeFilter: ['data-ytkit-buffer-status', 'data-ytkit-buffer-reason']
-				});
-				this._apply();
-				this._navRule = () => {
-					this._lastStatusKey = '';
-					this._apply();
-				};
-				addNavigateRule('bufferPreload', this._navRule);
-			},
-			destroy() {
-				removeNavigateRule('bufferPreload');
-				this._navRule = null;
-				this._statusObserver?.disconnect();
-				this._statusObserver = null;
-				this._lastStatusKey = '';
-				clearBridgeAttribute('data-ytkit-buffer-preload');
-				clearBridgeAttribute('data-ytkit-buffer-seconds');
-			}
-		},
-		{
-			id: 'bufferPreloadSeconds',
-			name: t('feature_bufferPreloadSeconds_name', 'Buffer Target'),
-			description: t('feature_bufferPreloadSeconds_desc', 'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.'),
-			group: 'Video Player',
-			icon: 'download',
-			type: 'range',
-			min: 5,
-			max: 600,
-			step: 5,
-			formatValue: value => (value >= 60
-				? t('bufferTargetMinutesTpl', '{count} min').replace('{count}', String(Math.round(value / 60)))
-				: t('bufferTargetSecondsTpl', '{count}s').replace('{count}', String(value))),
-			isSubFeature: true,
-			parentId: 'bufferPreload',
-			pages: [PageTypes.WATCH],
-			_republish() {
-				const parent = getFeatureById('bufferPreload');
-				if (parent?._initialized) parent._apply();
-			},
-			init() { this._republish(); },
-			destroy() { this._republish(); }
 		},
 		{
 			id: 'audioOnlyPlayback',

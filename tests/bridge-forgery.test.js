@@ -318,13 +318,14 @@ test('every bridge input is read through the channel, not off the document', () 
     assert.deepEqual(anyReads.filter((arg) => arg !== 'STATUS_ATTR' && arg !== 'REASON_ATTR'), [],
         'every attribute the bridge reads back is one of its own outputs');
 
-    // The two OUTPUT attributes are the deliberate exception: the bridge
-    // writes them, so it reads them back through the captured native to
-    // dedupe. They must not be read through the channel, which never carries
-    // them, and they must not be read through the live global either.
+    // The OUTPUT attributes are the deliberate exception: a bridge that
+    // writes them may read them back through the captured native to dedupe.
+    // They must not be read through the channel, which never carries them.
+    // Buffer / Preload was the one bridge doing that, and it's retired, so
+    // the set can be empty; anything else read back is a page-writable input.
     const nativeReads = [...mainSource.matchAll(/_NATIVE\.getAttribute\(([^)]+)\)/g)]
         .map((m) => m[1].trim());
-    assert.deepEqual(nativeReads.sort(), ['REASON_ATTR', 'STATUS_ATTR'],
+    assert.deepEqual(nativeReads.filter((arg) => arg !== 'STATUS_ATTR' && arg !== 'REASON_ATTR'), [],
         'only the bridge\'s own outputs may be read back off the attribute');
 });
 

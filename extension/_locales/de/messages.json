@@ -281,10 +281,6 @@
   "brandName": {
     "message": "Astra Deck"
   },
-  "bufferTargetMinutesTpl": {
-    "message": "{count} Min.",
-    "description": "Buffer target slider value rendered in minutes"
-  },
   "bufferTargetSecondsTpl": {
     "message": "{count} s",
     "description": "Buffer target slider value rendered in seconds"
@@ -1921,18 +1917,6 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
-  },
-  "feature_bufferPreloadSeconds_desc": {
-    "message": "Wie viele Sekunden eines Abrufvideos im Voraus gepuffert werden. Höhere Werte überstehen längere Verbindungsabbrüche; der Player kann sehr große Ziele bei langen Videos trotzdem begrenzen."
-  },
-  "feature_bufferPreloadSeconds_name": {
-    "message": "Pufferziel"
-  },
-  "feature_bufferPreload_desc": {
-    "message": "Bittet den YouTube-Player, für Abrufvideos einen größeren Puffer zu halten, damit ein kurzer Verbindungsabbruch die Wiedergabe nicht stoppt. Standardmäßig aus; Livestreams werden nie verändert."
-  },
-  "feature_bufferPreload_name": {
-    "message": "Buffer / Preload"
   },
   "feature_bulkCardActions_desc": {
     "message": "Auswahlmodus aktivieren, um mehrere Feed-Karten auszuwählen, dann gesammelt ausblenden, erlauben oder URLs kopieren. Eine schwebende Aktionsleiste erscheint während der Auswahl."

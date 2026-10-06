@@ -437,6 +437,8 @@ const RETIRED_SETTING_KEYS = new Set([
     'youtubeMusicCompat',
     'aiSummaryApiKey',
     'lowPowerProfileBackup',
+    'bufferPreload',
+    'bufferPreloadSeconds',
     'adblockFilterAutoUpdate',
     'adblockFilterUrl',
     'audioEqPreset',

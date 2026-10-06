@@ -38,10 +38,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // and six safe-sync allowlist entries for another 601 bytes.
     // Sponsored-content filtering adds one opt-in toggle and its safe-sync
     // allowlist entry for another 81 bytes in the profile snapshot.
-    assert.equal(assessment.totalBytes, 7165);
+    // Retiring Buffer / Preload drops its toggle, target and their two
+    // allowlist entries: -126 bytes.
+    assert.equal(assessment.totalBytes, 7039);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 7165);
+    assert.equal(assessment.largestItem.bytes, 7039);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -143,7 +145,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Retiring the YouTube Music toggle trims another 27 bytes.
     // Block Comment Authors adds 53: its toggle and the empty author list.
     // Action Notices adds 21 for its toggle, off by default.
-    assert.equal(assessment.totalBytes, 186487);
+    // Retiring Buffer / Preload trims 87: its toggle and target.
+    assert.equal(assessment.totalBytes, 186400);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -171,7 +174,7 @@ test('storage audit report handles arbitrary --file payloads without the built-i
 test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
-    assert.match(report, /Safe-store profile sync candidate: viable \(7\.\d KB/);
+    assert.match(report, /Safe-store profile sync candidate: viable \(6\.\d KB/);
     assert.match(report, /Full UI preferences payload: not viable for sync \(15\.\d KB/);
     assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(18[0-9]\.\d KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);

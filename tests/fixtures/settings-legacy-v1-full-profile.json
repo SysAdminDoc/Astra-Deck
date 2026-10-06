@@ -461,8 +461,6 @@
     "autoDismissContentWarning",
     "autoExitFullscreen",
     "autoSubtitlesWhenMuted",
-    "bufferPreload",
-    "bufferPreloadSeconds",
     "channelLandingTab",
     "classicPlayerChrome",
     "cleanUiPreset",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "recordedAt": "2026-10-06",
   "reason": "Accepted actionToasts inline: it is a setting showToast reads at call time, with no behavior a module could hold.",
-  "inlineOnlyFeatureIdCount": 280,
+  "inlineOnlyFeatureIdCount": 278,
   "featureModuleCount": 31,
   "inlineOnlyFeatureIds": [
     "abLoop",
@@ -44,8 +44,6 @@
     "autoSubtitlesWhenMuted",
     "autoTheaterMode",
     "blueLightIntensity",
-    "bufferPreload",
-    "bufferPreloadSeconds",
     "bulkCardActions",
     "bypassPlaylistMode",
     "channelAgeDisplay",

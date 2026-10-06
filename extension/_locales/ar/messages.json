@@ -281,10 +281,6 @@
   "brandName": {
     "message": "Astra Deck"
   },
-  "bufferTargetMinutesTpl": {
-    "message": "{count} دقيقة",
-    "description": "Buffer target slider value rendered in minutes"
-  },
   "bufferTargetSecondsTpl": {
     "message": "{count} ثانية",
     "description": "Buffer target slider value rendered in seconds"
@@ -1921,18 +1917,6 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
-  },
-  "feature_bufferPreloadSeconds_desc": {
-    "message": "عدد الثواني التي يتم تخزينها مؤقتًا مسبقًا من فيديو عند الطلب. القيم الأعلى تتحمل انقطاعات اتصال أطول؛ وقد يظل المشغّل يحدّ من الأهداف الكبيرة جدًا في مقاطع الفيديو الطويلة."
-  },
-  "feature_bufferPreloadSeconds_name": {
-    "message": "هدف التخزين المؤقت"
-  },
-  "feature_bufferPreload_desc": {
-    "message": "يطلب من مشغّل YouTube الاحتفاظ بتخزين مؤقت أكبر لمقاطع الفيديو عند الطلب، حتى لا يوقف انقطاع الاتصال القصير التشغيل. مُعطّل افتراضيًا، ولا يتم تغيير البث المباشر أبدًا."
-  },
-  "feature_bufferPreload_name": {
-    "message": "Buffer / Preload"
   },
   "feature_bulkCardActions_desc": {
     "message": "تفعيل وضع التحديد لاختيار بطاقات خلاصة متعددة، ثم إخفاء أو سماح أو نسخ الروابط بشكل جماعي. يظهر شريط إجراءات عائم أثناء التحديد."

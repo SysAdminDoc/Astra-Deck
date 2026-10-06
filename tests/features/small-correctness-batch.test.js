@@ -5,14 +5,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
 const { sources } = require('../helpers/source');
 const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
-
-const mainWorldSource = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'extension', 'ytkit-main.js'), 'utf8');
 
 // ── redirectToVideosTab ────────────────────────────────────────────────
 // The URL arithmetic lives inside init(); lift that region out so it can be
@@ -300,16 +295,4 @@ test('the Load More hiding rule takes the continuation out of layout', () => {
     assert.match(block, /ytd-continuation-item-renderer\[ytkit-load-more="1"\] \{ display: none !important; \}/);
     assert.doesNotMatch(block, /visibility: hidden !important/,
         'visibility:hidden leaves the box laid out and the auto-load running');
-});
-
-test('bufferPreload captures the player default and hands it back on disable', () => {
-    assert.match(mainWorldSource, /function captureDefaultGoal\(player\)/);
-    assert.match(mainWorldSource, /function restoreDefaultGoal\(\)/);
-    assert.match(mainWorldSource, /player\.setBufferingGoal\(defaultBufferingGoal\)/,
-        'disabling must restore the captured goal');
-    assert.match(mainWorldSource, /goal-persists-until-next-load/,
-        'when no getter exists the status must say so rather than claim a clean off');
-    // The capture must happen BEFORE the first override or it records our own value.
-    assert.match(mainWorldSource, /captureDefaultGoal\(player\);\s*\n\s*try \{\s*\n\s*player\.setBufferingGoal\(targetSeconds\)/,
-        'the default must be read before the first write');
 });
