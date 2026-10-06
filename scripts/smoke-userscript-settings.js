@@ -28,6 +28,7 @@ const { LIBRARIES } = require('../sync-userscript');
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'userscript-settings-smoke');
 const SECRET_TOKEN = 'SENTINEL-settings-smoke-token';
+const SECRET_PREDICATE = 'title.includes("SENTINEL-settings-smoke-predicate")';
 const STATES = Object.freeze([
     { name: 'desktop-dark', width: 1440, height: 900, dark: true },
     { name: 'desktop-light', width: 1440, height: 900, dark: false },
@@ -61,8 +62,12 @@ function buildFixture(stageDir) {
 <script>
 (() => {
     // authToken is no setting: it stands in for a secret the diagnostics
-    // bundle must redact.
-    const store = new Map([['ytkit_safe_mode', true], ['ytSuiteSettings', { authToken: '${SECRET_TOKEN}' }]]);
+    // bundle must redact. The predicate is a real schema setting, so it
+    // also travels through the settings diff.
+    const store = new Map([['ytkit_safe_mode', true], ['ytSuiteSettings', {
+        authToken: '${SECRET_TOKEN}',
+        advancedLocalPredicateCode: ${JSON.stringify(SECRET_PREDICATE)}
+    }]]);
     globalThis.__astraSmokeMenu = [];
     globalThis.__astraSmokeClipboard = [];
     globalThis.GM_info = { scriptHandler: 'settings-smoke', version: '0' };
@@ -284,9 +289,10 @@ async function checkDiagnostics(client, timeoutMs) {
             marker: menu.astraDeckBugReport === true && panel.astraDeckBugReport === true,
             runtime: menu.runtime,
             token: menu.settings.authToken,
+            predicateDiff: (menu.settingsDiff || []).find((change) => change.key === 'advancedLocalPredicateCode') || null,
             sameRedaction: JSON.stringify([menu.settings, menu.settingsDiff, menu.errors])
                 === JSON.stringify([panel.settings, panel.settingsDiff, panel.errors]),
-            leaked: menuText.includes(${JSON.stringify(SECRET_TOKEN)}) || panelText.includes(${JSON.stringify(SECRET_TOKEN)}),
+            leaked: [menuText, panelText].some((text) => text.includes('SENTINEL')),
             status: document.querySelector('#ytkit-panel-status')?.textContent.trim() || '',
             button: { width: rect.width, height: rect.height, label: button.getAttribute('aria-label') || '' }
         };
@@ -297,7 +303,10 @@ async function checkDiagnostics(client, timeoutMs) {
         failures.push(`runtime is ${JSON.stringify(result.runtime)}`);
     }
     if (result.token !== `[redacted, ${SECRET_TOKEN.length} chars]`) failures.push(`authToken came through as ${JSON.stringify(result.token)}`);
-    if (result.leaked) failures.push('the secret reached the clipboard');
+    if (result.predicateDiff?.current !== `[redacted, ${SECRET_PREDICATE.length} chars]`) {
+        failures.push(`the settings diff carried the predicate as ${JSON.stringify(result.predicateDiff)}`);
+    }
+    if (result.leaked) failures.push('a secret reached the clipboard');
     if (!result.sameRedaction) failures.push('the menu and the panel redacted differently');
     if (result.status !== 'Diagnostic copied to clipboard.') failures.push(`panel status reads ${JSON.stringify(result.status)}`);
     if (!(result.button.width > 0 && result.button.height > 0) || !result.button.label) {

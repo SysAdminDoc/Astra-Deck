@@ -8,7 +8,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
-- Userscript users can now send a diagnostics bundle with a bug report. Pick **Copy Astra Deck diagnostics** in your Tampermonkey or Violentmonkey menu, or click the new bug button at the bottom of the settings sidebar, and paste what it copies into the issue. It's the same bundle the extension's popup saves, with API keys, tokens, custom CSS and endpoint URLs redacted the same way, and it also says which userscript manager ran it. The bug button works in the extension too. If the clipboard won't take it, the bundle downloads as a file instead.
+- Userscript users can now send a diagnostics bundle with a bug report. Pick **Copy Astra Deck diagnostics** in your Tampermonkey or Violentmonkey menu, or click the new bug button at the bottom of the settings sidebar, and paste what it copies into the issue. It's the same bundle the extension's popup saves, with API keys, tokens, custom CSS, your own filter code and endpoint URLs redacted the same way, and it also says which userscript manager ran it. Copying it from a YouTube page doesn't try to reach Astra Downloader or Ollama on your computer, so it won't set off a local network prompt. Those two show as unchecked there, and the popup's Save still checks them. The bug button works in the extension too. If the clipboard won't take it, the bundle downloads as a file instead.
 
 ### Fixed
 

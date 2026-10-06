@@ -29669,14 +29669,29 @@ const STORAGE_KEYS = Object.freeze({
 			new Promise((resolve) => setTimeout(() => resolve(null), ms))
 		]).catch(() => null);
 		const probe = globalThis.YTKitCore?.capabilityProbe;
-		const [capabilities, capabilityLanes, lifecycle] = await Promise.all([
-			optional(() => probe?.runAll?.() ?? null, 1000),
+		let capabilities = null;
+		if (probe?.PROBES) {
+			capabilities = {};
+			for (const [name, entry] of Object.entries(probe.PROBES)) {
+				if (entry.async) { capabilities[name] = null; continue; }
+				try { capabilities[name] = Boolean(entry.run()); }
+				catch (_) { capabilities[name] = false; }
+			}
+		}
+		const [capabilityLanes, lifecycle] = await Promise.all([
 			optional(() => (probe?.resolveAiLaneStatus ? probe.resolveAiLaneStatus() : probe?.getAiLaneStatus?.() ?? null), 1000),
 			optional(() => sendRuntimeMessage({ type: 'GET_SW_LIFECYCLE' }), 1000)
 		]);
 		let featureHealth = null;
 		try {
 			featureHealth = buildFeatureHealthPayload();
+		} catch (_) {
+		}
+		let externalApiHealth = null;
+		try {
+			externalApiHealth = typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot
+				? ExternalApiHealth.snapshot()
+				: null;
 		} catch (_) {
 		}
 		const host = globalThis.__astraDeckUserscript;
@@ -29688,11 +29703,7 @@ const STORAGE_KEYS = Object.freeze({
 				? {
 					kind: 'userscript',
 					manager: String(host.manager || 'unknown'),
-					hostErrors: (Array.isArray(host.errors) ? host.errors : []).map((entry) => ({
-						stage: String(entry?.stage || ''),
-						message: String(entry?.message || '').replace(/https?:\/\/[^\s)]+/g, '<url>').slice(0, 200),
-						at: Number(entry?.at) || 0
-					}))
+					hostErrors: Array.isArray(host.errors) ? host.errors : []
 				}
 				: { kind: 'extension' },
 			userAgent: navigator.userAgent || '',
@@ -29700,9 +29711,7 @@ const STORAGE_KEYS = Object.freeze({
 			capabilityMatrix: probe?.CAPABILITY_MATRIX || null,
 			capabilityLanes,
 			swLifecycle: Array.isArray(lifecycle?.entries) ? lifecycle.entries : null,
-			externalApiHealth: (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
-				? ExternalApiHealth.snapshot()
-				: null,
+			externalApiHealth,
 			featureHealth
 		});
 	}

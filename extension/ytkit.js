@@ -39829,8 +39829,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             new Promise((resolve) => setTimeout(() => resolve(null), ms))
         ]).catch(() => null);
         const probe = globalThis.YTKitCore?.capabilityProbe;
-        const [capabilities, capabilityLanes, lifecycle] = await Promise.all([
-            optional(() => probe?.runAll?.() ?? null, 1000),
+        // Only the in-page probes run here. The companion and Ollama probes
+        // fetch 127.0.0.1, which a youtube.com page can't read (and Chrome
+        // may meet with a local-network prompt), so they stay null rather
+        // than reporting "absent". The popup's Save asks the background.
+        let capabilities = null;
+        if (probe?.PROBES) {
+            capabilities = {};
+            for (const [name, entry] of Object.entries(probe.PROBES)) {
+                if (entry.async) { capabilities[name] = null; continue; }
+                try { capabilities[name] = Boolean(entry.run()); }
+                catch (_) { capabilities[name] = false; }
+            }
+        }
+        const [capabilityLanes, lifecycle] = await Promise.all([
             optional(() => (probe?.resolveAiLaneStatus ? probe.resolveAiLaneStatus() : probe?.getAiLaneStatus?.() ?? null), 1000),
             optional(() => sendRuntimeMessage({ type: 'GET_SW_LIFECYCLE' }), 1000)
         ]);
@@ -39839,6 +39851,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             featureHealth = buildFeatureHealthPayload();
         } catch (_) {
             // reason: feature health is supplemental; the bundle ships without it
+        }
+        let externalApiHealth = null;
+        try {
+            externalApiHealth = typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot
+                ? ExternalApiHealth.snapshot()
+                : null;
+        } catch (_) {
+            // reason: API health is supplemental too; one bad entry must not cost the bundle
         }
         const host = globalThis.__astraDeckUserscript;
         return policy.buildBugReport({
@@ -39850,12 +39870,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     kind: 'userscript',
                     manager: String(host.manager || 'unknown'),
                     // Host failures (a missing grant, a module that would not
-                    // start) never reach settings._errors.
-                    hostErrors: (Array.isArray(host.errors) ? host.errors : []).map((entry) => ({
-                        stage: String(entry?.stage || ''),
-                        message: String(entry?.message || '').replace(/https?:\/\/[^\s)]+/g, '<url>').slice(0, 200),
-                        at: Number(entry?.at) || 0
-                    }))
+                    // start) never reach settings._errors. The builder
+                    // scrubs their URLs.
+                    hostErrors: Array.isArray(host.errors) ? host.errors : []
                 }
                 : { kind: 'extension' },
             userAgent: navigator.userAgent || '',
@@ -39863,9 +39880,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             capabilityMatrix: probe?.CAPABILITY_MATRIX || null,
             capabilityLanes,
             swLifecycle: Array.isArray(lifecycle?.entries) ? lifecycle.entries : null,
-            externalApiHealth: (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
-                ? ExternalApiHealth.snapshot()
-                : null,
+            externalApiHealth,
             featureHealth
         });
     }

@@ -209,6 +209,71 @@ test('the userscript menu reports a failure instead of copying a partial bundle'
     assert.equal(copied, false);
 });
 
+test('the page bundle never fetches 127.0.0.1 and survives a failing health snapshot', async () => {
+    // From youtube.com a loopback fetch fails CORS (and Chrome may ask about
+    // the local network), so the companion probes would read "absent" for
+    // a user who has them. They stay unanswered instead.
+    const page = loadUserscriptDeclarations(['buildBugReportBundle'], {
+        YTKitCore: {
+            createPolicyProfile,
+            capabilityProbe: {
+                PROBES: {
+                    cssScope: { async: false, run: () => true },
+                    promptApi: { async: false, run: () => { throw new Error('probe broke'); } },
+                    mediaDL: { async: true, run: () => assert.fail('the companion probe ran from the page') },
+                    ollama: { async: true, run: () => assert.fail('the Ollama probe ran from the page') }
+                },
+                runAll: () => assert.fail('runAll fetches loopback ports'),
+                getAiLaneStatus: () => ({ summary: { activeLane: 'byo-key' } })
+            }
+        },
+        StorageManager: { get: (_key, fallback) => fallback },
+        STORAGE_KEYS: { settings: 'ytSuiteSettings', filterListSubscription: 'ytkit-video-filter-list-subscription' },
+        YTKIT_VERSION: '0.0.0-test',
+        sendRuntimeMessage: async () => null,
+        buildFeatureHealthPayload: () => null,
+        ExternalApiHealth: { snapshot: () => { throw new Error('snapshot broke'); } },
+        navigator: { userAgent: '' },
+        setTimeout
+    });
+    const bundle = await page.buildBugReportBundle();
+    // Built inside the sandbox, so compared as data.
+    assert.deepEqual(JSON.parse(JSON.stringify(bundle.capabilities)),
+        { cssScope: true, promptApi: false, mediaDL: null, ollama: null });
+    assert.equal(bundle.externalApiHealth, null);
+    assert.deepEqual(bundle.capabilityLanes, { summary: { activeLane: 'byo-key' } });
+});
+
+test('the shared builder scrubs host errors and predicate code whoever calls it', () => {
+    const bundle = createPolicyProfile().buildBugReport({
+        settings: { advancedLocalPredicateCode: 'title.includes("SENTINEL-predicate")' },
+        runtime: {
+            kind: 'userscript',
+            manager: 'Tampermonkey 5.4',
+            hostErrors: [{ stage: 'grant', message: 'GET https://x.example/a?token=SENTINEL-q failed', at: 7 }]
+        }
+    });
+    assertNoSecrets(JSON.stringify(bundle), 'builder');
+    assert.deepEqual(bundle.runtime.hostErrors, [{ stage: 'grant', message: 'GET <url> failed', at: 7 }]);
+    assert.equal(bundle.runtime.manager, 'Tampermonkey 5.4');
+    assert.deepEqual(createPolicyProfile().buildBugReport({ runtime: { kind: 'extension' } }).runtime, { kind: 'extension' });
+});
+
+test('the userscript menu reports a clipboard the manager refused', async () => {
+    let notice = null;
+    const menu = loadDeclarationsFrom(hostSource, ['copyDiagnostics'], {
+        contentOnMessage: null,
+        extensionSender: () => ({}),
+        deliverMessage: async () => ({ ok: true, report: { astraDeckBugReport: true } }),
+        GM_API: { setClipboard: () => Promise.reject(new Error('clipboard denied')) },
+        HOST_WINDOW: { navigator: {} },
+        notify: (message) => { notice = message; },
+        hostText: (_key, fallback) => fallback
+    });
+    await assert.rejects(menu.copyDiagnostics(), /clipboard denied/);
+    assert.equal(notice, null, 'no "copied" notice after a refusal');
+});
+
 test('both routes are wired and named where a userscript user will look', () => {
     // The manager menu command, its label, and the grant it needs.
     assert.match(hostSource, /registerMenuCommand\(BUILD\.diagnosticsMenuLabel,[\s\S]{0,80}copyDiagnostics\(\)/);

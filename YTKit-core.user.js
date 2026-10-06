@@ -13346,6 +13346,7 @@ __astraDeckRegistry["core/policy-profile.js"] = function (globalThis, self, wind
 		'aiSummaryApiKey',
 		'aiSummaryEndpoint',
 		'customCssCode',
+		'advancedLocalPredicateCode',
 		'downloadCobaltInstance',
 		'hideVideosFilterListUrl',
 		'alternativeFrontendInstance',
@@ -13644,6 +13645,13 @@ __astraDeckRegistry["core/policy-profile.js"] = function (globalThis, self, wind
 					default: redactBugReportSettings({ [change.key]: change.defaultValue })[change.key]
 				}));
 		}
+		function scrubHostErrors(entries) {
+			return (Array.isArray(entries) ? entries : []).map((entry) => ({
+				stage: String(entry?.stage || ''),
+				message: String(entry?.message || '').replace(/https?:\/\/[^\s)]+/g, '<url>').slice(0, 200),
+				at: Number(entry?.at) || 0
+			}));
+		}
 		function buildBugReport(parts = {}) {
 			const settings = isPlainObject(parts.settings) ? parts.settings : {};
 			const now = Number.isFinite(parts.now) ? parts.now : Date.now();
@@ -13658,12 +13666,15 @@ __astraDeckRegistry["core/policy-profile.js"] = function (globalThis, self, wind
 				)
 				: null;
 			const orNull = (value) => (value === undefined ? null : value);
+			const runtime = isPlainObject(parts.runtime) && 'hostErrors' in parts.runtime
+				? { ...parts.runtime, hostErrors: scrubHostErrors(parts.runtime.hostErrors) }
+				: orNull(parts.runtime);
 			return {
 				astraDeckBugReport: true,
 				schemaVersion: 2,
 				exportedAt: new Date(now).toISOString(),
 				extensionVersion: String(parts.version || ''),
-				runtime: orNull(parts.runtime),
+				runtime,
 				userAgent: String(parts.userAgent || ''),
 				capabilities: orNull(parts.capabilities),
 				capabilityMatrix: orNull(parts.capabilityMatrix),

@@ -52,6 +52,7 @@
         'aiSummaryApiKey',
         'aiSummaryEndpoint',
         'customCssCode',
+        'advancedLocalPredicateCode',
         'downloadCobaltInstance',
         'hideVideosFilterListUrl',
         'alternativeFrontendInstance',
@@ -467,11 +468,22 @@
                 }));
         }
 
+        // A userscript host error can quote a URL with a token in its query.
+        function scrubHostErrors(entries) {
+            return (Array.isArray(entries) ? entries : []).map((entry) => ({
+                stage: String(entry?.stage || ''),
+                message: String(entry?.message || '').replace(/https?:\/\/[^\s)]+/g, '<url>').slice(0, 200),
+                at: Number(entry?.at) || 0
+            }));
+        }
+
         // The one diagnostics bundle behind the popup's Save, the settings
         // panel's copy button and the userscript menu command. Each caller
-        // passes what its world can reach and null for the rest. `settings`
-        // and `filterListSubscription` are the raw stored values; redaction
-        // happens here so no surface can ship a different cut.
+        // passes what its world can reach and null for the rest. `settings`,
+        // `filterListSubscription` and the runtime's host errors are raw;
+        // their redaction happens here so no surface can ship a different
+        // cut. Feature health and `errors` carry messages, not settings, and
+        // go out as recorded.
         function buildBugReport(parts = {}) {
             const settings = isPlainObject(parts.settings) ? parts.settings : {};
             const now = Number.isFinite(parts.now) ? parts.now : Date.now();
@@ -487,12 +499,15 @@
                 )
                 : null;
             const orNull = (value) => (value === undefined ? null : value);
+            const runtime = isPlainObject(parts.runtime) && 'hostErrors' in parts.runtime
+                ? { ...parts.runtime, hostErrors: scrubHostErrors(parts.runtime.hostErrors) }
+                : orNull(parts.runtime);
             return {
                 astraDeckBugReport: true,
                 schemaVersion: 2,
                 exportedAt: new Date(now).toISOString(),
                 extensionVersion: String(parts.version || ''),
-                runtime: orNull(parts.runtime),
+                runtime,
                 userAgent: String(parts.userAgent || ''),
                 capabilities: orNull(parts.capabilities),
                 capabilityMatrix: orNull(parts.capabilityMatrix),

@@ -58,7 +58,7 @@ test('the photosensitive frame budget has one owner, the core sampler', () => {
     context.globalThis = context;
     vm.runInNewContext(read('extension/core/player.js'), context);
     const budget = context.YTKitCore.videoFrameBudgetMs;
-    assert.equal(budget, 8, 'the measured contract: 2.5 to 3.3 ms median readback, 6 ms p90');
+    assert.equal(budget, 8, 'the measured contract: 3.5 ms median readback, 9.5 ms p90 on 4K60, worst 20-sample mean 7.0 ms');
     assert.equal(context.YTKitCore.createVideoFrameSampler({}).budgetMs, budget);
     assert.equal(require('../../scripts/bench-startup').PHOTOSENSITIVE_FRAME_BUDGET_MS, budget);
     for (const rel of ['extension/ytkit-main.js', 'extension/ytkit.js', 'extension/features/video-filters/index.js']) {

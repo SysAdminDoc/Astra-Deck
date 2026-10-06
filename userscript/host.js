@@ -1510,7 +1510,9 @@
         const response = await deliverMessage(contentOnMessage, { type: 'YTKIT_BUILD_BUG_REPORT' }, extensionSender());
         if (!response?.ok || !response.report) throw new Error(response?.error || 'diagnostics unavailable');
         const text = JSON.stringify(response.report, null, 2);
-        if (GM_API.setClipboard) GM_API.setClipboard(text);
+        // Awaited so a manager whose GM_setClipboard returns a promise can
+        // report a refusal; the plain sync form only fails by throwing.
+        if (GM_API.setClipboard) await GM_API.setClipboard(text);
         else await HOST_WINDOW.navigator.clipboard.writeText(text);
         notify(hostText('statusDiagCopied', 'Diagnostic copied to clipboard.'));
     }
