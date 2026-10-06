@@ -1,0 +1,8 @@
+{
+  "name": "@devicefarmer/adbkit",
+  "version": "0.0.0-astra-unavailable",
+  "description": "Stand-in for web-ext's Android device bridge, which Astra Deck never runs.",
+  "private": true,
+  "license": "MIT",
+  "main": "index.js"
+}

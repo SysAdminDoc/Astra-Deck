@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "resolutionOverrides": [
     {
+      "package": "@devicefarmer/adbkit",
+      "range": "file:./scripts/npm-stubs/devicefarmer-adbkit",
+      "reason": "web-ext loads its Android device bridge only for `web-ext run --target=firefox-android`, which this repository never runs. The real package pulls in node-forge, and node-forge 1.4.0, its newest release, still carries the RSA PKCS#1 v1.5 signature-verification advisory, so no version pin can answer it. The local stand-in throws if anything ever asks for an Android target.",
+      "answersAdvisory": "GHSA-86w9-cpqp-85rv",
+      "advisoryUrl": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+      "lastCheckedOn": "2026-10-06",
+      "recheckBecause": "Drop the stand-in once node-forge ships a fixed release and adbkit takes it, or the day this repository needs web-ext on Firefox for Android."
+    },
+    {
       "package": "brace-expansion",
       "range": "^5.0.12",
       "reason": "Seven advisories in 2026, the most recent (2026-09-29) a quadratic-time rewrite that 5.0.9 still allowed, all reachable only through development tooling.",
@@ -19,12 +28,6 @@
       "lastCheckedOn": "2026-09-13"
     },
     {
-      "package": "shell-quote",
-      "range": "^1.10.0",
-      "reason": "Transitive development dependency; the pin holds the floor above the command-injection advisory.",
-      "lastCheckedOn": "2026-08-21"
-    },
-    {
       "package": "fast-uri",
       "range": "^3.1.6",
       "reason": "Four high advisories landed against fast-uri 3.0.0-3.1.5, all host-confusion or SSRF through URL normalisation. It reaches this tree only as web-ext -> addons-linter -> ajv, so nothing it parses is user input, but the pin costs nothing and npm reported a non-breaking fix. The 4.x line is a major bump ajv does not ask for.",
@@ -40,6 +43,20 @@
       "answersAdvisory": "GHSA-2883-xcg3-v3hh",
       "advisoryUrl": "https://github.com/advisories/GHSA-2883-xcg3-v3hh",
       "lastCheckedOn": "2026-09-13"
+    },
+    {
+      "package": "shell-quote",
+      "range": "^1.12.0",
+      "reason": "Transitive development dependency through web-ext -> fx-runner. 1.11.0 fixes quote() emitting a command-injection-ready token after a { comment } token followed by a line terminator; 1.12.0 is the current release.",
+      "answersAdvisory": "shell-quote quote() line-terminator injection (>=1.8.4 <1.11.0)",
+      "lastCheckedOn": "2026-10-06"
+    },
+    {
+      "package": "source-map-js",
+      "range": "^1.2.2",
+      "reason": "Transitive development dependency through web-ext -> addons-linter -> css-tree. 1.2.2 bounds indexed source-map section offsets, which could otherwise stall the event loop.",
+      "answersAdvisory": "source-map-js indexed section offset denial of service (>=1.0.0 <1.2.2)",
+      "lastCheckedOn": "2026-10-06"
     }
   ]
 }

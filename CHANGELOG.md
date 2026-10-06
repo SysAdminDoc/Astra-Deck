@@ -19,6 +19,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The download progress panel shows the video's title instead of "Unknown".
 - A quiet confirmation now clears a warning that's still on screen. Before, the "isn't paired yet" notice stayed up after pairing had worked.
 
+### Security
+
+- The development dependency audit is clean again. None of this ships in the extension or the userscript; it's the Firefox lint toolchain. `shell-quote` moves to 1.12.0 and `source-map-js` to 1.2.2. web-ext's Android device bridge is replaced with a small local stand-in, because it pulled in `node-forge`, and no `node-forge` release fixes GHSA-86w9-cpqp-85rv yet. web-ext only loads that bridge for Firefox for Android, which this project never targets.
+
 ## [4.94.0] (2026-10-05)
 
 ### Added
