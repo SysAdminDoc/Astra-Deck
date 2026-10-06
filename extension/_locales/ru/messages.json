@@ -850,6 +850,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "Токен из однократного сопряжения юзерскрипта в Astra Downloader."
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "сопряжено"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -991,6 +997,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "Ещё не сопряжено"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1051,6 +1060,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "Astra Downloader запущен, но сопряжение не прошло. Сначала выберите в нём Pair userscript, затем проверьте снова в течение двух минут."
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "Astra Downloader запущен, и его нужно один раз сопрячь с юзерскриптом. В Astra Downloader откройте Browser extension и выберите Pair userscript, затем в течение двух минут нажмите здесь «Check again». Для сопряжения нужен Astra Downloader 2.16.0 или новее, его устанавливает кнопка Download setup ниже."
+  },
   "dlLocalOptionsTitle": {
     "message": "Показать параметры локальной загрузки",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1105,6 +1120,9 @@
   },
   "dlPopupDefault": {
     "message": "По умолчанию"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "Сначала сопрягите Astra Downloader с юзерскриптом"
   },
   "dlPopupDownloaderOffline": {
     "message": "Загрузчик не запущен"

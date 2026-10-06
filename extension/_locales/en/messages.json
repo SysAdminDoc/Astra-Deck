@@ -858,6 +858,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "Token from the one-time userscript pairing in Astra Downloader."
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "paired"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -999,6 +1005,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "Not paired yet"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1059,6 +1068,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "Astra Downloader is running but did not pair. Choose Pair userscript there first, then check again within two minutes."
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "Astra Downloader is running and needs to pair with the userscript once. In Astra Downloader, open Browser extension and choose Pair userscript, then choose Check again here within two minutes. Pairing needs Astra Downloader 2.16.0 or newer, which Download setup below installs."
+  },
   "dlLocalOptionsTitle": {
     "message": "Show local download options",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1115,6 +1130,9 @@
   },
   "dlPopupDefault": {
     "message": "Default"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "Pair Astra Downloader with the userscript first"
   },
   "dlPopupDownloaderOffline": {
     "message": "Downloader not running"

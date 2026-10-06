@@ -850,6 +850,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "Astra Downloader で一度だけ行うユーザースクリプトのペアリングで受け取ったトークンです。"
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "ペアリング済み"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -991,6 +997,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "まだペアリングされていません"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1051,6 +1060,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "Astra Downloader は起動していますが、ペアリングされませんでした。先に Astra Downloader で Pair userscript を選び、2 分以内にもう一度確認してください。"
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "Astra Downloader は起動していますが、ユーザースクリプトと一度ペアリングする必要があります。Astra Downloader で Browser extension を開いて Pair userscript を選び、2 分以内にここで「Check again」を選んでください。ペアリングには Astra Downloader 2.16.0 以降が必要で、下の「Download setup」でインストールできます。"
+  },
   "dlLocalOptionsTitle": {
     "message": "ローカルダウンロードのオプションを表示",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1105,6 +1120,9 @@
   },
   "dlPopupDefault": {
     "message": "既定値"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "先に Astra Downloader をユーザースクリプトとペアリングしてください"
   },
   "dlPopupDownloaderOffline": {
     "message": "ダウンローダーが実行されていません"

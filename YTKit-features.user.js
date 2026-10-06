@@ -26,6 +26,9 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 	const COOKIE_HANDOFF_MINIMUM_API = 2;
 	const AUTO_START_RETRY_BUDGET = 8;
 	const NATIVE_TOKEN_REQUEST_TIMEOUT_MS = 6500;
+	const USERSCRIPT_RUNTIME_ID = 'astra-deck-userscript';
+	const USERSCRIPT_TOKEN_KEY = 'ytkit_mediadl_userscript_token';
+	const USERSCRIPT_COMPANION_TIMEOUT_MS = 5000;
 	function getCompanionPortCatalogue() {
 		const catalogue = globalThis.YTKitCore?.companionPorts;
 		if (catalogue?.ports?.length) return catalogue;
@@ -409,7 +412,9 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			denoRuntime: normalizeRuntime(raw.denoRuntime),
 			token,
 			tokenSource: token
-				? (authenticatedStatus.tokenSource === 'native' ? 'native' : 'legacy-health')
+				? (['native', 'userscript'].includes(authenticatedStatus.tokenSource)
+					? authenticatedStatus.tokenSource
+					: 'legacy-health')
 				: null
 		};
 	}
@@ -667,6 +672,20 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			_PORT_CANDIDATES: COMPANION_PORTS,
 			_port: COMPANION_PORT_CATALOGUE?.primaryPort || null,
 			_SERVICE_ID: 'astra-downloader',
+			_isUserscript() {
+				return String(getExtensionRuntimeId() || '') === USERSCRIPT_RUNTIME_ID;
+			},
+			_companionTimeout(ms) {
+				return this._isUserscript() ? Math.max(ms, USERSCRIPT_COMPANION_TIMEOUT_MS) : ms;
+			},
+			_savedUserscriptToken() {
+				if (!this._isUserscript()) return '';
+				const saved = storageRead(USERSCRIPT_TOKEN_KEY, '');
+				return typeof saved === 'string' && /^[A-Za-z0-9_-]{16,128}$/.test(saved) ? saved : '';
+			},
+			_needsUserscriptPairing() {
+				return this._isUserscript() && this._nativeChannelRequired;
+			},
 			baseUrl() { return 'http://127.0.0.1:' + this._port; },
 			_isAstraDownloaderHealth(data) {
 				if (!data) return false;
@@ -763,30 +782,35 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 							'X-MDL-Client': 'MediaDL'
 						}),
 						data: JSON.stringify({ id: extensionId }),
-						timeout: 2000
+						timeout: this._companionTimeout(2000)
 					});
 					if (data?.ok === true && data?.paired === true) {
+						if (data.userscript === true && this._isUserscript() && typeof data.token === 'string') {
+							storageWrite(USERSCRIPT_TOKEN_KEY, data.token);
+						}
 						DebugManager.log('MediaDL', `Paired extension ${extensionId} with Astra Downloader on port ${port}`);
 						return true;
 					}
 				} catch (error) {
-					DebugManager.log('MediaDL', `Pairing failed on port ${port}: ${error?.message || error}`);
+					DebugManager.log('MediaDL', `Pairing failed on port ${port}: ${error?.data?.code || error?.message || error}`);
 				}
 				return false;
 			},
 			async _checkImpl(force) {
 				const now = Date.now();
 				let nativeToken = await this._requestNativeToken();
+				let userscriptToken = nativeToken.token ? '' : this._savedUserscriptToken();
 				let foreignServer = null;
-				const tryPort = async (port) => {
+				const tryPort = async (port, bearer = '') => {
 					try {
 						const headers = this._headers({ 'X-MDL-Client': 'MediaDL' });
 						if (nativeToken.token) headers['X-MDL-Token-Source'] = 'native';
+						if (bearer) headers['X-Auth-Token'] = bearer;
 						const { data } = await extensionFetchJson({
 							method: 'GET',
 							url: 'http://127.0.0.1:' + port + '/health',
 							headers,
-							timeout: 1500,
+							timeout: this._companionTimeout(1500),
 							retry: false
 						});
 						if (this._isAstraDownloaderHealth(data)) return data;
@@ -799,13 +823,29 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					return null;
 				};
 				const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
+				const probes = new Map();
+				const probe = (port) => {
+					if (!probes.has(port)) probes.set(port, tryPort(port));
+					return probes.get(port);
+				};
 				let nativeRequiredStatus = null;
 				for (const port of order) {
-					let data = await tryPort(port);
+					if (port === order[1] && this._isUserscript()) order.slice(1).forEach(probe);
+					let data = await probe(port);
 					if (data) {
-						if (!nativeToken.token && !data.token && data.service === this._SERVICE_ID) {
+						const strongIdentity = data.service === this._SERVICE_ID;
+						if (userscriptToken && strongIdentity) {
+							const verified = await tryPort(port, userscriptToken);
+							if (verified && verified.authorized === false) {
+								DebugManager.log('MediaDL', 'The saved userscript token is no longer current; pairing again');
+								storageWrite(USERSCRIPT_TOKEN_KEY, '');
+								userscriptToken = '';
+							}
+						}
+						if (!nativeToken.token && !userscriptToken && !data.token && strongIdentity) {
 							const paired = await this._pairWithCompanion(port);
-							if (paired) {
+							userscriptToken = paired ? this._savedUserscriptToken() : '';
+							if (paired && !userscriptToken) {
 								nativeToken = await this._requestNativeToken();
 								if (!nativeToken.token) {
 									const repaired = await tryPort(port);
@@ -813,7 +853,8 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 								}
 							}
 						}
-						const token = nativeToken.token || data.token || null;
+						const pairedToken = strongIdentity ? userscriptToken : '';
+						const token = nativeToken.token || pairedToken || data.token || null;
 						if (!token) {
 							if (data.nativeChannelRequired === true || data.legacyTokenEcho === false) {
 								nativeRequiredStatus = {
@@ -825,6 +866,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 									port,
 								};
 								DebugManager.log('MediaDL', `Astra Downloader on port ${port} requires native messaging for token bootstrap (${nativeToken.error || 'no native token'})`);
+								if (strongIdentity && this._isUserscript()) break;
 								continue;
 							}
 							DebugManager.log('MediaDL', `Astra Downloader on port ${port} did not provide an auth token`);
@@ -833,7 +875,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 						this._port = port;
 						this._status = 'running';
 						this._token = token;
-						this._tokenSource = nativeToken.token ? 'native' : 'legacy-health';
+						this._tokenSource = nativeToken.token ? 'native' : (pairedToken ? 'userscript' : 'legacy-health');
 						this._nativeTokenError = nativeToken.token ? null : nativeToken.error;
 						this._nativeChannelRequired = false;
 						this._foreignServer = foreignServer;
@@ -1052,6 +1094,12 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 						prompt.dataset.state = 'error';
 						return;
 					}
+					if (this._needsUserscriptPairing()) {
+						desc.textContent = t('dlInstallUserscriptPairDesc',
+							'Astra Downloader is running and needs to pair with the userscript once. In Astra Downloader, open Browser extension and choose Pair userscript, then choose Check again here within two minutes. Pairing needs Astra Downloader 2.16.0 or newer, which Download setup below installs.');
+						prompt.dataset.state = 'error';
+						return;
+					}
 					if (this._nativeChannelRequired) {
 						desc.textContent = t('dlInstallNativeRequiredDesc',
 							'Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again.');
@@ -1196,8 +1244,13 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					} else {
 						recheckBtn.setAttribute('aria-busy', 'false');
 						renderPromptDesc();
-						setPromptButtonState(recheckBtn, t('dlInstallNotDetected', 'Not detected yet'), 'danger');
-						setPromptNote(t('dlInstallNotDetectedHint', 'Setup was not detected yet. Make sure the installer finished, then check again.'), 'error');
+						if (this._needsUserscriptPairing()) {
+							setPromptButtonState(recheckBtn, t('dlInstallNotPaired', 'Not paired yet'), 'danger');
+							setPromptNote(t('dlInstallUserscriptNotPairedHint', 'Astra Downloader is running but did not pair. Choose Pair userscript there first, then check again within two minutes.'), 'error');
+						} else {
+							setPromptButtonState(recheckBtn, t('dlInstallNotDetected', 'Not detected yet'), 'danger');
+							setPromptNote(t('dlInstallNotDetectedHint', 'Setup was not detected yet. Make sure the installer finished, then check again.'), 'error');
+						}
 						recheckBtn.disabled = false;
 						setTimeout(() => { setPromptButtonState(recheckBtn, t('dlInstallCheckAgain', 'Check again')); }, 4000);
 					}
@@ -1363,7 +1416,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 						method: 'GET',
 						url: MediaDLManager.baseUrl() + '/status/' + id,
 						headers: { 'X-Auth-Token': token },
-						timeout: 3000
+						timeout: MediaDLManager._companionTimeout(3000)
 					});
 					if (stopped || !fill.isConnected) { stopPolling(); return; }
 					consecutiveErrors = 0;
@@ -1629,8 +1682,14 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				tone: '#f59e0b',
 				duration: 12,
 			},
+			'userscript-pairing-required': {
+				message: 'Astra Downloader is running but isn\u2019t paired with the userscript yet.',
+				advice: 'In Astra Downloader, open Browser extension and choose Pair userscript, then choose Check again below.',
+				tone: '#f59e0b',
+				duration: 14,
+			},
 		});
-		const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'client-api-too-old', 'companion-api-too-new']);
+		const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'userscript-pairing-required', 'client-api-too-old', 'companion-api-too-new']);
 		function classifyDownloaderFailureResponse(resp = {}) {
 			const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
 			const code = String(rawCode || 'download-failed');
@@ -1658,13 +1717,20 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			});
 			return mapped;
 		}
+		function downloaderUnavailableText() {
+			return MediaDLManager._needsUserscriptPairing()
+				? t('dlPopupDownloaderNotPaired', 'Pair Astra Downloader with the userscript first')
+				: t('dlPopupDownloaderOffline', 'Downloader not running');
+		}
 		function showNativeChannelRequired(status = {}) {
 			if (status.nativeTokenError) logFailure('native-token', status.nativeTokenError);
-			const mapped = showDownloaderFailure({
-				error_code: 'native-channel-required',
-				error: status.nativeTokenError || '',
-				next_action: 'repair-native-host',
-			});
+			const mapped = showDownloaderFailure(MediaDLManager._isUserscript()
+				? { error_code: 'userscript-pairing-required', next_action: 'pair-userscript' }
+				: {
+					error_code: 'native-channel-required',
+					error: status.nativeTokenError || '',
+					next_action: 'repair-native-host',
+				});
 			MediaDLManager.showInstallPrompt('retry');
 			return mapped;
 		}
@@ -1732,6 +1798,23 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				_downloadInProgress = false;
 			}
 		}
+		function pageVideoTitle(videoUrl) {
+			let requestedId = '';
+			try {
+				requestedId = new URL(videoUrl).searchParams.get('v') || '';
+			} catch (_) {
+				return '';
+			}
+			if (!requestedId || requestedId !== getVideoId()) return '';
+			const details = getPlayerResponseGlobal()?.videoDetails;
+			if (details?.title && (!details.videoId || details.videoId === requestedId)) {
+				return String(details.title).trim().slice(0, 300);
+			}
+			const heading = typeof document !== 'undefined'
+				? document.querySelector?.('ytd-watch-metadata h1')?.textContent?.trim()
+				: '';
+			return heading ? heading.slice(0, 300) : '';
+		}
 		async function _mediaDLSendDownload(videoUrl, audioOnly, token, opts = {}) {
 			DebugManager.log('MediaDL', `Sending download: ${videoUrl} (audio=${audioOnly})`);
 			const s = appState?.settings;
@@ -1744,6 +1827,8 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			if (opts.outputDir) payload.outputDir = opts.outputDir;
 			if (opts.section) payload.section = opts.section;
 			if (Array.isArray(opts.playlistItems)) payload.playlistItems = opts.playlistItems;
+			const title = pageVideoTitle(videoUrl);
+			if (title) payload.title = title;
 			const sendDownload = async () => {
 				try {
 					const { response, data: resp } = await extensionFetchJson({
@@ -1884,7 +1969,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					method: 'GET',
 					url: MediaDLManager.baseUrl() + '/config',
 					headers: { 'X-Auth-Token': token },
-					timeout: 2000
+					timeout: MediaDLManager._companionTimeout(2000)
 				});
 				return data;
 			} catch (_) { return null; }
@@ -2151,7 +2236,9 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				} catch (error) {
 					renderQualitySizeLabels(null);
 					logFailure('format-probe', error);
-					qualityStatus.textContent = describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
+					qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
+						? downloaderUnavailableText()
+						: describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
 				} finally {
 					probeBtn.disabled = false;
 					probeBtn.textContent = t('dlPopupFormatsRecheck', 'Check again');
@@ -2207,7 +2294,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				try {
 					const mdl = await MediaDLManager.check();
 					if (!mdl.ok) {
-						setDirText(t('dlPopupDownloaderOffline', 'Downloader not running'), false);
+						setDirText(downloaderUnavailableText(), false);
 						return;
 					}
 					const { data } = await extensionFetchJson({
@@ -2562,17 +2649,19 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					renderQualitySizeLabels(null);
 					logFailure('format-probe', error);
 					if (qualityStatus.isConnected) {
-						qualityStatus.textContent = describeFailureWithLabel(t(
-							'dlPopupFormatsUnavailable',
-							'Format list unavailable.'
-						), error);
+						qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
+							? downloaderUnavailableText()
+							: describeFailureWithLabel(t(
+								'dlPopupFormatsUnavailable',
+								'Format list unavailable.'
+							), error);
 					}
 				}
 			})();
 			(async () => {
 				const mdl = await MediaDLManager.check();
 				if (!mdl.ok) {
-					if (dirDisplay.isConnected) setDirText(t('dlPopupDownloaderOffline', 'Downloader not running'), false);
+					if (dirDisplay.isConnected) setDirText(downloaderUnavailableText(), false);
 					return;
 				}
 				const cfg = await _fetchServerConfig(mdl.token);
@@ -2656,14 +2745,19 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					return;
 				}
 				if (data.tokenSource) {
-					const authTone = data.tokenSource === 'native' ? 'ok' : 'warn';
+					const trusted = data.tokenSource === 'native' || data.tokenSource === 'userscript';
+					const authTone = trusted ? 'ok' : 'warn';
 					const authLabel = data.tokenSource === 'native'
 						? t('dlHealthNative', 'native')
-						: t('dlHealthLegacy', 'legacy');
+						: data.tokenSource === 'userscript'
+							? t('dlHealthUserscriptPaired', 'paired')
+							: t('dlHealthLegacy', 'legacy');
 					const authPill = this._renderPill(t('dlHealthAuth', 'Auth'), authLabel, authTone);
 					authPill.title = data.tokenSource === 'native'
 						? t('dlHealthNativeAuthTitle', 'Token received over browser native messaging; /health token echo suppressed.')
-						: t('dlHealthLegacyAuthTitle', 'Using legacy /health token bootstrap because native messaging is unavailable.');
+						: data.tokenSource === 'userscript'
+							? t('dlHealthUserscriptAuthTitle', 'Token from the one-time userscript pairing in Astra Downloader.')
+							: t('dlHealthLegacyAuthTitle', 'Using legacy /health token bootstrap because native messaging is unavailable.');
 					this._container.appendChild(authPill);
 				}
 				if (data.ytDlpVersion) {

@@ -23,6 +23,18 @@
     // or disconnected worker can strand the content-side message callback.
     // Keep discovery bounded so the install panel can still render.
     const NATIVE_TOKEN_REQUEST_TIMEOUT_MS = 6500;
+    // The userscript build's runtime ID (sync-userscript.js). It has no native
+    // messaging channel and no extension Origin, so it pairs with the companion
+    // once, through a window the user opens there (Astra Downloader 2.16.0+),
+    // and keeps the token in the userscript manager's private storage.
+    const USERSCRIPT_RUNTIME_ID = 'astra-deck-userscript';
+    const USERSCRIPT_TOKEN_KEY = 'ytkit_mediadl_userscript_token';
+    // A userscript manager relays each request through its own background
+    // page. In a background tab, where Firefox clamps timers to one second,
+    // Tampermonkey takes one to two seconds per round trip even to a companion
+    // that answers in 5 ms. That ran straight through the short timeouts here,
+    // so the periodic check lost a companion that was running.
+    const USERSCRIPT_COMPANION_TIMEOUT_MS = 5000;
 
     function getCompanionPortCatalogue() {
         const catalogue = globalThis.YTKitCore?.companionPorts;
@@ -475,7 +487,9 @@
             denoRuntime: normalizeRuntime(raw.denoRuntime),
             token,
             tokenSource: token
-                ? (authenticatedStatus.tokenSource === 'native' ? 'native' : 'legacy-health')
+                ? (['native', 'userscript'].includes(authenticatedStatus.tokenSource)
+                    ? authenticatedStatus.tokenSource
+                    : 'legacy-health')
                 : null
         };
     }
@@ -830,6 +844,28 @@
             _port: COMPANION_PORT_CATALOGUE?.primaryPort || null,
             _SERVICE_ID: 'astra-downloader',
 
+            _isUserscript() {
+                return String(getExtensionRuntimeId() || '') === USERSCRIPT_RUNTIME_ID;
+            },
+
+            _companionTimeout(ms) {
+                return this._isUserscript() ? Math.max(ms, USERSCRIPT_COMPANION_TIMEOUT_MS) : ms;
+            },
+
+            // The token the userscript collected when it paired. Same shape the
+            // companion accepts for ServerToken; anything else is ignored.
+            _savedUserscriptToken() {
+                if (!this._isUserscript()) return '';
+                const saved = storageRead(USERSCRIPT_TOKEN_KEY, '');
+                return typeof saved === 'string' && /^[A-Za-z0-9_-]{16,128}$/.test(saved) ? saved : '';
+            },
+
+            // Running, answering, and waiting for the user to choose Pair
+            // userscript in Astra Downloader.
+            _needsUserscriptPairing() {
+                return this._isUserscript() && this._nativeChannelRequired;
+            },
+
             // Base URL for server calls. Always reflects the currently discovered port.
             baseUrl() { return 'http://127.0.0.1:' + this._port; },
 
@@ -958,14 +994,19 @@
                             'X-MDL-Client': 'MediaDL'
                         }),
                         data: JSON.stringify({ id: extensionId }),
-                        timeout: 2000
+                        timeout: this._companionTimeout(2000)
                     });
                     if (data?.ok === true && data?.paired === true) {
+                        // Only the userscript is ever handed the token here, and
+                        // only while the user has the companion's window open.
+                        if (data.userscript === true && this._isUserscript() && typeof data.token === 'string') {
+                            storageWrite(USERSCRIPT_TOKEN_KEY, data.token);
+                        }
                         DebugManager.log('MediaDL', `Paired extension ${extensionId} with Astra Downloader on port ${port}`);
                         return true;
                     }
                 } catch (error) {
-                    DebugManager.log('MediaDL', `Pairing failed on port ${port}: ${error?.message || error}`);
+                    DebugManager.log('MediaDL', `Pairing failed on port ${port}: ${error?.data?.code || error?.message || error}`);
                 }
                 return false;
             },
@@ -973,17 +1014,19 @@
             async _checkImpl(force) {
                 const now = Date.now();
                 let nativeToken = await this._requestNativeToken();
+                let userscriptToken = nativeToken.token ? '' : this._savedUserscriptToken();
                 // First non-Astra server found squatting a companion port, if any.
                 let foreignServer = null;
-                const tryPort = async (port) => {
+                const tryPort = async (port, bearer = '') => {
                     try {
                         const headers = this._headers({ 'X-MDL-Client': 'MediaDL' });
                         if (nativeToken.token) headers['X-MDL-Token-Source'] = 'native';
+                        if (bearer) headers['X-Auth-Token'] = bearer;
                         const { data } = await extensionFetchJson({
                             method: 'GET',
                             url: 'http://127.0.0.1:' + port + '/health',
                             headers,
-                            timeout: 1500,
+                            timeout: this._companionTimeout(1500),
                             // A stopped companion refuses at once; backing off
                             // 1+2+4 s on each of six ports held every recovery
                             // button on "Checking..." for minutes.
@@ -1008,10 +1051,34 @@
 
                 // Try previously-known port first, then all others.
                 const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
+                // The userscript's longer timeout would cost five seconds for
+                // each closed port in turn when the companion is not running,
+                // so once the known port misses it asks the rest at once and
+                // still takes the answers in order.
+                const probes = new Map();
+                const probe = (port) => {
+                    if (!probes.has(port)) probes.set(port, tryPort(port));
+                    return probes.get(port);
+                };
                 let nativeRequiredStatus = null;
                 for (const port of order) {
-                    let data = await tryPort(port);
+                    if (port === order[1] && this._isUserscript()) order.slice(1).forEach(probe);
+                    let data = await probe(port);
                     if (data) {
+                        // The userscript's saved token goes only to a server
+                        // that names itself, for the reason given below, and
+                        // /health says whether it is still current. Regenerating
+                        // the token in the companion unpairs the userscript; a
+                        // companion older than the `authorized` flag is trusted.
+                        const strongIdentity = data.service === this._SERVICE_ID;
+                        if (userscriptToken && strongIdentity) {
+                            const verified = await tryPort(port, userscriptToken);
+                            if (verified && verified.authorized === false) {
+                                DebugManager.log('MediaDL', 'The saved userscript token is no longer current; pairing again');
+                                storageWrite(USERSCRIPT_TOKEN_KEY, '');
+                                userscriptToken = '';
+                            }
+                        }
                         // Pair only against the STRONG identity, not the
                         // legacy `token_required + port` heuristic that
                         // _isAstraDownloaderHealth also accepts. Anything
@@ -1021,9 +1088,10 @@
                         // and the runtime ID of an unpacked install is derived
                         // from its path, so it identifies the machine. Only a
                         // server that names itself gets it.
-                        if (!nativeToken.token && !data.token && data.service === this._SERVICE_ID) {
+                        if (!nativeToken.token && !userscriptToken && !data.token && strongIdentity) {
                             const paired = await this._pairWithCompanion(port);
-                            if (paired) {
+                            userscriptToken = paired ? this._savedUserscriptToken() : '';
+                            if (paired && !userscriptToken) {
                                 nativeToken = await this._requestNativeToken();
                                 // Pairing is what authorizes this origin, so the
                                 // companion only starts handing over the bearer
@@ -1044,7 +1112,8 @@
                                 }
                             }
                         }
-                        const token = nativeToken.token || data.token || null;
+                        const pairedToken = strongIdentity ? userscriptToken : '';
+                        const token = nativeToken.token || pairedToken || data.token || null;
                         if (!token) {
                             if (data.nativeChannelRequired === true || data.legacyTokenEcho === false) {
                                 nativeRequiredStatus = {
@@ -1056,6 +1125,12 @@
                                     port,
                                 };
                                 DebugManager.log('MediaDL', `Astra Downloader on port ${port} requires native messaging for token bootstrap (${nativeToken.error || 'no native token'})`);
+                                // The userscript's only way in is pairing, which
+                                // this server just answered. Probing the other
+                                // ports finds nothing, and on Windows each closed
+                                // one costs the full timeout: the pairing advice
+                                // took twenty seconds to appear.
+                                if (strongIdentity && this._isUserscript()) break;
                                 continue;
                             }
                             DebugManager.log('MediaDL', `Astra Downloader on port ${port} did not provide an auth token`);
@@ -1064,7 +1139,7 @@
                         this._port = port;
                         this._status = 'running';
                         this._token = token;
-                        this._tokenSource = nativeToken.token ? 'native' : 'legacy-health';
+                        this._tokenSource = nativeToken.token ? 'native' : (pairedToken ? 'userscript' : 'legacy-health');
                         this._nativeTokenError = nativeToken.token ? null : nativeToken.error;
                         this._nativeChannelRequired = false;
                         // Keep any squatter we passed on the way to the real
@@ -1337,6 +1412,12 @@
                     // predates that. "Verify the native host registration" was
                     // the old advice and nobody can act on it; name the fix and
                     // put the setup button under it.
+                    if (this._needsUserscriptPairing()) {
+                        desc.textContent = t('dlInstallUserscriptPairDesc',
+                            'Astra Downloader is running and needs to pair with the userscript once. In Astra Downloader, open Browser extension and choose Pair userscript, then choose Check again here within two minutes. Pairing needs Astra Downloader 2.16.0 or newer, which Download setup below installs.');
+                        prompt.dataset.state = 'error';
+                        return;
+                    }
                     if (this._nativeChannelRequired) {
                         desc.textContent = t('dlInstallNativeRequiredDesc',
                             'Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again.');
@@ -1496,8 +1577,13 @@
                     } else {
                         recheckBtn.setAttribute('aria-busy', 'false');
                         renderPromptDesc();
-                        setPromptButtonState(recheckBtn, t('dlInstallNotDetected', 'Not detected yet'), 'danger');
-                        setPromptNote(t('dlInstallNotDetectedHint', 'Setup was not detected yet. Make sure the installer finished, then check again.'), 'error');
+                        if (this._needsUserscriptPairing()) {
+                            setPromptButtonState(recheckBtn, t('dlInstallNotPaired', 'Not paired yet'), 'danger');
+                            setPromptNote(t('dlInstallUserscriptNotPairedHint', 'Astra Downloader is running but did not pair. Choose Pair userscript there first, then check again within two minutes.'), 'error');
+                        } else {
+                            setPromptButtonState(recheckBtn, t('dlInstallNotDetected', 'Not detected yet'), 'danger');
+                            setPromptNote(t('dlInstallNotDetectedHint', 'Setup was not detected yet. Make sure the installer finished, then check again.'), 'error');
+                        }
                         recheckBtn.disabled = false;
                         setTimeout(() => { setPromptButtonState(recheckBtn, t('dlInstallCheckAgain', 'Check again')); }, 4000);
                     }
@@ -1711,7 +1797,7 @@
                         method: 'GET',
                         url: MediaDLManager.baseUrl() + '/status/' + id,
                         headers: { 'X-Auth-Token': token },
-                        timeout: 3000
+                        timeout: MediaDLManager._companionTimeout(3000)
                     });
                     if (stopped || !fill.isConnected) { stopPolling(); return; }
                     consecutiveErrors = 0;
@@ -2004,11 +2090,17 @@
                 tone: '#f59e0b',
                 duration: 12,
             },
+            'userscript-pairing-required': {
+                message: 'Astra Downloader is running but isn\u2019t paired with the userscript yet.',
+                advice: 'In Astra Downloader, open Browser extension and choose Pair userscript, then choose Check again below.',
+                tone: '#f59e0b',
+                duration: 14,
+            },
         });
 
         // Failures the repair prompt (setup, start, check again) can fix. Every
         // other code has its own advice and a downloader that is answering.
-        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'client-api-too-old', 'companion-api-too-new']);
+        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'userscript-pairing-required', 'client-api-too-old', 'companion-api-too-new']);
 
         function classifyDownloaderFailureResponse(resp = {}) {
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
@@ -2045,16 +2137,24 @@
             return mapped;
         }
 
+        function downloaderUnavailableText() {
+            return MediaDLManager._needsUserscriptPairing()
+                ? t('dlPopupDownloaderNotPaired', 'Pair Astra Downloader with the userscript first')
+                : t('dlPopupDownloaderOffline', 'Downloader not running');
+        }
+
         function showNativeChannelRequired(status = {}) {
             // The native token error is a host-registration diagnostic, not
             // something the reader can act on; the preset advice already says
             // what to do.
             if (status.nativeTokenError) logFailure('native-token', status.nativeTokenError);
-            const mapped = showDownloaderFailure({
-                error_code: 'native-channel-required',
-                error: status.nativeTokenError || '',
-                next_action: 'repair-native-host',
-            });
+            const mapped = showDownloaderFailure(MediaDLManager._isUserscript()
+                ? { error_code: 'userscript-pairing-required', next_action: 'pair-userscript' }
+                : {
+                    error_code: 'native-channel-required',
+                    error: status.nativeTokenError || '',
+                    next_action: 'repair-native-host',
+                });
             // A toast on its own left the reader with nothing to press. The
             // repair prompt carries Download setup, Start service and Check
             // again, and its description names this exact state.
@@ -2145,6 +2245,28 @@
             }
         }
 
+        // The companion names the job with this in its queue and in /status.
+        // Without it every handoff read "Unknown" in the progress panel from
+        // start to finish: the companion never reads a title back from yt-dlp.
+        // Only the video this page is showing has a title we can vouch for.
+        function pageVideoTitle(videoUrl) {
+            let requestedId = '';
+            try {
+                requestedId = new URL(videoUrl).searchParams.get('v') || '';
+            } catch (_) {
+                return '';
+            }
+            if (!requestedId || requestedId !== getVideoId()) return '';
+            const details = getPlayerResponseGlobal()?.videoDetails;
+            if (details?.title && (!details.videoId || details.videoId === requestedId)) {
+                return String(details.title).trim().slice(0, 300);
+            }
+            const heading = typeof document !== 'undefined'
+                ? document.querySelector?.('ytd-watch-metadata h1')?.textContent?.trim()
+                : '';
+            return heading ? heading.slice(0, 300) : '';
+        }
+
         async function _mediaDLSendDownload(videoUrl, audioOnly, token, opts = {}) {
             DebugManager.log('MediaDL', `Sending download: ${videoUrl} (audio=${audioOnly})`);
             const s = appState?.settings;
@@ -2157,6 +2279,8 @@
             if (opts.outputDir) payload.outputDir = opts.outputDir;
             if (opts.section) payload.section = opts.section;
             if (Array.isArray(opts.playlistItems)) payload.playlistItems = opts.playlistItems;
+            const title = pageVideoTitle(videoUrl);
+            if (title) payload.title = title;
 
             const sendDownload = async () => {
                 try {
@@ -2355,7 +2479,7 @@
                     method: 'GET',
                     url: MediaDLManager.baseUrl() + '/config',
                     headers: { 'X-Auth-Token': token },
-                    timeout: 2000
+                    timeout: MediaDLManager._companionTimeout(2000)
                 });
                 return data;
             } catch (_) { return null; }
@@ -2655,7 +2779,9 @@
                 } catch (error) {
                     renderQualitySizeLabels(null);
                     logFailure('format-probe', error);
-                    qualityStatus.textContent = describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
+                    qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
+                        ? downloaderUnavailableText()
+                        : describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
                 } finally {
                     probeBtn.disabled = false;
                     probeBtn.textContent = t('dlPopupFormatsRecheck', 'Check again');
@@ -2716,7 +2842,7 @@
                 try {
                     const mdl = await MediaDLManager.check();
                     if (!mdl.ok) {
-                        setDirText(t('dlPopupDownloaderOffline', 'Downloader not running'), false);
+                        setDirText(downloaderUnavailableText(), false);
                         return;
                     }
                     const { data } = await extensionFetchJson({
@@ -3145,10 +3271,12 @@
                     renderQualitySizeLabels(null);
                     logFailure('format-probe', error);
                     if (qualityStatus.isConnected) {
-                        qualityStatus.textContent = describeFailureWithLabel(t(
-                            'dlPopupFormatsUnavailable',
-                            'Format list unavailable.'
-                        ), error);
+                        qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
+                            ? downloaderUnavailableText()
+                            : describeFailureWithLabel(t(
+                                'dlPopupFormatsUnavailable',
+                                'Format list unavailable.'
+                            ), error);
                     }
                 }
             })();
@@ -3157,7 +3285,7 @@
             (async () => {
                 const mdl = await MediaDLManager.check();
                 if (!mdl.ok) {
-                    if (dirDisplay.isConnected) setDirText(t('dlPopupDownloaderOffline', 'Downloader not running'), false);
+                    if (dirDisplay.isConnected) setDirText(downloaderUnavailableText(), false);
                     return;
                 }
                 const cfg = await _fetchServerConfig(mdl.token);
@@ -3257,14 +3385,19 @@
                     return;
                 }
                 if (data.tokenSource) {
-                    const authTone = data.tokenSource === 'native' ? 'ok' : 'warn';
+                    const trusted = data.tokenSource === 'native' || data.tokenSource === 'userscript';
+                    const authTone = trusted ? 'ok' : 'warn';
                     const authLabel = data.tokenSource === 'native'
                         ? t('dlHealthNative', 'native')
-                        : t('dlHealthLegacy', 'legacy');
+                        : data.tokenSource === 'userscript'
+                            ? t('dlHealthUserscriptPaired', 'paired')
+                            : t('dlHealthLegacy', 'legacy');
                     const authPill = this._renderPill(t('dlHealthAuth', 'Auth'), authLabel, authTone);
                     authPill.title = data.tokenSource === 'native'
                         ? t('dlHealthNativeAuthTitle', 'Token received over browser native messaging; /health token echo suppressed.')
-                        : t('dlHealthLegacyAuthTitle', 'Using legacy /health token bootstrap because native messaging is unavailable.');
+                        : data.tokenSource === 'userscript'
+                            ? t('dlHealthUserscriptAuthTitle', 'Token from the one-time userscript pairing in Astra Downloader.')
+                            : t('dlHealthLegacyAuthTitle', 'Using legacy /health token bootstrap because native messaging is unavailable.');
                     this._container.appendChild(authPill);
                 }
                 if (data.ytDlpVersion) {

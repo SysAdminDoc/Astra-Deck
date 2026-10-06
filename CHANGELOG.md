@@ -11,6 +11,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Astra no longer pops up a notice after everyday actions. Hiding a video, marking one as watched, toggling Repeat or skipping a chapter now just happens, with no "Video hidden" box in the corner. Warnings and errors still show, because they're how you find out a click didn't work. The settings panel keeps its confirmations too, and screen readers still hear every notice. If you liked the popups, turn on Action Notices in Advanced settings.
 - The research notes and roadmap were refreshed on 2026-10-05. That pass also compared the most-installed YouTube userscripts on Greasy Fork with Astra's settings, and none of them does anything Astra can't already do.
 
+### Fixed
+
+- The userscript can download through Astra Downloader again. A userscript manager has no native messaging and sends no extension origin, so the companion never gave it a token, and every download ended with advice to update. Now you pair them once. In Astra Downloader 2.16.0 or newer, open Browser extension and choose Pair userscript, then press a download button on YouTube within two minutes. The userscript keeps the token in your manager's storage, and regenerating the token in Astra Downloader unpairs it.
+- Before pairing, the download panel tells you to pair within a few seconds. It used to try every companion port first, which took about twenty.
+- The userscript gives Astra Downloader up to five seconds to answer. When the YouTube tab is in the background, Tampermonkey can add a second or two to each request, and that was enough to make a running companion look offline.
+- The download progress panel shows the video's title instead of "Unknown".
+- A quiet confirmation now clears a warning that's still on screen. Before, the "isn't paired yet" notice stayed up after pairing had worked.
+
 ## [4.94.0] (2026-10-05)
 
 ### Added

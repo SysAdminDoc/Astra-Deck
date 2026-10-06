@@ -850,6 +850,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "رمز من الاقتران لمرة واحدة بين البرنامج النصي و Astra Downloader."
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "مقترن"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -991,6 +997,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "لم يقترن بعد"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1051,6 +1060,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "يعمل Astra Downloader لكنه لم يقترن. اختر Pair userscript فيه أولًا، ثم تحقق مرة أخرى خلال دقيقتين."
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "يعمل Astra Downloader ويحتاج إلى الاقتران بالبرنامج النصي مرة واحدة. في Astra Downloader افتح Browser extension واختر Pair userscript، ثم اختر Check again هنا خلال دقيقتين. يتطلب الاقتران Astra Downloader 2.16.0 أو أحدث، ويثبّته Download setup أدناه."
+  },
   "dlLocalOptionsTitle": {
     "message": "إظهار خيارات التنزيل المحلي",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1105,6 +1120,9 @@
   },
   "dlPopupDefault": {
     "message": "الافتراضي"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "اقرن Astra Downloader بالبرنامج النصي أولًا"
   },
   "dlPopupDownloaderOffline": {
     "message": "المُنزِّل غير مُشغَّل"

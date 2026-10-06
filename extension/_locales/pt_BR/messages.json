@@ -850,6 +850,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "Token do pareamento único do userscript no Astra Downloader."
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "pareado"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -991,6 +997,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "Ainda não pareado"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1051,6 +1060,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "O Astra Downloader está em execução, mas não pareou. Escolha Pair userscript nele primeiro e verifique de novo em até dois minutos."
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "O Astra Downloader está em execução e precisa ser pareado uma vez com o userscript. No Astra Downloader, abra Browser extension e escolha Pair userscript, depois escolha Check again aqui em até dois minutos. O pareamento precisa do Astra Downloader 2.16.0 ou mais recente, que Download setup, abaixo, instala."
+  },
   "dlLocalOptionsTitle": {
     "message": "Mostrar opções de download local",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1105,6 +1120,9 @@
   },
   "dlPopupDefault": {
     "message": "Padrão"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "Primeiro pareie o Astra Downloader com o userscript"
   },
   "dlPopupDownloaderOffline": {
     "message": "Downloader não está em execução"

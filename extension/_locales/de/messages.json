@@ -850,6 +850,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "Token aus der einmaligen Userscript-Kopplung in Astra Downloader."
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "gekoppelt"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -991,6 +997,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "Noch nicht gekoppelt"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1051,6 +1060,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "Astra Downloader läuft, wurde aber nicht gekoppelt. Wähle dort zuerst „Pair userscript“ und prüfe dann innerhalb von zwei Minuten erneut."
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "Astra Downloader läuft und muss einmal mit dem Userscript gekoppelt werden. Öffne in Astra Downloader „Browser extension“ und wähle „Pair userscript“, dann hier innerhalb von zwei Minuten „Check again“. Die Kopplung braucht Astra Downloader 2.16.0 oder neuer, das „Download setup“ unten installiert."
+  },
   "dlLocalOptionsTitle": {
     "message": "Lokale Download-Optionen anzeigen",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1105,6 +1120,9 @@
   },
   "dlPopupDefault": {
     "message": "Standard"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "Koppel zuerst Astra Downloader mit dem Userscript"
   },
   "dlPopupDownloaderOffline": {
     "message": "Downloader nicht aktiv"

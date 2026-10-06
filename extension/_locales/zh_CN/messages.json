@@ -850,6 +850,12 @@
   "dlHealthUnreachable": {
     "message": "unreachable"
   },
+  "dlHealthUserscriptAuthTitle": {
+    "message": "来自 Astra Downloader 中一次性用户脚本配对的令牌。"
+  },
+  "dlHealthUserscriptPaired": {
+    "message": "已配对"
+  },
   "dlHistoryAllFormats": {
     "message": "All formats"
   },
@@ -991,6 +997,9 @@
   "dlInstallNotDetectedHint": {
     "message": "Setup was not detected yet. Make sure the installer finished, then check again."
   },
+  "dlInstallNotPaired": {
+    "message": "尚未配对"
+  },
   "dlInstallOpenSetup": {
     "message": "Open setup file"
   },
@@ -1051,6 +1060,12 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlInstallUserscriptNotPairedHint": {
+    "message": "Astra Downloader 正在运行，但没有完成配对。请先在其中选择 Pair userscript，然后在两分钟内再次检查。"
+  },
+  "dlInstallUserscriptPairDesc": {
+    "message": "Astra Downloader 正在运行，需要与用户脚本配对一次。在 Astra Downloader 中打开 Browser extension 并选择 Pair userscript，然后在两分钟内回到这里选择“Check again”。配对需要 Astra Downloader 2.16.0 或更高版本，下方的 Download setup 会安装它。"
+  },
   "dlLocalOptionsTitle": {
     "message": "显示本地下载选项",
     "description": "Tooltip and label for the injected watch-page download button"
@@ -1105,6 +1120,9 @@
   },
   "dlPopupDefault": {
     "message": "默认值"
+  },
+  "dlPopupDownloaderNotPaired": {
+    "message": "请先将 Astra Downloader 与用户脚本配对"
   },
   "dlPopupDownloaderOffline": {
     "message": "下载器未运行"

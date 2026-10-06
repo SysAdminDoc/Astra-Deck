@@ -2035,11 +2035,14 @@ const STORAGE_KEYS = Object.freeze({
 		const tone = normalizeToastTone(options.tone || inferToastTone(color));
 		return tone !== 'error' && tone !== 'warning';
 	}
+	function showQuietToast(message) {
+		announceA11y(String(message ?? ''));
+		const current = document.querySelector?.('.ytkit-global-toast');
+		if (current) dismissToast(current, true);
+		return null;
+	}
 	function showToast(message, color = '#22c55e', options = {}) {
-		if (isQuietToast(color, options)) {
-			announceA11y(String(message ?? ''));
-			return null;
-		}
+		if (isQuietToast(color, options)) return showQuietToast(message);
 		const sys = _getToastSystem();
 		if (sys) return sys.showToast(message, color, options);
 		const existingToast = document.querySelector('.ytkit-global-toast');

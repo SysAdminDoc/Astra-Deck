@@ -91,6 +91,38 @@ immediately after a successful pair. Without that re-read the token the pair
 had just authorized went unread until the next 30 second check, so the first
 download after an install failed even though pairing had succeeded.
 
+## Userscript pairing window (companion 2.16.0)
+
+The userscript reaches the companion through `GM_xmlhttpRequest`, which sends
+no `Origin` in Violentmonkey or Tampermonkey, and it has no native messaging.
+Neither path above can serve it: `/pair-extension` refused a request without
+an extension origin, and `/health` withholds the token once
+`LegacyHealthTokenEcho` is off, so every userscript download ended at the
+repair prompt.
+
+The companion now holds a one-shot pairing window. The user opens it with
+**Pair userscript** on the Browser extension page (or `AstraDownloader.exe
+--pair-userscript`, which a running copy receives over the instance socket).
+For 120 seconds, `POST /pair-extension` with `{"id": "astra-deck-userscript"}`
+and no origin, or an extension-shaped one, returns the token in the body once
+and closes the window. A web origin or `null` is refused without spending it.
+`/health` reports `authorized` for the presented `X-Auth-Token`, so the
+userscript can tell a saved token from one the user has since regenerated.
+
+On the Astra side, the token lives under `ytkit_mediadl_userscript_token`
+(backup excluded, scrubbed with the other credentials) and is sent only to a
+server whose `/health` names `service: "astra-downloader"`. A saved token that
+`/health` calls unauthorized is cleared, and the repair prompt names the Pair
+userscript step instead of an update. Regenerating the token in the
+companion's Settings unpairs the userscript.
+
+Userscript managers relay requests through their own background page. In a
+background tab, where Firefox clamps timers to one second, Tampermonkey takes
+one to two seconds per request, so the userscript gives every companion request
+at least five seconds. It asks the last known
+port first and the rest at once, so the longer timeout doesn't stack across
+closed ports when the companion isn't running.
+
 ## Authenticated-cookie capability (protocol v1)
 
 The bearer token and cookie grant are deliberately separate. A normal
