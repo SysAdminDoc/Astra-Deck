@@ -5057,7 +5057,9 @@ const STORAGE_KEYS = Object.freeze({
 			if (!item || typeof item !== 'object') return item;
 			return Object.fromEntries(Object.keys(item).sort().map((key) => [key, sortKeys(item[key])]));
 		};
-		return sortKeys(settingsManager._sanitize({ ...settingsManager.defaults, ...(value || {}) }));
+		const merged = settingsManager._sanitize(settingsManager._normalizeProfileModel(
+			settingsManager._sanitize({ ...settingsManager.defaults, ...(value || {}) })));
+		return Object.fromEntries(Object.keys(settingsManager.defaults).sort().map((key) => [key, sortKeys(merged[key])]));
 	}
 	function handleExternalStorageChanges(storageChanges, source = 'storage', options = {}) {
 		if (!storageChanges || typeof storageChanges !== 'object') return;

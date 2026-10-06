@@ -39,7 +39,8 @@ function loadHandler() {
         STORAGE_KEYS: { settings: SETTINGS_KEY },
         settingsManager: {
             defaults: { autoMaxResolution: true, audioOnlyPlayback: false, listFeedLayout: false, _errors: [] },
-            _sanitize: (settings) => ({ ...settings })
+            _sanitize: (settings) => ({ ...settings }),
+            _normalizeProfileModel: (settings) => settings
         },
         applyExternalSettingsUpdate: (update) => applied.push(update),
         getFeatureById: () => null,
@@ -80,6 +81,68 @@ test('an outside settings change is still applied', () => {
     handleExternalStorageChanges({ [SETTINGS_KEY]: { oldValue: {}, newValue: fromPopup } }, 'chrome-storage');
     assert.equal(applied.length, 1);
     assert.equal(applied[0].nextSettings.autoMaxResolution, false);
+});
+
+// The stubbed settingsManager above sanitizes as identity and never
+// normalizes, so it could not see what the real one does to an upgraded
+// user's bag. These run the real settingsManager.
+function loadRealHandler() {
+    const StorageManager = loadStorageCache();
+    const applied = [];
+    const api = loadDeclarations(['UNSAFE_OBJECT_KEYS', 'isPlainObject', 'isSafeObjectKey', 'RETIRED_SETTING_KEYS', 'settingsManager', 'settingsEchoForm', 'handleExternalStorageChanges'], {
+        StorageManager,
+        STORAGE_KEYS: { settings: SETTINGS_KEY },
+        LEGACY_STORAGE_KEYS: {},
+        applyExternalSettingsUpdate: (update) => applied.push(update),
+        getFeatureById: () => null,
+        syncSettingsPanelControls: () => {},
+        updateAllToggleStates: () => {},
+        DebugManager: { log() {} },
+        t: (_key, fallback) => fallback
+    });
+    const sm = api.settingsManager;
+    sm._getPolicyProfile = () => null;
+    // What save() computes from the page's settings and remembers.
+    const rememberSave = (stored, patch) => {
+        const nextSettings = sm._sanitize(sm._normalizeProfileModel({ ...sm.defaults, ...stored, ...patch }));
+        StorageManager._rememberLocalWrite(SETTINGS_KEY, api.settingsEchoForm(nextSettings));
+        return nextSettings;
+    };
+    // The worker persists {...stored, ...changes}; the page never sends what
+    // it dropped, so the stored copy keeps it.
+    const deliverEcho = (stored, patch) => api.handleExternalStorageChanges({
+        [SETTINGS_KEY]: { oldValue: asStored(stored), newValue: asStored({ ...stored, ...patch }) }
+    }, 'chrome-storage');
+    return { sm, applied, rememberSave, deliverEcho };
+}
+
+test('an upgraded user\'s echo still matches: a stale stored sync allowlist', () => {
+    const { sm, applied, rememberSave, deliverEcho } = loadRealHandler();
+    // Stored before v4.96: the allowlist still names the retired Buffer / Preload keys.
+    const staleAllowlist = [...sm.defaults.syncSafePrefsAllowlist];
+    staleAllowlist.splice(staleAllowlist.indexOf('listFeedLayout') + 1, 0, 'bufferPreload', 'bufferPreloadSeconds');
+    const stored = { syncSafePrefsAllowlist: staleAllowlist, audioOnlyPlayback: true, _settingsVersion: 11 };
+    const saved = rememberSave(stored, { audioOnlyPlayback: false });
+    assert.equal(saved.syncSafePrefsAllowlist.includes('bufferPreload'), false, 'the page drops the retired allowlist keys');
+    deliverEcho(stored, { audioOnlyPlayback: false });
+    assert.deepEqual(applied, [], 'the echo of the page\'s own save must be consumed');
+});
+
+test('an upgraded user\'s echo still matches: a legacy key the page moved out of the bag', () => {
+    const { applied, rememberSave, deliverEcho } = loadRealHandler();
+    const stored = { aiSummaryArtifactsData: {}, audioOnlyPlayback: true, _settingsVersion: 11 };
+    const { aiSummaryArtifactsData: _moved, ...pageCopy } = stored;
+    rememberSave(pageCopy, { audioOnlyPlayback: false });
+    deliverEcho(stored, { audioOnlyPlayback: false });
+    assert.deepEqual(applied, []);
+});
+
+test('with the real settingsManager an outside change is still applied', () => {
+    const { applied, rememberSave, deliverEcho } = loadRealHandler();
+    const stored = { audioOnlyPlayback: false, _settingsVersion: 11 };
+    rememberSave(stored, { listFeedLayout: true });
+    deliverEcho(stored, { autoMaxResolution: false });
+    assert.equal(applied.length, 1);
 });
 
 test('settingsManager.save remembers the echo form it will be compared against', () => {

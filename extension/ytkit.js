@@ -6877,15 +6877,20 @@ const STORAGE_KEYS = Object.freeze({
     // echo never matched the page's full snapshot byte for byte. Every echo
     // then ran as an outside change, and with two saves in flight the first
     // one's echo rolled the page back to the older state: at startup a
-    // conflict-skipped feature was started and torn down again. Compare a
-    // defaults-merged form with keys sorted at every depth.
+    // conflict-skipped feature was started and torn down again. Compare the
+    // form the page itself would hold: normalized the same way, keys sorted at
+    // every depth, and only the keys the page owns (its defaults). The stored
+    // copy can keep what the page has long dropped and the worker never
+    // deletes, such as a pre-v4.89 sync allowlist or a legacy in-bag key.
     function settingsEchoForm(value) {
         const sortKeys = (item) => {
             if (Array.isArray(item)) return item.map(sortKeys);
             if (!item || typeof item !== 'object') return item;
             return Object.fromEntries(Object.keys(item).sort().map((key) => [key, sortKeys(item[key])]));
         };
-        return sortKeys(settingsManager._sanitize({ ...settingsManager.defaults, ...(value || {}) }));
+        const merged = settingsManager._sanitize(settingsManager._normalizeProfileModel(
+            settingsManager._sanitize({ ...settingsManager.defaults, ...(value || {}) })));
+        return Object.fromEntries(Object.keys(settingsManager.defaults).sort().map((key) => [key, sortKeys(merged[key])]));
     }
 
     function handleExternalStorageChanges(storageChanges, source = 'storage', options = {}) {
