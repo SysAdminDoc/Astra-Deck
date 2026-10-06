@@ -39,9 +39,13 @@ function mainWorld({ codec = 'auto', core = {} } = {}) {
     const windowListeners = new Map();
     const documentListeners = new Map();
 
+    // What a record reports as its attribute name. MutationRecord's getters
+    // live on a prototype the page shares with the MAIN world, so a page can
+    // make every record lie.
+    let recordName = (name) => name;
     const fire = (name) => {
         for (const observer of [...observers]) {
-            if (observer.active) observer.callback([{ type: 'attributes', attributeName: name }]);
+            if (observer.active) observer.callback([{ type: 'attributes', attributeName: recordName(name) }]);
         }
     };
 
@@ -127,6 +131,7 @@ function mainWorld({ codec = 'auto', core = {} } = {}) {
         originalCanPlayType,
         isPatched: () => context.HTMLVideoElement.prototype.canPlayType !== originalCanPlayType,
         canPlayType: (type) => context.HTMLVideoElement.prototype.canPlayType.call({}, type),
+        blankRecordNames: () => { recordName = () => ''; },
     };
 }
 
@@ -194,6 +199,56 @@ test('the isolated world can still change the same value', () => {
     assert.equal(world.canPlayType(VP9), 'probably', 'and withdrawn again');
 });
 
+test('a page that blanks MutationRecord.attributeName cannot freeze the sealed state', () => {
+    // The observer used to read the records before it pulled the sealed
+    // payload, and returned early when no record named an attribute. A page
+    // that redefined the getter turned every isolated-world update into a
+    // no-op: Force H.264 switched on and the player kept using vp9.
+    const world = mainWorld({ codec: 'auto' });
+    world.blankRecordNames();
+    world.channel.publish('data-ytkit-codec', 'h264');
+    assert.equal(world.canPlayType(VP9), '', 'a sealed change lands whatever the records say');
+});
+
+/** The flash guard switched on, over a sampler the test feeds frames to. */
+function photosensitiveWorld() {
+    const sampler = { stopped: false };
+    const core = {
+        createFrameLuminanceReader: () => ({ read: (video) => video.luminance, reset() {} }),
+        createVideoFrameSampler(options) {
+            sampler.onFrame = options.onFrame;
+            return { start: () => true, stop() { sampler.stopped = true; }, isRunning: () => !sampler.stopped, getVideo: () => null };
+        },
+    };
+    const world = mainWorld({ codec: 'auto', core });
+    world.channel.publish('data-ytkit-photosensitive', 'on');
+    return {
+        world,
+        sampler,
+        frame: (currentSrc, luminance) => sampler.onFrame({ currentSrc, luminance }),
+        status: () => world.documentElement.getAttribute('data-ytkit-photosensitive-status'),
+        flashes: () => world.documentElement.getAttribute('data-ytkit-photosensitive-event'),
+    };
+}
+
+test('a page dispatching yt-navigate-start cannot switch the flash guard off', () => {
+    const { world, sampler, status } = photosensitiveWorld();
+    assert.equal(status(), 'monitoring', 'the guard is running before the page acts');
+    world.context.dispatchEvent({ type: 'yt-navigate-start' });
+    assert.equal(sampler.stopped, false, 'the sampler keeps reading frames');
+    assert.equal(status(), 'monitoring');
+});
+
+test('the cut to a new video is not a flash, and a flash inside one still is', () => {
+    const { frame, flashes } = photosensitiveWorld();
+    frame('blob:a', 0.1);
+    frame('blob:a', 0.1);
+    frame('blob:b', 0.9);
+    assert.equal(flashes(), null, 'a new source starts a new baseline');
+    frame('blob:b', 0.1);
+    assert.equal(flashes(), '1:0.8', 'the control: the guard still fires');
+});
+
 test('a forged navigate is not a navigation', () => {
     const world = mainWorld({ codec: 'h264' });
 
@@ -221,6 +276,10 @@ test('the bridge no longer listens to a page event by name', () => {
     assert.doesNotMatch(mainSource, /addEventListener\('yt-navigate-finish'/,
         'YouTube\'s navigate event and a forged one are the same object to a listener');
     assert.doesNotMatch(mainSource, /addEventListener\('yt-page-data-updated'/);
+    // The two names above were checked and yt-navigate-start was not, so the
+    // flash guard kept a raw listener a page could use to stop it.
+    assert.doesNotMatch(mainSource, /addEventListener\(\s*['"]yt-/,
+        'no YouTube event name at all, start included');
     assert.match(mainSource, /_isOwnNavigate\(event\)/,
         'every navigate handler has to check the token');
 });

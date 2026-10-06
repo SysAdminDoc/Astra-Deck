@@ -39,7 +39,14 @@
             addEventListener: globalThis.addEventListener &&
                 globalThis.addEventListener.bind(globalThis),
             docAddEventListener: document.addEventListener.bind(document),
-            now: Date.now
+            now: Date.now,
+            mediaSrc: (function() {
+                var proto = globalThis.HTMLMediaElement && globalThis.HTMLMediaElement.prototype;
+                var desc = proto && Object.getOwnPropertyDescriptor(proto, 'currentSrc');
+                return desc && desc.get
+                    ? Function.prototype.call.bind(desc.get)
+                    : function(media) { return media ? media.currentSrc : undefined; };
+            })()
         };
     })();
 
@@ -113,32 +120,32 @@
         if (!document || !document.documentElement) return;
         if (_ObsInstance) _ObsInstance.disconnect();
         _ObsInstance = new _NATIVE.MutationObserver(function(records) {
-            // Dedup attribute hits across the batch so each handler fires
-            // at most once per tick (matches the prior per-observer
-            // single-fire semantics — each old observer's callback was
-            // invoked once per batch regardless of record count).
-            var touched = null;
-            for (var i = 0; i < records.length; i++) {
-                var rec = records[i];
-                if (rec.type !== 'attributes' || !rec.attributeName) continue;
-                if (touched === null) touched = new Set();
-                touched.add(rec.attributeName);
-            }
-            if (!touched) return;
-            // Pull the sealed payload first. A page script writing a plain
-            // `data-ytkit-*` attribute still wakes this observer — it cannot
-            // be stopped from doing that — but there is no new sealed state
-            // behind the write, so every handler below reads what the isolated
-            // world last published and the forged value is simply not there.
+            // Pull the sealed payload first, before anything is read off the
+            // records: MutationRecord's getters sit on a prototype the page
+            // shares with this world, and a page that blanked attributeName
+            // would otherwise stop every sealed update from landing. A page
+            // script writing a plain `data-ytkit-*` attribute still wakes this
+            // observer — it cannot be stopped from doing that — but there is
+            // no new sealed state behind the write, so every handler below
+            // reads what the isolated world last published and the forged
+            // value is simply not there.
             //
             // A change to the payload itself carries no attribute name a
             // handler is registered for, and any value in it may have moved,
             // so that wakes all of them.
-            var stateChanged = false;
-            if (_bridgeReader) {
-                stateChanged = _bridgeReader.sync();
-                if (STATE_ATTR && touched.has(STATE_ATTR)) stateChanged = true;
+            var stateChanged = _bridgeReader ? _bridgeReader.sync() : false;
+            // Dedup attribute hits across the batch so each handler fires
+            // at most once per tick (matches the prior per-observer
+            // single-fire semantics — each old observer's callback was
+            // invoked once per batch regardless of record count).
+            var touched = new Set();
+            for (var i = 0; i < records.length; i++) {
+                var rec = records[i];
+                if (rec.type !== 'attributes' || !rec.attributeName) continue;
+                touched.add(rec.attributeName);
             }
+            if (_bridgeReader && STATE_ATTR && touched.has(STATE_ATTR)) stateChanged = true;
+            if (!stateChanged && !touched.size) return;
             for (var j = 0; j < _ObsHandlers.length; j++) {
                 var h = _ObsHandlers[j];
                 if (stateChanged) {
@@ -1687,6 +1694,7 @@
     var reader = null;
     var enabled = false;
     var previousLuminance = null;
+    var previousSrc = null;
     var lastEventAt = -Infinity;
     var eventSequence = 0;
     var statusTimer = null;
@@ -1750,6 +1758,17 @@
     }
 
     function handleFrame(video) {
+        // A new source is a new video, and the jump from the old one's last
+        // frame is a cut, not a flash. Told by the element, not by YouTube's
+        // yt-navigate-start: any page script can dispatch that, and stopping
+        // the sampler on it let a page keep the guard off. The reader runs one
+        // sample behind, so its pending copy of the old source goes too.
+        var src = _NATIVE.mediaSrc(video);
+        if (src !== previousSrc) {
+            previousSrc = src;
+            reader.reset();
+            previousLuminance = null;
+        }
         var luminance = reader.read(video);
         if (luminance === null || !isFinite(luminance)) return;
         if (previousLuminance !== null) {
@@ -1832,11 +1851,6 @@
         observerActive: Boolean(_ObsInstance)
     });
 
-    window.addEventListener('yt-navigate-start', function() {
-        if (!enabled) return;
-        stopSampler();
-        writeStatus('waiting');
-    });
     _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
         if (enabled && _isOwnNavigate(event)) scheduleSampler('navigate');
     });

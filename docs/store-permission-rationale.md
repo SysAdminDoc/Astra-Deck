@@ -243,12 +243,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 124 | `true` on every entry |
-| `store-safe` | firefox | A | 124 | omitted |
-| `chromium-store` | chromium | B | 123 | `true` on every entry |
-| `chromium-store` | firefox | B | 123 | omitted |
-| `github-full` | chromium | A | 124 | `true` on every entry |
-| `github-full` | firefox | A | 124 | omitted |
+| `store-safe` | chromium | A | 126 | `true` on every entry |
+| `store-safe` | firefox | A | 126 | omitted |
+| `chromium-store` | chromium | B | 125 | `true` on every entry |
+| `chromium-store` | firefox | B | 125 | omitted |
+| `github-full` | chromium | A | 126 | `true` on every entry |
+| `github-full` | firefox | A | 126 | omitted |
 
 #### Resource set A
 
@@ -359,6 +359,8 @@ Entry 2 resource paths:
 - `core/hide-attribution.js`
 - `core/heatmap.js`
 - `core/youtube-thumbnails.js`
+- `core/feed-prefilter.js`
+- `core/credential-vault.js`
 - `core/feature-schedule.js`
 - `core/companion-ports.js`
 - `core/cookie-handoff.js`
@@ -507,6 +509,8 @@ Entry 2 resource paths:
 - `core/hide-attribution.js`
 - `core/heatmap.js`
 - `core/youtube-thumbnails.js`
+- `core/feed-prefilter.js`
+- `core/credential-vault.js`
 - `core/feature-schedule.js`
 - `core/companion-ports.js`
 - `core/cookie-handoff.js`

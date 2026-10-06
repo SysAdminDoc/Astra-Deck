@@ -25,7 +25,7 @@ test('project facts are collected from the shipped source surfaces', () => {
     // selector-backed document-start shell layer. core/feed-prefilter.js is
     // also counted because the normal-page runtime loads its isolated module.
     // Block Comment Authors adds one module that declares two feature ids.
-    assert.equal(facts.runtimeModules, 121);
+    assert.equal(facts.runtimeModules, 123);
     assert.equal(facts.featureModules.length, 31);
     assert.equal(facts.featureIds.length, 303);
     assert.equal(facts.selectorPackFiles.length, 33);

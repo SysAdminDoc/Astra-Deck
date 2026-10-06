@@ -48,6 +48,7 @@ const GUARDED = Object.freeze({
     content: Object.freeze({
         'runtime.getContexts': 'capability-probe.js only tests typeof, to report the capability',
         'tabs.sendMessage': 'core/browser-api.js returns null when ns?.tabs?.sendMessage is missing',
+        'storage.session': 'core/credential-vault.js reads root.chrome?.storage?.session only inside createCredentialVault, which only the worker calls; the tab loads the module for its provider rules',
     }),
     background: Object.freeze({
         'runtime.connectNative': 'background.js checks ext.runtime?.connectNative first; the companion is reached over HTTP instead',

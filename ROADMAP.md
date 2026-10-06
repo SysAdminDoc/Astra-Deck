@@ -4,13 +4,25 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P2 — Adversarial review of the 2026-09-28 bridge commits
-  Why: the deep audit's closing self-audit (a fresh-context reviewer that sees only the diff and
-  the CHANGELOG) wasn't run because the pass was stopped early. The bridge commits change a
-  security boundary and the content script layout.
-  Where: eb95e4d6, 5fe1afe1, cc2a6f39 and the three fixes after them.
-  Acceptance: the review's confirmed objections fixed or logged here.
-  Complexity: S
+- [ ] P3 — Page-dispatched YouTube events still steer the MAIN world's scheduling
+  Why: the 2026-10-06 review of the bridge commits left three low-severity paths. (1) The
+  player task manager in `core/player.js` (`install()`, ~676-680) listens to raw
+  `yt-navigate-start`, `yt-navigate-finish` and `yt-page-data-updated`. A page that fires the
+  start event cancels every pending MAIN task retry (the flash guard's first start included)
+  until the next media event reschedules it; the other two re-run tasks. (2) The isolated world
+  turns YouTube's `yt-navigate-finish` into the sealed navigate, and the DOM is shared, so a page
+  that dispatches that event still gets a sealed navigate out of the isolated world. Handlers
+  re-read sealed state, so it's a re-run, never a forged value. (3)
+  `scripts/smoke-main-bridge-live.js` doesn't check that a real in-app navigation is admitted
+  as a sealed navigate, that the token attribute is gone before page scripts run, or that no
+  bridge reader is reachable from `window`.
+  Where: `extension/core/player.js`, the sealed-navigate relay in `extension/ytkit.js`,
+  `scripts/smoke-main-bridge-live.js`.
+  Acceptance: WHEN a page script dispatches `yt-navigate-start` during a pending MAIN task,
+  the task SHALL still start (a vm test over `createPlayerTaskManager`); AND the live bridge
+  smoke SHALL fail when a real in-app navigation isn't admitted, when the token attribute is
+  readable after document_start, or when a reader is reachable from `window`.
+  Complexity: M
 
 - [ ] P3 — Finish the English UI strings built outside the copy gate's sinks
   Why: the 2026-09-23 audit swept every untagged template literal with `${}` in extension
