@@ -117,6 +117,12 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   on `screen-reader-evidence`, and `npm run check` was 38/39 with `deps` red on
   node-forge GHSA-86w9-cpqp-85rv, which v4.95.0 cleared.
 
+  v4.96.0 (the #51 avatar and product-picture fixes, per-card Reset, the
+  isolated-world helpers AI Summary and Feed Prefilter needed) was published on
+  2026-10-06 from release commit `a928d28f` the same way. All 15 digests
+  matched, `npm run check` was 39/39 and 3,398 tests passed, and readiness
+  again failed only on `screen-reader-evidence`.
+
   Blocker: the channels cannot be promoted, so the gate cannot be made
   blocking without turning `npm run check` permanently red. The chain,
   measured again on 2026-09-14:
