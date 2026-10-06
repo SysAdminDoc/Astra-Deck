@@ -8,7 +8,6 @@
 
 <p align="center">
   Bring back a familiar layout, put comments beside the video, and clear noise from your feed.
-  Every control is optional. There is no Astra account and no telemetry.
 </p>
 
 <p align="center">
