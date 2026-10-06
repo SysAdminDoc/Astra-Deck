@@ -13,6 +13,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const { loadFeature } = require('./helpers/monolith');
 
 const extensionRoot = path.join(__dirname, '..', 'extension');
@@ -25,10 +26,17 @@ const read = (file) => fs.readFileSync(path.join(extensionRoot, file), 'utf8');
 const NOT_IN_ISOLATED = Object.freeze({
     // The extension's MAIN-world bridge patches the page; ytkit.js builds the
     // inline twin only when there is no extension context (the userscript).
-    createResourceUnlockBridge: 'userscript-only, behind !hasExtensionContext()'
+    createResourceUnlockBridge: 'userscript-only, behind !hasExtensionContext()',
+    // isFeatureAllowedByArtifact has never found it, so the page shows and
+    // runs GitHub-full-only features the popup hides. Making it work would
+    // hide 17 of them, AI Summary and Custom CSS among them, from everyone on
+    // the default profile: an owner decision, logged in Roadmap_Blocked.md.
+    findSettingEntry: 'dead profile filter, owner decision pending'
 });
 
-const CORE_READ = /YTKitCore\??\.([A-Za-z_$][\w$]*)/g;
+// A read, not a write: `YTKitCore.x = ...` is how a feature module publishes.
+const CORE_READ = /YTKitCore\??\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=[^=])/g;
+const CORE_WRITE = /YTKitCore\.([A-Za-z_$][\w$]*)\s*=[^=]/g;
 
 function loadCore(...files) {
     const core = {};
@@ -36,29 +44,64 @@ function loadCore(...files) {
     return core;
 }
 
+/**
+ * What the isolated runtime really puts on YTKitCore: every module before
+ * ytkit.js, run in manifest order over a stand-in page that answers anything.
+ * A text search for the name was fooled by a module that merely mentions it.
+ */
+function isolatedCoreKeys() {
+    const anything = () => new Proxy(function () {}, {
+        get: (_target, key) => (key === Symbol.toPrimitive ? () => '' : key === 'length' ? 0 : anything()),
+        apply: () => anything(),
+        construct: () => anything()
+    });
+    const context = {
+        console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, structuredClone,
+        URL, URLSearchParams, TextEncoder, TextDecoder, AbortController, crypto: globalThis.crypto,
+        document: anything(),
+        navigator: { userAgent: 'test', language: 'en' },
+        location: { href: 'https://www.youtube.com/', hostname: 'www.youtube.com', pathname: '/' }
+    };
+    context.globalThis = context;
+    context.window = context;
+    context.self = context;
+    vm.createContext(context);
+    const failed = [];
+    for (const file of runtimeModules.filter((entry) => entry !== 'ytkit.js')) {
+        try {
+            vm.runInContext(read(file), context, { filename: file });
+        } catch (error) {
+            failed.push(`${file}: ${error.message}`);
+        }
+    }
+    assert.deepEqual(failed, [], 'a module that fails to load here would silently drop its keys from this check');
+    return new Set(Object.keys(context.YTKitCore || {}));
+}
+
 test('every YTKitCore helper the isolated runtime reads is loaded into the isolated runtime', () => {
     const readers = runtimeModules.filter((file) => file === 'ytkit.js' || file.startsWith('features/'));
     const wanted = new Map();
+    const publishedAtRuntime = new Set();
     for (const file of readers) {
-        for (const [, name] of read(file).matchAll(CORE_READ)) {
+        const source = read(file);
+        for (const [, name] of source.matchAll(CORE_READ)) {
             if (!wanted.has(name)) wanted.set(name, new Set());
             wanted.get(name).add(file);
         }
+        for (const [, name] of source.matchAll(CORE_WRITE)) publishedAtRuntime.add(name);
     }
     assert.ok(wanted.has('normalizeBlockedChannelId') && wanted.has('validateAiProviderEndpoint'),
         'the scan must see the reads this test was written for');
 
-    // A module that reads a name does not define it, so reads are cut first.
-    const definers = runtimeModules.filter((file) => file !== 'ytkit.js').map((file) => read(file).replace(CORE_READ, ''));
-    const missing = [...wanted.keys()].filter((name) => {
-        if (NOT_IN_ISOLATED[name]) return false;
-        const bare = new RegExp(`(^|[^\\w$])${name.replace(/\$/g, '\\$')}($|[^\\w$])`);
-        return !definers.some((source) => bare.test(source));
-    }).map((name) => `${name} (read by ${[...wanted.get(name)].join(', ')})`);
+    const defined = isolatedCoreKeys();
+    const missing = [...wanted.keys()]
+        .filter((name) => !NOT_IN_ISOLATED[name] && !defined.has(name) && !publishedAtRuntime.has(name))
+        .map((name) => `${name} (read by ${[...wanted.get(name)].join(', ')})`);
     assert.deepEqual(missing, [], 'add the defining core module to x-ytkit-runtime-modules before ytkit.js');
 
     for (const name of Object.keys(NOT_IN_ISOLATED)) {
         assert.ok(wanted.has(name), `${name} is no longer read; drop its exemption`);
+        assert.ok(!defined.has(name), `${name} is defined in the tab now; drop its exemption`);
     }
 });
 

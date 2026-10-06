@@ -113,6 +113,24 @@
         }, true);
     }
 
+    // Player tasks get a manager of their own. The shared one in
+    // core/player.js listens to yt-navigate-start, and a page script that
+    // dispatched it cancelled every task pending here, the flash guard's
+    // start among them. It also sits on YTKitCore, which a page can swap.
+    // This one hears navigation only from the sealed navigate.
+    var _createTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.createPlayerTaskManager;
+    var _ownTasks = Boolean(_bridgeReader) && typeof _createTaskManager === 'function';
+    var _mainTasks = _ownTasks
+        ? _createTaskManager({ youtubeNavigation: false })
+        : (globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager) || null;
+    if (_ownTasks) {
+        _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+            if (!_isOwnNavigate(event)) return;
+            if (event.detail.reason === 'page-data') _mainTasks.notify('page-data');
+            else _mainTasks.bumpRoute('navigate');
+        });
+    }
+
     var _ObsHandlers = [];
     var _ObsAttrs = new Set();
     var _ObsInstance = null;
@@ -139,10 +157,17 @@
             // single-fire semantics — each old observer's callback was
             // invoked once per batch regardless of record count).
             var touched = new Set();
-            for (var i = 0; i < records.length; i++) {
-                var rec = records[i];
-                if (rec.type !== 'attributes' || !rec.attributeName) continue;
-                touched.add(rec.attributeName);
+            try {
+                for (var i = 0; i < records.length; i++) {
+                    var rec = records[i];
+                    if (rec.type !== 'attributes' || !rec.attributeName) continue;
+                    touched.add(rec.attributeName);
+                }
+            } catch (e) {
+                // reason: a getter the page made throw says nothing about
+                // which attribute moved; wake every handler, which only
+                // re-reads sealed state.
+                stateChanged = true;
             }
             if (_bridgeReader && STATE_ATTR && touched.has(STATE_ATTR)) stateChanged = true;
             if (!stateChanged && !touched.size) return;
@@ -711,7 +736,7 @@
     var pendingTimer = null;
     var pendingContextTimer = null;
     var DEBUG = false;
-    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var PlayerTaskManager = _mainTasks;
     var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
     var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
 
@@ -940,7 +965,7 @@
 
     var bridge = selection.createAudioTrackBridge({
         document: document,
-        taskManager: globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager,
+        taskManager: _mainTasks,
         read: function(_documentRef, name) { return _bridgeGet(name); }
     });
     var attrs = selection.ATTRS;
@@ -971,7 +996,7 @@
     var appliedKey = '';
     var restoreQuality = null;
     var pendingTimer = null;
-    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var PlayerTaskManager = _mainTasks;
     var TASK_ID = 'ytkit-main:audioOnly';
     var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
     var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
@@ -1687,7 +1712,7 @@
     var FLASH_COOLDOWN_MS = 250;
     var ALERT_STATUS_MS = 900;
     var MAX_LUMINANCE_DELTA = 0.8;
-    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var PlayerTaskManager = _mainTasks;
     var createSampler = globalThis.YTKitCore && globalThis.YTKitCore.createVideoFrameSampler;
     var createReader = globalThis.YTKitCore && globalThis.YTKitCore.createFrameLuminanceReader;
     var sampler = null;

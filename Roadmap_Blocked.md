@@ -10,6 +10,29 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P1 — Premise disproven, needs a product decision (2026-08-27)
 
+- [ ] P2 — Decide whether the YouTube tab honors the Store-safe / GitHub-full profile
+  Why: `isFeatureAllowedByArtifact` in `extension/ytkit.js` (~39623) reads
+  `globalThis.YTKitCore?.findSettingEntry`, which no module in the tab defines
+  (the schema publishes it only on `__YTKIT_SETTINGS_SCHEMA__`), so it has
+  returned true since `92cd08ac` (2026-08-11). The tab shows and runs all 17
+  `profile: "github-full"` settings while the popup hides them. With default
+  settings `resolveEffectiveProfile` says `store-safe` even in the GitHub-full
+  build, so making the lookup work would hide AI Summary, Custom CSS, Auto
+  Download on Visit, the Cobalt fallback, VLC/mpv handoff, the alternative
+  frontend, Video Insights, Age Restriction Bypass and Reaction Spammer from
+  everyone who hasn't switched the Full profile on, and stop them running.
+  Found by verification agent #5 on 2026-10-06.
+  Where: `extension/ytkit.js` `isFeatureAllowedByArtifact`,
+  `extension/core/policy-profile.js` `resolveEffectiveProfile`,
+  `tests/isolated-runtime-core.test.js` (`NOT_IN_ISOLATED.findSettingEntry`).
+  Acceptance: either the tab reads the schema's `findSettingEntry` and a
+  default-profile user sees exactly the popup's list (with a CHANGELOG line
+  saying where the hidden features went), or the dead filter is removed and
+  the popup stops hiding them; the exemption in the test goes either way.
+  Complexity: S once decided
+  Blocker: owner decision. Turning the filter on takes features away from
+  people using them today; removing it drops the profile split in the tab.
+
 - [ ] P1 — Give settings operations a live region
   Why: save, import, export, and sync produce no announcement, and the toast peel is explicitly blocked on this primitive.
   Evidence: zero `aria-live`/`role="status"` in `extension/core/settings-controller.js`, `settings-sync.js`, `settings-import-transaction.js`, and `features/subscription-groups/index.js`; `extension/core/toast.js:13-17` names the missing "live-region overlay primitive" as the reason the toast DOM layer stayed in the monolith.

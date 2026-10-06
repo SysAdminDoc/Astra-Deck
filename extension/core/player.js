@@ -490,6 +490,11 @@
         const clearTimer = options.clearTimeout || globalThis.clearTimeout?.bind(globalThis);
         const getVideo = options.getVideo || (() => getMainVideoElement(root));
         const getPlayer = options.getPlayer || (() => getMoviePlayerElement(root));
+        // false: leave yt-navigate-* and yt-page-data-updated alone and let the
+        // caller drive bumpRoute/notify. Any page script can dispatch those, and
+        // one forged yt-navigate-start cancels every pending task; the MAIN
+        // world hears navigation from the sealed bridge instead.
+        const youtubeNavigation = options.youtubeNavigation !== false;
         const tasks = new Map();
         let routeToken = 0;
         let installed = false;
@@ -674,9 +679,11 @@
             root.addEventListener('canplay', onMediaEvent, true);
             root.addEventListener('playing', onMediaEvent, true);
             root.addEventListener('visibilitychange', onVisibilityChange, true);
-            win.addEventListener('yt-navigate-start', onNavigateStart);
-            win.addEventListener('yt-navigate-finish', onNavigateFinish);
-            win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+            if (youtubeNavigation) {
+                win.addEventListener('yt-navigate-start', onNavigateStart);
+                win.addEventListener('yt-navigate-finish', onNavigateFinish);
+                win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+            }
             win.addEventListener('yt-player-updated', onPlayerUpdated);
             win.addEventListener('yt-player-state-change', onPlayerStateChange);
         }

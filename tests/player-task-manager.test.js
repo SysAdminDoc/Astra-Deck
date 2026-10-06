@@ -165,6 +165,37 @@ test('player task manager cancels stale retries across SPA navigation', () => {
     manager.destroy();
 });
 
+test('player task manager can leave YouTube\'s navigate events to its caller', () => {
+    const core = loadPlayerCore();
+    const env = createFakeEnv();
+    env.state.video = env.video;
+    const calls = [];
+    const manager = core.createPlayerTaskManager({
+        document: env.document,
+        window: env.window,
+        setTimeout: env.setTimeoutFake,
+        clearTimeout: env.clearTimeoutFake,
+        youtubeNavigation: false
+    });
+
+    manager.schedule('main:photosensitive', (ctx) => {
+        calls.push(ctx.reason);
+        return true;
+    }, { events: ['navigate', 'page-data', 'player-state'] });
+
+    env.dispatchWindow('yt-navigate-start');
+    assert.equal(env.timers.size, 1, 'a page-dispatched yt-navigate-start must not cancel the pending task');
+    env.flushOne();
+    for (const type of ['yt-navigate-finish', 'yt-page-data-updated']) env.dispatchWindow(type);
+    assert.equal(env.timers.size, 0, 'nor are the other two navigate events a navigation');
+    env.dispatchWindow('yt-player-updated');
+    env.flushOne();
+    manager.bumpRoute('navigate');
+    env.flushOne();
+    assert.deepEqual(calls, ['manual', 'player-state', 'navigate']);
+    manager.destroy();
+});
+
 test('player task manager reapplies registered tasks on media and player-state events', () => {
     const core = loadPlayerCore();
     const env = createFakeEnv();

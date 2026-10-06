@@ -42,10 +42,10 @@ function mainWorld({ codec = 'auto', core = {} } = {}) {
     // What a record reports as its attribute name. MutationRecord's getters
     // live on a prototype the page shares with the MAIN world, so a page can
     // make every record lie.
-    let recordName = (name) => name;
+    let makeRecord = (name) => ({ type: 'attributes', attributeName: name });
     const fire = (name) => {
         for (const observer of [...observers]) {
-            if (observer.active) observer.callback([{ type: 'attributes', attributeName: recordName(name) }]);
+            if (observer.active) observer.callback([makeRecord(name)]);
         }
     };
 
@@ -105,7 +105,8 @@ function mainWorld({ codec = 'auto', core = {} } = {}) {
     context.self = context;
     context.globalThis = context;
 
-    Object.assign(context.YTKitCore, core);
+    // A function gets the world, for core helpers that must listen on it.
+    Object.assign(context.YTKitCore, typeof core === 'function' ? core(context) : core);
     // Its own JSON, so a bridge feature that hooks window.JSON.parse wraps
     // this world's copy and not the test runner's.
     context.JSON = { parse: JSON.parse, stringify: JSON.stringify };
@@ -131,7 +132,13 @@ function mainWorld({ codec = 'auto', core = {} } = {}) {
         originalCanPlayType,
         isPatched: () => context.HTMLVideoElement.prototype.canPlayType !== originalCanPlayType,
         canPlayType: (type) => context.HTMLVideoElement.prototype.canPlayType.call({}, type),
-        blankRecordNames: () => { recordName = () => ''; },
+        blankRecordNames: () => { makeRecord = () => ({ type: 'attributes', attributeName: '' }); },
+        throwingRecords: () => {
+            makeRecord = () => ({
+                get type() { throw new Error('page-made getter'); },
+                get attributeName() { throw new Error('page-made getter'); },
+            });
+        },
     };
 }
 
@@ -210,6 +217,13 @@ test('a page that blanks MutationRecord.attributeName cannot freeze the sealed s
     assert.equal(world.canPlayType(VP9), '', 'a sealed change lands whatever the records say');
 });
 
+test('a page that makes MutationRecord getters throw cannot freeze it either', () => {
+    const world = mainWorld({ codec: 'auto' });
+    world.throwingRecords();
+    assert.doesNotThrow(() => world.channel.publish('data-ytkit-codec', 'h264'));
+    assert.equal(world.canPlayType(VP9), '', 'the sealed change still lands');
+});
+
 /** The flash guard switched on, over a sampler the test feeds frames to. */
 function photosensitiveWorld() {
     const sampler = { stopped: false };
@@ -237,6 +251,90 @@ test('a page dispatching yt-navigate-start cannot switch the flash guard off', (
     world.context.dispatchEvent({ type: 'yt-navigate-start' });
     assert.equal(sampler.stopped, false, 'the sampler keeps reading frames');
     assert.equal(status(), 'monitoring');
+});
+
+const playerSource = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'player.js'), 'utf8');
+
+/**
+ * The flash guard over the real task manager, with timers that wait until
+ * flushed: the gap a page gets between a task being scheduled and running.
+ */
+function pendingTaskWorld() {
+    const playerContext = { console, setTimeout() { return 0; }, clearTimeout() {} };
+    playerContext.globalThis = playerContext;
+    vm.runInNewContext(playerSource, playerContext, { filename: 'extension/core/player.js' });
+    const playerCore = playerContext.YTKitCore;
+
+    const pending = new Map();
+    let nextTimer = 1;
+    const created = [];
+    const video = {};
+    const sampler = { started: 0 };
+    const world = mainWorld({
+        codec: 'auto',
+        core: (context) => {
+            const env = (options) => ({
+                ...options,
+                document: { addEventListener() {}, removeEventListener() {} },
+                window: context,
+                setTimeout: (callback) => { pending.set(nextTimer, callback); return nextTimer++; },
+                clearTimeout: (id) => pending.delete(id),
+                getVideo: () => video,
+                getPlayer: () => null,
+            });
+            return {
+                createFrameLuminanceReader: () => ({ read: () => null, reset() {} }),
+                createVideoFrameSampler: () => ({
+                    start: () => { sampler.started += 1; return true; },
+                    stop() {},
+                    isRunning: () => sampler.started > 0,
+                    getVideo: () => video,
+                }),
+                // What core/player.js leaves on YTKitCore in this world.
+                playerTaskManager: playerCore.createPlayerTaskManager(env({})),
+                createPlayerTaskManager(options) {
+                    const manager = playerCore.createPlayerTaskManager(env(options));
+                    created.push(manager);
+                    return manager;
+                },
+            };
+        },
+    });
+    world.channel.publish('data-ytkit-photosensitive', 'on');
+    return {
+        world,
+        sampler,
+        created,
+        pending,
+        flush() { for (const [id, callback] of [...pending]) { pending.delete(id); callback(); } },
+        status: () => world.documentElement.getAttribute('data-ytkit-photosensitive-status'),
+    };
+}
+
+test('a page dispatching yt-navigate-start cannot cancel the flash guard\'s pending start', () => {
+    const { world, sampler, pending, flush, status } = pendingTaskWorld();
+    assert.ok(pending.size > 0, 'the start is waiting on its timer');
+    assert.equal(sampler.started, 0);
+    world.context.dispatchEvent({ type: 'yt-navigate-start' });
+    flush();
+    assert.equal(sampler.started, 1, 'the start still ran');
+    assert.equal(status(), 'monitoring');
+});
+
+test('player tasks here follow the sealed navigate, not YouTube\'s events', () => {
+    const { world, created } = pendingTaskWorld();
+    assert.equal(created.length, 1, 'the bridge builds a task manager of its own');
+    const route = () => created[0].snapshot().routeToken;
+    const before = route();
+    for (const type of ['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated']) {
+        world.context.dispatchEvent({ type });
+    }
+    world.context.dispatchEvent(world.channel.forgedNavigate());
+    assert.equal(route(), before, 'nothing a page can dispatch starts a new route');
+    world.context.dispatchEvent(world.channel.navigate('page-data'));
+    assert.equal(route(), before, 'more feed is not a new route');
+    world.context.dispatchEvent(world.channel.navigate());
+    assert.equal(route(), before + 1, 'a sealed navigate is');
 });
 
 test('the cut to a new video is not a flash, and a flash inside one still is', () => {

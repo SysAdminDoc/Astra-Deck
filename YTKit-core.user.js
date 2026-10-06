@@ -12179,6 +12179,7 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 		const clearTimer = options.clearTimeout || globalThis.clearTimeout?.bind(globalThis);
 		const getVideo = options.getVideo || (() => getMainVideoElement(root));
 		const getPlayer = options.getPlayer || (() => getMoviePlayerElement(root));
+		const youtubeNavigation = options.youtubeNavigation !== false;
 		const tasks = new Map();
 		let routeToken = 0;
 		let installed = false;
@@ -12339,9 +12340,11 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 			root.addEventListener('canplay', onMediaEvent, true);
 			root.addEventListener('playing', onMediaEvent, true);
 			root.addEventListener('visibilitychange', onVisibilityChange, true);
-			win.addEventListener('yt-navigate-start', onNavigateStart);
-			win.addEventListener('yt-navigate-finish', onNavigateFinish);
-			win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+			if (youtubeNavigation) {
+				win.addEventListener('yt-navigate-start', onNavigateStart);
+				win.addEventListener('yt-navigate-finish', onNavigateFinish);
+				win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+			}
 			win.addEventListener('yt-player-updated', onPlayerUpdated);
 			win.addEventListener('yt-player-state-change', onPlayerStateChange);
 		}
@@ -22867,6 +22870,7 @@ void 0;
 		const clearTimer = options.clearTimeout || globalThis.clearTimeout?.bind(globalThis);
 		const getVideo = options.getVideo || (() => getMainVideoElement(root));
 		const getPlayer = options.getPlayer || (() => getMoviePlayerElement(root));
+		const youtubeNavigation = options.youtubeNavigation !== false;
 		const tasks = new Map();
 		let routeToken = 0;
 		let installed = false;
@@ -23027,9 +23031,11 @@ void 0;
 			root.addEventListener('canplay', onMediaEvent, true);
 			root.addEventListener('playing', onMediaEvent, true);
 			root.addEventListener('visibilitychange', onVisibilityChange, true);
-			win.addEventListener('yt-navigate-start', onNavigateStart);
-			win.addEventListener('yt-navigate-finish', onNavigateFinish);
-			win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+			if (youtubeNavigation) {
+				win.addEventListener('yt-navigate-start', onNavigateStart);
+				win.addEventListener('yt-navigate-finish', onNavigateFinish);
+				win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+			}
 			win.addEventListener('yt-player-updated', onPlayerUpdated);
 			win.addEventListener('yt-player-state-change', onPlayerStateChange);
 		}
@@ -23613,6 +23619,18 @@ void 0;
 			_bridgeReader.admitNavigate(event);
 		}, true);
 	}
+	var _createTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.createPlayerTaskManager;
+	var _ownTasks = Boolean(_bridgeReader) && typeof _createTaskManager === 'function';
+	var _mainTasks = _ownTasks
+		? _createTaskManager({ youtubeNavigation: false })
+		: (globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager) || null;
+	if (_ownTasks) {
+		_NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+			if (!_isOwnNavigate(event)) return;
+			if (event.detail.reason === 'page-data') _mainTasks.notify('page-data');
+			else _mainTasks.bumpRoute('navigate');
+		});
+	}
 	var _ObsHandlers = [];
 	var _ObsAttrs = new Set();
 	var _ObsInstance = null;
@@ -23622,10 +23640,14 @@ void 0;
 		_ObsInstance = new _NATIVE.MutationObserver(function(records) {
 			var stateChanged = _bridgeReader ? _bridgeReader.sync() : false;
 			var touched = new Set();
-			for (var i = 0; i < records.length; i++) {
-				var rec = records[i];
-				if (rec.type !== 'attributes' || !rec.attributeName) continue;
-				touched.add(rec.attributeName);
+			try {
+				for (var i = 0; i < records.length; i++) {
+					var rec = records[i];
+					if (rec.type !== 'attributes' || !rec.attributeName) continue;
+					touched.add(rec.attributeName);
+				}
+			} catch (e) {
+				stateChanged = true;
 			}
 			if (_bridgeReader && STATE_ATTR && touched.has(STATE_ATTR)) stateChanged = true;
 			if (!stateChanged && !touched.size) return;
@@ -24078,7 +24100,7 @@ void 0;
 	var pendingTimer = null;
 	var pendingContextTimer = null;
 	var DEBUG = false;
-	var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+	var PlayerTaskManager = _mainTasks;
 	var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
 	var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
 	function log() {
@@ -24263,7 +24285,7 @@ void 0;
 	if (!selection || typeof selection.createAudioTrackBridge !== 'function') return;
 	var bridge = selection.createAudioTrackBridge({
 		document: document,
-		taskManager: globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager,
+		taskManager: _mainTasks,
 		read: function(_documentRef, name) { return _bridgeGet(name); }
 	});
 	var attrs = selection.ATTRS;
@@ -24282,7 +24304,7 @@ void 0;
 	var appliedKey = '';
 	var restoreQuality = null;
 	var pendingTimer = null;
-	var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+	var PlayerTaskManager = _mainTasks;
 	var TASK_ID = 'ytkit-main:audioOnly';
 	var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
 	var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
@@ -24896,7 +24918,7 @@ void 0;
 	var FLASH_COOLDOWN_MS = 250;
 	var ALERT_STATUS_MS = 900;
 	var MAX_LUMINANCE_DELTA = 0.8;
-	var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+	var PlayerTaskManager = _mainTasks;
 	var createSampler = globalThis.YTKitCore && globalThis.YTKitCore.createVideoFrameSampler;
 	var createReader = globalThis.YTKitCore && globalThis.YTKitCore.createFrameLuminanceReader;
 	var sampler = null;
