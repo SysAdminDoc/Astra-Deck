@@ -1785,7 +1785,7 @@
                 const hasDuration = this._extractDuration(element) > 0;
                 const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
                 const isMembersOnly = element.querySelector('[aria-label="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
-                const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive');
+                const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive, .ytBadgeShapeThumbnailLive');
                 const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
                 // Music watch pages link plain videos into a radio as well, so
                 // a radio link marks a Mix only on a card with no running

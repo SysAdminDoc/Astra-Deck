@@ -271,6 +271,44 @@ test('type filters never read the title or the channel name', () => {
     assert.equal(hider._extractVideoMetadata(cards.searchLive()).isLive, true, 'the LIVE badge still reads');
 });
 
+test('Subscriptions hides live and streamed lockups by their badge and date row', () => {
+    const { createSubscriptionGroupsFeature } = require('../../extension/features/subscription-groups/index.js');
+    const withClassList = (card) => {
+        const classes = new Set();
+        card.classList = { add: (name) => classes.add(name), remove: (name) => classes.delete(name), contains: (name) => classes.has(name) };
+        return card;
+    };
+    const liveNow = withClassList(parseCard(CURRENT['lockup: channel live tab, live now']));
+    const streamed = withClassList(parseCard(CURRENT['lockup: channel live tab, streamed']));
+    const plain = withClassList(cards.channelLockup());
+    const capsTitle = withClassList(parseCard(CURRENT['lockup: channel videos grid']
+        .replaceAll("We're trying something new...", 'LIVE REACTION TO THE DELIVERY')));
+    const streamedChannel = withClassList(parseCard(CURRENT['lockup: watch sidebar']
+        .replace('>Daryl Hall &amp; John Oates<', '>Streamed Gaming<')));
+    assert.ok(capsTitle.textContent.includes('LIVE REACTION'), 'fixture title really was replaced');
+
+    const all = [liveNow, streamed, plain, capsTitle, streamedChannel];
+    const originalDocument = globalThis.document;
+    globalThis.document = { querySelectorAll: () => all };
+    try {
+        const feature = createSubscriptionGroupsFeature({
+            appState: { settings: { subscriptionFilterLive: true, subscriptionFilterStreamed: true } }
+        });
+        feature._runCardBatch = (label, list, callback) => list.forEach(callback);
+        feature._applyContentTypeFilter();
+    } finally {
+        globalThis.document = originalDocument;
+    }
+    const hidden = (card) => card.classList.contains('ytkit-sub-hidden-by-type');
+    assert.equal(hidden(liveNow), true, 'the LIVE badge has no aria-label on lockups');
+    assert.equal(hidden(streamed), true, '"Streamed 4y ago" sits in the lockup row');
+    assert.equal(hidden(plain), false);
+    assert.equal(hidden(capsTitle), false, 'an all-caps LIVE in the title is not a live badge');
+    assert.equal(hidden(streamedChannel), false, 'the channel row is not the date row');
+
+    assert.equal(createHideVideosFromHomeFeature({ appState: { settings: {} } })._extractVideoMetadata(liveNow).isLive, true);
+});
+
 test('the shared parsers accept the 2026-09 spellings', () => {
     const { parseCompactCount, parseRelativeYouTubeAge } = globalThis.YTKitCore;
     assert.equal(parseCompactCount('186 thousand views'), 186_000);

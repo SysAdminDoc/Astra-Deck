@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
   "findings": [
-    "extension/features/subscription-groups/index.js|[aria-label*=\"LIVE\"]",
     "extension/features/subscription-groups/index.js|[aria-label*=\"ago\"]",
     "extension/features/subscription-groups/index.js|[aria-label*=\"view\"]",
     "extension/features/video-hider/index.js|[aria-label*=\":\"]",

@@ -652,14 +652,23 @@
                         card.classList.remove('ytkit-sub-hidden-by-type');
                         return;
                     }
+                    // The 2026-09 lockups mark live with a badge class and no
+                    // aria-label; a substring label match only caught titles.
                     const isLive = filterLive && !!card.querySelector(
                         'ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"],' +
                         'ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"],' +
-                        '.badge-style-type-live-now, [aria-label*="LIVE"]'
+                        '.badge-style-type-live-now, .ytBadgeShapeThumbnailLive, .ytBadgeShapeLive'
                     );
-                    const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(
-                        card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || ''
-                    );
+                    // A lockup's first row of two or more is the channel name.
+                    // Its spans run together ("129MStreamed 4y ago"), so each
+                    // span's aria-label ("Streamed 4 years ago") rides along.
+                    const lockupRows = Array.from(card.querySelectorAll('.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row'));
+                    const metadataText = lockupRows.length
+                        ? lockupRows.slice(lockupRows.length > 1 ? 1 : 0)
+                            .map(row => `${row.textContent} ${Array.from(row.querySelectorAll('[aria-label]'), node => node.getAttribute('aria-label')).join(' ')}`)
+                            .join(' ')
+                        : card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || '';
+                    const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(metadataText);
                     if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
                     else card.classList.remove('ytkit-sub-hidden-by-type');
                 });

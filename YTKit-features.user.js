@@ -9757,7 +9757,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const hasDuration = this._extractDuration(element) > 0;
 				const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
 				const isMembersOnly = element.querySelector('[aria-label="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
-				const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive');
+				const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive, .ytBadgeShapeThumbnailLive');
 				const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
 				const hasRadioLink = !hasDuration && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
 				const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
@@ -12893,11 +12893,15 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 					const isLive = filterLive && !!card.querySelector(
 						'ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"],' +
 						'ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"],' +
-						'.badge-style-type-live-now, [aria-label*="LIVE"]'
+						'.badge-style-type-live-now, .ytBadgeShapeThumbnailLive, .ytBadgeShapeLive'
 					);
-					const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(
-						card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || ''
-					);
+					const lockupRows = Array.from(card.querySelectorAll('.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row'));
+					const metadataText = lockupRows.length
+						? lockupRows.slice(lockupRows.length > 1 ? 1 : 0)
+							.map(row => `${row.textContent} ${Array.from(row.querySelectorAll('[aria-label]'), node => node.getAttribute('aria-label')).join(' ')}`)
+							.join(' ')
+						: card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || '';
+					const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(metadataText);
 					if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
 					else card.classList.remove('ytkit-sub-hidden-by-type');
 				});
