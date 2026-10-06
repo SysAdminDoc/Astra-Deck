@@ -3563,7 +3563,7 @@ const STORAGE_KEYS = Object.freeze({
 			const generation = ++this._settingsSaveGeneration;
 			if (hasExtensionContext()) {
 				StorageManager.syncFromExternal(STORAGE_KEYS.settings, nextSettings);
-				StorageManager._rememberLocalWrite(STORAGE_KEYS.settings, nextSettings);
+				StorageManager._rememberLocalWrite(STORAGE_KEYS.settings, settingsEchoForm(nextSettings));
 			}
 			return controller.mutateMany(changes).then((result) => {
 				if (result.ok) {
@@ -5051,11 +5051,20 @@ const STORAGE_KEYS = Object.freeze({
 		settingsManager.save(nextSettings);
 		applyExternalSettingsUpdate({ source: 'preset-recipe', nextSettings });
 	}
+	function settingsEchoForm(value) {
+		const sortKeys = (item) => {
+			if (Array.isArray(item)) return item.map(sortKeys);
+			if (!item || typeof item !== 'object') return item;
+			return Object.fromEntries(Object.keys(item).sort().map((key) => [key, sortKeys(item[key])]));
+		};
+		return sortKeys(settingsManager._sanitize({ ...settingsManager.defaults, ...(value || {}) }));
+	}
 	function handleExternalStorageChanges(storageChanges, source = 'storage', options = {}) {
 		if (!storageChanges || typeof storageChanges !== 'object') return;
 		const filteredChanges = {};
 		Object.entries(storageChanges).forEach(([key, change]) => {
-			const localEcho = StorageManager.consumeLocalEcho(key, change?.newValue);
+			const localEcho = StorageManager.consumeLocalEcho(key, change?.newValue)
+				|| (key === STORAGE_KEYS.settings && StorageManager.consumeLocalEcho(key, settingsEchoForm(change?.newValue)));
 			if (localEcho && !options.forceApplyLocal) return;
 			StorageManager.syncFromExternal(key, change?.newValue);
 			filteredChanges[key] = change;

@@ -4,18 +4,20 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P2 — Live-check the other page-side features the bridge fix revived
-  Why: these hadn't run for users since 4.89.0, so their live paths are untested against
-  today's YouTube. Checked live on 2026-09-28 and working: codec filter, Always Best Quality,
-  CPU Tamer's resource unlock, Force DVR (skips uploads), Filter Feeds Before Render (idle),
-  audio track selection (after the fix in this pass). Not yet checked: Audio-Only Mode, Volume
-  Boost, Mono to Stereo, Audio Normalization, Audio Pan, the EQ, auto gain, high-pass and audio
-  sync offset.
-  Where: `extension/ytkit-main.js` audio sections; probe pattern in
-  `scripts/smoke-main-bridge-live.js`.
-  Acceptance: each feature turned on in a live headless run with its effect observed (a Web
-  Audio node in the graph, a status attribute, or the media element state), findings fixed or
-  logged here.
+- [ ] P2 — Popup and side panel toggles skip the conflict pairs
+  Why: `CONFLICT_MAP` lives only in `ytkit.js`. The in-page panel and quick settings switch the
+  other side of a pair off, but the popup's settings list and the side panel write one key
+  through the worker. Turning on Audio-Only from the popup while Always Best Quality is on
+  (the default) leaves both running in open tabs, and the next page load keeps whichever comes
+  first in feature order and saves the other off, so the popup choice quietly reverts. Pairs
+  reachable from the popup include persistentSpeed/perChannelSpeed and
+  removeAllShorts/redirectShorts too.
+  Where: `CONFLICT_MAP` in `extension/ytkit.js` (~7367), `writeSetting` in `extension/popup.js`
+  (~1646), `extension/sidepanel.js` (~690). The map is needed in a third place, so it moves to a
+  shared core module.
+  Acceptance: a test where the popup turns Audio-Only on with Always Best Quality on, and the
+  stored settings end with Always Best Quality off and a notice naming it; the same for the
+  side panel; one map shared by all three surfaces.
   Complexity: M
 
 - [ ] P2 — Adversarial review of the 2026-09-28 bridge commits

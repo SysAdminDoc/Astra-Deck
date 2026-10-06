@@ -16,6 +16,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Features no longer flick on and back off when Astra saves two settings changes close together. A YouTube tab couldn't recognize its own saves coming back from storage, so an older save that landed late briefly undid the newer one. With Audio-Only and Always Best Quality both on, every page load dropped the video to 144p for a moment before Audio-Only shut off again.
 - The Subscriptions page's live and "Streamed" filters hide those videos again. YouTube's newer cards dropped the markers both filters looked for, so neither hid anything, and the live one could catch a normal video with "LIVE" in capitals in its title.
 - Disable Infinite Scroll actually stops the endless loading now. On search it kept pulling in the next page as you scrolled, with the Load More button sitting there doing nothing useful. Scrolling to the bottom now stops at the button, and each click loads one more page.
 - You can scroll through all of a channel's videos again. On a channel's Videos tab the grid stopped after the first 30 and never loaded more. Astra hides YouTube's loading spinner at the bottom of video grids by default, and it did that by removing the spinner's slot entirely, which is also what YouTube watches to know you've reached the bottom. The spinner now stays invisible but keeps its place, so the next batch loads as you scroll. The same grid runs Home and Subscriptions, so they get the fix too.
