@@ -561,8 +561,8 @@ function fakePanel(cards) {
 }
 
 const DEEP_LINK_NAMES = [
-    'DEEP_LINK_PREFIX', 'SETTING_KEY_SHAPE', '_requestedSettingKey', 'deepLinkedSettingKey',
-    'requestSettingFocus', 'openPanelToDeepLinkedSetting'
+    'DEEP_LINK_PREFIX', 'SETTING_KEY_SHAPE', '_requestedSettingKey', 'SETTING_KEY_HOMES', '_deepLinkFocus',
+    '_changedOnly', 'deepLinkedSettingKey', 'requestSettingFocus', 'openPanelToDeepLinkedSetting'
 ];
 
 test('a request from another surface outranks a stale URL fragment', () => {
@@ -649,6 +649,164 @@ test('a request that names nothing valid is refused before it is stored', () => 
     for (const bad of ['', null, undefined, 'has spaces', 'has-a-dash', '../etc', 'x'.repeat(90)]) {
         assert.equal(env.requestSettingFocus(bad), false, `${bad} must not be accepted`);
     }
+});
+
+/** Cards keyed by feature id, the way the panel renders list switches and stores. */
+function featureCards(ids, log) {
+    return ids.map((featureId) => ({
+        dataset: { featureId },
+        classList: { add: (cls) => log.push(`add:${featureId}:${cls}`), remove: () => {} },
+        closest: () => null,
+        querySelector: () => null,
+        scrollIntoView: () => {},
+        focus: () => log.push(`focus:${featureId}`)
+    }));
+}
+
+test('a list or a store lands on the card that edits it, and a key with no home reports false', () => {
+    const log = [];
+    const features = {
+        hiddenGuideElementsManager: { id: 'hiddenGuideElementsManager' },
+        guideHide_trending: { id: 'guideHide_trending', _arrayKey: 'hiddenGuideElements', _arrayValue: 'trending', parentId: 'hiddenGuideElementsManager' },
+        videoNotes: { id: 'videoNotes' }
+    };
+    const panel = fakePanel(featureCards(Object.keys(features), log));
+    const env = loadPanelDeclarations(DEEP_LINK_NAMES, {
+        document: { getElementById: (id) => (id === 'ytkit-settings-panel' ? panel : null) },
+        getFeatureById: (id) => features[id] || null,
+        CSS: { escape: (v) => v }
+    });
+    env.globalThis.location = { hash: '' };
+
+    assert.equal(env.requestSettingFocus('hiddenGuideElements'), true, 'a list goes to its manager');
+    assert.equal(env.requestSettingFocus('videoNotesData'), true, 'a store goes to the feature that keeps it');
+    assert.deepEqual(log.filter((entry) => entry.startsWith('focus:')),
+        ['focus:hiddenGuideElementsManager', 'focus:videoNotes']);
+    assert.equal(env.requestSettingFocus('featureSchedules'), false,
+        'nothing in the panel edits it, and the popup is told so');
+});
+
+test('the category is selected directly, not by clicking a tab nobody listens to yet', () => {
+    const log = [];
+    const pane = { id: 'ytkit-pane-theme' };
+    const [card] = featureCards(['alpha'], log);
+    card.closest = (selector) => (selector === '.ytkit-pane' ? pane : null);
+    const navBtn = { dataset: { tab: 'theme' }, click: () => log.push('click') };
+    const panel = {
+        querySelectorAll: (sel) => (sel === '.ytkit-deep-linked' ? [] : [card]),
+        querySelector: (sel) => (sel === '.ytkit-nav-btn[data-tab="theme"]' ? navBtn : null)
+    };
+    const env = loadPanelDeclarations(DEEP_LINK_NAMES, {
+        document: { getElementById: () => null },
+        syncPanelCategorySelection: (button) => log.push(`select:${button.dataset.tab}`),
+        CSS: { escape: (v) => v }
+    });
+    env.globalThis.location = { hash: '#ytkit-setting=alpha' };
+
+    assert.equal(env.openPanelToDeepLinkedSetting(panel), true);
+    assert.deepEqual(log, ['select:theme', 'add:alpha:ytkit-deep-linked', 'focus:alpha']);
+});
+
+test('a search that would hide the card is cleared first', () => {
+    const log = [];
+    const search = { value: 'comments' };
+    const panel = fakePanel(featureCards(['alpha'], log));
+    const env = loadPanelDeclarations(DEEP_LINK_NAMES, {
+        document: { getElementById: (id) => (id === 'ytkit-search' ? search : id === 'ytkit-settings-panel' ? panel : null) },
+        _panelSearchUpdater: (query) => log.push(`search:${query}`),
+        CSS: { escape: (v) => v }
+    });
+    env.globalThis.location = { hash: '' };
+
+    env.requestSettingFocus('alpha');
+    assert.equal(search.value, '');
+    assert.equal(log[0], 'search:', 'the filter runs again with nothing in it');
+});
+
+// The open routine focused the search box a frame after the link focused the
+// card, so the user was never left on the setting they were sent to. These run
+// the runtime's own setSettingsPanelOpen.
+function withOpenRoutine(fn) {
+    const classes = new Set();
+    const frames = [];
+    const doc = { activeElement: null };
+    const control = { isConnected: true, focus() { if (classes.has('open')) doc.activeElement = control; }, closest: () => null };
+    const card = {
+        dataset: { featureId: 'alpha' },
+        classList: { add() {}, remove() {} },
+        closest: () => null,
+        scrollIntoView() {},
+        querySelector: () => control
+    };
+    const search = { getClientRects: () => [{}], focus() { doc.activeElement = search; } };
+    const panel = {
+        querySelectorAll: (sel) => (sel === '.ytkit-deep-linked' ? [] : [card]),
+        contains: (node) => node === control || node === search,
+        getAttribute: () => null,
+        setAttribute() {}
+    };
+    Object.assign(doc, {
+        body: { classList: { contains: (c) => classes.has(c), toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) } },
+        documentElement: { classList: { toggle() {} }, style: {} },
+        getElementById: (id) => (id === 'ytkit-settings-panel' ? panel : id === 'ytkit-search' ? search : null),
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener() {},
+        removeEventListener() {}
+    });
+    const saved = {
+        document: globalThis.document,
+        requestAnimationFrame: globalThis.requestAnimationFrame,
+        HTMLElement: globalThis.HTMLElement,
+        YTKitFeatures: globalThis.YTKitFeatures
+    };
+    const modulePath = path.join(REPO_ROOT, 'extension', 'features', 'settings-panel', 'index.js');
+    globalThis.document = doc;
+    globalThis.requestAnimationFrame = (frame) => frames.push(frame);
+    globalThis.HTMLElement = class {};
+    delete require.cache[require.resolve(modulePath)];
+    globalThis.YTKitFeatures = {};
+    try {
+        const api = require(modulePath).createSettingsPanelRuntime({
+            PANEL_OPEN_CLASS: 'open',
+            appState: { settings: {} },
+            DebugManager: { log() {} },
+            shouldBuildPrimaryUI: () => true,
+            getFocusableUiElements: () => [],
+            getFeatureById: () => null,
+            t: (_key, fallback) => fallback
+        });
+        globalThis.YTKitFeatures = saved.YTKitFeatures;
+        fn({ api, doc, control, search, flush: () => { while (frames.length) frames.shift()(); } });
+    } finally {
+        Object.assign(globalThis, saved);
+    }
+}
+
+test('a deep link to an open panel keeps the focus on its setting', () => {
+    withOpenRoutine(({ api, doc, control, flush }) => {
+        api.setSettingsPanelOpen(true);
+        flush();
+        // What the popup's message does: open, then ask.
+        api.setSettingsPanelOpen(true);
+        assert.equal(api.requestSettingFocus('alpha'), true);
+        flush();
+        assert.equal(doc.activeElement, control);
+    });
+});
+
+test('a link that lands while the panel is shut is focused once it shows', () => {
+    withOpenRoutine(({ api, doc, control, search, flush }) => {
+        assert.equal(api.requestSettingFocus('alpha'), true);
+        api.setSettingsPanelOpen(true);
+        flush();
+        assert.equal(doc.activeElement, control);
+        api.setSettingsPanelOpen(false);
+        flush();
+        api.setSettingsPanelOpen(true);
+        flush();
+        assert.equal(doc.activeElement, search, 'an ordinary open later goes back to the search box');
+    });
 });
 
 test('the popup carries the key on both routes to the panel', () => {

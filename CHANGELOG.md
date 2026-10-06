@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The settings links in the toolbar popup land on the setting now. Its "in-page panel" buttons for lists and saved data (hidden Guide, chat, player and watch page items, video notes, per-channel SponsorBlock and intro/outro skips, DeArrow channel overrides, watch time) matched no row, so the panel opened on whatever page it showed last. It now opens on the right page with that setting's switch focused, clears a search that would hide it, and keeps focus there instead of jumping to the search box. A link that opens a new YouTube tab opens the panel too; before, it waited for you to open the panel yourself.
+
 ## [4.96.0] (2026-10-06)
 
 ### Added

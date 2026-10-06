@@ -52983,6 +52983,10 @@ html:not([dark]) .ytkit-sb-channel-chip {
         injectSettingsButton();
         injectPageModalButton();
         attachUIEventListeners();
+        // The popup opens a tab on #ytkit-setting=<key> when it has no YouTube
+        // tab to message. The panel reads the key when it builds, but nothing
+        // opened it, so the link landed on a page with the panel shut.
+        if (String(location.hash || '').startsWith('#ytkit-setting=')) setSettingsPanelOpen(true);
     }
 
         // ── Lifetime Ad Block Stats Flush ──

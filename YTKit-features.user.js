@@ -15708,6 +15708,18 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 		const DEEP_LINK_PREFIX = '#ytkit-setting=';
 		const SETTING_KEY_SHAPE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
 		let _requestedSettingKey = '';
+		const SETTING_KEY_HOMES = Object.freeze({
+			videoNotesData: 'videoNotes',
+			sbPerChannelProfilesData: 'sbPerChannelProfiles',
+			dwWatchTimeToday: 'digitalWellbeing',
+			perChannelIntroOutroData: 'perChannelIntroOutro',
+			deArrowChannelOverrides: 'deArrowChannelOverridesPanel',
+			subscriptionGroupData: 'subscriptionGroups',
+			subscriptionLastVisitData: 'subscriptionGroups',
+			subscriptionUnsubscribeStagingData: 'subscriptionGroups',
+			subscriptionAiTagData: 'subscriptionGroups'
+		});
+		let _deepLinkFocus = null;
 		function deepLinkedSettingKey(hash) {
 			const raw = String(hash || '');
 			if (!raw.startsWith(DEEP_LINK_PREFIX)) return '';
@@ -15721,8 +15733,7 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			if (!SETTING_KEY_SHAPE.test(clean)) return false;
 			_requestedSettingKey = clean;
 			const panel = document.getElementById('ytkit-settings-panel');
-			if (panel) openPanelToDeepLinkedSetting(panel);
-			return true;
+			return panel ? openPanelToDeepLinkedSetting(panel) : true;
 		}
 		function openPanelToDeepLinkedSetting(panel) {
 			const key = _requestedSettingKey || deepLinkedSettingKey(globalThis.location?.hash);
@@ -15730,16 +15741,28 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			if (!key) return false;
 			panel.querySelectorAll('.ytkit-deep-linked')
 				.forEach((stale) => stale.classList.remove('ytkit-deep-linked'));
-			const card = Array.from(panel.querySelectorAll('.ytkit-feature-card'))
-				.find((entry) => entry.dataset.settingKey === key || entry.dataset.featureId === key);
+			const cards = Array.from(panel.querySelectorAll('.ytkit-feature-card'));
+			const cardFor = (featureId) => (featureId ? cards.find((entry) => entry.dataset.featureId === featureId) : null);
+			const listSwitch = () => cards.find((entry) => getFeatureById(entry.dataset.featureId)?._arrayKey === key);
+			const card = cards.find((entry) => entry.dataset.settingKey === key || entry.dataset.featureId === key)
+				|| cardFor(SETTING_KEY_HOMES[key])
+				|| cardFor(getFeatureById(listSwitch()?.dataset.featureId)?.parentId);
 			if (!card) return false;
+			const search = document.getElementById('ytkit-search');
+			if (_changedOnly) {
+				if (search) search.value = '';
+				document.getElementById('ytkit-search-changed')?.click();
+			} else if (search?.value) {
+				search.value = '';
+				if (typeof _panelSearchUpdater === 'function') _panelSearchUpdater('');
+			}
 			const pane = card.closest('.ytkit-pane');
 			const navBtn = pane && panel.querySelector(`.ytkit-nav-btn[data-tab="${CSS.escape(pane.id.replace('ytkit-pane-', ''))}"]`);
-			if (navBtn) navBtn.click();
+			if (navBtn) syncPanelCategorySelection(navBtn);
 			card.classList.add('ytkit-deep-linked');
 			card.scrollIntoView?.({ block: 'center' });
-			const focusable = card.querySelector('input, select, textarea, button');
-			(focusable || card).focus?.({ preventScroll: true });
+			_deepLinkFocus = card.querySelector('input, select, textarea, button') || card;
+			_deepLinkFocus.focus?.({ preventScroll: true });
 			return true;
 		}
 		function refreshChangedFilterView() {
@@ -15777,6 +15800,14 @@ function setSettingsPanelOpen(open) {
 			}
 			const focusInitialControl = () => {
 				if (!isSettingsPanelOpen()) return;
+				if (_deepLinkFocus?.isConnected) {
+					_deepLinkFocus.closest?.('.ytkit-feature-card')?.scrollIntoView?.({ block: 'center' });
+					_deepLinkFocus.focus?.({ preventScroll: true });
+					if (document.activeElement === _deepLinkFocus) {
+						_deepLinkFocus = null;
+						return;
+					}
+				}
 				const searchInput = document.getElementById('ytkit-search');
 				const fallbackTarget = getFocusableUiElements(panel)[0];
 				const visibleSearch = searchInput?.getClientRects().length ? searchInput : null;
@@ -15789,6 +15820,7 @@ function setSettingsPanelOpen(open) {
 				}
 			});
 		} else if (wasOpen) {
+			_deepLinkFocus = null;
 			if (_panelCloseWatcher) {
 				const watcher = _panelCloseWatcher;
 				_panelCloseWatcher = null;

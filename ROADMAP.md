@@ -4,6 +4,35 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
+- [ ] P1 — 22 features have no card in the settings panel
+  Why: found 2026-10-06 while checking deep links. `groupFeaturesBySettingsPresentation` keeps a
+  feature only when its `group` is one of the ten panel categories, and seven groups aren't:
+  Research, Ratings, Subscriptions, Accessibility, Playlists, Integrations, Navigation. Checked in
+  the live panel, these have no card, so no switch and no search hit: localAiSummary,
+  localAiTranscriptQa, researchSpacedReview, researchTranscriptIndex,
+  researchTranscriptSearchPanel, transcriptQaLane, monetizationIndicator, returnDislike,
+  returnDislikeOnCards, subscriptionGroups, subscriptionViewControls, forcedColorsSupport,
+  globalAriaLiveRegion, lowPowerProfile, reducedMotion, playlistQuickRemove, watchLaterCleanup,
+  watchLaterWorkbench, astraContextMenu, openInAlternativeFrontend, vlcMpvHandoff,
+  bypassPlaylistMode. The filter predates 7fe69465, which kept it.
+  Where: `extension/features/settings-panel/index.js` (`resolveSettingsPresentationCategory`,
+  `groupFeaturesBySettingsPresentation`, `categoryOrder` ~591), the drifted copy in
+  `extension/ytkit.js` (~40557).
+  Acceptance: every feature in the live feature list that isn't internal SHALL render a card in
+  one of the panel categories (a test over the real feature list), and the 22 above SHALL be
+  found by the panel search in a headless check.
+  Complexity: M
+
+- [ ] P3 — Two popup "in-page panel" settings have no editor anywhere
+  Why: found 2026-10-06. `featureSchedules` and `syncSafePrefsAllowlist` show the popup's
+  "in-page panel" button, which promises the panel edits them, but nothing does. The panel now
+  reports `focused: false` for them and opens on its last page.
+  Where: `extension/popup.js` (`createSchemaSurfaceChip`), `extension/ytkit.js` (schedules ~6245,
+  sync allowlist ~4915).
+  Acceptance: neither key SHALL offer a button that opens the panel on nothing: each either gets
+  an editor its chip lands on, or the chip says where it is changed.
+  Complexity: S
+
 - [ ] P3 — A card's Reset chip sits on top of its switch
   Why: seen 2026-10-06 in the headless Reset check. The chip is absolutely placed 8px from the
   card's top-right corner, and on a toggle card (Custom CSS) it overlaps the top edge of the
@@ -59,16 +88,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: WHEN the settings-panel module is unavailable, ytkit.js SHALL fall back to a
   stub that reports the panel as unavailable rather than to a second implementation, and the
   monolith-peel gate SHALL record the removal.
-  Complexity: M
-
-- [ ] P2 — Settings deep links never land on a setting
-  Why: 2026-09-28 audit, confirmed. 16 of the 17 popup chip keys match no card; the
-  `#ytkit-setting=` new-tab route is only read when the panel is built; the pane switch runs
-  before listeners attach; the open routine then moves focus to the search box.
-  Where: `extension/popup.js` (~4525, ~4563), `extension/features/settings-panel/index.js`
-  (~3335, ~3790, open-focus ~324-339), `extension/ytkit.js` `requestSettingFocus` (~6914).
-  Acceptance: WHEN a deep link names a setting, THEN the panel SHALL open on its category with
-  that card focused, and SHALL report false when no card exists.
   Complexity: M
 
 - [ ] P3 — Tell an upcoming premiere lockup linked into a radio from a Mix

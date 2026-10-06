@@ -297,6 +297,24 @@
         // popup's "in-page panel" chip already opened the overlay and threw the
         // key away, so it landed users on whatever category was last open.
         let _requestedSettingKey = '';
+        // Stores a feature edits on its own card. The popup's "in-page panel"
+        // chip sends these keys, and no card carries them. A list such as
+        // hiddenGuideElements needs no entry: its switches name it.
+        const SETTING_KEY_HOMES = Object.freeze({
+            videoNotesData: 'videoNotes',
+            sbPerChannelProfilesData: 'sbPerChannelProfiles',
+            dwWatchTimeToday: 'digitalWellbeing',
+            perChannelIntroOutroData: 'perChannelIntroOutro',
+            deArrowChannelOverrides: 'deArrowChannelOverridesPanel',
+            subscriptionGroupData: 'subscriptionGroups',
+            subscriptionLastVisitData: 'subscriptionGroups',
+            subscriptionUnsubscribeStagingData: 'subscriptionGroups',
+            subscriptionAiTagData: 'subscriptionGroups'
+        });
+        // The control a deep link landed on, for the open routine to focus. A
+        // link that lands while the panel builds finds it still hidden, and the
+        // open routine moved focus to the search box after either way.
+        let _deepLinkFocus = null;
 
         function deepLinkedSettingKey(hash) {
             const raw = String(hash || '');
@@ -309,16 +327,15 @@
             return SETTING_KEY_SHAPE.test(key) ? key : '';
         }
 
-        // Ask the panel to reveal one setting. Returns true when the request was
-        // taken, which is not the same as the card having been found: the panel
-        // may not be built yet, and buildSettingsPanel drains the request.
+        // Ask the panel to reveal one setting. With the panel built, true means
+        // the card was found. Without it, true means the request was taken, and
+        // buildSettingsPanel drains it.
         function requestSettingFocus(key) {
             const clean = String(key || '');
             if (!SETTING_KEY_SHAPE.test(clean)) return false;
             _requestedSettingKey = clean;
             const panel = document.getElementById('ytkit-settings-panel');
-            if (panel) openPanelToDeepLinkedSetting(panel);
-            return true;
+            return panel ? openPanelToDeepLinkedSetting(panel) : true;
         }
 
         function openPanelToDeepLinkedSetting(panel) {
@@ -330,18 +347,34 @@
             if (!key) return false;
             panel.querySelectorAll('.ytkit-deep-linked')
                 .forEach((stale) => stale.classList.remove('ytkit-deep-linked'));
-            const card = Array.from(panel.querySelectorAll('.ytkit-feature-card'))
-                .find((entry) => entry.dataset.settingKey === key || entry.dataset.featureId === key);
+            const cards = Array.from(panel.querySelectorAll('.ytkit-feature-card'));
+            const cardFor = (featureId) => (featureId ? cards.find((entry) => entry.dataset.featureId === featureId) : null);
+            const listSwitch = () => cards.find((entry) => getFeatureById(entry.dataset.featureId)?._arrayKey === key);
+            const card = cards.find((entry) => entry.dataset.settingKey === key || entry.dataset.featureId === key)
+                || cardFor(SETTING_KEY_HOMES[key])
+                || cardFor(getFeatureById(listSwitch()?.dataset.featureId)?.parentId);
             if (!card) return false;
 
+            // A search or the Changed filter can be hiding the card.
+            const search = document.getElementById('ytkit-search');
+            if (_changedOnly) {
+                if (search) search.value = '';
+                document.getElementById('ytkit-search-changed')?.click();
+            } else if (search?.value) {
+                search.value = '';
+                if (typeof _panelSearchUpdater === 'function') _panelSearchUpdater('');
+            }
+            // Selected directly, not by clicking the tab: on a link that lands
+            // while the panel builds, the click listener isn't attached yet,
+            // and it ignores a closed panel anyway.
             const pane = card.closest('.ytkit-pane');
             const navBtn = pane && panel.querySelector(`.ytkit-nav-btn[data-tab="${CSS.escape(pane.id.replace('ytkit-pane-', ''))}"]`);
-            if (navBtn) navBtn.click();
+            if (navBtn) syncPanelCategorySelection(navBtn);
 
             card.classList.add('ytkit-deep-linked');
             card.scrollIntoView?.({ block: 'center' });
-            const focusable = card.querySelector('input, select, textarea, button');
-            (focusable || card).focus?.({ preventScroll: true });
+            _deepLinkFocus = card.querySelector('input, select, textarea, button') || card;
+            _deepLinkFocus.focus?.({ preventScroll: true });
             return true;
         }
 
@@ -387,6 +420,14 @@ function setSettingsPanelOpen(open) {
             }
             const focusInitialControl = () => {
                 if (!isSettingsPanelOpen()) return;
+                if (_deepLinkFocus?.isConnected) {
+                    _deepLinkFocus.closest?.('.ytkit-feature-card')?.scrollIntoView?.({ block: 'center' });
+                    _deepLinkFocus.focus?.({ preventScroll: true });
+                    if (document.activeElement === _deepLinkFocus) {
+                        _deepLinkFocus = null;
+                        return;
+                    }
+                }
                 const searchInput = document.getElementById('ytkit-search');
                 const fallbackTarget = getFocusableUiElements(panel)[0];
                 const visibleSearch = searchInput?.getClientRects().length ? searchInput : null;
@@ -402,6 +443,7 @@ function setSettingsPanelOpen(open) {
                 }
             });
         } else if (wasOpen) {
+            _deepLinkFocus = null;
             if (_panelCloseWatcher) {
                 const watcher = _panelCloseWatcher;
                 _panelCloseWatcher = null;

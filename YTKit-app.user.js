@@ -34290,6 +34290,7 @@ const STORAGE_KEYS = Object.freeze({
 		injectSettingsButton();
 		injectPageModalButton();
 		attachUIEventListeners();
+		if (String(location.hash || '').startsWith('#ytkit-setting=')) setSettingsPanelOpen(true);
 	}
 		const _CRASH_SESSION_KEY = '_ytkit_crash_guard';
 		const _CRASH_THRESHOLD = 3;
