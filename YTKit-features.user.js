@@ -15404,6 +15404,7 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			applyExternalSettingsUpdate = null,
 			createBrandImage,
 			createToast,
+			copyBugReportBundle = null,
 			destroyFeatureLifecycle,
 			formatPageLabel,
 			getFeatureById,
@@ -18256,6 +18257,30 @@ function buildSettingsPanel() {
 		githubLink.className = 'ytkit-github';
 		githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
 		githubLink.appendChild(ICONS.github());
+		const diagnosticsBtn = document.createElement('button');
+		diagnosticsBtn.type = 'button';
+		diagnosticsBtn.id = 'ytkit-copy-diagnostics';
+		diagnosticsBtn.className = 'ytkit-github';
+		diagnosticsBtn.title = t('settingsCopyDiagnosticsTitle', 'Copy diagnostics for a bug report');
+		diagnosticsBtn.setAttribute('aria-label', diagnosticsBtn.title);
+		diagnosticsBtn.style.cssText = 'cursor: pointer;';
+		const bugIcon = ICONS.bug();
+		bugIcon.style.color = 'currentColor';
+		diagnosticsBtn.appendChild(bugIcon);
+		diagnosticsBtn.addEventListener('click', async () => {
+			try {
+				const outcome = await copyBugReportBundle();
+				const message = outcome === 'copied'
+					? t('statusDiagCopied', 'Diagnostic copied to clipboard.')
+					: t('statusDiagSaved', 'Diagnostic log saved.');
+				createToast(message, 'success');
+				setPanelStatus(message, 'success');
+			} catch (_) {
+				const failed = t('statusDiagSaveFail', 'Could not save log');
+				createToast(failed, 'error');
+				setPanelStatus(failed, 'error');
+			}
+		});
 		const ytToolsBtn = document.createElement('button');
 		ytToolsBtn.type = 'button';
 		ytToolsBtn.className = 'ytkit-github';
@@ -18279,6 +18304,7 @@ function buildSettingsPanel() {
 		versionSpan.className = 'ytkit-version';
 		versionSpan.textContent = t('settingsVersionPrefix', 'v') + YTKIT_VERSION;
 		footerLeft.appendChild(githubLink);
+		if (typeof copyBugReportBundle === 'function') footerLeft.appendChild(diagnosticsBtn);
 		footerLeft.appendChild(ytToolsLink);
 		footerLeft.appendChild(versionSpan);
 		footerLeft.classList.add('ytkit-sidebar-footer');

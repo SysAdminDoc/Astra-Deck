@@ -849,7 +849,20 @@ test('the filter-list status line reports stored subscription state, not the shi
         'only the host may be written into the DOM, never the stored URL');
     assert.match(popupSource, /\(record\.sourceUrl \|\| record\.url\) === described\.url/,
         'a cached record for a different URL must not be reported as current');
-    assert.match(popupSource, /buildVideoFilterListSubscriptionMetadata/,
+    // Diagnostic bundles are built by core/policy-profile.js for every surface;
+    // the popup hands it the stored subscription and the builder sanitizes it.
+    assert.match(popupSource, /filterListSubscription: items\[STORAGE_KEYS\.filterListSubscription\]/,
+        'the popup must hand the stored filter-list subscription to the bundle builder');
+    require('../extension/core/persisted-domains.js');
+    const bundle = require('../extension/core/policy-profile.js').createPolicyProfile().buildBugReport({
+        filterListSubscription: {
+            sourceUrl: 'https://raw.githubusercontent.com/u/r/main/rules.txt?token=secret',
+            fetchedAt: 1000,
+            rules: { keywords: ['a'] }
+        },
+        now: 2000
+    });
+    assert.equal(bundle.filterListSubscription?.source, 'https://raw.githubusercontent.com/u/r/main/rules.txt',
         'diagnostic bundles must include sanitized filter-list provenance');
     assert.match(popupSource, /formatRelativeTimestamp/,
         'freshness must use the shared relative-time formatter');

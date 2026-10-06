@@ -9160,5 +9160,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "تطبيق القاعدة الخاصة بـ {selector}"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "نسخ التشخيص لتقرير خطأ"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "تعذّر نسخ التشخيص. افتح لوحة الإعدادات واستخدم زر الخطأ أسفل الشريط الجانبي."
   }
 }

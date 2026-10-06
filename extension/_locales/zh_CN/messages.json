@@ -9160,5 +9160,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "应用 {selector} 的规则"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "复制诊断信息用于错误报告"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "无法复制诊断信息。请打开设置面板，使用侧边栏底部的错误按钮。"
   }
 }

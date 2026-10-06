@@ -22,11 +22,10 @@ What you expected to happen.
 If applicable, add screenshots or browser console output (F12 > Console).
 
 **Astra Deck bug-report bundle (recommended)**
-Open the toolbar popup → Diagnostics → **Save log**. Attach the
-generated `astra-deck-diagnostics-YYYY-MM-DD....json` file. The bundle
-includes your extension version, browser user agent, runtime capability
-map, sanitized settings snapshot, and the diagnostic ring buffer. BYO
-API keys, custom CSS, and endpoint URLs are redacted in the bundle.
+- Extension: open the toolbar popup, go to Diagnostics and click **Save log**. Attach the `astra-deck-diagnostics-YYYY-MM-DD....json` file it saves.
+- Userscript: on a YouTube tab, open your manager's menu (Tampermonkey or Violentmonkey) and pick **Copy Astra Deck diagnostics**, then paste it here inside a code block.
+
+Either way, Astra Deck's settings panel has a bug button at the bottom of the sidebar that copies the same bundle. It holds your Astra Deck version, browser, what your browser supports, your settings and recent errors. API keys, custom CSS and endpoint URLs are replaced with `[redacted]` before anything is copied or saved.
 
 **Environment** (skip if you attached the bundle above)
 - Browser: [e.g. Chrome 120, Firefox 122]

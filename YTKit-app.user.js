@@ -4832,6 +4832,7 @@ const STORAGE_KEYS = Object.freeze({
 				getFeatureDescription,
 				getFeatureHealthSnapshot,
 				getFeatureName,
+				copyBugReportBundle,
 				getFocusableUiElements,
 				handleExternalStorageChanges,
 				handleFileExport,
@@ -5344,6 +5345,13 @@ const STORAGE_KEYS = Object.freeze({
 						sendResponse?.({ ok: false, error: String(e?.message || e) });
 					}
 					return false;
+				}
+				if (message.type === 'YTKIT_BUILD_BUG_REPORT') {
+					buildBugReportBundle().then(
+						(report) => sendResponse?.({ ok: true, report }),
+						(error) => sendResponse?.({ ok: false, error: String(error?.message || error) })
+					);
+					return true;
 				}
 				if (message.type === 'YTKIT_REFRESH_SELECTOR_ASSET') {
 					refreshSelectorAsset().then(
@@ -29652,6 +29660,62 @@ const STORAGE_KEYS = Object.freeze({
 			: [];
 		return report;
 	}
+	async function buildBugReportBundle() {
+		const policy = globalThis.YTKitCore?.createPolicyProfile?.();
+		if (typeof policy?.buildBugReport !== 'function') throw new Error('bug report builder unavailable');
+		const optional = (read, ms) => Promise.race([
+			Promise.resolve().then(read),
+			new Promise((resolve) => setTimeout(() => resolve(null), ms))
+		]).catch(() => null);
+		const probe = globalThis.YTKitCore?.capabilityProbe;
+		const [capabilities, capabilityLanes, lifecycle] = await Promise.all([
+			optional(() => probe?.runAll?.() ?? null, 1000),
+			optional(() => (probe?.resolveAiLaneStatus ? probe.resolveAiLaneStatus() : probe?.getAiLaneStatus?.() ?? null), 1000),
+			optional(() => sendRuntimeMessage({ type: 'GET_SW_LIFECYCLE' }), 1000)
+		]);
+		let featureHealth = null;
+		try {
+			featureHealth = buildFeatureHealthPayload();
+		} catch (_) {
+		}
+		const host = globalThis.__astraDeckUserscript;
+		return policy.buildBugReport({
+			settings: StorageManager.get(STORAGE_KEYS.settings, {}),
+			filterListSubscription: StorageManager.get(STORAGE_KEYS.filterListSubscription, null),
+			version: YTKIT_VERSION,
+			runtime: host
+				? {
+					kind: 'userscript',
+					manager: String(host.manager || 'unknown'),
+					hostErrors: (Array.isArray(host.errors) ? host.errors : []).map((entry) => ({
+						stage: String(entry?.stage || ''),
+						message: String(entry?.message || '').replace(/https?:\/\/[^\s)]+/g, '<url>').slice(0, 200),
+						at: Number(entry?.at) || 0
+					}))
+				}
+				: { kind: 'extension' },
+			userAgent: navigator.userAgent || '',
+			capabilities,
+			capabilityMatrix: probe?.CAPABILITY_MATRIX || null,
+			capabilityLanes,
+			swLifecycle: Array.isArray(lifecycle?.entries) ? lifecycle.entries : null,
+			externalApiHealth: (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
+				? ExternalApiHealth.snapshot()
+				: null,
+			featureHealth
+		});
+	}
+	async function copyBugReportBundle() {
+		const text = JSON.stringify(await buildBugReportBundle(), null, 2);
+		try {
+			await navigator.clipboard.writeText(text);
+			return 'copied';
+		} catch (_) {
+			const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+			handleFileExport(`astra-deck-diagnostics-${stamp}.json`, text);
+			return 'saved';
+		}
+	}
 	const CriticalSelectorCanary = (function () {
 		const SETTLE_DELAY_MS = 1400;
 		const RETRY_DELAY_MS = 650;
@@ -32591,6 +32655,30 @@ const STORAGE_KEYS = Object.freeze({
 		githubLink.className = 'ytkit-github';
 		githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
 		githubLink.appendChild(ICONS.github());
+		const diagnosticsBtn = document.createElement('button');
+		diagnosticsBtn.type = 'button';
+		diagnosticsBtn.id = 'ytkit-copy-diagnostics';
+		diagnosticsBtn.className = 'ytkit-github';
+		diagnosticsBtn.title = t('settingsCopyDiagnosticsTitle', 'Copy diagnostics for a bug report');
+		diagnosticsBtn.setAttribute('aria-label', diagnosticsBtn.title);
+		diagnosticsBtn.style.cssText = 'cursor: pointer;';
+		const bugIcon = ICONS.bug();
+		bugIcon.style.color = 'currentColor';
+		diagnosticsBtn.appendChild(bugIcon);
+		diagnosticsBtn.addEventListener('click', async () => {
+			try {
+				const outcome = await copyBugReportBundle();
+				const message = outcome === 'copied'
+					? t('statusDiagCopied', 'Diagnostic copied to clipboard.')
+					: t('statusDiagSaved', 'Diagnostic log saved.');
+				createToast(message, 'success');
+				setPanelStatus(message, 'success');
+			} catch (_) {
+				const failed = t('statusDiagSaveFail', 'Could not save log');
+				createToast(failed, 'error');
+				setPanelStatus(failed, 'error');
+			}
+		});
 		const ytToolsBtn = document.createElement('button');
 		ytToolsBtn.type = 'button';
 		ytToolsBtn.className = 'ytkit-github';
@@ -32610,6 +32698,7 @@ const STORAGE_KEYS = Object.freeze({
 		versionSpan.className = 'ytkit-version';
 		versionSpan.textContent = t('settingsVersionPrefix', 'v') + YTKIT_VERSION;
 		footerLeft.appendChild(githubLink);
+		footerLeft.appendChild(diagnosticsBtn);
 		footerLeft.appendChild(ytToolsLink);
 		footerLeft.appendChild(versionSpan);
 		footerLeft.classList.add('ytkit-sidebar-footer');

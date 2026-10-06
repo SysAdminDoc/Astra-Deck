@@ -9160,5 +9160,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "Applica la regola per {selector}"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "Copia la diagnostica per una segnalazione di bug"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "Impossibile copiare la diagnostica. Apri le impostazioni e usa il pulsante bug in fondo alla barra laterale."
   }
 }

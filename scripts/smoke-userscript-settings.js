@@ -27,6 +27,7 @@ const { LIBRARIES } = require('../sync-userscript');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'userscript-settings-smoke');
+const SECRET_TOKEN = 'SENTINEL-settings-smoke-token';
 const STATES = Object.freeze([
     { name: 'desktop-dark', width: 1440, height: 900, dark: true },
     { name: 'desktop-light', width: 1440, height: 900, dark: false },
@@ -59,8 +60,11 @@ function buildFixture(stageDir) {
 <style>html,body{margin:0;min-height:100%;background:#0f0f0f;color:#fff;font-family:Arial,sans-serif}</style>
 <script>
 (() => {
-    const store = new Map([['ytkit_safe_mode', true]]);
+    // authToken is no setting: it stands in for a secret the diagnostics
+    // bundle must redact.
+    const store = new Map([['ytkit_safe_mode', true], ['ytSuiteSettings', { authToken: '${SECRET_TOKEN}' }]]);
     globalThis.__astraSmokeMenu = [];
+    globalThis.__astraSmokeClipboard = [];
     globalThis.GM_info = { scriptHandler: 'settings-smoke', version: '0' };
     globalThis.GM_getValue = (key, fallback) => store.has(key) ? store.get(key) : fallback;
     globalThis.GM_setValue = (key, value) => { store.set(key, value); };
@@ -94,6 +98,7 @@ function buildFixture(stageDir) {
     globalThis.GM_getResourceText = () => null;
     globalThis.GM_cookie = { list: (details, done) => done([]) };
     globalThis.GM_registerMenuCommand = (label, run) => { globalThis.__astraSmokeMenu.push({ label, run }); return label; };
+    globalThis.GM_setClipboard = (text) => { globalThis.__astraSmokeClipboard.push(String(text)); };
 })();
 </script>
 ${records.map((file) => `<script src="${file}"></script>`).join('\n')}
@@ -244,6 +249,64 @@ async function auditState(client, state) {
     return pages;
 }
 
+// Both userscript routes to the diagnostics bundle: the manager menu command
+// (GM_setClipboard) and the settings panel's bug button (page clipboard). A
+// file:// page in headless Chromium has no clipboard permission, so the
+// button's write is recorded instead of performed.
+async function checkDiagnostics(client, timeoutMs) {
+    const ran = await evaluate(client, `(() => {
+        const command = globalThis.__astraSmokeMenu.find((entry) => entry.label === 'Copy Astra Deck diagnostics');
+        if (!command) return false;
+        command.run();
+        return true;
+    })()`);
+    if (!ran) throw new Error('the userscript menu has no "Copy Astra Deck diagnostics" command');
+    await waitForExpression(client, 'globalThis.__astraSmokeClipboard.length > 0', timeoutMs,
+        'the diagnostics menu command to copy');
+    await evaluate(client, `(() => {
+        globalThis.__astraSmokePanelCopy = null;
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: { writeText: async (text) => { globalThis.__astraSmokePanelCopy = String(text); } }
+        });
+        document.querySelector('#ytkit-copy-diagnostics').click();
+    })()`);
+    await waitForExpression(client, "typeof globalThis.__astraSmokePanelCopy === 'string'", timeoutMs,
+        'the settings panel bug button to copy');
+    const result = await evaluate(client, `(() => {
+        const menuText = globalThis.__astraSmokeClipboard[0];
+        const panelText = globalThis.__astraSmokePanelCopy;
+        const menu = JSON.parse(menuText);
+        const panel = JSON.parse(panelText);
+        const button = document.querySelector('#ytkit-copy-diagnostics');
+        const rect = button.getBoundingClientRect();
+        return {
+            marker: menu.astraDeckBugReport === true && panel.astraDeckBugReport === true,
+            runtime: menu.runtime,
+            token: menu.settings.authToken,
+            sameRedaction: JSON.stringify([menu.settings, menu.settingsDiff, menu.errors])
+                === JSON.stringify([panel.settings, panel.settingsDiff, panel.errors]),
+            leaked: menuText.includes(${JSON.stringify(SECRET_TOKEN)}) || panelText.includes(${JSON.stringify(SECRET_TOKEN)}),
+            status: document.querySelector('#ytkit-panel-status')?.textContent.trim() || '',
+            button: { width: rect.width, height: rect.height, label: button.getAttribute('aria-label') || '' }
+        };
+    })()`);
+    const failures = [];
+    if (!result.marker) failures.push('a bundle lacks the astraDeckBugReport marker');
+    if (result.runtime?.kind !== 'userscript' || !String(result.runtime?.manager || '').startsWith('settings-smoke')) {
+        failures.push(`runtime is ${JSON.stringify(result.runtime)}`);
+    }
+    if (result.token !== `[redacted, ${SECRET_TOKEN.length} chars]`) failures.push(`authToken came through as ${JSON.stringify(result.token)}`);
+    if (result.leaked) failures.push('the secret reached the clipboard');
+    if (!result.sameRedaction) failures.push('the menu and the panel redacted differently');
+    if (result.status !== 'Diagnostic copied to clipboard.') failures.push(`panel status reads ${JSON.stringify(result.status)}`);
+    if (!(result.button.width > 0 && result.button.height > 0) || !result.button.label) {
+        failures.push(`bug button is not a labelled, visible control: ${JSON.stringify(result.button)}`);
+    }
+    if (failures.length) throw new Error(`diagnostics: ${failures.join('; ')}`);
+    return result;
+}
+
 async function runCandidate(candidate, fixturePath, timeoutMs) {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-userscript-settings-profile-'));
     const port = await reserveLoopbackPort();
@@ -298,7 +361,9 @@ async function runCandidate(candidate, fixturePath, timeoutMs) {
         }
         const states = {};
         for (const state of STATES) states[state.name] = await auditState(client, state);
-        return { browser: candidate.label, states };
+        const diagnostics = await checkDiagnostics(client, timeoutMs);
+        await capture(client, 'diagnostics-copied');
+        return { browser: candidate.label, states, diagnostics };
     } finally {
         client?.close();
         killProcessTree(proc);
@@ -308,7 +373,9 @@ async function runCandidate(candidate, fixturePath, timeoutMs) {
 
 async function main(argv = process.argv.slice(2)) {
     const options = parseArgs(argv);
-    const candidates = browserCandidates(options.browser);
+    // A browser named on the command line is the only one tried: falling back
+    // past it hid its failure behind whichever installed browser passed.
+    const candidates = browserCandidates(options.browser).slice(0, options.browser ? 1 : undefined);
     if (!candidates.length) throw new Error('No Chromium-family browser is available');
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-userscript-settings-stage-'));
     try {
@@ -319,11 +386,13 @@ async function main(argv = process.argv.slice(2)) {
                 const result = await runCandidate(candidate, fixturePath, options.timeoutMs);
                 console.log(
                     `[smoke-userscript-settings] PASS — ${result.browser}; `
-                    + '11 pages rendered at 1440x900 dark/light and 1920x1080 dark without clipping or overflow'
+                    + '11 pages rendered at 1440x900 dark/light and 1920x1080 dark without clipping or overflow; '
+                    + 'menu and panel diagnostics copied with the same redaction'
                 );
                 console.log(`[smoke-userscript-settings] screenshots: ${OUT_DIR}`);
                 return result;
             } catch (error) {
+                console.warn(`[smoke-userscript-settings] ${candidate.label} failed: ${error.message || error}`);
                 lastError = error;
             }
         }

@@ -31,6 +31,7 @@
 // @grant        GM_download
 // @grant        GM_openInTab
 // @grant        GM_registerMenuCommand
+// @grant        GM_setClipboard
 // @grant        GM_getResourceText
 // @grant        GM_cookie
 // @connect      youtube.com
@@ -77,6 +78,7 @@ const ASTRA_DECK_BUILD = {
 	"runtimeId": "astra-deck-userscript",
 	"menuLabel": "Open Astra Deck settings",
 	"credentialMenuLabel": "AI provider key",
+	"diagnosticsMenuLabel": "Copy Astra Deck diagnostics",
 	"defaultLocale": "en",
 	"locales": [
 		"ar",
@@ -3604,7 +3606,9 @@ const ASTRA_DECK_BUILD = {
 		"zapRuleDuplicate": "A rule for that element already exists.",
 		"zapRuleRemove": "Remove",
 		"zapRuleRemoveAriaTpl": "Remove the rule for {selector}",
-		"zapRuleToggleAriaTpl": "Apply the rule for {selector}"
+		"zapRuleToggleAriaTpl": "Apply the rule for {selector}",
+		"settingsCopyDiagnosticsTitle": "Copy diagnostics for a bug report",
+		"diagnosticsMenuCopyFailed": "Couldn't copy the diagnostics. Open the settings panel and use the bug button under the sidebar."
 	}
 };
 
@@ -3812,6 +3816,7 @@ const ASTRA_DECK_BUILD = {
                 case 'download': return typeof GM_download === 'function' ? GM_download : null;
                 case 'openInTab': return typeof GM_openInTab === 'function' ? GM_openInTab : null;
                 case 'registerMenuCommand': return typeof GM_registerMenuCommand === 'function' ? GM_registerMenuCommand : null;
+                case 'setClipboard': return typeof GM_setClipboard === 'function' ? GM_setClipboard : null;
                 case 'getResourceText': return typeof GM_getResourceText === 'function' ? GM_getResourceText : null;
                 case 'cookie': return (typeof GM_cookie === 'object' || typeof GM_cookie === 'function') && GM_cookie ? GM_cookie : null;
                 default: return null;
@@ -3833,6 +3838,7 @@ const ASTRA_DECK_BUILD = {
         download: gm('download'),
         openInTab: gm('openInTab'),
         registerMenuCommand: gm('registerMenuCommand'),
+        setClipboard: gm('setClipboard'),
         getResourceText: gm('getResourceText'),
         cookie: gm('cookie')
     };
@@ -5112,12 +5118,32 @@ const ASTRA_DECK_BUILD = {
             : hostText('aiCredentialSaved', 'AI credential saved without exposing its value.'));
     }
 
+    // A manager menu click gives the page no user activation, so the page
+    // clipboard refuses it; GM_setClipboard doesn't need one.
+    async function copyDiagnostics() {
+        const response = await deliverMessage(contentOnMessage, { type: 'YTKIT_BUILD_BUG_REPORT' }, extensionSender());
+        if (!response?.ok || !response.report) throw new Error(response?.error || 'diagnostics unavailable');
+        const text = JSON.stringify(response.report, null, 2);
+        if (GM_API.setClipboard) GM_API.setClipboard(text);
+        else await HOST_WINDOW.navigator.clipboard.writeText(text);
+        notify(hostText('statusDiagCopied', 'Diagnostic copied to clipboard.'));
+    }
+
     function registerMenu() {
         if (!GM_API.registerMenuCommand) return;
         try {
             GM_API.registerMenuCommand(BUILD.menuLabel, () => {
                 deliverMessage(contentOnMessage, { type: 'YTKIT_OPEN_PANEL' }, extensionSender())
                     .catch((error) => recordError('open settings', error));
+            });
+            GM_API.registerMenuCommand(BUILD.diagnosticsMenuLabel, () => {
+                copyDiagnostics().catch((error) => {
+                    recordError('diagnostics', error);
+                    notify(hostText(
+                        'diagnosticsMenuCopyFailed',
+                        "Couldn't copy the diagnostics. Open the settings panel and use the bug button under the sidebar."
+                    ), true);
+                });
             });
             GM_API.registerMenuCommand(BUILD.credentialMenuLabel, () => {
                 manageAiCredential().catch((error) => {

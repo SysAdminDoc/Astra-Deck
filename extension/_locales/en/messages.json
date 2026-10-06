@@ -9221,5 +9221,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "Apply the rule for {selector}"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "Copy diagnostics for a bug report"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "Couldn't copy the diagnostics. Open the settings panel and use the bug button under the sidebar."
   }
 }

@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- Userscript users can now send a diagnostics bundle with a bug report. Pick **Copy Astra Deck diagnostics** in your Tampermonkey or Violentmonkey menu, or click the new bug button at the bottom of the settings sidebar, and paste what it copies into the issue. It's the same bundle the extension's popup saves, with API keys, tokens, custom CSS and endpoint URLs redacted the same way, and it also says which userscript manager ran it. The bug button works in the extension too. If the clipboard won't take it, the bundle downloads as a file instead.
+
 ### Fixed
 
 - Photosensitive Flash Protection no longer switches itself off a moment after it starts on computers that decode video on the graphics card. Reading each frame used to take 13 ms at 1080p and 45 ms at 4K, far past its 1 ms allowance, so the guard shut down within a few frames. It now asks the graphics card for a tiny copy of the frame, which takes about 3 ms, looks at no more than 40 frames a second, and only turns off when it stays slow on average, not after a brief hitch. Checked for a full minute of 4K 60 fps and 1080p playback.

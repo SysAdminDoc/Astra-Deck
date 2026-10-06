@@ -9160,5 +9160,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "{selector} 규칙 적용"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "버그 신고용 진단 복사"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "진단을 복사할 수 없습니다. 설정 패널을 열고 사이드바 아래쪽의 버그 버튼을 사용하세요."
   }
 }

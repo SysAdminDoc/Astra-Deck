@@ -53,6 +53,7 @@
             applyExternalSettingsUpdate = null,
             createBrandImage,
             createToast,
+            copyBugReportBundle = null,
             destroyFeatureLifecycle,
             formatPageLabel,
             getFeatureById,
@@ -3364,6 +3365,34 @@ function buildSettingsPanel() {
         githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
         githubLink.appendChild(ICONS.github());
 
+        // Userscript installs have no popup, so this is their way to the
+        // diagnostics bundle; extension users get it here too.
+        const diagnosticsBtn = document.createElement('button');
+        diagnosticsBtn.type = 'button';
+        diagnosticsBtn.id = 'ytkit-copy-diagnostics';
+        diagnosticsBtn.className = 'ytkit-github';
+        diagnosticsBtn.title = t('settingsCopyDiagnosticsTitle', 'Copy diagnostics for a bug report');
+        diagnosticsBtn.setAttribute('aria-label', diagnosticsBtn.title);
+        diagnosticsBtn.style.cssText = 'cursor: pointer;';
+        const bugIcon = ICONS.bug();
+        bugIcon.style.color = 'currentColor';
+        diagnosticsBtn.appendChild(bugIcon);
+        diagnosticsBtn.addEventListener('click', async () => {
+            try {
+                const outcome = await copyBugReportBundle();
+                const message = outcome === 'copied'
+                    ? t('statusDiagCopied', 'Diagnostic copied to clipboard.')
+                    : t('statusDiagSaved', 'Diagnostic log saved.');
+                createToast(message, 'success');
+                setPanelStatus(message, 'success');
+            } catch (_) {
+                // reason: the toast and panel status tell the user it failed
+                const failed = t('statusDiagSaveFail', 'Could not save log');
+                createToast(failed, 'error');
+                setPanelStatus(failed, 'error');
+            }
+        });
+
         // Local downloader installer button
         const ytToolsBtn = document.createElement('button');
         ytToolsBtn.type = 'button';
@@ -3391,6 +3420,7 @@ function buildSettingsPanel() {
         versionSpan.textContent = t('settingsVersionPrefix', 'v') + YTKIT_VERSION;
 
         footerLeft.appendChild(githubLink);
+        if (typeof copyBugReportBundle === 'function') footerLeft.appendChild(diagnosticsBtn);
         footerLeft.appendChild(ytToolsLink);
         footerLeft.appendChild(versionSpan);
         footerLeft.classList.add('ytkit-sidebar-footer');

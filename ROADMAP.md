@@ -237,24 +237,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Userscript users can't produce a diagnostics bundle
-  Why: the #51 reporter "could not find any diagonstics or toolbar popup". The bug template
-  sends everyone to the popup's Diagnostics → Save log, which only the extension has. Userscript
-  installs have no popup at all.
-  Evidence: `.github/ISSUE_TEMPLATE/bug_report.md:24-29`; `userscript/host.js` `registerMenu()`
-  (~1505) registers only the settings and AI-key commands; bundle assembly lives in
-  `extension/popup.js` (~682 payload, ~2417 `summarizeDiagnostics`) with redaction in
-  `extension/background.js` (~797). ZeroDelay v1.5.0 ships a one-click "Copy diagnostics".
-  Confidence: Verified.
-  Touches: a core module that builds the redacted bundle (moved out of `popup.js`),
-  `userscript/host.js` and `sync-userscript.js` (menu label), the in-page settings panel,
-  `.github/ISSUE_TEMPLATE/bug_report.md`, `extension/_locales/**`, tests.
-  Acceptance: WHEN a userscript user picks the new manager menu command or the panel action,
-  THEN a bundle with the popup's fields and redaction SHALL be copied. The template SHALL name
-  both routes. A test SHALL feed one fixture holding an API key and a token through both
-  vehicles and get identical redacted output.
-  Complexity: M
-
 - [ ] P1 — Feed filters can't read view counts or durations on YouTube's 2026-09-25 cards
   Why: Control Panel v1.36.0 (2026-09-25) had to handle a new views icon and a "play icon" views
   layout that broke its low-view hiding, and its #336 and #337 show the subscriptions list view and

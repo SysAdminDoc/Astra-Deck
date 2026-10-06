@@ -4777,7 +4777,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     // "local only" chip on the row makes the trust boundary visible
     // at the pasting moment, not buried in an opt-in panel. Tooltip
     // expands: bug-report bundles redact the value via NEW-1's
-    // BUG_REPORT_REDACTED_KEYS list, and ext.storage.local is
+    // policy profile redaction list, and ext.storage.local is
     // origin-scoped (never synced to a Google account).
     if (TRUST_SIGNAL_LOCAL_ONLY_KEYS.has(entry.key)) {
         const trustChip = document.createElement('span');
@@ -5386,23 +5386,9 @@ if (healthCopyBtn) {
     });
 }
 
-// v4.47.0 NEW-1: keys whose values are user-private and MUST NOT
-// leak into a bug report bundle. The BYO-key fields and any free-text
-// endpoint URL go here (an endpoint URL may contain a personal/self-
-// hosted hostname). The keys map to the corresponding schema entries
-// at settings-schema.js (search for risk:"api" / risk:"store-risk").
-const BUG_REPORT_REDACTED_KEYS = Object.freeze([
-    'aiSummaryApiKey',
-    'aiSummaryEndpoint',
-    'customCssCode',
-    'downloadCobaltInstance',
-    'hideVideosFilterListUrl',
-    'alternativeFrontendInstance',
-]);
-
 // v4.47.0: schema-overview rows for these keys carry an inline
-// "local only" trust signal chip. The set is a strict subset of
-// BUG_REPORT_REDACTED_KEYS — only the truly credential-bearing
+// "local only" trust signal chip. The set is a strict subset of the
+// policy profile's bugReportRedactedKeys — only the truly credential-bearing
 // keys (BYO API keys + the AI endpoint URL, which can embed a
 // key as a query param). Public default URLs (Cobalt instance,
 // alternative frontend, custom CSS) are redacted from bundles
@@ -5412,34 +5398,11 @@ const TRUST_SIGNAL_LOCAL_ONLY_KEYS = new Set([
     'aiSummaryEndpoint',
 ]);
 
-// v4.47.0 NEW-1: redact in place so the bug-report bundle never ships
-// a user's BYO API key, a self-hosted endpoint, or pasted custom CSS.
-// Returns a NEW object — callers must NOT use the input afterwards.
-// "[redacted]" placeholder preserves the key for diagnostics (presence
-// is signal: e.g. confirms that an API key WAS set) without leaking
-// the value.
+// The bundle's redaction lives in core/policy-profile.js, shared with the
+// settings panel and the userscript menu. Without a policy profile nothing
+// is shown rather than something unredacted.
 function redactBugReportSettings(settings) {
-    if (!isPlainObject(settings)) return {};
-    // Union of the explicit key list with the policy-profile scrub
-    // predicate (ALWAYS_SCRUB_KEY_PATTERNS) so the bug-report surface
-    // can never drift behind the export scrubber.
-    const policy = ensurePolicyProfile();
-    const scrubByPolicy = (policy && typeof policy.shouldScrubKey === 'function')
-        ? policy.shouldScrubKey
-        : () => false;
-    const out = { ...settings };
-    for (const key of Object.keys(out)) {
-        if (!BUG_REPORT_REDACTED_KEYS.includes(key) && !scrubByPolicy(key)) continue;
-        const v = out[key];
-        if (typeof v === 'string' && v.length > 0) {
-            out[key] = `[redacted, ${v.length} chars]`;
-        } else if (v !== undefined && v !== null && typeof v !== 'string') {
-            // Non-string secret-shaped values (unexpected, but possible
-            // via import) are masked outright — presence stays visible.
-            out[key] = '[redacted]';
-        }
-    }
-    return out;
+    return ensurePolicyProfile()?.redactBugReportSettings?.(settings) || {};
 }
 
 // v3.23.0 (L9): Save the full DiagnosticLog ring buffer as a JSON file.
@@ -5451,7 +5414,7 @@ function redactBugReportSettings(settings) {
 //
 // v4.47.0 NEW-1: payload expanded into a full bug-report bundle. Adds
 // sanitized settings snapshot (BYO API keys + endpoint URLs + custom
-// CSS redacted via redactBugReportSettings) and the capability-probe
+// CSS redacted by the policy profile's buildBugReport) and the capability-probe
 // map so issue triagers can see what was configured + what the
 // browser environment supports. A new top-level `astraDeckBugReport`
 // marker makes the bundle self-identifying for the issue template.
@@ -5459,20 +5422,8 @@ if (healthSaveBtn) {
     healthSaveBtn.addEventListener('click', async () => {
         try {
             const items = await storageGet([SETTINGS_STORAGE_KEY, STORAGE_KEYS.filterListSubscription]);
-            const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
-                ? items[SETTINGS_STORAGE_KEY]
-                : {};
-            const errors = Array.isArray(settings._errors) ? settings._errors : [];
-            const sanitized = redactBugReportSettings(settings);
-            // Drop the errors array out of sanitized — already in `errors`
-            // above; carrying it twice would just bloat the bundle.
-            delete sanitized._errors;
-            const filterListSubscription = typeof persistedDomains?.buildVideoFilterListSubscriptionMetadata === 'function'
-                ? persistedDomains.buildVideoFilterListSubscriptionMetadata(
-                    items[STORAGE_KEYS.filterListSubscription],
-                    { redactSource: true, now: Date.now() }
-                )
-                : null;
+            const policy = ensurePolicyProfile();
+            if (typeof policy?.buildBugReport !== 'function') throw new Error('bug report builder unavailable');
             const capabilities = popupState._capabilities || null;
             const capabilityMatrix = window.YTKitCore?.capabilityProbe?.CAPABILITY_MATRIX || null;
             const capabilityProbe = window.YTKitCore?.capabilityProbe;
@@ -5519,31 +5470,19 @@ if (healthSaveBtn) {
             } catch (_) {
                 // reason: feature health needs a live YouTube tab; the bundle ships without it otherwise
             }
-            const schemaScope = window.__YTKIT_SETTINGS_SCHEMA__;
-            const policy = ensurePolicyProfile();
-            const effectiveProfile = policy
-                ? policy.resolveEffectiveProfile(settings)
-                : 'store-safe';
-            const settingsDiff = schemaScope && Array.isArray(schemaScope.SETTINGS_SCHEMA)
-                ? sanitizeSchemaDiff(getVisibleSchemaChanges(schemaScope, settings, effectiveProfile))
-                : [];
-            const payload = {
-                astraDeckBugReport: true,
-                schemaVersion: 2,
-                exportedAt: new Date().toISOString(),
-                extensionVersion: manifestVersion,
+            const payload = policy.buildBugReport({
+                settings: items[SETTINGS_STORAGE_KEY],
+                filterListSubscription: items[STORAGE_KEYS.filterListSubscription],
+                version: manifestVersion,
+                runtime: { kind: 'extension' },
                 userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
                 capabilities,
                 capabilityMatrix,
                 capabilityLanes,
                 swLifecycle,
                 externalApiHealth,
-                featureHealth,
-                filterListSubscription,
-                settings: sanitized,
-                settingsDiff,
-                errors,
-            };
+                featureHealth
+            });
             const json = JSON.stringify(payload, null, 2);
             const stamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `astra-deck-diagnostics-${stamp}.json`;

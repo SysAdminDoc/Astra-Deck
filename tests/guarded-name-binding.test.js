@@ -34,7 +34,7 @@ const PLATFORM_GLOBALS = new Set([
     // so it probes each @grant it names, plus two web globals a manager
     // sandbox may not expose.
     'GM_listValues', 'GM_addValueChangeListener', 'GM_addElement', 'GM_download', 'GM_openInTab',
-    'GM_registerMenuCommand', 'GM_getResourceText', 'GM_cookie', 'Request', 'URLSearchParams'
+    'GM_registerMenuCommand', 'GM_setClipboard', 'GM_getResourceText', 'GM_cookie', 'Request', 'URLSearchParams'
 ]);
 
 // Deliberate, each with a working fallback when the name is absent. Keyed

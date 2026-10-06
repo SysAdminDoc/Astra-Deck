@@ -8899,8 +8899,16 @@ test('popup exposes a redacted changed-settings view and diagnostics field', () 
     assert.match(popup,
         /redactBugReportSettings\(\{ \[change\.key\]: change\.defaultValue \}\)\[change\.key\]/,
         'popup must redact default values before displaying or copying them');
-    assert.match(popup, /settingsDiff,/,
+    // The bundle's diff is built by the shared builder in core/policy-profile.js
+    // (the popup, the settings panel and the userscript menu all call it).
+    const bundle = loadPolicyProfileModule().createPolicyProfile().buildBugReport({
+        settings: { hideVideosFromHome: false }
+    });
+    assert.deepEqual(bundle.settingsDiff.find((change) => change.key === 'hideVideosFromHome'),
+        { key: 'hideVideosFromHome', category: 'content-filter', current: false, default: true },
         'diagnostic bundles must carry the changed-settings diff');
+    assert.match(popup, /policy\.buildBugReport\(\{\s*settings: items\[SETTINGS_STORAGE_KEY\],/,
+        'the popup Save must build its bundle, diff included, with the shared builder');
 });
 
 test('v4.28.0 popup schema-overview row labels prefer humanizeSettingKey output', () => {
@@ -12337,12 +12345,13 @@ test('v4.47.0 — schema-overview rows for credential-bearing keys carry an inli
     const trustListMatch = popupSource.match(/TRUST_SIGNAL_LOCAL_ONLY_KEYS\s*=\s*new Set\(\[([^\]]+)\]/);
     assert.ok(trustListMatch, 'TRUST_SIGNAL_LOCAL_ONLY_KEYS must initialize from an array literal');
     const trustKeys = trustListMatch[1].match(/'[^']+'/g) || [];
-    const redactListMatch = popupSource.match(/BUG_REPORT_REDACTED_KEYS\s*=\s*Object\.freeze\(\[([^\]]+)\]/);
-    assert.ok(redactListMatch, 'BUG_REPORT_REDACTED_KEYS must initialize from a frozen array literal');
-    const redactKeys = new Set((redactListMatch[1].match(/'[^']+'/g) || []));
+    // The redaction list lives in core/policy-profile.js, shared by every
+    // surface that builds a bundle.
+    const redactKeys = new Set(loadPolicyProfileModule().createPolicyProfile().bugReportRedactedKeys
+        .map((key) => `'${key}'`));
     for (const trustKey of trustKeys) {
         assert.ok(redactKeys.has(trustKey),
-            `${trustKey} must also be in BUG_REPORT_REDACTED_KEYS so the chip's "redacted from bundle" claim is true`);
+            `${trustKey} must also be in bugReportRedactedKeys so the chip's "redacted from bundle" claim is true`);
     }
     // The editable endpoint remains local-only; the credential itself no
     // longer has a schema row because it is managed by the worker vault.
@@ -12566,65 +12575,54 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
     // bundle never leaks a user's API key. The hardening test pins
     // the redaction list + the marker key + the payload shape.
 
-    // 1. BUG_REPORT_REDACTED_KEYS exists and lists every sensitive key.
-    assert.match(popupSource, /const\s+BUG_REPORT_REDACTED_KEYS\s*=\s*Object\.freeze\(\[/,
-        'popup.js must declare BUG_REPORT_REDACTED_KEYS as a frozen array');
-    // Anchor on the declaration itself (not a passing mention in a
-    // comment elsewhere) — a later comment referenced the symbol
-    // name and a bare indexOf would otherwise slice from the wrong
-    // spot.
-    const listStart = popupSource.search(/const\s+BUG_REPORT_REDACTED_KEYS\s*=/);
-    const listBlock = popupSource.slice(listStart, listStart + 600);
+    // 1-3 used to pin popup.js source. The list, the redaction and the
+    // payload now live in core/policy-profile.js so the settings panel and the
+    // userscript menu build the same bundle; tests/bug-report-bundle.test.js
+    // runs one fixture through all three surfaces.
+    const policy = loadPolicyProfileModule().createPolicyProfile();
+
+    // 1. The redaction list names every sensitive key.
     for (const key of ['aiSummaryApiKey', 'aiSummaryEndpoint', 'customCssCode',
                        'downloadCobaltInstance', 'alternativeFrontendInstance']) {
-        assert.match(listBlock, new RegExp(`'${key}'`),
-            `BUG_REPORT_REDACTED_KEYS must include ${key}`);
+        assert.ok(policy.bugReportRedactedKeys.includes(key),
+            `bugReportRedactedKeys must include ${key}`);
     }
+    assert.ok(Object.isFrozen(policy.bugReportRedactedKeys), 'the redaction list must be frozen');
 
-    // 2. redactBugReportSettings function is declared and replaces the
-    // value with a "[redacted — N chars]" sentinel that preserves the
-    // fact that the field was set without leaking the content.
-    assert.match(popupSource, /function\s+redactBugReportSettings\(/,
-        'popup.js must define redactBugReportSettings()');
-    const redactStart = popupSource.indexOf('function redactBugReportSettings');
-    const redactBlock = popupSource.slice(redactStart, redactStart + 800);
-    assert.match(redactBlock, /\[redacted/,
-        'redactBugReportSettings must replace the value with a [redacted...] placeholder');
-    assert.match(redactBlock, /v\.length\s*>\s*0/,
-        'redactBugReportSettings must skip empty strings (no need to mark an unset field)');
+    // 2. A set value becomes a "[redacted, N chars]" placeholder that keeps
+    // the fact it was set; an empty string stays empty.
+    const redacted = policy.redactBugReportSettings({ aiSummaryApiKey: 'sk-secret', customCssCode: '', authToken: 'abc' });
+    assert.equal(redacted.aiSummaryApiKey, '[redacted, 9 chars]');
+    assert.equal(redacted.customCssCode, '',
+        'redaction must skip empty strings (no need to mark an unset field)');
+    assert.equal(redacted.authToken, '[redacted, 3 chars]', 'policy scrub patterns redact too');
 
-    // 3. healthSave payload now carries the bug-report marker, schema
-    // version, capability map, sanitized settings, AND the errors
-    // ring. The marker is a stable identifier the issue triager
-    // can grep for.
+    // 3. The bundle carries the marker, the schema version, the capability
+    // map, external API health, redacted settings, and the errors ring once.
+    // The bug-report consumer tooling keys schema migrations on schemaVersion,
+    // so a bump comes with a deliberate test update.
+    const bundle = policy.buildBugReport({
+        settings: { aiSummaryApiKey: 'sk-secret', _errors: [{ msg: 'x' }] },
+        capabilities: { offscreen: true },
+        externalApiHealth: [{ id: 'sponsorblock' }]
+    });
+    assert.equal(bundle.astraDeckBugReport, true);
+    assert.equal(bundle.schemaVersion, 2);
+    assert.deepEqual(bundle.capabilities, { offscreen: true });
+    assert.deepEqual(bundle.externalApiHealth, [{ id: 'sponsorblock' }]);
+    assert.equal(bundle.settings.aiSummaryApiKey, '[redacted, 9 chars]');
+    assert.equal('_errors' in bundle.settings, false,
+        'the bundle must avoid double-shipping _errors (already in errors field)');
+    assert.deepEqual(bundle.errors, [{ msg: 'x' }]);
+
+    // The popup Save feeds it the capability map and external API health.
     const saveStart = popupSource.indexOf('healthSaveBtn.addEventListener');
     assert.ok(saveStart > -1, 'popup.js must wire healthSaveBtn');
-    // Window widened in v4.68.0 alongside the feature-health gather.
     const saveBlock = popupSource.slice(saveStart, saveStart + 5800);
-    assert.match(saveBlock, /astraDeckBugReport:\s*true/,
-        'healthSave payload must carry the astraDeckBugReport: true marker');
-    // schemaVersion currently 2 after the NEW-7 SW lifecycle ring
-    // addition; readers should accept >= the documented baseline.
-    // The number itself is pinned here so a future bump comes with
-    // a deliberate test update (the bug-report consumer tooling
-    // keys schema migrations on this field).
-    assert.match(saveBlock, /schemaVersion:\s*[12]/,
-        'healthSave payload must carry schemaVersion (currently 1 or 2)');
-    // Payload uses shorthand property syntax (`capabilities,` not
-    // `capabilities: capabilities`); the local variable comes from
-    // `popupState._capabilities || null` two lines up.
     assert.match(saveBlock, /const capabilities\s*=\s*popupState\._capabilities/,
         'healthSave must read the capability map from popupState._capabilities');
-    assert.match(saveBlock, /\n\s+capabilities,/,
-        'healthSave payload must include the capabilities map (shorthand property)');
-    assert.match(saveBlock, /\n\s+externalApiHealth,/,
-        'healthSave payload must include external API health when available');
-    assert.match(saveBlock, /settings:\s*sanitized/,
-        'healthSave payload must include sanitized settings');
-    assert.match(saveBlock, /redactBugReportSettings\(settings\)/,
-        'healthSave must redact the settings snapshot before bundling');
-    assert.match(saveBlock, /delete sanitized\._errors/,
-        'healthSave must avoid double-shipping _errors (already in errors field)');
+    assert.match(saveBlock, /policy\.buildBugReport\(\{[\s\S]*\n\s+capabilities,[\s\S]*\n\s+externalApiHealth,/,
+        'healthSave must hand the capability map and external API health to the shared builder');
 
     // 4. Issue template references the bundle.
     const bugTpl = fs.readFileSync(

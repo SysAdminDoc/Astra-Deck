@@ -135,6 +135,7 @@ A few things work differently because a userscript manager isn't a browser exten
 - **New sites ask first.** The first time a feature reaches a new host (Return YouTube Dislike, SponsorBlock, or Astra Downloader on `127.0.0.1`), your manager asks you to allow the connection.
 - **Settings live in your manager's storage.** Settings saved by the older userscript carry over the first time the new one runs.
 - **AI provider keys** go in through your manager's menu (**AI provider key** under Astra Deck), since there's no toolbar popup. They're kept in the manager's storage, where YouTube's own scripts can't read them. Keys you saved in the older userscript still work.
+- **Bug reports.** There's no popup to save a diagnostics file from, so pick **Copy Astra Deck diagnostics** in your manager's menu, or click the bug button at the bottom of the settings sidebar, then paste the result into your issue. API keys and other secrets are redacted the same way the extension's file does it.
 - **Pair Astra Downloader once.** The extension gets the companion's token through native messaging, and a userscript can't. In Astra Downloader 2.16.0 or newer, open Browser extension and choose Pair userscript, then press a download button on YouTube within two minutes. The token stays in your manager's storage. Regenerating it in Astra Downloader's Settings unpairs the userscript.
 - **Signed-in downloads need the extension.** The extension hands your YouTube sign-in to Astra Downloader only after the companion proves itself through native messaging, and a userscript can't do that. Members-only and age-restricted videos won't download from the userscript.
 
@@ -1271,8 +1272,9 @@ parity.
 
 ### Optional browser capabilities
 
-Astra Deck probes optional APIs before using them. The popup diagnostics bundle
-includes the same generated matrix used by the runtime at
+Astra Deck probes optional APIs before using them. The diagnostics bundle (the
+popup's Save, the settings panel's bug button, or the userscript menu) includes
+the same generated matrix used by the runtime at
 `build/browser-capability-matrix.json`, so support reports identify both the
 available capability and the promised fallback.
 

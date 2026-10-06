@@ -9160,5 +9160,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "Применить правило для {selector}"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "Скопировать диагностику для отчёта об ошибке"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "Не удалось скопировать диагностику. Откройте настройки и нажмите кнопку с жуком внизу боковой панели."
   }
 }

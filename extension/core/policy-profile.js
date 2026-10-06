@@ -44,6 +44,18 @@
     // copied to another machine, but importing it must never silently opt that
     // machine into account storage.
     const ALWAYS_LOCAL_ONLY_KEYS = new Set(['syncSettings']);
+    // A diagnostics bundle masks these on top of every key shouldScrubKey()
+    // catches: the BYO AI key and endpoint (an endpoint URL can carry a key or
+    // a self-hosted hostname), pasted custom CSS, and instance or list URLs
+    // that may point at a personal server.
+    const BUG_REPORT_REDACTED_KEYS = Object.freeze([
+        'aiSummaryApiKey',
+        'aiSummaryEndpoint',
+        'customCssCode',
+        'downloadCobaltInstance',
+        'hideVideosFilterListUrl',
+        'alternativeFrontendInstance',
+    ]);
 
     function readRuntimeManifest() {
         const runtimes = [
@@ -421,6 +433,80 @@
             return { visible, hidden, effective };
         }
 
+        // A set secret becomes "[redacted, N chars]" (or "[redacted]" when it
+        // isn't a string), so a report still shows the field was filled in.
+        // Empty strings stay as they are. Returns a new object.
+        function redactBugReportSettings(settings) {
+            if (!isPlainObject(settings)) return {};
+            const out = { ...settings };
+            for (const key of Object.keys(out)) {
+                if (!BUG_REPORT_REDACTED_KEYS.includes(key) && !shouldScrubKey(key)) continue;
+                const v = out[key];
+                if (typeof v === 'string' && v.length > 0) {
+                    out[key] = `[redacted, ${v.length} chars]`;
+                } else if (v !== undefined && v !== null && typeof v !== 'string') {
+                    out[key] = '[redacted]';
+                }
+            }
+            return out;
+        }
+
+        // Settings that differ from their defaults and apply under the
+        // effective profile, with both values redacted.
+        function buildBugReportSettingsDiff(settings) {
+            const getChanged = options.getChangedSettings || schemaScope?.getChangedSettings;
+            if (typeof getChanged !== 'function') return [];
+            const effective = resolveEffectiveProfile(settings);
+            return getChanged(settings, schema)
+                .filter((change) => isEntryAllowedInProfile(findEntry(change.key), effective))
+                .map((change) => ({
+                    key: change.key,
+                    category: change.category,
+                    current: redactBugReportSettings({ [change.key]: change.currentValue })[change.key],
+                    default: redactBugReportSettings({ [change.key]: change.defaultValue })[change.key]
+                }));
+        }
+
+        // The one diagnostics bundle behind the popup's Save, the settings
+        // panel's copy button and the userscript menu command. Each caller
+        // passes what its world can reach and null for the rest. `settings`
+        // and `filterListSubscription` are the raw stored values; redaction
+        // happens here so no surface can ship a different cut.
+        function buildBugReport(parts = {}) {
+            const settings = isPlainObject(parts.settings) ? parts.settings : {};
+            const now = Number.isFinite(parts.now) ? parts.now : Date.now();
+            const errors = Array.isArray(settings._errors) ? settings._errors : [];
+            const redacted = redactBugReportSettings(settings);
+            // Already in `errors`; carrying it twice only bloats the bundle.
+            delete redacted._errors;
+            const domains = options.persistedDomains || globalThis.YTKitCore?.persistedDomains;
+            const filterListSubscription = typeof domains?.buildVideoFilterListSubscriptionMetadata === 'function'
+                ? domains.buildVideoFilterListSubscriptionMetadata(
+                    parts.filterListSubscription,
+                    { redactSource: true, now }
+                )
+                : null;
+            const orNull = (value) => (value === undefined ? null : value);
+            return {
+                astraDeckBugReport: true,
+                schemaVersion: 2,
+                exportedAt: new Date(now).toISOString(),
+                extensionVersion: String(parts.version || ''),
+                runtime: orNull(parts.runtime),
+                userAgent: String(parts.userAgent || ''),
+                capabilities: orNull(parts.capabilities),
+                capabilityMatrix: orNull(parts.capabilityMatrix),
+                capabilityLanes: orNull(parts.capabilityLanes),
+                swLifecycle: orNull(parts.swLifecycle),
+                externalApiHealth: orNull(parts.externalApiHealth),
+                featureHealth: orNull(parts.featureHealth),
+                filterListSubscription,
+                settings: redacted,
+                settingsDiff: buildBugReportSettingsDiff(settings),
+                errors
+            };
+        }
+
         return {
             getArtifactProfile: () => artifactProfile,
             isDownloadFreeArtifact,
@@ -435,6 +521,9 @@
             validateSettingsSnapshot,
             buildExportSnapshot,
             countByProfile,
+            redactBugReportSettings,
+            buildBugReport,
+            bugReportRedactedKeys: BUG_REPORT_REDACTED_KEYS,
             alwaysLocalOnlyKeys: new Set(ALWAYS_LOCAL_ONLY_KEYS)
         };
     }

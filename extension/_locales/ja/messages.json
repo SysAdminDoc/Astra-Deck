@@ -9160,5 +9160,11 @@
   },
   "zapRuleToggleAriaTpl": {
     "message": "{selector} のルールを適用"
+  },
+  "settingsCopyDiagnosticsTitle": {
+    "message": "バグ報告用に診断をコピー"
+  },
+  "diagnosticsMenuCopyFailed": {
+    "message": "診断をコピーできませんでした。設定パネルを開き、サイドバー下部のバグボタンを使ってください。"
   }
 }

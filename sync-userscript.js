@@ -811,6 +811,7 @@ function buildHostData(plan, version, repoRoot = REPO_ROOT) {
         runtimeId: RUNTIME_ID,
         menuLabel: 'Open Astra Deck settings',
         credentialMenuLabel: 'AI provider key',
+        diagnosticsMenuLabel: 'Copy Astra Deck diagnostics',
         defaultLocale,
         locales: plan.locales,
         localeResourcePrefix: LOCALE_RESOURCE_PREFIX,
@@ -886,6 +887,7 @@ const USERSCRIPT_GRANTS = Object.freeze([
     'GM_download',
     'GM_openInTab',
     'GM_registerMenuCommand',
+    'GM_setClipboard',
     'GM_getResourceText',
     'GM_cookie',
 ]);
