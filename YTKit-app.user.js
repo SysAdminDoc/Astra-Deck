@@ -11982,9 +11982,7 @@ const STORAGE_KEYS = Object.freeze({
 				const continuations = document.querySelectorAll('ytd-continuation-item-renderer:not([ytkit-load-more])');
 				continuations.forEach(cont => {
 					cont.setAttribute('ytkit-load-more', '1');
-					cont.style.visibility = 'hidden';
-					cont.style.height = '0';
-					cont.style.overflow = 'hidden';
+					cont.style.display = 'none';
 					const spinner = cont.querySelector('tp-yt-paper-spinner, yt-next-continuation');
 					if (spinner) spinner.style.display = 'none';
 					const wrapper = document.createElement('div');
@@ -11995,12 +11993,10 @@ const STORAGE_KEYS = Object.freeze({
 					btn.className = 'ytkit-load-more-btn';
 					btn.textContent = 'Load More';
 					btn.onclick = () => {
-						cont.removeAttribute('ytkit-load-more');
-						cont.style.visibility = '';
-						cont.style.height = '';
-						cont.style.overflow = '';
-						if (spinner) spinner.style.display = '';
 						wrapper.remove();
+						cont.setAttribute('ytkit-load-more', 'released');
+						cont.style.display = '';
+						if (spinner) spinner.style.display = '';
 						cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
 					};
 					wrapper.appendChild(btn);
@@ -12008,7 +12004,8 @@ const STORAGE_KEYS = Object.freeze({
 				});
 			},
 			init() {
-				this._styleEl = injectStyle('ytd-continuation-item-renderer[ytkit-load-more] { visibility: hidden !important; height: 0 !important; overflow: hidden !important; }', this.id, true);
+				this._styleEl = injectStyle('ytd-continuation-item-renderer[ytkit-load-more="1"] { display: none !important; }', this.id, true);
+				this._process();
 				this._scheduleProcess(2000);
 				addMutationRule(this.id, () => this._process());
 				addNavigateRule('infiniteScroll', () => this._scheduleProcess(2000));
@@ -12022,7 +12019,7 @@ const STORAGE_KEYS = Object.freeze({
 				document.querySelectorAll('.ytkit-load-more-wrapper').forEach(el => el.remove());
 				document.querySelectorAll('[ytkit-load-more]').forEach(el => {
 					el.removeAttribute('ytkit-load-more');
-					el.style.visibility = ''; el.style.height = ''; el.style.overflow = '';
+					el.style.display = '';
 					const spinner = el.querySelector('tp-yt-paper-spinner, yt-next-continuation');
 					if (spinner) spinner.style.display = '';
 				});

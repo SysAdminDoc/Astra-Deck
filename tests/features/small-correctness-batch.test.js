@@ -241,7 +241,7 @@ test('the watch-time statistic only accrues while the tab is visible and playing
         'a paused video must not accrue watch time');
 });
 
-test('the Load More button is built next to the continuation and clears the attribute on click', () => {
+test('the Load More button is built next to the continuation and releases it on click', () => {
     const feed = fakeNode({ tag: 'div' });
     const continuation = fakeNode({ tag: 'ytd-continuation-item-renderer' });
     continuation.scrollIntoView = () => { continuation.scrolled = true; };
@@ -249,8 +249,8 @@ test('the Load More button is built next to the continuation and clears the attr
 
     const feature = loadFeature('disableInfiniteScroll', {
         document: fakeDocument((selector) => (
-            selector.startsWith('ytd-continuation-item-renderer') && !continuation.hasAttribute('ytkit-load-more')
-                ? [continuation]
+            selector.startsWith('ytd-continuation-item-renderer')
+                ? feed.children.filter((node) => node.tagName === 'YTD-CONTINUATION-ITEM-RENDERER' && !node.hasAttribute('ytkit-load-more'))
                 : []
         ))
     });
@@ -266,18 +266,40 @@ test('the Load More button is built next to the continuation and clears the attr
     assert.equal(button.textContent, 'Load More');
     assert.equal(button.className, 'ytkit-load-more-btn');
     assert.equal(continuation.getAttribute('ytkit-load-more'), '1');
+    // Chrome reports a laid-out zero-height target as intersecting, so only
+    // display:none keeps YouTube's observer from loading the next page.
+    assert.equal(continuation.style.display, 'none', 'the continuation must leave layout');
 
     button.onclick();
 
-    // The injected hiding rule is !important and keys on the attribute, so
-    // clearing the inline styles alone left the element zero-area.
-    assert.equal(continuation.getAttribute('ytkit-load-more'), null,
-        'the attribute the !important rule keys on must be cleared');
+    // The injected hiding rule is !important and keys on the value "1".
+    assert.equal(continuation.getAttribute('ytkit-load-more'), 'released',
+        'the value the !important rule keys on must change');
     assert.equal(feed.children.length, 1, 'the wrapper is removed once it has been used');
+    assert.equal(continuation.style.display, '', 'the continuation is back in layout for YouTube to load');
     assert.equal(continuation.scrolled, true);
 
+    // Removing the wrapper fires the mutation rule. Hiding the clicked
+    // continuation again there cancelled the load the click asked for.
     feature._process();
-    assert.equal(feed.children.length, 2, 'a re-rendered continuation gets a fresh button');
+    assert.equal(feed.children.length, 1, 'the released continuation stays in layout');
+    assert.equal(continuation.style.display, '');
+
+    // YouTube renders a fresh continuation element for the next page.
+    continuation.remove();
+    const next = fakeNode({ tag: 'ytd-continuation-item-renderer' });
+    feed.appendChild(next);
+    feature._process();
+    assert.equal(feed.children.length, 2, "the next page's continuation gets a fresh button");
+    assert.equal(next.style.display, 'none');
+});
+
+test('the Load More hiding rule takes the continuation out of layout', () => {
+    const start = sources.ytkit.indexOf("id: 'disableInfiniteScroll'");
+    const block = sources.ytkit.slice(start, start + 4000);
+    assert.match(block, /ytd-continuation-item-renderer\[ytkit-load-more="1"\] \{ display: none !important; \}/);
+    assert.doesNotMatch(block, /visibility: hidden !important/,
+        'visibility:hidden leaves the box laid out and the auto-load running');
 });
 
 test('bufferPreload captures the player default and hands it back on disable', () => {

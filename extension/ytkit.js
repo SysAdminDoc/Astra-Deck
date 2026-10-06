@@ -18603,12 +18603,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const continuations = document.querySelectorAll('ytd-continuation-item-renderer:not([ytkit-load-more])');
                 continuations.forEach(cont => {
                     cont.setAttribute('ytkit-load-more', '1');
-                    // Hide the spinner
-                    cont.style.visibility = 'hidden';
-                    cont.style.height = '0';
-                    cont.style.overflow = 'hidden';
+                    // display:none, not visibility:hidden or height:0: Chrome still
+                    // reports a laid-out zero-height target as intersecting, so
+                    // YouTube kept auto-loading under the old hide.
+                    cont.style.display = 'none';
 
-                    // Prevent IntersectionObserver from triggering auto-load
                     const spinner = cont.querySelector('tp-yt-paper-spinner, yt-next-continuation');
                     if (spinner) spinner.style.display = 'none';
 
@@ -18622,18 +18621,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     btn.textContent = 'Load More';
                     btn.onclick = () => {
                         // Restore the continuation element so YouTube loads the
-                        // next page. The attribute has to go too: the injected
-                        // `[ytkit-load-more]` rule is !important, so clearing the
-                        // inline styles alone left the element zero-area and the
-                        // next page loaded only because Chrome still reported it
-                        // as intersecting. The next continuation is re-hidden by
-                        // the mutation rule as soon as it renders.
-                        cont.removeAttribute('ytkit-load-more');
-                        cont.style.visibility = '';
-                        cont.style.height = '';
-                        cont.style.overflow = '';
-                        if (spinner) spinner.style.display = '';
+                        // next page. It stays marked "released" so the mutation
+                        // rule doesn't hide it again before YouTube's observer
+                        // sees it. YouTube renders a fresh continuation element
+                        // for the next page (search and rich grids, 2026-10),
+                        // and that one gets its own button.
                         wrapper.remove();
+                        cont.setAttribute('ytkit-load-more', 'released');
+                        cont.style.display = '';
+                        if (spinner) spinner.style.display = '';
                         // Scroll it into view to trigger YouTube's intersection observer
                         cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     };
@@ -18643,7 +18639,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                this._styleEl = injectStyle('ytd-continuation-item-renderer[ytkit-load-more] { visibility: hidden !important; height: 0 !important; overflow: hidden !important; }', this.id, true);
+                this._styleEl = injectStyle('ytd-continuation-item-renderer[ytkit-load-more="1"] { display: none !important; }', this.id, true);
+                this._process();
                 this._scheduleProcess(2000);
                 addMutationRule(this.id, () => this._process());
                 addNavigateRule('infiniteScroll', () => this._scheduleProcess(2000));
@@ -18657,7 +18654,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-load-more-wrapper').forEach(el => el.remove());
                 document.querySelectorAll('[ytkit-load-more]').forEach(el => {
                     el.removeAttribute('ytkit-load-more');
-                    el.style.visibility = ''; el.style.height = ''; el.style.overflow = '';
+                    el.style.display = '';
                     const spinner = el.querySelector('tp-yt-paper-spinner, yt-next-continuation');
                     if (spinner) spinner.style.display = '';
                 });
