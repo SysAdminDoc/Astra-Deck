@@ -154,6 +154,25 @@ test('early.css avatar hide leaves the signed-in account button its picture (#51
     }
 });
 
+test('early.css never takes the box away from the infinite-scroll trigger', () => {
+    // YouTube loads the next page of a grid when an IntersectionObserver sees
+    // ytd-continuation-item-renderer. A display:none default on it stopped
+    // channel /videos grids at the first 30 videos.
+    const earlyCss = fs.readFileSync(path.join(repoRoot, 'extension', 'early.css'), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '');
+    const offenders = [];
+    for (const [, selectors, body] of earlyCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        if (!/display\s*:\s*none/i.test(body)) continue;
+        for (const selector of selectors.split(',')) {
+            const subject = selector.trim().split(/\s+/).pop() || '';
+            if (/^ytd-continuation-item-renderer\b/.test(subject)) offenders.push(selector.trim());
+        }
+    }
+    assert.deepEqual(offenders, []);
+    assert.match(earlyCss, /ytd-continuation-item-renderer\.style-scope\.ytd-rich-grid-renderer\s*\{\s*visibility:\s*hidden/,
+        'the grid spinner stays hidden without losing its box');
+});
+
 test('early.css baked-in avatar/shelf hides are opt-out via html:not(.ytkit-restore-native-ui)', () => {
     const earlyCss = fs.readFileSync(path.join(repoRoot, 'extension', 'early.css'), 'utf8');
     // The avatar + rich-section-shelf hides must be gated so a user can restore

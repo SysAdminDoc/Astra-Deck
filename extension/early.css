@@ -196,9 +196,16 @@ html:not(.ytkit-restore-native-ui) ytd-video-owner-renderer.style-scope.ytd-watc
  * — class absent — keeps the rules active with zero FOUC. */
 html:not(.ytkit-restore-native-ui) ytd-ghost-grid-renderer.style-scope.ytd-continuation-item-renderer,
 html:not(.ytkit-restore-native-ui) div.style-scope.ytd-rich-section-renderer,
-html:not(.ytkit-restore-native-ui) ytd-rich-section-renderer.style-scope.ytd-rich-grid-renderer,
-html:not(.ytkit-restore-native-ui) ytd-continuation-item-renderer.style-scope.ytd-rich-grid-renderer {
+html:not(.ytkit-restore-native-ui) ytd-rich-section-renderer.style-scope.ytd-rich-grid-renderer {
     display: none !important;
+}
+
+/* The grid's continuation renderer is the infinite-scroll trigger: YouTube
+ * loads the next page when an IntersectionObserver sees it. display:none
+ * gives it no box, so channel /videos grids stopped at the first 30 videos.
+ * Hiding the spinner keeps the box, and the observer still fires. */
+html:not(.ytkit-restore-native-ui) ytd-continuation-item-renderer.style-scope.ytd-rich-grid-renderer {
+    visibility: hidden !important;
 }
 
 /* YouTube avatars: hide the IMG element inside yt-img-shadow wrappers,
