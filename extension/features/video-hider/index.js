@@ -110,6 +110,18 @@
     const FILTER_LIST_MAX_BYTES = 1024 * 1024;
     const FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
 
+    // Duration badges, most specific first. The bare colon-in-aria-label
+    // fallback also matches titles like "Part 1: ..." so it only runs when
+    // no real badge on the card holds a clock.
+    const CARD_DURATION_SELECTORS = Object.freeze([
+        'ytd-thumbnail-overlay-time-status-renderer',
+        '.ytd-thumbnail-overlay-time-status-renderer',
+        'yt-thumbnail-badge-view-model badge-shape',
+        '[aria-label*=":"]'
+    ]);
+    const INPUT_HEALTH_MIN_CARDS = 12;
+    const INPUT_HEALTH_NAMES = Object.freeze({ views: 'view counts', ages: 'upload ages', durations: 'durations' });
+
     function filterListError(code, message) {
         const error = new Error(message);
         error.code = code;
@@ -197,6 +209,7 @@
             unmarkCardHidden = () => {},
             getFeatureName = feature => feature?.name || '',
             getCurrentPath = () => globalThis.location?.pathname || '',
+            setFeatureHealth = () => {},
             getPlayerResponseGlobal = () => globalThis.ytInitialPlayerResponse || null,
             extensionFetchJson = null,
             storageWriteJSON = storageWrite,
@@ -1607,13 +1620,16 @@
             },
 
             _extractDuration(element) {
-                const badge = element.querySelector('ytd-thumbnail-overlay-time-status-renderer, .ytd-thumbnail-overlay-time-status-renderer, [aria-label*=":"]');
-                if (!badge) return 0;
-                const text = badge.textContent?.trim() || badge.getAttribute('aria-label') || '';
-                const match = text.match(/(\d+):(\d+):?(\d+)?/);
-                if (!match) return 0;
-                if (match[3]) return parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]);
-                return parseInt(match[1])*60 + parseInt(match[2]);
+                for (const selector of CARD_DURATION_SELECTORS) {
+                    for (const badge of element.querySelectorAll(selector)) {
+                        const text = badge.textContent?.trim() || badge.getAttribute('aria-label') || '';
+                        const match = text.match(/(\d+):(\d+):?(\d+)?/);
+                        if (!match) continue;
+                        if (match[3]) return parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]);
+                        return parseInt(match[1])*60 + parseInt(match[2]);
+                    }
+                }
+                return 0;
             },
 
             _extractTitle(element) {
@@ -1625,7 +1641,21 @@
                 return fn ? fn(text, null, options) : null;
             },
 
+            // YouTube's 2026-09 cards print the count bare ("1.1M") beside a
+            // views icon. Lockups (Home, Subscriptions, channel, related) keep
+            // the words in that span's aria-label ("1.1 million views"); search
+            // cards drop them, leaving "57M" as the first inline metadata item.
+            // Those come first, then the older layouts that spell out "views".
             _extractViewCount(element) {
+                for (const node of element.querySelectorAll('yt-content-metadata-view-model [aria-label]')) {
+                    const count = this._parseCompactCount(node.getAttribute('aria-label') || '')
+                        ?? this._parseCompactCount(node.textContent || '', { allowBare: true });
+                    if (count !== null) return count;
+                }
+                for (const node of element.querySelectorAll('#metadata-line .inline-metadata-item')) {
+                    const count = this._parseCompactCount(node.textContent || '', { allowBare: true });
+                    if (count !== null) return count;
+                }
                 const candidates = [
                     ...element.querySelectorAll('#metadata-line, ytd-video-meta-block, .metadata, #meta, [aria-label*="view"], [aria-label*="watching"]')
                 ];
@@ -1710,8 +1740,16 @@
                 const title = this._extractTitle(element);
                 const descriptionText = this._extractDescriptionText(element);
                 const channelText = this._extractChannelText(element);
-                const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
-                    .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
+                // The 2026-09 lockup rows abbreviate ("6d ago") and put the
+                // spelled-out form on the spans' aria-labels ("6 days ago"),
+                // so those labels ride along for the age and type checks.
+                const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer, yt-content-metadata-view-model, yt-thumbnail-badge-view-model'))
+                    .map(node => {
+                        const labels = /^YT-(?:CONTENT-METADATA|THUMBNAIL-BADGE)-VIEW-MODEL$/.test(node.tagName || '')
+                            ? Array.from(node.querySelectorAll('[aria-label]'), labelled => labelled.getAttribute('aria-label') || '').join(' ')
+                            : '';
+                        return `${node.textContent || ''} ${node.getAttribute('aria-label') || ''} ${labels}`;
+                    })
                     .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
                 // NFD splits Latin letters from their accents so the patterns
                 // below can be written unaccented — but it ALSO decomposes each
@@ -1773,7 +1811,57 @@
                 };
             },
 
+            // A filter that needs a number it can't read passes every card,
+            // which looks exactly like a feed with nothing to hide. Once a
+            // page's worth of cards gives no readable value, feature health
+            // says so. Upload cadence isn't watched: most cards never state one.
+            _inputReadability: null,
+            _inputHealthDegraded: false,
+
+            _noteFilterInputs(element, metadata) {
+                const settings = appState.settings;
+                const observed = [];
+                if (settings.hideVideosLowViewFilter || settings.hideVideosLowSignalFilter === true) {
+                    observed.push(['views', metadata.views !== null]);
+                }
+                if (settings.hideVideosLowSignalFilter === true) observed.push(['ages', metadata.ageDays !== null]);
+                if ((settings.hideVideosDurationFilter || 0) > 0 && !metadata.isLive && !metadata.isUpcoming
+                    && !metadata.isShort && !metadata.isPlaylist && !metadata.isMix) {
+                    observed.push(['durations', this._extractDuration(element) > 0]);
+                }
+                if (!observed.length) return;
+                const route = getCurrentPath();
+                if (this._inputReadability?.route !== route) this._inputReadability = { route, seen: {}, read: {} };
+                const state = this._inputReadability;
+                for (const [input, readable] of observed) {
+                    state.seen[input] = (state.seen[input] || 0) + 1;
+                    if (readable) state.read[input] = (state.read[input] || 0) + 1;
+                }
+                const unreadable = Object.keys(state.seen)
+                    .filter(input => state.seen[input] >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
+                if (unreadable.length) {
+                    const names = unreadable.map(input => INPUT_HEALTH_NAMES[input]);
+                    const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
+                    this._inputHealthDegraded = true;
+                    setFeatureHealth(this.id, {
+                        status: 'degraded',
+                        source: 'video-hider-inputs',
+                        initialized: true,
+                        lastError: `Can't read ${list} on this page's cards, so the filters that need them aren't hiding anything.`
+                    });
+                } else if (this._inputHealthDegraded && Object.keys(state.read).length) {
+                    this._inputHealthDegraded = false;
+                    setFeatureHealth(this.id, {
+                        status: 'initialized',
+                        source: 'video-hider-inputs',
+                        initialized: true,
+                        lastError: null
+                    });
+                }
+            },
+
             _matchesMetadataFilters(element, metadata = this._extractVideoMetadata(element)) {
+                this._noteFilterInputs(element, metadata);
                 if (appState.settings.hideVideosHideLive && metadata.isLive) return { hide: true, reason: 'live' };
                 if (appState.settings.hideVideosHideUpcoming && metadata.isUpcoming) return { hide: true, reason: 'upcoming' };
                 if (appState.settings.hideVideosHideMixes && metadata.isMix) return { hide: true, reason: 'mix' };
@@ -3134,6 +3222,8 @@
                 this._directWatchRouteKey = null;
                 this._directWatchAllowedRouteKey = null;
                 this._directWatchResumeAfterDecision = false;
+                this._inputReadability = null;
+                this._inputHealthDegraded = false;
                 this._restoreRemovedVideoNodes();
                 documentRef?.querySelectorAll?.('.ytkit-video-hidden-placeholder')
                     ?.forEach?.((placeholder) => placeholder.remove());

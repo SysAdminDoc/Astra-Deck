@@ -63,12 +63,16 @@
             if (Number.isFinite(timestamp)) return Math.max(0, now - timestamp);
         }
 
-        const metadata = queryAll(card, [
+        // Since 2026-09 the lockup row reads "6d ago" and only the span's
+        // aria-label spells it out ("6 days ago"), so the labels go in too.
+        const labels = queryAll(card, 'yt-content-metadata-view-model [aria-label]')
+            .map((node) => String(node?.getAttribute?.('aria-label') || ''));
+        const metadata = labels.concat(queryAll(card, [
             'yt-content-metadata-view-model',
             '#metadata-line',
             '.inline-metadata-item',
             'ytd-video-meta-block'
-        ].join(', ')).map((node) => String(node?.textContent || '')).join(' · ');
+        ].join(', ')).map((node) => String(node?.textContent || ''))).join(' · ');
         return parseRelativeAgeMs(metadata);
     }
 

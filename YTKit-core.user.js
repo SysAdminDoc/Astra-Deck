@@ -10563,7 +10563,7 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 	}
 	const VIEW_COUNT_LABELS = /(?:views?|watching|aufrufe?|ansichten?|visualizaciones?|vues?|visualizações?|visualizzazioni?|просмотр(?:а|ов|ы)?|回視聴|視聴回数|조회수|观看次数?|播放次数?|المشاهدات?|مشاهدة)/i;
 	const DEFAULT_NO_COUNT = /(?:\bno\s+views?\b|\bkeine[nr]?\s+aufrufe?\b|\bkeine\s+ansichten?\b|\bkeine\s+visualisierungen\b|нет\s+просмотров|視聴回数\s*(?:なし|ありません)|조회수\s*없음|(?:没有|暂无)观看次数|(?:لا\s+)?مشاهدات)/i;
-	const SUFFIX_SOURCE = '(k|m|b|tsd\\.?|mio\\.?|mrd\\.?|md|mln\\.?|mld\\.?|tys\\.?|rb|jt|тыс\\.?|млн\\.?|млрд\\.?|mil|mille|million(?:s|en)?|milliard(?:s|en)?|千|万|億|亿|천|만|억|ألف|مليون|مليار)';
+	const SUFFIX_SOURCE = '(k|m|b|tsd\\.?|mio\\.?|mrd\\.?|md|mln\\.?|mld\\.?|tys\\.?|rb|jt|тыс\\.?|млн\\.?|млрд\\.?|mil|mille|thousand|million(?:s|en)?|billion(?:s)?|milliard(?:s|en)?|千|万|億|亿|천|만|억|ألف|مليون|مليار)';
 	const TOKEN_SOURCE = `(\\d[\\d\\s.,]*)(?:\\s*${SUFFIX_SOURCE})?`;
 	const DIGIT_RANGES = Object.freeze([
 		[0x0660, 0x0669],
@@ -10610,8 +10610,11 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 			'млрд': 1e9,
 			mil: 1e3,
 			mille: 1e3,
+			thousand: 1e3,
 			million: 1e6,
 			millions: 1e6,
+			billion: 1e9,
+			billions: 1e9,
 			millionen: 1e6,
 			milliard: 1e9,
 			milliards: 1e9,
@@ -10742,6 +10745,9 @@ __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, c
 		}[unit];
 		return unitMs ? new Date(result.getTime() - (amount * unitMs)) : null;
 	}
+	const ABBREVIATED_AGE_UNITS = Object.freeze({
+		s: 'second', m: 'minute', min: 'minute', h: 'hour', d: 'day', w: 'week', mo: 'month', y: 'year'
+	});
 	function parseRelativeYouTubeAge(text, now = new Date()) {
 		const reference = parseYouTubeDate(now);
 		if (!reference) return null;
@@ -10753,11 +10759,12 @@ __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, c
 		if (/\btoday\b/i.test(normalized) || /\bjust now\b/i.test(normalized)) {
 			return { date: new Date(reference.getTime()), unit: 'day', approximate: true };
 		}
-		const match = normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(second|minute|hour|day|week|month|year)s?\s+ago\b/i);
+		const match = normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(second|minute|hour|day|week|month|year)s?\s+ago\b/i)
+			|| normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(mo|min|y|w|d|h|m|s)\s+ago\b/i);
 		if (!match) return null;
 		const amount = Number(match[1].replace(',', '.'));
 		if (!Number.isFinite(amount) || amount < 0) return null;
-		const unit = match[2].toLowerCase();
+		const unit = ABBREVIATED_AGE_UNITS[match[2].toLowerCase()] || match[2].toLowerCase();
 		const date = subtractCalendarUnits(reference, amount, unit);
 		return date ? { date, unit, approximate: true } : null;
 	}

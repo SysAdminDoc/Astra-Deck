@@ -64,7 +64,7 @@
     // count label, then normalize its locale-specific separators/suffix.
     const VIEW_COUNT_LABELS = /(?:views?|watching|aufrufe?|ansichten?|visualizaciones?|vues?|visualizações?|visualizzazioni?|просмотр(?:а|ов|ы)?|回視聴|視聴回数|조회수|观看次数?|播放次数?|المشاهدات?|مشاهدة)/i;
     const DEFAULT_NO_COUNT = /(?:\bno\s+views?\b|\bkeine[nr]?\s+aufrufe?\b|\bkeine\s+ansichten?\b|\bkeine\s+visualisierungen\b|нет\s+просмотров|視聴回数\s*(?:なし|ありません)|조회수\s*없음|(?:没有|暂无)观看次数|(?:لا\s+)?مشاهدات)/i;
-    const SUFFIX_SOURCE = '(k|m|b|tsd\\.?|mio\\.?|mrd\\.?|md|mln\\.?|mld\\.?|tys\\.?|rb|jt|тыс\\.?|млн\\.?|млрд\\.?|mil|mille|million(?:s|en)?|milliard(?:s|en)?|千|万|億|亿|천|만|억|ألف|مليون|مليار)';
+    const SUFFIX_SOURCE = '(k|m|b|tsd\\.?|mio\\.?|mrd\\.?|md|mln\\.?|mld\\.?|tys\\.?|rb|jt|тыс\\.?|млн\\.?|млрд\\.?|mil|mille|thousand|million(?:s|en)?|billion(?:s)?|milliard(?:s|en)?|千|万|億|亿|천|만|억|ألف|مليون|مليار)';
     const TOKEN_SOURCE = `(\\d[\\d\\s.,]*)(?:\\s*${SUFFIX_SOURCE})?`;
     const DIGIT_RANGES = Object.freeze([
         [0x0660, 0x0669], // Arabic-Indic
@@ -115,8 +115,13 @@
             'млрд': 1e9,
             mil: 1e3,
             mille: 1e3,
+            // Spelled out in the aria-label of YouTube's 2026-09 cards
+            // ("186 thousand views"), where the visible text is just "186K".
+            thousand: 1e3,
             million: 1e6,
             millions: 1e6,
+            billion: 1e9,
+            billions: 1e9,
             millionen: 1e6,
             milliard: 1e9,
             milliards: 1e9,

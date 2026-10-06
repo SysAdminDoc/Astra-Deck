@@ -14163,6 +14163,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             markCardHidden,
             unmarkCardHidden,
             getFeatureName,
+            setFeatureHealth,
             getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
             extensionFetchJson,
             storageWriteJSON,

@@ -237,22 +237,28 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Feed filters can't read view counts or durations on YouTube's 2026-09-25 cards
-  Why: Control Panel v1.36.0 (2026-09-25) had to handle a new views icon and a "play icon" views
-  layout that broke its low-view hiding, and its #336 and #337 show the subscriptions list view and
-  Home breaking on 2026-09-24. Astra's parsers read only the older containers. Once the word
-  "views" becomes an icon they return null, and the low-view, duration and cadence filters pass
-  every card without telling anyone.
-  Evidence: `extension/features/video-hider/index.js:1609` `_extractDuration` and `:1628`
-  `_extractViewCount`. Neither reads `yt-content-metadata-view-model`, which
-  `features/subscription-view/index.js:67` already handles. Confidence: Likely, needs live
-  validation.
-  Touches: `extension/features/video-hider/index.js`, `tests/features/video-hider*.test.js`, a
-  fixture captured from a live 2026-10 feed, feature health reporting.
-  Acceptance: WHEN a card uses the current metadata layout, THEN both extractors SHALL return the
-  right numbers, with fixture tests for the old and new layouts. WHEN a filter that needs a value
-  can't read one on a whole page of cards, THEN feature health SHALL say so instead of passing.
-  Complexity: M
+- [ ] P1 — Keyword filters never see a title on lockup cards
+  Why: `_extractTitle` reads `#video-title, .title`, and the lockups on Home, Subscriptions,
+  channel pages and the watch sidebar carry neither, so a title keyword (or regex) hides nothing
+  there. A live run on 2026-10-06 read an empty title on all 50 channel and sidebar cards; only
+  search cards (`ytd-video-renderer`) still have `#video-title`.
+  Evidence: `extension/features/video-hider/index.js` `_extractTitle`; the lockup title is
+  `a.ytLockupMetadataViewModelTitle` inside `h3.ytLockupMetadataViewModelHeadingReset`
+  (`tests/fixtures/feed-card-layouts-2026-10.html`).
+  Acceptance: WHEN a title keyword is set, THEN a lockup card whose title holds it SHALL hide on
+  every surface in the 2026-10 fixture, and the title SHALL be the visible text, not the
+  aria-label with the duration appended.
+  Complexity: S
+
+- [ ] P2 — Hide Mixes reads plain music videos in the watch sidebar as Mixes
+  Why: on a music video's watch page YouTube links every sidebar recommendation through
+  `list=RD…&start_radio=1`, including ordinary videos with a view count and a duration. The Mix
+  check treats that link alone as proof, so Hide Mixes empties the music sidebar.
+  Evidence: the 2026-10-06 watch capture (all three captured sidebar cards on `dQw4w9WgXcQ` link
+  with `start_radio=1`); `hasMixMarker` and the `list=rd` href test in `_extractVideoMetadata`.
+  Acceptance: WHEN a sidebar card has a duration badge and a view count, THEN a radio link alone
+  SHALL NOT make it a Mix; a real Mix card (Mix badge or collection thumbnail) SHALL still hide.
+  Complexity: S
 
 - [ ] P2 — Hide thumbnail badges ("New", "4K")
   Why: YouTube started stamping "New" on thumbnails around 2026-09-18, and three other projects'

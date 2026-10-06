@@ -8461,6 +8461,7 @@ const STORAGE_KEYS = Object.freeze({
 			markCardHidden,
 			unmarkCardHidden,
 			getFeatureName,
+			setFeatureHealth,
 			getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
 			extensionFetchJson,
 			storageWriteJSON,

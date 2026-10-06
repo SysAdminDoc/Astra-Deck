@@ -59,6 +59,10 @@
         return unitMs ? new Date(result.getTime() - (amount * unitMs)) : null;
     }
 
+    const ABBREVIATED_AGE_UNITS = Object.freeze({
+        s: 'second', m: 'minute', min: 'minute', h: 'hour', d: 'day', w: 'week', mo: 'month', y: 'year'
+    });
+
     function parseRelativeYouTubeAge(text, now = new Date()) {
         const reference = parseYouTubeDate(now);
         if (!reference) return null;
@@ -72,11 +76,14 @@
             return { date: new Date(reference.getTime()), unit: 'day', approximate: true };
         }
 
-        const match = normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(second|minute|hour|day|week|month|year)s?\s+ago\b/i);
+        // YouTube's 2026-09 cards abbreviate the unit ("4y ago", "1mo ago",
+        // "6d ago"); "mo" is a month and a bare "m" a minute.
+        const match = normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(second|minute|hour|day|week|month|year)s?\s+ago\b/i)
+            || normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(mo|min|y|w|d|h|m|s)\s+ago\b/i);
         if (!match) return null;
         const amount = Number(match[1].replace(',', '.'));
         if (!Number.isFinite(amount) || amount < 0) return null;
-        const unit = match[2].toLowerCase();
+        const unit = ABBREVIATED_AGE_UNITS[match[2].toLowerCase()] || match[2].toLowerCase();
         const date = subtractCalendarUnits(reference, amount, unit);
         return date ? { date, unit, approximate: true } : null;
     }
