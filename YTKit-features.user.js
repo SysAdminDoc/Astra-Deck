@@ -8260,6 +8260,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 		'yt-thumbnail-badge-view-model badge-shape',
 		'[aria-label*=":"]'
 	]);
+	const CARD_ROW_SKIP_SELECTOR = '#video-title, #title-wrapper, ytd-channel-name';
+	const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
 	const INPUT_HEALTH_MIN_CARDS = 12;
 	const INPUT_HEALTH_NAMES = Object.freeze({ views: 'view counts', ages: 'upload ages', durations: 'durations' });
 	function filterListError(code, message) {
@@ -9642,7 +9644,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				return 0;
 			},
 			_extractTitle(element) {
-				return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title')?.textContent?.trim()?.toLowerCase() || '';
+				return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title, .shortsLockupViewModelHostMetadataTitle')?.textContent?.trim()?.toLowerCase() || '';
 			},
 			_parseCompactCount(text, options = {}) {
 				const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
@@ -9733,10 +9735,19 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const channelText = this._extractChannelText(element);
 				const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer, yt-content-metadata-view-model, yt-thumbnail-badge-view-model'))
 					.map(node => {
+						let parts = [node];
+						if (node.tagName === 'YT-CONTENT-METADATA-VIEW-MODEL') {
+							const rows = Array.from(node.querySelectorAll(LOCKUP_ROW_SELECTOR));
+							if (rows.length > 1) parts = rows.slice(1);
+						}
+						let text = parts.map(part => part.textContent || '').join(' ');
+						if (node.tagName === 'YTD-VIDEO-META-BLOCK' || node.getAttribute('id') === 'meta') {
+							for (const cut of node.querySelectorAll(CARD_ROW_SKIP_SELECTOR)) text = text.replace(cut.textContent || '', ' ');
+						}
 						const labels = /^YT-(?:CONTENT-METADATA|THUMBNAIL-BADGE)-VIEW-MODEL$/.test(node.tagName || '')
-							? Array.from(node.querySelectorAll('[aria-label]'), labelled => labelled.getAttribute('aria-label') || '').join(' ')
+							? parts.flatMap(part => Array.from(part.querySelectorAll('[aria-label]'), labelled => labelled.getAttribute('aria-label') || '')).join(' ')
 							: '';
-						return `${node.textContent || ''} ${node.getAttribute('aria-label') || ''} ${labels}`;
+						return `${text} ${node.getAttribute('aria-label') || ''} ${labels}`;
 					})
 					.join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
 				const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
@@ -9745,8 +9756,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const heuristicText = `${title} ${descriptionText} ${channelText} ${hrefText}`;
 				const hasDuration = this._extractDuration(element) > 0;
 				const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
-				const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
-				const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], [aria-label*="LIVE" i]');
+				const isMembersOnly = element.querySelector('[aria-label="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
+				const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive');
 				const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
 				const hasRadioLink = !hasDuration && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
 				const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
@@ -9792,13 +9803,27 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					&& !metadata.isShort && !metadata.isPlaylist && !metadata.isMix) {
 					observed.push(['durations', this._extractDuration(element) > 0]);
 				}
-				if (!observed.length) return;
+				if (!observed.length) {
+					if (this._inputHealthDegraded) {
+						this._inputHealthDegraded = false;
+						setFeatureHealth(this.id, { status: 'initialized', source: 'video-hider-inputs', initialized: true, lastError: null });
+					}
+					return;
+				}
 				const route = getCurrentPath();
-				if (this._inputReadability?.route !== route) this._inputReadability = { route, seen: {}, read: {} };
+				if (this._inputReadability?.route !== route) this._inputReadability = { route, seen: {}, read: {}, cards: new WeakMap() };
 				const state = this._inputReadability;
+				let noted = state.cards.get(element);
+				if (!noted) state.cards.set(element, noted = new Set());
 				for (const [input, readable] of observed) {
-					state.seen[input] = (state.seen[input] || 0) + 1;
-					if (readable) state.read[input] = (state.read[input] || 0) + 1;
+					if (!noted.has(input)) {
+						noted.add(input);
+						state.seen[input] = (state.seen[input] || 0) + 1;
+					}
+					if (readable && !noted.has(`${input}:read`)) {
+						noted.add(`${input}:read`);
+						state.read[input] = (state.read[input] || 0) + 1;
+					}
 				}
 				const unreadable = Object.keys(state.seen)
 					.filter(input => state.seen[input] >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
@@ -10959,6 +10984,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				};
 				addNavigateRule('hideVideosFromHomeNav', () => {
 					try { this._predicateCache?.evaluator?.reset?.(); } catch (_) {   }
+					this._inputReadability = null;
 					this._processAllVideosDebounced(500);
 					checkPages();
 					this._evaluateDirectWatchBlock();

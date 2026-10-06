@@ -210,6 +210,9 @@ test('lockup titles read as their visible text', () => {
     assert.equal(hider._extractTitle(cards.sidebarLockup()), 'daryl hall & john oates - maneater (official video)');
     assert.equal(hider._extractTitle(cards.oldLockup()), 'why the dating crisis is just natural selection');
     assert.match(hider._extractTitle(cards.searchVideo()), /^cozy autumn music/);
+    // Home's Shorts shelf wraps this same lockup in a rich item.
+    const shorts = parseCard(`<ytd-rich-item-renderer>${CURRENT['shorts: search shelf lockup']}</ytd-rich-item-renderer>`);
+    assert.match(hider._extractTitle(shorts), /^woodworking tips and tricks #diy/);
 });
 
 test('title keywords hide lockup cards on every surface', () => {
@@ -235,6 +238,37 @@ test('Hide Mixes hides a real Mix but not a plain video linked into a radio', ()
     assert.deepEqual(hider._matchesMetadataFilters(radioVideo), { hide: false, reason: '' });
     assert.equal(hider._extractVideoMetadata(mix).isMix, true);
     assert.deepEqual(hider._matchesMetadataFilters(mix), { hide: true, reason: 'mix' });
+});
+
+test('type filters never read the title or the channel name', () => {
+    const typeWords = 'how to mix audio for a free movie premiere live';
+    const search = parseCard(CURRENT['search: video']
+        .replaceAll('cozy autumn music 🍂 lofi beats to study / relax to', typeWords)
+        .replaceAll('Lofi Girl', 'Film Theory Premieres Live'));
+    const sidebar = parseCard(CURRENT['lockup: watch sidebar']
+        .replace('>Daryl Hall &amp; John Oates<', '>Film Theory Live Mix Premiere<'));
+    assert.match(search.querySelector('#meta').textContent, /mix audio/, 'the title really sits inside #meta');
+    assert.match(sidebar.querySelector('yt-content-metadata-view-model').textContent, /Film Theory/);
+
+    const hider = feature({ hideVideosHideMixes: true, hideVideosHideMovies: true, hideVideosHideUpcoming: true, hideVideosHideLive: true });
+    for (const card of [search, sidebar]) {
+        const metadata = hider._extractVideoMetadata(card);
+        assert.deepEqual(
+            { isMix: metadata.isMix, isMovie: metadata.isMovie, isUpcoming: metadata.isUpcoming, isLive: metadata.isLive },
+            { isMix: false, isMovie: false, isUpcoming: false, isLive: false });
+        assert.deepEqual(hider._matchesMetadataFilters(card), { hide: false, reason: '' });
+    }
+    // The age and view rows after the byline still read.
+    assert.equal(hider._extractVideoMetadata(sidebar).ageDays > 6000, true);
+
+    // The title also rides on aria-labels, where a substring marker caught it.
+    const liveTitle = parseCard(CURRENT['lockup: watch sidebar']
+        .replaceAll('Daryl Hall &amp; John Oates - Maneater (Official Video)', 'Billie Jean (Live) Members Only Alive'));
+    assert.ok(liveTitle.querySelectorAll('[aria-label]').some((node) => node.getAttribute('aria-label').includes('(Live)')),
+        'the title really sits on an aria-label');
+    assert.equal(hider._extractVideoMetadata(liveTitle).isLive, false);
+    assert.equal(hider._extractVideoMetadata(liveTitle).isMembersOnly, null);
+    assert.equal(hider._extractVideoMetadata(cards.searchLive()).isLive, true, 'the LIVE badge still reads');
 });
 
 test('the shared parsers accept the 2026-09 spellings', () => {
@@ -293,6 +327,44 @@ test('feature health reports a page of cards whose filter inputs cannot be read'
     route = '/feed/subscriptions';
     for (let i = 0; i < 20; i += 1) hider._matchesMetadataFilters(cards.channelLockup());
     assert.equal(calls.length, 2, 'readable cards never report');
+});
+
+test('feature health counts cards, not re-checks of the same card', () => {
+    const calls = [];
+    const hider = feature(
+        { hideVideosLowViewFilter: true, hideVideosLowViewThreshold: 1000 },
+        { setFeatureHealth: (...args) => calls.push(args), getCurrentPath: () => '/results' }
+    );
+    // A shelf card with no count is re-checked on every feed mutation.
+    const shelf = parseCard('<ytd-video-renderer><a id="video-title" href="/watch?v=abcdefghijk">Untitled</a></ytd-video-renderer>');
+    for (let i = 0; i < 30; i += 1) hider._matchesMetadataFilters(shelf);
+    assert.equal(calls.length, 0, 'one unreadable card is not a page of them');
+});
+
+test('feature health clears its report once no filter needs the input', () => {
+    const calls = [];
+    const settings = { hideVideosLowViewFilter: true, hideVideosLowViewThreshold: 1000 };
+    const hider = createHideVideosFromHomeFeature({
+        appState: { settings },
+        setFeatureHealth: (id, patch) => calls.push(patch),
+        getCurrentPath: () => '/results'
+    });
+    const blank = () => parseCard('<ytd-video-renderer><a id="video-title" href="/watch?v=abcdefghijk">Untitled</a></ytd-video-renderer>');
+    for (let i = 0; i < 12; i += 1) hider._matchesMetadataFilters(blank());
+    assert.equal(calls.at(-1).status, 'degraded');
+
+    settings.hideVideosLowViewFilter = false;
+    hider._matchesMetadataFilters(blank());
+    assert.equal(calls.at(-1).status, 'initialized', 'a switched-off filter has nothing left to report');
+    assert.equal(calls.at(-1).lastError, null);
+    hider._matchesMetadataFilters(blank());
+    assert.equal(calls.length, 2, 'and it says so once');
+});
+
+test('a new search starts a fresh count even though the path stays /results', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
+    const start = source.indexOf("addNavigateRule('hideVideosFromHomeNav'");
+    assert.match(source.slice(start, start + 900), /this\._inputReadability = null;/);
 });
 
 test('feature health stays quiet when no filter needs a number', () => {
