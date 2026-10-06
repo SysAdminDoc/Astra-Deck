@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.95.0
+// @version      4.96.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -1069,7 +1069,7 @@ return response;
 		if (!channelBase || channelBaseFromTabs(data) !== channelBase) return false;
 		return listChannelTabSuffixes(data).includes(suffix);
 	}
-	const YTKIT_VERSION = '4.95.0';
+	const YTKIT_VERSION = '4.96.0';
 	const BRAND = Object.freeze({
 		name: 'Astra Deck',
 		short: 'Astra',
