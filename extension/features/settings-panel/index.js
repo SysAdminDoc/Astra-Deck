@@ -153,6 +153,17 @@
         }
 
         function cardDiffersFromDefault(card) {
+            // A guide, watch, chat or player "hide" card stores no key of its
+            // own: it is one value in its parent's list, and it differs when
+            // its membership does. Keyed on its own id, all ~45 read as unchanged.
+            const feature = card?.dataset?.featureId && typeof getFeatureById === 'function'
+                ? getFeatureById(card.dataset.featureId)
+                : null;
+            if (feature?._arrayKey) {
+                const holds = (list) => Array.isArray(list) && list.includes(feature._arrayValue);
+                return holds(appState?.settings?.[feature._arrayKey])
+                    !== holds(settingsManager?.defaults?.[feature._arrayKey]);
+            }
             return settingDiffersFromDefault(card?.dataset?.settingKey);
         }
 
@@ -175,32 +186,88 @@
             return visible || key;
         }
 
+        // Put `value` on a card's own control and fire the event a person's edit
+        // fires, so the control's handler below does what an edit does:
+        // conflicts, parent re-init, save, repaint. Returns the control, or null
+        // when the card has none.
+        function driveCardControl(featureId, value) {
+            const byId = (prefix) => document.getElementById(`${prefix}${featureId}`);
+            const fire = (control, type) => {
+                control.dispatchEvent(new Event(type, { bubbles: true }));
+                return control;
+            };
+            const toggle = byId('ytkit-toggle-');
+            if (toggle) {
+                toggle.checked = Boolean(value);
+                return fire(toggle, 'change');
+            }
+            const select = byId('ytkit-select-');
+            if (select) {
+                select.value = String(value ?? '');
+                return fire(select, 'input');
+            }
+            const range = byId('ytkit-range-');
+            if (range) {
+                range.value = String(value);
+                return fire(range, 'input');
+            }
+            const color = byId('ytkit-color-');
+            if (color) {
+                // A colour input can't hold "" (no override), so the handler
+                // takes the value from here instead of from the swatch.
+                color.dataset.ytkitPendingValue = String(value ?? '');
+                color.value = value || '#3b82f6';
+                return fire(color, 'input');
+            }
+            const text = byId('ytkit-input-');
+            if (text) {
+                text.value = String(value ?? '');
+                fire(text, 'input');
+                return fire(text, 'blur');
+            }
+            return null;
+        }
+
         // One setting back to its default, with the same undo the category
         // reset offers. Category-wide was the only granularity there was, so
         // undoing one accidental toggle meant reverting everything beside it.
+        //
+        // It goes through the card's control. Writing the value into settings
+        // directly left the switch or text showing the old value (a textarea
+        // blur then saved it back), skipped conflicts and the parent re-init of
+        // a list card, and left Custom CSS injected.
         function resetSingleSetting(featureId, settingKey) {
-            const key = settingKey || featureId;
+            const feature = typeof getFeatureById === 'function' ? getFeatureById(featureId) : null;
+            const listKey = feature?._arrayKey;
+            const key = listKey || settingKey || featureId;
             const shipped = settingsManager?.defaults?.[key];
             if (shipped === undefined) return false;
-            const previous = appState.settings[key];
+            // A list card's control is a switch for one member of the list.
+            const asControlValue = (value) => (listKey
+                ? Array.isArray(value) && value.includes(feature._arrayValue)
+                : value);
+            const previous = asControlValue(appState.settings[key]);
 
-            const apply = (value, reason) => {
-                appState.settings[key] = value;
-                const feature = typeof getFeatureById === 'function' ? getFeatureById(featureId) : null;
-                if (!feature) return;
-                try { destroyFeatureLifecycle(feature, reason); } catch (error) {
-                    DebugManager?.log?.('Reset', `Destroy failed for "${featureId}": ${error.message}`);
-                }
-                if (value) {
-                    try { initFeatureLifecycle(feature, reason); } catch (error) {
-                        DebugManager?.log?.('Reset', `Init failed for "${featureId}": ${error.message}`);
-                    }
-                }
+            const apply = (value) => {
+                const control = driveCardControl(featureId, value);
+                if (!control) return false;
+                const settle = () => {
+                    refreshChangedFilterView();
+                    // The Reset button hides itself once the card matches its
+                    // default, so focus goes to the control it just set, or to
+                    // the Changed filter when the card has left that list.
+                    const card = control.closest?.('.ytkit-feature-card');
+                    const shown = card?.isConnected && card.getClientRects?.().length > 0;
+                    (shown ? control : document.getElementById('ytkit-search-changed'))?.focus?.({ preventScroll: true });
+                };
+                settle();
+                // A switch turned on can wait on a host-permission prompt
+                // before its handler saves, so settle again once it has.
+                setTimeout(settle, 0);
+                return true;
             };
 
-            apply(shipped, 'single-reset');
-            settingsManager.save(appState.settings);
-            refreshChangedFilterView();
+            if (!apply(asControlValue(shipped))) return false;
 
             showToast(
                 t('settingsSingleResetToastTpl', '“{name}” reset to default')
@@ -210,11 +277,7 @@
                     duration: 5,
                     action: {
                         text: t('toastActionUndo', 'Undo'),
-                        onClick: () => {
-                            apply(previous, 'single-reset-undo');
-                            settingsManager.save(appState.settings);
-                            refreshChangedFilterView();
-                        }
+                        onClick: () => { apply(previous); }
                     }
                 }
             );
@@ -3764,7 +3827,9 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
                 'Clear {featureName}'
             ).replace('{featureName}', () => featureName));
             clearBtn.textContent = t('commonClear', 'Clear');
-            clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('input', { bubbles: true })); };
+            // Back to the shipped colour. It used to store a fixed blue, which
+            // turned "no accent override" into a blue override.
+            clearBtn.onclick = () => { driveCardControl(f.id, settingsManager?.defaults?.[settingKey] ?? ''); };
             wrapper.appendChild(colorInput);
             wrapper.appendChild(clearBtn);
             card.appendChild(wrapper);
@@ -4723,7 +4788,9 @@ function attachUIEventListeners() {
                 const featureId = card.dataset.featureId;
                 const feature = getFeatureById(featureId);
                 const settingKey = feature?.settingKey || featureId;
-                appState.settings[settingKey] = e.target.value;
+                const pending = e.target.dataset.ytkitPendingValue;
+                delete e.target.dataset.ytkitPendingValue;
+                appState.settings[settingKey] = pending !== undefined ? pending : e.target.value;
                 settingsManager.save(appState.settings);
                 setPanelStatus(t('settingsColorUpdatedTpl', '{name} updated.')
                     .replace('{name}', () => getFeatureName(feature) || t('settingsColorSettingFallback', 'Color setting')), 'success');
@@ -4743,6 +4810,11 @@ function attachUIEventListeners() {
                     }, 300));
                 }
             }
+            // The Reset button and the Changed filter read this marker. A
+            // switch refreshes it through updateAllToggleStates; these edits
+            // never did, so a card kept a Reset button after being set back.
+            const editedCard = e.target.closest?.('.ytkit-feature-card');
+            if (editedCard) editedCard.dataset.changed = cardDiffersFromDefault(editedCard) ? '1' : '';
         });
     }
 

@@ -4,6 +4,15 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
+- [ ] P3 — A card's Reset chip sits on top of its switch
+  Why: seen 2026-10-06 in the headless Reset check. The chip is absolutely placed 8px from the
+  card's top-right corner, and on a toggle card (Custom CSS) it overlaps the top edge of the
+  switch by about 7px.
+  Where: `extension/features/settings-panel/index.js` (`.ytkit-card-reset`, ~859).
+  Acceptance: on a changed toggle card the chip's box SHALL NOT intersect the switch's box, in
+  both themes, at 1400 and 900 px wide (checked from getBoundingClientRect in a headless panel).
+  Complexity: S
+
 - [ ] P3 — A page's yt-navigate-finish still gets a sealed navigate out of the isolated world, and the live bridge smoke misses three checks
   Why: the 2026-10-06 review of the bridge commits left these after the MAIN task manager
   stopped listening to raw navigate events. (1) The isolated world turns YouTube's
@@ -50,18 +59,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: WHEN the settings-panel module is unavailable, ytkit.js SHALL fall back to a
   stub that reports the panel as unavailable rather than to a second implementation, and the
   monolith-peel gate SHALL record the removal.
-  Complexity: M
-
-- [ ] P2 — Settings panel per-card Reset doesn't repaint or take effect
-  Why: 2026-09-28 audit, confirmed. Single Reset saves the default but leaves the checkbox or
-  textarea showing the old value (a textarea blur then saves it back). It dispatches no
-  `ytkit-settings-changed`, skips parent re-init and conflict enforcement, so Custom CSS stays
-  injected after reset. The Changed filter misses the ~45 `guideHide_*` style cards and the
-  Reset marker goes stale after select, range, color and textarea edits.
-  Where: `extension/features/settings-panel/index.js` (~180-221 reset, ~4035 changed view,
-  ~4432-4552 non-toggle handlers).
-  Acceptance: Reset SHALL go through the same path as a user toggle (repaint, event, conflicts,
-  init/destroy) and keep focus on the card.
   Complexity: M
 
 - [ ] P2 — Settings deep links never land on a setting

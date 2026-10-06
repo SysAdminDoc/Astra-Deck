@@ -6493,7 +6493,10 @@ const STORAGE_KEYS = Object.freeze({
 
             const color = card.querySelector('[id^="ytkit-color-"]');
             if (color) {
-                const nextValue = appState.settings[getFeatureSettingKey(feature)] ?? color.value;
+                // "" is "no override". A colour input can't hold it and turns
+                // it into black, so draw it as the blue buildFeatureCard does.
+                const stored = appState.settings[getFeatureSettingKey(feature)];
+                const nextValue = stored === undefined || stored === null ? color.value : (stored || '#3b82f6');
                 if (color.value !== nextValue) color.value = nextValue;
             }
         });

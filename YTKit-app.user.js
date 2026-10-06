@@ -4727,7 +4727,8 @@ const STORAGE_KEYS = Object.freeze({
 			}
 			const color = card.querySelector('[id^="ytkit-color-"]');
 			if (color) {
-				const nextValue = appState.settings[getFeatureSettingKey(feature)] ?? color.value;
+				const stored = appState.settings[getFeatureSettingKey(feature)];
+				const nextValue = stored === undefined || stored === null ? color.value : (stored || '#3b82f6');
 				if (color.value !== nextValue) color.value = nextValue;
 			}
 		});
