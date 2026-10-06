@@ -23542,6 +23542,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // videos.
             _isCollectionCard(card, href) {
                 if (card?.matches?.('ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer')) return false;
+                // Music watch pages link plain sidebar videos into a radio
+                // too. A video shows its running time; a Mix or playlist
+                // never does.
+                const badges = card?.querySelectorAll?.('ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model') || [];
+                if (Array.from(badges).some((badge) => /\d+:\d{2}/.test(badge.textContent || ''))) return false;
                 try {
                     const url = new URL(href, 'https://www.youtube.com');
                     return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';

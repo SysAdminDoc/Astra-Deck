@@ -9748,7 +9748,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
 				const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], [aria-label*="LIVE" i]');
 				const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
-				const hasMixMarker = !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"], a[href*="start_radio=1"], a[href*="list=RD"]');
+				const hasRadioLink = !hasDuration && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
+				const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
 				const hasPlaylistMarker = !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer, ytd-playlist-video-renderer, [is-playlist], [data-list-type="playlist"]');
 				return {
 					title,
@@ -9769,7 +9770,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						|| /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i.test(normalizedRowsText),
 					isMix: hasMixMarker
 						|| /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
-						|| /(?:start_radio=1|list=rd)/i.test(hrefText),
+						|| (!hasDuration && /(?:start_radio=1|list=rd)/i.test(hrefText)),
 					isPlaylist: hasPlaylistMarker
 						|| /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
 					isMovie: /(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)/i.test(normalizedRowsText),

@@ -225,6 +225,18 @@ test('title keywords hide lockup cards on every surface', () => {
         'the duration in the title aria-label is not part of the title');
 });
 
+test('Hide Mixes hides a real Mix but not a plain video linked into a radio', () => {
+    const hider = feature({ hideVideosHideMixes: true });
+    const mix = parseCard(CURRENT['lockup: watch sidebar mix']);
+    const radioVideo = parseCard(CURRENT['lockup: watch sidebar radio-linked video']);
+    assert.match(radioVideo.querySelector('a').getAttribute('href'), /start_radio=1/, 'fixture really is radio-linked');
+    assert.equal(hider._extractVideoMetadata(radioVideo).isMix, false);
+    assert.equal(hider._extractVideoMetadata(cards.sidebarLockup()).isMix, false);
+    assert.deepEqual(hider._matchesMetadataFilters(radioVideo), { hide: false, reason: '' });
+    assert.equal(hider._extractVideoMetadata(mix).isMix, true);
+    assert.deepEqual(hider._matchesMetadataFilters(mix), { hide: true, reason: 'mix' });
+});
+
 test('the shared parsers accept the 2026-09 spellings', () => {
     const { parseCompactCount, parseRelativeYouTubeAge } = globalThis.YTKitCore;
     assert.equal(parseCompactCount('186 thousand views'), 186_000);

@@ -507,6 +507,24 @@ test('persistentQueue offers no button on Mix or playlist cards, but keeps playl
         'the button from the recycled video must not stay on the Mix');
 });
 
+test('persistentQueue keeps the button on a plain video linked into a radio', () => {
+    // Music watch pages link every sidebar video through list=RD...&start_radio=1.
+    // Its running time says it's one video; a Mix shows none.
+    const { feature, documentRef } = treeQueue(new Map());
+    const video = lockupCard(documentRef, 'https://www.youtube.com/watch?v=fffffffffff&list=RDfffffffffff&start_radio=1', 'Eye of the Tiger');
+    const badge = documentRef.createElement('yt-thumbnail-badge-view-model');
+    badge.textContent = '4:05';
+    video.thumbnail.appendChild(badge);
+    const mix = lockupCard(documentRef, 'https://www.youtube.com/watch?v=ggggggggggg&list=RDggggggggggg&start_radio=1', 'Mix - Survivor');
+    const mixBadge = documentRef.createElement('yt-thumbnail-badge-view-model');
+    mixBadge.textContent = 'Mix';
+    mix.thumbnail.appendChild(mixBadge);
+
+    feature._addButtons();
+    assert.equal(byClass(video.thumbnail, 'ytkit-queue-btn').length, 1, 'a radio-linked video is still one video');
+    assert.equal(byClass(mix.thumbnail, 'ytkit-queue-btn').length, 0);
+});
+
 test('persistentQueue puts titles into labels as written, dollar signs included', () => {
     const store = new Map([['ytkit-queue', { v: 2, items: [entry('aaaaaaaaaaa', "Save $$ and $& now $'", 'Chan $1')] }]]);
     const { feature, documentRef } = treeQueue(store);

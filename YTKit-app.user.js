@@ -16288,6 +16288,8 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_isCollectionCard(card, href) {
 				if (card?.matches?.('ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer')) return false;
+				const badges = card?.querySelectorAll?.('ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model') || [];
+				if (Array.from(badges).some((badge) => /\d+:\d{2}/.test(badge.textContent || ''))) return false;
 				try {
 					const url = new URL(href, 'https://www.youtube.com');
 					return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';

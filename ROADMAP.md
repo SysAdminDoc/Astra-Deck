@@ -251,16 +251,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   names the user blocked from that surface).
   Complexity: M
 
-- [ ] P2 — Hide Mixes reads plain music videos in the watch sidebar as Mixes
-  Why: on a music video's watch page YouTube links every sidebar recommendation through
-  `list=RD…&start_radio=1`, including ordinary videos with a view count and a duration. The Mix
-  check treats that link alone as proof, so Hide Mixes empties the music sidebar.
-  Evidence: the 2026-10-06 watch capture (all three captured sidebar cards on `dQw4w9WgXcQ` link
-  with `start_radio=1`); `hasMixMarker` and the `list=rd` href test in `_extractVideoMetadata`.
-  Acceptance: WHEN a sidebar card has a duration badge and a view count, THEN a radio link alone
-  SHALL NOT make it a Mix; a real Mix card (Mix badge or collection thumbnail) SHALL still hide.
-  Complexity: S
-
 - [ ] P2 — Hide thumbnail badges ("New", "4K")
   Why: YouTube started stamping "New" on thumbnails around 2026-09-18, and three other projects'
   trackers asked for a way to hide the badges that month. Control Panel shipped it in v1.36.0.

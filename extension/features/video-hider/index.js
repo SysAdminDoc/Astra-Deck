@@ -1771,7 +1771,11 @@
                 const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
                 const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], [aria-label*="LIVE" i]');
                 const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
-                const hasMixMarker = !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"], a[href*="start_radio=1"], a[href*="list=RD"]');
+                // Music watch pages link plain videos into a radio as well, so
+                // a radio link marks a Mix only on a card with no running
+                // time. A Mix has none; a video always shows one.
+                const hasRadioLink = !hasDuration && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
+                const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
                 const hasPlaylistMarker = !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer, ytd-playlist-video-renderer, [is-playlist], [data-list-type="playlist"]');
                 return {
                     title,
@@ -1798,7 +1802,7 @@
                     // "movie review", or "top 5 videos".
                     isMix: hasMixMarker
                         || /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
-                        || /(?:start_radio=1|list=rd)/i.test(hrefText),
+                        || (!hasDuration && /(?:start_radio=1|list=rd)/i.test(hrefText)),
                     isPlaylist: hasPlaylistMarker
                         || /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
                     // Localised like their four siblings above: Latin terms are
