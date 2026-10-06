@@ -14,7 +14,9 @@ const {
 } = require('../scripts/check-zero-ad-rules');
 const {
     CONTRACT,
+    assertManagerFixture,
     buildIsolatedUserscript,
+    fixtureHtml: managerFixtureHtml,
     parseArgs: parseManagerSmokeArgs,
     readManagerFixtures,
     runManager,
@@ -334,6 +336,38 @@ test('userscript-manager smoke closes its fixture when Firefox startup fails', a
         /driver unavailable/
     );
     assert.equal(fixtureClosed, true);
+});
+
+test('userscript-manager smoke fails when the signed-in account avatar is hidden (#51)', () => {
+    const html = managerFixtureHtml('t');
+    assert.match(html, /<ytd-topbar-menu-button-renderer[^>]*><button id="avatar-btn"[^>]*><yt-img-shadow[^>]*><img id="img" class="style-scope yt-img-shadow"[^>]*src="data:image\/gif;base64,/);
+    assert.match(html, /<ytd-video-owner-renderer><yt-img-shadow[^>]*><img id="channel-avatar" class="style-scope yt-img-shadow"/);
+    const collapsed = { display: 'none', visibility: 'visible', opacity: '1', width: 0, height: 0, loaded: false };
+    const passing = () => ({
+        contract: CONTRACT,
+        ready: true,
+        initial: { ...collapsed },
+        reinserted: { ...collapsed },
+        accountAvatar: { display: 'inline', visibility: 'visible', opacity: '1', width: 32, height: 32, loaded: true },
+        channelAvatar: { display: 'none', visibility: 'visible', opacity: '1', width: 0, height: 0, loaded: true },
+        timeline: { contract: CONTRACT, contractObservedAt: 1 },
+        masthead: true, search: true, player: true, video: true
+    });
+    const manager = { name: 'Violentmonkey' };
+    assert.doesNotThrow(() => assertManagerFixture(manager, passing(), true));
+    for (const account of [
+        { display: 'none', width: 0, height: 0 },
+        { opacity: '0' },
+        { visibility: 'hidden' },
+        { loaded: false }
+    ]) {
+        const state = passing();
+        Object.assign(state.accountAvatar, account);
+        assert.throws(() => assertManagerFixture(manager, state, true), /signed-in account avatar is not visible/);
+    }
+    const unguarded = passing();
+    unguarded.channelAvatar.display = 'inline';
+    assert.throws(() => assertManagerFixture(manager, unguarded, true), /default channel avatar hide did not apply/);
 });
 
 test('release preparation gates the Chromium, live-chat, Firefox, and real-manager desktop contracts', () => {

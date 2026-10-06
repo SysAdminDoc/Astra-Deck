@@ -141,6 +141,19 @@ test('no view-count parser uses the broken decimal-coercion pattern', () => {
     }
 });
 
+test('early.css avatar hide leaves the signed-in account button its picture (#51)', () => {
+    const earlyCss = fs.readFileSync(path.join(repoRoot, 'extension', 'early.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const selectors = earlyCss.match(/[^{}]*img\.style-scope\.yt-img-shadow[^{}]*\{[^}]*\}/g) || [];
+    assert.equal(selectors.length, 1, 'one rule hides yt-img-shadow images');
+    assert.match(selectors[0], /display:\s*none/);
+    for (const selector of selectors[0].split('{')[0].split(',').filter((part) => part.includes('img.style-scope.yt-img-shadow'))) {
+        assert.ok(
+            selector.includes(':not(ytd-topbar-menu-button-renderer img)'),
+            `avatar hide must spare the masthead account button: ${selector.trim()}`
+        );
+    }
+});
+
 test('early.css baked-in avatar/shelf hides are opt-out via html:not(.ytkit-restore-native-ui)', () => {
     const earlyCss = fs.readFileSync(path.join(repoRoot, 'extension', 'early.css'), 'utf8');
     // The avatar + rich-section-shelf hides must be gated so a user can restore

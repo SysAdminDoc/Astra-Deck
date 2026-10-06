@@ -237,24 +237,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Account avatar is invisible in the userscript on Firefox (Refs #51)
-  Why: the project's only open user report. On 2026-10-01 a LibreWolf 157 user running the
-  v4.93.0 userscript in Violentmonkey with default settings saw an empty outlined square where
-  the signed-in avatar belongs. Every live smoke runs signed out, and signed out YouTube shows
-  "Sign in" instead of the avatar, so no gate has ever rendered it.
-  Evidence: https://github.com/SysAdminDoc/Astra-Deck/issues/51. The default-on avatar rules
-  only set a radius (`extension/ytkit.js` `squareAvatars` ~28688, the `rectangularize` carve-out
-  ~39213), and `hideOwnAvatar` (~7581) is default off. Root cause not found by reading.
-  Confidence: Needs live validation.
-  Touches: `scripts/smoke-userscript-managers.js`, a trimmed and scrubbed signed-in masthead
-  fixture (the local `Subscriptions - YouTube.mhtml` carries account data and is gitignored),
-  `extension/core/feature-bisect.js`, whichever rule or adapter path turns out to be at fault.
-  Acceptance: WHEN the userscript runs under Violentmonkey on Firefox with default settings on a
-  signed-in masthead, THEN `#avatar-btn img` SHALL have a loaded `src`, a nonzero box and visible
-  opacity, and a test SHALL pin that. If Astra isn't the cause, record how that was shown. The
-  issue stays open until the reporter confirms; commits say `Refs #51`.
-  Complexity: M
-
 - [ ] P1 — Userscript users can't produce a diagnostics bundle
   Why: the #51 reporter "could not find any diagonstics or toolbar popup". The bug template
   sends everyone to the popup's Diagnostics → Save log, which only the extension has. Userscript

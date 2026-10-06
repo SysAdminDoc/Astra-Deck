@@ -48,6 +48,9 @@ const TRANSPARENT_GIF = Buffer.from(
     'R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
     'base64'
 );
+// A signed-in masthead's avatar, minus the account: every other live smoke
+// runs signed out, where YouTube shows "Sign in" instead (#51).
+const AVATAR_SRC = `data:image/gif;base64,${TRANSPARENT_GIF.toString('base64')}`;
 
 function parseArgs(argv) {
     const options = {
@@ -220,8 +223,11 @@ function fixtureHtml(token) {
   </script>
 </head>
 <body>
-  <header id="masthead"><input id="search" aria-label="Search"></header>
+  <header id="masthead"><input id="search" aria-label="Search">
+    <ytd-topbar-menu-button-renderer class="style-scope ytd-masthead"><button id="avatar-btn" aria-label="Account menu"><yt-img-shadow class="style-scope ytd-topbar-menu-button-renderer no-transition" loaded><img id="img" class="style-scope yt-img-shadow" alt="Avatar image" width="32" height="32" src="${AVATAR_SRC}"></yt-img-shadow></button></ytd-topbar-menu-button-renderer>
+  </header>
   <main>
+    <ytd-video-owner-renderer><yt-img-shadow class="style-scope ytd-video-owner-renderer"><img id="channel-avatar" class="style-scope yt-img-shadow" alt="" width="40" height="40" src="${AVATAR_SRC}"></yt-img-shadow></ytd-video-owner-renderer>
     <div id="masthead-ad" style="display:block;width:320px;height:100px;min-height:100px">Initial ad shell</div>
     <img id="pre-request-probe" src="/pre-request-probe.gif?token=${encodeURIComponent(token)}" alt="">
     <div id="movie_player"><video></video></div>
@@ -384,13 +390,16 @@ function managerFixtureExpression() {
             if (!node) return null;
             const style = getComputedStyle(node);
             const rect = node.getBoundingClientRect();
-            return { display: style.display, visibility: style.visibility, width: rect.width, height: rect.height };
+            return { display: style.display, visibility: style.visibility, opacity: style.opacity,
+                width: rect.width, height: rect.height, loaded: node.complete === true && node.naturalWidth > 0 };
         };
         return {
             contract: document.documentElement.getAttribute('data-ytkit-userscript-ad-contract') || '',
             ready: document.documentElement.getAttribute('data-astra-manager-fixture-ready') === '1',
             initial: snapshot('#masthead-ad'),
             reinserted: snapshot('#player-ads'),
+            accountAvatar: snapshot('#avatar-btn img'),
+            channelAvatar: snapshot('#channel-avatar'),
             timeline: window.__astraManagerTimeline || null,
             masthead: Boolean(document.querySelector('#masthead')),
             search: Boolean(document.querySelector('#search')),
@@ -412,6 +421,15 @@ function assertManagerFixture(manager, state, parserRequestObserved) {
     }
     if (state.timeline?.contract !== CONTRACT || !Number.isFinite(state.timeline?.contractObservedAt)) {
         failures.push('shell-only contract timing was not observed by the fixture');
+    }
+    const account = state.accountAvatar;
+    if (!account?.loaded || account.display === 'none' || account.visibility !== 'visible'
+        || !(account.width > 0 && account.height > 0) || !(Number(account.opacity) > 0)) {
+        failures.push(`signed-in account avatar is not visible: ${JSON.stringify(account)}`);
+    }
+    // Without the default avatar hide in force, a visible account avatar proves nothing.
+    if (!state.channelAvatar || state.channelAvatar.display !== 'none') {
+        failures.push(`default channel avatar hide did not apply: ${JSON.stringify(state.channelAvatar)}`);
     }
     if (!state.masthead || !state.search || !state.player || !state.video) {
         failures.push('fixture masthead/search/player workflow was damaged');
@@ -543,7 +561,7 @@ async function main(argv = process.argv.slice(2)) {
             results.push(result);
             console.log(
                 `[smoke-userscript-managers] PASS — ${manager.name} ${manager.version}: `
-                + `${CONTRACT}; initial + reinserted shells collapsed; parser request observed (no pre-request claim)`
+                + `${CONTRACT}; initial + reinserted shells collapsed; signed-in avatar visible; parser request observed (no pre-request claim)`
             );
         }
         const summary = {
