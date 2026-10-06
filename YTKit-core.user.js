@@ -11767,11 +11767,12 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 (() => {
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-	if (core.__playerCoreVersion >= 3) return;
+	if (core.__playerCoreVersion >= 5) return;
 	const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
 	const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
-	const DEFAULT_VIDEO_FRAME_BUDGET_MS = 1;
-	const MAX_CONSECUTIVE_OVER_BUDGET_FRAMES = 3;
+	const DEFAULT_VIDEO_FRAME_BUDGET_MS = 8;
+	const VIDEO_FRAME_BUDGET_WINDOW = 30;
+	const MIN_VIDEO_FRAME_SAMPLE_INTERVAL_MS = 25;
 	function getDefaultDocument() {
 		return typeof document !== 'undefined' ? document : null;
 	}
@@ -12015,7 +12016,9 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 		let callbackId = null;
 		let generation = 0;
 		let lastSampleMs = 0;
-		let overBudgetFrames = 0;
+		let lastSampledAt = null;
+		let recentSamples = [];
+		let recentTotalMs = 0;
 		function cancelPending() {
 			if (callbackId === null || callbackId === undefined) return;
 			try { currentVideo?.cancelVideoFrameCallback?.(callbackId); }
@@ -12028,7 +12031,9 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 			cancelPending();
 			currentVideo = null;
 			lastSampleMs = 0;
-			overBudgetFrames = 0;
+			lastSampledAt = null;
+			recentSamples = [];
+			recentTotalMs = 0;
 		}
 		function requestNext(token) {
 			if (!active || !currentVideo || token !== generation) return false;
@@ -12043,6 +12048,12 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 					callbackId = null;
 					if (!active || currentVideo !== video || token !== generation) return;
 					const startedAt = readNow();
+					if (lastSampledAt !== null
+						&& Number(startedAt) - lastSampledAt < MIN_VIDEO_FRAME_SAMPLE_INTERVAL_MS) {
+						requestNext(token);
+						return;
+					}
+					lastSampledAt = Number(startedAt);
 					try {
 						onFrame(video, metadataNow, metadata);
 					} catch (error) {
@@ -12051,16 +12062,14 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 						return;
 					}
 					lastSampleMs = Math.max(0, Number(readNow()) - Number(startedAt));
-					if (lastSampleMs > budgetMs) {
-						overBudgetFrames += 1;
-						if (overBudgetFrames >= MAX_CONSECUTIVE_OVER_BUDGET_FRAMES) {
-							const exceededMs = lastSampleMs;
-							stop();
-							onBudgetExceeded(exceededMs, video);
-							return;
-						}
-					} else {
-						overBudgetFrames = 0;
+					recentSamples.push(lastSampleMs);
+					recentTotalMs += lastSampleMs;
+					if (recentSamples.length > VIDEO_FRAME_BUDGET_WINDOW) recentTotalMs -= recentSamples.shift();
+					if (recentTotalMs > budgetMs * VIDEO_FRAME_BUDGET_WINDOW) {
+						const meanMs = recentTotalMs / recentSamples.length;
+						stop();
+						onBudgetExceeded(meanMs, video);
+						return;
 					}
 					requestNext(token);
 				});
@@ -12091,9 +12100,70 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 			isRunning: () => active,
 			getVideo: () => currentVideo,
 			getLastSampleMs: () => lastSampleMs,
-			getOverBudgetFrames: () => overBudgetFrames,
+			getRecentSampleCount: () => recentSamples.length,
 			budgetMs
 		};
+	}
+	function createFrameLuminanceReader(options = {}) {
+		const doc = options.document || getDefaultDocument();
+		const win = options.window || getDefaultWindow();
+		const onError = typeof options.onError === 'function' ? options.onError : () => {};
+		let context = null;
+		let generation = 0;
+		let pending = false;
+		let ready = null;
+		function readPixels(source) {
+			if (!context) {
+				const canvas = doc?.createElement?.('canvas');
+				if (canvas) {
+					canvas.width = 2;
+					canvas.height = 2;
+					context = canvas.getContext('2d', { willReadFrequently: true });
+				}
+				if (!context) throw new Error('frame luminance canvas unavailable');
+			}
+			context.drawImage(source, 0, 0, 2, 2);
+			return computeFrameLuminance(context.getImageData(0, 0, 2, 2).data);
+		}
+		function read(video) {
+			if (!video) return null;
+			if (typeof win?.createImageBitmap !== 'function') return readPixels(video);
+			let luminance = null;
+			if (ready) {
+				const bitmap = ready;
+				ready = null;
+				try {
+					luminance = readPixels(bitmap);
+				} finally {
+					bitmap.close?.();
+				}
+			}
+			if (!pending) {
+				const token = generation;
+				pending = true;
+				win.createImageBitmap(video, { resizeWidth: 2, resizeHeight: 2, resizeQuality: 'low' }).then((bitmap) => {
+					if (token !== generation) {
+						bitmap.close?.();
+						return;
+					}
+					pending = false;
+					ready = bitmap;
+				}, (error) => {
+					if (token !== generation) return;
+					pending = false;
+					if (error?.name === 'InvalidStateError') return;
+					onError(error);
+				});
+			}
+			return luminance;
+		}
+		function reset() {
+			generation += 1;
+			pending = false;
+			ready?.close?.();
+			ready = null;
+		}
+		return { read, reset };
 	}
 	function createPlayerTaskManager(options = {}) {
 		const root = options.document || getDefaultDocument();
@@ -12302,9 +12372,11 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 	const volumeCurveController = core.volumeCurveController || createVolumeCurveController();
 	const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 	Object.assign(core, {
-		__playerCoreVersion: 4,
+		__playerCoreVersion: 5,
 		createPlayerTaskManager,
 		createVideoFrameSampler,
+		createFrameLuminanceReader,
+		videoFrameBudgetMs: DEFAULT_VIDEO_FRAME_BUDGET_MS,
 		computeFrameLuminance,
 		createVolumeCurveController,
 		getLivePlaybackMetrics,
@@ -22075,11 +22147,12 @@ void 0;
 (() => {
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-	if (core.__playerCoreVersion >= 3) return;
+	if (core.__playerCoreVersion >= 5) return;
 	const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
 	const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
-	const DEFAULT_VIDEO_FRAME_BUDGET_MS = 1;
-	const MAX_CONSECUTIVE_OVER_BUDGET_FRAMES = 3;
+	const DEFAULT_VIDEO_FRAME_BUDGET_MS = 8;
+	const VIDEO_FRAME_BUDGET_WINDOW = 30;
+	const MIN_VIDEO_FRAME_SAMPLE_INTERVAL_MS = 25;
 	function getDefaultDocument() {
 		return typeof document !== 'undefined' ? document : null;
 	}
@@ -22323,7 +22396,9 @@ void 0;
 		let callbackId = null;
 		let generation = 0;
 		let lastSampleMs = 0;
-		let overBudgetFrames = 0;
+		let lastSampledAt = null;
+		let recentSamples = [];
+		let recentTotalMs = 0;
 		function cancelPending() {
 			if (callbackId === null || callbackId === undefined) return;
 			try { currentVideo?.cancelVideoFrameCallback?.(callbackId); }
@@ -22336,7 +22411,9 @@ void 0;
 			cancelPending();
 			currentVideo = null;
 			lastSampleMs = 0;
-			overBudgetFrames = 0;
+			lastSampledAt = null;
+			recentSamples = [];
+			recentTotalMs = 0;
 		}
 		function requestNext(token) {
 			if (!active || !currentVideo || token !== generation) return false;
@@ -22351,6 +22428,12 @@ void 0;
 					callbackId = null;
 					if (!active || currentVideo !== video || token !== generation) return;
 					const startedAt = readNow();
+					if (lastSampledAt !== null
+						&& Number(startedAt) - lastSampledAt < MIN_VIDEO_FRAME_SAMPLE_INTERVAL_MS) {
+						requestNext(token);
+						return;
+					}
+					lastSampledAt = Number(startedAt);
 					try {
 						onFrame(video, metadataNow, metadata);
 					} catch (error) {
@@ -22359,16 +22442,14 @@ void 0;
 						return;
 					}
 					lastSampleMs = Math.max(0, Number(readNow()) - Number(startedAt));
-					if (lastSampleMs > budgetMs) {
-						overBudgetFrames += 1;
-						if (overBudgetFrames >= MAX_CONSECUTIVE_OVER_BUDGET_FRAMES) {
-							const exceededMs = lastSampleMs;
-							stop();
-							onBudgetExceeded(exceededMs, video);
-							return;
-						}
-					} else {
-						overBudgetFrames = 0;
+					recentSamples.push(lastSampleMs);
+					recentTotalMs += lastSampleMs;
+					if (recentSamples.length > VIDEO_FRAME_BUDGET_WINDOW) recentTotalMs -= recentSamples.shift();
+					if (recentTotalMs > budgetMs * VIDEO_FRAME_BUDGET_WINDOW) {
+						const meanMs = recentTotalMs / recentSamples.length;
+						stop();
+						onBudgetExceeded(meanMs, video);
+						return;
 					}
 					requestNext(token);
 				});
@@ -22399,9 +22480,70 @@ void 0;
 			isRunning: () => active,
 			getVideo: () => currentVideo,
 			getLastSampleMs: () => lastSampleMs,
-			getOverBudgetFrames: () => overBudgetFrames,
+			getRecentSampleCount: () => recentSamples.length,
 			budgetMs
 		};
+	}
+	function createFrameLuminanceReader(options = {}) {
+		const doc = options.document || getDefaultDocument();
+		const win = options.window || getDefaultWindow();
+		const onError = typeof options.onError === 'function' ? options.onError : () => {};
+		let context = null;
+		let generation = 0;
+		let pending = false;
+		let ready = null;
+		function readPixels(source) {
+			if (!context) {
+				const canvas = doc?.createElement?.('canvas');
+				if (canvas) {
+					canvas.width = 2;
+					canvas.height = 2;
+					context = canvas.getContext('2d', { willReadFrequently: true });
+				}
+				if (!context) throw new Error('frame luminance canvas unavailable');
+			}
+			context.drawImage(source, 0, 0, 2, 2);
+			return computeFrameLuminance(context.getImageData(0, 0, 2, 2).data);
+		}
+		function read(video) {
+			if (!video) return null;
+			if (typeof win?.createImageBitmap !== 'function') return readPixels(video);
+			let luminance = null;
+			if (ready) {
+				const bitmap = ready;
+				ready = null;
+				try {
+					luminance = readPixels(bitmap);
+				} finally {
+					bitmap.close?.();
+				}
+			}
+			if (!pending) {
+				const token = generation;
+				pending = true;
+				win.createImageBitmap(video, { resizeWidth: 2, resizeHeight: 2, resizeQuality: 'low' }).then((bitmap) => {
+					if (token !== generation) {
+						bitmap.close?.();
+						return;
+					}
+					pending = false;
+					ready = bitmap;
+				}, (error) => {
+					if (token !== generation) return;
+					pending = false;
+					if (error?.name === 'InvalidStateError') return;
+					onError(error);
+				});
+			}
+			return luminance;
+		}
+		function reset() {
+			generation += 1;
+			pending = false;
+			ready?.close?.();
+			ready = null;
+		}
+		return { read, reset };
 	}
 	function createPlayerTaskManager(options = {}) {
 		const root = options.document || getDefaultDocument();
@@ -22610,9 +22752,11 @@ void 0;
 	const volumeCurveController = core.volumeCurveController || createVolumeCurveController();
 	const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 	Object.assign(core, {
-		__playerCoreVersion: 4,
+		__playerCoreVersion: 5,
 		createPlayerTaskManager,
 		createVideoFrameSampler,
+		createFrameLuminanceReader,
+		videoFrameBudgetMs: DEFAULT_VIDEO_FRAME_BUDGET_MS,
 		computeFrameLuminance,
 		createVolumeCurveController,
 		getLivePlaybackMetrics,
@@ -24648,16 +24792,14 @@ void 0;
 	var TASK_ID = 'ytkit-main:photosensitiveFlashProtection';
 	var TASK_EVENTS = ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
 	var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
-	var FRAME_BUDGET_MS = 1;
 	var FLASH_COOLDOWN_MS = 250;
 	var ALERT_STATUS_MS = 900;
 	var MAX_LUMINANCE_DELTA = 0.8;
 	var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
 	var createSampler = globalThis.YTKitCore && globalThis.YTKitCore.createVideoFrameSampler;
-	var computeLuminance = globalThis.YTKitCore && globalThis.YTKitCore.computeFrameLuminance;
+	var createReader = globalThis.YTKitCore && globalThis.YTKitCore.createFrameLuminanceReader;
 	var sampler = null;
-	var canvas = null;
-	var context = null;
+	var reader = null;
 	var enabled = false;
 	var previousLuminance = null;
 	var lastEventAt = -Infinity;
@@ -24673,6 +24815,7 @@ void 0;
 		if (root.getAttribute(STATUS_ATTR) !== next) root.setAttribute(STATUS_ATTR, next);
 	}
 	function resetFrameState() {
+		if (reader) reader.reset();
 		previousLuminance = null;
 		lastEventAt = -Infinity;
 		if (statusTimer !== null) {
@@ -24700,23 +24843,6 @@ void 0;
 			|| document.querySelector('#movie_player video')
 			|| null;
 	}
-	function readLuminance(video) {
-		if (!canvas) {
-			canvas = document.createElement('canvas');
-			canvas.width = 2;
-			canvas.height = 2;
-			context = canvas.getContext('2d', { willReadFrequently: true });
-		}
-		if (!context) throw new Error('photosensitive canvas readback unavailable');
-		context.drawImage(video, 0, 0, 2, 2);
-		var pixels = context.getImageData(0, 0, 2, 2).data;
-		if (typeof computeLuminance === 'function') return computeLuminance(pixels);
-		var total = 0;
-		for (var i = 0; i + 2 < pixels.length; i += 4) {
-			total += (0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]) / 255;
-		}
-		return total / 4;
-	}
 	function signalFlash(delta) {
 		var now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 		if (now - lastEventAt < FLASH_COOLDOWN_MS) return;
@@ -24731,8 +24857,8 @@ void 0;
 		}, ALERT_STATUS_MS);
 	}
 	function handleFrame(video) {
-		var luminance = readLuminance(video);
-		if (!isFinite(luminance)) return;
+		var luminance = reader.read(video);
+		if (luminance === null || !isFinite(luminance)) return;
 		if (previousLuminance !== null) {
 			var delta = Math.abs(luminance - previousLuminance);
 			var threshold = numberAttr(THRESHOLD_ATTR, 0.2, 0.05, MAX_LUMINANCE_DELTA);
@@ -24742,20 +24868,22 @@ void 0;
 	}
 	function startSampler(video) {
 		if (!enabled) return true;
-		if (typeof createSampler !== 'function') {
+		if (typeof createSampler !== 'function' || typeof createReader !== 'function') {
 			writeStatus('unsupported');
 			return true;
+		}
+		if (!reader) {
+			reader = createReader({ onError: function(error) { failClosed('sample', error); } });
 		}
 		if (sampler && sampler.isRunning && sampler.isRunning() && sampler.getVideo() === video) return true;
 		if (sampler && typeof sampler.stop === 'function') sampler.stop();
 		resetFrameState();
 		sampler = createSampler({
 			getVideo: function() { return getVideo(); },
-			budgetMs: FRAME_BUDGET_MS,
 			onFrame: function(frameVideo) { handleFrame(frameVideo); },
 			onUnsupported: function() { writeStatus('unsupported'); },
 			onError: function(error) { failClosed('sample', error); },
-			onBudgetExceeded: function(duration) { failClosed('budget', new Error('frame sample took ' + duration.toFixed(2) + 'ms')); }
+			onBudgetExceeded: function(duration) { failClosed('budget', new Error('frame samples averaged ' + duration.toFixed(2) + 'ms')); }
 		});
 		if (!sampler.start(video)) {
 			writeStatus('unsupported');

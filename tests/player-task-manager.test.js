@@ -229,13 +229,9 @@ test('video frame sampler follows requestVideoFrameCallback and rebinds on stop'
     assert.equal(sampler.isRunning(), false);
 });
 
-test('video frame sampler fails closed after three consecutive over-budget callbacks', () => {
-    const core = loadPlayerCore();
+function createFakeFrameSource() {
     const pending = new Map();
     let nextId = 0;
-    let clock = 0;
-    let budgetFailures = 0;
-    let reported = null;
     const video = {
         requestVideoFrameCallback(callback) {
             const id = ++nextId;
@@ -246,29 +242,193 @@ test('video frame sampler fails closed after three consecutive over-budget callb
             pending.delete(id);
         }
     };
-    const sampler = core.createVideoFrameSampler({
-        getVideo: () => video,
-        budgetMs: 1,
-        now: () => clock,
-        onFrame: () => { clock += 2; },
-        onBudgetExceeded: (duration) => { budgetFailures += 1; reported = duration; }
-    });
     const deliver = () => {
         const callback = pending.values().next().value;
         pending.clear();
         callback(0, {});
     };
+    return { pending, video, deliver };
+}
+
+test('video frame sampler fails closed once a window of samples costs more than its budget', () => {
+    const core = loadPlayerCore();
+    const source = createFakeFrameSource();
+    let clock = 0;
+    let budgetFailures = 0;
+    let reported = null;
+    const sampler = core.createVideoFrameSampler({
+        getVideo: () => source.video,
+        budgetMs: 1,
+        now: () => clock,
+        onFrame: () => { clock += 2; },
+        onBudgetExceeded: (duration) => { budgetFailures += 1; reported = duration; }
+    });
+    // Frames arrive 33 ms apart, past the sampler's 25 ms spacing. Thirty
+    // samples may cost 30 ms in all at a 1 ms budget; at 2 ms each, the
+    // 16th sample takes the window past that.
+    const deliver = () => { clock += 33; source.deliver(); };
 
     sampler.start();
-    deliver();
-    deliver();
+    for (let i = 0; i < 15; i += 1) deliver();
+    assert.equal(budgetFailures, 0, 'a window still inside its total keeps sampling');
     deliver();
     assert.equal(budgetFailures, 1);
     // The failure notice quotes this number. It used to be read after stop()
-    // had zeroed it, so every notice said the sample took 0.00ms.
-    assert.equal(reported, 2, 'the handler gets the sample time that tripped the budget');
+    // had cleared it, so every notice said 0.00ms.
+    assert.equal(reported, 2, 'the handler gets the mean sample time of the window');
     assert.equal(sampler.isRunning(), false);
-    assert.equal(pending.size, 0);
+    assert.equal(source.pending.size, 0);
+});
+
+test('video frame sampler rides out a short burst of slow samples', () => {
+    // Live 4K60 playback on 2026-10-06 had three samples over 8 ms in a row
+    // within 45 seconds while the mean stayed near 3.5 ms. A rule that
+    // tripped on that switched the guard off for the rest of the video.
+    const core = loadPlayerCore();
+    const source = createFakeFrameSource();
+    const costs = [...Array(10).fill(3), 20, 20, 20, ...Array(30).fill(3)];
+    let clock = 0;
+    let budgetFailures = 0;
+    const sampler = core.createVideoFrameSampler({
+        getVideo: () => source.video,
+        now: () => clock,
+        onFrame: () => { clock += costs.shift(); },
+        onBudgetExceeded: () => { budgetFailures += 1; }
+    });
+
+    sampler.start();
+    while (costs.length) {
+        clock += 33;
+        source.deliver();
+    }
+    assert.equal(budgetFailures, 0);
+    assert.equal(sampler.isRunning(), true);
+});
+
+test('video frame sampler spaces samples 25 ms apart and skipped frames do not water down the window', () => {
+    const core = loadPlayerCore();
+    const source = createFakeFrameSource();
+    let clock = 0;
+    let samples = 0;
+    let budgetFailures = 0;
+    const sampler = core.createVideoFrameSampler({
+        getVideo: () => source.video,
+        now: () => clock,
+        // Every real sample costs 10 ms against the default 8 ms budget.
+        onFrame: () => { samples += 1; clock += 10; },
+        onBudgetExceeded: () => { budgetFailures += 1; }
+    });
+    // 60 fps: a frame every 16.7 ms, so every other frame is sampled.
+    let frame = 0;
+    const deliverNext = () => {
+        clock = frame * 16.7;
+        frame += 1;
+        source.deliver();
+    };
+
+    sampler.start();
+    for (let i = 0; i < 48; i += 1) deliverNext();
+    assert.equal(samples, 24, 'every other 60 fps frame is sampled');
+    assert.equal(sampler.getRecentSampleCount(), 24, 'skipped frames are not samples');
+    assert.equal(budgetFailures, 0, '24 samples at 10 ms are 240 ms, exactly the window total');
+    assert.equal(source.pending.size, 1, 'a skipped frame still asks for the next one');
+    // If skipped frames counted as free samples, thirty of them would hold
+    // only fifteen real ones (150 ms) and the sampler would never switch off.
+    deliverNext();
+    assert.equal(samples, 25);
+    assert.equal(budgetFailures, 1);
+    assert.equal(sampler.isRunning(), false);
+});
+
+function createFakeReadback(pixelsFor) {
+    const bitmaps = [];
+    const closed = [];
+    const drawn = [];
+    const context = {
+        source: null,
+        drawImage(source) { this.source = source; drawn.push(source); },
+        getImageData() { return { data: pixelsFor(this.source) }; }
+    };
+    const document = {
+        createElement: () => ({ width: 0, height: 0, getContext: () => context })
+    };
+    const window = {
+        createImageBitmap(video, options) {
+            let resolve;
+            let reject;
+            const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+            // Spread copies the options out of the vm realm for deepEqual.
+            const bitmap = { video, options: { ...options }, close() { closed.push(bitmap); } };
+            bitmaps.push({ bitmap, resolve: () => resolve(bitmap), reject });
+            return promise;
+        }
+    };
+    return { bitmaps, closed, drawn, document, window };
+}
+
+const WHITE = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
+const BLACK = [0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255];
+
+test('frame luminance reader reads a 2x2 bitmap one sample later, one bitmap in flight', async () => {
+    const core = loadPlayerCore();
+    const fake = createFakeReadback((source) => (source.video === 'white-frame' ? WHITE : BLACK));
+    const reader = core.createFrameLuminanceReader({ document: fake.document, window: fake.window });
+
+    assert.equal(reader.read('white-frame'), null, 'the first sample has nothing to read yet');
+    assert.equal(fake.bitmaps.length, 1);
+    assert.deepEqual(fake.bitmaps[0].bitmap.options, { resizeWidth: 2, resizeHeight: 2, resizeQuality: 'low' });
+    assert.equal(reader.read('white-frame'), null);
+    assert.equal(fake.bitmaps.length, 1, 'a second bitmap must wait for the first');
+
+    fake.bitmaps[0].resolve();
+    await Promise.resolve();
+    assert.ok(Math.abs(reader.read('black-frame') - 1) < 1e-12, 'reads the white bitmap asked for earlier');
+    assert.deepEqual(fake.closed, [fake.bitmaps[0].bitmap], 'a read bitmap is closed');
+    assert.equal(fake.bitmaps.length, 2);
+    assert.equal(fake.drawn.includes('white-frame'), false, 'the video itself is never drawn');
+
+    fake.bitmaps[1].resolve();
+    await Promise.resolve();
+    assert.equal(reader.read('black-frame'), 0);
+});
+
+test('frame luminance reader drops late bitmaps after reset and only reports real failures', async () => {
+    const core = loadPlayerCore();
+    const errors = [];
+    const fake = createFakeReadback(() => WHITE);
+    const reader = core.createFrameLuminanceReader({
+        document: fake.document,
+        window: fake.window,
+        onError: (error) => errors.push(error)
+    });
+
+    reader.read('a');
+    reader.reset();
+    fake.bitmaps[0].resolve();
+    await Promise.resolve();
+    assert.deepEqual(fake.closed, [fake.bitmaps[0].bitmap], 'a bitmap for the old video is closed unread');
+    assert.equal(reader.read('b'), null, 'nothing from before the reset is read');
+
+    const gone = new Error('frame gone');
+    gone.name = 'InvalidStateError';
+    fake.bitmaps[1].reject(gone);
+    await Promise.resolve();
+    assert.deepEqual(errors, [], 'a frame that went away is not a failure');
+    reader.read('b');
+    assert.equal(fake.bitmaps.length, 3, 'the next sample asks again');
+
+    const broken = new Error('decoder lost');
+    fake.bitmaps[2].reject(broken);
+    await Promise.resolve();
+    assert.deepEqual(errors, [broken]);
+});
+
+test('frame luminance reader draws the video directly without createImageBitmap', () => {
+    const core = loadPlayerCore();
+    const fake = createFakeReadback(() => WHITE);
+    const reader = core.createFrameLuminanceReader({ document: fake.document, window: {} });
+    assert.ok(Math.abs(reader.read('frame') - 1) < 1e-12);
+    assert.deepEqual(fake.drawn, ['frame']);
 });
 
 test('volume curve maps slider positions through dB space and round-trips', () => {

@@ -4,23 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P1 — Photosensitive Flash Protection switches itself off on GPU machines
-  Why: 2026-09-28, measured live. The frame sampler fails closed after three samples over
-  `FRAME_BUDGET_MS = 1`. A 2x2 `drawImage` + `getImageData` of a hardware-decoded YouTube frame
-  took 4.6ms median, 5.8ms p90, 15.4ms max on an RTX 4070 SUPER (headless Chromium, D3D11), so
-  every frame is over budget and the guard shuts off within a tenth of a second of starting.
-  Software rendering sits right at the line (1.1ms median). With the budget at 8ms (what Video
-  Hider and Subscription Groups already use) the guard stayed on `monitoring` across an in-app
-  navigation and caught real flashes. At ~5ms a frame it also costs real main-thread time, so
-  look at a capped sample rate or an off-thread read (`VideoFrame.copyTo`) at the same time.
-  Where: `extension/ytkit-main.js` `FRAME_BUDGET_MS`, `extension/features/video-filters/index.js`
-  `PHOTOSENSITIVE_FRAME_BUDGET_MS`, the `|| 1` fallback in `ytkit.js` `_startFallbackSampler`,
-  `scripts/bench-startup.js` `PHOTOSENSITIVE_FRAME_BUDGET_MS`. Tests that pin 1ms:
-  `tests/startup-performance.test.js` and two in `tests/features/video-filters.test.js`.
-  Acceptance: on a GPU-accelerated headless run the guard stays on `monitoring` for a full
-  minute of playback, and the three budget copies are held together by one test.
-  Complexity: M
-
 - [ ] P2 — Buffer / Preload has no player API to drive
   Why: 2026-09-28, checked live. The feature calls `movie_player.setBufferingGoal()`, which
   isn't in the player's public or internal API any more (245 methods listed; the only

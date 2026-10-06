@@ -23,22 +23,11 @@ test('Video Filters module references the html5-main-video target', () => {
 });
 
 test('Photosensitive frame helpers detect bounded luminance changes and render an alert lane', () => {
-    const black = new Uint8ClampedArray([
-        0, 0, 0, 255, 0, 0, 0, 255,
-        0, 0, 0, 255, 0, 0, 0, 255
-    ]);
-    const white = new Uint8ClampedArray([
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255
-    ]);
-    assert.equal(videoFilters.computeFrameLuminance(black), 0);
-    assert.ok(Math.abs(videoFilters.computeFrameLuminance(white) - 1) < 1e-12);
     const flash = videoFilters.detectPhotosensitiveFlash(0.1, 0.35, 0.2);
     assert.equal(flash.luminance, 0.35);
     assert.ok(Math.abs(flash.delta - 0.25) < 1e-12);
     assert.equal(flash.triggered, true);
     assert.match(videoFilters.buildPhotosensitiveOverlayCss(), /ytkit-photosensitive-alert/);
-    assert.equal(videoFilters.PHOTOSENSITIVE_FRAME_BUDGET_MS, 1);
 });
 
 test('Photosensitive settings stay inside the safe local bounds', () => {
@@ -53,8 +42,28 @@ test('Photosensitive protection wires the isolated warning to the MAIN frame sam
     const ytkitSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
     assert.match(mainSrc, /requestVideoFrameCallback/);
     assert.match(mainSrc, /data-ytkit-photosensitive-event/);
-    assert.match(mainSrc, /FRAME_BUDGET_MS = 1/);
+    assert.match(mainSrc, /createFrameLuminanceReader/);
     assert.match(ytkitSrc, /id: 'photosensitiveFlashProtection'/);
     assert.match(ytkitSrc, /_recordFeatureRuntimeFailure\(this\.id, error\)/);
     assert.match(ytkitSrc, /data-ytkit-photosensitive-failure/);
+});
+
+test('the photosensitive frame budget has one owner, the core sampler', () => {
+    // 2026-09-28 found the budget in five places, and a 1 ms value in all of
+    // them switched the guard off on every GPU machine. core/player.js now
+    // owns it; the two samplers take its default and the bench reads it.
+    const vm = require('vm');
+    const read = (rel) => fs.readFileSync(path.join(__dirname, '..', '..', rel), 'utf8');
+    const context = { console, setTimeout() { return 0; }, clearTimeout() {} };
+    context.globalThis = context;
+    vm.runInNewContext(read('extension/core/player.js'), context);
+    const budget = context.YTKitCore.videoFrameBudgetMs;
+    assert.equal(budget, 8, 'the measured contract: 2.5 to 3.3 ms median readback, 6 ms p90');
+    assert.equal(context.YTKitCore.createVideoFrameSampler({}).budgetMs, budget);
+    assert.equal(require('../../scripts/bench-startup').PHOTOSENSITIVE_FRAME_BUDGET_MS, budget);
+    for (const rel of ['extension/ytkit-main.js', 'extension/ytkit.js', 'extension/features/video-filters/index.js']) {
+        const source = read(rel);
+        assert.doesNotMatch(source, /budgetMs\s*:/, `${rel} must not pass its own frame budget`);
+        assert.doesNotMatch(source, /FRAME_BUDGET_MS\s*=/, `${rel} must not keep a budget copy`);
+    }
 });

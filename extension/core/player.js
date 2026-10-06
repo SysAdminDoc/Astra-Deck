@@ -2,12 +2,27 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.__playerCoreVersion >= 3) return;
+    if (core.__playerCoreVersion >= 5) return;
 
     const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
     const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
-    const DEFAULT_VIDEO_FRAME_BUDGET_MS = 1;
-    const MAX_CONSECUTIVE_OVER_BUDGET_FRAMES = 3;
+    // Photosensitive Flash Protection is the sampler's user, and this is the
+    // only copy of its budget: the mean cost of a sample, in ms. Measured
+    // 2026-10-06 on an RTX 4070 SUPER (D3D11, headless Chromium): drawing a
+    // hardware-decoded frame straight into a 2x2 canvas blocked 13 ms at
+    // 1080p and 45 ms at 4K, because the whole frame is converted first. A
+    // 2x2 createImageBitmap brings a sample to 3.5 ms median, but p90 is
+    // 9.5 ms on 4K60 and three slow samples in a row happen within a minute
+    // on both, so the budget is held over a window, not per sample. The
+    // worst 20-sample mean in those runs was 7.0 ms (4K60) and 5.2 ms (1080p).
+    const DEFAULT_VIDEO_FRAME_BUDGET_MS = 8;
+    // The sampler switches off once the last this-many samples together cost
+    // more than this-many budgets. The old 45 ms path trips after six samples.
+    const VIDEO_FRAME_BUDGET_WINDOW = 30;
+    // Samples land at least this far apart: every frame of 24 to 30 fps
+    // video, every other frame at 50 or 60 fps. That halves the readback
+    // cost on high frame rate video and still sees a 15 Hz flash.
+    const MIN_VIDEO_FRAME_SAMPLE_INTERVAL_MS = 25;
 
     function getDefaultDocument() {
         return typeof document !== 'undefined' ? document : null;
@@ -296,7 +311,9 @@
         let callbackId = null;
         let generation = 0;
         let lastSampleMs = 0;
-        let overBudgetFrames = 0;
+        let lastSampledAt = null;
+        let recentSamples = [];
+        let recentTotalMs = 0;
 
         function cancelPending() {
             if (callbackId === null || callbackId === undefined) return;
@@ -311,7 +328,9 @@
             cancelPending();
             currentVideo = null;
             lastSampleMs = 0;
-            overBudgetFrames = 0;
+            lastSampledAt = null;
+            recentSamples = [];
+            recentTotalMs = 0;
         }
 
         function requestNext(token) {
@@ -327,6 +346,14 @@
                     callbackId = null;
                     if (!active || currentVideo !== video || token !== generation) return;
                     const startedAt = readNow();
+                    // A skipped frame isn't a sample, so it can't water down
+                    // the window's cost.
+                    if (lastSampledAt !== null
+                        && Number(startedAt) - lastSampledAt < MIN_VIDEO_FRAME_SAMPLE_INTERVAL_MS) {
+                        requestNext(token);
+                        return;
+                    }
+                    lastSampledAt = Number(startedAt);
                     try {
                         onFrame(video, metadataNow, metadata);
                     } catch (error) {
@@ -335,17 +362,15 @@
                         return;
                     }
                     lastSampleMs = Math.max(0, Number(readNow()) - Number(startedAt));
-                    if (lastSampleMs > budgetMs) {
-                        overBudgetFrames += 1;
-                        if (overBudgetFrames >= MAX_CONSECUTIVE_OVER_BUDGET_FRAMES) {
-                            // stop() zeroes lastSampleMs, so keep the reading first.
-                            const exceededMs = lastSampleMs;
-                            stop();
-                            onBudgetExceeded(exceededMs, video);
-                            return;
-                        }
-                    } else {
-                        overBudgetFrames = 0;
+                    recentSamples.push(lastSampleMs);
+                    recentTotalMs += lastSampleMs;
+                    if (recentSamples.length > VIDEO_FRAME_BUDGET_WINDOW) recentTotalMs -= recentSamples.shift();
+                    if (recentTotalMs > budgetMs * VIDEO_FRAME_BUDGET_WINDOW) {
+                        // stop() clears the window, so take the mean first.
+                        const meanMs = recentTotalMs / recentSamples.length;
+                        stop();
+                        onBudgetExceeded(meanMs, video);
+                        return;
                     }
                     requestNext(token);
                 });
@@ -379,9 +404,83 @@
             isRunning: () => active,
             getVideo: () => currentVideo,
             getLastSampleMs: () => lastSampleMs,
-            getOverBudgetFrames: () => overBudgetFrames,
+            getRecentSampleCount: () => recentSamples.length,
             budgetMs
         };
+    }
+
+    // Mean luminance of a video frame, read from a 2x2 copy. createImageBitmap
+    // does the scaling on the GPU, and the bitmap asked for on one sample is
+    // read on the next, so read() returns the previous sample's luminance
+    // (null until there is one) and only one bitmap is ever in flight.
+    // Without createImageBitmap it draws the video itself, the slow path the
+    // sampler's budget then catches.
+    function createFrameLuminanceReader(options = {}) {
+        const doc = options.document || getDefaultDocument();
+        const win = options.window || getDefaultWindow();
+        const onError = typeof options.onError === 'function' ? options.onError : () => {};
+        let context = null;
+        let generation = 0;
+        let pending = false;
+        let ready = null;
+
+        function readPixels(source) {
+            if (!context) {
+                const canvas = doc?.createElement?.('canvas');
+                if (canvas) {
+                    canvas.width = 2;
+                    canvas.height = 2;
+                    context = canvas.getContext('2d', { willReadFrequently: true });
+                }
+                if (!context) throw new Error('frame luminance canvas unavailable');
+            }
+            context.drawImage(source, 0, 0, 2, 2);
+            return computeFrameLuminance(context.getImageData(0, 0, 2, 2).data);
+        }
+
+        function read(video) {
+            if (!video) return null;
+            if (typeof win?.createImageBitmap !== 'function') return readPixels(video);
+            let luminance = null;
+            if (ready) {
+                const bitmap = ready;
+                ready = null;
+                try {
+                    luminance = readPixels(bitmap);
+                } finally {
+                    bitmap.close?.();
+                }
+            }
+            if (!pending) {
+                const token = generation;
+                pending = true;
+                win.createImageBitmap(video, { resizeWidth: 2, resizeHeight: 2, resizeQuality: 'low' }).then((bitmap) => {
+                    if (token !== generation) {
+                        bitmap.close?.();
+                        return;
+                    }
+                    pending = false;
+                    ready = bitmap;
+                }, (error) => {
+                    if (token !== generation) return;
+                    pending = false;
+                    // The frame went away before the copy (a source swap);
+                    // the next sample asks again.
+                    if (error?.name === 'InvalidStateError') return;
+                    onError(error);
+                });
+            }
+            return luminance;
+        }
+
+        function reset() {
+            generation += 1;
+            pending = false;
+            ready?.close?.();
+            ready = null;
+        }
+
+        return { read, reset };
     }
 
     function createPlayerTaskManager(options = {}) {
@@ -620,9 +719,11 @@
     const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 
     Object.assign(core, {
-        __playerCoreVersion: 4,
+        __playerCoreVersion: 5,
         createPlayerTaskManager,
         createVideoFrameSampler,
+        createFrameLuminanceReader,
+        videoFrameBudgetMs: DEFAULT_VIDEO_FRAME_BUDGET_MS,
         computeFrameLuminance,
         createVolumeCurveController,
         getLivePlaybackMetrics,

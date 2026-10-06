@@ -4420,7 +4420,6 @@ __astraDeckRegistry["features/video-filters/index.js"] = function (globalThis, s
 		photosensitiveFlashThreshold: { min: 0.05, max: 0.8, fallback: 0.2 },
 		photosensitiveDimPercent: { min: 10, max: 80, fallback: 35 }
 	});
-	const PHOTOSENSITIVE_FRAME_BUDGET_MS = 1;
 	const PHOTOSENSITIVE_FLASH_HOLD_MS = 900;
 	const PHOTOSENSITIVE_EVENT_COOLDOWN_MS = 250;
 	function readField(settings, key) {
@@ -4456,25 +4455,6 @@ __astraDeckRegistry["features/video-filters/index.js"] = function (globalThis, s
 		if (raw === undefined || raw === null) return bounds.fallback;
 		return clamp(raw, bounds.min, bounds.max);
 	}
-	function computeFrameLuminance(pixels) {
-		if (!pixels || typeof pixels.length !== 'number' || pixels.length < 4) return null;
-		let total = 0;
-		let count = 0;
-		for (let index = 0; index + 2 < pixels.length; index += 4) {
-			total += (0.2126 * Number(pixels[index])
-				+ 0.7152 * Number(pixels[index + 1])
-				+ 0.0722 * Number(pixels[index + 2])) / 255;
-			count += 1;
-		}
-		return count > 0 && Number.isFinite(total) ? total / count : null;
-	}
-	function sampleVideoLuminance(video, canvas, context) {
-		if (!video || !canvas || !context) return null;
-		if (canvas.width !== 2) canvas.width = 2;
-		if (canvas.height !== 2) canvas.height = 2;
-		context.drawImage(video, 0, 0, 2, 2);
-		return computeFrameLuminance(context.getImageData(0, 0, 2, 2).data);
-	}
 	function detectPhotosensitiveFlash(previousLuminance, currentLuminance, threshold) {
 		const current = Number(currentLuminance);
 		if (!Number.isFinite(current)) return { luminance: null, delta: null, triggered: false };
@@ -4504,12 +4484,9 @@ __astraDeckRegistry["features/video-filters/index.js"] = function (globalThis, s
 		buildVideoFilterCss,
 		isVideoFilterIdentity,
 		readPhotosensitiveSetting,
-		computeFrameLuminance,
-		sampleVideoLuminance,
 		detectPhotosensitiveFlash,
 		buildPhotosensitiveOverlayCss,
 		PHOTOSENSITIVE_BOUNDS,
-		PHOTOSENSITIVE_FRAME_BUDGET_MS,
 		PHOTOSENSITIVE_FLASH_HOLD_MS,
 		PHOTOSENSITIVE_EVENT_COOLDOWN_MS,
 		featureSpec,
@@ -4524,10 +4501,9 @@ __astraDeckRegistry["features/video-filters/index.js"] = function (globalThis, s
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = {
 			buildVideoFilterCss, isVideoFilterIdentity,
-			readPhotosensitiveSetting, computeFrameLuminance,
-			sampleVideoLuminance, detectPhotosensitiveFlash,
+			readPhotosensitiveSetting, detectPhotosensitiveFlash,
 			buildPhotosensitiveOverlayCss, PHOTOSENSITIVE_BOUNDS,
-			PHOTOSENSITIVE_FRAME_BUDGET_MS, PHOTOSENSITIVE_FLASH_HOLD_MS,
+			PHOTOSENSITIVE_FLASH_HOLD_MS,
 			PHOTOSENSITIVE_EVENT_COOLDOWN_MS, featureSpec, FIELD_BOUNDS
 		};
 	}

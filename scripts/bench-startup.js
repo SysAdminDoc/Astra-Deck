@@ -19,6 +19,7 @@ const os = require('os');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { spawn } = require('child_process');
+const vm = require('vm');
 const WebSocket = require('ws');
 
 const {
@@ -54,11 +55,21 @@ const STEADY_STATE_KEYS = Object.freeze([
     'idleStyleRecalcsPerMin',
     'idleHeapGrowthBytesPerMin',
 ]);
-// Photosensitive protection gets one millisecond per presented frame for its
-// 2x2 luminance readback. The shared frame sampler disables itself after three
-// consecutive over-budget callbacks; keep this contract visible beside the
-// startup budget so performance changes are reviewed with the same gate.
-const PHOTOSENSITIVE_FRAME_BUDGET_MS = 1;
+// Photosensitive protection's per-sample budget for its 2x2 luminance
+// readback. The shared frame sampler disables itself once a window of samples
+// costs more than the budget allows; keep this contract visible beside the startup budget so
+// performance changes are reviewed with the same gate. core/player.js owns the
+// number; this reads it rather than keeping a copy.
+const PHOTOSENSITIVE_FRAME_BUDGET_MS = (() => {
+    const context = { console, setTimeout() { return 0; }, clearTimeout() {} };
+    context.globalThis = context;
+    vm.runInNewContext(
+        fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'player.js'), 'utf8'),
+        context,
+        { filename: 'extension/core/player.js' }
+    );
+    return context.YTKitCore.videoFrameBudgetMs;
+})();
 const HEADED_PRIVATE = process.env.YTKIT_BENCH_HEADED_PRIVATE === '1';
 // Tolerance against the MINIMUM, which is far steadier than the median the
 // gate used to compare: 0.35 relative existed to absorb load the statistic now

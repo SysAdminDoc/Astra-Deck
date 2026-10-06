@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Photosensitive Flash Protection no longer switches itself off a moment after it starts on computers that decode video on the graphics card. Reading each frame used to take 13 ms at 1080p and 45 ms at 4K, far past its 1 ms allowance, so the guard shut down within a few frames. It now asks the graphics card for a tiny copy of the frame, which takes about 3 ms, looks at no more than 40 frames a second, and only turns off when it stays slow on average, not after a brief hitch. Checked for a full minute of 4K 60 fps and 1080p playback.
+
 ## [4.95.0] (2026-10-06)
 
 ### Changed

@@ -21598,8 +21598,7 @@ const STORAGE_KEYS = Object.freeze({
 			_mutationObserver: null,
 			_navRule: null,
 			_fallbackSampler: null,
-			_fallbackCanvas: null,
-			_fallbackContext: null,
+			_fallbackReader: null,
 			_fallbackPreviousLuminance: null,
 			_lastEvent: '',
 			_lastFailure: '',
@@ -21666,6 +21665,7 @@ const STORAGE_KEYS = Object.freeze({
 			_stopFallbackSampler() {
 				this._fallbackSampler?.stop?.();
 				this._fallbackSampler = null;
+				this._fallbackReader?.reset?.();
 				this._fallbackPreviousLuminance = null;
 			},
 			_runtimeFailure(error) {
@@ -21677,15 +21677,8 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_fallbackFrame(video) {
 				const tools = this._tools();
-				if (!this._fallbackCanvas) {
-					this._fallbackCanvas = document.createElement('canvas');
-					this._fallbackCanvas.width = 2;
-					this._fallbackCanvas.height = 2;
-					this._fallbackContext = this._fallbackCanvas.getContext('2d', { willReadFrequently: true });
-				}
-				if (!this._fallbackContext) throw new Error('photosensitive canvas readback unavailable');
-				if (typeof tools.sampleVideoLuminance !== 'function') return;
-				const luminance = tools.sampleVideoLuminance(video, this._fallbackCanvas, this._fallbackContext);
+				const luminance = this._fallbackReader?.read(video) ?? null;
+				if (luminance === null) return;
 				const result = typeof tools.detectPhotosensitiveFlash === 'function'
 					? tools.detectPhotosensitiveFlash(this._fallbackPreviousLuminance, luminance, this._setting('photosensitiveFlashThreshold', 0.2))
 					: { luminance, delta: Math.abs(Number(luminance) - Number(this._fallbackPreviousLuminance)), triggered: false };
@@ -21697,16 +21690,17 @@ const STORAGE_KEYS = Object.freeze({
 			_startFallbackSampler(video) {
 				if (hasExtensionContext() || this._runtimeDisabled) return true;
 				const factory = globalThis.YTKitCore?.createVideoFrameSampler;
-				if (typeof factory !== 'function' || !video) return true;
+				const createReader = globalThis.YTKitCore?.createFrameLuminanceReader;
+				if (typeof factory !== 'function' || typeof createReader !== 'function' || !video) return true;
 				if (this._fallbackSampler?.isRunning?.() && this._fallbackSampler.getVideo?.() === video) return true;
 				this._stopFallbackSampler();
+				this._fallbackReader ||= createReader({ onError: (error) => this._runtimeFailure(error) });
 				this._fallbackSampler = factory({
 					getVideo: () => getMainVideoElement(),
-					budgetMs: this._tools().PHOTOSENSITIVE_FRAME_BUDGET_MS || 1,
 					onFrame: (frameVideo) => this._fallbackFrame(frameVideo),
 					onUnsupported: () => {},
 					onError: (error) => this._runtimeFailure(error),
-					onBudgetExceeded: (duration) => this._runtimeFailure(new Error(`frame sample took ${duration.toFixed(2)}ms`))
+					onBudgetExceeded: (duration) => this._runtimeFailure(new Error(`frame samples averaged ${duration.toFixed(2)}ms`))
 				});
 				this._fallbackSampler.start(video);
 				return true;

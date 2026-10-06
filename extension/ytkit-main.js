@@ -1930,9 +1930,10 @@
     // ──────────────────────────────────────────────────────────────────
     // The isolated feature owns the warning surface and settings. This
     // MAIN-world half owns only the frame sampler, where YouTube's live
-    // HTMLVideoElement is available. It deliberately reads a 2x2 canvas on
-    // each requestVideoFrameCallback frame: one frame, one tiny readback,
-    // and no network or crowd-sourced classification.
+    // HTMLVideoElement is available. It reads a 2x2 copy of a presented frame
+    // (requestVideoFrameCallback, at most every 25 ms) through the core
+    // sampler and reader, which own the frame budget: one tiny readback per
+    // sample, and no network or crowd-sourced classification.
 (function() {
     'use strict';
     if (typeof document === 'undefined' || !document.documentElement) return;
@@ -1946,16 +1947,14 @@
     var TASK_ID = 'ytkit-main:photosensitiveFlashProtection';
     var TASK_EVENTS = ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
     var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
-    var FRAME_BUDGET_MS = 1;
     var FLASH_COOLDOWN_MS = 250;
     var ALERT_STATUS_MS = 900;
     var MAX_LUMINANCE_DELTA = 0.8;
     var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
     var createSampler = globalThis.YTKitCore && globalThis.YTKitCore.createVideoFrameSampler;
-    var computeLuminance = globalThis.YTKitCore && globalThis.YTKitCore.computeFrameLuminance;
+    var createReader = globalThis.YTKitCore && globalThis.YTKitCore.createFrameLuminanceReader;
     var sampler = null;
-    var canvas = null;
-    var context = null;
+    var reader = null;
     var enabled = false;
     var previousLuminance = null;
     var lastEventAt = -Infinity;
@@ -1974,6 +1973,7 @@
     }
 
     function resetFrameState() {
+        if (reader) reader.reset();
         previousLuminance = null;
         lastEventAt = -Infinity;
         if (statusTimer !== null) {
@@ -2005,24 +2005,6 @@
             || null;
     }
 
-    function readLuminance(video) {
-        if (!canvas) {
-            canvas = document.createElement('canvas');
-            canvas.width = 2;
-            canvas.height = 2;
-            context = canvas.getContext('2d', { willReadFrequently: true });
-        }
-        if (!context) throw new Error('photosensitive canvas readback unavailable');
-        context.drawImage(video, 0, 0, 2, 2);
-        var pixels = context.getImageData(0, 0, 2, 2).data;
-        if (typeof computeLuminance === 'function') return computeLuminance(pixels);
-        var total = 0;
-        for (var i = 0; i + 2 < pixels.length; i += 4) {
-            total += (0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]) / 255;
-        }
-        return total / 4;
-    }
-
     function signalFlash(delta) {
         var now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
         if (now - lastEventAt < FLASH_COOLDOWN_MS) return;
@@ -2038,8 +2020,8 @@
     }
 
     function handleFrame(video) {
-        var luminance = readLuminance(video);
-        if (!isFinite(luminance)) return;
+        var luminance = reader.read(video);
+        if (luminance === null || !isFinite(luminance)) return;
         if (previousLuminance !== null) {
             var delta = Math.abs(luminance - previousLuminance);
             var threshold = numberAttr(THRESHOLD_ATTR, 0.2, 0.05, MAX_LUMINANCE_DELTA);
@@ -2050,20 +2032,22 @@
 
     function startSampler(video) {
         if (!enabled) return true;
-        if (typeof createSampler !== 'function') {
+        if (typeof createSampler !== 'function' || typeof createReader !== 'function') {
             writeStatus('unsupported');
             return true;
+        }
+        if (!reader) {
+            reader = createReader({ onError: function(error) { failClosed('sample', error); } });
         }
         if (sampler && sampler.isRunning && sampler.isRunning() && sampler.getVideo() === video) return true;
         if (sampler && typeof sampler.stop === 'function') sampler.stop();
         resetFrameState();
         sampler = createSampler({
             getVideo: function() { return getVideo(); },
-            budgetMs: FRAME_BUDGET_MS,
             onFrame: function(frameVideo) { handleFrame(frameVideo); },
             onUnsupported: function() { writeStatus('unsupported'); },
             onError: function(error) { failClosed('sample', error); },
-            onBudgetExceeded: function(duration) { failClosed('budget', new Error('frame sample took ' + duration.toFixed(2) + 'ms')); }
+            onBudgetExceeded: function(duration) { failClosed('budget', new Error('frame samples averaged ' + duration.toFixed(2) + 'ms')); }
         });
         if (!sampler.start(video)) {
             writeStatus('unsupported');
