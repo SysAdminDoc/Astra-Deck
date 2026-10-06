@@ -9642,7 +9642,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				return 0;
 			},
 			_extractTitle(element) {
-				return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
+				return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title')?.textContent?.trim()?.toLowerCase() || '';
 			},
 			_parseCompactCount(text, options = {}) {
 				const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;

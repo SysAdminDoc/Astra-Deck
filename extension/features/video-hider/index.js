@@ -1632,8 +1632,11 @@
                 return 0;
             },
 
+            // Lockups (Home, Subscriptions, channel pages, the watch sidebar)
+            // carry no #video-title; their title anchor's visible text is the
+            // title, while its aria-label appends the duration.
             _extractTitle(element) {
-                return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
+                return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title')?.textContent?.trim()?.toLowerCase() || '';
             },
 
             _parseCompactCount(text, options = {}) {

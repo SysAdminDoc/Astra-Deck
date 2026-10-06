@@ -237,18 +237,19 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P1 — Keyword filters never see a title on lockup cards
-  Why: `_extractTitle` reads `#video-title, .title`, and the lockups on Home, Subscriptions,
-  channel pages and the watch sidebar carry neither, so a title keyword (or regex) hides nothing
-  there. A live run on 2026-10-06 read an empty title on all 50 channel and sidebar cards; only
-  search cards (`ytd-video-renderer`) still have `#video-title`.
-  Evidence: `extension/features/video-hider/index.js` `_extractTitle`; the lockup title is
-  `a.ytLockupMetadataViewModelTitle` inside `h3.ytLockupMetadataViewModelHeadingReset`
-  (`tests/fixtures/feed-card-layouts-2026-10.html`).
-  Acceptance: WHEN a title keyword is set, THEN a lockup card whose title holds it SHALL hide on
-  every surface in the 2026-10 fixture, and the title SHALL be the visible text, not the
-  aria-label with the duration appended.
-  Complexity: S
+- [ ] P2 — Channel blocks and the allowlist can't identify watch-sidebar cards
+  Why: `_extractChannelInfos` builds identities from channel links, and the 2026-10 sidebar lockups
+  have none: the byline is a plain span and the avatar carries no href. A live run on 2026-10-06
+  identified 0 of 20 sidebar cards (search cards 20 of 20), so a blocked channel still shows up
+  under every video, and allowlist mode can't judge those cards (it fails open). Channel-page grids
+  have no byline either, but there the page itself names the channel.
+  Evidence: `extension/features/video-hider/index.js` `_extractChannelInfos`; the sidebar card in
+  `tests/fixtures/feed-card-layouts-2026-10.html`.
+  Acceptance: WHEN a blocked channel's video appears in the watch sidebar, THEN it SHALL hide,
+  using an identity that can't collide between two channels with the same display name (a
+  video-to-channel cache filled from surfaces that do carry links, or a name match limited to
+  names the user blocked from that surface).
+  Complexity: M
 
 - [ ] P2 — Hide Mixes reads plain music videos in the watch sidebar as Mixes
   Why: on a music video's watch page YouTube links every sidebar recommendation through

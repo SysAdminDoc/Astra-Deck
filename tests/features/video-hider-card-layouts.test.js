@@ -37,6 +37,8 @@ function makeElement(tag, attrs, parent) {
         parent,
         children: [],
         dataset: {},
+        get href() { return attrs.href; },
+        get className() { return attrs.class || ''; },
         get ancestors() {
             const chain = [];
             for (let node = this.parent; node && node.tag !== '#root'; node = node.parent) chain.unshift(node);
@@ -200,6 +202,27 @@ test('upload ages read from abbreviated rows and their aria-labels', () => {
     assert.ok(sidebar >= 17 * 365 && sidebar <= 17 * 366 + 1, `17 years ago read as ${sidebar} days`);
     const old = ageDays(cards.oldLockup());
     assert.ok(old >= 300 && old <= 310, `10 months ago read as ${old} days`);
+});
+
+test('lockup titles read as their visible text', () => {
+    const hider = feature();
+    assert.equal(hider._extractTitle(cards.channelLockup()), "we're trying something new...");
+    assert.equal(hider._extractTitle(cards.sidebarLockup()), 'daryl hall & john oates - maneater (official video)');
+    assert.equal(hider._extractTitle(cards.oldLockup()), 'why the dating crisis is just natural selection');
+    assert.match(hider._extractTitle(cards.searchVideo()), /^cozy autumn music/);
+});
+
+test('title keywords hide lockup cards on every surface', () => {
+    const hider = feature({ hideVideosKeywordFilter: 'something new, maneater, cozy autumn, dating crisis' });
+    for (const [label, make] of Object.entries(cards)) {
+        if (label === 'searchLive' || label === 'oldSearch') continue;
+        const card = make();
+        assert.equal(hider._shouldHide(card), true, `${label} must hide on a title keyword`);
+        assert.equal(card.dataset.ytkitFilterReason, 'keyword', label);
+    }
+    const unrelated = feature({ hideVideosKeywordFilter: 'minutes' });
+    assert.equal(unrelated._shouldHide(cards.channelLockup()), false,
+        'the duration in the title aria-label is not part of the title');
 });
 
 test('the shared parsers accept the 2026-09 spellings', () => {
