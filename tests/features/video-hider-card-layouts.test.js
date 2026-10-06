@@ -286,8 +286,15 @@ test('Subscriptions hides live and streamed lockups by their badge and date row'
     const streamedChannel = withClassList(parseCard(CURRENT['lockup: watch sidebar']
         .replace('>Daryl Hall &amp; John Oates<', '>Streamed Gaming<')));
     assert.ok(capsTitle.textContent.includes('LIVE REACTION'), 'fixture title really was replaced');
+    // Older ytd-video-renderer cards: their #meta holds the title and channel too.
+    const oldChannel = parseCard(CURRENT['search: video']).querySelector('ytd-channel-name').textContent.trim();
+    const oldTitled = withClassList(parseCard(CURRENT['search: video'].replace(/cozy autumn music/g, 'Streamed highlights: cozy autumn music')));
+    const oldChannelNamed = withClassList(parseCard(CURRENT['search: video'].split(oldChannel).join('Streamed Gaming')));
+    const oldStreamed = withClassList(parseCard(CURRENT['search: video'].replace(/(<div id="metadata-line"[^>]*>)/, '$1<span>Streamed 2 years ago</span>')));
+    assert.ok(oldTitled.textContent.includes('Streamed highlights') && oldChannelNamed.textContent.includes('Streamed Gaming'));
+    assert.match(oldStreamed.querySelector('#metadata-line').textContent, /Streamed 2 years ago/, 'fixture date line really was replaced');
 
-    const all = [liveNow, streamed, plain, capsTitle, streamedChannel];
+    const all = [liveNow, streamed, plain, capsTitle, streamedChannel, oldTitled, oldChannelNamed, oldStreamed];
     const originalDocument = globalThis.document;
     globalThis.document = { querySelectorAll: () => all };
     try {
@@ -305,6 +312,9 @@ test('Subscriptions hides live and streamed lockups by their badge and date row'
     assert.equal(hidden(plain), false);
     assert.equal(hidden(capsTitle), false, 'an all-caps LIVE in the title is not a live badge');
     assert.equal(hidden(streamedChannel), false, 'the channel row is not the date row');
+    assert.equal(hidden(oldTitled), false, 'an older card\'s title is not its date line');
+    assert.equal(hidden(oldChannelNamed), false, 'nor is its channel name');
+    assert.equal(hidden(oldStreamed), true, 'an older card that was streamed still hides');
 
     assert.equal(createHideVideosFromHomeFeature({ appState: { settings: {} } })._extractVideoMetadata(liveNow).isLive, true);
 });
@@ -412,6 +422,20 @@ test('feature health holds its report while a card that needs no input goes by',
     hider._matchesMetadataFilters(blank());
     assert.equal(calls.includes('initialized'), false, 'a Short has no running time, which says nothing about the page');
     assert.equal(calls.at(-1), 'degraded');
+});
+
+test('feature health does not call a page of live streams unreadable', () => {
+    // A channel's Live tab: every card counts watchers, not views, and has no
+    // age. That is how live cards look, not a broken read.
+    const calls = [];
+    const hider = feature(
+        { hideVideosLowViewFilter: true, hideVideosLowViewThreshold: 1000, hideVideosLowSignalFilter: true },
+        { setFeatureHealth: (id, patch) => calls.push(patch.status), getCurrentPath: () => '/@channel/streams' }
+    );
+    const live = () => parseCard(CURRENT['lockup: channel live tab, live now']);
+    assert.equal(hider._extractVideoMetadata(live()).isLive, true);
+    for (let i = 0; i < 15; i += 1) hider._matchesMetadataFilters(live());
+    assert.deepEqual(calls, []);
 });
 
 test('feature health drops an input whose filter was switched off while another stays on', () => {

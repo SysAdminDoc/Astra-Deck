@@ -1865,10 +1865,18 @@
                     }
                     return;
                 }
-                // Live, upcoming, Shorts, playlists and Mixes have no running time.
-                const durationExempt = metadata.isLive || metadata.isUpcoming || metadata.isShort || metadata.isPlaylist || metadata.isMix;
+                // A card that never carries an input is no evidence either way.
+                // Live, upcoming, Shorts, playlists and Mixes have no running
+                // time; live and upcoming cards count watchers, not views;
+                // playlists and Mixes print no views or age; Shorts often no age.
+                const noRuntime = metadata.isLive || metadata.isUpcoming || metadata.isShort || metadata.isPlaylist || metadata.isMix;
+                const exempt = {
+                    durations: noRuntime,
+                    views: metadata.isLive || metadata.isUpcoming || metadata.isPlaylist || metadata.isMix,
+                    ages: noRuntime
+                };
                 const observed = needed
-                    .filter(input => input !== 'durations' || !durationExempt)
+                    .filter(input => !exempt[input])
                     .map(input => [input, input === 'views' ? metadata.views !== null
                         : input === 'ages' ? metadata.ageDays !== null
                             : this._extractDuration(element) > 0]);

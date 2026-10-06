@@ -7,6 +7,21 @@
     // settings descriptor and injects monolith-scoped helpers through
     // createSubscriptionGroupsFeature(deps).
 
+    // An older card's views and date line. A selector list returns the first
+    // match in document order, so asking for '#metadata-line, #meta' got #meta,
+    // which also holds the title and the channel: a video titled "Streamed
+    // highlights" or from "Streamed Gaming" read as a past live stream.
+    function oldCardMetadataText(card) {
+        const line = card.querySelector('#metadata-line');
+        if (line) return line.textContent || '';
+        const block = card.querySelector('ytd-video-meta-block, #meta');
+        let text = block?.textContent || '';
+        for (const cut of block?.querySelectorAll('#video-title, #title-wrapper, ytd-channel-name') || []) {
+            text = text.replace(cut.textContent || '', ' ');
+        }
+        return text;
+    }
+
     function createSubscriptionGroupsFeature(deps = {}) {
         const {
             PageTypes = { SUBSCRIPTIONS: 'subscriptions' },
@@ -670,7 +685,7 @@
                         ? lockupRows.slice(bylineFirst ? 1 : 0)
                             .map(row => `${row.textContent} ${Array.from(row.querySelectorAll('[aria-label]'), node => node.getAttribute('aria-label')).join(' ')}`)
                             .join(' ')
-                        : card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || '';
+                        : oldCardMetadataText(card);
                     const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(metadataText);
                     if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
                     else card.classList.remove('ytkit-sub-hidden-by-type');

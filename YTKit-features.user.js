@@ -9808,9 +9808,14 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					}
 					return;
 				}
-				const durationExempt = metadata.isLive || metadata.isUpcoming || metadata.isShort || metadata.isPlaylist || metadata.isMix;
+				const noRuntime = metadata.isLive || metadata.isUpcoming || metadata.isShort || metadata.isPlaylist || metadata.isMix;
+				const exempt = {
+					durations: noRuntime,
+					views: metadata.isLive || metadata.isUpcoming || metadata.isPlaylist || metadata.isMix,
+					ages: noRuntime
+				};
 				const observed = needed
-					.filter(input => input !== 'durations' || !durationExempt)
+					.filter(input => !exempt[input])
 					.map(input => [input, input === 'views' ? metadata.views !== null
 						: input === 'ages' ? metadata.ageDays !== null
 							: this._extractDuration(element) > 0]);
@@ -12412,6 +12417,16 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 'use strict';
 (() => {
 	'use strict';
+	function oldCardMetadataText(card) {
+		const line = card.querySelector('#metadata-line');
+		if (line) return line.textContent || '';
+		const block = card.querySelector('ytd-video-meta-block, #meta');
+		let text = block?.textContent || '';
+		for (const cut of block?.querySelectorAll('#video-title, #title-wrapper, ytd-channel-name') || []) {
+			text = text.replace(cut.textContent || '', ' ');
+		}
+		return text;
+	}
 	function createSubscriptionGroupsFeature(deps = {}) {
 		const {
 			PageTypes = { SUBSCRIPTIONS: 'subscriptions' },
@@ -12906,7 +12921,7 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 						? lockupRows.slice(bylineFirst ? 1 : 0)
 							.map(row => `${row.textContent} ${Array.from(row.querySelectorAll('[aria-label]'), node => node.getAttribute('aria-label')).join(' ')}`)
 							.join(' ')
-						: card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || '';
+						: oldCardMetadataText(card);
 					const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(metadataText);
 					if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
 					else card.classList.remove('ytkit-sub-hidden-by-type');

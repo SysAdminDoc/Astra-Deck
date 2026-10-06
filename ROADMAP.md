@@ -67,6 +67,17 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   that card focused, and SHALL report false when no card exists.
   Complexity: M
 
+- [ ] P3 — Tell an upcoming premiere lockup linked into a radio from a Mix
+  Why: Hide Mixes and Watch Feed treat a card with no running time and a radio link as a Mix
+  unless it carries a live or upcoming marker. The upcoming checks look for
+  `[overlay-style="UPCOMING"]`, `[data-upcoming]` and `[is-upcoming]`, which 2026-09 lockup cards
+  don't have, so a premiere in the music sidebar still reads as a Mix (fourth verification pass).
+  Where: `extension/features/video-hider/index.js` `radioCandidate` (~1798),
+  `extension/ytkit.js` Watch Feed's copy (~23551).
+  Acceptance: a fixture trimmed from a live capture of an upcoming lockup in a watch sidebar,
+  and a test that it is not a Mix and keeps its Watch Feed button.
+  Complexity: S
+
 - [ ] P3 — Selector asset hardening
   Why: 2026-09-28 audit, confirmed. The stored `ytkit-selector-asset` is never re-verified and
   outlives upgrades (the disable feed got a `-v2` key bump for this; the asset didn't). Any old
