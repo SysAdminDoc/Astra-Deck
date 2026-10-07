@@ -502,3 +502,128 @@ test('subscription sort reads the age off the lockup aria-label', () => {
     assert.equal(extractLoadedAgeMs(cards.channelLockup(), now), 6 * DAY_MS);
     assert.equal(extractLoadedAgeMs(cards.oldLockup(), now), 10 * 2_629_746_000);
 });
+
+// Watch-sidebar lockups name their channel only in their own view model, which
+// ytkit-main.js reads and writes on the card. A live run identified 0 of 20
+// sidebar cards, so a blocked channel showed under every video. These use the
+// real tag format and the real record rules from ytkit.js.
+const { describeLockupChannels, parseLockupChannels } = require('../../extension/core/feed-prefilter.js');
+const { loadDeclarations } = require('../helpers/monolith');
+
+const channelRules = loadDeclarations([
+    'isPlainObject', 'YOUTUBE_CHANNEL_ID_PATTERN', 'YOUTUBE_CHANNEL_HANDLE_PATTERN',
+    'normalizeChannelUrlCandidate', 'decodeChannelPathSegment', 'getChannelIdentityFromValue',
+    'normalizeBlockedChannelRecord', 'getBlockedChannelIdentityKeys'
+], { URL });
+
+// Maneater's channel, as the live sidebar data named it.
+const SIDEBAR_VIDEO = 'yRYFKcMa_Ek';
+const SIDEBAR_CHANNEL = 'UCSRoN5Sxu5M-jc0JXt3E-xg';
+
+/** A lockup view model in the shape the live watch sidebar used, 2026-10-06. */
+function lockupViewModel(contentId, channels, contentType = 'LOCKUP_CONTENT_TYPE_VIDEO') {
+    const tap = ({ id, handle }) => ({
+        rendererContext: { commandContext: { onTap: { innertubeCommand: {
+            commandMetadata: { webCommandMetadata: { url: handle ? `/${handle}` : `/channel/${id}` } },
+            browseEndpoint: handle ? { browseId: id, canonicalBaseUrl: `/${handle}` } : { browseId: id }
+        } } } }
+    });
+    const image = channels.length === 1
+        ? { decoratedAvatarViewModel: tap(channels[0]) }
+        : { avatarStackViewModel: { rendererContext: { commandContext: { onTap: { innertubeCommand: { showDialogCommand: {
+            panelLoadingStrategy: { inlineContent: { dialogViewModel: { customContent: { listViewModel: {
+                listItems: channels.map(channel => ({ listItemViewModel: tap(channel) }))
+            } } } } }
+        } } } } } } };
+    return { contentId, contentType, metadata: { lockupMetadataViewModel: { image } } };
+}
+
+/** The real sidebar card from the fixture, tagged the way ytkit-main.js tags it. */
+function sidebarCard(tag) {
+    const html = CURRENT['lockup: watch sidebar'];
+    return parseCard(tag ? html.replace('<yt-lockup-view-model ', `<yt-lockup-view-model data-ytkit-lockup-channels="${tag}" `) : html);
+}
+
+function channelHider({ blocked = [], allowed = [], settings = {} } = {}) {
+    const storage = new Map([['ytkit-blocked-channels', blocked], ['ytkit-allowed-channels', allowed]]);
+    const sanitize = list => list.map(channelRules.normalizeBlockedChannelRecord).filter(Boolean);
+    const hider = feature(settings, {
+        storageRead: (key, fallback) => (storage.has(key) ? storage.get(key) : fallback),
+        storageWrite: (key, value) => storage.set(key, value),
+        normalizeBlockedChannelRecord: channelRules.normalizeBlockedChannelRecord,
+        getBlockedChannelIdentityKeys: channelRules.getBlockedChannelIdentityKeys,
+        sanitizeImportedBlockedChannels: sanitize,
+        sanitizeImportedAllowedChannels: sanitize,
+        parseLockupChannels
+    });
+    return { hider, storage };
+}
+
+test('a sidebar lockup tag names each channel its data does, and nothing for a Mix', () => {
+    const one = { id: SIDEBAR_CHANNEL };
+    const handled = { id: 'UCX6OQ3DkcsbYNE6H8uQQuVA', handle: '@MrBeast' };
+    assert.equal(describeLockupChannels(lockupViewModel(SIDEBAR_VIDEO, [one])), `${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`);
+    assert.equal(describeLockupChannels(lockupViewModel(SIDEBAR_VIDEO, [handled])), `${SIDEBAR_VIDEO};UCX6OQ3DkcsbYNE6H8uQQuVA@MrBeast`);
+    assert.equal(describeLockupChannels(lockupViewModel(SIDEBAR_VIDEO, [one, handled])),
+        `${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL};UCX6OQ3DkcsbYNE6H8uQQuVA@MrBeast`, 'a collab names every channel');
+    assert.equal(describeLockupChannels(lockupViewModel('RDdQw4w9WgXcQ', [one, handled], 'LOCKUP_CONTENT_TYPE_PLAYLIST')), '',
+        'a Mix is not one channel\'s video');
+    assert.equal(describeLockupChannels(null), '');
+
+    assert.deepEqual(parseLockupChannels(`${SIDEBAR_VIDEO};UCX6OQ3DkcsbYNE6H8uQQuVA@MrBeast;junk;${SIDEBAR_CHANNEL}`), {
+        videoId: SIDEBAR_VIDEO,
+        channels: [{ channelId: 'UCX6OQ3DkcsbYNE6H8uQQuVA', handle: '@MrBeast' }, { channelId: SIDEBAR_CHANNEL, handle: '' }]
+    });
+    for (const bad of ['', `short;${SIDEBAR_CHANNEL}`, SIDEBAR_VIDEO, `${SIDEBAR_VIDEO};@MrBeast`]) {
+        assert.equal(parseLockupChannels(bad), null, bad);
+    }
+});
+
+test('a blocked channel hides in the watch sidebar by the id its card data names', () => {
+    const { hider } = channelHider({ blocked: [{ channelId: SIDEBAR_CHANNEL, name: 'Daryl Hall & John Oates' }] });
+    assert.equal(hider._shouldHide(sidebarCard('')), false, 'untagged, the card names no channel at all');
+    const card = sidebarCard(`${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`);
+    assert.equal(hider._shouldHide(card), true);
+    assert.equal(card.dataset.ytkitFilterReason, 'blockedChannel');
+    assert.equal(card.dataset.ytkitFilterChannel, 'Daryl Hall & John Oates', 'the byline names the hide');
+    assert.equal(hider._shouldHide(sidebarCard(`dQw4w9WgXcQ;${SIDEBAR_CHANNEL}`)), false,
+        'a tag left from another video on a reused card says nothing');
+
+    const namesake = channelHider({ blocked: [{ channelId: 'UCuAXFkgsw1L7xaCfnd5JJOw', name: 'Daryl Hall & John Oates' }] });
+    assert.equal(namesake.hider._shouldHide(sidebarCard(`${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`)), false,
+        'another channel with the same name is not this one');
+});
+
+test('a channel blocked by its handle learns its id from a card that shows both', () => {
+    // Feed cards link the handle, so that's what a block from one saved. The
+    // sidebar names only the id.
+    const { hider, storage } = channelHider({ blocked: [{ id: '@hallandoates', handle: '@hallandoates', name: 'Daryl Hall & John Oates' }] });
+    assert.equal(hider._shouldHide(sidebarCard(`${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`)), false, 'nothing pairs them yet');
+
+    const feedCard = parseCard(`<yt-lockup-view-model data-ytkit-lockup-channels="${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}">`
+        + `<a href="/watch?v=${SIDEBAR_VIDEO}">Maneater</a><a href="/@hallandoates">Daryl Hall &amp; John Oates</a></yt-lockup-view-model>`);
+    assert.equal(hider._shouldHide(feedCard), true, 'the feed card still hides by its handle');
+    const [saved] = storage.get('ytkit-blocked-channels');
+    assert.equal(saved.channelId, SIDEBAR_CHANNEL);
+    assert.equal(saved.handle, '@hallandoates', 'the handle stays, search cards show only that');
+
+    assert.equal(hider._shouldHide(sidebarCard(`${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`)), true);
+});
+
+test('the allowlist judges a sidebar card by its channel instead of letting it through', () => {
+    const settings = { hideVideosChannelAllowlist: true };
+    const { hider } = channelHider({ allowed: [{ channelId: SIDEBAR_CHANNEL, name: 'Daryl Hall & John Oates' }], settings });
+    assert.equal(hider._shouldHide(sidebarCard(`${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`)), false);
+    const other = channelHider({ allowed: [{ channelId: 'UCuAXFkgsw1L7xaCfnd5JJOw', name: 'Rick Astley' }], settings });
+    const card = sidebarCard(`${SIDEBAR_VIDEO};${SIDEBAR_CHANNEL}`);
+    assert.equal(other.hider._shouldHide(card), true);
+    assert.equal(card.dataset.ytkitFilterReason, 'channelNotAllowed');
+});
+
+test('a saved channel keeps both its id and its handle', () => {
+    const record = channelRules.normalizeBlockedChannelRecord({ id: '@hallandoates', handle: '@hallandoates', channelId: SIDEBAR_CHANNEL, name: 'x' });
+    assert.equal(record.channelId, SIDEBAR_CHANNEL);
+    assert.equal(record.handle, '@hallandoates');
+    const keys = channelRules.getBlockedChannelIdentityKeys(record);
+    assert.ok(keys.includes(`channel:${SIDEBAR_CHANNEL}`) && keys.includes('handle:@hallandoates'), keys.join(' '));
+});

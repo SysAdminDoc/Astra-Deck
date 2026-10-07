@@ -351,6 +351,76 @@
     })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature: lockup channel tags (data-ytkit-lockup-channels)
+    // ──────────────────────────────────────────────────────────────────
+    // Watch-sidebar lockups carry no channel link, so the video hider could
+    // not tell whose video one was and a blocked channel showed under every
+    // video. The card's own view model names the channel; only this world
+    // can read it. Each video lockup gets "videoId;UC…@handle" written on it
+    // (core/feed-prefilter.js describes the shape), and the hider ignores a
+    // tag whose video is not the card's. A page script can write the same
+    // attribute, which can only hide or show a card it could remove anyway.
+    //
+    // On only while the hider has channel rules to apply.
+    (function installLockupChannelTags() {
+        var describe = globalThis.YTKitCore && globalThis.YTKitCore.describeLockupChannels;
+        if (typeof describe !== 'function' || typeof document === 'undefined') return;
+
+        var ENABLE_ATTR = 'data-ytkit-lockup-channels-on';
+        var TAG_ATTR = 'data-ytkit-lockup-channels';
+        var observer = null;
+        // What was last written on each card, so an unchanged one isn't
+        // rewritten. Every write wakes the hider's re-check of that card.
+        var written = new WeakMap();
+
+        function tag(lockup) {
+            var value = '';
+            try {
+                var data = lockup.componentProps && lockup.componentProps.data;
+                value = describe(typeof data === 'function' ? data() : null);
+            } catch (error) {
+                return;
+            }
+            if (!value || written.get(lockup) === value) return;
+            written.set(lockup, value);
+            lockup.setAttribute(TAG_ATTR, value);
+        }
+
+        // A card YouTube reuses for another video re-renders its insides, so
+        // an element added inside a lockup re-tags the lockup around it.
+        function scan(node, seen) {
+            if (!node || node.nodeType !== 1) return;
+            var host = node.closest ? node.closest('yt-lockup-view-model') : null;
+            if (host && !seen.has(host)) { seen.add(host); tag(host); }
+            var inner = node.querySelectorAll ? node.querySelectorAll('yt-lockup-view-model') : [];
+            for (var i = 0; i < inner.length; i++) {
+                if (!seen.has(inner[i])) { seen.add(inner[i]); tag(inner[i]); }
+            }
+        }
+
+        function sync() {
+            var on = _bridgeGet(ENABLE_ATTR) === 'on';
+            if (on && !observer) {
+                observer = new _NATIVE.MutationObserver(function(records) {
+                    var seen = new Set();
+                    for (var i = 0; i < records.length; i++) {
+                        var added = records[i].addedNodes;
+                        for (var j = 0; j < added.length; j++) scan(added[j], seen);
+                    }
+                });
+                observer.observe(document.documentElement, { childList: true, subtree: true });
+                scan(document.documentElement, new Set());
+            } else if (!on && observer) {
+                observer.disconnect();
+                observer = null;
+            }
+        }
+
+        _obsRegister([ENABLE_ATTR], sync);
+        sync();
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature: Force DVR (data-ytkit-force-dvr)
     // ──────────────────────────────────────────────────────────────────
     // YouTube decides whether a live seekbar can rewind from the player

@@ -226,19 +226,15 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P2 — Channel blocks and the allowlist can't identify watch-sidebar cards
-  Why: `_extractChannelInfos` builds identities from channel links, and the 2026-10 sidebar lockups
-  have none: the byline is a plain span and the avatar carries no href. A live run on 2026-10-06
-  identified 0 of 20 sidebar cards (search cards 20 of 20), so a blocked channel still shows up
-  under every video, and allowlist mode can't judge those cards (it fails open). Channel-page grids
-  have no byline either, but there the page itself names the channel.
-  Evidence: `extension/features/video-hider/index.js` `_extractChannelInfos`; the sidebar card in
-  `tests/fixtures/feed-card-layouts-2026-10.html`.
-  Acceptance: WHEN a blocked channel's video appears in the watch sidebar, THEN it SHALL hide,
-  using an identity that can't collide between two channels with the same display name (a
-  video-to-channel cache filled from surfaces that do carry links, or a name match limited to
-  names the user blocked from that surface).
-  Complexity: M
+- [ ] P3 — Userscript: blocked channels still show in the watch sidebar
+  Why: the extension reads a sidebar card's channel from YouTube's card data in its MAIN-world
+  script (`ytkit-main.js`, lockup channel tags). The userscript build has no MAIN-world bridge, so
+  its sidebar cards still name no channel and a blocked channel's videos show there.
+  Where: `sync-userscript.js`, `extension/features/video-hider/index.js` (`_readLockupChannels`),
+  `extension/core/feed-prefilter.js` (`describeLockupChannels`).
+  Acceptance: WHEN the userscript runs and a blocked channel's video is in the watch sidebar, THEN
+  it SHALL hide.
+  Complexity: S
 
 - [ ] P2 — Hide thumbnail badges ("New", "4K")
   Why: YouTube started stamping "New" on thumbnails around 2026-09-18, and three other projects'

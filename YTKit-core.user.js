@@ -16866,20 +16866,51 @@ __astraDeckRegistry["core/feed-prefilter.js"] = function (globalThis, self, wind
 		report.applied = report.removed > 0;
 		return report;
 	}
+	const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+	const LOCKUP_CHANNEL = /^(UC[A-Za-z0-9_-]{22})(@[A-Za-z0-9._-]{2,100})?$/;
+	const MAX_LOCKUP_CHANNELS = 8;
+	function describeLockupChannels(viewModel) {
+		if (!viewModel || typeof viewModel !== 'object') return '';
+		if (viewModel.contentType !== 'LOCKUP_CONTENT_TYPE_VIDEO' || !VIDEO_ID.test(viewModel.contentId || '')) return '';
+		const channels = [];
+		(function collect(node, depth) {
+			if (!node || typeof node !== 'object' || depth > MAX_DEPTH || channels.length >= MAX_LOCKUP_CHANNELS) return;
+			const browse = node.browseEndpoint;
+			const handle = /^\/(@[A-Za-z0-9._-]{2,100})$/.exec(String(browse?.canonicalBaseUrl || ''));
+			const entry = `${browse?.browseId}${handle ? handle[1] : ''}`;
+			if (LOCKUP_CHANNEL.test(entry) && !channels.some((known) => known.startsWith(browse.browseId))) channels.push(entry);
+			for (const value of Object.values(node)) collect(value, depth + 1);
+		})(viewModel.metadata?.lockupMetadataViewModel?.image, 0);
+		return channels.length ? `${viewModel.contentId};${channels.join(';')}` : '';
+	}
+	function parseLockupChannels(value) {
+		const [videoId, ...parts] = String(value || '').split(';');
+		if (!VIDEO_ID.test(videoId)) return null;
+		const channels = [];
+		for (const part of parts.slice(0, MAX_LOCKUP_CHANNELS)) {
+			const match = LOCKUP_CHANNEL.exec(part);
+			if (match) channels.push({ channelId: match[1], handle: match[2] || '' });
+		}
+		return channels.length ? { videoId, channels } : null;
+	}
 	Object.assign(core, {
 		FEED_PREFILTER_MAX_REMOVED_RATIO: MAX_REMOVED_RATIO,
 		buildChannelBlocklist: buildBlocklist,
 		collectRendererChannelIds,
+		describeLockupChannels,
 		filterBrowseResponse,
-		normalizeBlockedChannelId: normalizeChannelId
+		normalizeBlockedChannelId: normalizeChannelId,
+		parseLockupChannels
 	});
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = {
 			FEED_PREFILTER_MAX_REMOVED_RATIO: MAX_REMOVED_RATIO,
 			buildChannelBlocklist: buildBlocklist,
 			collectRendererChannelIds,
+			describeLockupChannels,
 			filterBrowseResponse,
-			normalizeBlockedChannelId: normalizeChannelId
+			normalizeBlockedChannelId: normalizeChannelId,
+			parseLockupChannels
 		};
 	}
 })();
@@ -23547,20 +23578,51 @@ void 0;
 		report.applied = report.removed > 0;
 		return report;
 	}
+	const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+	const LOCKUP_CHANNEL = /^(UC[A-Za-z0-9_-]{22})(@[A-Za-z0-9._-]{2,100})?$/;
+	const MAX_LOCKUP_CHANNELS = 8;
+	function describeLockupChannels(viewModel) {
+		if (!viewModel || typeof viewModel !== 'object') return '';
+		if (viewModel.contentType !== 'LOCKUP_CONTENT_TYPE_VIDEO' || !VIDEO_ID.test(viewModel.contentId || '')) return '';
+		const channels = [];
+		(function collect(node, depth) {
+			if (!node || typeof node !== 'object' || depth > MAX_DEPTH || channels.length >= MAX_LOCKUP_CHANNELS) return;
+			const browse = node.browseEndpoint;
+			const handle = /^\/(@[A-Za-z0-9._-]{2,100})$/.exec(String(browse?.canonicalBaseUrl || ''));
+			const entry = `${browse?.browseId}${handle ? handle[1] : ''}`;
+			if (LOCKUP_CHANNEL.test(entry) && !channels.some((known) => known.startsWith(browse.browseId))) channels.push(entry);
+			for (const value of Object.values(node)) collect(value, depth + 1);
+		})(viewModel.metadata?.lockupMetadataViewModel?.image, 0);
+		return channels.length ? `${viewModel.contentId};${channels.join(';')}` : '';
+	}
+	function parseLockupChannels(value) {
+		const [videoId, ...parts] = String(value || '').split(';');
+		if (!VIDEO_ID.test(videoId)) return null;
+		const channels = [];
+		for (const part of parts.slice(0, MAX_LOCKUP_CHANNELS)) {
+			const match = LOCKUP_CHANNEL.exec(part);
+			if (match) channels.push({ channelId: match[1], handle: match[2] || '' });
+		}
+		return channels.length ? { videoId, channels } : null;
+	}
 	Object.assign(core, {
 		FEED_PREFILTER_MAX_REMOVED_RATIO: MAX_REMOVED_RATIO,
 		buildChannelBlocklist: buildBlocklist,
 		collectRendererChannelIds,
+		describeLockupChannels,
 		filterBrowseResponse,
-		normalizeBlockedChannelId: normalizeChannelId
+		normalizeBlockedChannelId: normalizeChannelId,
+		parseLockupChannels
 	});
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = {
 			FEED_PREFILTER_MAX_REMOVED_RATIO: MAX_REMOVED_RATIO,
 			buildChannelBlocklist: buildBlocklist,
 			collectRendererChannelIds,
+			describeLockupChannels,
 			filterBrowseResponse,
-			normalizeBlockedChannelId: normalizeChannelId
+			normalizeBlockedChannelId: normalizeChannelId,
+			parseLockupChannels
 		};
 	}
 })();
@@ -23787,6 +23849,54 @@ void 0;
 			writeStatus();
 		}
 		_obsRegister([ENABLE_ATTR, IDS_ATTR], sync);
+		sync();
+	})();
+	(function installLockupChannelTags() {
+		var describe = globalThis.YTKitCore && globalThis.YTKitCore.describeLockupChannels;
+		if (typeof describe !== 'function' || typeof document === 'undefined') return;
+		var ENABLE_ATTR = 'data-ytkit-lockup-channels-on';
+		var TAG_ATTR = 'data-ytkit-lockup-channels';
+		var observer = null;
+		var written = new WeakMap();
+		function tag(lockup) {
+			var value = '';
+			try {
+				var data = lockup.componentProps && lockup.componentProps.data;
+				value = describe(typeof data === 'function' ? data() : null);
+			} catch (error) {
+				return;
+			}
+			if (!value || written.get(lockup) === value) return;
+			written.set(lockup, value);
+			lockup.setAttribute(TAG_ATTR, value);
+		}
+		function scan(node, seen) {
+			if (!node || node.nodeType !== 1) return;
+			var host = node.closest ? node.closest('yt-lockup-view-model') : null;
+			if (host && !seen.has(host)) { seen.add(host); tag(host); }
+			var inner = node.querySelectorAll ? node.querySelectorAll('yt-lockup-view-model') : [];
+			for (var i = 0; i < inner.length; i++) {
+				if (!seen.has(inner[i])) { seen.add(inner[i]); tag(inner[i]); }
+			}
+		}
+		function sync() {
+			var on = _bridgeGet(ENABLE_ATTR) === 'on';
+			if (on && !observer) {
+				observer = new _NATIVE.MutationObserver(function(records) {
+					var seen = new Set();
+					for (var i = 0; i < records.length; i++) {
+						var added = records[i].addedNodes;
+						for (var j = 0; j < added.length; j++) scan(added[j], seen);
+					}
+				});
+				observer.observe(document.documentElement, { childList: true, subtree: true });
+				scan(document.documentElement, new Set());
+			} else if (!on && observer) {
+				observer.disconnect();
+				observer = null;
+			}
+		}
+		_obsRegister([ENABLE_ATTR], sync);
 		sync();
 	})();
 	(function() {

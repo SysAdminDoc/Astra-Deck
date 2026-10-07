@@ -1261,6 +1261,10 @@ const STORAGE_KEYS = Object.freeze({
 			|| getChannelIdentityFromValue(isPlainObject(entry) ? entry.url : '')
 			|| getChannelIdentityFromValue(isPlainObject(entry) ? entry.handle : '');
 		if (!identity?.primary) return null;
+		if (isPlainObject(entry)) {
+			identity.channelId = identity.channelId || getChannelIdentityFromValue(entry.channelId)?.channelId || '';
+			identity.handle = identity.handle || getChannelIdentityFromValue(entry.handle)?.handle || '';
+		}
 		const nameSource = isPlainObject(entry) && typeof entry.name === 'string'
 			? entry.name
 			: identity.primary;
@@ -8477,7 +8481,8 @@ const STORAGE_KEYS = Object.freeze({
 			filterListCodec: globalThis.YTKitCore?.persistedDomains,
 			t,
 			runBudgetedElementBatch,
-			injectStyle
+			injectStyle,
+			publishBridgeAttribute
 		}) || {
 			id: 'hideVideosFromHome',
 			name: t('feature_hideVideosFromHome_name', 'Video Hider'),

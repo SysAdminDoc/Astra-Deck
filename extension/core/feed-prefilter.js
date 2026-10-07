@@ -242,12 +242,50 @@
         return report;
     }
 
+    // A watch-sidebar lockup names its channel only in its own view model: the
+    // byline is a plain span and the avatar has no link. The MAIN world reads
+    // the model off the card (ytkit-main.js) and writes what this returns on
+    // it, "videoId;UC…@handle;UC…", for the video hider to read back. The
+    // channels are the avatar's tap targets, one or a collab's whole stack.
+    // A Mix or playlist is not one channel's video and gives ''.
+    const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+    const LOCKUP_CHANNEL = /^(UC[A-Za-z0-9_-]{22})(@[A-Za-z0-9._-]{2,100})?$/;
+    const MAX_LOCKUP_CHANNELS = 8;
+
+    function describeLockupChannels(viewModel) {
+        if (!viewModel || typeof viewModel !== 'object') return '';
+        if (viewModel.contentType !== 'LOCKUP_CONTENT_TYPE_VIDEO' || !VIDEO_ID.test(viewModel.contentId || '')) return '';
+        const channels = [];
+        (function collect(node, depth) {
+            if (!node || typeof node !== 'object' || depth > MAX_DEPTH || channels.length >= MAX_LOCKUP_CHANNELS) return;
+            const browse = node.browseEndpoint;
+            const handle = /^\/(@[A-Za-z0-9._-]{2,100})$/.exec(String(browse?.canonicalBaseUrl || ''));
+            const entry = `${browse?.browseId}${handle ? handle[1] : ''}`;
+            if (LOCKUP_CHANNEL.test(entry) && !channels.some((known) => known.startsWith(browse.browseId))) channels.push(entry);
+            for (const value of Object.values(node)) collect(value, depth + 1);
+        })(viewModel.metadata?.lockupMetadataViewModel?.image, 0);
+        return channels.length ? `${viewModel.contentId};${channels.join(';')}` : '';
+    }
+
+    function parseLockupChannels(value) {
+        const [videoId, ...parts] = String(value || '').split(';');
+        if (!VIDEO_ID.test(videoId)) return null;
+        const channels = [];
+        for (const part of parts.slice(0, MAX_LOCKUP_CHANNELS)) {
+            const match = LOCKUP_CHANNEL.exec(part);
+            if (match) channels.push({ channelId: match[1], handle: match[2] || '' });
+        }
+        return channels.length ? { videoId, channels } : null;
+    }
+
     Object.assign(core, {
         FEED_PREFILTER_MAX_REMOVED_RATIO: MAX_REMOVED_RATIO,
         buildChannelBlocklist: buildBlocklist,
         collectRendererChannelIds,
+        describeLockupChannels,
         filterBrowseResponse,
-        normalizeBlockedChannelId: normalizeChannelId
+        normalizeBlockedChannelId: normalizeChannelId,
+        parseLockupChannels
     });
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -255,8 +293,10 @@
             FEED_PREFILTER_MAX_REMOVED_RATIO: MAX_REMOVED_RATIO,
             buildChannelBlocklist: buildBlocklist,
             collectRendererChannelIds,
+            describeLockupChannels,
             filterBrowseResponse,
-            normalizeBlockedChannelId: normalizeChannelId
+            normalizeBlockedChannelId: normalizeChannelId,
+            parseLockupChannels
         };
     }
 })();

@@ -8,6 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Blocked channels hide in the watch page sidebar now. Those cards don't link their channel, so the blocklist couldn't tell whose video they were and showed them anyway. Astra reads the channel from YouTube's own card data instead, by channel ID, so two channels with the same name can't be mixed up. A channel you blocked from a feed card is matched there too once Astra has seen it on any card, and the allowlist judges sidebar cards the same way.
+
 - 22 features were missing from the settings panel entirely, with no switch and no search result: Return YouTube Dislike and dislikes on thumbnails, the monetization indicator, the local AI summary and transcript questions, transcript search and the research tools, Subscription Groups and its view controls, the accessibility options (reduced motion, forced colors, the screen reader announcer, low power mode), the Watch Later and playlist tools, the right-click menu, Open in alternative frontend, VLC/mpv handoff, and Bypass playlist mode. Their groups had no page in the panel. They now sit on Watch Page, Home / Subscriptions, Theme, Content and Playback. The toolbar popup's Subscription Groups links land on its card now too.
 
 - Hide Notification Bell and Hide End Screen Cards had no card in the settings panel either. The bell's group never got a page. End Screen Cards is drawn under Hide Video End Content, but it was filed on Watch Page while its parent sits on Video Player, so neither page drew it. The bell is on Home / Subscriptions now, and End Screen Cards shows under its parent.

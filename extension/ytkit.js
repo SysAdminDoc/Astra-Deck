@@ -1592,6 +1592,13 @@ const STORAGE_KEYS = Object.freeze({
             || getChannelIdentityFromValue(isPlainObject(entry) ? entry.url : '')
             || getChannelIdentityFromValue(isPlainObject(entry) ? entry.handle : '');
         if (!identity?.primary) return null;
+        // A channel known both ways keeps both: a card's link gives the
+        // handle, its data the channel id, and the watch sidebar shows only
+        // the id. Taking just the first lost the handle the feeds match on.
+        if (isPlainObject(entry)) {
+            identity.channelId = identity.channelId || getChannelIdentityFromValue(entry.channelId)?.channelId || '';
+            identity.handle = identity.handle || getChannelIdentityFromValue(entry.handle)?.handle || '';
+        }
         const nameSource = isPlainObject(entry) && typeof entry.name === 'string'
             ? entry.name
             : identity.primary;
@@ -14189,7 +14196,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             filterListCodec: globalThis.YTKitCore?.persistedDomains,
             t,
             runBudgetedElementBatch,
-            injectStyle
+            injectStyle,
+            publishBridgeAttribute
         }) || {
             // Descriptor only. The behaviour lives in
             // extension/features/video-hider/index.js.

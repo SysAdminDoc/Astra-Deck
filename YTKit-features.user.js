@@ -8329,6 +8329,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/,
 			normalizeBlockedChannelRecord = value => value,
 			getBlockedChannelIdentityKeys = value => (value ? [String(value.id || value.channelId || value.handle || value.url || value)] : []),
+			parseLockupChannels = globalThis.YTKitCore?.parseLockupChannels || (() => null),
+			publishBridgeAttribute = () => {},
 			isPlainObject = value => !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype,
 			createSVG = (globalThis.YTKitCore && globalThis.YTKitCore.createSVG) || createFallbackSvg,
 			showToast = () => {},
@@ -9627,7 +9629,66 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					dedupeKeys.forEach(key => seenKeys.add(key));
 					records.push({ ...record, name: channelName || record.name });
 				}
+				const tagged = this._readLockupChannels(element);
+				if (records.length === 1 && records[0].handle && tagged.length === 1) {
+					this._learnChannelId(records[0].handle, tagged[0].channelId);
+				}
+				const byline = tagged.length ? element.querySelector?.(LOCKUP_ROW_SELECTOR)?.textContent?.trim() || '' : '';
+				for (const channel of tagged) {
+					const record = normalizeBlockedChannelRecord({
+						id: channel.channelId,
+						channelId: channel.channelId,
+						handle: channel.handle,
+						name: (records.length === 1 ? records[0].name : '') || fallbackName || byline || channel.handle || channel.channelId,
+						source: 'lockup'
+					});
+					const keys = record ? this._getChannelIdentityKeys(record) : [];
+					if (!keys.length || keys.some(key => seenKeys.has(key))) continue;
+					keys.forEach(key => seenKeys.add(key));
+					records.push(record);
+				}
 				return records;
+			},
+			_readLockupChannels(element) {
+				const host = element?.matches?.('yt-lockup-view-model')
+					? element
+					: element?.querySelector?.('yt-lockup-view-model[data-ytkit-lockup-channels]');
+				const parsed = parseLockupChannels(host?.getAttribute?.('data-ytkit-lockup-channels'));
+				if (!parsed || parsed.videoId !== this._extractVideoId(element)) return [];
+				return parsed.channels;
+			},
+			_learnChannelId(handle, channelId) {
+				const handleKey = `handle:${String(handle).toLowerCase()}`;
+				const channelKey = `channel:${channelId}`;
+				this._learnedChannelPairs ||= new Set();
+				const lists = [
+					[() => this._getBlockedChannels(), () => this._channelKeyCache, next => this._setBlockedChannels(next)],
+					[() => this._getAllowedChannels(), () => this._allowedChannelKeyCache, next => this._setAllowedChannels(next)]
+				];
+				for (const [read, keys, save] of lists) {
+					const channels = read();
+					const known = keys();
+					if (!known?.has(handleKey) || known.has(channelKey) || this._learnedChannelPairs.has(handleKey + channelKey)) continue;
+					this._learnedChannelPairs.add(handleKey + channelKey);
+					let changed = false;
+					const next = channels.map((channel) => {
+						if (channel.channelId || !this._getChannelIdentityKeys(channel).includes(handleKey)) return channel;
+						changed = true;
+						return { ...channel, channelId };
+					});
+					if (changed) save(next);
+				}
+			},
+			_syncLockupChannelTags() {
+				const state = this._getBlockedChannelKeys().size > 0
+					|| (this._isChannelAllowlistMode() && this._getAllowedChannelKeys().size > 0) ? 'on' : 'off';
+				if (this._lockupTagState === state) return;
+				this._lockupTagState = state;
+				try {
+					publishBridgeAttribute('data-ytkit-lockup-channels-on', state);
+				} catch (error) {
+					DebugManager.log('VideoHider', `Lockup channel tags not published: ${error?.message || error}`);
+				}
 			},
 			_extractChannelInfo(element) {
 				return this._extractChannelInfos(element)[0] || null;
@@ -10416,6 +10477,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				this._clearBatchBuffer?.();
 				this._cancelBudgetedScans();
 				this._restoreRemovedVideoNodes();
+				this._syncLockupChannelTags();
 				document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
 				const videos = Array.from(document.querySelectorAll(this._VIDEO_SELECTORS));
 				const processOne = !this._isScopeEnabledForPath()
@@ -10959,6 +11021,11 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				};
 				this._observer = new MutationObserver(mutations => {
 					for (const m of mutations) {
+						if (m.type === 'attributes') {
+							const card = m.target.closest?.(selectors);
+							if (card) pendingMutationCards.push(card);
+							continue;
+						}
 						for (const node of m.addedNodes) {
 							if (node.nodeType !== 1) continue;
 							if (node.matches?.(selectors)) {
@@ -10977,7 +11044,12 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					scheduleMutationBatch();
 				});
 				const observeTarget = document.querySelector('ytd-app') || document.body;
-				this._observer.observe(observeTarget, { childList: true, subtree: true });
+				this._observer.observe(observeTarget, {
+					childList: true,
+					subtree: true,
+					attributes: true,
+					attributeFilter: ['data-ytkit-lockup-channels']
+				});
 				let wasOnSubsPage = window.location.pathname === '/feed/subscriptions';
 				const checkPages = () => {
 					const path = window.location.pathname;
@@ -11015,6 +11087,10 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			},
 			destroy() {
 				this._destroyed = true;
+				if (this._lockupTagState === 'on') {
+					this._lockupTagState = 'off';
+					publishBridgeAttribute('data-ytkit-lockup-channels-on', 'off');
+				}
 				if (this._filterListRefreshTimer) {
 					clearTimeoutFn(this._filterListRefreshTimer);
 					this._filterListRefreshTimer = null;
