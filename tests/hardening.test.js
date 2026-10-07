@@ -5051,7 +5051,21 @@ test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered h
     // `window.MutationObserver` before the bridge builds its observer, and
     // then it sees every attribute the bridge watches. The reference is taken
     // at document_start, before any page script exists.
-    const observerInstantiations = (ytkitMainSource.match(/new _NATIVE\.MutationObserver\(/g) || []).length;
+    //
+    // The watch-sidebar lockup tagger is the one other observer, and it
+    // watches no attributes: it needs childList over the whole subtree, which
+    // the shared attribute observer can't carry. Everything outside it still
+    // shares one observer.
+    const lockupStart = ytkitMainSource.indexOf('(function installLockupChannelTags() {');
+    const lockupEnd = ytkitMainSource.indexOf('\n    })();', lockupStart);
+    assert.ok(lockupStart !== -1 && lockupEnd !== -1, 'installLockupChannelTags must stay one IIFE');
+    const lockupBlock = ytkitMainSource.slice(lockupStart, lockupEnd);
+    const sharedSource = ytkitMainSource.slice(0, lockupStart) + ytkitMainSource.slice(lockupEnd);
+    assert.equal((lockupBlock.match(/new _NATIVE\.MutationObserver\(/g) || []).length, 1);
+    assert.match(lockupBlock, /\.observe\(document\.documentElement, \{ childList: true, subtree: true \}\)/);
+    assert.doesNotMatch(lockupBlock, /attributes:\s*true|attributeFilter/,
+        'the lockup observer must leave attribute watching to the shared observer');
+    const observerInstantiations = (sharedSource.match(/new _NATIVE\.MutationObserver\(/g) || []).length;
     assert.equal(observerInstantiations, 1,
         `ytkit-main.js should instantiate exactly one MutationObserver after consolidation; found ${observerInstantiations}`);
     assert.doesNotMatch(ytkitMainSource, /new MutationObserver\(/,
@@ -5812,10 +5826,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Block Comment Authors adds its toggle and the blocked-author list (488).
     // Action Notices adds the switch that quiets confirmation toasts (489).
     // Buffer / Preload is retired with its target slider (489 → 487).
+    // Hide Thumbnail Badges adds one toggle (488).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 487,
-        'SETTINGS_SCHEMA must cover all 487 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 488,
+        'SETTINGS_SCHEMA must cover all 488 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

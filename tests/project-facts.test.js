@@ -19,7 +19,8 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
     // Buffer / Preload retired its toggle and slider (489 → 487, 305 → 303 ids).
-    assert.equal(facts.schemaEntries, 487);
+    // Hide Thumbnail Badges added one toggle (488).
+    assert.equal(facts.schemaEntries, 488);
     assert.equal(facts.schemaCategories, 18);
     // The runtime graph includes the semantic zero-ad fallback beside the
     // selector-backed document-start shell layer. core/feed-prefilter.js is
@@ -46,7 +47,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`487` entries', '`486` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`488` entries', '`487` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);
