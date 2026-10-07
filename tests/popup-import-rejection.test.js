@@ -40,6 +40,7 @@ function loadImporter() {
         Error,
         Promise,
         t: (_key, fallback) => fallback,
+        tCount: (count, _key, singular, plural) => (Number(count) === 1 ? singular : plural),
         persistedDomains: persisted,
         importButton: button,
         importFileInput: { value: 'x' },

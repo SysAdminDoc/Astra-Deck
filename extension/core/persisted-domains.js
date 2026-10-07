@@ -934,7 +934,7 @@
             .replace('{count}', () => String(replace));
         const mergeText = tCount(merge, 'importPreviewMergeTpl', '{count} setting merges', '{count} settings merge')
             .replace('{count}', () => String(merge));
-        const dropText = tCount(drop, 'importPreviewDroppedTpl', '{count} dropped', '{count} dropped')
+        const dropText = tCount(drop, 'importPreviewDroppedTpl', '{count} item dropped', '{count} items dropped')
             .replace('{count}', () => String(drop));
         const excludedText = tCount(excluded, 'importPreviewExcludedTpl',
             '{count} cache, runtime, diagnostic, or credential domain intentionally excluded',

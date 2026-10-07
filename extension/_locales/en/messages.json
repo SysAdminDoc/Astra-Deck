@@ -9375,10 +9375,10 @@
     "message": "{count} settings merge"
   },
   "importPreviewDroppedTplOne": {
-    "message": "{count} dropped"
+    "message": "{count} item dropped"
   },
   "importPreviewDroppedTplOther": {
-    "message": "{count} dropped"
+    "message": "{count} items dropped"
   },
   "importPreviewExcludedTplOne": {
     "message": "{count} cache, runtime, diagnostic, or credential domain intentionally excluded"

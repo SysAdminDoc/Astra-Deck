@@ -114,6 +114,7 @@ function loadSettingsManager() {
         Blob,
         appState: { settings: {} },
         t: (_key, fallback) => fallback,
+        tCount: (count, _key, singular, plural) => (Number(count) === 1 ? singular : plural),
         DebugManager: { log() {} },
         StorageManager: {
             get: (key, fallback) => (store.has(key) ? store.get(key) : fallback),

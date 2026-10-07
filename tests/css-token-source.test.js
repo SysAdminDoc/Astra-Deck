@@ -19,8 +19,30 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..', 'extension');
 
 /** Every custom property declared in a `:root` block of a stylesheet. */
+// The light-scheme override redefines the same tokens. Fallback arms and
+// budgets here are about the base palette, so that block is left out.
+function withoutLightScheme(css) {
+    const media = /@media\s*\(prefers-color-scheme:\s*light\)\s*\{/g;
+    let out = '';
+    let last = 0;
+    let match;
+    while ((match = media.exec(css))) {
+        let depth = 1;
+        let index = match.index + match[0].length;
+        while (index < css.length && depth > 0) {
+            if (css[index] === '{') depth += 1;
+            else if (css[index] === '}') depth -= 1;
+            index += 1;
+        }
+        out += css.slice(last, match.index);
+        last = index;
+        media.lastIndex = index;
+    }
+    return out + css.slice(last);
+}
+
 function rootTokens(file) {
-    const css = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    const css = withoutLightScheme(fs.readFileSync(path.join(ROOT, file), 'utf8'));
     const tokens = new Map();
     const blocks = /:root\s*\{([\s\S]*?)\}/g;
     let block;

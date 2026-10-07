@@ -62,7 +62,7 @@ test('the import preview line is built from catalogue keys', () => {
     assert.equal(formatImportPreview(preview, { t: markerT }), '«importPreviewTpl»');
     const inner = formatImportPreview(preview, { t: (key, fallback) => (key === 'importPreviewTpl' ? fallback : markerT(key)) });
     assert.equal(inner, '«importPreviewReplaceTplOne», «importPreviewMergeTplOther», «importPreviewDroppedTplOther»; «importPreviewExcludedTplOther»');
-    assert.equal(formatImportPreview(preview), '1 item replaces, 3 settings merge, 0 dropped; 2 cache, runtime, diagnostic, or credential domains intentionally excluded',
+    assert.equal(formatImportPreview(preview), '1 item replaces, 3 settings merge, 0 items dropped; 2 cache, runtime, diagnostic, or credential domains intentionally excluded',
         'without i18n it is the English line');
 });
 

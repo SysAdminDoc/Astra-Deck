@@ -372,5 +372,5 @@ test('import preview reports replace, merge, drop, and intentional exclusions', 
     }, { hiddenVideos: 2 });
     assert.deepEqual({ replace: preview.replace, merge: preview.merge, drop: preview.drop }, { replace: 2, merge: 2, drop: 2 });
     assert.ok(preview.exclusions.some((entry) => entry.id === 'credentialVault'));
-    assert.match(persisted.formatImportPreview(preview), /2 items replace, 2 settings merge, 2 dropped/);
+    assert.match(persisted.formatImportPreview(preview), /2 items replace, 2 settings merge, 2 items dropped/);
 });
