@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **Hide All** on Subscriptions keeps going as YouTube loads more. One press hides what's on screen, then each page as it arrives, until it reaches videos you'd already hidden last time (or 20 pages). Then loading pauses, with a Resume button on the banner. Home still hides just what's on screen and keeps loading forever.
+
+### Fixed
+
+- The Subscriptions pause for a feed full of hidden videos never kicked in on YouTube's current card layout, so a cleared feed kept loading in the background. It now pauses after about three hidden pages, even when YouTube fetches them back to back.
+
+- Pausing Subscriptions didn't stop YouTube from fetching more pages behind the banner. It holds now.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added

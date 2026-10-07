@@ -8522,6 +8522,10 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			_removedVideoNodes: [],
 			_hiddenReasonPlaceholders: new WeakMap(),
 			_subsBannerCollapsed: false,
+			_hideAllSweep: null,
+			_HIDE_ALL_SWEEP_MAX_PAGES: 20,
+			_HIDE_ALL_SWEEP_IDLE_MS: 8000,
+			_HIDE_ALL_SWEEP_CAUGHT_UP_RUN: 20,
 			_subsLoadState: {
 				consecutiveHiddenBatches: 0,
 				lastBatchSize: 0,
@@ -8632,12 +8636,14 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					cont.style.display = 'none';
 					cont.dataset.ytkitBlocked = 'true';
 				});
+				document.documentElement.setAttribute('data-ytkit-subs-paused', '');
 				this._showLoadBlockedBanner();
 				DebugManager.log('VideoHider', 'Subscription loading blocked - too many consecutive hidden batches');
 			},
 			_removeLoadBlocker() {
 				this._subsLoadState.loadingBlocked = false;
 				this._subsBannerCollapsed = false;
+				document.documentElement.removeAttribute('data-ytkit-subs-paused');
 				document.querySelectorAll('[data-ytkit-blocked="true"]').forEach(el => {
 					if (!(el instanceof HTMLElement)) return;
 					el.style.display = '';
@@ -8721,7 +8727,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				banner.appendChild(buttonContainer);
 				document.body.appendChild(banner);
 			},
-			_trackSubsLoadBatch(processedVideos) {
+			_trackSubsLoadBatch(processedVideos, pages = 1) {
 				if (window.location.pathname !== '/feed/subscriptions') return;
 				if (!appState.settings.hideVideosSubsLoadLimit) return;
 				if (this._subsLoadState.loadingBlocked) return;
@@ -8741,8 +8747,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const mostlyHidden = hiddenRatio >= ratioCutoff;
 				const threshold = appState.settings.hideVideosSubsLoadThreshold || 3;
 				if (mostlyHidden) {
-					this._subsLoadState.consecutiveHiddenBatches++;
-					DebugManager.log('VideoHider', `Subs load: batch ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} mostly hidden (${hiddenCount}/${batchSize} = ${Math.round(hiddenRatio * 100)}% >= ${Math.round(ratioCutoff * 100)}%)`);
+					const pageCount = Math.max(1, Math.floor(Number(pages)) || 1);
+					this._subsLoadState.consecutiveHiddenBatches += pageCount;
+					DebugManager.log('VideoHider', `Subs load: streak ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} after ${pageCount} mostly hidden page(s) (${hiddenCount}/${batchSize} = ${Math.round(hiddenRatio * 100)}% >= ${Math.round(ratioCutoff * 100)}%)`);
 					if (this._subsLoadState.consecutiveHiddenBatches >= threshold) this._blockSubsLoading();
 				} else {
 					this._subsLoadState.consecutiveHiddenBatches = 0;
@@ -10609,6 +10616,10 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			_isNestedCardHost(element) {
 				return !!element?.parentElement?.closest?.(this._VIDEO_SELECTORS);
 			},
+			_loadBatchEntry(element, hidden) {
+				if (this._isNestedCardHost(element)) return null;
+				return { element, hidden };
+			},
 			_processVideoElement(element) {
 				if (this._isNestedCardHost(element)) return;
 				element.dataset.ytkitHideProcessed = 'true';
@@ -10821,27 +10832,118 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				});
 			},
 			_hideAllVideos() {
+				const onSubs = window.location.pathname === '/feed/subscriptions';
+				if (onSubs && this._hideAllSweep) return;
 				const videos = this._getVisibleVideos();
-				if (videos.length === 0) {
+				if (videos.length === 0 && !onSubs) {
 					showToast(t('videoHiderNoVisibleVideos', 'No visible videos to hide'), '#6b7280');
 					return;
 				}
+				const { newlyHidden, removedAllowed } = this._hideVideoBatch(videos);
+				if (onSubs) {
+					this._startHideAllSweep(videos, newlyHidden, removedAllowed);
+					return;
+				}
+				this._updatePageActionButtons();
+				this._showHideAllResult(videos, newlyHidden, removedAllowed);
+			},
+			_hideVideoBatch(videos) {
 				const hidden = this._getHiddenVideos();
+				const known = new Set(hidden);
 				let newlyHidden = 0;
-				const removedAllowed = this._removeAllowedVideos(videos.map(v => v.id));
+				const removedAllowed = videos.length ? this._removeAllowedVideos(videos.map(v => v.id)) : [];
 				videos.forEach(v => {
-					if (!hidden.includes(v.id)) { hidden.push(v.id); newlyHidden++; }
+					if (!known.has(v.id)) { known.add(v.id); hidden.push(v.id); newlyHidden++; }
 					this._applyVideoHiddenState(v.element, true);
 				});
 				if (hidden.length > IMPORT_LIMITS.hiddenVideos) {
 					hidden.splice(0, hidden.length - IMPORT_LIMITS.hiddenVideos);
 				}
-				this._setHiddenVideos(hidden);
-				this._updatePageActionButtons();
+				if (videos.length) this._setHiddenVideos(hidden);
+				return { newlyHidden, removedAllowed };
+			},
+			_showHideAllResult(videos, newlyHidden, removedAllowed) {
 				this._showToast(t('bulkHiddenTpl', 'Hidden {count} videos').replace('{count}', String(newlyHidden)), [
 					{ text: t('videoHiderUndoAll', 'Undo All'), onClick: () => this._undoHideAll(videos, removedAllowed) },
 					{ text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
 				]);
+			},
+			_startHideAllSweep(videos, newlyHidden, removedAllowed) {
+				const seen = new WeakSet();
+				document.querySelectorAll(this._VIDEO_SELECTORS).forEach(card => seen.add(card));
+				this._hideAllSweep = {
+					videos: [...videos],
+					newlyHidden,
+					removedAllowed: [...removedAllowed],
+					seen,
+					hiddenRun: 0,
+					pages: 0,
+					idleTimer: null
+				};
+				if (this._subsLoadState.loadingBlocked) this._resumeSubsLoading();
+				this._armHideAllSweepIdle();
+				this._updatePageActionButtons();
+				this._showToast(t('videoHiderHideAllSweepingTpl', 'Hidden {count} videos. Hiding the rest as they load.')
+					.replace('{count}', String(newlyHidden)), [
+					{ text: t('toastActionStop', 'Stop'), onClick: () => this._endHideAllSweep('stopped') }
+				]);
+			},
+			_armHideAllSweepIdle() {
+				const sweep = this._hideAllSweep;
+				if (!sweep) return;
+				if (sweep.idleTimer) clearTimeoutFn(sweep.idleTimer);
+				sweep.idleTimer = setTimeoutFn(() => this._endHideAllSweep('idle'), this._HIDE_ALL_SWEEP_IDLE_MS);
+			},
+			_continueHideAllSweep(arrived) {
+				const sweep = this._hideAllSweep;
+				if (!sweep) return;
+				if (window.location.pathname !== '/feed/subscriptions') {
+					this._endHideAllSweep('navigated');
+					return;
+				}
+				const fresh = arrived.filter(entry => entry.element && !sweep.seen.has(entry.element));
+				if (fresh.length === 0) return;
+				let caughtUp = false;
+				fresh.forEach(entry => {
+					sweep.seen.add(entry.element);
+					sweep.hiddenRun = entry.hidden ? sweep.hiddenRun + 1 : 0;
+					if (sweep.hiddenRun >= this._HIDE_ALL_SWEEP_CAUGHT_UP_RUN) caughtUp = true;
+				});
+				const visible = this._getVisibleVideos();
+				const { newlyHidden, removedAllowed } = this._hideVideoBatch(visible);
+				sweep.videos.push(...visible);
+				sweep.newlyHidden += newlyHidden;
+				sweep.removedAllowed.push(...removedAllowed);
+				sweep.pages += 1;
+				this._subsLoadState.totalVideosLoaded += fresh.length;
+				this._subsLoadState.totalVideosHidden += fresh.length;
+				this._updatePageActionButtons();
+				if (caughtUp) {
+					this._endHideAllSweep('caught-up');
+					return;
+				}
+				if (sweep.pages >= this._HIDE_ALL_SWEEP_MAX_PAGES) {
+					this._endHideAllSweep('limit');
+					return;
+				}
+				this._armHideAllSweepIdle();
+			},
+			_endHideAllSweep(reason) {
+				const sweep = this._hideAllSweep;
+				if (!sweep) return;
+				this._hideAllSweep = null;
+				if (sweep.idleTimer) clearTimeoutFn(sweep.idleTimer);
+				if (reason === 'navigated' || reason === 'teardown') return;
+				if ((reason === 'caught-up' || reason === 'limit')
+					&& window.location.pathname === '/feed/subscriptions') {
+					this._blockSubsLoading();
+				}
+				this._updatePageActionButtons();
+				if (sweep.videos.length === 0) {
+					showToast(t('videoHiderNoVisibleVideos', 'No visible videos to hide'), '#6b7280');
+					return;
+				}
+				this._showHideAllResult(sweep.videos, sweep.newlyHidden, sweep.removedAllowed);
 			},
 			_undoHideAll(videos, removedAllowed = []) {
 				const hidden = this._getHiddenVideos();
@@ -10850,6 +10952,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				videos.forEach(v => v.element.classList.remove('ytkit-video-hidden'));
 				this._setHiddenVideos(hidden.filter(id => !removeSet.has(id)));
 				if (removedAllowed.length > 0) this._addAllowedVideos(removedAllowed, { force: true });
+				if (this._subsLoadState.loadingBlocked) this._removeLoadBlocker();
 				this._updatePageActionButtons();
 				showToast(t('videoHiderRestoredAllVideos', 'Restored all videos'), '#22c55e');
 			},
@@ -11105,6 +11208,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
                     .ytkit-video-mark-watched-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
                     .ytkit-video-marked-watched { opacity: 0.48 !important; filter: saturate(0.72); }
                     .ytkit-video-hidden { display: none !important; }
+                    html[data-ytkit-subs-paused] ytd-continuation-item-renderer { display: none !important; }
                     .ytkit-video-hidden-placeholder {
                         box-sizing: border-box;
                         display: flex !important;
@@ -11221,13 +11325,26 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const selectors = this._VIDEO_SELECTORS;
 				let batchBuffer = [];
 				let batchTimeout = null;
+				let pagesSinceBatch = 0;
+				let batchOpenedAt = 0;
+				const BATCH_MAX_WAIT_MS = 1000;
 				this._clearBatchBuffer = () => {
 					batchBuffer = [];
+					pagesSinceBatch = 0;
+					batchOpenedAt = 0;
 					if (batchTimeout) { clearTimeout(batchTimeout); batchTimeout = null; }
 				};
 				const processBatch = () => {
-					if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
-						this._trackSubsLoadBatch(batchBuffer);
+					batchTimeout = null;
+					batchOpenedAt = 0;
+					const pages = pagesSinceBatch;
+					pagesSinceBatch = 0;
+					if (this._hideAllSweep) {
+						const arrived = batchBuffer;
+						batchBuffer = [];
+						this._continueHideAllSweep(arrived);
+					} else if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
+						this._trackSubsLoadBatch(batchBuffer, pages);
 						batchBuffer = [];
 					}
 					this._updatePageActionButtons();
@@ -11239,8 +11356,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					pendingMutationCards = [];
 					const handle = runBudgetedElementBatch(cards, (el) => {
 						const wasHidden = this._processVideoElementWithResult(el);
-						if (!this._subsLoadState.loadingBlocked) {
-							batchBuffer.push({ element: el, hidden: wasHidden });
+						const entry = this._loadBatchEntry(el, wasHidden);
+						if (entry && !this._subsLoadState.loadingBlocked) {
+							batchBuffer.push(entry);
 						}
 					}, {
 						label: 'video-hider:mutation-batch',
@@ -11259,7 +11377,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						this._enforceRuleHideRatioGuard(this._guardCardSet());
 						if (pendingMutationCards.length) scheduleMutationBatch();
 						if (batchTimeout) clearTimeout(batchTimeout);
-						batchTimeout = setTimeout(processBatch, 300);
+						if (!batchOpenedAt) batchOpenedAt = Date.now();
+						const openFor = Date.now() - batchOpenedAt;
+						batchTimeout = setTimeout(processBatch, Math.max(0, Math.min(300, BATCH_MAX_WAIT_MS - openFor)));
 					});
 				};
 				this._observer = new MutationObserver(mutations => {
@@ -11271,6 +11391,11 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						}
 						for (const node of m.addedNodes) {
 							if (node.nodeType !== 1) continue;
+							if (window.location.pathname === '/feed/subscriptions'
+								&& (node.matches?.('ytd-continuation-item-renderer')
+									|| node.querySelector?.('ytd-continuation-item-renderer'))) {
+								pagesSinceBatch += 1;
+							}
 							if (node.matches?.(selectors)) {
 								pendingMutationCards.push(node);
 							}
@@ -11298,10 +11423,14 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					const path = window.location.pathname;
 					const isOnSubsPage = path === '/feed/subscriptions';
 					if (isOnSubsPage && this._isScopeEnabledForPath('/feed/subscriptions')) {
-						if (!wasOnSubsPage) this._resetSubsLoadState();
+						if (!wasOnSubsPage) {
+							this._resetSubsLoadState();
+							pagesSinceBatch = 0;
+						}
 					} else {
 						this._removeLoadBlocker();
 					}
+					if (!isOnSubsPage) this._endHideAllSweep('navigated');
 					this._syncMastheadPageActions();
 					wasOnSubsPage = isOnSubsPage;
 					this._updatePageActionButtons();
@@ -11341,6 +11470,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				this._styleElement?.remove();
 				this._observer?.disconnect();
 				this._clearBatchBuffer?.();
+				this._endHideAllSweep('teardown');
 				this._cancelBudgetedScans();
 				this._clearDirectWatchEvaluation();
 				this._closeDirectWatchInterstitial({ restoreFocus: false });

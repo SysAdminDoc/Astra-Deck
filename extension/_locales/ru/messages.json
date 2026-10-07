@@ -318,6 +318,9 @@
   "bulkHiddenTpl": {
     "message": "Hidden {count} videos"
   },
+  "videoHiderHideAllSweepingTpl": {
+    "message": "Скрыто видео: {count}. Остальные будут скрыты по мере загрузки."
+  },
   "bulkHide": {
     "message": "Hide"
   },
@@ -7439,6 +7442,9 @@
   },
   "toastActionUndo": {
     "message": "Отменить"
+  },
+  "toastActionStop": {
+    "message": "Остановить"
   },
   "toastCookieHandoffDisclosure": {
     "message": "Авторизованное скачивание: в Astra Downloader на этом устройстве отправляются только необходимые файлы cookie для входа в YouTube."

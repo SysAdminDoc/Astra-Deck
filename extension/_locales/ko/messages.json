@@ -318,6 +318,9 @@
   "bulkHiddenTpl": {
     "message": "Hidden {count} videos"
   },
+  "videoHiderHideAllSweepingTpl": {
+    "message": "동영상 {count}개를 숨겼습니다. 나머지는 로드되는 대로 숨깁니다."
+  },
   "bulkHide": {
     "message": "Hide"
   },
@@ -7439,6 +7442,9 @@
   },
   "toastActionUndo": {
     "message": "실행 취소"
+  },
+  "toastActionStop": {
+    "message": "중지"
   },
   "toastCookieHandoffDisclosure": {
     "message": "인증된 다운로드: 필요한 YouTube 로그인 쿠키만 이 기기의 Astra Downloader로 전송됩니다."

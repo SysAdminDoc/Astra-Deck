@@ -318,6 +318,9 @@
   "bulkHiddenTpl": {
     "message": "Hidden {count} videos"
   },
+  "videoHiderHideAllSweepingTpl": {
+    "message": "已隐藏 {count} 个视频。其余视频将在加载时隐藏。"
+  },
   "bulkHide": {
     "message": "Hide"
   },
@@ -7439,6 +7442,9 @@
   },
   "toastActionUndo": {
     "message": "撤销"
+  },
+  "toastActionStop": {
+    "message": "停止"
   },
   "toastCookieHandoffDisclosure": {
     "message": "身份验证下载：仅将所需的 YouTube 登录 Cookie 发送到此设备上的 Astra Downloader。"

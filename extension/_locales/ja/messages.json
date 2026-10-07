@@ -318,6 +318,9 @@
   "bulkHiddenTpl": {
     "message": "Hidden {count} videos"
   },
+  "videoHiderHideAllSweepingTpl": {
+    "message": "{count} 本の動画を非表示にしました。残りは読み込まれ次第非表示にします。"
+  },
   "bulkHide": {
     "message": "Hide"
   },
@@ -7439,6 +7442,9 @@
   },
   "toastActionUndo": {
     "message": "取り消す"
+  },
+  "toastActionStop": {
+    "message": "停止"
   },
   "toastCookieHandoffDisclosure": {
     "message": "認証付きダウンロード: 必要な YouTube ログイン Cookie だけが、このデバイス上の Astra Downloader に送信されます。"

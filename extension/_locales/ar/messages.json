@@ -318,6 +318,9 @@
   "bulkHiddenTpl": {
     "message": "Hidden {count} videos"
   },
+  "videoHiderHideAllSweepingTpl": {
+    "message": "تم إخفاء {count} من الفيديوهات. سيتم إخفاء الباقي أثناء تحميله."
+  },
   "bulkHide": {
     "message": "Hide"
   },
@@ -7439,6 +7442,9 @@
   },
   "toastActionUndo": {
     "message": "تراجع"
+  },
+  "toastActionStop": {
+    "message": "إيقاف"
   },
   "toastCookieHandoffDisclosure": {
     "message": "تنزيل موثَّق: لا تُرسل إلى Astra Downloader على هذا الجهاز سوى ملفات تعريف ارتباط تسجيل الدخول إلى YouTube المطلوبة."

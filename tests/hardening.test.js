@@ -11621,7 +11621,7 @@ test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hidde
     // (default 0.8). A 70%-hidden batch resets the streak instead of
     // tripping the pause.
     const ytkitSrc = videoHiderSource;
-    const fnIdx = ytkitSrc.indexOf('_trackSubsLoadBatch(processedVideos)');
+    const fnIdx = ytkitSrc.indexOf('_trackSubsLoadBatch(processedVideos');
     assert.ok(fnIdx > -1, '_trackSubsLoadBatch must exist');
     const slice = ytkitSrc.slice(fnIdx, fnIdx + 2500);
 

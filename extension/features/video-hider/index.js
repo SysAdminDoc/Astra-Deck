@@ -352,6 +352,18 @@
             // a placeholder that is no longer in the document needs no removal.
             _hiddenReasonPlaceholders: new WeakMap(),
             _subsBannerCollapsed: false,
+            // Hide All on Subscriptions keeps going while the feed loads.
+            // Hiding what's on screen collapses the grid, YouTube loads the
+            // next page into view, and that page used to arrive unhidden. The
+            // sweep hides each page as it lands, stops once a run of
+            // _HIDE_ALL_SWEEP_CAUGHT_UP_RUN cards arrives already hidden (where
+            // the last clear ended) or after _HIDE_ALL_SWEEP_MAX_PAGES, and
+            // then pauses loading so an empty feed doesn't keep fetching.
+            _hideAllSweep: null,
+            _HIDE_ALL_SWEEP_MAX_PAGES: 20,
+            _HIDE_ALL_SWEEP_IDLE_MS: 8000,
+            // Longer than a hidden Shorts shelf, shorter than a feed page.
+            _HIDE_ALL_SWEEP_CAUGHT_UP_RUN: 20,
             _subsLoadState: {
                 consecutiveHiddenBatches: 0,
                 lastBatchSize: 0,
@@ -475,6 +487,11 @@
                     cont.style.display = 'none';
                     cont.dataset.ytkitBlocked = 'true';
                 });
+                // A page already in flight lands with a fresh load trigger of
+                // its own, which the loop above never saw, so loading went on
+                // after the pause (measured live: eight more pages). The
+                // stylesheet rule covers triggers added later too.
+                document.documentElement.setAttribute('data-ytkit-subs-paused', '');
                 this._showLoadBlockedBanner();
                 DebugManager.log('VideoHider', 'Subscription loading blocked - too many consecutive hidden batches');
             },
@@ -482,6 +499,7 @@
             _removeLoadBlocker() {
                 this._subsLoadState.loadingBlocked = false;
                 this._subsBannerCollapsed = false;
+                document.documentElement.removeAttribute('data-ytkit-subs-paused');
                 document.querySelectorAll('[data-ytkit-blocked="true"]').forEach(el => {
                     if (!(el instanceof HTMLElement)) return;
                     el.style.display = '';
@@ -581,7 +599,7 @@
                 document.body.appendChild(banner);
             },
 
-            _trackSubsLoadBatch(processedVideos) {
+            _trackSubsLoadBatch(processedVideos, pages = 1) {
                 if (window.location.pathname !== '/feed/subscriptions') return;
                 if (!appState.settings.hideVideosSubsLoadLimit) return;
                 if (this._subsLoadState.loadingBlocked) return;
@@ -611,8 +629,13 @@
                 const mostlyHidden = hiddenRatio >= ratioCutoff;
                 const threshold = appState.settings.hideVideosSubsLoadThreshold || 3;
                 if (mostlyHidden) {
-                    this._subsLoadState.consecutiveHiddenBatches++;
-                    DebugManager.log('VideoHider', `Subs load: batch ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} mostly hidden (${hiddenCount}/${batchSize} = ${Math.round(hiddenRatio * 100)}% >= ${Math.round(ratioCutoff * 100)}%)`);
+                    // A batch closes 300 ms after the feed goes quiet, and a
+                    // fully hidden feed loads its next page sooner than that,
+                    // so twenty pages could arrive as one batch and the streak
+                    // never reached the threshold. Every page in it counts.
+                    const pageCount = Math.max(1, Math.floor(Number(pages)) || 1);
+                    this._subsLoadState.consecutiveHiddenBatches += pageCount;
+                    DebugManager.log('VideoHider', `Subs load: streak ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} after ${pageCount} mostly hidden page(s) (${hiddenCount}/${batchSize} = ${Math.round(hiddenRatio * 100)}% >= ${Math.round(ratioCutoff * 100)}%)`);
                     if (this._subsLoadState.consecutiveHiddenBatches >= threshold) this._blockSubsLoading();
                 } else {
                     this._subsLoadState.consecutiveHiddenBatches = 0;
@@ -2734,6 +2757,16 @@
                 return !!element?.parentElement?.closest?.(this._VIDEO_SELECTORS);
             },
 
+            // One entry per card for the load statistics and the Hide All
+            // sweep. The inner card of a 2026-09 lockup pair carries no
+            // verdict and always reported "not hidden", so every batch read
+            // as at most half hidden: the Subscriptions guard's 80% cutoff
+            // could never be reached, and no run of hidden cards ever formed.
+            _loadBatchEntry(element, hidden) {
+                if (this._isNestedCardHost(element)) return null;
+                return { element, hidden };
+            },
+
             _processVideoElement(element) {
                 if (this._isNestedCardHost(element)) return;
                 element.dataset.ytkitHideProcessed = 'true';
@@ -2986,27 +3019,142 @@
             },
 
             _hideAllVideos() {
+                const onSubs = window.location.pathname === '/feed/subscriptions';
+                if (onSubs && this._hideAllSweep) return;
                 const videos = this._getVisibleVideos();
-                if (videos.length === 0) {
+                // On Subscriptions an empty screen can still have pages on the
+                // way (or paused), so the sweep starts anyway.
+                if (videos.length === 0 && !onSubs) {
                     showToast(t('videoHiderNoVisibleVideos', 'No visible videos to hide'), '#6b7280');
                     return;
                 }
+                const { newlyHidden, removedAllowed } = this._hideVideoBatch(videos);
+                if (onSubs) {
+                    this._startHideAllSweep(videos, newlyHidden, removedAllowed);
+                    return;
+                }
+                this._updatePageActionButtons();
+                this._showHideAllResult(videos, newlyHidden, removedAllowed);
+            },
+
+            _hideVideoBatch(videos) {
                 const hidden = this._getHiddenVideos();
+                const known = new Set(hidden);
                 let newlyHidden = 0;
-                const removedAllowed = this._removeAllowedVideos(videos.map(v => v.id));
+                const removedAllowed = videos.length ? this._removeAllowedVideos(videos.map(v => v.id)) : [];
                 videos.forEach(v => {
-                    if (!hidden.includes(v.id)) { hidden.push(v.id); newlyHidden++; }
+                    if (!known.has(v.id)) { known.add(v.id); hidden.push(v.id); newlyHidden++; }
                     this._applyVideoHiddenState(v.element, true);
                 });
                 if (hidden.length > IMPORT_LIMITS.hiddenVideos) {
                     hidden.splice(0, hidden.length - IMPORT_LIMITS.hiddenVideos);
                 }
-                this._setHiddenVideos(hidden);
-                this._updatePageActionButtons();
+                if (videos.length) this._setHiddenVideos(hidden);
+                return { newlyHidden, removedAllowed };
+            },
+
+            _showHideAllResult(videos, newlyHidden, removedAllowed) {
                 this._showToast(t('bulkHiddenTpl', 'Hidden {count} videos').replace('{count}', String(newlyHidden)), [
                     { text: t('videoHiderUndoAll', 'Undo All'), onClick: () => this._undoHideAll(videos, removedAllowed) },
                     { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
                 ]);
+            },
+
+            _startHideAllSweep(videos, newlyHidden, removedAllowed) {
+                // Cards on the page now are judged; only cards that arrive
+                // later count as a new page. Lockups get re-queued when their
+                // channel data lands, and counting those again read as "a page
+                // that arrived already hidden" and ended the sweep early.
+                const seen = new WeakSet();
+                document.querySelectorAll(this._VIDEO_SELECTORS).forEach(card => seen.add(card));
+                this._hideAllSweep = {
+                    videos: [...videos],
+                    newlyHidden,
+                    removedAllowed: [...removedAllowed],
+                    seen,
+                    hiddenRun: 0,
+                    pages: 0,
+                    idleTimer: null
+                };
+                if (this._subsLoadState.loadingBlocked) this._resumeSubsLoading();
+                this._armHideAllSweepIdle();
+                this._updatePageActionButtons();
+                this._showToast(t('videoHiderHideAllSweepingTpl', 'Hidden {count} videos. Hiding the rest as they load.')
+                    .replace('{count}', String(newlyHidden)), [
+                    { text: t('toastActionStop', 'Stop'), onClick: () => this._endHideAllSweep('stopped') }
+                ]);
+            },
+
+            _armHideAllSweepIdle() {
+                const sweep = this._hideAllSweep;
+                if (!sweep) return;
+                if (sweep.idleTimer) clearTimeoutFn(sweep.idleTimer);
+                // No page for a while: the feed ran out, or its load trigger
+                // isn't on screen. Either way the sweep is done.
+                sweep.idleTimer = setTimeoutFn(() => this._endHideAllSweep('idle'), this._HIDE_ALL_SWEEP_IDLE_MS);
+            },
+
+            // `arrived` is one mutation batch: { element, hidden } per card.
+            _continueHideAllSweep(arrived) {
+                const sweep = this._hideAllSweep;
+                if (!sweep) return;
+                if (window.location.pathname !== '/feed/subscriptions') {
+                    this._endHideAllSweep('navigated');
+                    return;
+                }
+                const fresh = arrived.filter(entry => entry.element && !sweep.seen.has(entry.element));
+                if (fresh.length === 0) return;
+                // While the grid is collapsed YouTube loads pages back to back,
+                // faster than batches flush, so one batch can hold the last new
+                // page, the earlier clear and more after it. A long run of
+                // cards that arrived already hidden marks the earlier clear
+                // wherever it falls; the run carries across batches.
+                let caughtUp = false;
+                fresh.forEach(entry => {
+                    sweep.seen.add(entry.element);
+                    sweep.hiddenRun = entry.hidden ? sweep.hiddenRun + 1 : 0;
+                    if (sweep.hiddenRun >= this._HIDE_ALL_SWEEP_CAUGHT_UP_RUN) caughtUp = true;
+                });
+                const visible = this._getVisibleVideos();
+                const { newlyHidden, removedAllowed } = this._hideVideoBatch(visible);
+                sweep.videos.push(...visible);
+                sweep.newlyHidden += newlyHidden;
+                sweep.removedAllowed.push(...removedAllowed);
+                sweep.pages += 1;
+                this._subsLoadState.totalVideosLoaded += fresh.length;
+                this._subsLoadState.totalVideosHidden += fresh.length;
+                this._updatePageActionButtons();
+                // Everything already loaded is hidden either way, so cards
+                // past the earlier clear don't sit visible under an empty feed.
+                if (caughtUp) {
+                    this._endHideAllSweep('caught-up');
+                    return;
+                }
+                if (sweep.pages >= this._HIDE_ALL_SWEEP_MAX_PAGES) {
+                    this._endHideAllSweep('limit');
+                    return;
+                }
+                this._armHideAllSweepIdle();
+            },
+
+            _endHideAllSweep(reason) {
+                const sweep = this._hideAllSweep;
+                if (!sweep) return;
+                this._hideAllSweep = null;
+                if (sweep.idleTimer) clearTimeoutFn(sweep.idleTimer);
+                if (reason === 'navigated' || reason === 'teardown') return;
+                // Everything loaded is hidden now, so YouTube would keep
+                // fetching pages into an empty feed. Resume is on the banner.
+                if ((reason === 'caught-up' || reason === 'limit')
+                    && window.location.pathname === '/feed/subscriptions') {
+                    this._blockSubsLoading();
+                }
+                this._updatePageActionButtons();
+                if (sweep.videos.length === 0) {
+                    showToast(t('videoHiderNoVisibleVideos', 'No visible videos to hide'), '#6b7280');
+                    return;
+                }
+                this._showHideAllResult(sweep.videos, sweep.newlyHidden, sweep.removedAllowed);
             },
 
             _undoHideAll(videos, removedAllowed = []) {
@@ -3016,6 +3164,9 @@
                 videos.forEach(v => v.element.classList.remove('ytkit-video-hidden'));
                 this._setHiddenVideos(hidden.filter(id => !removeSet.has(id)));
                 if (removedAllowed.length > 0) this._addAllowedVideos(removedAllowed, { force: true });
+                // The restored cards fill the feed again, so a pause the sweep
+                // set has nothing left to protect.
+                if (this._subsLoadState.loadingBlocked) this._removeLoadBlocker();
                 this._updatePageActionButtons();
                 showToast(t('videoHiderRestoredAllVideos', 'Restored all videos'), '#22c55e');
             },
@@ -3284,6 +3435,7 @@
                     .ytkit-video-mark-watched-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
                     .ytkit-video-marked-watched { opacity: 0.48 !important; filter: saturate(0.72); }
                     .ytkit-video-hidden { display: none !important; }
+                    html[data-ytkit-subs-paused] ytd-continuation-item-renderer { display: none !important; }
                     .ytkit-video-hidden-placeholder {
                         box-sizing: border-box;
                         display: flex !important;
@@ -3401,14 +3553,34 @@
 
                 let batchBuffer = [];
                 let batchTimeout = null;
+                // Each feed page arrives with a fresh continuation spinner,
+                // which makes it the page count for the load guard.
+                let pagesSinceBatch = 0;
+                // A batch closes once the feed is quiet for 300 ms, or after a
+                // second open. A fully hidden feed fetches page after page and
+                // is never quiet, so without the cap the guard and the sweep
+                // only saw it once it ran out (measured live: 22 pages).
+                let batchOpenedAt = 0;
+                const BATCH_MAX_WAIT_MS = 1000;
                 this._clearBatchBuffer = () => {
                     batchBuffer = [];
+                    pagesSinceBatch = 0;
+                    batchOpenedAt = 0;
                     if (batchTimeout) { clearTimeout(batchTimeout); batchTimeout = null; }
                 };
 
                 const processBatch = () => {
-                    if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
-                        this._trackSubsLoadBatch(batchBuffer);
+                    batchTimeout = null;
+                    batchOpenedAt = 0;
+                    const pages = pagesSinceBatch;
+                    pagesSinceBatch = 0;
+                    if (this._hideAllSweep) {
+                        // The sweep decides when loading stops while it runs.
+                        const arrived = batchBuffer;
+                        batchBuffer = [];
+                        this._continueHideAllSweep(arrived);
+                    } else if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
+                        this._trackSubsLoadBatch(batchBuffer, pages);
                         batchBuffer = [];
                     }
                     this._updatePageActionButtons();
@@ -3433,8 +3605,9 @@
                         // references without bound until Resume or a
                         // navigation. The statistics these feed are only
                         // meaningful while loading is running anyway.
-                        if (!this._subsLoadState.loadingBlocked) {
-                            batchBuffer.push({ element: el, hidden: wasHidden });
+                        const entry = this._loadBatchEntry(el, wasHidden);
+                        if (entry && !this._subsLoadState.loadingBlocked) {
+                            batchBuffer.push(entry);
                         }
                     }, {
                         // i18n-static: internal batch diagnostic label.
@@ -3465,7 +3638,9 @@
                         this._enforceRuleHideRatioGuard(this._guardCardSet());
                         if (pendingMutationCards.length) scheduleMutationBatch();
                         if (batchTimeout) clearTimeout(batchTimeout);
-                        batchTimeout = setTimeout(processBatch, 300);
+                        if (!batchOpenedAt) batchOpenedAt = Date.now();
+                        const openFor = Date.now() - batchOpenedAt;
+                        batchTimeout = setTimeout(processBatch, Math.max(0, Math.min(300, BATCH_MAX_WAIT_MS - openFor)));
                     });
                 };
                 this._observer = new MutationObserver(mutations => {
@@ -3478,6 +3653,11 @@
                         }
                         for (const node of m.addedNodes) {
                             if (node.nodeType !== 1) continue;
+                            if (window.location.pathname === '/feed/subscriptions'
+                                && (node.matches?.('ytd-continuation-item-renderer')
+                                    || node.querySelector?.('ytd-continuation-item-renderer'))) {
+                                pagesSinceBatch += 1;
+                            }
                             if (node.matches?.(selectors)) {
                                 pendingMutationCards.push(node);
                             }
@@ -3512,10 +3692,14 @@
                     const path = window.location.pathname;
                     const isOnSubsPage = path === '/feed/subscriptions';
                     if (isOnSubsPage && this._isScopeEnabledForPath('/feed/subscriptions')) {
-                        if (!wasOnSubsPage) this._resetSubsLoadState();
+                        if (!wasOnSubsPage) {
+                            this._resetSubsLoadState();
+                            pagesSinceBatch = 0;
+                        }
                     } else {
                         this._removeLoadBlocker();
                     }
+                    if (!isOnSubsPage) this._endHideAllSweep('navigated');
                     this._syncMastheadPageActions();
                     wasOnSubsPage = isOnSubsPage;
                     this._updatePageActionButtons();
@@ -3568,6 +3752,7 @@
                 this._styleElement?.remove();
                 this._observer?.disconnect();
                 this._clearBatchBuffer?.();
+                this._endHideAllSweep('teardown');
                 this._cancelBudgetedScans();
                 this._clearDirectWatchEvaluation();
                 this._closeDirectWatchInterstitial({ restoreFocus: false });
