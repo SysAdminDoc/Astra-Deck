@@ -982,6 +982,12 @@ function buildSettingsPanel() {
             #ytkit-settings-panel .ytkit-card-reset {
                 display: none;
                 position: absolute;
+                /* Anchored to the first grid cell (the text column), not the card, so
+                   the chip can never land on the control column's switch or select. */
+                grid-column: 1 / 2;
+                grid-row: 1 / 2;
+                justify-self: end;
+                align-self: start;
                 top: 8px;
                 inset-inline-end: 8px;
                 min-height: 22px;
@@ -995,6 +1001,7 @@ function buildSettingsPanel() {
             }
             #ytkit-settings-panel .ytkit-feature-card[data-changed="1"] { position: relative; }
             #ytkit-settings-panel .ytkit-feature-card[data-changed="1"] .ytkit-card-reset { display: inline-flex; align-items: center; }
+            #ytkit-settings-panel .ytkit-feature-card[data-changed="1"] > .ytkit-feature-main { padding-inline-end: 56px; }
             html:not([dark]) #ytkit-settings-panel .ytkit-card-reset {
                 border-color: rgba(15,23,42,0.18);
                 background: rgba(15,23,42,0.04);

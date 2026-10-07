@@ -1017,3 +1017,15 @@ test('turning Force H.264 on sends a chosen codec back to auto, never to false',
         }
     }
 });
+
+test('a card Reset chip anchors to the text column so it cannot sit on the switch', () => {
+    const source = fs.readFileSync(require.resolve(MODULE_PATH), 'utf8');
+    const rule = source.match(/#ytkit-settings-panel \.ytkit-card-reset \{([^}]*)\}/);
+    assert.ok(rule, 'the chip rule exists');
+    // `grid-column: 1` alone ends at the padding edge for an absolute box, which
+    // puts the chip back over the control column. It has to be a closed 1 / 2 area.
+    assert.match(rule[1], /grid-column:\s*1 \/ 2;/);
+    assert.match(rule[1], /grid-row:\s*1 \/ 2;/);
+    assert.match(rule[1], /justify-self:\s*end;/);
+    assert.match(source, /\.ytkit-feature-card\[data-changed="1"\] > \.ytkit-feature-main \{ padding-inline-end: \d+px; \}/);
+});
