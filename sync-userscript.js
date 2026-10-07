@@ -26,6 +26,7 @@
 
 const fs = require('fs');
 const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 const acorn = require('acorn');
 const path = require('path');
 const { getUserscriptBasename } = require('./scripts/repo-paths');
@@ -68,9 +69,9 @@ function coreRequireUrl(version) {
 }
 
 // A tag can still be deleted and re-pushed, so each @require and @resource
-// also names the SHA-256 of the exact bytes this build wrote, in the
-// Tampermonkey SRI fragment Greasy Fork accepts. Tampermonkey refuses a
-// mismatch; Violentmonkey ignores the fragment (its issue #1558).
+// also names the SHA-256 of the bytes its URL serves, in the Tampermonkey SRI
+// fragment Greasy Fork accepts. Tampermonkey refuses a mismatch; Violentmonkey
+// ignores the fragment (its issue #1558).
 const INTEGRITY_FRAGMENT_RE = /#sha256=([a-f0-9]{64})$/;
 
 function integrityFragment(content) {
@@ -79,6 +80,44 @@ function integrityFragment(content) {
 
 function stripIntegrity(url) {
     return String(url).replace(/#.*$/, '');
+}
+
+// The bytes each pinned URL serves, keyed by repo-relative path. Once
+// v<version> is tagged, that's the tag's blob, not this tree: main keeps
+// moving between releases while its @require still names the last tag, and
+// a hash of the newer bytes would make every fresh Tampermonkey install from
+// main refuse the libraries it fetched. Before the tag exists (the release
+// bump writes the records the tag will hold) and for a file the tag lacks,
+// it's the given working-tree bytes. One git process for all of them.
+function readPinnedBytes(repoRoot, version, workingBytes) {
+    const files = [...workingBytes.keys()];
+    const pinned = new Map(workingBytes);
+    let output;
+    try {
+        output = execFileSync('git', ['cat-file', '--batch'], {
+            cwd: repoRoot,
+            input: files.map((file) => `refs/tags/v${version}:${file}`).join('\n') + '\n',
+            maxBuffer: 64 * 1024 * 1024,
+            stdio: ['pipe', 'pipe', 'ignore'],
+            windowsHide: true,
+        });
+    } catch (_) {
+        // reason: no git or not a checkout; the tree is all there is to pin
+        return pinned;
+    }
+    let offset = 0;
+    for (const file of files) {
+        const lineEnd = output.indexOf(0x0a, offset);
+        if (lineEnd === -1) break;
+        const header = output.subarray(offset, lineEnd).toString('utf8');
+        offset = lineEnd + 1;
+        const blob = /^[0-9a-f]{40,64} blob (\d+)$/.exec(header);
+        if (!blob) continue;
+        const size = Number(blob[1]);
+        pinned.set(file, output.subarray(offset, offset + size));
+        offset += size + 1;
+    }
+    return pinned;
 }
 
 const LIBRARIES = Object.freeze([
@@ -913,7 +952,13 @@ function metaLine(key, value) {
 
 function buildUserscriptHeader(plan, version, libraryTexts, repoRoot = REPO_ROOT) {
     const { matches, excludes } = matchPatterns(plan.manifest);
-    const pinned = (relativePath, content) => `${tagUrl(version, relativePath)}${integrityFragment(content)}`;
+    const resourceLocales = plan.locales.filter((locale) => locale !== (plan.manifest.default_locale || 'en'));
+    const localeFile = (locale) => `extension/_locales/${locale}/messages.json`;
+    const servedBytes = readPinnedBytes(repoRoot, version, new Map([
+        ...LIBRARIES.map((library) => [library.file, Buffer.from(libraryTexts.get(library.file), 'utf8')]),
+        ...resourceLocales.map((locale) => [localeFile(locale), fs.readFileSync(path.join(repoRoot, localeFile(locale)))]),
+    ]));
+    const pinned = (relativePath) => `${tagUrl(version, relativePath)}${integrityFragment(servedBytes.get(relativePath))}`;
     const lines = [
         '// ==UserScript==',
         metaLine('name', `YTKit v${version}`),
@@ -933,13 +978,8 @@ function buildUserscriptHeader(plan, version, libraryTexts, repoRoot = REPO_ROOT
         metaLine('inject-into', 'content'),
         ...USERSCRIPT_GRANTS.map((grant) => metaLine('grant', grant)),
         ...connectHosts(plan.manifest).map((host) => metaLine('connect', host)),
-        ...LIBRARIES.map((library) => metaLine('require', pinned(library.file, libraryTexts.get(library.file)))),
-        ...plan.locales
-            .filter((locale) => locale !== (plan.manifest.default_locale || 'en'))
-            .map((locale) => {
-                const file = `extension/_locales/${locale}/messages.json`;
-                return metaLine('resource', `${LOCALE_RESOURCE_PREFIX}${locale} ${pinned(file, fs.readFileSync(path.join(repoRoot, file)))}`);
-            }),
+        ...LIBRARIES.map((library) => metaLine('require', pinned(library.file))),
+        ...resourceLocales.map((locale) => metaLine('resource', `${LOCALE_RESOURCE_PREFIX}${locale} ${pinned(localeFile(locale))}`)),
         '// ==/UserScript==',
     ];
     return lines.join('\n');
@@ -981,8 +1021,9 @@ function parseUserscriptBuild(text) {
 }
 
 // Checks a shipped YTKit.user.js header against the files it names: every
-// @require and @resource must carry #sha256= and the hash must be that file's
-// bytes. readFile(relativePath) returns a Buffer, or null when it's missing.
+// @require and @resource must carry #sha256= and the hash must be the bytes
+// its URL serves. readFile(relativePath) returns those bytes as a Buffer
+// (readPinnedBytes), or null when the file is missing.
 function findIntegrityMismatches(mainText, readFile) {
     const errors = [];
     const header = String(mainText).split('// ==/UserScript==')[0];
@@ -1096,6 +1137,7 @@ module.exports = {
     findIntegrityMismatches,
     integrityFragment,
     parseUserscriptBuild,
+    readPinnedBytes,
     readBuildPlan,
     reindentOutsideLiterals,
     shrinkModuleBody,

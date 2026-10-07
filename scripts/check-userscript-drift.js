@@ -14,8 +14,8 @@
 //   3. Every locale the extension ships reaches the userscript: English is
 //      embedded, the rest are @resource records.
 //   4. Every feature id the extension declares is in a shipped file.
-//   5. Every @require and @resource carries a #sha256= hash of the file on
-//      disk it names.
+//   5. Every @require and @resource carries a #sha256= hash of the bytes its
+//      URL serves: the tag's blob once v<version> is tagged, the tree before.
 //
 // The userscript used to be a second implementation with a list of
 // "extension-only" features. It runs the extension's own code now, so there is
@@ -31,6 +31,7 @@ const {
     findIntegrityMismatches,
     parseUserscriptBuild,
     readBuildPlan,
+    readPinnedBytes,
 } = require('../sync-userscript');
 
 const REPO_ROOT = path.join(__dirname, '..');
@@ -130,16 +131,17 @@ for (const file of extensionFeatureFiles) {
 const missingIds = [...extensionIds].filter((id) => !shippedIds.has(id)).sort();
 if (missingIds.length) errors.push(`feature id(s) the userscript does not ship: ${missingIds.join(', ')}`);
 
-// ── 5. SRI hashes match the files on disk ──
-// Read from disk, not the fresh build: this is what a push serves.
+// ── 5. SRI hashes match what each pinned URL serves ──
+// The committed header, not the fresh build: this is what a push serves.
+// Each URL serves the tag's blob once the tag exists, the tree before that.
 const shippedMain = fs.existsSync(path.join(REPO_ROOT, 'YTKit.user.js'))
     ? fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8')
     : '';
-const readShipped = (file) => {
-    const target = path.join(REPO_ROOT, file);
-    return fs.existsSync(target) ? fs.readFileSync(target) : null;
-};
-for (const error of findIntegrityMismatches(shippedMain, readShipped)) errors.push(error);
+const pinnable = [...LIBRARIES.map((library) => library.file), ...locales.map((locale) => `extension/_locales/${locale}/messages.json`)]
+    .filter((file) => fs.existsSync(path.join(REPO_ROOT, file)));
+const served = readPinnedBytes(REPO_ROOT, build.version,
+    new Map(pinnable.map((file) => [file, fs.readFileSync(path.join(REPO_ROOT, file))])));
+for (const error of findIntegrityMismatches(shippedMain, (file) => served.get(file) || null)) errors.push(error);
 
 if (errors.length) {
     console.error(`[check-userscript-drift] ${errors.length} drift issue(s):`);

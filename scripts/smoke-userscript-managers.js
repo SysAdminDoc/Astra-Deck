@@ -40,7 +40,7 @@ const {
 const REPO_ROOT = path.join(__dirname, '..');
 const FIXTURES_PATH = path.join(__dirname, 'userscript-manager-fixtures.json');
 const USERSCRIPT_PATH = path.join(REPO_ROOT, 'YTKit.user.js');
-const { INTEGRITY_FRAGMENT_RE, LIBRARIES, stripIntegrity } = require('../sync-userscript');
+const { INTEGRITY_FRAGMENT_RE, LIBRARIES, integrityFragment, stripIntegrity } = require('../sync-userscript');
 const LIBRARY_FILES = LIBRARIES.map((library) => library.file);
 // The tamper lane serves this library with one comment line appended, which
 // is still valid JavaScript, so only an SRI check can stop it.
@@ -169,10 +169,13 @@ function buildIsolatedUserscript(port) {
     const localMatch = `// @match        ${origin}/*`;
     const result = source
         .replace(/^\/\/ @match\s/m, `${localMatch}\n$&`)
-        // Keeps each #sha256= pin: the managers check it against what this
-        // server sends.
-        .replace(/^(\/\/ @require\s+)\S+\/(YTKit-[a-z]+\.user\.js#sha256=[a-f0-9]{64})$/gm, `$1${origin}/$2`)
-        .replace(/^(\/\/ @resource\s+\S+\s+)\S+\/(extension\/_locales\/[A-Za-z_]+\/messages\.json#sha256=[a-f0-9]{64})$/gm, `$1${origin}/$2`)
+        // Each #sha256= pin is re-taken from the tree this server sends: the
+        // shipped pins name the last tag's bytes (check-userscript-drift
+        // checks those), and this lane tests the managers' check itself.
+        .replace(/^(\/\/ @require\s+)\S+\/(YTKit-[a-z]+\.user\.js)#sha256=[a-f0-9]{64}$/gm,
+            (_, prefix, file) => `${prefix}${origin}/${file}${integrityFragment(fs.readFileSync(path.join(REPO_ROOT, file)))}`)
+        .replace(/^(\/\/ @resource\s+\S+\s+)\S+\/(extension\/_locales\/[A-Za-z_]+\/messages\.json)#sha256=[a-f0-9]{64}$/gm,
+            (_, prefix, file) => `${prefix}${origin}/${file}${integrityFragment(fs.readFileSync(path.join(REPO_ROOT, file)))}`)
         .replace(/^\/\/ @updateURL.*\r?\n/m, '')
         .replace(/^\/\/ @downloadURL.*\r?\n/m, '');
     const requires = [...result.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);

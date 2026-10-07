@@ -291,17 +291,19 @@ test('userscript-health: core dependency gate rejects placeholders and unknown h
 });
 
 // A tag can be deleted and re-pushed, so each @require and @resource also
-// pins the SHA-256 of the bytes sync-userscript.js wrote. Tampermonkey refuses
-// a mismatch (the manager smoke's tamper lane shows it); the drift gate fails
+// pins the SHA-256 of the bytes its URL serves. Tampermonkey refuses a
+// mismatch (the manager smoke's tamper lane shows it); the drift gate fails
 // on one before a push can serve it.
 test('userscript-health: every @require and @resource pins the SHA-256 of the file it names', () => {
-    const { findIntegrityMismatches, integrityFragment } = require('../sync-userscript');
+    const { findIntegrityMismatches, integrityFragment, readPinnedBytes } = require('../sync-userscript');
     const root = path.join(__dirname, '..');
-    const read = (file) => {
-        const target = path.join(root, file);
-        return fs.existsSync(target) ? fs.readFileSync(target) : null;
-    };
     const main = readUserscript('YTKit.user.js');
+    const version = /^\/\/ @version\s+(\S+)$/m.exec(main)[1];
+    const files = fs.readdirSync(path.join(root, 'extension', '_locales'))
+        .map((locale) => `extension/_locales/${locale}/messages.json`)
+        .concat(USERSCRIPT_LIBRARIES.map(({ file }) => file));
+    const served = readPinnedBytes(root, version, new Map(files.map((file) => [file, fs.readFileSync(path.join(root, file))])));
+    const read = (file) => served.get(file) || null;
     assert.deepEqual(findIntegrityMismatches(main, read), []);
     const header = main.split('// ==/UserScript==')[0];
     const locales = fs.readdirSync(path.join(root, 'extension', '_locales')).length;
@@ -320,4 +322,39 @@ test('userscript-health: every @require and @resource pins the SHA-256 of the fi
         /YTKit-features\.user\.js is pinned by YTKit\.user\.js but missing/);
     assert.equal(integrityFragment(Buffer.from('abc')),
         '#sha256=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+});
+
+// Main keeps moving between releases while its @require still names the last
+// tag. Hashing the newer tree there would make every fresh Tampermonkey
+// install from main refuse what the old tag serves, so a tagged version pins
+// the tag's blob, and only an untagged one (the release bump) pins the tree.
+test('userscript-health: SRI pins name the tag the URL serves, not newer bytes on main', () => {
+    const { execFileSync } = require('node:child_process');
+    const os = require('node:os');
+    const { readPinnedBytes } = require('../sync-userscript');
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-sri-'));
+    const git = (...args) => execFileSync('git', args, { cwd: repo, stdio: 'pipe', windowsHide: true });
+    try {
+        git('init', '-q');
+        git('config', 'user.email', 'test@example.invalid');
+        git('config', 'user.name', 'test');
+        git('config', 'commit.gpgsign', 'false');
+        git('config', 'tag.gpgsign', 'false');
+        fs.writeFileSync(path.join(repo, 'lib.js'), 'released\n');
+        git('add', 'lib.js');
+        git('commit', '-q', '-m', 'release');
+        git('tag', '-a', 'v1.0.0', '-m', 'v1.0.0');
+        fs.writeFileSync(path.join(repo, 'lib.js'), 'changed on main\n');
+
+        const working = new Map([['lib.js', Buffer.from('changed on main\n')], ['new.js', Buffer.from('added after the tag\n')]]);
+        const tagged = readPinnedBytes(repo, '1.0.0', working);
+        assert.equal(tagged.get('lib.js').toString(), 'released\n', 'a tagged version pins what the tag serves');
+        assert.equal(tagged.get('new.js').toString(), 'added after the tag\n', 'a file the tag lacks falls back to the tree');
+        const bump = readPinnedBytes(repo, '1.1.0', working);
+        assert.equal(bump.get('lib.js').toString(), 'changed on main\n', 'an untagged version pins the tree it will tag');
+        const notARepo = readPinnedBytes(path.join(repo, 'missing'), '1.0.0', working);
+        assert.equal(notARepo.get('lib.js').toString(), 'changed on main\n', 'no git checkout pins the tree');
+    } finally {
+        fs.rmSync(repo, { recursive: true, force: true });
+    }
 });
