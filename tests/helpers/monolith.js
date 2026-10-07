@@ -1020,7 +1020,7 @@ function simpleSelectorMatch(node, selector) {
     // Ancestors count too, as in a browser. Matching the last compound alone
     // answered '.tab.active .label' with the first label in the tree. Sibling
     // combinators are still not modelled.
-    if (/[+~]/.test(text)) return true;
+    if (/[+~]/.test(text.replace(/\[[^\]]*\]|\([^)]*\)/g, ''))) return true;
     const steps = text.replace(/\s*>\s*/g, ' > ').split(/\s+/);
     let current = node;
     for (let index = steps.length - 2; index >= 0; index -= 1) {

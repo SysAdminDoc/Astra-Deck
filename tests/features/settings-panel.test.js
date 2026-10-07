@@ -342,19 +342,23 @@ test('the Digital Wellbeing shortcut opens the page its card is on', () => {
     // It worked the page out from Digital Wellbeing's raw group, which names a
     // page only while that group has one of its own. Research maps to Watch
     // Page, so a raw-group lookup finds no tab here.
+    let before = null;
     let state = null;
     buildRealPanel([
+        { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' },
         { id: 'digitalWellbeing', name: 'Digital Wellbeing', group: 'Research', type: 'checkbox' },
         { id: 'shortsDailyLimit', name: 'Daily Shorts limit', group: 'Advanced', type: 'checkbox', isSubFeature: true, parentId: 'digitalWellbeing' }
     ], {}, {
         shortsKeys: ['shortsDailyLimit'],
         act: (doc) => {
+            before = panelState(doc);
             const shortcut = doc.querySelector('.ytkit-shorts-dependency')?.querySelector('button');
             assert.ok(shortcut, 'the promoted Shorts card carries the shortcut');
             shortcut.dispatchEvent({ type: 'click' });
             state = panelState(doc);
         }
     });
+    assert.notEqual(before.tab, 'Watch-Page', `the shortcut has to move the panel, it started on ${before.tab}`);
     assert.equal(state.tab, 'Watch-Page');
     assert.equal(state.focus, 'digitalWellbeing');
     assert.ok(state.readout && state.readout !== 'Video Player', `the readout follows the page, read ${state.readout}`);
@@ -374,7 +378,8 @@ test('the built panel draws every feature once, sub-cards under their parent', (
     // of the page would read this sub-card as one the Shorts rule moved and
     // draw it apart from its parent.
     assert.deepEqual(placed.returnDislikeOnCards, [{ pane: 'Watch-Page', under: 'returnDislike', promoted: false }]);
-    assert.equal(Object.keys(placed).length, 5, 'one card per feature, none dropped and none twice');
+    assert.equal(Object.keys(placed).length, 5, 'one card per feature, none dropped');
+    for (const [id, spots] of Object.entries(placed)) assert.equal(spots.length, 1, `${id} is drawn once`);
 });
 
 test('settingsPanel does not count a feature whose setting is absent from the sparse bag', () => {
