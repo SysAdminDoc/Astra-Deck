@@ -1540,6 +1540,8 @@ const ASTRA_DECK_BUILD = {
 		"feature_hideJumpAheadButton_name": "Hide Jump Ahead",
 		"feature_hideLatestPosts_desc": "Hide community posts and updates sections from feeds",
 		"feature_hideLatestPosts_name": "Hide Latest Posts",
+		"feature_hideThumbnailBadges_desc": "Hide the \"New\", \"4K\" and \"CC\" badges on video cards. The duration and the watched bar stay.",
+		"feature_hideThumbnailBadges_name": "Hide Thumbnail Badges",
 		"feature_hideLiveChatEngagement_desc": "Remove engagement prompts in live chat",
 		"feature_hideLiveChatEngagement_name": "Hide Chat Engagement",
 		"feature_hideMembersOnly_desc": "Hide members-only feed cards on Home and Subscriptions",

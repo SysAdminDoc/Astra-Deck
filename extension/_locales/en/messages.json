@@ -2934,6 +2934,12 @@
   "feature_hideLatestPosts_name": {
     "message": "Hide Latest Posts"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "Hide the \"New\", \"4K\" and \"CC\" badges on video cards. The duration and the watched bar stay."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "Hide Thumbnail Badges"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "Remove engagement prompts in live chat"
   },

@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "إخفاء آخر المنشورات"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "إخفاء شارات \"جديد\" و\"4K\" و\"CC\" على بطاقات الفيديو. تبقى المدة وشريط المشاهدة."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "إخفاء شارات الصور المصغرة"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "إزالة رسائل التفاعل في الدردشة المباشرة"
   },

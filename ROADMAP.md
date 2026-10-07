@@ -236,20 +236,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   it SHALL hide.
   Complexity: S
 
-- [ ] P2 — Hide thumbnail badges ("New", "4K")
-  Why: YouTube started stamping "New" on thumbnails around 2026-09-18, and three other projects'
-  trackers asked for a way to hide the badges that month. Control Panel shipped it in v1.36.0.
-  Evidence: https://github.com/insin/control-panel-for-youtube/issues/335,
-  https://github.com/code-charity/youtube/issues/4358,
-  https://github.com/YouTube-Enhancer/extension/issues/1425, Control Panel v1.36.0 notes.
-  Confidence: Verified demand; selectors need a live capture.
-  Touches: `extension/core/settings-schema.js` (new key through the nine-places checklist), the
-  feed CSS in `extension/ytkit.js` or a feature module, `extension/_locales/**`, tests.
-  Acceptance: WHEN enabled, THEN the badge row SHALL be hidden on Home, Subscriptions, search,
-  related and channel cards while the duration overlay and watched progress bar stay, using
-  selectors taken from a live page. Default off.
-  Complexity: S
-
 - [ ] P2 — Hide videos YouTube labels "Made with AI"
   Why: the strongest request of the window (Weedout's Show HN reached 185 points on
   2026-09-01), and YouTube made the label more visible on 2026-05-27. Astra's

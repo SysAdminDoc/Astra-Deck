@@ -285,6 +285,7 @@
   "notificationMaxCount": 0,
   "notificationHideRead": false,
   "hideLatestPosts": false,
+  "hideThumbnailBadges": false,
   "disableMiniPlayer": false,
   "adaptiveLiveLayout": false,
   "commentNavigator": false,

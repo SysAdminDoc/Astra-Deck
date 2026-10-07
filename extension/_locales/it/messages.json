@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "Nascondi ultimi post"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "Nasconde i badge \"Nuovo\", \"4K\" e \"CC\" sulle schede video. La durata e la barra di visione restano."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "Nascondi badge delle miniature"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "Rimuovi i suggerimenti di interazione nella chat live"
   },

@@ -59,7 +59,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.96.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `487` entries across `18` categories |
+| Settings schema | `488` entries across `18` categories |
 | Runtime graph | `123` modules, including `31` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
@@ -472,7 +472,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **482 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **483 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -577,7 +577,7 @@ This generated knowledgebase documents all **482 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Feeds and layout</strong>: 13 settings</summary>
+<summary><strong>Feeds and layout</strong>: 14 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -591,6 +591,7 @@ This generated knowledgebase documents all **482 user-facing settings** in the c
 | <a id="setting-hideInfoPanels"></a><strong>Hide Info Panels</strong><br><code>hideInfoPanels</code> | Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.) | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-disableInfiniteScroll"></a><strong>Disable Infinite Scroll</strong><br><code>disableInfiniteScroll</code> | Replace infinite scroll with a "Load More" button on home, search, and subscriptions pages | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideLatestPosts"></a><strong>Hide Latest Posts</strong><br><code>hideLatestPosts</code> | Hide community posts and updates sections from feeds | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-hideThumbnailBadges"></a><strong>Hide Thumbnail Badges</strong><br><code>hideThumbnailBadges</code> | Hide the "New", "4K" and "CC" badges on video cards. The duration and the watched bar stay. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.97.0</code> |
 | <a id="setting-searchHideUnrelatedShelves"></a><strong>Hide Unrelated Search Shelves</strong><br><code>searchHideUnrelatedShelves</code> | Keep direct video, channel, and playlist results while hiding unrelated search-page shelves. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 | <a id="setting-searchHideRelatedSearches"></a><strong>Hide Related Search Blocks</strong><br><code>searchHideRelatedSearches</code> | Hide related-search chip blocks without removing filters, corrections, or direct results. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 | <a id="setting-searchHideWatchedRecommended"></a><strong>Hide Watched and Recommended Results</strong><br><code>searchHideWatchedRecommended</code> | Hide watched-progress results and recommendation interleaves from YouTube search. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |

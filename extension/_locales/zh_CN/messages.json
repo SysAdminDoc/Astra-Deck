@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "隐藏最新帖子"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "隐藏视频卡片上的“新”“4K”和“CC”标记。时长和已观看进度条保留。"
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "隐藏缩略图标记"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "移除直播聊天中的互动提示"
   },

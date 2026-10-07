@@ -2938,6 +2938,7 @@ const STORAGE_KEYS = Object.freeze({
 			notificationMaxCount: 0,
 			notificationHideRead: false,
 			hideLatestPosts: false,
+			hideThumbnailBadges: false,
 			disableMiniPlayer: false,
 			adaptiveLiveLayout: false,
 			commentNavigator: false,
@@ -18531,6 +18532,8 @@ const STORAGE_KEYS = Object.freeze({
 		cssFeature('hideLatestPosts', 'Hide Latest Posts', 'Hide community posts and updates sections from feeds', 'Content', 'file-x',
 			(globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildHideLatestPostsCss && globalThis.YTKitFeatures.wave8Css.buildHideLatestPostsCss())
 			|| `ytd-rich-section-renderer:has(ytd-post-renderer),ytd-rich-section-renderer:has(ytd-backstage-post-thread-renderer),ytd-post-renderer,ytd-backstage-post-thread-renderer,ytd-reel-shelf-renderer:has(ytd-backstage-post-thread-renderer){display:none!important}`),
+		cssFeature('hideThumbnailBadges', 'Hide Thumbnail Badges', 'Hide the "New", "4K" and "CC" badges on video cards. The duration and the watched bar stay.', 'Content', 'eye-off',
+			`ytd-video-renderer ytd-badge-supported-renderer#badges,ytd-video-renderer ytd-badge-supported-renderer#video-badges,ytd-grid-video-renderer ytd-badge-supported-renderer#video-badges,ytd-compact-video-renderer ytd-badge-supported-renderer#badges,yt-lockup-view-model .ytContentMetadataViewModelBadge,yt-badge-view-model.shortsLockupViewModelHostBadge{display:none!important}`),
 		cssFeature('disableMiniPlayer', 'Disable Mini Player', 'Prevent the mini player from appearing when navigating away', 'Video Player', 'minimize-2',
 			(globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildDisableMiniPlayerCss && globalThis.YTKitFeatures.wave8Css.buildDisableMiniPlayerCss())
 			|| `ytd-miniplayer[active]{display:none!important}.ytp-miniplayer-button{display:none!important}`),

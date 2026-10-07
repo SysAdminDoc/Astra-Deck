@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "Ocultar publicaciones recientes"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "Oculta las insignias \"Nuevo\", \"4K\" y \"CC\" de las tarjetas de video. La duración y la barra de visto se mantienen."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "Ocultar insignias de miniaturas"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "Eliminar avisos de interacción en el chat en vivo"
   },

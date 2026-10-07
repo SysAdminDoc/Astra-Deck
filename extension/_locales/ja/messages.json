@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "最新の投稿を非表示"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "動画カードの「新着」「4K」「CC」バッジを非表示にします。再生時間と視聴済みバーは残ります。"
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "サムネイルのバッジを非表示"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "ライブチャットのエンゲージメントプロンプトを削除"
   },

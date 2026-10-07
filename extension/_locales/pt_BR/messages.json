@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "Ocultar Últimos Posts"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "Oculta os selos \"Novo\", \"4K\" e \"CC\" nos cards de vídeo. A duração e a barra de assistido continuam."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "Ocultar selos das miniaturas"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "Remover avisos de engajamento no chat ao vivo"
   },

@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "Neueste Beiträge ausblenden"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "Blendet die Abzeichen „Neu“, „4K“ und „CC“ auf Videokarten aus. Dauer und Gesehen-Balken bleiben."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "Thumbnail-Abzeichen ausblenden"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "Engagement-Aufforderungen im Live-Chat entfernen"
   },

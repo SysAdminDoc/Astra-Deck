@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "Скрыть последние публикации"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "Скрывает значки «Новое», «4K» и «CC» на карточках видео. Длительность и полоса просмотра остаются."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "Скрыть значки на миниатюрах"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "Убрать подсказки вовлечения в чате прямого эфира"
   },

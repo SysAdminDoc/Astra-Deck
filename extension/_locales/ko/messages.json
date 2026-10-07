@@ -2920,6 +2920,12 @@
   "feature_hideLatestPosts_name": {
     "message": "최근 게시물 숨기기"
   },
+  "feature_hideThumbnailBadges_desc": {
+    "message": "동영상 카드의 \"새 동영상\", \"4K\", \"CC\" 배지를 숨깁니다. 재생 시간과 시청 표시줄은 유지됩니다."
+  },
+  "feature_hideThumbnailBadges_name": {
+    "message": "썸네일 배지 숨기기"
+  },
   "feature_hideLiveChatEngagement_desc": {
     "message": "실시간 채팅의 참여 유도 프롬프트 제거"
   },
