@@ -14,6 +14,8 @@
 //   3. Every locale the extension ships reaches the userscript: English is
 //      embedded, the rest are @resource records.
 //   4. Every feature id the extension declares is in a shipped file.
+//   5. Every @require and @resource carries a #sha256= hash of the file on
+//      disk it names.
 //
 // The userscript used to be a second implementation with a list of
 // "extension-only" features. It runs the extension's own code now, so there is
@@ -26,6 +28,7 @@ const path = require('node:path');
 const {
     LIBRARIES,
     buildUserscriptOutputs,
+    findIntegrityMismatches,
     parseUserscriptBuild,
     readBuildPlan,
 } = require('../sync-userscript');
@@ -126,6 +129,17 @@ for (const file of extensionFeatureFiles) {
 }
 const missingIds = [...extensionIds].filter((id) => !shippedIds.has(id)).sort();
 if (missingIds.length) errors.push(`feature id(s) the userscript does not ship: ${missingIds.join(', ')}`);
+
+// ── 5. SRI hashes match the files on disk ──
+// Read from disk, not the fresh build: this is what a push serves.
+const shippedMain = fs.existsSync(path.join(REPO_ROOT, 'YTKit.user.js'))
+    ? fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8')
+    : '';
+const readShipped = (file) => {
+    const target = path.join(REPO_ROOT, file);
+    return fs.existsSync(target) ? fs.readFileSync(target) : null;
+};
+for (const error of findIntegrityMismatches(shippedMain, readShipped)) errors.push(error);
 
 if (errors.length) {
     console.error(`[check-userscript-drift] ${errors.length} drift issue(s):`);

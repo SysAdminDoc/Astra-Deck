@@ -10,6 +10,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Hide Thumbnail Badges** (Content page, off by default) hides the "New", "4K" and "CC" badges YouTube stamps on video cards in search, the sidebar, channel pages and Shorts. The duration and the watched bar stay, so you'll still see how long a video is.
 
+- Each userscript `@require` and translation `@resource` now ends in the SHA-256 of the exact file it should load. If a release tag were ever moved or re-pushed, Tampermonkey refuses the changed file instead of running it. Violentmonkey doesn't check these hashes yet.
+
 ### Fixed
 
 - Blocked channels hide in the watch page sidebar now. Those cards don't link their channel, so the blocklist couldn't tell whose video they were and showed them anyway. Astra reads the channel from YouTube's own card data instead, by channel ID, so two channels with the same name can't be mixed up. A channel you blocked from a feed card is matched there too once Astra has seen it on any card, and the allowlist judges sidebar cards the same way.

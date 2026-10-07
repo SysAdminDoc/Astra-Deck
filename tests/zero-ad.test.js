@@ -238,10 +238,14 @@ test('real userscript-manager smoke pins both signed managers and keeps its shel
     // The userscript loads three @require libraries now, not one core. Every
     // one has to come from the local fixture server, or the manager fetches
     // the published tag and the smoke tests a build other than this tree's.
+    // Each keeps its #sha256= pin, which the managers check against the bytes
+    // the fixture server sends.
     for (const { file } of USERSCRIPT_LIBRARIES) {
-        assert.match(isolated, new RegExp(`@require\\s+http://127\\.0\\.0\\.1:43123/${file.replace(/\./g, '\\.')}\\s`),
+        assert.match(isolated, new RegExp(`@require\\s+http://127\\.0\\.0\\.1:43123/${file.replace(/\./g, '\\.')}#sha256=[a-f0-9]{64}\\s`),
             `the isolated userscript must load ${file} from the fixture server`);
     }
+    assert.deepEqual(Object.fromEntries(fixtures.managers.map(({ id, enforcesSri }) => [id, enforcesSri])),
+        { tampermonkey: true, violentmonkey: false });
     assert.doesNotMatch(isolated, /@require\s+https:\/\//,
         'no @require may still point at the published tag');
     assert.match(isolated, /document-start-shells-only/);

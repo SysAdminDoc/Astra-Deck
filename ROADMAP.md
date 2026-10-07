@@ -255,19 +255,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   opt-in and default off: masked lookups behind a concurrency cap chosen from a measured live run.
   Complexity: L
 
-- [ ] P2 — Pin the userscript's `@require` libraries with SRI hashes
-  Why: the three libraries load from `raw.githubusercontent.com/.../refs/tags/v<version>/`, so a
-  moved or re-pushed tag changes the code every install runs and nothing checks it. Greasy Fork
-  accepts `@require` URLs that carry SRI hashes, which also helps the blocked Greasy Fork listing.
-  Evidence: `sync-userscript.js:46,62`; https://greasyfork.org/en/help/external-scripts.
-  Confidence: Verified gap; manager behavior on a mismatch needs the smoke run.
-  Touches: `sync-userscript.js`, `YTKit.user.js`, the userscript drift gate,
-  `scripts/smoke-userscript-managers.js`.
-  Acceptance: every `@require` URL carries a `#sha256=` hash of the exact bytes sync writes, and a
-  gate fails when a hash and its file disagree. The manager smoke shows Tampermonkey and
-  Violentmonkey load the real hash and refuse a tampered one.
-  Complexity: S
-
 - [ ] P3 — Bring the What's New note to userscript users
   Why: the extension popup shows a What's New banner after an update, but the userscript has no
   popup and the in-page panel shows nothing. Userscript installs update themselves from main, so

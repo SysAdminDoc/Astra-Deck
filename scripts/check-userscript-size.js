@@ -8,7 +8,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { LIBRARIES, MAX_RECORD_BYTES } = require('../sync-userscript');
+const { LIBRARIES, MAX_RECORD_BYTES, stripIntegrity } = require('../sync-userscript');
 
 const ROOT = path.join(__dirname, '..');
 const MAIN_FILE = 'YTKit.user.js';
@@ -18,7 +18,7 @@ const escapeRe = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // it re-fetches whatever that pointer says today; see the note in
 // sync-userscript.js.
 const TAGGED_LIBRARY_URL_PATTERN = new RegExp(
-    `^https://raw\\.githubusercontent\\.com/SysAdminDoc/Astra-Deck/refs/tags/v\\d+\\.\\d+\\.\\d+/(?:${LIBRARY_FILES.map(escapeRe).join('|')})$`);
+    `^https://raw\\.githubusercontent\\.com/SysAdminDoc/Astra-Deck/refs/tags/v\\d+\\.\\d+\\.\\d+/(?:${LIBRARY_FILES.map(escapeRe).join('|')})#sha256=[a-f0-9]{64}$`);
 const GREASY_FORK_LIBRARY_URL_PATTERN = /^https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^/]+$/;
 const MUTABLE_REF_PATTERN = /githubusercontent\.com\/[^/]+\/[^/]+\/(?:main|master|refs\/heads\/)/;
 
@@ -71,7 +71,7 @@ function main() {
 
     // Order matters: the libraries only register, and the host checks that
     // every one of them did before it runs anything.
-    const requiredFiles = requireUrls.map((url) => url.slice(url.lastIndexOf('/') + 1));
+    const requiredFiles = requireUrls.map(stripIntegrity).map((url) => url.slice(url.lastIndexOf('/') + 1));
     if (requireUrls.length !== LIBRARY_FILES.length
         || requiredFiles.some((file, index) => file !== LIBRARY_FILES[index])) {
         fail(`${MAIN_FILE} must @require ${LIBRARY_FILES.join(', ')} in that order (found ${requiredFiles.join(', ') || 'none'})`);

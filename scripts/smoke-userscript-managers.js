@@ -40,7 +40,13 @@ const {
 const REPO_ROOT = path.join(__dirname, '..');
 const FIXTURES_PATH = path.join(__dirname, 'userscript-manager-fixtures.json');
 const USERSCRIPT_PATH = path.join(REPO_ROOT, 'YTKit.user.js');
-const LIBRARY_FILES = require('../sync-userscript').LIBRARIES.map((library) => library.file);
+const { INTEGRITY_FRAGMENT_RE, LIBRARIES, stripIntegrity } = require('../sync-userscript');
+const LIBRARY_FILES = LIBRARIES.map((library) => library.file);
+// The tamper lane serves this library with one comment line appended, which
+// is still valid JavaScript, so only an SRI check can stop it.
+const TAMPERED_LIBRARY = 'YTKit-app.user.js';
+const TAMPER_SUFFIX = Buffer.from('\n// tampered by the manager smoke\n');
+const TAMPER_RUN_WAIT_MS = 15000;
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'userscript-manager-smoke');
 const CONTRACT = 'document-start-shells-only';
 const MAX_MANAGER_BYTES = 4 * 1024 * 1024;
@@ -110,6 +116,9 @@ function readManagerFixtures(filePath = FIXTURES_PATH) {
         if (!manager.extensionId || !manager.installUrlPattern || !manager.installButton) {
             throw new Error(`${manager.id} is missing install automation metadata`);
         }
+        if (typeof manager.enforcesSri !== 'boolean') {
+            throw new Error(`${manager.id} must say whether it enforces @require SRI hashes (enforcesSri)`);
+        }
     }
     return payload;
 }
@@ -160,16 +169,19 @@ function buildIsolatedUserscript(port) {
     const localMatch = `// @match        ${origin}/*`;
     const result = source
         .replace(/^\/\/ @match\s/m, `${localMatch}\n$&`)
-        .replace(/^(\/\/ @require\s+)\S+\/(YTKit-[a-z]+\.user\.js)$/gm, `$1${origin}/$2`)
-        .replace(/^(\/\/ @resource\s+\S+\s+)\S+\/(extension\/_locales\/[A-Za-z_]+\/messages\.json)$/gm, `$1${origin}/$2`)
+        // Keeps each #sha256= pin: the managers check it against what this
+        // server sends.
+        .replace(/^(\/\/ @require\s+)\S+\/(YTKit-[a-z]+\.user\.js#sha256=[a-f0-9]{64})$/gm, `$1${origin}/$2`)
+        .replace(/^(\/\/ @resource\s+\S+\s+)\S+\/(extension\/_locales\/[A-Za-z_]+\/messages\.json#sha256=[a-f0-9]{64})$/gm, `$1${origin}/$2`)
         .replace(/^\/\/ @updateURL.*\r?\n/m, '')
         .replace(/^\/\/ @downloadURL.*\r?\n/m, '');
     const requires = [...result.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);
     const resources = [...result.matchAll(/^\/\/ @resource\s+\S+\s+(\S+)$/gm)].map((match) => match[1]);
     if (!result.includes(localMatch)
-        || LIBRARY_FILES.some((file) => !requires.includes(`${origin}/${file}`))
+        || LIBRARY_FILES.some((file) => !requires.map(stripIntegrity).includes(`${origin}/${file}`))
         || requires.length !== LIBRARY_FILES.length
-        || resources.some((url) => !url.startsWith(`${origin}/`))) {
+        || requires.some((url) => !INTEGRITY_FRAGMENT_RE.test(url))
+        || resources.some((url) => !url.startsWith(`${origin}/`) || !INTEGRITY_FRAGMENT_RE.test(url))) {
         throw new Error('Could not isolate userscript @match/@require/@resource metadata for the manager smoke');
     }
     if (!result.includes(`'${CONTRACT}'`)) {
@@ -245,11 +257,14 @@ function fixtureHtml(token) {
 </html>`;
 }
 
-async function startFixtureServer() {
+async function startFixtureServer({ tamper = '' } = {}) {
     const port = await reserveLoopbackPort();
     const requests = [];
     const userscript = buildIsolatedUserscript(port);
-    const libraries = new Map(LIBRARY_FILES.map((file) => [`/${file}`, fs.readFileSync(path.join(REPO_ROOT, file))]));
+    const libraries = new Map(LIBRARY_FILES.map((file) => {
+        const bytes = fs.readFileSync(path.join(REPO_ROOT, file));
+        return [`/${file}`, file === tamper ? Buffer.concat([bytes, TAMPER_SUFFIX]) : bytes];
+    }));
     const server = http.createServer((request, response) => {
         const receivedAt = Date.now();
         requests.push({ method: request.method, receivedAt, url: request.url || '' });
@@ -547,6 +562,74 @@ async function runManager(manager, options, firefox, xpiPath, dependencies = {})
     }
 }
 
+// The #sha256= pins, the other way round: a fresh profile, the same install,
+// and TAMPERED_LIBRARY served with a byte change. A manager that enforces SRI
+// must not run the script, whether it refuses at install or at page load. One
+// that doesn't (Violentmonkey, its issue #1558) must still run it, so the
+// smoke notices the day that changes and enforcesSri gets flipped.
+async function runTamperedManager(manager, options, firefox, xpiPath, dependencies = {}) {
+    const openFixture = dependencies.startFixtureServer || startFixtureServer;
+    const openFirefox = dependencies.startFirefoxSession || startFirefoxSession;
+    const fixture = await openFixture({ tamper: TAMPERED_LIBRARY });
+    let session = null;
+    try {
+        session = await openFirefox({
+            cwd: REPO_ROOT,
+            firefox,
+            geckodriver: options.geckodriver,
+            headed: options.headed,
+            systemAccess: true,
+            commandTimeoutMs: options.timeoutMs,
+            startupTimeoutMs: Math.min(options.timeoutMs, 30000)
+        });
+        const { client } = session;
+        await client.command('webExtension.install', {
+            extensionData: { type: 'archivePath', path: xpiPath.split(path.sep).join('/') }
+        });
+        const tree = await client.command('browsingContext.getTree', {});
+        const baseContext = tree.contexts?.[0]?.context;
+        if (!baseContext) throw new Error(`${manager.name} Firefox session has no top-level context`);
+        let installError = null;
+        try {
+            await installUserscript(client, baseContext, manager, fixture.baseUrl, options.timeoutMs);
+        } catch (error) {
+            installError = error;
+        }
+        let ran = false;
+        for (const lane of ['warmup', 'measured']) {
+            await client.command('browsingContext.navigate', {
+                context: baseContext,
+                url: `${fixture.baseUrl}/fixture?token=${manager.id}-tamper-${lane}-${Date.now()}`,
+                wait: 'complete'
+            });
+            await waitForJson(client, baseContext, managerFixtureExpression(), (value) => value?.ready,
+                { timeoutMs: options.timeoutMs, label: `${manager.name} tamper fixture` });
+            const state = await waitForJson(client, baseContext, managerFixtureExpression(),
+                (value) => value?.contract === CONTRACT,
+                { timeoutMs: TAMPER_RUN_WAIT_MS, label: `${manager.name} tampered userscript run` }).catch(() => null);
+            ran = ran || Boolean(state);
+        }
+        if (!fixture.requests.some(({ url }) => url.startsWith(`/${TAMPERED_LIBRARY}`))) {
+            throw new Error(`${manager.name} never fetched the tampered ${TAMPERED_LIBRARY}, so the lane proves nothing`
+                + (installError ? ` (install: ${installError.message.split('\n')[0]})` : ''));
+        }
+        if (manager.enforcesSri && ran) {
+            throw new Error(`${manager.name} ran the userscript with a tampered ${TAMPERED_LIBRARY} despite its #sha256= pin`);
+        }
+        if (!manager.enforcesSri && !ran) {
+            throw new Error(`${manager.name} refused a tampered ${TAMPERED_LIBRARY}: it enforces SRI now, so set enforcesSri`);
+        }
+        return { enforced: manager.enforcesSri, refusedAt: ran ? '' : (installError ? 'install' : 'page load') };
+    } catch (error) {
+        const logs = session?.logs().trim() || '';
+        if (logs) error.message += `\n${logs.slice(-4000)}`;
+        throw error;
+    } finally {
+        if (session) await session.close();
+        await fixture.close();
+    }
+}
+
 async function main(argv = process.argv.slice(2)) {
     const options = parseArgs(argv);
     const payload = readManagerFixtures();
@@ -558,10 +641,14 @@ async function main(argv = process.argv.slice(2)) {
         for (const manager of managers) {
             const xpiPath = await downloadManager(manager, downloadDir, options.timeoutMs);
             const result = await runManager(manager, options, firefox, xpiPath);
+            result.sri = await runTamperedManager(manager, options, firefox, xpiPath);
             results.push(result);
             console.log(
                 `[smoke-userscript-managers] PASS — ${manager.name} ${manager.version}: `
-                + `${CONTRACT}; initial + reinserted shells collapsed; signed-in avatar visible; parser request observed (no pre-request claim)`
+                + `${CONTRACT}; initial + reinserted shells collapsed; signed-in avatar visible; parser request observed (no pre-request claim); `
+                + (result.sri.enforced
+                    ? `pinned libraries load, a tampered one is refused at ${result.sri.refusedAt}`
+                    : 'pinned libraries load, SRI not enforced (a tampered library still runs)')
             );
         }
         const summary = {
@@ -604,6 +691,7 @@ module.exports = {
     parseArgs,
     readManagerFixtures,
     runManager,
+    runTamperedManager,
     selectManagers,
     sha256,
     startFixtureServer

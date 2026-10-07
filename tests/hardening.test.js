@@ -7948,7 +7948,8 @@ test('v4.20.0 the userscript is a generated host plus three @require libraries',
     const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
     const main = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
     const requires = [...main.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);
-    assert.deepEqual(requires.map((url) => url.slice(url.lastIndexOf('/') + 1)),
+    // Each URL ends in its #sha256= pin since the SRI change; the name is before it.
+    assert.deepEqual(requires.map(sync.stripIntegrity).map((url) => url.slice(url.lastIndexOf('/') + 1)),
         sync.LIBRARIES.map(({ file }) => file),
         'YTKit.user.js must @require each library once, core first');
     const build = readUserscriptBuild(main);

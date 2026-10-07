@@ -223,7 +223,8 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
     // on different days; v4.88.3 pinned it to an immutable tag ref.
     const block = extractMetadataBlock(main);
     const requires = metadataValues(block, 'require');
-    assert.deepEqual(requires.map((url) => url.slice(url.lastIndexOf('/') + 1)),
+    // Each URL ends in its #sha256= pin since the SRI change; the name is before it.
+    assert.deepEqual(requires.map((url) => url.split('#')[0]).map((url) => url.slice(url.lastIndexOf('/') + 1)),
         USERSCRIPT_LIBRARIES.map(({ file }) => file),
         'YTKit.user.js must @require each library once, in the order the host expects to find them registered');
     for (const url of requires) {
@@ -259,11 +260,18 @@ test('userscript-health: core dependency gate rejects placeholders and unknown h
     // different bytes on different days, in a script that grants
     // GM_xmlhttpRequest to three AI providers and loopback. Only an immutable
     // tag ref or a numbered Greasy Fork record may resolve.
+    // A tag can be re-pushed too, so since the SRI change the URL must also
+    // carry the #sha256= of its bytes.
+    assert.equal(
+        isResolvableRequireUrl(
+            `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js#sha256=${'a'.repeat(64)}`),
+        true,
+        'a tag-pinned, hash-pinned raw GitHub core must be accepted');
     assert.equal(
         isResolvableRequireUrl(
             'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js'),
-        true,
-        'a tag-pinned raw GitHub core must be accepted');
+        false,
+        'a tag-pinned core with no hash must fail closed');
     assert.equal(
         isResolvableRequireUrl(
             'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js'),
@@ -280,4 +288,36 @@ test('userscript-health: core dependency gate rejects placeholders and unknown h
         'the placeholder Greasy Fork core record must fail closed');
     assert.equal(isResolvableRequireUrl('https://invalid.example.invalid/ytkit-core.js'), false,
         'an unresolvable external core host must fail closed');
+});
+
+// A tag can be deleted and re-pushed, so each @require and @resource also
+// pins the SHA-256 of the bytes sync-userscript.js wrote. Tampermonkey refuses
+// a mismatch (the manager smoke's tamper lane shows it); the drift gate fails
+// on one before a push can serve it.
+test('userscript-health: every @require and @resource pins the SHA-256 of the file it names', () => {
+    const { findIntegrityMismatches, integrityFragment } = require('../sync-userscript');
+    const root = path.join(__dirname, '..');
+    const read = (file) => {
+        const target = path.join(root, file);
+        return fs.existsSync(target) ? fs.readFileSync(target) : null;
+    };
+    const main = readUserscript('YTKit.user.js');
+    assert.deepEqual(findIntegrityMismatches(main, read), []);
+    const header = main.split('// ==/UserScript==')[0];
+    const locales = fs.readdirSync(path.join(root, 'extension', '_locales')).length;
+    assert.equal((header.match(/^\/\/ @require\s+\S+#sha256=[a-f0-9]{64}$/gm) || []).length, USERSCRIPT_LIBRARIES.length);
+    assert.equal((header.match(/^\/\/ @resource\s+\S+\s+\S+#sha256=[a-f0-9]{64}$/gm) || []).length, locales - 1,
+        'every locale but the embedded English one is a pinned @resource');
+
+    const tampered = (target) => (file) => (file === target ? Buffer.concat([read(file), Buffer.from('\n')]) : read(file));
+    assert.match(findIntegrityMismatches(main, tampered('YTKit-app.user.js')).join('\n'),
+        /YTKit-app\.user\.js does not match/);
+    assert.match(findIntegrityMismatches(main, tampered('extension/_locales/de/messages.json')).join('\n'),
+        /_locales\/de\/messages\.json does not match/);
+    assert.match(findIntegrityMismatches(main.replace(/(YTKit-core\.user\.js)#sha256=[a-f0-9]{64}/, '$1'), read).join('\n'),
+        /YTKit-core\.user\.js carries no #sha256= hash/);
+    assert.match(findIntegrityMismatches(main, (file) => (file === 'YTKit-features.user.js' ? null : read(file))).join('\n'),
+        /YTKit-features\.user\.js is pinned by YTKit\.user\.js but missing/);
+    assert.equal(integrityFragment(Buffer.from('abc')),
+        '#sha256=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
 });

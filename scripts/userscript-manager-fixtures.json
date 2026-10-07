@@ -12,7 +12,8 @@
       "size": 687379,
       "installUrlPattern": "/confirm/index.html",
       "installButton": "#confirm:not([disabled])",
-      "installedText": "Script installed."
+      "installedText": "Script installed.",
+      "enforcesSri": false
     },
     {
       "id": "tampermonkey",
@@ -24,7 +25,8 @@
       "size": 1717973,
       "installUrlPattern": "/ask.html",
       "installButton": ".button.install:not([disabled])",
-      "installedText": ""
+      "installedText": "",
+      "enforcesSri": true
     }
   ]
 }

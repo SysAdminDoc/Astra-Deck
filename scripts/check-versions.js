@@ -96,7 +96,7 @@ function readUserscriptNameVersion(source = fs.readFileSync(path.join(REPO_ROOT,
 // nothing anywhere saying so. The expected URLs come from the same function
 // sync-userscript.js writes them with, in the order the host needs.
 function findUserscriptRequireDrift(productVersion, source) {
-    const { LIBRARIES, tagUrl } = require('../sync-userscript.js');
+    const { LIBRARIES, stripIntegrity, tagUrl } = require('../sync-userscript.js');
     const expected = LIBRARIES.map((library) => tagUrl(productVersion, library.file));
     // Read the lines a userscript manager reads: only those between the
     // ==UserScript== markers, and with its relaxed parsing, where anything may
@@ -109,7 +109,9 @@ function findUserscriptRequireDrift(productVersion, source) {
     const block = close === -1 ? [] : lines.slice(open + 1, close);
     const found = block
         .map((line) => /\/\/[ \t]*@require[ \t]+(\S+)/.exec(line)?.[1])
-        .filter(Boolean);
+        .filter(Boolean)
+        // The #sha256= fragment is check-userscript-drift's to verify.
+        .map(stripIntegrity);
     const same = found.length === expected.length && found.every((url, index) => url === expected[index]);
     return same ? null : { expected, found };
 }

@@ -126,7 +126,7 @@ data-consent permissions cover the documented collection categories).
 
 Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then open [`YTKit.user.js`](https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js) and confirm the install. It updates itself.
 
-The userscript is the extension. It runs the same files, so you get the same features, settings panel, themes and Theater Split, and a fix to one is a fix to both. `YTKit.user.js` is a small host that stands in for the browser's extension APIs using your manager's `GM_*` grants. It loads three libraries (`YTKit-core`, `YTKit-features` and `YTKit-app`) with `@require`, pinned to the release tag that matches its version, and `node sync-userscript.js` builds all four files from `extension/`.
+The userscript is the extension. It runs the same files, so you get the same features, settings panel, themes and Theater Split, and a fix to one is a fix to both. `YTKit.user.js` is a small host that stands in for the browser's extension APIs using your manager's `GM_*` grants. It loads three libraries (`YTKit-core`, `YTKit-features` and `YTKit-app`) with `@require`, pinned to the release tag that matches its version, and `node sync-userscript.js` builds all four files from `extension/`. Each `@require` and translation `@resource` also ends in `#sha256=` and the hash of the exact file it should get. Tampermonkey checks it and won't run a file that doesn't match. Violentmonkey doesn't check these hashes yet.
 
 A few things work differently because a userscript manager isn't a browser extension:
 

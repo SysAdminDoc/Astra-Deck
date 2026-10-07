@@ -197,7 +197,8 @@ test('the installed userscript reaches the shared guard through a tag-pinned @re
         && read(file).includes('__astraDeckRegistry["core/regex-safety.js"] = function '));
     assert.ok(carrier, "one of the userscript libraries must register core/regex-safety.js");
     const requires = [...main.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]);
-    assert.ok(requires.some((url) => url.endsWith("/" + carrier)),
+    // Each URL ends in its #sha256= pin since the SRI change; the name is before it.
+    assert.ok(requires.some((url) => url.split("#")[0].endsWith("/" + carrier)),
         `the installed userscript must @require ${carrier}, which carries the guard`);
     assert.ok(requires.every((url) => !/Astra-Deck\/(?:main|master|refs\/heads\/)/.test(url)),
         "and no requirement may resolve through a mutable branch pointer");
