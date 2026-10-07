@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "O YouTube só mostra o rótulo \"Feito com IA\" na página do vídeo, nunca em um card."
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "Vai pular para o momento mais repetido quando o anúncio acabar"
   }
 }

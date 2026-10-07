@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube は「AI で作成」ラベルを再生ページにのみ表示し、カードには表示しません。"
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "広告が終わったら最も繰り返し再生された場面へ移動します"
   }
 }

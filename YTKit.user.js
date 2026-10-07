@@ -3615,7 +3615,8 @@ const ASTRA_DECK_BUILD = {
 		"feature_hideVideosMadeWithAiLookups_desc": "Works with Made With AI Label. Asks YouTube for each card's label so labeled videos hide before you open them: one small request per card, four at a time, without your cookies.",
 		"videoHiderReasonMadeWithAi": "YouTube's \"Made with AI\" label",
 		"videoHiderAiLabelTitle": "YouTube's AI label",
-		"videoHiderAiLabelDesc": "YouTube only shows its \"Made with AI\" label on the watch page, never on a card."
+		"videoHiderAiLabelDesc": "YouTube only shows its \"Made with AI\" label on the watch page, never on a card.",
+		"heatmapJumpAfterAdToast": "Jumping to the most replayed moment once the ad ends"
 	}
 };
 

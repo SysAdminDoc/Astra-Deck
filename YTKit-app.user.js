@@ -2497,6 +2497,13 @@ const STORAGE_KEYS = Object.freeze({
 	function isProgrammaticPlaybackRateChange() {
 		return Date.now() < programmaticRateUntil;
 	}
+	function isAdShowingIn(video) {
+		const player = video?.closest?.('.html5-video-player');
+		return !!player && (
+			player.classList.contains('ad-showing')
+			|| player.classList.contains('ad-interrupting')
+		);
+	}
 	function unregisterPersistentButton(id) {
 		const config = persistentButtons.get(id);
 		if (config) {
@@ -12680,6 +12687,7 @@ const STORAGE_KEYS = Object.freeze({
 			_markers: [],
 			_btn: null,
 			_navRule: null,
+			_pendingSeek: null,
 			_readMarkers() {
 				if (typeof heatmapMarkersFor !== 'function') return [];
 				return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData, _rw.navigatedPageData);
@@ -12688,6 +12696,30 @@ const STORAGE_KEYS = Object.freeze({
 				const peak = findMostReplayed(this._markers);
 				const video = getMainVideoElement();
 				if (!peak || !video) return;
+				this._cancelPendingSeek();
+				if (isAdShowingIn(video)) {
+					const videoId = getVideoId();
+					const handler = () => {
+						if (getVideoId() !== videoId) {
+							this._cancelPendingSeek();
+							return;
+						}
+						if (isAdShowingIn(video)) return;
+						this._cancelPendingSeek();
+						this._seek(video, peak);
+					};
+					this._pendingSeek = { video, handler };
+					video.addEventListener('timeupdate', handler);
+					showToast(
+						t('heatmapJumpAfterAdToast', 'Jumping to the most replayed moment once the ad ends'),
+						'#3b82f6',
+						{ duration: 2 }
+					);
+					return;
+				}
+				this._seek(video, peak);
+			},
+			_seek(video, peak) {
 				video.currentTime = peak.startSeconds;
 				showToast(
 					t('heatmapJumpedToast', 'Jumped to the most replayed moment'),
@@ -12695,12 +12727,18 @@ const STORAGE_KEYS = Object.freeze({
 					{ duration: 2 }
 				);
 			},
+			_cancelPendingSeek() {
+				if (!this._pendingSeek) return;
+				this._pendingSeek.video.removeEventListener('timeupdate', this._pendingSeek.handler);
+				this._pendingSeek = null;
+			},
 			_removeButton() {
 				this._btn?.remove();
 				this._btn = null;
 				unregisterPersistentButton(this.id);
 			},
 			_sync() {
+				this._cancelPendingSeek();
 				this._markers = this._readMarkers();
 				if (!this._markers.length) {
 					this._removeButton();
@@ -12737,6 +12775,7 @@ const STORAGE_KEYS = Object.freeze({
 			destroy() {
 				removeNavigateRule(this.id);
 				this._navRule = null;
+				this._cancelPendingSeek();
 				this._markers = [];
 				this._removeButton();
 			}
@@ -12766,6 +12805,10 @@ const STORAGE_KEYS = Object.freeze({
 				const video = this._video;
 				if (!video || !this._markers.length) return;
 				if (getFeatureById('liveLatencyCatchup')?._ownsRate?.(video)) return;
+				if (isAdShowingIn(video)) {
+					this._restoreBaseRate();
+					return;
+				}
 				if (this._baseRate == null) this._baseRate = video.playbackRate || 1;
 				if (this._appliedRate != null
 					&& Math.abs(video.playbackRate - this._appliedRate) > 0.001

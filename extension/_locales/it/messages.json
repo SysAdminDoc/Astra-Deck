@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube mostra la sua etichetta \"Creato con l'IA\" solo nella pagina di riproduzione, mai su una scheda."
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "Salto al momento più rivisto appena finisce l'annuncio"
   }
 }

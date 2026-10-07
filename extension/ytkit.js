@@ -3770,6 +3770,16 @@ const STORAGE_KEYS = Object.freeze({
         return Date.now() < programmaticRateUntil;
     }
 
+    // Ads play in the same <video> as the watch content, so a seek or a rate
+    // meant for the video lands on the ad while one is showing.
+    function isAdShowingIn(video) {
+        const player = video?.closest?.('.html5-video-player');
+        return !!player && (
+            player.classList.contains('ad-showing')
+            || player.classList.contains('ad-interrupting')
+        );
+    }
+
     function unregisterPersistentButton(id) {
         const config = persistentButtons.get(id);
         if (config) {
@@ -19445,6 +19455,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _markers: [],
             _btn: null,
             _navRule: null,
+            _pendingSeek: null,
 
             _readMarkers() {
                 if (typeof heatmapMarkersFor !== 'function') return [];
@@ -19460,12 +19471,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const peak = findMostReplayed(this._markers);
                 const video = getMainVideoElement();
                 if (!peak || !video) return;
+                this._cancelPendingSeek();
+                // Seeking an ad to the video's peak ends the ad, and the video
+                // then starts at 0:00. Wait for the video itself instead.
+                if (isAdShowingIn(video)) {
+                    const videoId = getVideoId();
+                    const handler = () => {
+                        if (getVideoId() !== videoId) {
+                            this._cancelPendingSeek();
+                            return;
+                        }
+                        if (isAdShowingIn(video)) return;
+                        this._cancelPendingSeek();
+                        this._seek(video, peak);
+                    };
+                    this._pendingSeek = { video, handler };
+                    video.addEventListener('timeupdate', handler);
+                    showToast(
+                        t('heatmapJumpAfterAdToast', 'Jumping to the most replayed moment once the ad ends'),
+                        '#3b82f6',
+                        { duration: 2 }
+                    );
+                    return;
+                }
+                this._seek(video, peak);
+            },
+
+            _seek(video, peak) {
                 video.currentTime = peak.startSeconds;
                 showToast(
                     t('heatmapJumpedToast', 'Jumped to the most replayed moment'),
                     '#22c55e',
                     { duration: 2 }
                 );
+            },
+
+            _cancelPendingSeek() {
+                if (!this._pendingSeek) return;
+                this._pendingSeek.video.removeEventListener('timeupdate', this._pendingSeek.handler);
+                this._pendingSeek = null;
             },
 
             _removeButton() {
@@ -19475,6 +19519,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _sync() {
+                this._cancelPendingSeek();
                 this._markers = this._readMarkers();
                 // No heatmap means no control. A dead button on every video
                 // without the data would be worse than no feature: it would
@@ -19515,6 +19560,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
+                this._cancelPendingSeek();
                 this._markers = [];
                 this._removeButton();
             }
@@ -19553,6 +19599,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Another feature owning the rate wins: live catch-up writes
                 // the rate for reasons this feature cannot see.
                 if (getFeatureById('liveLatencyCatchup')?._ownsRate?.(video)) return;
+                // The curve describes the video, not an ad playing in the same
+                // element. Hand the ad back the user's own speed and leave it.
+                if (isAdShowingIn(video)) {
+                    this._restoreBaseRate();
+                    return;
+                }
                 if (this._baseRate == null) this._baseRate = video.playbackRate || 1;
                 // A rate change the USER made re-bases the feature instead of
                 // being overwritten on the next tick.

@@ -4,16 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P3 — The heatmap features act on an in-stream ad
-  Why: seen 2026-10-06 in the headless heatmap check. With `#movie_player.ad-showing`, the video
-  element is the ad. Jump to Most Replayed set the ad's currentTime to the video's peak (162 s on
-  a 15 s ad), which ended the ad and started the real video at 0:00 instead of the peak. Heatmap
-  Smart Speed ran the ad at the cold rate, steered by the video's curve.
-  Where: `extension/ytkit.js` `jumpToMostReplayed._seekToPeak` and `heatmapSmartSpeed._tick`.
-  Acceptance: WHILE an ad is showing, the jump SHALL land on the video's peak once the video plays
-  (or do nothing and say so), and Smart Speed SHALL leave the rate alone.
-  Complexity: S
-
 - [ ] P3 — Two popup "in-page panel" settings have no editor anywhere
   Why: found 2026-10-06. `featureSchedules` and `syncSafePrefsAllowlist` show the popup's
   "in-page panel" button, which promises the panel edits them, but nothing does. The panel now

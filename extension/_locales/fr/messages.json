@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube n'affiche son label « Créé avec l'IA » que sur la page de lecture, jamais sur une carte."
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "Saut vers le moment le plus revu dès la fin de la pub"
   }
 }

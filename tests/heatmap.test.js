@@ -486,3 +486,152 @@ test('the runtime object really exposes ytInitialData, not just the call site', 
     assert.equal(loadHeatmap().parseHeatmapMarkers(data).length, 5,
         'the object the accessor returns has to be the one the parser understands');
 });
+
+// An in-stream ad plays in the watch page's own <video>. Seen 2026-10-06 in
+// the headless heatmap check: the jump seeked a 15 s ad to the video's 162 s
+// peak, which ended the ad and started the video at 0:00, and Smart Speed ran
+// the ad at the cold rate, steered by the video's curve.
+
+const { isAdShowingIn } = require('./helpers/monolith').loadDeclarations(['isAdShowingIn']);
+
+function playerVideo({ ad = 'ad-showing', rate = 1 } = {}) {
+    const classes = new Set(['html5-video-player']);
+    if (ad) classes.add(ad);
+    const listeners = new Map();
+    const player = { classList: { contains: (name) => classes.has(name) } };
+    const video = {
+        currentTime: 3,
+        playbackRate: rate,
+        closest: (selector) => (selector === '.html5-video-player' ? player : null),
+        addEventListener: (type, fn) => listeners.set(type, fn),
+        removeEventListener: (type, fn) => { if (listeners.get(type) === fn) listeners.delete(type); }
+    };
+    return { video, listeners, startAd: () => classes.add('ad-showing'), endAd: () => { classes.delete('ad-showing'); classes.delete('ad-interrupting'); } };
+}
+
+test('isAdShowingIn reads both of the player classes YouTube uses for an ad', () => {
+    assert.equal(isAdShowingIn(playerVideo().video), true);
+    assert.equal(isAdShowingIn(playerVideo({ ad: 'ad-interrupting' }).video), true);
+    assert.equal(isAdShowingIn(playerVideo({ ad: null }).video), false);
+    assert.equal(isAdShowingIn({}), false, 'a video outside a player is not an ad');
+    assert.equal(isAdShowingIn(null), false);
+});
+
+function jumpFeature(video, toasts, currentVideo = { id: PLAYING }) {
+    const core = loadHeatmap();
+    const feature = loadFeature('jumpToMostReplayed', {
+        heatmapMarkersFor: core.heatmapMarkersFor,
+        findMostReplayed: core.findMostReplayed,
+        getMainVideoElement: () => video,
+        getVideoId: () => currentVideo.id,
+        isAdShowingIn,
+        unregisterPersistentButton() {},
+        showToast: (message) => toasts.push(message),
+        _rw: { ytInitialPlayerResponse: heatmapPayload() }
+    });
+    feature._markers = feature._readMarkers();
+    return feature;
+}
+
+test('the jump waits out an ad, then lands on the video peak', () => {
+    const { video, listeners, endAd } = playerVideo();
+    const toasts = [];
+    const feature = jumpFeature(video, toasts);
+
+    feature._seekToPeak();
+    assert.equal(video.currentTime, 3, 'the ad is never seeked');
+    listeners.get('timeupdate')();
+    assert.equal(video.currentTime, 3, 'nothing happens while the ad still plays');
+    endAd();
+    listeners.get('timeupdate')();
+
+    assert.equal(video.currentTime, 20, 'the video lands on its peak');
+    assert.equal(listeners.has('timeupdate'), false, 'the one-shot listener is gone');
+    assert.deepEqual(toasts, [
+        'Jumping to the most replayed moment once the ad ends',
+        'Jumped to the most replayed moment'
+    ]);
+});
+
+test('a pending jump is dropped when the user moves on to another video', () => {
+    const { video, listeners, endAd } = playerVideo();
+    const current = { id: PLAYING };
+    const feature = jumpFeature(video, [], current);
+
+    feature._seekToPeak();
+    current.id = 'zzzzzzzzzzz';
+    endAd();
+    listeners.get('timeupdate')();
+    assert.equal(video.currentTime, 3, "the old video's peak is not applied to the new one");
+    assert.equal(listeners.has('timeupdate'), false);
+
+    feature._seekToPeak();
+    feature.destroy();
+    assert.equal(listeners.has('timeupdate'), false, 'teardown drops a pending jump too');
+});
+
+test('without an ad the jump seeks at once, as before', () => {
+    const { video, listeners } = playerVideo({ ad: null });
+    jumpFeature(video, [])._seekToPeak();
+    assert.equal(video.currentTime, 20);
+    assert.equal(listeners.size, 0);
+});
+
+test('Smart Speed leaves an ad alone and gives it back the user speed', () => {
+    const core = loadHeatmap();
+    const { video, startAd, endAd } = playerVideo({ ad: null, rate: 1.25 });
+    const writes = [];
+    const feature = loadFeature('heatmapSmartSpeed', {
+        heatmapMarkersFor: core.heatmapMarkersFor,
+        resolveHeatmapRate: core.resolveHeatmapRate,
+        setProgrammaticPlaybackRate: (target, rate) => { writes.push(rate); target.playbackRate = rate; },
+        isProgrammaticPlaybackRateChange: () => false,
+        getFeatureById: () => null,
+        isAdShowingIn,
+        appState: { settings: { heatmapSmartSpeedColdRate: 2 } },
+        _rw: { ytInitialPlayerResponse: heatmapPayload() }
+    });
+    feature._markers = feature._readMarkers();
+    feature._video = video;
+
+    video.currentTime = 5;
+    feature._tick();
+    assert.equal(video.playbackRate, 2, 'a cold region of the video speeds up');
+
+    startAd();
+    feature._tick();
+    assert.equal(video.playbackRate, 1.25, 'an ad starting mid-cold-region gets the user speed back');
+    const before = writes.length;
+    feature._tick();
+    assert.equal(writes.length, before, 'and the ad is left alone after that');
+
+    endAd();
+    feature._tick();
+    assert.equal(video.playbackRate, 2, 'the video picks the curve back up after the ad');
+});
+
+test('Smart Speed never takes an ad rate as the user speed', () => {
+    const core = loadHeatmap();
+    const { video, endAd } = playerVideo({ rate: 1 });
+    const feature = loadFeature('heatmapSmartSpeed', {
+        heatmapMarkersFor: core.heatmapMarkersFor,
+        resolveHeatmapRate: core.resolveHeatmapRate,
+        setProgrammaticPlaybackRate: (target, rate) => { target.playbackRate = rate; },
+        isProgrammaticPlaybackRateChange: () => false,
+        getFeatureById: () => null,
+        isAdShowingIn,
+        appState: { settings: { heatmapSmartSpeedColdRate: 2 } },
+        _rw: { ytInitialPlayerResponse: heatmapPayload() }
+    });
+    feature._markers = feature._readMarkers();
+    feature._video = video;
+
+    video.currentTime = 25;
+    feature._tick();
+    assert.equal(feature._baseRate, null, 'a pre-roll is not sampled as the base');
+    assert.equal(video.playbackRate, 1);
+    endAd();
+    video.playbackRate = 1.5;
+    feature._tick();
+    assert.equal(feature._baseRate, 1.5, "the base is the video's own rate");
+});

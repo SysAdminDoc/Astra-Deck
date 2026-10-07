@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube 只在播放页显示“AI 制作”标签，从不在卡片上显示。"
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "广告结束后跳到重播最多的片段"
   }
 }

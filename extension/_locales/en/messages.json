@@ -9238,5 +9238,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube only shows its \"Made with AI\" label on the watch page, never on a card."
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "Jumping to the most replayed moment once the ad ends"
   }
 }

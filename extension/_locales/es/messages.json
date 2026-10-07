@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube solo muestra su etiqueta \"Hecho con IA\" en la página de reproducción, nunca en una tarjeta."
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "Saltará al momento más repetido cuando termine el anuncio"
   }
 }

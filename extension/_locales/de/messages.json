@@ -9177,5 +9177,8 @@
   },
   "videoHiderAiLabelDesc": {
     "message": "YouTube zeigt sein Label „Mit KI erstellt“ nur auf der Wiedergabeseite, nie auf einer Karte."
+  },
+  "heatmapJumpAfterAdToast": {
+    "message": "Springt zur meistwiederholten Stelle, sobald die Werbung endet"
   }
 }
