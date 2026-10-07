@@ -1009,10 +1009,28 @@ function fakeDocument(resolve) {
 }
 
 function simpleSelectorMatch(node, selector) {
-    const candidate = String(selector || '').trim().split(/[\s>+~]+/).at(-1);
+    const text = String(selector || '').trim();
+    const compounds = text.split(/[\s>+~]+/);
+    const candidate = compounds.at(-1);
     if (!candidate || candidate === ':scope') return false;
-    if (candidate === '*') return true;
-    try { return node.matches(candidate); } catch { return false; }
+    const matchesOne = (target, compound) => compound === '*' || compound === ':scope' || (() => {
+        try { return target.matches(compound); } catch { return false; }
+    })();
+    if (!matchesOne(node, candidate)) return false;
+    // Ancestors count too, as in a browser. Matching the last compound alone
+    // answered '.tab.active .label' with the first label in the tree. Sibling
+    // combinators are still not modelled.
+    if (/[+~]/.test(text)) return true;
+    const steps = text.replace(/\s*>\s*/g, ' > ').split(/\s+/);
+    let current = node;
+    for (let index = steps.length - 2; index >= 0; index -= 1) {
+        const child = steps[index] === '>';
+        if (child) index -= 1;
+        current = current.parentElement;
+        if (!child) while (current && !matchesOne(current, steps[index])) current = current.parentElement;
+        if (!current || !matchesOne(current, steps[index])) return false;
+    }
+    return true;
 }
 
 function collectFakeTree(root, selector) {

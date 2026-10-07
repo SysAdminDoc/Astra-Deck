@@ -17,7 +17,8 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 - [ ] P3 — Two popup "in-page panel" settings have no editor anywhere
   Why: found 2026-10-06. `featureSchedules` and `syncSafePrefsAllowlist` show the popup's
   "in-page panel" button, which promises the panel edits them, but nothing does. The panel now
-  reports `focused: false` for them and opens on its last page.
+  reports `focused: false` for them and opens on its last page. The popup doesn't read that
+  reply yet (`sendPanelOpenMessage` in `extension/popup.js` only checks `ok`), so it can't say so.
   Where: `extension/popup.js` (`createSchemaSurfaceChip`), `extension/ytkit.js` (schedules ~6245,
   sync allowlist ~4915).
   Acceptance: neither key SHALL offer a button that opens the panel on nothing: each either gets
@@ -72,7 +73,9 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Why: `attachUIEventListeners()` in `extension/ytkit.js` (~43586) delegates to the
   settings-panel module and otherwise runs a full inline copy of the panel's handlers. That
   copy only runs when the module failed to load, and it has already drifted: its reset and
-  export statuses are English literals where the module now routes them through `t()`. The
+  export statuses are English literals where the module now routes them through `t()`. It also
+  files cards by their raw `group` (~40607), so the features the module places through its
+  group map, Return YouTube Dislike and the notification bell among them, get no card there. The
   same peel was finished for Theater Split, whose monolith copy is a descriptor stub.
   Where: `extension/ytkit.js` (the inline fallback around ~43586 onward),
   `tests/ux-theming-fixes.test.js` (pins the fallback's literals), `scripts/check-monolith-peel.js`.

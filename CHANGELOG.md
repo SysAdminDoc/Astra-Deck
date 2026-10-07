@@ -14,6 +14,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The settings links in the toolbar popup land on the setting now. Its "in-page panel" buttons for lists and saved data (hidden Guide, chat, player and watch page items, video notes, per-channel SponsorBlock and intro/outro skips, DeArrow channel overrides, watch time) matched no row, so the panel opened on whatever page it showed last. It now opens on the right page with that setting's switch focused, clears a search that would hide it, and keeps focus there instead of jumping to the search box. A link that opens a new YouTube tab opens the panel too; before, it waited for you to open the panel yourself.
 
+- A settings link that lands on a card with nothing to switch, like a watch-time readout, or on a setting that's greyed out until its main switch is on, now leaves the focus on that card instead of the search box. The panel's Active section readout follows the link to its page too.
+
 - Jump to Most Replayed and Heatmap Smart Speed work again after you click from one video to another. Once they stopped trusting a curve that names a different video, the only curves they could read came from the page you first opened. So after a click the button vanished and the speed didn't change until you reloaded. They now take the curve YouTube sends with each navigation, in Chrome and Firefox.
 
 - A card's Reset button could switch a hide on. On a Guide, chat or player list you'd never changed, turning an item on and off again made Reset turn it back on, because the switch had quietly moved the default too. Undo on the Reset toast works after you've closed the panel now, and a Reset that needs host access waits for your answer before it says anything was reset.

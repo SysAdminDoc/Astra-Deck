@@ -413,13 +413,33 @@
             // and it ignores a closed panel anyway.
             const pane = card.closest('.ytkit-pane');
             const navBtn = pane && panel.querySelector(`.ytkit-nav-btn[data-tab="${CSS.escape(pane.id.replace('ytkit-pane-', ''))}"]`);
-            if (navBtn) syncPanelCategorySelection(navBtn);
+            if (navBtn) selectPanelCategory(navBtn);
 
             card.classList.add('ytkit-deep-linked');
             card.scrollIntoView?.({ block: 'center' });
-            _deepLinkFocus = card.querySelector('input, select, textarea, button') || card;
-            _deepLinkFocus.focus?.({ preventScroll: true });
+            // Sub-cards are inert while their parent is off, and nothing in an
+            // inert block takes focus. What unlocks them does: the parent's
+            // switch drawn just above, or the Digital Wellbeing shortcut.
+            const unlock = card.closest('.ytkit-sub-features[inert]')?.previousElementSibling;
+            _deepLinkFocus = unlock?.querySelector('input, select, textarea, button')
+                || card.querySelector('input, select, textarea, button') || card;
+            focusDeepLinkTarget();
             return true;
+        }
+
+        // Focus the linked control, or the card itself when the control can't
+        // take focus: an info card has none, and a control can be disabled.
+        // Focus used to fall through to the search box while the popup was
+        // told the link landed.
+        function focusDeepLinkTarget() {
+            if (!_deepLinkFocus) return false;
+            _deepLinkFocus.focus?.({ preventScroll: true });
+            if (document.activeElement === _deepLinkFocus) return true;
+            const card = _deepLinkFocus.closest?.('.ytkit-feature-card');
+            if (!card) return false;
+            if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+            card.focus({ preventScroll: true });
+            return document.activeElement === card;
         }
 
         // Re-runs whichever filter is active so a reset immediately leaves the
@@ -466,8 +486,7 @@ function setSettingsPanelOpen(open) {
                 if (!isSettingsPanelOpen()) return;
                 if (_deepLinkFocus?.isConnected) {
                     _deepLinkFocus.closest?.('.ytkit-feature-card')?.scrollIntoView?.({ block: 'center' });
-                    _deepLinkFocus.focus?.({ preventScroll: true });
-                    if (document.activeElement === _deepLinkFocus) {
+                    if (focusDeepLinkTarget()) {
                         _deepLinkFocus = null;
                         return;
                     }
@@ -575,6 +594,24 @@ function syncPanelCategorySelection(activeButton) {
             pane.setAttribute('aria-labelledby', `ytkit-tab-${pane.id.replace('ytkit-pane-', '')}`);
         });
         syncCategoryReorderButtons();
+    }
+
+// What picking a category does, for the tab, a deep link and the Digital
+// Wellbeing shortcut. The last two used to select it alone, which left the
+// active-section readout on the old category and a stored list unrefreshed.
+function selectPanelCategory(navBtn) {
+        syncPanelCategorySelection(navBtn);
+        const pane = document.getElementById(`ytkit-pane-${navBtn.dataset.tab}`);
+        if (pane) {
+            // Stored-list panes re-read storage on selection so they
+            // never show a snapshot from when the panel was built.
+            if (typeof pane._ytkitRefresh === 'function') pane._ytkitRefresh();
+            pane.scrollTop = 0;
+        }
+        if (typeof navBtn._ytkitRefreshCount === 'function') navBtn._ytkitRefreshCount();
+        const contentArea = document.querySelector('.ytkit-content');
+        if (contentArea) contentArea.scrollTop = 0;
+        updatePanelInsightState();
     }
 
 // The move up / move down pair acts on the selected category. It used to
@@ -3327,17 +3364,16 @@ function buildSettingsPanel() {
                         'Open Digital Wellbeing'
                     );
                     dependencyAction.addEventListener('click', () => {
-                        const parentFeature = getFeatureById(parentId);
-                        const parentCategoryId = String(parentFeature?.group || 'Advanced')
-                            .replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
-                        const parentNav = document.querySelector(`.ytkit-nav-btn[data-tab="${parentCategoryId}"]`);
-                        if (!parentNav) return;
-                        syncPanelCategorySelection(parentNav);
-                        const parentPane = document.getElementById(`ytkit-pane-${parentCategoryId}`);
-                        if (parentPane) parentPane.scrollTop = 0;
+                        // The page the card is drawn on. The raw group only
+                        // named one while Digital Wellbeing's group had a page
+                        // of its own, and a remap would have made this a no-op.
                         const parentCard = document.querySelector(`.ytkit-feature-card[data-feature-id="${parentId}"]`);
-                        parentCard?.scrollIntoView?.({ block: 'center' });
-                        parentCard?.querySelector('input, select, textarea, button')?.focus?.({ preventScroll: true });
+                        const parentPane = parentCard?.closest('.ytkit-pane');
+                        const parentNav = parentPane && document.querySelector(`.ytkit-nav-btn[data-tab="${parentPane.id.replace('ytkit-pane-', '')}"]`);
+                        if (!parentNav) return;
+                        selectPanelCategory(parentNav);
+                        parentCard.scrollIntoView?.({ block: 'center' });
+                        parentCard.querySelector('input, select, textarea, button')?.focus?.({ preventScroll: true });
                     });
                     dependency.append(dependencyCopy, dependencyAction);
                     sectionBody.appendChild(dependency);
@@ -4111,18 +4147,7 @@ function attachUIEventListeners() {
             }
             const navBtn = e.target.closest('.ytkit-nav-btn');
             if (navBtn) {
-                syncPanelCategorySelection(navBtn);
-                const pane = doc.querySelector(`#ytkit-pane-${navBtn.dataset.tab}`);
-                if (pane) {
-                    // Stored-list panes re-read storage on selection so they
-                    // never show a snapshot from when the panel was built.
-                    if (typeof pane._ytkitRefresh === 'function') pane._ytkitRefresh();
-                    pane.scrollTop = 0;
-                }
-                if (typeof navBtn._ytkitRefreshCount === 'function') navBtn._ytkitRefreshCount();
-                const contentArea = doc.querySelector('.ytkit-content');
-                if (contentArea) contentArea.scrollTop = 0;
-                updatePanelInsightState();
+                selectPanelCategory(navBtn);
                 // Clear search on tab click
                 const searchInput = doc.getElementById('ytkit-search');
                 if (searchInput && searchInput.value) {

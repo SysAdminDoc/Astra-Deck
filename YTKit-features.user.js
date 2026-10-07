@@ -15785,12 +15785,24 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			}
 			const pane = card.closest('.ytkit-pane');
 			const navBtn = pane && panel.querySelector(`.ytkit-nav-btn[data-tab="${CSS.escape(pane.id.replace('ytkit-pane-', ''))}"]`);
-			if (navBtn) syncPanelCategorySelection(navBtn);
+			if (navBtn) selectPanelCategory(navBtn);
 			card.classList.add('ytkit-deep-linked');
 			card.scrollIntoView?.({ block: 'center' });
-			_deepLinkFocus = card.querySelector('input, select, textarea, button') || card;
-			_deepLinkFocus.focus?.({ preventScroll: true });
+			const unlock = card.closest('.ytkit-sub-features[inert]')?.previousElementSibling;
+			_deepLinkFocus = unlock?.querySelector('input, select, textarea, button')
+				|| card.querySelector('input, select, textarea, button') || card;
+			focusDeepLinkTarget();
 			return true;
+		}
+		function focusDeepLinkTarget() {
+			if (!_deepLinkFocus) return false;
+			_deepLinkFocus.focus?.({ preventScroll: true });
+			if (document.activeElement === _deepLinkFocus) return true;
+			const card = _deepLinkFocus.closest?.('.ytkit-feature-card');
+			if (!card) return false;
+			if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+			card.focus({ preventScroll: true });
+			return document.activeElement === card;
 		}
 		function refreshChangedFilterView() {
 			const activeSearch = document.getElementById('ytkit-search');
@@ -15829,8 +15841,7 @@ function setSettingsPanelOpen(open) {
 				if (!isSettingsPanelOpen()) return;
 				if (_deepLinkFocus?.isConnected) {
 					_deepLinkFocus.closest?.('.ytkit-feature-card')?.scrollIntoView?.({ block: 'center' });
-					_deepLinkFocus.focus?.({ preventScroll: true });
-					if (document.activeElement === _deepLinkFocus) {
+					if (focusDeepLinkTarget()) {
 						_deepLinkFocus = null;
 						return;
 					}
@@ -15928,6 +15939,18 @@ function syncPanelCategorySelection(activeButton) {
 			pane.setAttribute('aria-labelledby', `ytkit-tab-${pane.id.replace('ytkit-pane-', '')}`);
 		});
 		syncCategoryReorderButtons();
+	}
+function selectPanelCategory(navBtn) {
+		syncPanelCategorySelection(navBtn);
+		const pane = document.getElementById(`ytkit-pane-${navBtn.dataset.tab}`);
+		if (pane) {
+			if (typeof pane._ytkitRefresh === 'function') pane._ytkitRefresh();
+			pane.scrollTop = 0;
+		}
+		if (typeof navBtn._ytkitRefreshCount === 'function') navBtn._ytkitRefreshCount();
+		const contentArea = document.querySelector('.ytkit-content');
+		if (contentArea) contentArea.scrollTop = 0;
+		updatePanelInsightState();
 	}
 function syncCategoryReorderButtons() {
 		const buttons = document.querySelectorAll('#ytkit-settings-panel .ytkit-nav-reorder-btn');
@@ -18317,17 +18340,13 @@ function buildSettingsPanel() {
 						'Open Digital Wellbeing'
 					);
 					dependencyAction.addEventListener('click', () => {
-						const parentFeature = getFeatureById(parentId);
-						const parentCategoryId = String(parentFeature?.group || 'Advanced')
-							.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
-						const parentNav = document.querySelector(`.ytkit-nav-btn[data-tab="${parentCategoryId}"]`);
-						if (!parentNav) return;
-						syncPanelCategorySelection(parentNav);
-						const parentPane = document.getElementById(`ytkit-pane-${parentCategoryId}`);
-						if (parentPane) parentPane.scrollTop = 0;
 						const parentCard = document.querySelector(`.ytkit-feature-card[data-feature-id="${parentId}"]`);
-						parentCard?.scrollIntoView?.({ block: 'center' });
-						parentCard?.querySelector('input, select, textarea, button')?.focus?.({ preventScroll: true });
+						const parentPane = parentCard?.closest('.ytkit-pane');
+						const parentNav = parentPane && document.querySelector(`.ytkit-nav-btn[data-tab="${parentPane.id.replace('ytkit-pane-', '')}"]`);
+						if (!parentNav) return;
+						selectPanelCategory(parentNav);
+						parentCard.scrollIntoView?.({ block: 'center' });
+						parentCard.querySelector('input, select, textarea, button')?.focus?.({ preventScroll: true });
 					});
 					dependency.append(dependencyCopy, dependencyAction);
 					sectionBody.appendChild(dependency);
@@ -18969,16 +18988,7 @@ function attachUIEventListeners() {
 			}
 			const navBtn = e.target.closest('.ytkit-nav-btn');
 			if (navBtn) {
-				syncPanelCategorySelection(navBtn);
-				const pane = doc.querySelector(`#ytkit-pane-${navBtn.dataset.tab}`);
-				if (pane) {
-					if (typeof pane._ytkitRefresh === 'function') pane._ytkitRefresh();
-					pane.scrollTop = 0;
-				}
-				if (typeof navBtn._ytkitRefreshCount === 'function') navBtn._ytkitRefreshCount();
-				const contentArea = doc.querySelector('.ytkit-content');
-				if (contentArea) contentArea.scrollTop = 0;
-				updatePanelInsightState();
+				selectPanelCategory(navBtn);
 				const searchInput = doc.getElementById('ytkit-search');
 				if (searchInput && searchInput.value) {
 					searchInput.value = '';

@@ -671,7 +671,8 @@ function fakePanel(cards) {
 
 const DEEP_LINK_NAMES = [
     'DEEP_LINK_PREFIX', 'SETTING_KEY_SHAPE', '_requestedSettingKey', 'SETTING_KEY_HOMES', '_deepLinkFocus',
-    '_changedOnly', 'deepLinkedSettingKey', 'requestSettingFocus', 'openPanelToDeepLinkedSetting'
+    '_changedOnly', 'deepLinkedSettingKey', 'requestSettingFocus', 'openPanelToDeepLinkedSetting',
+    'focusDeepLinkTarget'
 ];
 
 test('a request from another surface outranks a stale URL fragment', () => {
@@ -807,7 +808,7 @@ test('the category is selected directly, not by clicking a tab nobody listens to
     };
     const env = loadPanelDeclarations(DEEP_LINK_NAMES, {
         document: { getElementById: () => null },
-        syncPanelCategorySelection: (button) => log.push(`select:${button.dataset.tab}`),
+        selectPanelCategory: (button) => log.push(`select:${button.dataset.tab}`),
         CSS: { escape: (v) => v }
     });
     env.globalThis.location = { hash: '#ytkit-setting=alpha' };
@@ -835,22 +836,39 @@ test('a search that would hide the card is cleared first', () => {
 // The open routine focused the search box a frame after the link focused the
 // card, so the user was never left on the setting they were sent to. These run
 // the runtime's own setSettingsPanelOpen.
-function withOpenRoutine(fn) {
+function withOpenRoutine(fn, { control: hasControl = true, disabled = false, locked = false } = {}) {
     const classes = new Set();
     const frames = [];
     const doc = { activeElement: null };
-    const control = { isConnected: true, focus() { if (classes.has('open')) doc.activeElement = control; }, closest: () => null };
+    const attrs = new Map();
+    // A sub-card under a parent that's off sits in an inert block, right after
+    // the parent's card.
+    const parentSwitch = { isConnected: true, focus() { if (classes.has('open')) doc.activeElement = parentSwitch; }, closest: () => null };
+    const lockedBlock = { previousElementSibling: { querySelector: () => parentSwitch } };
     const card = {
+        isConnected: true,
         dataset: { featureId: 'alpha' },
         classList: { add() {}, remove() {} },
-        closest: () => null,
+        closest: (sel) => (sel === '.ytkit-feature-card' ? card
+            : sel === '.ytkit-sub-features[inert]' && locked ? lockedBlock : null),
         scrollIntoView() {},
+        hasAttribute: (name) => attrs.has(name),
+        getAttribute: (name) => attrs.get(name) ?? null,
+        setAttribute: (name, value) => attrs.set(name, String(value)),
+        // As in a browser: a div takes focus only once it has a tabindex, a
+        // disabled control ignores focus(), and nothing inert takes it.
+        focus() { if (classes.has('open') && attrs.has('tabindex') && !locked) doc.activeElement = card; },
         querySelector: () => control
     };
+    const control = hasControl ? {
+        isConnected: true,
+        focus() { if (classes.has('open') && !disabled && !locked) doc.activeElement = control; },
+        closest: card.closest
+    } : null;
     const search = { getClientRects: () => [{}], focus() { doc.activeElement = search; } };
     const panel = {
         querySelectorAll: (sel) => (sel === '.ytkit-deep-linked' ? [] : [card]),
-        contains: (node) => node === control || node === search,
+        contains: (node) => [control, search, card, parentSwitch].includes(node),
         getAttribute: () => null,
         setAttribute() {}
     };
@@ -886,7 +904,7 @@ function withOpenRoutine(fn) {
             t: (_key, fallback) => fallback
         });
         globalThis.YTKitFeatures = saved.YTKitFeatures;
-        fn({ api, doc, control, search, flush: () => { while (frames.length) frames.shift()(); } });
+        fn({ api, doc, control, card, parentSwitch, search, flush: () => { while (frames.length) frames.shift()(); } });
     } finally {
         Object.assign(globalThis, saved);
     }
@@ -916,6 +934,43 @@ test('a link that lands while the panel is shut is focused once it shows', () =>
         flush();
         assert.equal(doc.activeElement, search, 'an ordinary open later goes back to the search box');
     });
+});
+
+test('a card with nothing to focus takes the focus itself, not the search box', () => {
+    // An info card has no control, and a sub-card's switch is disabled while
+    // its parent is off. Focus fell through to the search box in both cases
+    // while the popup was told the link landed.
+    for (const options of [{ control: false }, { disabled: true }]) {
+        const label = JSON.stringify(options);
+        withOpenRoutine(({ api, doc, card, flush }) => {
+            api.setSettingsPanelOpen(true);
+            flush();
+            api.setSettingsPanelOpen(true);
+            assert.equal(api.requestSettingFocus('alpha'), true);
+            flush();
+            assert.equal(doc.activeElement, card, `open panel, ${label}`);
+            assert.equal(card.getAttribute('tabindex'), '-1', 'focusable by script, still out of the Tab order');
+        }, options);
+        withOpenRoutine(({ api, doc, card, flush }) => {
+            assert.equal(api.requestSettingFocus('alpha'), true);
+            api.setSettingsPanelOpen(true);
+            flush();
+            assert.equal(doc.activeElement, card, `shut panel, ${label}`);
+        }, options);
+    }
+});
+
+test('a link to a sub-setting whose parent is off focuses the switch that unlocks it', () => {
+    // The sub-cards sit in an inert block until the parent is on, so neither
+    // their switch nor the card can take focus. Seen live: the search box got it.
+    withOpenRoutine(({ api, doc, parentSwitch, flush }) => {
+        api.setSettingsPanelOpen(true);
+        flush();
+        api.setSettingsPanelOpen(true);
+        assert.equal(api.requestSettingFocus('alpha'), true);
+        flush();
+        assert.equal(doc.activeElement, parentSwitch);
+    }, { locked: true });
 });
 
 test('the popup carries the key on both routes to the panel', () => {

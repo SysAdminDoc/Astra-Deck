@@ -228,14 +228,17 @@ test('a sub-feature whose own group lands elsewhere goes where its parent goes',
 
 // The real panel build, on the fake tree document from tests/helpers. The
 // tests above call the grouping helper; this is the code that draws from it.
-function buildRealPanel(features, settings = {}) {
+// `act` runs against the built panel while its document is still installed.
+function buildRealPanel(features, settings = {}, { shortsKeys, act } = {}) {
     const { fakeTreeDocument } = require('../helpers/monolith');
     const doc = fakeTreeDocument();
-    const saved = { document: globalThis.document, chrome: globalThis.chrome, YTKitCore: globalThis.YTKitCore };
+    const saved = { document: globalThis.document, chrome: globalThis.chrome, YTKitCore: globalThis.YTKitCore, CSS: globalThis.CSS };
     globalThis.document = doc;
     globalThis.chrome = { i18n: { getUILanguage: () => 'en-US', getMessage: () => '' } };
+    globalThis.CSS = { escape: (value) => String(value) };
     // A core another test loaded adds the Shorts ledger card to the build.
     delete globalThis.YTKitCore;
+    if (shortsKeys) globalThis.YTKitCore = { SHORTS_PANEL_SETTING_KEYS: shortsKeys };
     try {
         const byId = new Map(features.map((feature) => [feature.id, feature]));
         const noop = () => {};
@@ -292,14 +295,70 @@ function buildRealPanel(features, settings = {}) {
             }
             (placed[card.dataset.featureId] ||= []).push(where);
         }
+        act?.(doc, runtime);
         return placed;
     } finally {
         globalThis.document = saved.document;
         globalThis.chrome = saved.chrome;
+        globalThis.CSS = saved.CSS;
         if (saved.YTKitCore === undefined) delete globalThis.YTKitCore;
         else globalThis.YTKitCore = saved.YTKitCore;
     }
 }
+
+/** Where a built panel stands: selected tab, the readout of it, and focus. */
+function panelState(doc) {
+    return {
+        tab: doc.querySelector('.ytkit-nav-btn.active')?.dataset.tab,
+        readout: doc.getElementById('ytkit-insight-active-section')?.textContent,
+        focus: doc.activeElement?.closest?.('.ytkit-feature-card')?.dataset.featureId
+    };
+}
+
+test('a deep link selects its page the way a tab click does', () => {
+    // The link selected the page alone, so the panel's Active section readout
+    // still named the page it was on before.
+    let before = null;
+    let state = null;
+    buildRealPanel([
+        { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' },
+        { id: 'returnDislike', name: 'Return YouTube Dislike', group: 'Ratings', type: 'checkbox' }
+    ], {}, {
+        act: (doc, runtime) => {
+            before = panelState(doc);
+            assert.equal(runtime.requestSettingFocus('returnDislike'), true);
+            state = panelState(doc);
+            state.label = doc.querySelector('.ytkit-nav-btn.active .ytkit-nav-label')?.textContent;
+        }
+    });
+    assert.notEqual(before.tab, 'Watch-Page', `the link has to move the panel, it started on ${before.tab}`);
+    assert.equal(state.tab, 'Watch-Page');
+    assert.ok(state.label, 'the tab has a label to read out');
+    assert.equal(state.readout, state.label);
+    assert.equal(state.focus, 'returnDislike');
+});
+
+test('the Digital Wellbeing shortcut opens the page its card is on', () => {
+    // It worked the page out from Digital Wellbeing's raw group, which names a
+    // page only while that group has one of its own. Research maps to Watch
+    // Page, so a raw-group lookup finds no tab here.
+    let state = null;
+    buildRealPanel([
+        { id: 'digitalWellbeing', name: 'Digital Wellbeing', group: 'Research', type: 'checkbox' },
+        { id: 'shortsDailyLimit', name: 'Daily Shorts limit', group: 'Advanced', type: 'checkbox', isSubFeature: true, parentId: 'digitalWellbeing' }
+    ], {}, {
+        shortsKeys: ['shortsDailyLimit'],
+        act: (doc) => {
+            const shortcut = doc.querySelector('.ytkit-shorts-dependency')?.querySelector('button');
+            assert.ok(shortcut, 'the promoted Shorts card carries the shortcut');
+            shortcut.dispatchEvent({ type: 'click' });
+            state = panelState(doc);
+        }
+    });
+    assert.equal(state.tab, 'Watch-Page');
+    assert.equal(state.focus, 'digitalWellbeing');
+    assert.ok(state.readout && state.readout !== 'Video Player', `the readout follows the page, read ${state.readout}`);
+});
 
 test('the built panel draws every feature once, sub-cards under their parent', () => {
     const placed = buildRealPanel([
