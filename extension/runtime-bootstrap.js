@@ -438,8 +438,14 @@
             bootstrapState.phase = 'failed';
             bootstrapState.active = false;
             bootstrapState.completedAt = Date.now();
-            bootstrapState.failure = String(error?.message || error || 'runtime-load-failed').slice(0, 240);
-            console.error('[YTKit] Runtime module load failed', error);
+            // A dynamic import can reject with undefined (seen on Firefox's first
+            // page after a temporary install), and logging that bare value printed
+            // "Runtime module load failed undefined". Always name the module and
+            // the message; the loader attaches the module to the error it throws.
+            const failedModule = typeof error?.module === 'string' ? error.module : '';
+            const failureMessage = String(error?.message || error || 'no error value was thrown');
+            bootstrapState.failure = (failedModule ? failedModule + ': ' : '') + failureMessage.slice(0, 240);
+            console.error('[YTKit] Runtime module load failed' + (failedModule ? ': ' + failedModule : '') + ' - ' + failureMessage, error);
             throw error;
         }
     );

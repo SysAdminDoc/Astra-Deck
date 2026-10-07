@@ -86,8 +86,12 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
     // cost ~48 ms of a ~140 ms parse+init. This is safe only while no module
     // calls a sibling at evaluation time — tests/runtime-graph-order.test.js
     // holds that property by loading the graph in reverse.
-    assert.match(loaderSource, /await Promise\.all\(FOUNDATION_MODULES\.map\(\(modulePath\) => import\(getURL\(modulePath\)\)\)\)/,
-        'the core loader must import the foundation graph concurrently through runtime.getURL');
+    // The per-module wrapper only adds error naming and one retry; the graph is
+    // still one Promise.all over every module, each import going through getURL.
+    assert.match(loaderSource, /await Promise\.all\(FOUNDATION_MODULES\.map\(importFoundationModule\)\)/,
+        'the core loader must import the foundation graph concurrently');
+    assert.match(loaderSource, /const url = getURL\(modulePath\);[\s\S]*?return await import\(url\);/,
+        'every foundation import must go through runtime.getURL');
     assert.doesNotMatch(loaderSource, /for \(const modulePath of FOUNDATION_MODULES\)/,
         'the sequential dynamic-import loop must not come back — it serialized 75 compiles');
     // Static `import './core/x.js'` specifiers resolve against the canonical
@@ -158,4 +162,59 @@ test('deferred feature modules are never gated by the landing route', () => {
         path.join(repoRoot, 'scripts', 'generate-runtime-bootstrap.js'), 'utf8');
     assert.doesNotMatch(generator, /^const FEATURE_ROUTES/m,
         'the generator must not reintroduce a route table');
+});
+
+// A dynamic import can reject with no value (seen on Firefox's first page after a
+// temporary install), and the old log line read "Runtime module load failed
+// undefined". These run the real generated loader against modules that throw.
+async function runLoaderAgainst(badBody) {
+    const os = require('node:os');
+    const { pathToFileURL } = require('node:url');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-loader-'));
+    const stamp = `${Date.now()}${Math.random().toString(16).slice(2)}`;
+    try {
+        fs.writeFileSync(path.join(dir, 'ok.mjs'), 'export {};\n');
+        fs.writeFileSync(path.join(dir, 'bad.mjs'),
+            `globalThis.__loaderBadRuns = (globalThis.__loaderBadRuns || 0) + 1;\n${badBody}\n`);
+        fs.writeFileSync(path.join(dir, 'loader.mjs'), loaderSource);
+        globalThis.__loaderBadRuns = 0;
+        const previous = globalThis.chrome;
+        globalThis.chrome = {
+            runtime: {
+                getURL: (modulePath) => pathToFileURL(
+                    path.join(dir, modulePath === 'core/storage.js' ? 'bad.mjs' : 'ok.mjs')).href
+            }
+        };
+        try {
+            return await import(`${pathToFileURL(path.join(dir, 'loader.mjs')).href}?t=${stamp}`)
+                .then(() => null, (error) => error);
+        } finally {
+            if (previous === undefined) delete globalThis.chrome; else globalThis.chrome = previous;
+        }
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+}
+
+test('a foundation module that rejects with no value is retried once, then reported by name', async () => {
+    const error = await runLoaderAgainst('throw undefined;');
+    assert.ok(error instanceof Error, 'the loader rethrows an Error, never the bare value');
+    assert.equal(error.module, 'core/storage.js');
+    assert.match(error.message, /core\/storage\.js/);
+    assert.doesNotMatch(error.message, /undefined/);
+    assert.equal(globalThis.__loaderBadRuns, 2, 'one retry, no more');
+});
+
+test('a foundation module that throws a real Error is reported with its message and never re-run', async () => {
+    const error = await runLoaderAgainst("throw new Error('boom from storage');");
+    assert.ok(error instanceof Error);
+    assert.equal(error.module, 'core/storage.js');
+    assert.match(error.message, /core\/storage\.js - boom from storage/);
+    assert.equal(globalThis.__loaderBadRuns, 1, 'module code that already ran must not run twice');
+});
+
+test('the bootstrap failure log names the module and the message', () => {
+    assert.match(bootstrapSource, /'\[YTKit\] Runtime module load failed' \+ \(failedModule/);
+    assert.doesNotMatch(bootstrapSource, /Runtime module load failed', error\)/,
+        'the bare-value log call is what printed "undefined"');
 });

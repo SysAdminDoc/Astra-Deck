@@ -332,8 +332,14 @@ ${settingsLiteral}
             bootstrapState.phase = 'failed';
             bootstrapState.active = false;
             bootstrapState.completedAt = Date.now();
-            bootstrapState.failure = String(error?.message || error || 'runtime-load-failed').slice(0, 240);
-            console.error('[YTKit] Runtime module load failed', error);
+            // A dynamic import can reject with undefined (seen on Firefox's first
+            // page after a temporary install), and logging that bare value printed
+            // "Runtime module load failed undefined". Always name the module and
+            // the message; the loader attaches the module to the error it throws.
+            const failedModule = typeof error?.module === 'string' ? error.module : '';
+            const failureMessage = String(error?.message || error || 'no error value was thrown');
+            bootstrapState.failure = (failedModule ? failedModule + ': ' : '') + failureMessage.slice(0, 240);
+            console.error('[YTKit] Runtime module load failed' + (failedModule ? ': ' + failedModule : '') + ' - ' + failureMessage, error);
             throw error;
         }
     );
@@ -384,7 +390,37 @@ ${moduleLiteral}
 // exposed under \`use_dynamic_url: true\` -- the real extension then fails to
 // boot at all. Warming the fetches ahead of the sequential loop changes
 // nothing, because the cost is compile, not fetch.
-await Promise.all(FOUNDATION_MODULES.map((modulePath) => import(getURL(modulePath))));
+//
+// A rejection can arrive with no value at all (Firefox, first page after a
+// temporary install), which used to reach the log as "undefined" with no clue
+// which module failed. Every rejection is rethrown as an Error that names the
+// module. A value-less rejection is retried once with a cache-busting query,
+// because it means the fetch failed before anything evaluated; a real Error
+// from module code is never retried, so nothing executes twice.
+const importFoundationModule = async (modulePath) => {
+    const url = getURL(modulePath);
+    let reason;
+    try {
+        return await import(url);
+    } catch (error) {
+        reason = error;
+    }
+    if (!(reason instanceof Error) && !reason?.message) {
+        try {
+            return await import(url + '?retry=1');
+        } catch (error) {
+            reason = error;
+        }
+    }
+    const failure = new Error(
+        'foundation module failed to load: ' + modulePath + ' - '
+        + (reason?.message || String(reason ?? 'the import rejected without a value')),
+        { cause: reason }
+    );
+    failure.module = modulePath;
+    throw failure;
+};
+await Promise.all(FOUNDATION_MODULES.map(importFoundationModule));
 `;
 }
 
