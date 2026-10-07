@@ -10,6 +10,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Hide All** on Subscriptions keeps going as YouTube loads more. One press hides what's on screen, then each page as it arrives, until it reaches videos you'd already hidden last time (or 20 pages). Then loading pauses, with a Resume button on the banner. Home still hides just what's on screen and keeps loading forever.
 
+- Videos you hide from your feeds, with the X or **Hide All**, now still show on the channel's own page, so you can always see everything a channel has posted. Your keyword and channel rules still apply there. The X doesn't appear on channel pages anymore, since a hide made there wouldn't stick.
+
 ### Fixed
 
 - The Subscriptions pause for a feed full of hidden videos never kicked in on YouTube's current card layout, so a cleared feed kept loading in the background. It now pauses after about three hidden pages, even when YouTube fetches them back to back.

@@ -9546,6 +9546,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const key = settingByScope[scope];
 				return !key || appState.settings[key] !== false;
 			},
+			_videoIdHidesApplyHere(pathname = getCurrentPath()) {
+				return this._getCurrentScope(pathname) !== 'channel';
+			},
 			_restoreRemovedVideoNodes(ids = null) {
 				const idSet = ids ? new Set(ids) : null;
 				const remaining = [];
@@ -10284,7 +10287,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const thumbnail = this._findThumbnailContainer(element);
 				if (!thumbnail) return;
 				const existing = thumbnail.querySelector('.ytkit-video-hide-btn');
-				const controlsEnabled = appState.settings.hideVideosShowQuickHideButton !== false && this._isScopeEnabledForPath();
+				const controlsEnabled = appState.settings.hideVideosShowQuickHideButton !== false
+					&& this._isScopeEnabledForPath()
+					&& this._videoIdHidesApplyHere();
 				if (!controlsEnabled) {
 					existing?.remove();
 					return;
@@ -10465,7 +10470,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				};
 				const videoId = this._extractVideoId(element);
 				if (videoId && this._isVideoAllowed(videoId)) return false;
-				if (videoId && this._isVideoIdHidden(videoId)) return hideForReason('manual');
+				if (videoId && this._videoIdHidesApplyHere() && this._isVideoIdHidden(videoId)) return hideForReason('manual');
 				if (videoId
 					&& appState.settings.markWatchedVideos === true
 					&& appState.settings.hideVideosRemoveHiddenCards === true
@@ -18069,7 +18074,7 @@ function buildSettingsPanel() {
 						{
 							key: 'hideVideosScopeChannels',
 							title: t('videoHiderScopeChannelsTitle', 'Channel pages'),
-							description: t('videoHiderScopeChannelsDesc', 'Apply rules on channel home, video, live, and playlist surfaces.')
+							description: t('videoHiderScopeChannelsDesc', 'Apply your filter rules on channel pages. Videos you hid yourself still show on their own channel.')
 						},
 						{
 							key: 'hideVideosScopeOther',

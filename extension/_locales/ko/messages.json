@@ -8455,7 +8455,7 @@
     "message": "동영상 숨기기 필터가 {total}개 중 {count}개에 일치하여 그대로 표시했습니다."
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "채널 홈, 동영상, 라이브 및 재생목록 화면에 규칙을 적용합니다."
+    "message": "채널 페이지에 필터 규칙을 적용합니다. 직접 숨긴 동영상은 해당 채널 페이지에서는 계속 표시됩니다."
   },
   "videoHiderScopeChannelsTitle": {
     "message": "채널 페이지"

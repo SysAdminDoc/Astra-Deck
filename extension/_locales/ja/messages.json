@@ -8455,7 +8455,7 @@
     "message": "動画非表示のフィルターが {total} 件中 {count} 件に一致したため、表示を維持しました。"
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "チャンネルホーム、動画、ライブ、再生リストの各画面にルールを適用します。"
+    "message": "チャンネルページにフィルタールールを適用します。自分で非表示にした動画は、そのチャンネルのページには表示されます。"
   },
   "videoHiderScopeChannelsTitle": {
     "message": "チャンネルページ"

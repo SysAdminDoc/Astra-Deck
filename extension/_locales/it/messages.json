@@ -8455,7 +8455,7 @@
     "message": "I filtri di Video Hider hanno coinciso con {count} schede su {total}, quindi sono rimaste visibili."
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "Applica le regole alle superfici Home del canale, video, live e playlist."
+    "message": "Applica le regole di filtro nelle pagine dei canali. I video che hai nascosto tu restano visibili sul loro canale."
   },
   "videoHiderScopeChannelsTitle": {
     "message": "Pagine dei canali"

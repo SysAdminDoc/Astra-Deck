@@ -8455,7 +8455,7 @@
     "message": "Les filtres du masqueur de vidéos ont ciblé {count} cartes sur {total} : elles restent visibles."
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "Appliquer les règles aux surfaces d’accueil de chaîne, de vidéo, de direct et de playlist."
+    "message": "Appliquer vos règles de filtrage sur les pages de chaîne. Les vidéos que vous avez masquées vous-même restent visibles sur leur propre chaîne."
   },
   "videoHiderScopeChannelsTitle": {
     "message": "Pages de chaînes"

@@ -8455,7 +8455,7 @@
     "message": "Video-Ausblender-Filter trafen {count} von {total} Karten und wurden daher sichtbar gelassen."
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "Regeln auf Kanalstartseiten sowie Video-, Live- und Playlist-Oberflächen anwenden."
+    "message": "Filterregeln auf Kanalseiten anwenden. Selbst ausgeblendete Videos bleiben auf ihrem eigenen Kanal sichtbar."
   },
   "videoHiderScopeChannelsTitle": {
     "message": "Kanalseiten"

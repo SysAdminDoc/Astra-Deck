@@ -8455,7 +8455,7 @@
     "message": "视频隐藏过滤器匹配了 {total} 张卡片中的 {count} 张，因此它们保持可见。"
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "在频道主页、视频、直播和播放列表界面应用规则。"
+    "message": "在频道页面应用过滤规则。你手动隐藏的视频仍会在其所属频道中显示。"
   },
   "videoHiderScopeChannelsTitle": {
     "message": "频道页"

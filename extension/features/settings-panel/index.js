@@ -2532,7 +2532,7 @@ function buildSettingsPanel() {
                         {
                             key: 'hideVideosScopeChannels',
                             title: t('videoHiderScopeChannelsTitle', 'Channel pages'),
-                            description: t('videoHiderScopeChannelsDesc', 'Apply rules on channel home, video, live, and playlist surfaces.')
+                            description: t('videoHiderScopeChannelsDesc', 'Apply your filter rules on channel pages. Videos you hid yourself still show on their own channel.')
                         },
                         {
                             key: 'hideVideosScopeOther',

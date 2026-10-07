@@ -3377,7 +3377,7 @@ const ASTRA_DECK_BUILD = {
 		"videoHiderRestorePageTpl": "Restore {count} hidden videos on this page",
 		"videoHiderRestoredAllVideos": "Restored all videos",
 		"videoHiderRuleGuardTpl": "Video Hider filters matched {count} of {total} cards, so they were left visible.",
-		"videoHiderScopeChannelsDesc": "Apply rules on channel home, video, live, and playlist surfaces.",
+		"videoHiderScopeChannelsDesc": "Apply your filter rules on channel pages. Videos you hid yourself still show on their own channel.",
 		"videoHiderScopeChannelsTitle": "Channel pages",
 		"videoHiderScopeHomeDesc": "Hide matches on the YouTube home feed.",
 		"videoHiderScopeHomeTitle": "Home",

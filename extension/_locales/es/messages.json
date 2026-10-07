@@ -8455,7 +8455,7 @@
     "message": "Los filtros del ocultador de vídeos coincidieron con {count} de {total} tarjetas, por lo que se dejaron visibles."
   },
   "videoHiderScopeChannelsDesc": {
-    "message": "Aplicar reglas en las superficies de inicio de canal, video, directo y listas de reproducción."
+    "message": "Aplica tus reglas de filtro en las páginas de canal. Los videos que ocultaste tú siguen apareciendo en su propio canal."
   },
   "videoHiderScopeChannelsTitle": {
     "message": "Páginas de canales"

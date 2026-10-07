@@ -1485,6 +1485,14 @@
                 return !key || appState.settings[key] !== false;
             },
 
+            // Hiding a video by id (the card X, Hide All) cleans up feeds. A
+            // channel's own page is where you go to see everything it posted,
+            // so those hides don't apply there. Keyword, channel and duration
+            // rules still follow hideVideosScopeChannels.
+            _videoIdHidesApplyHere(pathname = getCurrentPath()) {
+                return this._getCurrentScope(pathname) !== 'channel';
+            },
+
             _restoreRemovedVideoNodes(ids = null) {
                 const idSet = ids ? new Set(ids) : null;
                 const remaining = [];
@@ -2343,7 +2351,11 @@
                 const thumbnail = this._findThumbnailContainer(element);
                 if (!thumbnail) return;
                 const existing = thumbnail.querySelector('.ytkit-video-hide-btn');
-                const controlsEnabled = appState.settings.hideVideosShowQuickHideButton !== false && this._isScopeEnabledForPath();
+                // No X on a channel page: the hide it records wouldn't apply
+                // there, so the card would come back on the next scan.
+                const controlsEnabled = appState.settings.hideVideosShowQuickHideButton !== false
+                    && this._isScopeEnabledForPath()
+                    && this._videoIdHidesApplyHere();
                 if (!controlsEnabled) {
                     existing?.remove();
                     return;
@@ -2543,7 +2555,7 @@
                 };
                 const videoId = this._extractVideoId(element);
                 if (videoId && this._isVideoAllowed(videoId)) return false;
-                if (videoId && this._isVideoIdHidden(videoId)) return hideForReason('manual');
+                if (videoId && this._videoIdHidesApplyHere() && this._isVideoIdHidden(videoId)) return hideForReason('manual');
                 if (videoId
                     && appState.settings.markWatchedVideos === true
                     && appState.settings.hideVideosRemoveHiddenCards === true

@@ -63,7 +63,7 @@ const PURPOSE_OVERRIDES = Object.freeze({
     hideVideosScopeSubscriptions: 'Runs Video Hider rules and bulk actions on the subscriptions feed.',
     hideVideosScopeSearch: 'Runs Video Hider video and channel rules on search results.',
     hideVideosScopeWatch: 'Runs Video Hider rules on recommendations beside and below the player.',
-    hideVideosScopeChannels: 'Runs Video Hider rules on channel pages.',
+    hideVideosScopeChannels: 'Runs Video Hider rules on channel pages. Videos you hid yourself still show on their own channel.',
     hideVideosScopeOther: 'Runs Video Hider rules on supported feed surfaces outside the named scopes.',
     hideVideosLowViewFilter: 'Enables hiding cards whose exposed view count is below the configured threshold.',
     hideVideosLowViewThreshold: 'Sets the minimum visible view count accepted by the low-view filter.',

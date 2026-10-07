@@ -33,7 +33,8 @@ function createFeed({ path = '/feed/subscriptions', stored = [], settings = {} }
         showToast: (message, color, options) => toasts.push({ message, actions: (options?.actions || []).map((a) => a.text), options }),
         t: (_key, fallback) => fallback,
         setTimeoutFn: (fn, ms) => { const handle = nextTimer++; timers.set(handle, { fn, ms }); return handle; },
-        clearTimeoutFn: (handle) => timers.delete(handle)
+        clearTimeoutFn: (handle) => timers.delete(handle),
+        getCurrentPath: () => globalThis.window.location.pathname
     });
     feature._getHiddenVideos = () => hiddenList.slice();
     feature._setHiddenVideos = (list) => { hiddenList = list.slice(); };
@@ -278,4 +279,58 @@ test('hidden pages that land in one batch each count toward the pause', (t) => {
     assert.equal(fresh.calls.block, 0, 'two hidden pages are under the threshold');
     fresh.feature._trackSubsLoadBatch(entries(30, 0));
     assert.equal(fresh.calls.block, 1, 'a batch without a page count is one page');
+});
+
+function channelPageFeed(path, stored) {
+    const feed = createFeed({ path, stored });
+    const f = feed.feature;
+    f._isVideoAllowed = () => false;
+    f._isVideoIdHidden = (videoId) => feed.hidden().includes(videoId);
+    f._isChannelAllowlistMode = () => false;
+    f._extractChannelInfos = () => [];
+    f._matchedBlockedChannel = () => null;
+    f._getEffectiveKeywordFilters = () => ['unboxing'];
+    f._extractTitle = (el) => el.title;
+    f._matchesMetadataFilters = () => ({ hide: false });
+    const card = (videoId, title = 'A video') => ({ videoId, title, dataset: {} });
+    return { ...feed, card };
+}
+
+function onPage(path, stored, check) {
+    const feed = channelPageFeed(path, stored);
+    try {
+        check(feed);
+    } finally {
+        feed.restore();
+    }
+}
+
+test('videos hidden from feeds still show on their channel page', () => {
+    for (const path of ['/@author/videos', '/@author', '/channel/UCabcdefghijklmnopqrstuv/videos']) {
+        onPage(path, [id(1)], (feed) => {
+            assert.equal(feed.feature._shouldHide(feed.card(id(1))), false, `${path} shows a video hidden from feeds`);
+            const keyword = feed.card(id(2), 'Big unboxing');
+            assert.equal(feed.feature._shouldHide(keyword), true, `${path} still applies keyword rules`);
+            assert.equal(keyword.dataset.ytkitFilterReason, 'keyword');
+        });
+    }
+    for (const path of ['/feed/subscriptions', '/', '/results', '/watch']) {
+        onPage(path, [id(1)], (feed) => {
+            const hidden = feed.card(id(1));
+            assert.equal(feed.feature._shouldHide(hidden), true, `${path} keeps the video hidden`);
+            assert.equal(hidden.dataset.ytkitFilterReason, 'manual');
+        });
+    }
+});
+
+test('a channel page has no quick-hide X, since its hide would not stick there', () => {
+    const removesX = (feed) => {
+        let removed = false;
+        const existing = { remove: () => { removed = true; }, setAttribute() {} };
+        feed.feature._findThumbnailContainer = () => ({ querySelector: () => existing });
+        feed.feature._syncQuickHideButton({}, id(1));
+        return removed;
+    };
+    onPage('/@author/videos', [], (feed) => assert.equal(removesX(feed), true, 'the X comes off cards on a channel page'));
+    onPage('/feed/subscriptions', [], (feed) => assert.equal(removesX(feed), false, 'feeds keep the X'));
 });
