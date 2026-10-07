@@ -876,6 +876,11 @@
         };
     }
 
+    const YTKIT_VERSION = '4.96.0';
+
+    // Holds { extensionVersion, asset }. The asset was verified, signature
+    // included, by the build that fetched it, and a different build has its
+    // own shipped packs and floor, so it starts from those after an upgrade.
     const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
     // Last time an automatic refresh was ATTEMPTED, and the last one that
     // succeeded. Persisted rather than kept in the page, because the schedule
@@ -941,7 +946,15 @@
         if (typeof selectorCore.applySelectorAsset !== 'function') return null;
         const stored = storageReadJSON(SELECTOR_ASSET_STORAGE_KEY, null);
         if (!stored) return null;
-        const result = await selectorCore.applySelectorAsset(stored, { source: 'stored' });
+        if (stored.extensionVersion !== YTKIT_VERSION || !stored.asset) {
+            // Stored by another build, or in the bare shape before it was
+            // keyed. Either way this build's shipped packs come first.
+            try { await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, null, { immediate: true }); } catch (_) {
+                // reason: the stale entry is ignored either way; the next refresh overwrites it
+            }
+            return null;
+        }
+        const result = await selectorCore.applySelectorAsset(stored.asset, { source: 'stored', floorVersion: YTKIT_VERSION });
         if (!result.ok) {
             // A stale/corrupt local candidate must not strand every future
             // boot in rollback. The shipped JS packs remain active and the
@@ -966,10 +979,11 @@
                 selectorAsset: selectorCore.getSelectorAssetState?.() || null
             };
         }
-        const result = await selectorCore.applySelectorAsset(response.text, { source: 'remote' });
+        const result = await selectorCore.applySelectorAsset(response.text, { source: 'remote', floorVersion: YTKIT_VERSION });
         if (result.ok) {
             try {
-                await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, JSON.parse(response.text), { immediate: true });
+                await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY,
+                    { extensionVersion: YTKIT_VERSION, asset: JSON.parse(response.text) }, { immediate: true });
             } catch (error) {
                 // The verified map is already active. A storage failure only
                 // means the next page starts from the shipped offline copy.
@@ -1348,7 +1362,8 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.96.0';
+    // YTKIT_VERSION is declared above SELECTOR_ASSET_STORAGE_KEY: the stored
+    // selector asset is checked against it before this section runs.
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',

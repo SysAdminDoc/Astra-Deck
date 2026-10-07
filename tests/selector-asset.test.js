@@ -10,8 +10,9 @@ const { digestPayload } = require('../scripts/build-selector-asset');
 
 const ROOT = path.join(__dirname, '..');
 
-function loadSelectorCore() {
+function loadSelectorCore(extraGlobals = {}) {
     const context = {
+        ...extraGlobals,
         console,
         Date,
         Math,
@@ -106,4 +107,76 @@ test('selector refresh is fixed to the allowlisted project asset and size bounde
     assert.match(background, /MAX_SELECTOR_ASSET_BYTES\s*=\s*256\s*\*\s*1024/);
     assert.ok(manifest.host_permissions.includes('https://raw.githubusercontent.com/*'));
     assert.doesNotMatch(background, /SELECTOR_ASSET_URL\s*=\s*msg\./);
+});
+
+function shippedCandidate(version, mutate = () => {}) {
+    const candidate = JSON.parse(fs.readFileSync(path.join(ROOT, 'selector-packs.json'), 'utf8'));
+    candidate.assetVersion = version;
+    mutate(candidate);
+    candidate.digest = `sha256:${digestPayload(candidate)}`;
+    return candidate;
+}
+
+// A selector reaches injectStyle as stylesheet text. A brace there closes the
+// rule and opens another; url( makes the page fetch. Signed or not, those
+// assets are refused whole.
+test('a selector that could break out of a style rule rejects the asset', async () => {
+    for (const hostile of ['ytd-app{}', 'ytd-app } body { display: none', '[style*="url(https://example.com/x)"]']) {
+        const core = loadSelectorCore();
+        const result = await core.applySelectorAsset(shippedCandidate('9.9.9.selector.1', (asset) => {
+            asset.packs.watch.stable.unshift(hostile);
+        }), { source: 'remote' });
+        assert.equal(result.ok, false, hostile);
+        assert.match(result.error, /could break out of a style rule/, hostile);
+        assert.equal(core.getSelectorAssetState().source, 'shipped');
+    }
+});
+
+test('where the browser can check selector syntax, an unparseable one rejects the asset', async () => {
+    const asked = [];
+    const CSS = {
+        supports(text) {
+            asked.push(text);
+            return !text.includes('!!');
+        }
+    };
+    const accepted = await loadSelectorCore({ CSS }).applySelectorAsset(shippedCandidate('9.9.9.selector.1', (asset) => {
+        asset.packs.watch.stable.unshift('ytd-a, :is(ytd-b, [title="x, y"])');
+    }), { source: 'remote' });
+    assert.equal(accepted.ok, true);
+    // A list is checked one complex selector at a time; commas inside
+    // :is() and inside a quoted value stay with their part.
+    assert.ok(asked.includes('selector(ytd-a)'));
+    assert.ok(asked.includes('selector(:is(ytd-b, [title="x, y"]))'));
+
+    const rejected = await loadSelectorCore({ CSS }).applySelectorAsset(shippedCandidate('9.9.9.selector.1', (asset) => {
+        asset.packs.watch.stable.unshift('ytd-app!!');
+    }), { source: 'remote' });
+    assert.equal(rejected.ok, false);
+    assert.match(rejected.error, /can't parse: ytd-app!!/);
+});
+
+test('an asset older than the build\'s own packs, or than the active one, is refused', async () => {
+    const core = loadSelectorCore();
+    const old = await core.applySelectorAsset(shippedCandidate('4.95.0.selector.9'), { source: 'remote', floorVersion: '4.96.0' });
+    assert.equal(old.ok, false);
+    assert.match(old.error, /older than the packs this build shipped \(4\.96\.0\)/);
+
+    const current = await core.applySelectorAsset(shippedCandidate('4.96.0.selector.2'), { source: 'remote', floorVersion: '4.96.0' });
+    assert.equal(current.ok, true, 'the release\'s own asset clears the floor');
+
+    const replay = await core.applySelectorAsset(shippedCandidate('4.96.0.selector.1'), { source: 'remote', floorVersion: '4.96.0' });
+    assert.equal(replay.ok, false);
+    assert.match(replay.error, /older than the active 4\.96\.0\.selector\.2/);
+    assert.equal(core.getSelectorAssetState().assetVersion, '4.96.0.selector.2', 'the newer asset stays active');
+
+    assert.equal(core.compareSelectorAssetVersions('4.96.0.selector.10', '4.96.0.selector.9'), 1);
+    assert.equal(core.compareSelectorAssetVersions('no-digits', '0.0.1'), -1, 'a version with no numbers fails closed');
+});
+
+test('the shipped asset clears its own release\'s floor', () => {
+    const shipped = JSON.parse(fs.readFileSync(path.join(ROOT, 'selector-packs.json'), 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    assert.ok(loadSelectorCore().compareSelectorAssetVersions(shipped.assetVersion, pkg.version) >= 0,
+        `${shipped.assetVersion} must not sit below ${pkg.version}, or every user refuses it`);
 });

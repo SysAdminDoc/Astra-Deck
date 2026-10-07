@@ -742,6 +742,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
+	const YTKIT_VERSION = '4.96.0';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -785,7 +786,12 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 		if (typeof selectorCore.applySelectorAsset !== 'function') return null;
 		const stored = storageReadJSON(SELECTOR_ASSET_STORAGE_KEY, null);
 		if (!stored) return null;
-		const result = await selectorCore.applySelectorAsset(stored, { source: 'stored' });
+		if (stored.extensionVersion !== YTKIT_VERSION || !stored.asset) {
+			try { await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, null, { immediate: true }); } catch (_) {
+			}
+			return null;
+		}
+		const result = await selectorCore.applySelectorAsset(stored.asset, { source: 'stored', floorVersion: YTKIT_VERSION });
 		if (!result.ok) {
 			try { await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, null, { immediate: true }); } catch (_) {
 			}
@@ -805,10 +811,11 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 				selectorAsset: selectorCore.getSelectorAssetState?.() || null
 			};
 		}
-		const result = await selectorCore.applySelectorAsset(response.text, { source: 'remote' });
+		const result = await selectorCore.applySelectorAsset(response.text, { source: 'remote', floorVersion: YTKIT_VERSION });
 		if (result.ok) {
 			try {
-				await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, JSON.parse(response.text), { immediate: true });
+				await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY,
+					{ extensionVersion: YTKIT_VERSION, asset: JSON.parse(response.text) }, { immediate: true });
 			} catch (error) {
 				result.storageError = String(error?.message || error).slice(0, 180);
 			}
@@ -1071,7 +1078,6 @@ return response;
 		if (!channelBase || channelBaseFromTabs(data) !== channelBase) return false;
 		return listChannelTabSuffixes(data).includes(suffix);
 	}
-	const YTKIT_VERSION = '4.96.0';
 	const BRAND = Object.freeze({
 		name: 'Astra Deck',
 		short: 'Astra',

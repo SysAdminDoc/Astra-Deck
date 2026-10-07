@@ -3816,6 +3816,60 @@ __astraDeckRegistry["core/selectors.js"] = function (globalThis, self, window, c
 	function canonicalSelectorAsset(asset) {
 		return JSON.stringify(selectorAssetPayload(asset));
 	}
+	const UNSAFE_SELECTOR_TEXT = /[{}]|url\(/i;
+	function splitSelectorList(selector) {
+		const parts = [];
+		let depth = 0;
+		let quote = '';
+		let current = '';
+		for (let i = 0; i < selector.length; i += 1) {
+			const char = selector[i];
+			if (char === '\\') {
+				current += char + (selector[i + 1] || '');
+				i += 1;
+				continue;
+			}
+			if (quote) {
+				if (char === quote) quote = '';
+			} else if (char === '"' || char === "'") {
+				quote = char;
+			} else if (char === '(' || char === '[') {
+				depth += 1;
+			} else if ((char === ')' || char === ']') && depth > 0) {
+				depth -= 1;
+			} else if (char === ',' && depth === 0) {
+				parts.push(current.trim());
+				current = '';
+				continue;
+			}
+			current += char;
+		}
+		parts.push(current.trim());
+		return parts;
+	}
+	function selectorSyntaxCheck() {
+		const css = globalThis.CSS;
+		if (typeof css?.supports !== 'function') return null;
+		try {
+			if (!css.supports('selector(div)')) return null;
+		} catch (_) {
+			return null;
+		}
+		return (part) => {
+			if (!part) return false;
+			try { return css.supports(`selector(${part})`); } catch (_) { return false; }
+		};
+	}
+	function compareSelectorAssetVersions(left, right) {
+		const parts = (value) => String(value || '').split(/\D+/).filter(Boolean).map(Number);
+		const a = parts(left);
+		const b = parts(right);
+		for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+			const diff = (a[i] || 0) - (b[i] || 0);
+			if (diff) return diff < 0 ? -1 : 1;
+		}
+		return 0;
+	}
 	function normalizeAssetSelectorList(value, label, limits) {
 		if (typeof value !== 'string' && !Array.isArray(value)) {
 			throw new Error(`${label} is malformed`);
@@ -3829,6 +3883,14 @@ __astraDeckRegistry["core/selectors.js"] = function (globalThis, self, window, c
 		if (selectors.some((selector) => selector.length > limits.maxChars
 			|| /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(selector))) {
 			throw new Error(`${label} contains an invalid selector`);
+		}
+		if (selectors.some((selector) => UNSAFE_SELECTOR_TEXT.test(selector))) {
+			throw new Error(`${label} contains a selector that could break out of a style rule`);
+		}
+		const parses = selectorSyntaxCheck();
+		if (parses) {
+			const invalid = selectors.find((selector) => !splitSelectorList(selector).every(parses));
+			if (invalid) throw new Error(`${label} contains a selector this browser can't parse: ${invalid.slice(0, 80)}`);
 		}
 		return selectors;
 	}
@@ -4025,6 +4087,13 @@ __astraDeckRegistry["core/selectors.js"] = function (globalThis, self, window, c
 		const attemptedVersion = typeof asset === 'object' && asset ? asset.assetVersion : null;
 		try {
 			const normalized = normalizeSelectorAsset(asset);
+			if (options.floorVersion && compareSelectorAssetVersions(normalized.assetVersion, options.floorVersion) < 0) {
+				throw new Error(`Selector asset ${normalized.assetVersion} is older than the packs this build shipped (${options.floorVersion})`);
+			}
+			if (options.source === 'remote' && selectorAssetState.source !== 'shipped'
+				&& compareSelectorAssetVersions(normalized.assetVersion, selectorAssetState.assetVersion) < 0) {
+				throw new Error(`Selector asset ${normalized.assetVersion} is older than the active ${selectorAssetState.assetVersion}`);
+			}
 			const actualDigest = await selectorAssetDigest(normalized);
 			const expectedDigest = normalized.digest.slice('sha256:'.length);
 			if (actualDigest !== expectedDigest) throw new Error('Selector asset digest mismatch');
@@ -4557,6 +4626,7 @@ __astraDeckRegistry["core/selectors.js"] = function (globalThis, self, window, c
 		SurfaceSelectorMap,
 		SurfaceSelectors,
 		applySelectorAsset,
+		compareSelectorAssetVersions,
 		exportSelectorHealth,
 		findSurfaceElement,
 		findSurfaceElements,
@@ -20673,6 +20743,54 @@ function decodeFeedSignature(text) {
 	for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
 	return bytes;
 }
+let selectorAssetInFlight = null;
+function fetchSelectorAssetShared() {
+	if (selectorAssetInFlight) return selectorAssetInFlight;
+	selectorAssetInFlight = (async () => {
+		const selectorAssetController = new AbortController();
+		let timedOut = false;
+		const timer = setTimeout(() => {
+			timedOut = true;
+			selectorAssetController.abort();
+		}, SELECTOR_ASSET_TIMEOUT_MS);
+		try {
+			const response = await fetch(SELECTOR_ASSET_URL, {
+				method: 'GET',
+				headers: { Accept: 'application/json' },
+				credentials: 'omit',
+				cache: 'no-store',
+				redirect: 'error',
+				signal: selectorAssetController.signal
+			});
+			if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
+			const { text, bytes } = await readTextBounded(
+				response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController);
+			clearTimeout(timer);
+			const signature = await fetchFeedSignature(SELECTOR_ASSET_URL);
+			if (!await verifyFeedSignature(text, signature)) {
+				throw new Error('Selector asset signature could not be verified.');
+			}
+			return {
+				ok: true,
+				text,
+				bytes,
+				url: SELECTOR_ASSET_URL,
+				fetchedAt: Date.now(),
+				etag: response.headers?.get?.('etag') || null
+			};
+		} catch (error) {
+			return {
+				ok: false,
+				error: timedOut ? 'Selector asset fetch timed out.' : (error?.message || 'Selector asset fetch failed.')
+			};
+		} finally {
+			clearTimeout(timer);
+		}
+	})().finally(() => {
+		selectorAssetInFlight = null;
+	});
+	return selectorAssetInFlight;
+}
 async function fetchFeedSignature(url) {
 	const controller = new AbortController();
 	const timer = setTimeout(() => {
@@ -20716,6 +20834,7 @@ async function verifyFeedSignature(payloadText, signatureText) {
 }
 const SELECTOR_ASSET_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/selector-packs.json';
 const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
+const SELECTOR_ASSET_TIMEOUT_MS = 20000;
 const MAX_COBALT_RESPONSE_BYTES = 512 * 1024;
 const COBALT_REQUEST_TIMEOUT_MS = 15000;
 const FEATURE_DISABLE_FEED_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/feature-disable-feed.csv';
@@ -21510,33 +21629,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 			sendResponse({ ok: false, error: 'Selector asset origin is not allowlisted.' });
 			return false;
 		}
-		const selectorAssetController = new AbortController();
-		fetch(SELECTOR_ASSET_URL, {
-			method: 'GET',
-			headers: { Accept: 'application/json' },
-			credentials: 'omit',
-			cache: 'no-store',
-			redirect: 'error',
-			signal: selectorAssetController.signal
-		}).then(async (response) => {
-			if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
-			const { text, bytes } = await readTextBounded(
-				response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController);
-			const signature = await fetchFeedSignature(SELECTOR_ASSET_URL);
-			if (!await verifyFeedSignature(text, signature)) {
-				throw new Error('Selector asset signature could not be verified.');
-			}
-			sendResponse({
-				ok: true,
-				text,
-				bytes,
-				url: SELECTOR_ASSET_URL,
-				fetchedAt: Date.now(),
-				etag: response.headers?.get?.('etag') || null
-			});
-		}).catch((error) => {
-			sendResponse({ ok: false, error: error?.message || 'Selector asset fetch failed.' });
-		});
+		fetchSelectorAssetShared().then(sendResponse);
 		return true;
 	}
 	if (msg.type === 'YTKIT_FETCH_FEATURE_DISABLE_FEED') {

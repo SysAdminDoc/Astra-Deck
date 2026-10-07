@@ -1105,6 +1105,61 @@ function decodeFeedSignature(text) {
     return bytes;
 }
 
+let selectorAssetInFlight = null;
+
+// One request at a time, with a deadline on the whole body. The controller
+// also lets an over-limit body abort the request rather than drain into a
+// worker that already gave up on it.
+function fetchSelectorAssetShared() {
+    if (selectorAssetInFlight) return selectorAssetInFlight;
+    selectorAssetInFlight = (async () => {
+        const selectorAssetController = new AbortController();
+        let timedOut = false;
+        const timer = setTimeout(() => {
+            timedOut = true;
+            selectorAssetController.abort();
+        }, SELECTOR_ASSET_TIMEOUT_MS);
+        try {
+            const response = await fetch(SELECTOR_ASSET_URL, {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+                credentials: 'omit',
+                cache: 'no-store',
+                redirect: 'error',
+                signal: selectorAssetController.signal
+            });
+            if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
+            const { text, bytes } = await readTextBounded(
+                response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController);
+            clearTimeout(timer);
+            // The asset's own `sha256:` digest travels inside the asset, so it
+            // cannot detect substitution. The detached signature can.
+            const signature = await fetchFeedSignature(SELECTOR_ASSET_URL);
+            if (!await verifyFeedSignature(text, signature)) {
+                throw new Error('Selector asset signature could not be verified.');
+            }
+            return {
+                ok: true,
+                text,
+                bytes,
+                url: SELECTOR_ASSET_URL,
+                fetchedAt: Date.now(),
+                etag: response.headers?.get?.('etag') || null
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                error: timedOut ? 'Selector asset fetch timed out.' : (error?.message || 'Selector asset fetch failed.')
+            };
+        } finally {
+            clearTimeout(timer);
+        }
+    })().finally(() => {
+        selectorAssetInFlight = null;
+    });
+    return selectorAssetInFlight;
+}
+
 async function fetchFeedSignature(url) {
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -1157,6 +1212,7 @@ async function verifyFeedSignature(payloadText, signatureText) {
 
 const SELECTOR_ASSET_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/selector-packs.json';
 const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
+const SELECTOR_ASSET_TIMEOUT_MS = 20000;
 const MAX_COBALT_RESPONSE_BYTES = 512 * 1024;
 const COBALT_REQUEST_TIMEOUT_MS = 15000;
 
@@ -2237,38 +2293,9 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             sendResponse({ ok: false, error: 'Selector asset origin is not allowlisted.' });
             return false;
         }
-        // The controller exists so an over-limit body can abort the request
-        // rather than being left to drain into a worker that already gave up
-        // on it.
-        const selectorAssetController = new AbortController();
-        fetch(SELECTOR_ASSET_URL, {
-            method: 'GET',
-            headers: { Accept: 'application/json' },
-            credentials: 'omit',
-            cache: 'no-store',
-            redirect: 'error',
-            signal: selectorAssetController.signal
-        }).then(async (response) => {
-            if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
-            const { text, bytes } = await readTextBounded(
-                response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController);
-            // The asset's own `sha256:` digest travels inside the asset, so it
-            // cannot detect substitution. The detached signature can.
-            const signature = await fetchFeedSignature(SELECTOR_ASSET_URL);
-            if (!await verifyFeedSignature(text, signature)) {
-                throw new Error('Selector asset signature could not be verified.');
-            }
-            sendResponse({
-                ok: true,
-                text,
-                bytes,
-                url: SELECTOR_ASSET_URL,
-                fetchedAt: Date.now(),
-                etag: response.headers?.get?.('etag') || null
-            });
-        }).catch((error) => {
-            sendResponse({ ok: false, error: error?.message || 'Selector asset fetch failed.' });
-        });
+        // Every YouTube tab whose schedule is due asks at boot, so they share
+        // one request rather than making one each.
+        fetchSelectorAssetShared().then(sendResponse);
         return true;
     }
 

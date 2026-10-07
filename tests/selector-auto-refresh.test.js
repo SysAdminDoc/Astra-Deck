@@ -162,3 +162,58 @@ test('a storage write that fails does not break the refresh', async () => {
     const result = await api.maybeAutoRefreshSelectorAsset(NOW);
     assert.equal(result.ok, true, 'the asset already applied; losing the timestamp costs one extra attempt');
 });
+
+// The stored asset is keyed to the build that verified it. Before, a bare
+// asset sat in storage across upgrades and replayed into a build whose own
+// shipped packs were newer.
+function loadAssetStore(overrides = {}) {
+    const store = new Map(Object.entries(overrides.stored || {}));
+    const applied = [];
+    const api = loadDeclarations(['hydrateStoredSelectorAsset', 'refreshSelectorAsset'], {
+        YTKIT_VERSION: '4.97.0',
+        SELECTOR_ASSET_STORAGE_KEY: 'ytkit-selector-asset',
+        storageReadJSON: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
+        storageWriteJSON: async (key, value) => { store.set(key, value); },
+        sendRuntimeMessage: async () => ({ ok: true, text: JSON.stringify({ assetVersion: '4.97.0.selector.1' }) }),
+        YTKitCore: {
+            applySelectorAsset: async (asset, options) => {
+                applied.push({ asset, options });
+                return { ok: true, state: { source: options.source } };
+            },
+            getSelectorAssetState: () => null
+        },
+        ...overrides.globals
+    });
+    return { api, store, applied };
+}
+
+test('a stored asset from another build, or in the old bare shape, is dropped unread', async () => {
+    for (const stored of [
+        { extensionVersion: '4.96.0', asset: { assetVersion: '4.96.0.selector.3' } },
+        { schemaVersion: 1, assetVersion: '4.96.0.selector.3', packs: {} }
+    ]) {
+        const { api, store, applied } = loadAssetStore({ stored: { 'ytkit-selector-asset': stored } });
+        assert.equal(await api.hydrateStoredSelectorAsset(), null);
+        assert.equal(applied.length, 0, 'nothing from another build reaches the selector map');
+        assert.equal(store.get('ytkit-selector-asset'), null, 'and it is cleared, so the next boot skips it too');
+    }
+});
+
+test('a stored asset from this build is applied against the build\'s floor', async () => {
+    const asset = { assetVersion: '4.97.0.selector.2' };
+    const { api, applied } = loadAssetStore({ stored: { 'ytkit-selector-asset': { extensionVersion: '4.97.0', asset } } });
+    const result = await api.hydrateStoredSelectorAsset();
+    assert.equal(result.ok, true);
+    assert.equal(applied[0].asset, asset);
+    assert.deepEqual({ ...applied[0].options }, { source: 'stored', floorVersion: '4.97.0' });
+});
+
+test('a refreshed asset is stored keyed to the build that verified it', async () => {
+    const { api, store, applied } = loadAssetStore();
+    const result = await api.refreshSelectorAsset();
+    assert.equal(result.ok, true);
+    assert.equal(applied[0].options.floorVersion, '4.97.0');
+    const saved = store.get('ytkit-selector-asset');
+    assert.equal(saved.extensionVersion, '4.97.0');
+    assert.equal(saved.asset.assetVersion, '4.97.0.selector.1');
+});

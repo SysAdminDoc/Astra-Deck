@@ -34,7 +34,8 @@ function loadBackground({
     initialSettings = {},
     initialSession = {},
     initialEnabledRulesets = ['astra_zero_ads'],
-    apiNamespace = 'chrome'
+    apiNamespace = 'chrome',
+    setTimeoutImpl = setTimeout
 } = {}) {
     let messageListener = null;
     let installedListener = null;
@@ -241,7 +242,7 @@ function loadBackground({
             remoteListOriginPattern: remoteListScope.remoteListOriginPattern,
             cookieHandoff
         },
-        setTimeout
+        setTimeout: setTimeoutImpl
     };
     context[apiNamespace] = chrome;
     context.globalThis = context;
@@ -2125,4 +2126,38 @@ test('a sender with no origin at all cannot reach a page-only handler', async ()
             { id: 'astra-test-extension', tab: { id: 9, windowId: 1, index: 0 } });
         assert.equal(response.ok, false, `${type} must fail closed when the origin is unknown`);
     }
+});
+
+// Every YouTube tab whose refresh schedule is due asks at boot. Eight tabs
+// used to make eight requests, and a stalled body had no deadline at all.
+test('selector asset requests made together share one fetch', async () => {
+    let payloadFetches = 0;
+    const signed = signedFeedFetch('selector-packs.json');
+    const bgx = loadBackground({
+        fetchImpl: async (url, init) => {
+            if (String(url).endsWith('selector-packs.json')) payloadFetches += 1;
+            return signed(url, init);
+        }
+    });
+    const replies = await Promise.all(Array.from({ length: 8 }, () =>
+        dispatchMessage(bgx.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' })));
+    assert.ok(replies.every((reply) => reply.ok === true), 'every tab gets the verified asset');
+    assert.equal(payloadFetches, 1, 'eight tabs at once make one request');
+
+    const later = await dispatchMessage(bgx.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' });
+    assert.equal(later.ok, true);
+    assert.equal(payloadFetches, 2, 'a later refresh fetches again rather than reusing a settled answer');
+});
+
+test('a selector asset body that never finishes times out', async () => {
+    const bgx = loadBackground({
+        // The 20 s deadline fires at once; every other timer runs normally.
+        setTimeoutImpl: (fn, ms, ...args) => setTimeout(fn, ms === 20000 ? 0 : ms, ...args),
+        fetchImpl: (url, init) => new Promise((_resolve, reject) => {
+            init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        })
+    });
+    const reply = await dispatchMessage(bgx.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' });
+    assert.equal(reply.ok, false);
+    assert.equal(reply.error, 'Selector asset fetch timed out.');
 });

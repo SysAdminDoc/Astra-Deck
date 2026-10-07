@@ -18,6 +18,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Selector updates are checked harder before they're used. A saved update is now tied to the version that downloaded it, so after an upgrade the extension starts from its own built-in selectors instead of replaying an older saved set. Updates older than the ones a release shipped with are refused, and so is any update that would step back from the one already in use. Each selector also has to parse in your browser and can't contain braces or `url(`, so a bad one can't spill into the page's styles. When several YouTube tabs ask for an update at once they now share a single download, and a download that stalls gives up after 20 seconds.
+
 - An upcoming premiere or scheduled stream in the watch sidebar isn't mistaken for a Mix anymore. Hide Mixes leaves it alone, and it keeps its Watch Feed button. YouTube's newer cards only say "Upcoming" in words, which both features now read in every supported language.
 
 - If the settings panel's code fails to load, opening the panel now tells you to reload the page. Before, it quietly showed an older built-in copy that had fallen behind: some cards were missing (Return YouTube Dislike and the notification bell among them) and a few messages stayed in English. That copy, about 3,900 lines, is gone, and the build checks keep it from coming back.

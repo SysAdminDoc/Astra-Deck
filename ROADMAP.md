@@ -27,18 +27,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   keys present in all 11 locales, with counts through `tCount`.
   Complexity: M
 
-- [ ] P3 — Selector asset hardening
-  Why: 2026-09-28 audit, confirmed. The stored `ytkit-selector-asset` is never re-verified and
-  outlives upgrades (the disable feed got a `-v2` key bump for this; the asset didn't). Any old
-  signed pack replays (no version floor). Selectors allow `{`, `}` and `url(`, which reach
-  `injectStyle`. Scheduled refresh has no in-flight dedupe (8 tabs, 8 refreshes) and the body
-  fetch has no timeout.
-  Where: `extension/ytkit.js` (~882, ~918-957, ~13577), `extension/core/selectors.js`
-  (~443-601), `extension/core/styles.js` ~89, `extension/background.js` (~2216-2246).
-  Acceptance: stored assets SHALL be re-verified or re-keyed, versions below the shipped pack
-  rejected, selectors validated with `CSS.supports('selector(...)')`, refresh deduped with a timeout.
-  Complexity: M
-
 - [ ] P3 — Smaller audit leftovers
   Why: 2026-09-28 audit. (1) Channel landing tab: non-Videos tabs only work on a hard load;
   after in-app navigation the embedded page data belongs to the previous page (`ytkit.js`
@@ -143,6 +131,19 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   `extension/core/text-metrics.js`, `tests/features/hide-planned-livestreams.test.js`.
   Acceptance: WHEN a card's rows carry upcoming wording in any shipped language, THEN Hide Planned
   Livestreams, Video Hider and Watch Feed SHALL agree it is upcoming, through one shared pattern.
+  Complexity: S
+
+- [ ] P3 — Headless Firefox 156 hangs at WebDriver session creation
+  Why: on 2026-10-07 the system Firefox had auto-updated to 156.0.1. Every `startFirefoxSession`
+  call (geckodriver 0.37.1, headless, with or without `--allow-system-access`, on 9222 or a free
+  `--websocket-port`) printed "WebDriver BiDi listening" and then timed out at `POST /session`.
+  Each left a firefox.exe that `taskkill /PID /T /F` reports as gone while CIM still lists it, still
+  holding its BiDi port and locking its `astra-firefox-webdriver-*` profile. The heatmap check
+  passed in Firefox on 155 earlier in the same drain. Blocks `npm run smoke:firefox` and the
+  first-load item above.
+  Where: `scripts/firefox-webdriver.js` (`startFirefoxSession`), `scripts/smoke-firefox-webext.js`.
+  Acceptance: `npm run smoke:firefox` SHALL pass on the installed Firefox, with any geckodriver or
+  Firefox pin it needs written in the repo CLAUDE.md, and no firefox.exe left behind afterwards.
   Complexity: S
 
 ## Research-Driven Additions
