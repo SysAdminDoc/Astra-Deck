@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.19
+// @name         Theater Split v1.0.20
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.19
+// @version      1.0.20
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -44,6 +44,8 @@
 //   @version 1.0.19 - New look that follows the YouTube theme: one flat pane,
 //                     quiet comment actions, a findable divider, and the
 //                     view count read from its accessible label.
+//   @version 1.0.20 - The comments count lines up with the header text, and
+//                     the collapsed edge says "Show comments" on hover/focus.
 
 (function() {
     'use strict';

@@ -9417,5 +9417,8 @@
   },
   "dlInstallerRunHint": {
     "message": "打开“下载”文件夹，双击安装文件即可安装。"
+  },
+  "stickyVideoShowCommentsLabel": {
+    "message": "显示评论"
   }
 }

@@ -9478,5 +9478,8 @@
   },
   "dlInstallerRunHint": {
     "message": "Open Downloads and double-click the setup file to install."
+  },
+  "stickyVideoShowCommentsLabel": {
+    "message": "Show comments"
   }
 }

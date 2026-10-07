@@ -9417,5 +9417,8 @@
   },
   "dlInstallerRunHint": {
     "message": "افتح التنزيلات وانقر نقرًا مزدوجًا على ملف الإعداد للتثبيت."
+  },
+  "stickyVideoShowCommentsLabel": {
+    "message": "إظهار التعليقات"
   }
 }

@@ -88,17 +88,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   keys present in all 11 locales, and a search for that name SHALL still match its rows.
   Complexity: S
 
-- [ ] P3 — Popup and side panel have no light theme
-  Why: 2026-09-28 polish pass. Both pages are dark only (`surface-system.css` tokens have no
-  `prefers-color-scheme: light` set), while the in-page settings panel follows YouTube's theme.
-  Someone on a light YouTube gets a dark popup next to a light page.
-  Where: `extension/surface-system.css` `--astra-*` tokens, `extension/popup.css`,
-  `extension/sidepanel.css`; `scripts/smoke-headless-a11y.js` already captures a light variant
-  for in-page surfaces and would need one for these two.
-  Acceptance: both pages follow `prefers-color-scheme` with a light token set that passes the
-  a11y smoke's contrast and focus checks in light and dark.
-  Complexity: M
-
 - [ ] P3 — Surfaces the 2026-09-28 polish pass didn't reach
   Why: that pass covered the Command Deck, popup, side panel, download panel, Video Hider,
   transcript states, comment search, toasts and the Theater Split captures. These got no
@@ -111,17 +100,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: each surface captured headless in light and dark (default, hover, focus,
   disabled, empty, error), with findings fixed or logged here.
   Complexity: M
-
-- [ ] P3 — Theater Split: comments header chip offset and collapsed-rail hint
-  Why: 2026-09-28 redesign leftovers. The comments count chip sits about 8 px low because an
-  empty `h3` in the header still takes a gap. The closed divider rail gives no hint that a
-  click reopens comments.
-  Where: `extension/features/sticky-video-styles/index.js` `buildSplitCommentsCss` and the
-  divider rules in `buildSplitShellCss`; regenerate the standalone with
-  `npm run generate:theater-split-css`.
-  Acceptance: the chip SHALL align with the header text in dark and light captures, and the
-  closed rail SHALL expose a visible and accessible "Show comments" affordance.
-  Complexity: S
 
 - [ ] P3 — Watch Feed Import is unreachable when the feed is empty
   Why: 2026-09-28 audit, confirmed. Import lives in the Watch Feed panel, and the only way into
@@ -168,6 +146,17 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   as covered by the dock's Repeat (card note or conflict pair) or be retired through both
   retirement lists with a CHANGELOG note. WHEN the dock is off, the standalone button SHALL keep
   working.
+  Complexity: S
+
+- [ ] P3 — Popup pseudo-locale lane of the headless a11y smoke fails
+  Why: `node scripts/smoke-headless-a11y.js --fixture-states --surface popup` fails its pseudo
+  lane with "popup/pseudo: pseudo-locale copy did not render". It fails on main before the
+  2026-10-06 light-theme change too, so the lane has been red unseen: the smoke isn't part of
+  `npm run check`, and the pseudo lane is the one that proves popup copy goes through i18n.
+  Where: `scripts/smoke-headless-a11y.js` (the pseudo stage, ~60 and ~300),
+  `scripts/generate-pseudolocale.js`, `extension/popup.js` locale selection.
+  Acceptance: WHEN the a11y smoke runs the popup surface, THEN the pseudo lane SHALL render
+  pseudo-locale copy and pass, and a test SHALL fail if the lane quietly renders real copy.
   Complexity: S
 
 ## Research-Driven Additions

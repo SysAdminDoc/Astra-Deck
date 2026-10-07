@@ -9417,5 +9417,8 @@
   },
   "dlInstallerRunHint": {
     "message": "Ouvrez Téléchargements et double-cliquez sur le fichier d’installation pour installer."
+  },
+  "stickyVideoShowCommentsLabel": {
+    "message": "Afficher les commentaires"
   }
 }

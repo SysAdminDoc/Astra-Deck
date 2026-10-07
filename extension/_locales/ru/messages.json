@@ -9417,5 +9417,8 @@
   },
   "dlInstallerRunHint": {
     "message": "Откройте «Загрузки» и дважды щёлкните установочный файл, чтобы установить."
+  },
+  "stickyVideoShowCommentsLabel": {
+    "message": "Показать комментарии"
   }
 }

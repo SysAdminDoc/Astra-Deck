@@ -9417,5 +9417,8 @@
   },
   "dlInstallerRunHint": {
     "message": "다운로드 폴더를 열고 설치 파일을 더블클릭하여 설치하세요."
+  },
+  "stickyVideoShowCommentsLabel": {
+    "message": "댓글 표시"
   }
 }

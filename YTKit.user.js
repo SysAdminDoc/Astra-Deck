@@ -3695,7 +3695,8 @@ const ASTRA_DECK_BUILD = {
 		"importSummaryAiSummariesTplOther": "{count} AI summaries",
 		"importSummaryDuplicatesTplOne": "{count} duplicate",
 		"importSummaryDuplicatesTplOther": "{count} duplicates",
-		"dlInstallerRunHint": "Open Downloads and double-click the setup file to install."
+		"dlInstallerRunHint": "Open Downloads and double-click the setup file to install.",
+		"stickyVideoShowCommentsLabel": "Show comments"
 	}
 };
 
