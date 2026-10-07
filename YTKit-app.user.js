@@ -1032,8 +1032,20 @@ return response;
 			return this._idCache;
 		},
 		_idCache: null,
-		_idCacheHref: ''
+		_idCacheHref: '',
+		navigatedPageData: null
 	};
+	function captureNavigatedPageData(event) {
+		_rw.navigatedPageData = null;
+		if (!appState.settings?.jumpToMostReplayed && !appState.settings?.heatmapSmartSpeed) return;
+		try {
+			const frameworkUpdates = event?.detail?.response?.response?.frameworkUpdates;
+			if (frameworkUpdates && typeof frameworkUpdates === 'object') {
+				_rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
+			}
+		} catch (_) {
+		}
+	}
 	const CHANNEL_TAB_SUFFIXES = Object.freeze(['videos', 'shorts', 'streams', 'podcasts', 'playlists', 'posts']);
 	function channelLandingTabSuffix(value) {
 		const wanted = String(value || '').trim().toLowerCase();
@@ -12634,7 +12646,7 @@ const STORAGE_KEYS = Object.freeze({
 			_navRule: null,
 			_readMarkers() {
 				if (typeof heatmapMarkersFor !== 'function') return [];
-				return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData);
+				return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData, _rw.navigatedPageData);
 			},
 			_seekToPeak() {
 				const peak = findMostReplayed(this._markers);
@@ -12712,7 +12724,7 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_readMarkers() {
 				if (typeof heatmapMarkersFor !== 'function') return [];
-				return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData);
+				return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData, _rw.navigatedPageData);
 			},
 			_tick() {
 				const video = this._video;
@@ -33852,6 +33864,7 @@ const STORAGE_KEYS = Object.freeze({
 			addNavigateRule('_retiredCommentCleanup', () => cleanupRetiredCommentUi());
 		}
 		attachExtensionBridgeListeners();
+		document.addEventListener('yt-navigate-finish', captureNavigatedPageData, true);
 		injectPalette();
 		if (isLiveChatFrame()) {
 			const CHAT_FEATURE_IDS = new Set([

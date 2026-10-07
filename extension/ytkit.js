@@ -1267,8 +1267,37 @@ return response;
             return this._idCache;
         },
         _idCache: null,
-        _idCacheHref: ''
+        _idCacheHref: '',
+
+        // The last in-app navigation's frameworkUpdates, copied by
+        // captureNavigatedPageData below.
+        navigatedPageData: null
     };
+
+    // YouTube hands every navigation its page data on yt-navigate-finish, the
+    // most-replayed curve included, and strips the curve from that object
+    // within a second. The inline scripts `_rw` parses are written once at hard
+    // load, so without a copy taken during the dispatch the heatmap features
+    // had no curve after an in-app click until a reload. Reading `detail` from
+    // this world costs a copy of the whole response in Chromium (about 4 ms),
+    // so it is only done while a feature that wants the curve is on. Firefox
+    // hands over a live view of YouTube's object instead, and holding on to it
+    // meant reading it after YouTube had emptied it, so the part kept is
+    // serialized here, during the dispatch. A page script can dispatch the
+    // event too, and heatmapMarkersFor still takes a curve only when it names
+    // the video that is playing.
+    function captureNavigatedPageData(event) {
+        _rw.navigatedPageData = null;
+        if (!appState.settings?.jumpToMostReplayed && !appState.settings?.heatmapSmartSpeed) return;
+        try {
+            const frameworkUpdates = event?.detail?.response?.response?.frameworkUpdates;
+            if (frameworkUpdates && typeof frameworkUpdates === 'object') {
+                _rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
+            }
+        } catch (_) {
+            // reason: a detail that throws is no curve, never a broken navigation
+        }
+    }
 
     // The channel tabs a browse payload actually lists, as unlocalised URL
     // suffixes ('/videos', '/streams', ...).
@@ -19383,8 +19412,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // The curve can arrive on either object depending on the A/B
                 // bucket. Both are read from the hard-load inline scripts and
                 // go stale after in-page navigation, so only a payload about
-                // the playing video counts.
-                return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData);
+                // the playing video counts. The third is the copy taken from
+                // the last in-app navigation.
+                return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData, _rw.navigatedPageData);
             },
 
             _seekToPeak() {
@@ -19475,7 +19505,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _readMarkers() {
                 if (typeof heatmapMarkersFor !== 'function') return [];
-                return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData);
+                return heatmapMarkersFor(getVideoId(), _rw.ytInitialPlayerResponse, _rw.ytInitialData, _rw.navigatedPageData);
             },
 
             _tick() {
@@ -46226,6 +46256,10 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             addNavigateRule('_retiredCommentCleanup', () => cleanupRetiredCommentUi());
         }
         attachExtensionBridgeListeners();
+        // Capture phase, so the copy is taken before YouTube's own handlers
+        // get to the object. Registered after the settings line for the same
+        // TDZ reason as the selector refresh above.
+        document.addEventListener('yt-navigate-finish', captureNavigatedPageData, true);
 
         // Before the live-chat branch below returns: the chat frame injects its
         // own surfaces and needs the tokens as much as the main document does.

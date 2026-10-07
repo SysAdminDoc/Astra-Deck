@@ -211,8 +211,10 @@ test('both heatmap features hide themselves when the video has no heatmap', () =
         'a video without heatmap data must not get a dead button');
     // This used to pin `parseHeatmapMarkers(_rw.ytInitialPlayerResponse)`, a
     // call on a name ytkit.js never bound, so the pin held the bug in place.
-    assert.equal((body.match(/heatmapMarkersFor\(getVideoId\(\), _rw\.ytInitialPlayerResponse, _rw\.ytInitialData\)/g) || []).length, 2,
-        'both features read the player response first, initial data second, for the playing video only');
+    // The navigation copy joined the list as a third source; the first two
+    // keep their order.
+    assert.equal((body.match(/heatmapMarkersFor\(getVideoId\(\), _rw\.ytInitialPlayerResponse, _rw\.ytInitialData, _rw\.navigatedPageData\)/g) || []).length, 2,
+        'both features read the player response first, initial data second, then the navigation copy, for the playing video only');
     const destructure = ytkit.slice(ytkit.indexOf('const {'), ytkit.indexOf('} = globalThis.YTKitCore || {};'));
     for (const name of ['findMostReplayed', 'heatmapMarkersFor', 'resolveHeatmapRate']) {
         assert.match(destructure, new RegExp(`\\b${name},`), `${name} must be bound from YTKitCore`);
@@ -341,6 +343,79 @@ test('both features ignore a curve that belongs to the previous video', () => {
     const mixed = { ytInitialPlayerResponse: heatmapPayload(6, 'zzzzzzzzzzz'), ytInitialData: heatmapPayload(5) };
     assert.equal(heatmapFeature('heatmapSmartSpeed', mixed)._readMarkers().length, 5,
         'a stale player response falls through to initial data about the playing video');
+});
+
+test('after an in-app click both features use the curve that navigation carried', () => {
+    // The inline payloads still describe the video the tab opened on, so before
+    // the navigation copy existed both features had no curve until a reload.
+    const stale = { ytInitialPlayerResponse: heatmapPayload(6, 'zzzzzzzzzzz'), ytInitialData: heatmapPayload(5, 'zzzzzzzzzzz') };
+    for (const id of ['jumpToMostReplayed', 'heatmapSmartSpeed']) {
+        const markers = heatmapFeature(id, { ...stale, navigatedPageData: heatmapPayload(7) })._readMarkers();
+        assert.equal(markers.length, 7, `${id} must read the new video's curve without a reload`);
+        assert.equal(findPeak(markers), 20, 'and it is that curve, not the stale one');
+        assert.deepEqual(Array.from(heatmapFeature(id, { ...stale, navigatedPageData: heatmapPayload(7, 'yyyyyyyyyyy') })._readMarkers()), [],
+            `${id} still refuses a navigation curve that names another video`);
+    }
+});
+
+function findPeak(markers) {
+    return loadHeatmap().findMostReplayed(markers).startSeconds;
+}
+
+function navigationCapture(settings) {
+    const { loadDeclarations } = require('./helpers/monolith');
+    return loadDeclarations(['_rw', 'captureNavigatedPageData'], {
+        appState: { settings },
+        document: { querySelectorAll: () => [] },
+        location: { href: 'https://www.youtube.com/watch?v=abc12345678' }
+    });
+}
+
+function navigateFinish(payload) {
+    return { type: 'yt-navigate-finish', detail: { pageType: 'watch', response: { response: payload } } };
+}
+
+test('the navigation copy is taken from YouTube\'s own event while a heatmap feature is on', () => {
+    for (const settings of [{ jumpToMostReplayed: true }, { heatmapSmartSpeed: true }]) {
+        const { _rw, captureNavigatedPageData } = navigationCapture(settings);
+        captureNavigatedPageData(navigateFinish(heatmapPayload(5, 'nextvideo11')));
+        assert.equal(loadHeatmap().heatmapMarkersFor('nextvideo11', _rw.navigatedPageData).length, 5,
+            `with ${Object.keys(settings)[0]} on, the curve YouTube handed the navigation is kept`);
+
+        // Firefox hands this world a live view of YouTube's object, and YouTube
+        // empties it within a second, before the navigate rules read it.
+        const live = heatmapPayload(5, 'nextvideo11');
+        captureNavigatedPageData(navigateFinish(live));
+        live.frameworkUpdates.entityBatchUpdate.mutations.length = 0;
+        delete live.frameworkUpdates.entityBatchUpdate;
+        assert.equal(loadHeatmap().heatmapMarkersFor('nextvideo11', _rw.navigatedPageData).length, 5,
+            'the copy is taken during the dispatch, not a reference to an object YouTube clears');
+
+        // A navigation with no curve (a channel page, a video without one)
+        // must not leave the last video's copy behind.
+        captureNavigatedPageData(navigateFinish({ contents: {} }));
+        assert.equal(_rw.navigatedPageData, null);
+    }
+
+    const off = navigationCapture({ jumpToMostReplayed: false, heatmapSmartSpeed: false });
+    let read = false;
+    off.captureNavigatedPageData({ get detail() { read = true; return navigateFinish(heatmapPayload(5)).detail; } });
+    assert.equal(read, false, 'with both features off the response is never copied into this world');
+    assert.equal(off._rw.navigatedPageData, null);
+
+    const { _rw, captureNavigatedPageData } = navigationCapture({ jumpToMostReplayed: true });
+    captureNavigatedPageData(navigateFinish(heatmapPayload(5)));
+    assert.doesNotThrow(() => captureNavigatedPageData({ get detail() { throw new Error('page-made getter'); } }));
+    assert.equal(_rw.navigatedPageData, null, 'a detail that throws leaves no copy, old or new');
+});
+
+test('the navigation copy is wired in once the settings exist', () => {
+    const ytkit = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
+    const settingsAt = ytkit.indexOf('appState.settings = settingsManager.load();');
+    const wiredAt = ytkit.indexOf("document.addEventListener('yt-navigate-finish', captureNavigatedPageData, true);");
+    assert.ok(settingsAt > 0 && wiredAt > 0, 'both lines exist');
+    assert.ok(wiredAt > settingsAt,
+        'the handler reads appState.settings, a `let` declared later in the file; wiring it earlier is a TDZ throw on every navigation');
 });
 
 test('heatmapMarkersFor needs a payload that names the playing video', () => {

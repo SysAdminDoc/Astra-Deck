@@ -4,6 +4,16 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
+- [ ] P3 — The heatmap features act on an in-stream ad
+  Why: seen 2026-10-06 in the headless heatmap check. With `#movie_player.ad-showing`, the video
+  element is the ad. Jump to Most Replayed set the ad's currentTime to the video's peak (162 s on
+  a 15 s ad), which ended the ad and started the real video at 0:00 instead of the peak. Heatmap
+  Smart Speed ran the ad at the cold rate, steered by the video's curve.
+  Where: `extension/ytkit.js` `jumpToMostReplayed._seekToPeak` and `heatmapSmartSpeed._tick`.
+  Acceptance: WHILE an ad is showing, the jump SHALL land on the video's peak once the video plays
+  (or do nothing and say so), and Smart Speed SHALL leave the rate alone.
+  Complexity: S
+
 - [ ] P3 — Two popup "in-page panel" settings have no editor anywhere
   Why: found 2026-10-06. `featureSchedules` and `syncSafePrefsAllowlist` show the popup's
   "in-page panel" button, which promises the panel edits them, but nothing does. The panel now
@@ -162,19 +172,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: the chip SHALL align with the header text in dark and light captures, and the
   closed rail SHALL expose a visible and accessible "Show comments" affordance.
   Complexity: S
-
-- [ ] P2 — Heatmap features have no curve after in-app navigation
-  Why: since the 2026-09-28 fix, Jump to Most Replayed and Heatmap Smart Speed ignore page data
-  that belongs to another video, so after you click from one video to another they do nothing
-  until a full reload. The ISOLATED world only has the hard-load inline scripts. The fresh curve
-  arrives in the `/next` response (`frameworkUpdates.entityBatchUpdate.mutations[].payload
-  .macroMarkersListEntity`), which only the MAIN world sees.
-  Where: `extension/ytkit-main.js` and `extension/core/bridge-channel.js` (carry the markers
-  across), `extension/ytkit.js` heatmap `_readMarkers` (x2), `extension/core/heatmap.js`
-  `heatmapMarkersFor`. The userscript runs the same code, so one fix covers both.
-  Acceptance: WHEN you click from one video to another, THEN both features SHALL use the new
-  video's curve without a reload, and SHALL still refuse a curve whose id doesn't match.
-  Complexity: M
 
 - [ ] P3 — Watch Feed Import is unreachable when the feed is empty
   Why: 2026-09-28 audit, confirmed. Import lives in the Watch Feed panel, and the only way into
