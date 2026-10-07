@@ -15645,7 +15645,12 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 		function driveCardControl(featureId, value) {
 			const byId = (prefix) => document.getElementById(`${prefix}${featureId}`);
 			const fire = (control, type) => {
-				control.dispatchEvent(new Event(type, { bubbles: true }));
+				control.dataset.ytkitDriven = 'true';
+				try {
+					control.dispatchEvent(new Event(type, { bubbles: true }));
+				} finally {
+					delete control.dataset.ytkitDriven;
+				}
 				return control;
 			};
 			const toggle = byId('ytkit-toggle-');
@@ -15667,7 +15672,9 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			if (color) {
 				color.dataset.ytkitPendingValue = String(value ?? '');
 				color.value = value || '#3b82f6';
-				return fire(color, 'input');
+				fire(color, 'input');
+				delete color.dataset.ytkitPendingValue;
+				return color;
 			}
 			const text = byId('ytkit-input-');
 			if (text) {
@@ -15687,33 +15694,38 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 				? Array.isArray(value) && value.includes(feature._arrayValue)
 				: value);
 			const previous = asControlValue(appState.settings[key]);
-			const apply = (value) => {
+			const apply = (value, then) => {
 				const control = driveCardControl(featureId, value);
 				if (!control) return false;
+				const edit = control.ytkitDrivenEdit;
+				delete control.ytkitDrivenEdit;
 				const settle = () => {
 					refreshChangedFilterView();
 					const card = control.closest?.('.ytkit-feature-card');
 					const shown = card?.isConnected && card.getClientRects?.().length > 0;
 					(shown ? control : document.getElementById('ytkit-search-changed'))?.focus?.({ preventScroll: true });
 				};
-				settle();
-				setTimeout(settle, 0);
+				Promise.resolve(edit).then(() => {
+					settle();
+					then?.(String(asControlValue(appState.settings[key])) === String(value));
+				});
 				return true;
 			};
-			if (!apply(asControlValue(shipped))) return false;
-			showToast(
-				t('settingsSingleResetToastTpl', '“{name}” reset to default')
-					.replace('{name}', () => settingDisplayName(featureId, key)),
-				'#f97316',
-				{
-					duration: 5,
-					action: {
-						text: t('toastActionUndo', 'Undo'),
-						onClick: () => { apply(previous); }
+			return apply(asControlValue(shipped), (landed) => {
+				if (!landed) return;
+				showToast(
+					t('settingsSingleResetToastTpl', '“{name}” reset to default')
+						.replace('{name}', () => settingDisplayName(featureId, key)),
+					'#f97316',
+					{
+						duration: 5,
+						action: {
+							text: t('toastActionUndo', 'Undo'),
+							onClick: () => { apply(previous); }
+						}
 					}
-				}
-			);
-			return true;
+				);
+			});
 		}
 		const DEEP_LINK_PREFIX = '#ytkit-setting=';
 		const SETTING_KEY_SHAPE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
@@ -19275,7 +19287,12 @@ function attachUIEventListeners() {
 		}
 		_panelSearchUpdater = _handleSearch;
 		doc.addEventListener('change', async (e) => {
-			if (!isSettingsPanelOpen()) return;
+			const run = onControlChange(e);
+			if (e.target?.dataset?.ytkitDriven === 'true') e.target.ytkitDrivenEdit = run;
+			return run;
+		});
+		async function onControlChange(e) {
+			if (!isSettingsPanelOpen() && e.target?.dataset?.ytkitDriven !== 'true') return;
 			if (e.target.matches('.ytkit-feature-cb')) {
 				const input = e.target;
 				const card = input.closest('[data-feature-id]');
@@ -19330,7 +19347,7 @@ function attachUIEventListeners() {
 					let arr = appState.settings[feature._arrayKey] || [];
 					if (!Array.isArray(arr)) arr = [];
 					if (isEnabled && !arr.includes(feature._arrayValue)) {
-						arr.push(feature._arrayValue);
+						arr = [...arr, feature._arrayValue];
 					} else if (!isEnabled) {
 						arr = arr.filter(v => v !== feature._arrayValue);
 					}
@@ -19492,10 +19509,10 @@ function attachUIEventListeners() {
 						: t('settingsSectionAllDisabled', 'Disabled all settings in this section.'), 'success');
 				}
 			}
-		});
+		}
 		const _reinitTimers = new Map();
 		doc.addEventListener('input', (e) => {
-			if (!isSettingsPanelOpen()) return;
+			if (!isSettingsPanelOpen() && e.target?.dataset?.ytkitDriven !== 'true') return;
 			if (e.target.matches('.ytkit-input')) {
 				const card = e.target.closest('[data-feature-id]');
 				if (!card) return;

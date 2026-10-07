@@ -206,8 +206,16 @@
         // when the card has none.
         function driveCardControl(featureId, value) {
             const byId = (prefix) => document.getElementById(`${prefix}${featureId}`);
+            // The change and input handlers ignore a closed panel, so an Undo
+            // pressed after closing it flipped the switch and saved nothing.
+            // The mark lets this edit through while it is handled.
             const fire = (control, type) => {
-                control.dispatchEvent(new Event(type, { bubbles: true }));
+                control.dataset.ytkitDriven = 'true';
+                try {
+                    control.dispatchEvent(new Event(type, { bubbles: true }));
+                } finally {
+                    delete control.dataset.ytkitDriven;
+                }
                 return control;
             };
             const toggle = byId('ytkit-toggle-');
@@ -227,11 +235,15 @@
             }
             const color = byId('ytkit-color-');
             if (color) {
-                // A colour input can't hold "" (no override), so the handler
+                // A color input can't hold "" (no override), so the handler
                 // takes the value from here instead of from the swatch.
                 color.dataset.ytkitPendingValue = String(value ?? '');
                 color.value = value || '#3b82f6';
-                return fire(color, 'input');
+                fire(color, 'input');
+                // The handler takes it during the dispatch. One it skipped must
+                // not be saved in place of the next color someone picks.
+                delete color.dataset.ytkitPendingValue;
+                return color;
             }
             const text = byId('ytkit-input-');
             if (text) {
@@ -262,9 +274,14 @@
                 : value);
             const previous = asControlValue(appState.settings[key]);
 
-            const apply = (value) => {
+            // `then` hears whether the value landed once the control's handler
+            // is done. A switch turned on waits on a host-permission prompt
+            // first, and a refused one leaves the setting where it was.
+            const apply = (value, then) => {
                 const control = driveCardControl(featureId, value);
                 if (!control) return false;
+                const edit = control.ytkitDrivenEdit;
+                delete control.ytkitDrivenEdit;
                 const settle = () => {
                     refreshChangedFilterView();
                     // The Reset button hides itself once the card matches its
@@ -274,28 +291,30 @@
                     const shown = card?.isConnected && card.getClientRects?.().length > 0;
                     (shown ? control : document.getElementById('ytkit-search-changed'))?.focus?.({ preventScroll: true });
                 };
-                settle();
-                // A switch turned on can wait on a host-permission prompt
-                // before its handler saves, so settle again once it has.
-                setTimeout(settle, 0);
+                Promise.resolve(edit).then(() => {
+                    settle();
+                    then?.(String(asControlValue(appState.settings[key])) === String(value));
+                });
                 return true;
             };
 
-            if (!apply(asControlValue(shipped))) return false;
-
-            showToast(
-                t('settingsSingleResetToastTpl', '“{name}” reset to default')
-                    .replace('{name}', () => settingDisplayName(featureId, key)),
-                '#f97316',
-                {
-                    duration: 5,
-                    action: {
-                        text: t('toastActionUndo', 'Undo'),
-                        onClick: () => { apply(previous); }
+            // No toast for a reset that didn't happen: the switch's handler has
+            // already said why host access was needed.
+            return apply(asControlValue(shipped), (landed) => {
+                if (!landed) return;
+                showToast(
+                    t('settingsSingleResetToastTpl', '“{name}” reset to default')
+                        .replace('{name}', () => settingDisplayName(featureId, key)),
+                    '#f97316',
+                    {
+                        duration: 5,
+                        action: {
+                            text: t('toastActionUndo', 'Undo'),
+                            onClick: () => { apply(previous); }
+                        }
                     }
-                }
-            );
-            return true;
+                );
+            });
         }
 
         // #ytkit-setting=<key> opens the panel on that setting.
@@ -4462,7 +4481,14 @@ function attachUIEventListeners() {
 
         // Feature toggles
         doc.addEventListener('change', async (e) => {
-            if (!isSettingsPanelOpen()) return;
+            const run = onControlChange(e);
+            // Reset waits on this, not a timer: a switch turned on can sit on
+            // a host-permission prompt before anything is saved.
+            if (e.target?.dataset?.ytkitDriven === 'true') e.target.ytkitDrivenEdit = run;
+            return run;
+        });
+        async function onControlChange(e) {
+            if (!isSettingsPanelOpen() && e.target?.dataset?.ytkitDriven !== 'true') return;
             if (e.target.matches('.ytkit-feature-cb')) {
                 const input = e.target;
                 const card = input.closest('[data-feature-id]');
@@ -4526,7 +4552,9 @@ function attachUIEventListeners() {
                     let arr = appState.settings[feature._arrayKey] || [];
                     if (!Array.isArray(arr)) arr = [];
                     if (isEnabled && !arr.includes(feature._arrayValue)) {
-                        arr.push(feature._arrayValue);
+                        // A new array: a list never saved is the defaults' own
+                        // array, and pushing into it moved the default too.
+                        arr = [...arr, feature._arrayValue];
                     } else if (!isEnabled) {
                         arr = arr.filter(v => v !== feature._arrayValue);
                     }
@@ -4709,7 +4737,7 @@ function attachUIEventListeners() {
                         : t('settingsSectionAllDisabled', 'Disabled all settings in this section.'), 'success');
                 }
             }
-        });
+        }
 
         // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
         // Per-feature reinit debounce. A single shared timer let a color
@@ -4718,7 +4746,7 @@ function attachUIEventListeners() {
         // never applied until an unrelated reinit or navigation.
         const _reinitTimers = new Map();
         doc.addEventListener('input', (e) => {
-            if (!isSettingsPanelOpen()) return;
+            if (!isSettingsPanelOpen() && e.target?.dataset?.ytkitDriven !== 'true') return;
             if (e.target.matches('.ytkit-input')) {
                 const card = e.target.closest('[data-feature-id]');
                 if (!card) return;

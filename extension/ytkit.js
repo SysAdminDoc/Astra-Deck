@@ -44325,7 +44325,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     let arr = appState.settings[feature._arrayKey] || [];
                     if (!Array.isArray(arr)) arr = [];
                     if (isEnabled && !arr.includes(feature._arrayValue)) {
-                        arr.push(feature._arrayValue);
+                        // A new array: a list never saved is the defaults' own
+                        // array, and pushing into it moved the default too.
+                        arr = [...arr, feature._arrayValue];
                     } else if (!isEnabled) {
                         arr = arr.filter(v => v !== feature._arrayValue);
                     }

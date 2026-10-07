@@ -33521,7 +33521,7 @@ const STORAGE_KEYS = Object.freeze({
 					let arr = appState.settings[feature._arrayKey] || [];
 					if (!Array.isArray(arr)) arr = [];
 					if (isEnabled && !arr.includes(feature._arrayValue)) {
-						arr.push(feature._arrayValue);
+						arr = [...arr, feature._arrayValue];
 					} else if (!isEnabled) {
 						arr = arr.filter(v => v !== feature._arrayValue);
 					}

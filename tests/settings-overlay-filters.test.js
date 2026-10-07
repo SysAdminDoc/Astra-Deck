@@ -205,9 +205,12 @@ const CONTROL = {
     textarea: { prefix: 'ytkit-input-', selector: '.ytkit-input' }
 };
 
-function resetHarness({ settings, defaults, features, controls }) {
+function resetHarness({ settings, defaults, features, controls, shareDefaults = false, requestHosts = async () => true }) {
     const handlers = new Map();
-    const appState = { settings: structuredClone(settings) };
+    // `shareDefaults` merges the way settingsManager.load() does, so a list
+    // that was never saved is the defaults' own array.
+    const appState = { settings: shareDefaults ? { ...defaults, ...structuredClone(settings) } : structuredClone(settings) };
+    let panelOpen = true;
     const calls = { saved: [], toasts: [], inited: [], destroyed: [], fired: [], focused: [], refreshed: 0 };
     const settingsManager = {
         defaults,
@@ -256,7 +259,7 @@ function resetHarness({ settings, defaults, features, controls }) {
     const panel = { contains: () => true };
     byId.set('ytkit-settings-panel', panel);
     const doc = {
-        body: { classList: { contains: () => true, toggle() {} } },
+        body: { classList: { contains: () => panelOpen, toggle() {} } },
         documentElement: { classList: { toggle() {} }, style: {} },
         activeElement: null,
         getElementById: (id) => byId.get(id) || null,
@@ -293,7 +296,7 @@ function resetHarness({ settings, defaults, features, controls }) {
         getFeatureDescription: () => '',
         getFocusableUiElements: () => [],
         liveFeatureList: [],
-        requestFeatureOptionalHosts: async () => true,
+        requestFeatureOptionalHosts: requestHosts,
         safeInitFeature() {},
         safeDestroyFeature() {},
         initFeatureLifecycle: (feature, reason) => calls.inited.push(`${feature.id}:${reason}`),
@@ -311,7 +314,7 @@ function resetHarness({ settings, defaults, features, controls }) {
         appState,
         settingsManager,
         getFeatureById,
-        refreshChangedFilterView: () => { calls.refreshed += 1; },
+        refreshChangedFilterView: () => { calls.refreshed += 1; calls.lastRefresh = structuredClone(appState.settings); },
         showToast,
         document: doc,
         Event,
@@ -322,8 +325,14 @@ function resetHarness({ settings, defaults, features, controls }) {
     // on the next task to follow it.
     const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
     return {
-        resetSingleSetting, appState, calls, controls: made, settled,
+        resetSingleSetting, appState, calls, controls: made, settled, defaults,
+        closePanel() { panelOpen = false; },
         restore() { globalThis.document = originalDocument; },
+        flip(featureId, checked) {
+            const control = made[featureId];
+            control.checked = checked;
+            for (const handler of handlers.get('change') || []) handler({ type: 'change', target: control });
+        },
         edit(featureId, value) {
             const control = made[featureId];
             control.value = value;
@@ -396,6 +405,106 @@ test('Reset of a list card puts its member back and re-inits the parent', async 
         assert.deepEqual(h.appState.settings.guideHideItems, ['music']);
         assert.deepEqual(h.calls.destroyed, ['hideGuide:array-toggle']);
         assert.deepEqual(h.calls.inited, ['hideGuide:array-toggle']);
+    });
+});
+
+test('a list never saved keeps its shipped members when a card is switched on and off', async () => {
+    // settingsManager.load() spreads the defaults, so until a list is saved the
+    // setting is the defaults' own array. Pushing a member into it moved the
+    // default as well, and Reset then switched that hide on.
+    await withReset({
+        shareDefaults: true,
+        settings: { hideGuide: true },
+        defaults: { hideGuide: true, guideHideItems: ['music'] },
+        features: {
+            hideGuide: { id: 'hideGuide', name: 'Hide guide items' },
+            guideHide_home: { id: 'guideHide_home', name: 'Home', _arrayKey: 'guideHideItems', _arrayValue: 'home', parentId: 'hideGuide' }
+        },
+        controls: { guideHide_home: ['toggle', false] }
+    }, async (h) => {
+        assert.equal(h.appState.settings.guideHideItems, h.defaults.guideHideItems, 'the fixture shares the array the way load() does');
+        h.flip('guideHide_home', true);
+        await h.settled();
+        assert.deepEqual(h.defaults.guideHideItems, ['music'], 'switching a member on must not change the default');
+        h.flip('guideHide_home', false);
+        await h.settled();
+        h.resetSingleSetting('guideHide_home', undefined);
+        await h.settled();
+        assert.equal(h.controls.guideHide_home.checked, false, 'Reset leaves a member the default does not hide switched off');
+        assert.deepEqual(h.appState.settings.guideHideItems, ['music']);
+    });
+});
+
+test('Undo after the panel is closed still saves what it puts back', async () => {
+    await withReset({
+        settings: { alpha: true },
+        defaults: { alpha: false },
+        features: { alpha: { id: 'alpha', name: 'Alpha' } },
+        controls: { alpha: ['toggle', true] }
+    }, async (h) => {
+        h.resetSingleSetting('alpha', 'alpha');
+        await h.settled();
+        h.closePanel();
+        h.calls.toasts[0].opts.action.onClick();
+        await h.settled();
+        assert.equal(h.controls.alpha.checked, true);
+        assert.equal(h.appState.settings.alpha, true, 'the undo lands with the panel shut');
+        assert.equal(h.calls.saved.at(-1).alpha, true, 'and is saved, so a reopened panel agrees with the switch');
+    });
+});
+
+test('a color Undo after closing the panel lands and leaves nothing for the next pick', async () => {
+    await withReset({
+        settings: { themeAccentColor: '#ff0000' },
+        defaults: { themeAccentColor: '' },
+        features: { themeAccentColor: { id: 'themeAccentColor', settingKey: 'themeAccentColor', name: 'Accent' } },
+        controls: { themeAccentColor: ['color', '#ff0000'] }
+    }, async (h) => {
+        h.resetSingleSetting('themeAccentColor', 'themeAccentColor');
+        await h.settled();
+        h.closePanel();
+        h.calls.toasts[0].opts.action.onClick();
+        await h.settled();
+        assert.equal(h.appState.settings.themeAccentColor, '#ff0000', 'the undo lands');
+        assert.equal(h.controls.themeAccentColor.dataset.ytkitPendingValue, undefined,
+            'a value left on the swatch was saved in place of the next color picked');
+    });
+});
+
+test('a reset the browser refuses host access for claims nothing', async () => {
+    await withReset({
+        settings: { alpha: false },
+        defaults: { alpha: true },
+        features: { alpha: { id: 'alpha', name: 'Alpha' } },
+        controls: { alpha: ['toggle', false] },
+        requestHosts: async () => { throw new Error('host access denied'); }
+    }, async (h) => {
+        assert.equal(h.resetSingleSetting('alpha', 'alpha'), true);
+        await h.settled();
+        assert.equal(h.appState.settings.alpha, false, 'the switch stays off');
+        assert.deepEqual(h.calls.toasts.map((toast) => toast.message).filter((message) => /reset to default/.test(message)), [],
+            'only the switch speaks, and it says why');
+    });
+});
+
+test('Reset settles after a slow host prompt, not on the next tick', async () => {
+    let grant = null;
+    await withReset({
+        settings: { alpha: false },
+        defaults: { alpha: true },
+        features: { alpha: { id: 'alpha', name: 'Alpha' } },
+        controls: { alpha: ['toggle', false] },
+        requestHosts: () => new Promise((resolve) => { grant = resolve; })
+    }, async (h) => {
+        h.resetSingleSetting('alpha', 'alpha');
+        await h.settled();
+        assert.equal(h.calls.toasts.length, 0, 'nothing is claimed while the prompt is open');
+        grant(true);
+        await h.settled();
+        assert.equal(h.appState.settings.alpha, true);
+        assert.equal(h.calls.lastRefresh?.alpha, true, 'the Changed view is refreshed after the save, not before it');
+        assert.equal(h.calls.focused.at(-1), 'ytkit-toggle-alpha');
+        assert.equal(h.calls.toasts.length, 1);
     });
 });
 

@@ -14,6 +14,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Jump to Most Replayed and Heatmap Smart Speed work again after you click from one video to another. Once they stopped trusting a curve that names a different video, the only curves they could read came from the page you first opened. So after a click the button vanished and the speed didn't change until you reloaded. They now take the curve YouTube sends with each navigation, in Chrome and Firefox.
 
+- A card's Reset button could switch a hide on. On a Guide, chat or player list you'd never changed, turning an item on and off again made Reset turn it back on, because the switch had quietly moved the default too. Undo on the Reset toast works after you've closed the panel now, and a Reset that needs host access waits for your answer before it says anything was reset.
+
 ### Release checks
 
 - When Firefox took too long to start and its profile then wouldn't delete, the WebDriver helper crashed with "Cannot set property message" and the startup error was lost. It reports both now.
