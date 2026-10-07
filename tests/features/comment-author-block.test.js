@@ -224,3 +224,146 @@ test('findOpenMenu picks the visible YouTube menu popup and skips hidden dropdow
     assert.equal(menu.after, listbox);
     assert.equal(findOpenMenu({ querySelectorAll: () => [hidden, closed] }), null);
 });
+
+// Signed out, YouTube renders the comment menu empty at zero size, and Studio
+// Comments can hide it. Those comments get a Block button of their own when
+// the pointer or keyboard focus enters them.
+
+const { isMenuUsable } = require('../../extension/features/comment-author-block/index.js');
+
+function fakeElement(tag) {
+    const attrs = new Map();
+    const listeners = new Map();
+    const el = {
+        tagName: tag.toUpperCase(),
+        children: [],
+        parent: null,
+        className: '',
+        setAttribute: (name, value) => attrs.set(name, String(value)),
+        getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
+        removeAttribute: (name) => attrs.delete(name),
+        hasAttribute: (name) => attrs.has(name),
+        appendChild(child) { child.parent = el; el.children.push(child); return child; },
+        remove() {
+            if (!el.parent) return;
+            el.parent.children = el.parent.children.filter((node) => node !== el);
+            el.parent = null;
+        },
+        addEventListener: (type, fn) => listeners.set(type, fn),
+        click: () => listeners.get('click')?.({ preventDefault() {}, stopPropagation() {} }),
+        closest(selector) {
+            for (let node = el; node; node = node.parent) {
+                if (selector.split(',').map((part) => part.trim().toUpperCase()).includes(node.tagName)) return node;
+            }
+            return null;
+        }
+    };
+    return el;
+}
+
+function inlineHarness({ menu = 'zero', handle = '@SignedOutSpammer' } = {}) {
+    const settings = { commentBlockedAuthors: '' };
+    const listeners = new Map();
+    const dispatched = [];
+    const toasts = [];
+    const buttons = [];
+    const toolbar = fakeElement('div');
+    const author = { textContent: handle, getAttribute: (name) => (name === 'href' ? `/${handle}` : null) };
+    const menuEl = {
+        querySelector: () => null,
+        getBoundingClientRect: () => (menu === 'zero' ? { width: 0, height: 0 } : { width: 40, height: 40 })
+    };
+    const comment = fakeElement('ytd-comment-view-model');
+    comment.appendChild(toolbar);
+    comment.querySelector = (selector) => {
+        if (selector === '#author-text') return author;
+        if (selector === '#action-menu, #inline-action-menu') return menu === 'missing' ? null : menuEl;
+        if (selector === '#toolbar') return toolbar;
+        if (selector === '.ytkit-comment-block-inline') return toolbar.children[0] || null;
+        return null;
+    };
+    const documentRef = {
+        defaultView: {
+            getComputedStyle: () => ({ display: menu === 'hidden' ? 'none' : 'inline-flex', visibility: 'visible' }),
+            KeyboardEvent: class { constructor(type) { this.type = type; } }
+        },
+        createElement: (tag) => { const el = fakeElement(tag); buttons.push(el); return el; },
+        createElementNS: (_ns, tag) => fakeElement(tag),
+        querySelectorAll: (selector) => (selector === '.ytkit-comment-block-inline' ? buttons.filter((b) => b.parent)
+            : selector === '[data-ytkit-block-checked]' ? [comment].filter((c) => c.hasAttribute('data-ytkit-block-checked')) : []),
+        addEventListener: (type, fn) => listeners.set(type, fn),
+        removeEventListener: (type) => listeners.delete(type),
+        dispatchEvent: (event) => dispatched.push(event)
+    };
+    const [feature] = createCommentAuthorBlockFeatures({
+        documentRef,
+        readSetting: (key) => settings[key],
+        writeSetting: (key, value) => { settings[key] = value; },
+        showToast: (message) => toasts.push(message),
+        setTimeoutFn: () => 1,
+        clearTimeoutFn: () => {}
+    });
+    feature.init();
+    const enter = (type = 'focusin') => listeners.get(type)({ target: comment });
+    return { feature, settings, listeners, dispatched, toasts, toolbar, comment, author, enter };
+}
+
+test('isMenuUsable is false for a missing, hidden or zero-size comment menu', () => {
+    const view = (display) => ({ getComputedStyle: () => ({ display, visibility: 'visible' }) });
+    const comment = (menu) => ({ querySelector: () => menu });
+    const sized = (width) => ({ querySelector: () => null, getBoundingClientRect: () => ({ width, height: width }) });
+    assert.equal(isMenuUsable(comment(null), view('inline-flex')), false);
+    assert.equal(isMenuUsable(comment(sized(40)), view('none')), false);
+    assert.equal(isMenuUsable(comment(sized(0)), view('inline-flex')), false, 'signed out: rendered empty at zero size');
+    assert.equal(isMenuUsable(comment(sized(40)), view('inline-flex')), true);
+});
+
+test('a comment whose menu is unusable gets a keyboard-reachable Block button', () => {
+    for (const menu of ['zero', 'hidden', 'missing']) {
+        const h = inlineHarness({ menu });
+        h.enter('focusin');
+        const [button] = h.toolbar.children;
+        assert.ok(button, `${menu}: a button is offered`);
+        assert.equal(button.tagName, 'BUTTON', 'a real button, so Tab and Enter reach it');
+        assert.equal(button.getAttribute('aria-label'), 'Block @SignedOutSpammer');
+        h.enter('mouseover');
+        assert.equal(h.toolbar.children.length, 1, 'entering again adds no second button');
+
+        button.click();
+        assert.equal(h.settings.commentBlockedAuthors, '@SignedOutSpammer');
+        assert.equal(h.dispatched.length, 0, 'no menu is open, so no Escape goes out');
+        assert.match(h.toasts[0], /Blocked @SignedOutSpammer/);
+    }
+});
+
+test('a comment with a working menu gets no extra button', () => {
+    const h = inlineHarness({ menu: 'sized' });
+    h.enter('mouseover');
+    assert.equal(h.toolbar.children.length, 0);
+});
+
+test('a recycled comment element is checked again for its new author', () => {
+    const h = inlineHarness();
+    h.enter();
+    h.author.textContent = '@SomeoneElse';
+    h.author.getAttribute = (name) => (name === 'href' ? '/@SomeoneElse' : null);
+    h.enter();
+    const [button] = h.toolbar.children;
+    assert.equal(h.toolbar.children.length, 1, 'the old button is replaced, not stacked');
+    assert.equal(button.getAttribute('aria-label'), 'Block @SomeoneElse');
+    button.click();
+    assert.equal(h.settings.commentBlockedAuthors, '@SomeoneElse', 'the click reads the author the element holds now');
+});
+
+test('teardown and a menu-affecting setting change drop the offered buttons', () => {
+    const h = inlineHarness();
+    h.enter();
+    h.listeners.get('ytkit-settings-changed')({ detail: { key: 'chatStyleComments' } });
+    assert.equal(h.toolbar.children.length, 0);
+    assert.equal(h.comment.hasAttribute('data-ytkit-block-checked'), false, 'the comment is checked again next time');
+    h.enter();
+    assert.equal(h.toolbar.children.length, 1);
+    h.feature.destroy();
+    assert.equal(h.toolbar.children.length, 0);
+    assert.ok(!h.listeners.has('focusin') && !h.listeners.has('mouseover'));
+});

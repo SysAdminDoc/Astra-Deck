@@ -15,6 +15,10 @@
     // current author where a per-node marker would stick to the old one.
 
     const ITEM_CLASS = 'ytkit-comment-block-item';
+    const INLINE_CLASS = 'ytkit-comment-block-inline';
+    // Holds the author key the comment was last checked for. YouTube recycles
+    // comment elements, so a mark for another author is stale and re-checked.
+    const CHECKED_ATTR = 'data-ytkit-block-checked';
     const STYLE_ID = 'commentAuthorBlock';
     const MENU_STYLE_ID = 'commentAuthorBlock-menu';
     const SETTING_KEY = 'commentBlockedAuthors';
@@ -146,8 +150,50 @@
     // Defaults follow YouTube's stock menu row. matchNativeItem() then copies
     // the live row's geometry, color and type onto the item, so it matches
     // whichever menu styling is active. Only hover differs by lane.
+    // The ⋮ menu is the usual way in. Signed out, YouTube renders it empty at
+    // zero size, and Studio Comments can hide it, so a comment whose menu
+    // can't be opened gets a Block button of its own.
+    function isMenuUsable(comment, view) {
+        const menu = comment?.querySelector?.('#action-menu, #inline-action-menu');
+        if (!menu) return false;
+        const style = view?.getComputedStyle?.(menu);
+        if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+        const button = menu.querySelector?.('button, yt-icon-button, tp-yt-paper-icon-button') || menu;
+        const rect = button.getBoundingClientRect?.();
+        return !!rect && rect.width > 0 && rect.height > 0;
+    }
+
     function buildMenuItemCss() {
         return `
+            .${INLINE_CLASS} {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                margin-inline-start: 4px;
+                padding: 0;
+                border: 0;
+                border-radius: 50%;
+                background: transparent;
+                color: inherit;
+                cursor: pointer;
+                opacity: 0.72;
+            }
+            .${INLINE_CLASS}:hover,
+            .${INLINE_CLASS}:focus-visible {
+                opacity: 1;
+                background: color-mix(in srgb, currentColor 10%, transparent);
+            }
+            .${INLINE_CLASS}:focus-visible {
+                outline: 2px solid currentColor;
+                outline-offset: 1px;
+            }
+            .${INLINE_CLASS} svg {
+                width: 20px;
+                height: 20px;
+                fill: currentColor;
+            }
             .${ITEM_CLASS} {
                 display: flex;
                 align-items: center;
@@ -298,6 +344,7 @@
             _styleEl: null,
             _menuStyleEl: null,
             _clickHandler: null,
+            _offerHandler: null,
             _settingsHandler: null,
             _popupTimer: null,
             _lastBlock: null,
@@ -351,11 +398,11 @@
                 }
             },
 
-            _activate(author, dropdown) {
+            _activate(author, dropdown, { closeMenu = true } = {}) {
                 const label = author.label;
                 const blocked = this.block(author);
                 this._removeMenuItems();
-                this._closeMenu(dropdown);
+                if (closeMenu) this._closeMenu(dropdown);
                 if (!blocked) {
                     showToast(t('commentBlockAlreadyTpl', '{author} is already blocked').replace('{author}', () => label), '#6b7280', { tone: 'neutral' });
                     return;
@@ -403,6 +450,51 @@
                 return item;
             },
 
+            _buildInlineButton(author) {
+                const button = documentRef.createElement('button');
+                button.type = 'button';
+                button.className = INLINE_CLASS;
+                const label = t('commentBlockMenuItemTpl', 'Block {author}').replace('{author}', () => author.label);
+                button.setAttribute('aria-label', label);
+                button.title = label;
+                const svg = documentRef.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('aria-hidden', 'true');
+                svg.setAttribute('focusable', 'false');
+                const path = documentRef.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', BLOCK_ICON_PATH);
+                svg.appendChild(path);
+                button.appendChild(svg);
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    // Read the author again: the element may hold another
+                    // comment by now.
+                    const current = readCommentAuthor(button.closest?.(COMMENT_SELECTOR));
+                    if (current) this._activate(current, null, { closeMenu: false });
+                });
+                return button;
+            },
+
+            // Runs when the pointer or keyboard focus enters a comment, so the
+            // button is there before Tab reaches the end of its toolbar.
+            _offerInlineBlock(event) {
+                const comment = event?.target?.closest?.(COMMENT_SELECTOR);
+                if (!comment) return;
+                const author = readCommentAuthor(comment);
+                if (!author || comment.getAttribute?.(CHECKED_ATTR) === author.key) return;
+                comment.querySelector?.(`.${INLINE_CLASS}`)?.remove?.();
+                comment.setAttribute?.(CHECKED_ATTR, author.key);
+                if (isMenuUsable(comment, documentRef?.defaultView)) return;
+                const host = comment.querySelector?.('#toolbar') || comment.querySelector?.('#header-author');
+                host?.appendChild?.(this._buildInlineButton(author));
+            },
+
+            _removeInlineButtons() {
+                documentRef?.querySelectorAll?.(`.${INLINE_CLASS}`).forEach((button) => button.remove());
+                documentRef?.querySelectorAll?.(`[${CHECKED_ATTR}]`).forEach((comment) => comment.removeAttribute(CHECKED_ATTR));
+            },
+
             _injectWhenOpen(author, startedAt) {
                 this._popupTimer = null;
                 const menu = findOpenMenu(documentRef);
@@ -447,10 +539,16 @@
                 this._menuStyleEl = injectStyle(buildMenuItemCss(), MENU_STYLE_ID, true);
                 this._clickHandler = (event) => this._onDocumentClick(event);
                 documentRef?.addEventListener?.('click', this._clickHandler, true);
+                this._offerHandler = (event) => this._offerInlineBlock(event);
+                documentRef?.addEventListener?.('focusin', this._offerHandler, true);
+                documentRef?.addEventListener?.('mouseover', this._offerHandler, { capture: true, passive: true });
                 this._settingsHandler = (event) => {
                     const detail = event?.detail || {};
                     const keys = Array.isArray(detail.keys) ? detail.keys : detail.key ? [detail.key] : null;
                     if (!keys || keys.includes(SETTING_KEY)) this._applyStyles();
+                    // Another setting (Studio Comments, say) can hide or show
+                    // the menu, so every comment is checked again.
+                    if (!keys || keys.some((key) => key !== SETTING_KEY)) this._removeInlineButtons();
                 };
                 documentRef?.addEventListener?.('ytkit-settings-changed', this._settingsHandler);
             },
@@ -458,8 +556,14 @@
             destroy() {
                 if (this._popupTimer) { clearTimeoutFn(this._popupTimer); this._popupTimer = null; }
                 if (this._clickHandler) documentRef?.removeEventListener?.('click', this._clickHandler, true);
+                if (this._offerHandler) {
+                    documentRef?.removeEventListener?.('focusin', this._offerHandler, true);
+                    documentRef?.removeEventListener?.('mouseover', this._offerHandler, { capture: true });
+                }
                 if (this._settingsHandler) documentRef?.removeEventListener?.('ytkit-settings-changed', this._settingsHandler);
+                this._removeInlineButtons();
                 this._clickHandler = null;
+                this._offerHandler = null;
                 this._settingsHandler = null;
                 this._removeMenuItems();
                 this._styleEl?.remove?.();
@@ -499,7 +603,8 @@
         serializeBlockedAuthors,
         readCommentAuthor,
         buildBlockedAuthorsCss,
-        findOpenMenu
+        findOpenMenu,
+        isMenuUsable
     });
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.commentAuthorBlock = api;

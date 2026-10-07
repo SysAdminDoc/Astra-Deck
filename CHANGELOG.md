@@ -16,6 +16,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Block Comment Authors works signed out and with Studio Comments now. YouTube renders the comment menu empty when you're signed out, so there was nowhere to choose Block. A comment whose menu can't be opened gets its own Block button in its toolbar, which you can reach with Tab.
+
 - Digital Wellbeing's reminders, the Subscription Groups and settings import summaries, and a few other messages showed in English whatever language Astra Deck was in. They're translated into all 11 languages now, with real singular and plural forms instead of "(s)".
 
 - In the popup's Settings Overview, the chips on feature schedules and the sync allowlist used to open the in-page panel on nothing. They now point you to the backup file, which is where those two get changed.

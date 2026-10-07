@@ -379,7 +379,7 @@ stable public fixture before accepting extractor dependency bumps.
 | Feature | Default |
 |---------|---------|
 | Sort Comments Newest First | Off |
-| Block Comment Authors, a Block item in each comment's menu that hides that person's comments and replies everywhere | On |
+| Block Comment Authors, a Block item in each comment's menu that hides that person's comments and replies everywhere (signed out, or with the menu hidden, the comment gets its own Block button) | On |
 | Creator Comment Highlight | Off |
 | Comment Handle Revealer, show original channel name next to @handle | Off |
 | Preload Comments | Off |

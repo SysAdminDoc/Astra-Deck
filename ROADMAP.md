@@ -112,17 +112,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   disabled, empty, error), with findings fixed or logged here.
   Complexity: M
 
-- [ ] P3 — Block Comment Authors has no entry point when the comment menu is hidden
-  Why: the Block item lives in the ⋮ menu YouTube opens from a comment. Two setups remove
-  that menu: signed-out pages (YouTube renders the menu empty and the button zero-size) and
-  Studio Comments (`chatStyleComments` hides `#action-menu` outright). Blocking still works there by typing the
-  handle into Blocked Comment Authors, but nothing on the comment offers it.
-  Where: `extension/features/comment-author-block/index.js`,
-  `extension/features/chat-style-comments/index.js` (the `#action-menu` hide).
-  Acceptance: WHEN the comment menu is absent or hidden, THEN each comment SHALL still offer a
-  keyboard-reachable Block control (for example in the Studio Comments hover toolbar).
-  Complexity: S
-
 - [ ] P3 — Theater Split: comments header chip offset and collapsed-rail hint
   Why: 2026-09-28 redesign leftovers. The comments count chip sits about 8 px low because an
   empty `h3` in the header still takes a gap. The closed divider rail gives no hint that a

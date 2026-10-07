@@ -5300,6 +5300,8 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 (() => {
 	'use strict';
 	const ITEM_CLASS = 'ytkit-comment-block-item';
+	const INLINE_CLASS = 'ytkit-comment-block-inline';
+	const CHECKED_ATTR = 'data-ytkit-block-checked';
 	const STYLE_ID = 'commentAuthorBlock';
 	const MENU_STYLE_ID = 'commentAuthorBlock-menu';
 	const SETTING_KEY = 'commentBlockedAuthors';
@@ -5410,8 +5412,17 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 			'}'
 		].join('\n');
 	}
+	function isMenuUsable(comment, view) {
+		const menu = comment?.querySelector?.('#action-menu, #inline-action-menu');
+		if (!menu) return false;
+		const style = view?.getComputedStyle?.(menu);
+		if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+		const button = menu.querySelector?.('button, yt-icon-button, tp-yt-paper-icon-button') || menu;
+		const rect = button.getBoundingClientRect?.();
+		return !!rect && rect.width > 0 && rect.height > 0;
+	}
 	function buildMenuItemCss() {
-		return `.${ITEM_CLASS}{display:flex;align-items:center;box-sizing:border-box;width:100%;min-height:36px;padding:0 12px 0 16px;gap:12px;border:0 solid transparent;cursor:pointer;color:inherit;font-family:"Roboto","Arial",sans-serif;font-size:14px;line-height:20px;font-weight:400;white-space:nowrap;user-select:none;outline:none}.${ITEM_CLASS} span{min-width:0;overflow:hidden;text-overflow:ellipsis}.${ITEM_CLASS}:hover,.${ITEM_CLASS}:focus-visible{background:color-mix(in srgb,currentColor 10%,transparent)}.${ITEM_CLASS}:focus-visible{outline:2px solid currentColor;outline-offset:-2px}.${ITEM_CLASS} svg{flex:none;width:24px;height:24px;fill:currentColor}html.ytkit-watch-restyle .${ITEM_CLASS}{transition:background 160ms ease,border-color 160ms ease,transform 160ms ease}html.ytkit-watch-restyle .${ITEM_CLASS}:hover,html.ytkit-watch-restyle .${ITEM_CLASS}:focus-visible{border-color:var(--ytkit-native-menu-border);background:var(--ytkit-native-menu-row-hover);outline:none;transform:translateY(-1px)}@media (prefers-reduced-motion:reduce){html.ytkit-watch-restyle .${ITEM_CLASS}{transition:none}html.ytkit-watch-restyle .${ITEM_CLASS}:hover{transform:none}}`;
+		return `.${INLINE_CLASS}{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin-inline-start:4px;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;opacity:0.72}.${INLINE_CLASS}:hover,.${INLINE_CLASS}:focus-visible{opacity:1;background:color-mix(in srgb,currentColor 10%,transparent)}.${INLINE_CLASS}:focus-visible{outline:2px solid currentColor;outline-offset:1px}.${INLINE_CLASS} svg{width:20px;height:20px;fill:currentColor}.${ITEM_CLASS}{display:flex;align-items:center;box-sizing:border-box;width:100%;min-height:36px;padding:0 12px 0 16px;gap:12px;border:0 solid transparent;cursor:pointer;color:inherit;font-family:"Roboto","Arial",sans-serif;font-size:14px;line-height:20px;font-weight:400;white-space:nowrap;user-select:none;outline:none}.${ITEM_CLASS} span{min-width:0;overflow:hidden;text-overflow:ellipsis}.${ITEM_CLASS}:hover,.${ITEM_CLASS}:focus-visible{background:color-mix(in srgb,currentColor 10%,transparent)}.${ITEM_CLASS}:focus-visible{outline:2px solid currentColor;outline-offset:-2px}.${ITEM_CLASS} svg{flex:none;width:24px;height:24px;fill:currentColor}html.ytkit-watch-restyle .${ITEM_CLASS}{transition:background 160ms ease,border-color 160ms ease,transform 160ms ease}html.ytkit-watch-restyle .${ITEM_CLASS}:hover,html.ytkit-watch-restyle .${ITEM_CLASS}:focus-visible{border-color:var(--ytkit-native-menu-border);background:var(--ytkit-native-menu-row-hover);outline:none;transform:translateY(-1px)}@media (prefers-reduced-motion:reduce){html.ytkit-watch-restyle .${ITEM_CLASS}{transition:none}html.ytkit-watch-restyle .${ITEM_CLASS}:hover{transform:none}}`;
 	}
 	function matchNativeItem(item, listbox, view) {
 		const getStyle = typeof view?.getComputedStyle === 'function' ? (el) => view.getComputedStyle(el) : null;
@@ -5494,6 +5505,7 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 			_styleEl: null,
 			_menuStyleEl: null,
 			_clickHandler: null,
+			_offerHandler: null,
 			_settingsHandler: null,
 			_popupTimer: null,
 			_lastBlock: null,
@@ -5538,11 +5550,11 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 					}));
 				}
 			},
-			_activate(author, dropdown) {
+			_activate(author, dropdown, { closeMenu = true } = {}) {
 				const label = author.label;
 				const blocked = this.block(author);
 				this._removeMenuItems();
-				this._closeMenu(dropdown);
+				if (closeMenu) this._closeMenu(dropdown);
 				if (!blocked) {
 					showToast(t('commentBlockAlreadyTpl', '{author} is already blocked').replace('{author}', () => label), '#6b7280', { tone: 'neutral' });
 					return;
@@ -5586,6 +5598,44 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 				});
 				return item;
 			},
+			_buildInlineButton(author) {
+				const button = documentRef.createElement('button');
+				button.type = 'button';
+				button.className = INLINE_CLASS;
+				const label = t('commentBlockMenuItemTpl', 'Block {author}').replace('{author}', () => author.label);
+				button.setAttribute('aria-label', label);
+				button.title = label;
+				const svg = documentRef.createElementNS('http://www.w3.org/2000/svg', 'svg');
+				svg.setAttribute('viewBox', '0 0 24 24');
+				svg.setAttribute('aria-hidden', 'true');
+				svg.setAttribute('focusable', 'false');
+				const path = documentRef.createElementNS('http://www.w3.org/2000/svg', 'path');
+				path.setAttribute('d', BLOCK_ICON_PATH);
+				svg.appendChild(path);
+				button.appendChild(svg);
+				button.addEventListener('click', (event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					const current = readCommentAuthor(button.closest?.(COMMENT_SELECTOR));
+					if (current) this._activate(current, null, { closeMenu: false });
+				});
+				return button;
+			},
+			_offerInlineBlock(event) {
+				const comment = event?.target?.closest?.(COMMENT_SELECTOR);
+				if (!comment) return;
+				const author = readCommentAuthor(comment);
+				if (!author || comment.getAttribute?.(CHECKED_ATTR) === author.key) return;
+				comment.querySelector?.(`.${INLINE_CLASS}`)?.remove?.();
+				comment.setAttribute?.(CHECKED_ATTR, author.key);
+				if (isMenuUsable(comment, documentRef?.defaultView)) return;
+				const host = comment.querySelector?.('#toolbar') || comment.querySelector?.('#header-author');
+				host?.appendChild?.(this._buildInlineButton(author));
+			},
+			_removeInlineButtons() {
+				documentRef?.querySelectorAll?.(`.${INLINE_CLASS}`).forEach((button) => button.remove());
+				documentRef?.querySelectorAll?.(`[${CHECKED_ATTR}]`).forEach((comment) => comment.removeAttribute(CHECKED_ATTR));
+			},
 			_injectWhenOpen(author, startedAt) {
 				this._popupTimer = null;
 				const menu = findOpenMenu(documentRef);
@@ -5625,18 +5675,28 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 				this._menuStyleEl = injectStyle(buildMenuItemCss(), MENU_STYLE_ID, true);
 				this._clickHandler = (event) => this._onDocumentClick(event);
 				documentRef?.addEventListener?.('click', this._clickHandler, true);
+				this._offerHandler = (event) => this._offerInlineBlock(event);
+				documentRef?.addEventListener?.('focusin', this._offerHandler, true);
+				documentRef?.addEventListener?.('mouseover', this._offerHandler, { capture: true, passive: true });
 				this._settingsHandler = (event) => {
 					const detail = event?.detail || {};
 					const keys = Array.isArray(detail.keys) ? detail.keys : detail.key ? [detail.key] : null;
 					if (!keys || keys.includes(SETTING_KEY)) this._applyStyles();
+					if (!keys || keys.some((key) => key !== SETTING_KEY)) this._removeInlineButtons();
 				};
 				documentRef?.addEventListener?.('ytkit-settings-changed', this._settingsHandler);
 			},
 			destroy() {
 				if (this._popupTimer) { clearTimeoutFn(this._popupTimer); this._popupTimer = null; }
 				if (this._clickHandler) documentRef?.removeEventListener?.('click', this._clickHandler, true);
+				if (this._offerHandler) {
+					documentRef?.removeEventListener?.('focusin', this._offerHandler, true);
+					documentRef?.removeEventListener?.('mouseover', this._offerHandler, { capture: true });
+				}
 				if (this._settingsHandler) documentRef?.removeEventListener?.('ytkit-settings-changed', this._settingsHandler);
+				this._removeInlineButtons();
 				this._clickHandler = null;
+				this._offerHandler = null;
 				this._settingsHandler = null;
 				this._removeMenuItems();
 				this._styleEl?.remove?.();
@@ -5672,7 +5732,8 @@ __astraDeckRegistry["features/comment-author-block/index.js"] = function (global
 		serializeBlockedAuthors,
 		readCommentAuthor,
 		buildBlockedAuthorsCss,
-		findOpenMenu
+		findOpenMenu,
+		isMenuUsable
 	});
 	const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
 	features.commentAuthorBlock = api;
