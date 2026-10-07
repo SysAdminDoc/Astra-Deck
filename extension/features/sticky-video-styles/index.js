@@ -194,9 +194,35 @@ ${ROOT} #ytkit-split-divider:focus-visible .ytkit-divider-pip {
     outline-offset: 3px !important;
 }
 ${ROOT} #ytkit-split-divider[data-ytkit-panel-state="closed"] { background: color-mix(in srgb, var(--ytkit-split-accent) 14%, var(--ytkit-split-canvas)) !important; }
+${ROOT} #ytkit-split-divider[data-ytkit-panel-state="closed"] { cursor: pointer !important; }
 ${ROOT} #ytkit-split-divider[data-ytkit-panel-state="closed"] .ytkit-divider-pip {
     border-color: var(--ytkit-split-accent) !important;
     color: var(--ytkit-split-accent) !important;
+}
+/* The closed rail names what a click does. The words come from the divider's
+   data-ytkit-hint attribute on the pip (attr() reads the element the pseudo
+   belongs to), which the controller fills from the same localized string as the
+   rail's accessible name. */
+${ROOT} #ytkit-split-divider[data-ytkit-panel-state="closed"] .ytkit-divider-pip[data-ytkit-hint]::before {
+    content: attr(data-ytkit-hint) !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: calc(100% + 10px) !important;
+    padding: 6px 10px !important;
+    border: 1px solid var(--ytkit-split-accent) !important;
+    border-radius: var(--ytkit-split-radius-sm) !important;
+    background: var(--ytkit-split-panel) !important;
+    color: var(--ytkit-split-text) !important;
+    font: 600 12px/1.2 var(--yt-spec-font-family, "Roboto", Arial, sans-serif) !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+    transform: translate(6px, -50%) !important;
+    transition: opacity 160ms var(--ytkit-split-ease), transform 160ms var(--ytkit-split-ease) !important;
+}
+${ROOT} #ytkit-split-divider[data-ytkit-panel-state="closed"]:is(:hover, :focus-visible) .ytkit-divider-pip[data-ytkit-hint]::before {
+    opacity: 1 !important;
+    transform: translate(0, -50%) !important;
 }
 ${ROOT} #ytkit-split-divider[data-ytkit-panel-state="hidden"] {
     width: 0 !important;
@@ -899,6 +925,11 @@ ${PANE} ytd-comments-header-renderer :is(#title, #leading-section, #additional-s
     margin: 0 !important;
 }
 ${PANE} ytd-comments-header-renderer #title { justify-content: flex-start !important; gap: 12px !important; }
+/* YouTube leaves an empty h3 beside the count. Its default margins and the row gap
+   pushed the count chip about 8px off the header text, so an empty one takes no
+   space and a filled one carries no margin. */
+${PANE} ytd-comments-header-renderer h3 { margin: 0 !important; padding: 0 !important; }
+${PANE} ytd-comments-header-renderer :is(h3, h2):empty { display: none !important; }
 ${PANE} ytd-comments-header-renderer :is(#count, yt-formatted-string.count-text) {
     display: inline-flex !important;
     align-items: baseline !important;

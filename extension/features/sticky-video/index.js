@@ -361,6 +361,19 @@
                 divider.setAttribute('aria-expanded', String(open));
                 divider.setAttribute('aria-valuenow', String(Math.round(open ? leftPct : 100)));
                 divider.dataset.ytkitPanelState = visible ? (open ? 'open' : 'closed') : 'hidden';
+                // A closed rail reopens comments on click, so it says so. The
+                // open rail is a resize handle again.
+                const reopen = visible && !open;
+                const label = reopen
+                    ? t('stickyVideoShowCommentsLabel', 'Show comments')
+                    : t('stickyVideoResizePanelsLabel', 'Resize Theater Split panels');
+                divider.setAttribute('aria-label', label);
+                divider.title = label;
+                const pip = divider.querySelector('.ytkit-divider-pip');
+                if (pip) {
+                    if (reopen) pip.dataset.ytkitHint = label;
+                    else delete pip.dataset.ytkitHint;
+                }
                 divider.toggleAttribute('aria-hidden', !visible);
             },
 

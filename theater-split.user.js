@@ -222,9 +222,35 @@
             outline-offset: 3px !important;
         }
         body.ts-active #ts-divider[data-panel-state="closed"] { background: color-mix(in srgb, var(--ts-accent) 14%, var(--ts-canvas)) !important; }
+        body.ts-active #ts-divider[data-panel-state="closed"] { cursor: pointer !important; }
         body.ts-active #ts-divider[data-panel-state="closed"] .ts-divider-pip {
             border-color: var(--ts-accent) !important;
             color: var(--ts-accent) !important;
+        }
+        /* The closed rail names what a click does. The words come from the divider's
+           data-hint attribute on the pip (attr() reads the element the pseudo
+           belongs to), which the controller fills from the same localized string as the
+           rail's accessible name. */
+        body.ts-active #ts-divider[data-panel-state="closed"] .ts-divider-pip[data-hint]::before {
+            content: attr(data-hint) !important;
+            position: absolute !important;
+            top: 50% !important;
+            right: calc(100% + 10px) !important;
+            padding: 6px 10px !important;
+            border: 1px solid var(--ts-accent) !important;
+            border-radius: var(--ts-radius-sm) !important;
+            background: var(--ts-panel) !important;
+            color: var(--ts-text) !important;
+            font: 600 12px/1.2 var(--yt-spec-font-family, "Roboto", Arial, sans-serif) !important;
+            white-space: nowrap !important;
+            pointer-events: none !important;
+            opacity: 0 !important;
+            transform: translate(6px, -50%) !important;
+            transition: opacity 160ms var(--ts-ease), transform 160ms var(--ts-ease) !important;
+        }
+        body.ts-active #ts-divider[data-panel-state="closed"]:is(:hover, :focus-visible) .ts-divider-pip[data-hint]::before {
+            opacity: 1 !important;
+            transform: translate(0, -50%) !important;
         }
         body.ts-active #ts-divider[data-panel-state="hidden"] {
             width: 0 !important;
@@ -899,6 +925,11 @@
             margin: 0 !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer #title { justify-content: flex-start !important; gap: 12px !important; }
+        /* YouTube leaves an empty h3 beside the count. Its default margins and the row gap
+           pushed the count chip about 8px off the header text, so an empty one takes no
+           space and a filled one carries no margin. */
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer h3 { margin: 0 !important; padding: 0 !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer :is(h3, h2):empty { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer :is(#count, yt-formatted-string.count-text) {
             display: inline-flex !important;
             align-items: baseline !important;
@@ -2802,6 +2833,16 @@
         divider.setAttribute('aria-expanded', String(open));
         divider.setAttribute('aria-valuenow', String(Math.round(open ? leftPct : 100)));
         divider.dataset.panelState = visible ? (open ? 'open' : 'closed') : 'hidden';
+        // A closed rail reopens comments on click, so it says so.
+        const reopen = visible && !open;
+        const label = reopen ? 'Show comments' : 'Resize Theater Split panels';
+        divider.setAttribute('aria-label', label);
+        divider.title = label;
+        const pip = divider.querySelector('.ts-divider-pip');
+        if (pip) {
+            if (reopen) pip.dataset.hint = label;
+            else delete pip.dataset.hint;
+        }
         divider.toggleAttribute('aria-hidden', !visible);
     }
 

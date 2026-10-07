@@ -47,6 +47,7 @@ const RENAMES = Object.freeze([
     ['#ytkit-split-close', '#ts-close'],
     ['#ytkit-split-collapse-strip', '#ts-collapse-strip'],
     ['data-ytkit-panel-state', 'data-panel-state'],
+    ['data-ytkit-hint', 'data-hint'],
     ['container: ytkit-split-owner', 'container: ts-owner'],
     ['@container ytkit-split-owner', '@container ts-owner'],
     ['--ytkit-split-', '--ts-']
