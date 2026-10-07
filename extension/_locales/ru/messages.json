@@ -1523,16 +1523,16 @@
     "message": "Этот браузер не поддерживает эту функцию. Обновите его и повторите попытку."
   },
   "featureHealthAgeDaysTpl": {
-    "message": "{count}d ago"
+    "message": "{count} дн. назад"
   },
   "featureHealthAgeHoursTpl": {
-    "message": "{count}h ago"
+    "message": "{count} ч назад"
   },
   "featureHealthAgeMinutesTpl": {
-    "message": "{count}m ago"
+    "message": "{count} мин назад"
   },
   "featureHealthAgeSecondsTpl": {
-    "message": "{count}s ago"
+    "message": "{count} с назад"
   },
   "featureHealthAllWellTpl": {
     "message": "{healthy} features working"
@@ -9186,5 +9186,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "Для этого параметра пока нет редактора. Экспортируйте резервную копию, измените значение в файле и импортируйте её обратно."
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "Сегодня {minutes} мин"
+  },
+  "dwDailyLimitHint": {
+    "message": "Если закрыть это напоминание, оно не появится до начала следующего локального дня."
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "Скрыть до завтра"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "Сеанс {minutes} мин"
+  },
+  "dwBreakHint": {
+    "message": "Воспроизведение приостановлено, пока вы не решите продолжить."
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "Сегодня вы смотрели {minutes} минуту. Отдохните до конца дня или возвращайтесь завтра с обнулённым счётчиком."
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "Сегодня вы смотрели {minutes} минут. Отдохните до конца дня или возвращайтесь завтра с обнулённым счётчиком."
+  },
+  "dwBreakMessageTplOne": {
+    "message": "Вы смотрите уже {minutes} минуту. Дайте глазам отдохнуть, разомнитесь или ненадолго отвлекитесь от экрана, прежде чем продолжить."
+  },
+  "dwBreakMessageTplOther": {
+    "message": "Вы смотрите уже {minutes} минут. Дайте глазам отдохнуть, разомнитесь или ненадолго отвлекитесь от экрана, прежде чем продолжить."
+  },
+  "subImportNewTpl": {
+    "message": "новых: {count}"
+  },
+  "subImportUpdatedTpl": {
+    "message": "обновлено: {count}"
+  },
+  "subImportRemovedTpl": {
+    "message": "удалено: {count}"
+  },
+  "subImportReplacedAll": {
+    "message": "Все группы заменены."
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}."
+  },
+  "subStaleReasonTplOne": {
+    "message": "{count} день с последней загрузки на её странице"
+  },
+  "subStaleReasonTplOther": {
+    "message": "{count} дней с последней загрузки на её странице"
+  },
+  "subImportChannelsTplOne": {
+    "message": "{count} канал"
+  },
+  "subImportChannelsTplOther": {
+    "message": "{count} каналов"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "пропущена {count} группа"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "пропущено групп: {count}"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "пропущен {count} канал"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "пропущено каналов: {count}"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "пропущен {count} дубликат канала"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "пропущено дубликатов каналов: {count}"
+  },
+  "subImportSummaryTplOne": {
+    "message": "Импортирована {count} группа подписок из {source} ({details})."
+  },
+  "subImportSummaryTplOther": {
+    "message": "Импортировано групп подписок: {count} из {source} ({details})."
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "Установочный файл готов. {hint} Запасная команда тоже скопирована."
+  },
+  "dlInstallerReadyTpl": {
+    "message": "Установочный файл готов. {hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "неизвестно"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "Поиск функции Astra Deck методом деления: {feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "Поиск функции Astra Deck методом деления: ни одна отдельная функция не виновата"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "неизвестный браузер"
+  },
+  "bisectReportPageTpl": {
+    "message": "Страница: {page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count} шаг"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count} шагов"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "Проверена {count} включённая функция за {steps}"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "Проверено включённых функций: {count} за {steps}"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}, {merge}, {dropped}; {excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "будет заменён {count} элемент"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "будет заменено элементов: {count}"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "будет объединена {count} настройка"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "будет объединено настроек: {count}"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "отброшен {count}"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "отброшено: {count}"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "{count} домен кэша, среды выполнения, диагностики или учётных данных намеренно исключён"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "доменов кэша, среды выполнения, диагностики или учётных данных намеренно исключено: {count}"
+  },
+  "externalHealthAgeNever": {
+    "message": "никогда"
+  },
+  "importSummaryNoChanges": {
+    "message": "значения не изменились"
+  },
+  "importSummarySkippedTpl": {
+    "message": "пропущено: {count}"
+  },
+  "importSummaryTpl": {
+    "message": "Импортировано: {summary}."
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}."
+  },
+  "takeoutNothingNew": {
+    "message": "Новых записей истории просмотров не импортировано."
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "{count} дубликат уже существовал."
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "Дубликатов, которые уже существовали: {count}."
+  },
+  "takeoutSkippedTplOne": {
+    "message": "{count} более старая запись выходит за окно аналитики в {days} дн."
+  },
+  "takeoutSkippedTplOther": {
+    "message": "Более старых записей вне окна аналитики в {days} дн.: {count}."
+  },
+  "takeoutImportedTplOne": {
+    "message": "Импортирована {count} запись просмотра из Takeout в локальную аналитику просмотров."
+  },
+  "takeoutImportedTplOther": {
+    "message": "Импортировано записей просмотра из Takeout в локальную аналитику просмотров: {count}."
+  },
+  "importSummarySettingsTplOne": {
+    "message": "обновлена {count} настройка"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "обновлено настроек: {count}"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "{count} скрытое видео"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "скрытых видео: {count}"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "{count} разрешённое видео"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "разрешённых видео: {count}"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "{count} видео, отмеченное как просмотренное"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "видео, отмеченных как просмотренные: {count}"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "{count} заблокированный канал"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "заблокированных каналов: {count}"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "{count} разрешённый канал"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "разрешённых каналов: {count}"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "{count} видео с закладками"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "видео с закладками: {count}"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "{count} сводка ИИ"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "сводок ИИ: {count}"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "{count} дубликат"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "дубликатов: {count}"
+  },
+  "dlInstallerRunHint": {
+    "message": "Откройте «Загрузки» и дважды щёлкните установочный файл, чтобы установить."
   }
 }

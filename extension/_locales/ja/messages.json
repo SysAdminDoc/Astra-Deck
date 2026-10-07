@@ -1523,16 +1523,16 @@
     "message": "このブラウザーではその機能を実行できません。更新してからもう一度お試しください。"
   },
   "featureHealthAgeDaysTpl": {
-    "message": "{count}d ago"
+    "message": "{count}日前"
   },
   "featureHealthAgeHoursTpl": {
-    "message": "{count}h ago"
+    "message": "{count}時間前"
   },
   "featureHealthAgeMinutesTpl": {
-    "message": "{count}m ago"
+    "message": "{count}分前"
   },
   "featureHealthAgeSecondsTpl": {
-    "message": "{count}s ago"
+    "message": "{count}秒前"
   },
   "featureHealthAllWellTpl": {
     "message": "{healthy} features working"
@@ -9186,5 +9186,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "この設定にはまだ編集画面がありません。バックアップをエクスポートし、ファイル内の値を変更してからインポートしてください。"
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "本日 {minutes} 分"
+  },
+  "dwDailyLimitHint": {
+    "message": "このリマインダーを閉じると、次のローカルの日が始まるまで表示されません。"
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "明日まで閉じる"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "{minutes} 分連続"
+  },
+  "dwBreakHint": {
+    "message": "再開を選ぶまで再生は一時停止されます。"
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "今日は {minutes} 分視聴しました。今日はもう休むか、明日またリセットされた状態で戻ってきてください。"
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "今日は {minutes} 分視聴しました。今日はもう休むか、明日またリセットされた状態で戻ってきてください。"
+  },
+  "dwBreakMessageTplOne": {
+    "message": "{minutes} 分間視聴し続けています。続ける前に、目を休めたりストレッチをしたり、少し画面から目を離しましょう。"
+  },
+  "dwBreakMessageTplOther": {
+    "message": "{minutes} 分間視聴し続けています。続ける前に、目を休めたりストレッチをしたり、少し画面から目を離しましょう。"
+  },
+  "subImportNewTpl": {
+    "message": "新規 {count} 件"
+  },
+  "subImportUpdatedTpl": {
+    "message": "更新 {count} 件"
+  },
+  "subImportRemovedTpl": {
+    "message": "削除 {count} 件"
+  },
+  "subImportReplacedAll": {
+    "message": "すべてのグループを置き換えました。"
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}。"
+  },
+  "subStaleReasonTplOne": {
+    "message": "ページの最新アップロードから {count} 日経過"
+  },
+  "subStaleReasonTplOther": {
+    "message": "ページの最新アップロードから {count} 日経過"
+  },
+  "subImportChannelsTplOne": {
+    "message": "{count} チャンネル"
+  },
+  "subImportChannelsTplOther": {
+    "message": "{count} チャンネル"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "スキップしたグループ {count} 件"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "スキップしたグループ {count} 件"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "スキップしたチャンネル {count} 件"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "スキップしたチャンネル {count} 件"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "重複チャンネル {count} 件をスキップ"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "重複チャンネル {count} 件をスキップ"
+  },
+  "subImportSummaryTplOne": {
+    "message": "{source} から登録チャンネルグループ {count} 件をインポートしました ({details})。"
+  },
+  "subImportSummaryTplOther": {
+    "message": "{source} から登録チャンネルグループ {count} 件をインポートしました ({details})。"
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "セットアップファイルの準備ができました。{hint} 代替コマンドもコピーしました。"
+  },
+  "dlInstallerReadyTpl": {
+    "message": "セットアップファイルの準備ができました。{hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "不明"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "Astra Deck 機能の絞り込み: {feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "Astra Deck 機能の絞り込み: 原因となる単独の機能はありません"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "不明なブラウザ"
+  },
+  "bisectReportPageTpl": {
+    "message": "ページ: {page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count} ステップ"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count} ステップ"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "有効な機能 {count} 件を {steps} で調査しました"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "有効な機能 {count} 件を {steps} で調査しました"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}、{merge}、{dropped}。{excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "{count} 件を置き換え"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "{count} 件を置き換え"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "設定 {count} 件をマージ"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "設定 {count} 件をマージ"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "{count} 件を破棄"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "{count} 件を破棄"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "キャッシュ、ランタイム、診断、認証情報のドメイン {count} 件は意図的に除外"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "キャッシュ、ランタイム、診断、認証情報のドメイン {count} 件は意図的に除外"
+  },
+  "externalHealthAgeNever": {
+    "message": "なし"
+  },
+  "importSummaryNoChanges": {
+    "message": "値の変更なし"
+  },
+  "importSummarySkippedTpl": {
+    "message": "スキップ {count} 件"
+  },
+  "importSummaryTpl": {
+    "message": "{summary} をインポートしました。"
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}。"
+  },
+  "takeoutNothingNew": {
+    "message": "新しい視聴履歴はインポートされませんでした。"
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "重複 {count} 件はすでに存在していました。"
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "重複 {count} 件はすでに存在していました。"
+  },
+  "takeoutSkippedTplOne": {
+    "message": "古い履歴 {count} 件は {days} 日間の分析期間外でした。"
+  },
+  "takeoutSkippedTplOther": {
+    "message": "古い履歴 {count} 件は {days} 日間の分析期間外でした。"
+  },
+  "takeoutImportedTplOne": {
+    "message": "Takeout の視聴履歴 {count} 件をローカルの視聴分析にインポートしました。"
+  },
+  "takeoutImportedTplOther": {
+    "message": "Takeout の視聴履歴 {count} 件をローカルの視聴分析にインポートしました。"
+  },
+  "importSummarySettingsTplOne": {
+    "message": "設定 {count} 件を更新"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "設定 {count} 件を更新"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "非表示の動画 {count} 件"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "非表示の動画 {count} 件"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "許可した動画 {count} 件"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "許可した動画 {count} 件"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "視聴済みにした動画 {count} 件"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "視聴済みにした動画 {count} 件"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "ブロックしたチャンネル {count} 件"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "ブロックしたチャンネル {count} 件"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "許可したチャンネル {count} 件"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "許可したチャンネル {count} 件"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "ブックマーク付きの動画 {count} 件"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "ブックマーク付きの動画 {count} 件"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "AI 要約 {count} 件"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "AI 要約 {count} 件"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "重複 {count} 件"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "重複 {count} 件"
+  },
+  "dlInstallerRunHint": {
+    "message": "ダウンロードフォルダを開き、セットアップファイルをダブルクリックしてインストールしてください。"
   }
 }

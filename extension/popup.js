@@ -3170,14 +3170,15 @@ if (selectorHealthCopyBtn) {
 
 function formatExternalHealthAge(ts) {
     const n = Number(ts);
-    if (!Number.isFinite(n) || n <= 0) return 'never';
+    if (!Number.isFinite(n) || n <= 0) return t('externalHealthAgeNever', 'never');
+    const age = (key, fallback, count) => t(key, fallback).replace('{count}', () => String(count));
     const seconds = Math.max(0, Math.round((Date.now() - n) / 1000));
-    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 60) return age('featureHealthAgeSecondsTpl', '{count}s ago', seconds);
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 60) return age('featureHealthAgeMinutesTpl', '{count}m ago', minutes);
     const hours = Math.round(minutes / 60);
-    if (hours < 48) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
+    if (hours < 48) return age('featureHealthAgeHoursTpl', '{count}h ago', hours);
+    return age('featureHealthAgeDaysTpl', '{count}d ago', Math.round(hours / 24));
 }
 
 function externalHealthTone(state) {
@@ -4263,7 +4264,9 @@ async function copyFeatureBisectResult() {
     const report = core.formatBisectResult(session, {
         version: manifestVersion,
         browser: describeBrowserForReport(),
-        pageType
+        pageType,
+        t,
+        tCount
     });
     const copied = await copyTextToClipboard(report);
     showStatus(copied
@@ -6565,7 +6568,7 @@ async function importSettings(file) {
             sanitized.droppedByDomain,
             sanitized.appliedByDomain
         );
-        const previewText = persistedDomains.formatImportPreview(preview);
+        const previewText = persistedDomains.formatImportPreview(preview, { t, tCount });
         showStatus(t('statusImportPreviewApplyTpl', 'Import preview: {preview}. Applying with rollback…')
             .replace('{preview}', () => previewText), 'success', 6000);
         await new Promise((resolve) => (globalThis.requestAnimationFrame || setTimeout)(resolve, 0));

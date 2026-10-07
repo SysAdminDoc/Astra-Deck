@@ -1010,10 +1010,12 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				if (!downloaded) {
 					void openExternalUrl(this.INSTALLER_URL).catch(() => {});
 				}
+				const hint = t('dlInstallerRunHint', this.INSTALLER_RUN_HINT);
 				showToast(
-					copied
-						? `Setup file ready. ${this.INSTALLER_RUN_HINT} The fallback command was copied too.`
-						: `Setup file ready. ${this.INSTALLER_RUN_HINT}`,
+					(copied
+						? t('dlInstallerReadyCopiedTpl', 'Setup file ready. {hint} The fallback command was copied too.')
+						: t('dlInstallerReadyTpl', 'Setup file ready. {hint}')
+					).replace('{hint}', () => hint),
 					'#22c55e',
 					{ duration: 8 }
 				);
@@ -12714,6 +12716,9 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 			extensionFetchJson = null,
 			t = (_key, fallback) => fallback
 		} = deps;
+		const tCount = (count, key, one, other) => (
+			Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other)
+		);
 		const describeFailureCause = (error) => {
 			const describe = globalThis.YTKitCore?.describeFailure;
 			if (typeof describe === 'function') return describe(error, t);
@@ -13478,7 +13483,7 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 										ageDays: candidate.ageDays,
 										stagedAt: now,
 										undoUntil: now + this._UNSUB_STAGE_TTL_MS,
-										reason: `${candidate.ageDays} days since newest rendered upload`,
+										reason: this._staleReason(candidate.ageDays),
 										source: 'health-center'
 									};
 									this._writeUnsubscribeStaging(next);
@@ -13516,7 +13521,9 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 							const name = document.createElement('div');
 							name.className = 'ytkit-sub-digest-name';
 							name.textContent = entry.channelName || entry.channelId;
-							name.title = entry.reason || '';
+							name.title = Number.isFinite(Number(entry.ageDays)) && entry.ageDays !== null
+								? this._staleReason(entry.ageDays)
+								: (entry.reason || '');
 							const until = document.createElement('div');
 							until.className = 'ytkit-sub-digest-muted';
 							until.textContent = entry.undoUntil
@@ -13816,7 +13823,7 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 						ageDays: candidate.ageDays,
 						stagedAt: current[channelId]?.stagedAt || now,
 						undoUntil: now + this._UNSUB_STAGE_TTL_MS,
-						reason: `${candidate.ageDays} days since newest rendered upload`,
+						reason: this._staleReason(candidate.ageDays),
 						source: 'dead-channel'
 					};
 					stagedIds.push(channelId);
@@ -15270,6 +15277,12 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 				}
 				return merged;
 			},
+			_staleReason(ageDays) {
+				return tCount(ageDays, 'subStaleReasonTpl',
+					'{count} day since the newest upload on its page',
+					'{count} days since the newest upload on its page')
+					.replace('{count}', () => String(ageDays));
+			},
 			_commitImportedGroups(groups, label, meta = {}, options = {}) {
 				const previous = this._readGroups();
 				const replace = options.mode === 'replace';
@@ -15292,18 +15305,36 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 				const skippedGroups = Math.max(0, Number(meta.skippedGroups) || 0);
 				const skippedChannels = Math.max(0, Number(meta.skippedChannels) || 0);
 				const duplicateChannels = Math.max(0, Number(meta.duplicateChannels) || 0);
+				const fill = (text, value) => text.replace('{count}', () => String(value));
 				const detailParts = [
-					`${createdGroups} new`,
-					`${updatedGroups} updated`,
-					`${importedChannels} channel${importedChannels === 1 ? '' : 's'}`
+					fill(t('subImportNewTpl', '{count} new'), createdGroups),
+					fill(t('subImportUpdatedTpl', '{count} updated'), updatedGroups),
+					fill(tCount(importedChannels, 'subImportChannelsTpl', '{count} channel', '{count} channels'), importedChannels)
 				];
-				if (removedGroups) detailParts.push(`${removedGroups} removed`);
+				if (removedGroups) detailParts.push(fill(t('subImportRemovedTpl', '{count} removed'), removedGroups));
 				const skipParts = [];
-				if (skippedGroups) skipParts.push(`${skippedGroups} skipped group${skippedGroups === 1 ? '' : 's'}`);
-				if (skippedChannels) skipParts.push(`${skippedChannels} skipped channel${skippedChannels === 1 ? '' : 's'}`);
-				if (duplicateChannels) skipParts.push(`skipped ${duplicateChannels} duplicate channel${duplicateChannels === 1 ? '' : 's'}`);
-				const mergeNote = replace ? ' Replaced all groups.' : '';
-				const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${mergeNote}${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
+				if (skippedGroups) {
+					skipParts.push(fill(tCount(skippedGroups, 'subImportSkippedGroupsTpl', '{count} skipped group', '{count} skipped groups'), skippedGroups));
+				}
+				if (skippedChannels) {
+					skipParts.push(fill(tCount(skippedChannels, 'subImportSkippedChannelsTpl', '{count} skipped channel', '{count} skipped channels'), skippedChannels));
+				}
+				if (duplicateChannels) {
+					skipParts.push(fill(tCount(duplicateChannels, 'subImportDuplicateChannelsTpl',
+						'skipped {count} duplicate channel', 'skipped {count} duplicate channels'), duplicateChannels));
+				}
+				const sentences = [
+					fill(tCount(count, 'subImportSummaryTpl',
+						'Imported {count} subscription group from {source} ({details}).',
+						'Imported {count} subscription groups from {source} ({details}).'), count)
+						.replace('{source}', () => String(label))
+						.replace('{details}', () => detailParts.join(', '))
+				];
+				if (replace) sentences.push(t('subImportReplacedAll', 'Replaced all groups.'));
+				if (skipParts.length) {
+					sentences.push(t('subImportSkippedTpl', '{skipped}.').replace('{skipped}', () => skipParts.join(', ')));
+				}
+				const message = sentences.join(' ');
 				if (typeof showToast === 'function') {
 					showToast(message, '#22c55e', {
 						duration: 6,
@@ -15364,6 +15395,9 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 			trapFocusWithin = () => {},
 			t = (_key, fallback) => fallback
 		} = deps;
+		const tCount = (count, key, one, other) => (
+			Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other)
+		);
 		return {
 			id: 'digitalWellbeing',
 			name: t('feature_digitalWellbeing_name', 'Digital Wellbeing'),
@@ -15658,12 +15692,16 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 				const capDismissedDate = this._getCapDismissDate();
 				if (dailyCap > 0 && today.seconds >= dailyCap) {
 					if (!this._overlay && capDismissedDate !== todayKey) {
+						const minutes = this._formatMinutes(today.seconds / 60);
 						this._showOverlay('cap', {
 							title: t('dwDailyLimitTitle', 'Daily Limit Reached'),
-							badge: `${this._formatMinutes(today.seconds / 60)} Min Today`,
-							message: `You have watched ${this._formatMinutes(today.seconds / 60)} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset.`,
-							hint: 'Dismissing this reminder will keep it quiet until your next local day starts.',
-							buttonText: 'Dismiss Until Tomorrow',
+							badge: t('dwDailyLimitBadgeTpl', '{minutes} Min Today').replace('{minutes}', () => minutes),
+							message: tCount(Math.floor(today.seconds / 60), 'dwDailyLimitMessageTpl',
+								'You have watched {minutes} minute today. Take the rest of the day off, or come back tomorrow with a fresh reset.',
+								'You have watched {minutes} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset.')
+								.replace('{minutes}', () => minutes),
+							hint: t('dwDailyLimitHint', 'Dismissing this reminder will keep it quiet until your next local day starts.'),
+							buttonText: t('dwDailyLimitDismissButton', 'Dismiss Until Tomorrow'),
 							onDismiss: () => this._setCapDismissDate(todayKey)
 						});
 						return;
@@ -15672,11 +15710,15 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 				if (shortsActive && this._showShortsLimitOverlay(shortsToday, shortsLimit)) return;
 				if (breakEvery > 0 && sessionElapsed >= breakEvery && !this._overlay) {
 					this._sessionStart = today.seconds;
+					const minutes = this._formatMinutes(breakEvery / 60);
 					this._showOverlay('break', {
 						title: t('dwBreakTitle', 'Take a Break'),
-						badge: `${this._formatMinutes(breakEvery / 60)} Min Session`,
-						message: `You have been watching for ${this._formatMinutes(breakEvery / 60)} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing.`,
-						hint: 'Playback is paused until you choose to resume.'
+						badge: t('dwBreakBadgeTpl', '{minutes} Min Session').replace('{minutes}', () => minutes),
+						message: tCount(Math.floor(breakEvery / 60), 'dwBreakMessageTpl',
+							'You have been watching for {minutes} minute. Rest your eyes, stretch, or look away from the screen for a moment before continuing.',
+							'You have been watching for {minutes} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing.')
+							.replace('{minutes}', () => minutes),
+						hint: t('dwBreakHint', 'Playback is paused until you choose to resume.')
 					});
 				}
 			},

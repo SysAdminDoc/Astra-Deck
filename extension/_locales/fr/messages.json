@@ -1523,16 +1523,16 @@
     "message": "Ce navigateur ne peut pas exécuter cette fonction. Mettez-le à jour, puis réessayez."
   },
   "featureHealthAgeDaysTpl": {
-    "message": "{count}d ago"
+    "message": "il y a {count} j"
   },
   "featureHealthAgeHoursTpl": {
-    "message": "{count}h ago"
+    "message": "il y a {count} h"
   },
   "featureHealthAgeMinutesTpl": {
-    "message": "{count}m ago"
+    "message": "il y a {count} min"
   },
   "featureHealthAgeSecondsTpl": {
-    "message": "{count}s ago"
+    "message": "il y a {count} s"
   },
   "featureHealthAllWellTpl": {
     "message": "{healthy} features working"
@@ -9186,5 +9186,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "Ce réglage n'a pas encore d'éditeur. Exportez une sauvegarde, modifiez la valeur dans le fichier, puis réimportez-la."
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "{minutes} min aujourd’hui"
+  },
+  "dwDailyLimitHint": {
+    "message": "Si vous fermez ce rappel, il restera silencieux jusqu’au début de votre prochaine journée locale."
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "Ignorer jusqu’à demain"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "Session de {minutes} min"
+  },
+  "dwBreakHint": {
+    "message": "La lecture est en pause jusqu’à ce que vous choisissiez de reprendre."
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "Vous avez regardé {minutes} minute aujourd’hui. Prenez le reste de la journée pour souffler, ou revenez demain avec un compteur remis à zéro."
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "Vous avez regardé {minutes} minutes aujourd’hui. Prenez le reste de la journée pour souffler, ou revenez demain avec un compteur remis à zéro."
+  },
+  "dwBreakMessageTplOne": {
+    "message": "Vous regardez depuis {minutes} minute. Reposez vos yeux, étirez-vous ou détournez le regard de l’écran un instant avant de continuer."
+  },
+  "dwBreakMessageTplOther": {
+    "message": "Vous regardez depuis {minutes} minutes. Reposez vos yeux, étirez-vous ou détournez le regard de l’écran un instant avant de continuer."
+  },
+  "subImportNewTpl": {
+    "message": "nouveaux : {count}"
+  },
+  "subImportUpdatedTpl": {
+    "message": "{count} mis à jour"
+  },
+  "subImportRemovedTpl": {
+    "message": "supprimés : {count}"
+  },
+  "subImportReplacedAll": {
+    "message": "Tous les groupes ont été remplacés."
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}."
+  },
+  "subStaleReasonTplOne": {
+    "message": "{count} jour depuis la dernière mise en ligne sur sa page"
+  },
+  "subStaleReasonTplOther": {
+    "message": "{count} jours depuis la dernière mise en ligne sur sa page"
+  },
+  "subImportChannelsTplOne": {
+    "message": "{count} chaîne"
+  },
+  "subImportChannelsTplOther": {
+    "message": "{count} chaînes"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "{count} groupe ignoré"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "{count} groupes ignorés"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "{count} chaîne ignorée"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "{count} chaînes ignorées"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "{count} chaîne en double ignorée"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "{count} chaînes en double ignorées"
+  },
+  "subImportSummaryTplOne": {
+    "message": "{count} groupe d’abonnements importé depuis {source} ({details})."
+  },
+  "subImportSummaryTplOther": {
+    "message": "{count} groupes d’abonnements importés depuis {source} ({details})."
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "Fichier d’installation prêt. {hint} La commande de secours a aussi été copiée."
+  },
+  "dlInstallerReadyTpl": {
+    "message": "Fichier d’installation prêt. {hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "inconnu"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "Recherche de fonctionnalité Astra Deck : {feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "Recherche de fonctionnalité Astra Deck : aucune fonctionnalité unique n’est responsable"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "navigateur inconnu"
+  },
+  "bisectReportPageTpl": {
+    "message": "Page : {page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count} étape"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count} étapes"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "{count} fonctionnalité activée examinée en {steps}"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "{count} fonctionnalités activées examinées en {steps}"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}, {merge}, {dropped} ; {excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "{count} élément sera remplacé"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "{count} éléments seront remplacés"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "{count} réglage sera fusionné"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "{count} réglages seront fusionnés"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "{count} abandonné"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "{count} abandonnés"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "{count} domaine de cache, d’exécution, de diagnostic ou d’identifiants volontairement exclu"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "{count} domaines de cache, d’exécution, de diagnostic ou d’identifiants volontairement exclus"
+  },
+  "externalHealthAgeNever": {
+    "message": "jamais"
+  },
+  "importSummaryNoChanges": {
+    "message": "aucune modification de valeur"
+  },
+  "importSummarySkippedTpl": {
+    "message": "ignorés : {count}"
+  },
+  "importSummaryTpl": {
+    "message": "Importé : {summary}."
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}."
+  },
+  "takeoutNothingNew": {
+    "message": "Aucune nouvelle entrée de l’historique de visionnage importée."
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "{count} doublon existait déjà."
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "{count} doublons existaient déjà."
+  },
+  "takeoutSkippedTplOne": {
+    "message": "{count} entrée plus ancienne était hors de la fenêtre d’analyse de {days} jours."
+  },
+  "takeoutSkippedTplOther": {
+    "message": "{count} entrées plus anciennes étaient hors de la fenêtre d’analyse de {days} jours."
+  },
+  "takeoutImportedTplOne": {
+    "message": "{count} entrée de visionnage Takeout importée dans les statistiques de visionnage locales."
+  },
+  "takeoutImportedTplOther": {
+    "message": "{count} entrées de visionnage Takeout importées dans les statistiques de visionnage locales."
+  },
+  "importSummarySettingsTplOne": {
+    "message": "{count} réglage mis à jour"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "{count} réglages mis à jour"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "{count} vidéo masquée"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "{count} vidéos masquées"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "{count} vidéo autorisée"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "{count} vidéos autorisées"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "{count} vidéo marquée comme vue"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "{count} vidéos marquées comme vues"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "{count} chaîne bloquée"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "{count} chaînes bloquées"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "{count} chaîne autorisée"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "{count} chaînes autorisées"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "{count} vidéo avec signets"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "{count} vidéos avec signets"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "{count} résumé IA"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "{count} résumés IA"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "{count} doublon"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "{count} doublons"
+  },
+  "dlInstallerRunHint": {
+    "message": "Ouvrez Téléchargements et double-cliquez sur le fichier d’installation pour installer."
   }
 }

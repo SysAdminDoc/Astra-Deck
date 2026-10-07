@@ -4,22 +4,25 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P3 — Finish the English UI strings built outside the copy gate's sinks
-  Why: the 2026-09-23 audit swept every untagged template literal with `${}` in extension
-  code and found user-facing English the UI-copy gate cannot see (copy built in a `return`,
-  passed to a helper, or set on a property it does not scan). The settings panel status line
-  and the SponsorBlock skip announcement are fixed; these remain, each English in all 11
-  locales: Digital Wellbeing's daily-limit and break messages
-  (`features/digital-wellbeing/index.js` ~380, ~394); the Subscription Groups import summary
-  and its "(s)" plurals (`features/subscription-groups/index.js` ~3061-3067) and the
-  "N days since newest rendered upload" reason (~1006, ~1362); the settings import summary
-  and Takeout import messages in `extension/ytkit.js` (~5107-5117, ~5416, ~5425); the popup's
-  service-health age ("5m ago", "never", `popup.js` `formatExternalHealthAge`); the
-  installer-ready status in `features/download-ui/index.js` ~1189; the feature-bisect summary
-  (`core/feature-bisect.js` ~201) and the import preview line (`core/persisted-domains.js`
-  ~897). Re-run the sweep before starting: an acorn walk over TemplateLiteral nodes whose
-  static text carries English words, minus logs, errors and selectors.
-  Where: the files above, `extension/_locales/*/messages.json`.
+- [ ] P3 — English UI strings the 2026-10-06 sweep found outside the copy gate's sinks
+  Why: re-running the template-literal sweep for the "built outside the sinks" item turned up
+  more English UI copy than that item listed, all English in every locale. In `extension/ytkit.js`:
+  Quick Links' add/remove/limit toasts, the sleep timer's set/extend toasts and its menu label,
+  the watch-time stats line ("Today: … | This week: …"), the channel-skip "Skipped:" toast, the
+  Watch Feed "N of M" / "N items" counters, the comment search "Match N of M" / "Thread N of M"
+  lines, the settings profile saved/not-found/imported toasts (with "profile(s)"), the AI
+  summary citation counts ("invented citation(s)"), the audio-track notices, the DeArrow
+  per-channel override toast, the transcript batch progress and "No transcripts matched", the
+  protocol handoff note, the panel's reset/undo and "needs host access" toasts, and the
+  "saved" toasts for text and range settings. Elsewhere: `features/settings-panel/index.js`
+  ("Hidden Video … Ready to Review" through an English `countLabel`), `features/video-hider`
+  (the "Can't read … on this page's cards" notice), `features/download-ui` (the runtime repair
+  label and both Cobalt fallback notices), `core/date-time.js` (the relative-time fallback) and
+  `core/external-api-health.js` ("cache is … old"). Each is a template literal assigned to a
+  variable or returned before it reaches a sink, so the gate can't see it.
+  Where: the files above, `extension/_locales/*/messages.json`. The sweep: an acorn walk over
+  TemplateLiteral nodes with English words in their static text, minus logs, errors, AI prompt
+  bodies, file names and selectors.
   Acceptance: WHEN the UI locale is not English, each string above SHALL render from catalogue
   keys present in all 11 locales, with counts through `tCount`.
   Complexity: M

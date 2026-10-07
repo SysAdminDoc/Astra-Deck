@@ -1523,16 +1523,16 @@
     "message": "لا يمكن لهذا المتصفح تشغيل تلك الميزة. حدّثه ثم حاول مرة أخرى."
   },
   "featureHealthAgeDaysTpl": {
-    "message": "{count}d ago"
+    "message": "منذ {count} ي"
   },
   "featureHealthAgeHoursTpl": {
-    "message": "{count}h ago"
+    "message": "منذ {count} س"
   },
   "featureHealthAgeMinutesTpl": {
-    "message": "{count}m ago"
+    "message": "منذ {count} د"
   },
   "featureHealthAgeSecondsTpl": {
-    "message": "{count}s ago"
+    "message": "منذ {count} ث"
   },
   "featureHealthAllWellTpl": {
     "message": "{healthy} features working"
@@ -9186,5 +9186,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "لا يوجد محرر لهذا الإعداد بعد. صدّر نسخة احتياطية، وغيّر القيمة في الملف، ثم استوردها."
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "{minutes} دقيقة اليوم"
+  },
+  "dwDailyLimitHint": {
+    "message": "إغلاق هذا التذكير سيُسكته حتى يبدأ يومك المحلي التالي."
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "إغلاق حتى الغد"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "جلسة {minutes} دقيقة"
+  },
+  "dwBreakHint": {
+    "message": "تم إيقاف التشغيل مؤقتًا حتى تختار المتابعة."
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "شاهدت {minutes} دقيقة اليوم. خذ بقية اليوم راحة، أو عد غدًا ببداية جديدة."
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "شاهدت {minutes} دقيقة اليوم. خذ بقية اليوم راحة، أو عد غدًا ببداية جديدة."
+  },
+  "dwBreakMessageTplOne": {
+    "message": "تشاهد منذ {minutes} دقيقة. أرح عينيك وتمدد أو انظر بعيدًا عن الشاشة قليلًا قبل المتابعة."
+  },
+  "dwBreakMessageTplOther": {
+    "message": "تشاهد منذ {minutes} دقيقة. أرح عينيك وتمدد أو انظر بعيدًا عن الشاشة قليلًا قبل المتابعة."
+  },
+  "subImportNewTpl": {
+    "message": "{count} جديدة"
+  },
+  "subImportUpdatedTpl": {
+    "message": "{count} محدّثة"
+  },
+  "subImportRemovedTpl": {
+    "message": "{count} محذوفة"
+  },
+  "subImportReplacedAll": {
+    "message": "تم استبدال كل المجموعات."
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}."
+  },
+  "subStaleReasonTplOne": {
+    "message": "مرّ {count} يوم منذ آخر رفع في صفحتها"
+  },
+  "subStaleReasonTplOther": {
+    "message": "مرّ {count} يوم منذ آخر رفع في صفحتها"
+  },
+  "subImportChannelsTplOne": {
+    "message": "{count} قناة"
+  },
+  "subImportChannelsTplOther": {
+    "message": "{count} قنوات"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "{count} مجموعة متخطاة"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "{count} مجموعات متخطاة"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "{count} قناة متخطاة"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "{count} قنوات متخطاة"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "تم تخطي {count} قناة مكررة"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "تم تخطي {count} قنوات مكررة"
+  },
+  "subImportSummaryTplOne": {
+    "message": "تم استيراد {count} مجموعة اشتراكات من {source} ({details})."
+  },
+  "subImportSummaryTplOther": {
+    "message": "تم استيراد {count} مجموعات اشتراكات من {source} ({details})."
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "ملف الإعداد جاهز. {hint} تم نسخ الأمر البديل أيضًا."
+  },
+  "dlInstallerReadyTpl": {
+    "message": "ملف الإعداد جاهز. {hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "غير معروف"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "البحث الثنائي في ميزات Astra Deck: {feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "البحث الثنائي في ميزات Astra Deck: لا توجد ميزة واحدة مسؤولة"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "متصفح غير معروف"
+  },
+  "bisectReportPageTpl": {
+    "message": "الصفحة: {page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count} خطوة"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count} خطوات"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "تم فحص {count} ميزة مفعّلة في {steps}"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "تم فحص {count} ميزات مفعّلة في {steps}"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}، {merge}، {dropped}؛ {excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "سيتم استبدال {count} عنصر"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "سيتم استبدال {count} عناصر"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "سيتم دمج {count} إعداد"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "سيتم دمج {count} إعدادات"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "{count} مُهمل"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "{count} مُهملة"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "{count} نطاق للذاكرة المؤقتة أو التشغيل أو التشخيص أو بيانات الاعتماد مستثنى عمدًا"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "{count} نطاقات للذاكرة المؤقتة أو التشغيل أو التشخيص أو بيانات الاعتماد مستثناة عمدًا"
+  },
+  "externalHealthAgeNever": {
+    "message": "أبدًا"
+  },
+  "importSummaryNoChanges": {
+    "message": "لا تغييرات في القيم"
+  },
+  "importSummarySkippedTpl": {
+    "message": "{count} متخطاة"
+  },
+  "importSummaryTpl": {
+    "message": "تم استيراد {summary}."
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}."
+  },
+  "takeoutNothingNew": {
+    "message": "لم يتم استيراد أي إدخالات جديدة من سجل المشاهدة."
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "{count} مكرر موجود مسبقًا."
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "{count} مكررات موجودة مسبقًا."
+  },
+  "takeoutSkippedTplOne": {
+    "message": "{count} إدخال أقدم خارج نافذة التحليلات البالغة {days} يومًا."
+  },
+  "takeoutSkippedTplOther": {
+    "message": "{count} إدخالات أقدم خارج نافذة التحليلات البالغة {days} يومًا."
+  },
+  "takeoutImportedTplOne": {
+    "message": "تم استيراد {count} إدخال مشاهدة من Takeout إلى تحليلات المشاهدة المحلية."
+  },
+  "takeoutImportedTplOther": {
+    "message": "تم استيراد {count} إدخالات مشاهدة من Takeout إلى تحليلات المشاهدة المحلية."
+  },
+  "importSummarySettingsTplOne": {
+    "message": "{count} إعداد محدّث"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "{count} إعدادات محدّثة"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "{count} فيديو مخفي"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "{count} فيديوهات مخفية"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "{count} فيديو مسموح"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "{count} فيديوهات مسموحة"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "{count} فيديو معلَّم كمشاهَد"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "{count} فيديوهات معلَّمة كمشاهَدة"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "{count} قناة محظورة"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "{count} قنوات محظورة"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "{count} قناة مسموحة"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "{count} قنوات مسموحة"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "{count} فيديو له إشارات مرجعية"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "{count} فيديوهات لها إشارات مرجعية"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "{count} ملخص AI"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "{count} ملخصات AI"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "{count} مكرر"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "{count} مكررات"
+  },
+  "dlInstallerRunHint": {
+    "message": "افتح التنزيلات وانقر نقرًا مزدوجًا على ملف الإعداد للتثبيت."
   }
 }

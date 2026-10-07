@@ -3675,20 +3675,25 @@ const STORAGE_KEYS = Object.freeze({
 			};
 		},
 		_formatSettingsImportSummary(summary) {
+			const fill = (text, count) => text.replace('{count}', () => String(count));
+			const n = summary;
 			const parts = [];
-			if (summary.settingsUpdated) parts.push(`${summary.settingsUpdated} setting${summary.settingsUpdated === 1 ? '' : 's'} updated`);
-			if (summary.hiddenVideos) parts.push(`${summary.hiddenVideos} hidden video${summary.hiddenVideos === 1 ? '' : 's'}`);
-			if (summary.allowedVideos) parts.push(`${summary.allowedVideos} allowed video${summary.allowedVideos === 1 ? '' : 's'}`);
-			if (summary.markedWatchedVideos) parts.push(`${summary.markedWatchedVideos} marked-watched video${summary.markedWatchedVideos === 1 ? '' : 's'}`);
-			if (summary.blockedChannels) parts.push(`${summary.blockedChannels} blocked channel${summary.blockedChannels === 1 ? '' : 's'}`);
-			if (summary.allowedChannels) parts.push(`${summary.allowedChannels} allowed channel${summary.allowedChannels === 1 ? '' : 's'}`);
-			if (summary.bookmarkVideos) parts.push(`${summary.bookmarkVideos} bookmark video${summary.bookmarkVideos === 1 ? '' : 's'}`);
-			if (summary.aiSummaries) parts.push(`${summary.aiSummaries} AI summar${summary.aiSummaries === 1 ? 'y' : 'ies'}`);
-			const main = parts.length ? parts.join(', ') : 'no value changes';
+			if (n.settingsUpdated) parts.push(fill(tCount(n.settingsUpdated, 'importSummarySettingsTpl', '{count} setting updated', '{count} settings updated'), n.settingsUpdated));
+			if (n.hiddenVideos) parts.push(fill(tCount(n.hiddenVideos, 'importSummaryHiddenVideosTpl', '{count} hidden video', '{count} hidden videos'), n.hiddenVideos));
+			if (n.allowedVideos) parts.push(fill(tCount(n.allowedVideos, 'importSummaryAllowedVideosTpl', '{count} allowed video', '{count} allowed videos'), n.allowedVideos));
+			if (n.markedWatchedVideos) parts.push(fill(tCount(n.markedWatchedVideos, 'importSummaryWatchedVideosTpl', '{count} marked-watched video', '{count} marked-watched videos'), n.markedWatchedVideos));
+			if (n.blockedChannels) parts.push(fill(tCount(n.blockedChannels, 'importSummaryBlockedChannelsTpl', '{count} blocked channel', '{count} blocked channels'), n.blockedChannels));
+			if (n.allowedChannels) parts.push(fill(tCount(n.allowedChannels, 'importSummaryAllowedChannelsTpl', '{count} allowed channel', '{count} allowed channels'), n.allowedChannels));
+			if (n.bookmarkVideos) parts.push(fill(tCount(n.bookmarkVideos, 'importSummaryBookmarksTpl', '{count} video with bookmarks', '{count} videos with bookmarks'), n.bookmarkVideos));
+			if (n.aiSummaries) parts.push(fill(tCount(n.aiSummaries, 'importSummaryAiSummariesTpl', '{count} AI summary', '{count} AI summaries'), n.aiSummaries));
+			const main = parts.length ? parts.join(', ') : t('importSummaryNoChanges', 'no value changes');
 			const extras = [];
-			if (summary.skipped) extras.push(`${summary.skipped} skipped`);
-			if (summary.duplicates) extras.push(`${summary.duplicates} duplicate${summary.duplicates === 1 ? '' : 's'}`);
-			return `Imported ${main}.${extras.length ? ` ${extras.join(', ')}.` : ''}`;
+			if (n.skipped) extras.push(fill(t('importSummarySkippedTpl', '{count} skipped'), n.skipped));
+			if (n.duplicates) extras.push(fill(tCount(n.duplicates, 'importSummaryDuplicatesTpl', '{count} duplicate', '{count} duplicates'), n.duplicates));
+			const sentence = t('importSummaryTpl', 'Imported {summary}.').replace('{summary}', () => main);
+			return extras.length
+				? `${sentence} ${t('importSummaryExtrasTpl', '{extras}.').replace('{extras}', () => extras.join(', '))}`
+				: sentence;
 		},
 		exportAllSettings() {
 			const exportSettings = this._buildSchemaValidatedExportSettings(this.load());
@@ -3959,10 +3964,16 @@ const STORAGE_KEYS = Object.freeze({
 					StorageManager.setSync(STORAGE_KEYS.watchTime, result.stats);
 				}
 				const duplicateCopy = result.duplicates > 0
-					? ` ${fmt(result.duplicates)} duplicate${result.duplicates === 1 ? '' : 's'} already existed.`
+					? ` ${tCount(result.duplicates, 'takeoutDuplicatesTpl',
+						'{count} duplicate already existed.', '{count} duplicates already existed.')
+						.replace('{count}', () => fmt(result.duplicates))}`
 					: '';
 				const skippedCopy = result.skipped > 0
-					? ` ${fmt(result.skipped)} older entr${result.skipped === 1 ? 'y was' : 'ies were'} outside the ${STORAGE_CAPS.watchTimeDays}-day analytics window.`
+					? ` ${tCount(result.skipped, 'takeoutSkippedTpl',
+						'{count} older entry was outside the {days}-day analytics window.',
+						'{count} older entries were outside the {days}-day analytics window.')
+						.replace('{count}', () => fmt(result.skipped))
+						.replace('{days}', () => fmt(STORAGE_CAPS.watchTimeDays))}`
 					: '';
 				if (result.imported === 0) {
 					return {
@@ -3971,7 +3982,7 @@ const STORAGE_KEYS = Object.freeze({
 						toastTone: 'warning',
 						statusTone: 'warn',
 						...result,
-						message: `No new watch-history entries imported.${duplicateCopy}${skippedCopy}`
+						message: `${t('takeoutNothingNew', 'No new watch-history entries imported.')}${duplicateCopy}${skippedCopy}`
 					};
 				}
 				return {
@@ -3980,7 +3991,10 @@ const STORAGE_KEYS = Object.freeze({
 					toastTone: 'success',
 					statusTone: 'success',
 					...result,
-					message: `Imported ${fmt(result.imported)} Takeout watch entr${result.imported === 1 ? 'y' : 'ies'} into local watch analytics.${duplicateCopy}${skippedCopy}`
+					message: `${tCount(result.imported, 'takeoutImportedTpl',
+						'Imported {count} Takeout watch entry into local watch analytics.',
+						'Imported {count} Takeout watch entries into local watch analytics.')
+						.replace('{count}', () => fmt(result.imported))}${duplicateCopy}${skippedCopy}`
 				};
 			} catch (e) {
 				console.error('[YTKit] Failed to import YouTube Takeout watch history:', e);

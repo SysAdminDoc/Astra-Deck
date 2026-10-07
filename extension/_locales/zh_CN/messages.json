@@ -1523,16 +1523,16 @@
     "message": "此浏览器无法运行该功能。请更新后再试。"
   },
   "featureHealthAgeDaysTpl": {
-    "message": "{count}d ago"
+    "message": "{count} 天前"
   },
   "featureHealthAgeHoursTpl": {
-    "message": "{count}h ago"
+    "message": "{count} 小时前"
   },
   "featureHealthAgeMinutesTpl": {
-    "message": "{count}m ago"
+    "message": "{count} 分钟前"
   },
   "featureHealthAgeSecondsTpl": {
-    "message": "{count}s ago"
+    "message": "{count} 秒前"
   },
   "featureHealthAllWellTpl": {
     "message": "{healthy} features working"
@@ -9186,5 +9186,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "此设置暂无编辑器。请导出备份，在文件中修改该值，然后重新导入。"
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "今天 {minutes} 分钟"
+  },
+  "dwDailyLimitHint": {
+    "message": "关闭此提醒后，在你的下一个本地日开始之前不会再出现。"
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "明天前不再提醒"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "本次 {minutes} 分钟"
+  },
+  "dwBreakHint": {
+    "message": "播放已暂停，直到你选择继续。"
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "你今天已观看 {minutes} 分钟。今天剩下的时间好好休息，或明天重新开始。"
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "你今天已观看 {minutes} 分钟。今天剩下的时间好好休息，或明天重新开始。"
+  },
+  "dwBreakMessageTplOne": {
+    "message": "你已连续观看 {minutes} 分钟。继续之前，让眼睛休息一下，活动活动身体，或暂时看向屏幕之外。"
+  },
+  "dwBreakMessageTplOther": {
+    "message": "你已连续观看 {minutes} 分钟。继续之前，让眼睛休息一下，活动活动身体，或暂时看向屏幕之外。"
+  },
+  "subImportNewTpl": {
+    "message": "新增 {count} 个"
+  },
+  "subImportUpdatedTpl": {
+    "message": "更新 {count} 个"
+  },
+  "subImportRemovedTpl": {
+    "message": "移除 {count} 个"
+  },
+  "subImportReplacedAll": {
+    "message": "已替换所有分组。"
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}。"
+  },
+  "subStaleReasonTplOne": {
+    "message": "距其页面上最新上传已过 {count} 天"
+  },
+  "subStaleReasonTplOther": {
+    "message": "距其页面上最新上传已过 {count} 天"
+  },
+  "subImportChannelsTplOne": {
+    "message": "{count} 个频道"
+  },
+  "subImportChannelsTplOther": {
+    "message": "{count} 个频道"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "跳过 {count} 个分组"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "跳过 {count} 个分组"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "跳过 {count} 个频道"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "跳过 {count} 个频道"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "跳过 {count} 个重复频道"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "跳过 {count} 个重复频道"
+  },
+  "subImportSummaryTplOne": {
+    "message": "已从 {source} 导入 {count} 个订阅分组（{details}）。"
+  },
+  "subImportSummaryTplOther": {
+    "message": "已从 {source} 导入 {count} 个订阅分组（{details}）。"
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "安装文件已就绪。{hint} 备用命令也已复制。"
+  },
+  "dlInstallerReadyTpl": {
+    "message": "安装文件已就绪。{hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "未知"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "Astra Deck 功能二分查找：{feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "Astra Deck 功能二分查找：没有单一功能是原因"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "未知浏览器"
+  },
+  "bisectReportPageTpl": {
+    "message": "页面：{page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count} 步"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count} 步"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "在 {steps}内排查了 {count} 个已启用的功能"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "在 {steps}内排查了 {count} 个已启用的功能"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}、{merge}、{dropped}；{excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "替换 {count} 项"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "替换 {count} 项"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "合并 {count} 项设置"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "合并 {count} 项设置"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "丢弃 {count} 项"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "丢弃 {count} 项"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "有意排除了 {count} 个缓存、运行时、诊断或凭据域"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "有意排除了 {count} 个缓存、运行时、诊断或凭据域"
+  },
+  "externalHealthAgeNever": {
+    "message": "从未"
+  },
+  "importSummaryNoChanges": {
+    "message": "没有数值变化"
+  },
+  "importSummarySkippedTpl": {
+    "message": "跳过 {count} 个"
+  },
+  "importSummaryTpl": {
+    "message": "已导入 {summary}。"
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}。"
+  },
+  "takeoutNothingNew": {
+    "message": "没有导入新的观看历史记录。"
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "{count} 条重复记录已存在。"
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "{count} 条重复记录已存在。"
+  },
+  "takeoutSkippedTplOne": {
+    "message": "{count} 条较早的记录超出了 {days} 天的分析时间范围。"
+  },
+  "takeoutSkippedTplOther": {
+    "message": "{count} 条较早的记录超出了 {days} 天的分析时间范围。"
+  },
+  "takeoutImportedTplOne": {
+    "message": "已将 {count} 条 Takeout 观看记录导入本地观看分析。"
+  },
+  "takeoutImportedTplOther": {
+    "message": "已将 {count} 条 Takeout 观看记录导入本地观看分析。"
+  },
+  "importSummarySettingsTplOne": {
+    "message": "更新 {count} 项设置"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "更新 {count} 项设置"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "{count} 个隐藏视频"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "{count} 个隐藏视频"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "{count} 个允许的视频"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "{count} 个允许的视频"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "{count} 个标记为已观看的视频"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "{count} 个标记为已观看的视频"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "{count} 个已屏蔽频道"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "{count} 个已屏蔽频道"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "{count} 个允许的频道"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "{count} 个允许的频道"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "{count} 个带书签的视频"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "{count} 个带书签的视频"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "{count} 条 AI 摘要"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "{count} 条 AI 摘要"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "{count} 条重复"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "{count} 条重复"
+  },
+  "dlInstallerRunHint": {
+    "message": "打开“下载”文件夹，双击安装文件即可安装。"
   }
 }

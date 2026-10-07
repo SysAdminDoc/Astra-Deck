@@ -8812,9 +8812,31 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 			exclusions: EXCLUDED_DOMAINS.map(({ id, reason }) => ({ id, reason }))
 		};
 	}
-	function formatImportPreview(preview) {
+	function formatImportPreview(preview, i18n = {}) {
 		const p = preview || {};
-		return `${Number(p.replace) || 0} items replace, ${Number(p.merge) || 0} settings merge, ${Number(p.drop) || 0} dropped; ${(p.exclusions || []).length} cache, runtime, diagnostic, or credential domains intentionally excluded`;
+		const t = typeof i18n.t === 'function' ? i18n.t : (_key, fallback) => fallback;
+		const tCount = typeof i18n.tCount === 'function'
+			? i18n.tCount
+			: (count, key, one, other) => (Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other));
+		const replace = Number(p.replace) || 0;
+		const merge = Number(p.merge) || 0;
+		const drop = Number(p.drop) || 0;
+		const excluded = (p.exclusions || []).length;
+		const replaceText = tCount(replace, 'importPreviewReplaceTpl', '{count} item replaces', '{count} items replace')
+			.replace('{count}', () => String(replace));
+		const mergeText = tCount(merge, 'importPreviewMergeTpl', '{count} setting merges', '{count} settings merge')
+			.replace('{count}', () => String(merge));
+		const dropText = tCount(drop, 'importPreviewDroppedTpl', '{count} dropped', '{count} dropped')
+			.replace('{count}', () => String(drop));
+		const excludedText = tCount(excluded, 'importPreviewExcludedTpl',
+			'{count} cache, runtime, diagnostic, or credential domain intentionally excluded',
+			'{count} cache, runtime, diagnostic, or credential domains intentionally excluded')
+			.replace('{count}', () => String(excluded));
+		return t('importPreviewTpl', '{replace}, {merge}, {dropped}; {excluded}')
+			.replace('{replace}', () => replaceText)
+			.replace('{merge}', () => mergeText)
+			.replace('{dropped}', () => dropText)
+			.replace('{excluded}', () => excludedText);
 	}
 	function estimateJsonBytes(value) {
 		const json = JSON.stringify(value);
@@ -15245,16 +15267,29 @@ __astraDeckRegistry["core/feature-bisect.js"] = function (globalThis, self, wind
 		return age < 0 || age > maxAgeMs;
 	}
 	function formatBisectResult(session, context = {}) {
+		const t = typeof context.t === 'function' ? context.t : (_key, fallback) => fallback;
+		const tCount = typeof context.tCount === 'function'
+			? context.tCount
+			: (count, key, one, other) => (Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other));
+		const unknown = t('bisectReportUnknown', 'unknown');
 		const lines = [];
 		if (session?.phase === PHASE_CULPRIT && session.candidates.length === 1) {
-			lines.push(`Astra Deck feature bisect: ${session.candidates[0]}`);
+			lines.push(t('bisectReportCulpritTpl', 'Astra Deck feature bisect: {feature}')
+				.replace('{feature}', () => session.candidates[0]));
 		} else {
-			lines.push('Astra Deck feature bisect: no single feature is responsible');
+			lines.push(t('bisectReportNoCulprit', 'Astra Deck feature bisect: no single feature is responsible'));
 		}
-		lines.push(`Astra Deck ${context.version || 'unknown'}`);
-		lines.push(String(context.browser || 'unknown browser'));
-		lines.push(`Page: ${context.pageType || 'unknown'}`);
-		lines.push(`Searched ${session?.snapshot?.length || 0} enabled feature(s) in ${session?.answers?.length || 0} step(s)`);
+		lines.push(`Astra Deck ${context.version || unknown}`);
+		lines.push(String(context.browser || t('bisectReportUnknownBrowser', 'unknown browser')));
+		lines.push(t('bisectReportPageTpl', 'Page: {page}').replace('{page}', () => context.pageType || unknown));
+		const features = session?.snapshot?.length || 0;
+		const steps = session?.answers?.length || 0;
+		const stepText = tCount(steps, 'bisectReportStepsTpl', '{count} step', '{count} steps')
+			.replace('{count}', () => String(steps));
+		lines.push(tCount(features, 'bisectReportSearchedTpl',
+			'Searched {count} enabled feature in {steps}', 'Searched {count} enabled features in {steps}')
+			.replace('{count}', () => String(features))
+			.replace('{steps}', () => stepText));
 		return lines.join('\n');
 	}
 	core.createFeatureBisect = startFeatureBisect;

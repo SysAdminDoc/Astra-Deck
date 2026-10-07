@@ -19,6 +19,12 @@
             t = (_key, fallback) => fallback
         } = deps;
 
+        // Chrome's i18n has no plurals, so a count picks between a key pair
+        // (key + 'One' / key + 'Other'), the same way ytkit.js's tCount does.
+        const tCount = (count, key, one, other) => (
+            Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other)
+        );
+
         return {
             id: 'digitalWellbeing',
             name: t('feature_digitalWellbeing_name', 'Digital Wellbeing'),
@@ -374,12 +380,16 @@
                 const capDismissedDate = this._getCapDismissDate();
                 if (dailyCap > 0 && today.seconds >= dailyCap) {
                     if (!this._overlay && capDismissedDate !== todayKey) {
+                        const minutes = this._formatMinutes(today.seconds / 60);
                         this._showOverlay('cap', {
                             title: t('dwDailyLimitTitle', 'Daily Limit Reached'),
-                            badge: `${this._formatMinutes(today.seconds / 60)} Min Today`,
-                            message: `You have watched ${this._formatMinutes(today.seconds / 60)} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset.`,
-                            hint: 'Dismissing this reminder will keep it quiet until your next local day starts.',
-                            buttonText: 'Dismiss Until Tomorrow',
+                            badge: t('dwDailyLimitBadgeTpl', '{minutes} Min Today').replace('{minutes}', () => minutes),
+                            message: tCount(Math.floor(today.seconds / 60), 'dwDailyLimitMessageTpl',
+                                'You have watched {minutes} minute today. Take the rest of the day off, or come back tomorrow with a fresh reset.',
+                                'You have watched {minutes} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset.')
+                                .replace('{minutes}', () => minutes),
+                            hint: t('dwDailyLimitHint', 'Dismissing this reminder will keep it quiet until your next local day starts.'),
+                            buttonText: t('dwDailyLimitDismissButton', 'Dismiss Until Tomorrow'),
                             onDismiss: () => this._setCapDismissDate(todayKey)
                         });
                         return;
@@ -388,11 +398,15 @@
                 if (shortsActive && this._showShortsLimitOverlay(shortsToday, shortsLimit)) return;
                 if (breakEvery > 0 && sessionElapsed >= breakEvery && !this._overlay) {
                     this._sessionStart = today.seconds;
+                    const minutes = this._formatMinutes(breakEvery / 60);
                     this._showOverlay('break', {
                         title: t('dwBreakTitle', 'Take a Break'),
-                        badge: `${this._formatMinutes(breakEvery / 60)} Min Session`,
-                        message: `You have been watching for ${this._formatMinutes(breakEvery / 60)} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing.`,
-                        hint: 'Playback is paused until you choose to resume.'
+                        badge: t('dwBreakBadgeTpl', '{minutes} Min Session').replace('{minutes}', () => minutes),
+                        message: tCount(Math.floor(breakEvery / 60), 'dwBreakMessageTpl',
+                            'You have been watching for {minutes} minute. Rest your eyes, stretch, or look away from the screen for a moment before continuing.',
+                            'You have been watching for {minutes} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing.')
+                            .replace('{minutes}', () => minutes),
+                        hint: t('dwBreakHint', 'Playback is paused until you choose to resume.')
                     });
                 }
             },

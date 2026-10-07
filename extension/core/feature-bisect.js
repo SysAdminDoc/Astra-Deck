@@ -189,16 +189,31 @@
      * values: a bisect report is pasted in public like the feature report is.
      */
     function formatBisectResult(session, context = {}) {
+        // The module stays pure: the popup hands in its t/tCount, and without
+        // them the report is the English one.
+        const t = typeof context.t === 'function' ? context.t : (_key, fallback) => fallback;
+        const tCount = typeof context.tCount === 'function'
+            ? context.tCount
+            : (count, key, one, other) => (Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other));
+        const unknown = t('bisectReportUnknown', 'unknown');
         const lines = [];
         if (session?.phase === PHASE_CULPRIT && session.candidates.length === 1) {
-            lines.push(`Astra Deck feature bisect: ${session.candidates[0]}`);
+            lines.push(t('bisectReportCulpritTpl', 'Astra Deck feature bisect: {feature}')
+                .replace('{feature}', () => session.candidates[0]));
         } else {
-            lines.push('Astra Deck feature bisect: no single feature is responsible');
+            lines.push(t('bisectReportNoCulprit', 'Astra Deck feature bisect: no single feature is responsible'));
         }
-        lines.push(`Astra Deck ${context.version || 'unknown'}`);
-        lines.push(String(context.browser || 'unknown browser'));
-        lines.push(`Page: ${context.pageType || 'unknown'}`);
-        lines.push(`Searched ${session?.snapshot?.length || 0} enabled feature(s) in ${session?.answers?.length || 0} step(s)`);
+        lines.push(`Astra Deck ${context.version || unknown}`);
+        lines.push(String(context.browser || t('bisectReportUnknownBrowser', 'unknown browser')));
+        lines.push(t('bisectReportPageTpl', 'Page: {page}').replace('{page}', () => context.pageType || unknown));
+        const features = session?.snapshot?.length || 0;
+        const steps = session?.answers?.length || 0;
+        const stepText = tCount(steps, 'bisectReportStepsTpl', '{count} step', '{count} steps')
+            .replace('{count}', () => String(steps));
+        lines.push(tCount(features, 'bisectReportSearchedTpl',
+            'Searched {count} enabled feature in {steps}', 'Searched {count} enabled features in {steps}')
+            .replace('{count}', () => String(features))
+            .replace('{steps}', () => stepText));
         return lines.join('\n');
     }
 

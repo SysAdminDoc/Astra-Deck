@@ -9247,5 +9247,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "No editor for this one yet. Export a backup, change the value in the file, then import it."
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "{minutes} Min Today"
+  },
+  "dwDailyLimitHint": {
+    "message": "Dismissing this reminder will keep it quiet until your next local day starts."
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "Dismiss Until Tomorrow"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "{minutes} Min Session"
+  },
+  "dwBreakHint": {
+    "message": "Playback is paused until you choose to resume."
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "You have watched {minutes} minute today. Take the rest of the day off, or come back tomorrow with a fresh reset."
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "You have watched {minutes} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset."
+  },
+  "dwBreakMessageTplOne": {
+    "message": "You have been watching for {minutes} minute. Rest your eyes, stretch, or look away from the screen for a moment before continuing."
+  },
+  "dwBreakMessageTplOther": {
+    "message": "You have been watching for {minutes} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing."
+  },
+  "subImportNewTpl": {
+    "message": "{count} new"
+  },
+  "subImportUpdatedTpl": {
+    "message": "{count} updated"
+  },
+  "subImportRemovedTpl": {
+    "message": "{count} removed"
+  },
+  "subImportReplacedAll": {
+    "message": "Replaced all groups."
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}."
+  },
+  "subStaleReasonTplOne": {
+    "message": "{count} day since the newest upload on its page"
+  },
+  "subStaleReasonTplOther": {
+    "message": "{count} days since the newest upload on its page"
+  },
+  "subImportChannelsTplOne": {
+    "message": "{count} channel"
+  },
+  "subImportChannelsTplOther": {
+    "message": "{count} channels"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "{count} skipped group"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "{count} skipped groups"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "{count} skipped channel"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "{count} skipped channels"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "skipped {count} duplicate channel"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "skipped {count} duplicate channels"
+  },
+  "subImportSummaryTplOne": {
+    "message": "Imported {count} subscription group from {source} ({details})."
+  },
+  "subImportSummaryTplOther": {
+    "message": "Imported {count} subscription groups from {source} ({details})."
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "Setup file ready. {hint} The fallback command was copied too."
+  },
+  "dlInstallerReadyTpl": {
+    "message": "Setup file ready. {hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "unknown"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "Astra Deck feature bisect: {feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "Astra Deck feature bisect: no single feature is responsible"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "unknown browser"
+  },
+  "bisectReportPageTpl": {
+    "message": "Page: {page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count} step"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count} steps"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "Searched {count} enabled feature in {steps}"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "Searched {count} enabled features in {steps}"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}, {merge}, {dropped}; {excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "{count} item replaces"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "{count} items replace"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "{count} setting merges"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "{count} settings merge"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "{count} dropped"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "{count} dropped"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "{count} cache, runtime, diagnostic, or credential domain intentionally excluded"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "{count} cache, runtime, diagnostic, or credential domains intentionally excluded"
+  },
+  "externalHealthAgeNever": {
+    "message": "never"
+  },
+  "importSummaryNoChanges": {
+    "message": "no value changes"
+  },
+  "importSummarySkippedTpl": {
+    "message": "{count} skipped"
+  },
+  "importSummaryTpl": {
+    "message": "Imported {summary}."
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}."
+  },
+  "takeoutNothingNew": {
+    "message": "No new watch-history entries imported."
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "{count} duplicate already existed."
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "{count} duplicates already existed."
+  },
+  "takeoutSkippedTplOne": {
+    "message": "{count} older entry was outside the {days}-day analytics window."
+  },
+  "takeoutSkippedTplOther": {
+    "message": "{count} older entries were outside the {days}-day analytics window."
+  },
+  "takeoutImportedTplOne": {
+    "message": "Imported {count} Takeout watch entry into local watch analytics."
+  },
+  "takeoutImportedTplOther": {
+    "message": "Imported {count} Takeout watch entries into local watch analytics."
+  },
+  "importSummarySettingsTplOne": {
+    "message": "{count} setting updated"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "{count} settings updated"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "{count} hidden video"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "{count} hidden videos"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "{count} allowed video"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "{count} allowed videos"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "{count} marked-watched video"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "{count} marked-watched videos"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "{count} blocked channel"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "{count} blocked channels"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "{count} allowed channel"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "{count} allowed channels"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "{count} video with bookmarks"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "{count} videos with bookmarks"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "{count} AI summary"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "{count} AI summaries"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "{count} duplicate"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "{count} duplicates"
+  },
+  "dlInstallerRunHint": {
+    "message": "Open Downloads and double-click the setup file to install."
   }
 }

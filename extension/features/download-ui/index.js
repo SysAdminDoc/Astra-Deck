@@ -1290,10 +1290,12 @@
                 if (!downloaded) {
                     void openExternalUrl(this.INSTALLER_URL).catch(() => {});
                 }
+                const hint = t('dlInstallerRunHint', this.INSTALLER_RUN_HINT);
                 showToast(
-                    copied
-                        ? `Setup file ready. ${this.INSTALLER_RUN_HINT} The fallback command was copied too.`
-                        : `Setup file ready. ${this.INSTALLER_RUN_HINT}`,
+                    (copied
+                        ? t('dlInstallerReadyCopiedTpl', 'Setup file ready. {hint} The fallback command was copied too.')
+                        : t('dlInstallerReadyTpl', 'Setup file ready. {hint}')
+                    ).replace('{hint}', () => hint),
                     '#22c55e',
                     { duration: 8 }
                 );

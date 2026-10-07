@@ -918,9 +918,33 @@
         };
     }
 
-    function formatImportPreview(preview) {
+    function formatImportPreview(preview, i18n = {}) {
         const p = preview || {};
-        return `${Number(p.replace) || 0} items replace, ${Number(p.merge) || 0} settings merge, ${Number(p.drop) || 0} dropped; ${(p.exclusions || []).length} cache, runtime, diagnostic, or credential domains intentionally excluded`;
+        const t = typeof i18n.t === 'function' ? i18n.t : (_key, fallback) => fallback;
+        const tCount = typeof i18n.tCount === 'function'
+            ? i18n.tCount
+            : (count, key, one, other) => (Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other));
+        // One statement per piece: literal keys for the plural-key test, and
+        // each key's own .replace('{count}') next to it for check-i18n.
+        const replace = Number(p.replace) || 0;
+        const merge = Number(p.merge) || 0;
+        const drop = Number(p.drop) || 0;
+        const excluded = (p.exclusions || []).length;
+        const replaceText = tCount(replace, 'importPreviewReplaceTpl', '{count} item replaces', '{count} items replace')
+            .replace('{count}', () => String(replace));
+        const mergeText = tCount(merge, 'importPreviewMergeTpl', '{count} setting merges', '{count} settings merge')
+            .replace('{count}', () => String(merge));
+        const dropText = tCount(drop, 'importPreviewDroppedTpl', '{count} dropped', '{count} dropped')
+            .replace('{count}', () => String(drop));
+        const excludedText = tCount(excluded, 'importPreviewExcludedTpl',
+            '{count} cache, runtime, diagnostic, or credential domain intentionally excluded',
+            '{count} cache, runtime, diagnostic, or credential domains intentionally excluded')
+            .replace('{count}', () => String(excluded));
+        return t('importPreviewTpl', '{replace}, {merge}, {dropped}; {excluded}')
+            .replace('{replace}', () => replaceText)
+            .replace('{merge}', () => mergeText)
+            .replace('{dropped}', () => dropText)
+            .replace('{excluded}', () => excludedText);
     }
 
     function estimateJsonBytes(value) {

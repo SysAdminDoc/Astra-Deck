@@ -1523,16 +1523,16 @@
     "message": "이 브라우저에서는 해당 기능을 실행할 수 없습니다. 업데이트한 후 다시 시도하세요."
   },
   "featureHealthAgeDaysTpl": {
-    "message": "{count}d ago"
+    "message": "{count}일 전"
   },
   "featureHealthAgeHoursTpl": {
-    "message": "{count}h ago"
+    "message": "{count}시간 전"
   },
   "featureHealthAgeMinutesTpl": {
-    "message": "{count}m ago"
+    "message": "{count}분 전"
   },
   "featureHealthAgeSecondsTpl": {
-    "message": "{count}s ago"
+    "message": "{count}초 전"
   },
   "featureHealthAllWellTpl": {
     "message": "{healthy} features working"
@@ -9186,5 +9186,236 @@
   },
   "schemaSurfaceBackupTitle": {
     "message": "이 설정은 아직 편집기가 없습니다. 백업을 내보내 파일에서 값을 바꾼 뒤 다시 가져오세요."
+  },
+  "dwDailyLimitBadgeTpl": {
+    "message": "오늘 {minutes}분"
+  },
+  "dwDailyLimitHint": {
+    "message": "이 알림을 닫으면 다음 현지 날짜가 시작될 때까지 다시 표시되지 않습니다."
+  },
+  "dwDailyLimitDismissButton": {
+    "message": "내일까지 닫기"
+  },
+  "dwBreakBadgeTpl": {
+    "message": "{minutes}분 시청 중"
+  },
+  "dwBreakHint": {
+    "message": "다시 시작하기를 선택할 때까지 재생이 일시중지됩니다."
+  },
+  "dwDailyLimitMessageTplOne": {
+    "message": "오늘 {minutes}분 시청했습니다. 남은 하루는 쉬거나, 내일 초기화된 상태로 다시 오세요."
+  },
+  "dwDailyLimitMessageTplOther": {
+    "message": "오늘 {minutes}분 시청했습니다. 남은 하루는 쉬거나, 내일 초기화된 상태로 다시 오세요."
+  },
+  "dwBreakMessageTplOne": {
+    "message": "{minutes}분째 시청 중입니다. 계속하기 전에 눈을 쉬게 하고, 스트레칭을 하거나 잠시 화면에서 눈을 떼 보세요."
+  },
+  "dwBreakMessageTplOther": {
+    "message": "{minutes}분째 시청 중입니다. 계속하기 전에 눈을 쉬게 하고, 스트레칭을 하거나 잠시 화면에서 눈을 떼 보세요."
+  },
+  "subImportNewTpl": {
+    "message": "신규 {count}개"
+  },
+  "subImportUpdatedTpl": {
+    "message": "업데이트 {count}개"
+  },
+  "subImportRemovedTpl": {
+    "message": "삭제 {count}개"
+  },
+  "subImportReplacedAll": {
+    "message": "모든 그룹을 교체했습니다."
+  },
+  "subImportSkippedTpl": {
+    "message": "{skipped}."
+  },
+  "subStaleReasonTplOne": {
+    "message": "페이지의 최신 업로드 이후 {count}일 경과"
+  },
+  "subStaleReasonTplOther": {
+    "message": "페이지의 최신 업로드 이후 {count}일 경과"
+  },
+  "subImportChannelsTplOne": {
+    "message": "채널 {count}개"
+  },
+  "subImportChannelsTplOther": {
+    "message": "채널 {count}개"
+  },
+  "subImportSkippedGroupsTplOne": {
+    "message": "건너뛴 그룹 {count}개"
+  },
+  "subImportSkippedGroupsTplOther": {
+    "message": "건너뛴 그룹 {count}개"
+  },
+  "subImportSkippedChannelsTplOne": {
+    "message": "건너뛴 채널 {count}개"
+  },
+  "subImportSkippedChannelsTplOther": {
+    "message": "건너뛴 채널 {count}개"
+  },
+  "subImportDuplicateChannelsTplOne": {
+    "message": "중복 채널 {count}개 건너뜀"
+  },
+  "subImportDuplicateChannelsTplOther": {
+    "message": "중복 채널 {count}개 건너뜀"
+  },
+  "subImportSummaryTplOne": {
+    "message": "{source}에서 구독 그룹 {count}개를 가져왔습니다 ({details})."
+  },
+  "subImportSummaryTplOther": {
+    "message": "{source}에서 구독 그룹 {count}개를 가져왔습니다 ({details})."
+  },
+  "dlInstallerReadyCopiedTpl": {
+    "message": "설치 파일이 준비되었습니다. {hint} 대체 명령도 복사했습니다."
+  },
+  "dlInstallerReadyTpl": {
+    "message": "설치 파일이 준비되었습니다. {hint}"
+  },
+  "bisectReportUnknown": {
+    "message": "알 수 없음"
+  },
+  "bisectReportCulpritTpl": {
+    "message": "Astra Deck 기능 이진 탐색: {feature}"
+  },
+  "bisectReportNoCulprit": {
+    "message": "Astra Deck 기능 이진 탐색: 원인이 되는 단일 기능이 없습니다"
+  },
+  "bisectReportUnknownBrowser": {
+    "message": "알 수 없는 브라우저"
+  },
+  "bisectReportPageTpl": {
+    "message": "페이지: {page}"
+  },
+  "bisectReportStepsTplOne": {
+    "message": "{count}단계"
+  },
+  "bisectReportStepsTplOther": {
+    "message": "{count}단계"
+  },
+  "bisectReportSearchedTplOne": {
+    "message": "사용 중인 기능 {count}개를 {steps}에 걸쳐 조사했습니다"
+  },
+  "bisectReportSearchedTplOther": {
+    "message": "사용 중인 기능 {count}개를 {steps}에 걸쳐 조사했습니다"
+  },
+  "importPreviewTpl": {
+    "message": "{replace}, {merge}, {dropped}. {excluded}"
+  },
+  "importPreviewReplaceTplOne": {
+    "message": "{count}개 항목 교체"
+  },
+  "importPreviewReplaceTplOther": {
+    "message": "{count}개 항목 교체"
+  },
+  "importPreviewMergeTplOne": {
+    "message": "설정 {count}개 병합"
+  },
+  "importPreviewMergeTplOther": {
+    "message": "설정 {count}개 병합"
+  },
+  "importPreviewDroppedTplOne": {
+    "message": "{count}개 제외됨"
+  },
+  "importPreviewDroppedTplOther": {
+    "message": "{count}개 제외됨"
+  },
+  "importPreviewExcludedTplOne": {
+    "message": "캐시, 런타임, 진단, 자격 증명 도메인 {count}개는 의도적으로 제외됨"
+  },
+  "importPreviewExcludedTplOther": {
+    "message": "캐시, 런타임, 진단, 자격 증명 도메인 {count}개는 의도적으로 제외됨"
+  },
+  "externalHealthAgeNever": {
+    "message": "없음"
+  },
+  "importSummaryNoChanges": {
+    "message": "값 변경 없음"
+  },
+  "importSummarySkippedTpl": {
+    "message": "건너뜀 {count}개"
+  },
+  "importSummaryTpl": {
+    "message": "{summary}을(를) 가져왔습니다."
+  },
+  "importSummaryExtrasTpl": {
+    "message": "{extras}."
+  },
+  "takeoutNothingNew": {
+    "message": "가져온 새 시청 기록이 없습니다."
+  },
+  "takeoutDuplicatesTplOne": {
+    "message": "중복 {count}개는 이미 있었습니다."
+  },
+  "takeoutDuplicatesTplOther": {
+    "message": "중복 {count}개는 이미 있었습니다."
+  },
+  "takeoutSkippedTplOne": {
+    "message": "이전 기록 {count}개는 {days}일 분석 기간 밖이었습니다."
+  },
+  "takeoutSkippedTplOther": {
+    "message": "이전 기록 {count}개는 {days}일 분석 기간 밖이었습니다."
+  },
+  "takeoutImportedTplOne": {
+    "message": "Takeout 시청 기록 {count}개를 로컬 시청 분석으로 가져왔습니다."
+  },
+  "takeoutImportedTplOther": {
+    "message": "Takeout 시청 기록 {count}개를 로컬 시청 분석으로 가져왔습니다."
+  },
+  "importSummarySettingsTplOne": {
+    "message": "설정 {count}개 업데이트"
+  },
+  "importSummarySettingsTplOther": {
+    "message": "설정 {count}개 업데이트"
+  },
+  "importSummaryHiddenVideosTplOne": {
+    "message": "숨긴 동영상 {count}개"
+  },
+  "importSummaryHiddenVideosTplOther": {
+    "message": "숨긴 동영상 {count}개"
+  },
+  "importSummaryAllowedVideosTplOne": {
+    "message": "허용한 동영상 {count}개"
+  },
+  "importSummaryAllowedVideosTplOther": {
+    "message": "허용한 동영상 {count}개"
+  },
+  "importSummaryWatchedVideosTplOne": {
+    "message": "시청 완료로 표시한 동영상 {count}개"
+  },
+  "importSummaryWatchedVideosTplOther": {
+    "message": "시청 완료로 표시한 동영상 {count}개"
+  },
+  "importSummaryBlockedChannelsTplOne": {
+    "message": "차단한 채널 {count}개"
+  },
+  "importSummaryBlockedChannelsTplOther": {
+    "message": "차단한 채널 {count}개"
+  },
+  "importSummaryAllowedChannelsTplOne": {
+    "message": "허용한 채널 {count}개"
+  },
+  "importSummaryAllowedChannelsTplOther": {
+    "message": "허용한 채널 {count}개"
+  },
+  "importSummaryBookmarksTplOne": {
+    "message": "북마크가 있는 동영상 {count}개"
+  },
+  "importSummaryBookmarksTplOther": {
+    "message": "북마크가 있는 동영상 {count}개"
+  },
+  "importSummaryAiSummariesTplOne": {
+    "message": "AI 요약 {count}개"
+  },
+  "importSummaryAiSummariesTplOther": {
+    "message": "AI 요약 {count}개"
+  },
+  "importSummaryDuplicatesTplOne": {
+    "message": "중복 {count}개"
+  },
+  "importSummaryDuplicatesTplOther": {
+    "message": "중복 {count}개"
+  },
+  "dlInstallerRunHint": {
+    "message": "다운로드 폴더를 열고 설치 파일을 더블클릭하여 설치하세요."
   }
 }

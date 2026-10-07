@@ -203,7 +203,8 @@ test('the result names the feature, both versions, and the page type only', () =
     assert.match(report, /^Astra Deck 4\.84\.0$/m);
     assert.match(report, /^Chrome 129$/m);
     assert.match(report, /^Page: watch$/m);
-    assert.match(report, /Searched 4 enabled feature\(s\) in \d+ step\(s\)/);
+    // Real plurals now, not "(s)": the counts go through tCount.
+    assert.match(report, /^Searched 4 enabled features in \d+ steps?$/m);
     // Same rule as the feature report: this gets pasted in public.
     assert.equal(/https?:\/\//.test(report), false);
 });

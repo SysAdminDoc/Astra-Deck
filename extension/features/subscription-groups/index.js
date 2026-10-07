@@ -63,6 +63,12 @@
             t = (_key, fallback) => fallback
         } = deps;
 
+        // Chrome's i18n has no plurals, so a count picks between a key pair
+        // (key + 'One' / key + 'Other'), the same way ytkit.js's tCount does.
+        const tCount = (count, key, one, other) => (
+            Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other)
+        );
+
         // Failure copy: name one of the localized causes in
         // extension/core/failure-copy.js and the next action it implies. The
         // thrown text never reaches the reader; it goes to DebugManager.
@@ -1030,7 +1036,7 @@
                                         ageDays: candidate.ageDays,
                                         stagedAt: now,
                                         undoUntil: now + this._UNSUB_STAGE_TTL_MS,
-                                        reason: `${candidate.ageDays} days since newest rendered upload`,
+                                        reason: this._staleReason(candidate.ageDays),
                                         source: 'health-center'
                                     };
                                     this._writeUnsubscribeStaging(next);
@@ -1070,7 +1076,11 @@
                             const name = document.createElement('div');
                             name.className = 'ytkit-sub-digest-name';
                             name.textContent = entry.channelName || entry.channelId;
-                            name.title = entry.reason || '';
+                            // Rendered from the stored age so entries staged
+                            // before a language switch read in the new one.
+                            name.title = Number.isFinite(Number(entry.ageDays)) && entry.ageDays !== null
+                                ? this._staleReason(entry.ageDays)
+                                : (entry.reason || '');
                             const until = document.createElement('div');
                             until.className = 'ytkit-sub-digest-muted';
                             until.textContent = entry.undoUntil
@@ -1386,7 +1396,7 @@
                         ageDays: candidate.ageDays,
                         stagedAt: current[channelId]?.stagedAt || now,
                         undoUntil: now + this._UNSUB_STAGE_TTL_MS,
-                        reason: `${candidate.ageDays} days since newest rendered upload`,
+                        reason: this._staleReason(candidate.ageDays),
                         source: 'dead-channel'
                     };
                     stagedIds.push(channelId);
@@ -3060,6 +3070,13 @@
                 }
                 return merged;
             },
+            _staleReason(ageDays) {
+                return tCount(ageDays, 'subStaleReasonTpl',
+                    '{count} day since the newest upload on its page',
+                    '{count} days since the newest upload on its page')
+                    .replace('{count}', () => String(ageDays));
+            },
+
             _commitImportedGroups(groups, label, meta = {}, options = {}) {
                 const previous = this._readGroups();
                 const replace = options.mode === 'replace';
@@ -3082,18 +3099,36 @@
                 const skippedGroups = Math.max(0, Number(meta.skippedGroups) || 0);
                 const skippedChannels = Math.max(0, Number(meta.skippedChannels) || 0);
                 const duplicateChannels = Math.max(0, Number(meta.duplicateChannels) || 0);
+                const fill = (text, value) => text.replace('{count}', () => String(value));
                 const detailParts = [
-                    `${createdGroups} new`,
-                    `${updatedGroups} updated`,
-                    `${importedChannels} channel${importedChannels === 1 ? '' : 's'}`
+                    fill(t('subImportNewTpl', '{count} new'), createdGroups),
+                    fill(t('subImportUpdatedTpl', '{count} updated'), updatedGroups),
+                    fill(tCount(importedChannels, 'subImportChannelsTpl', '{count} channel', '{count} channels'), importedChannels)
                 ];
-                if (removedGroups) detailParts.push(`${removedGroups} removed`);
+                if (removedGroups) detailParts.push(fill(t('subImportRemovedTpl', '{count} removed'), removedGroups));
                 const skipParts = [];
-                if (skippedGroups) skipParts.push(`${skippedGroups} skipped group${skippedGroups === 1 ? '' : 's'}`);
-                if (skippedChannels) skipParts.push(`${skippedChannels} skipped channel${skippedChannels === 1 ? '' : 's'}`);
-                if (duplicateChannels) skipParts.push(`skipped ${duplicateChannels} duplicate channel${duplicateChannels === 1 ? '' : 's'}`);
-                const mergeNote = replace ? ' Replaced all groups.' : '';
-                const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${mergeNote}${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
+                if (skippedGroups) {
+                    skipParts.push(fill(tCount(skippedGroups, 'subImportSkippedGroupsTpl', '{count} skipped group', '{count} skipped groups'), skippedGroups));
+                }
+                if (skippedChannels) {
+                    skipParts.push(fill(tCount(skippedChannels, 'subImportSkippedChannelsTpl', '{count} skipped channel', '{count} skipped channels'), skippedChannels));
+                }
+                if (duplicateChannels) {
+                    skipParts.push(fill(tCount(duplicateChannels, 'subImportDuplicateChannelsTpl',
+                        'skipped {count} duplicate channel', 'skipped {count} duplicate channels'), duplicateChannels));
+                }
+                const sentences = [
+                    fill(tCount(count, 'subImportSummaryTpl',
+                        'Imported {count} subscription group from {source} ({details}).',
+                        'Imported {count} subscription groups from {source} ({details}).'), count)
+                        .replace('{source}', () => String(label))
+                        .replace('{details}', () => detailParts.join(', '))
+                ];
+                if (replace) sentences.push(t('subImportReplacedAll', 'Replaced all groups.'));
+                if (skipParts.length) {
+                    sentences.push(t('subImportSkippedTpl', '{skipped}.').replace('{skipped}', () => skipParts.join(', ')));
+                }
+                const message = sentences.join(' ');
                 if (typeof showToast === 'function') {
                     showToast(message, '#22c55e', {
                         duration: 6,

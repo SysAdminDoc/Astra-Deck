@@ -16,6 +16,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Digital Wellbeing's reminders, the Subscription Groups and settings import summaries, and a few other messages showed in English whatever language Astra Deck was in. They're translated into all 11 languages now, with real singular and plural forms instead of "(s)".
+
 - In the popup's Settings Overview, the chips on feature schedules and the sync allowlist used to open the in-page panel on nothing. They now point you to the backup file, which is where those two get changed.
 
 - The Reset chip on a changed setting card doesn't cover its switch or dropdown anymore. It sits beside the title now.
