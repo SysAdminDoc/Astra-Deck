@@ -332,13 +332,17 @@ async function startFirefoxSession(options) {
             }).catch(() => undefined);
         }
         killProcessTree(proc);
+        // A fetch timeout rejects with a DOMException, whose `message` is a
+        // read-only getter. Appending to it threw a TypeError that replaced
+        // the startup error it was meant to explain.
+        let message = error.message;
         try {
             await removeTempTree(profileRoot, 'Firefox WebDriver profile');
         } catch (cleanupError) {
-            error.message += `; ${cleanupError.message}`;
+            message += `; ${cleanupError.message}`;
         }
         const suffix = logs.trim() ? `\n${logs.trim().slice(-4000)}` : '';
-        throw new Error(`${error.message}${suffix}`);
+        throw new Error(`${message}${suffix}`);
     }
 }
 

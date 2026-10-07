@@ -30,7 +30,7 @@ const {
     networkEventsForToken,
     parseArgs: parseFirefoxSmokeArgs
 } = require('../scripts/smoke-firefox-webext');
-const { removeTempTree } = require('../scripts/firefox-webdriver');
+const { removeTempTree, startFirefoxSession } = require('../scripts/firefox-webdriver');
 const { LIBRARIES: USERSCRIPT_LIBRARIES } = require('../sync-userscript');
 
 test('zero-ad static rules cover every request captured during live desktop reconnaissance', () => {
@@ -315,6 +315,37 @@ test('Firefox WebDriver cleanup retries a locked profile before failing', async 
         fs.rmSync = originalRmSync;
         if (fs.existsSync(profile)) originalRmSync(profile, { recursive: true, force: true });
     }
+});
+
+test('a Firefox startup timeout is still the error when the profile will not delete', async () => {
+    // geckodriver answers /status and then never creates the session, so the
+    // fetch times out. That rejection is a DOMException with a read-only
+    // message, and the cleanup note used to be appended to it in place.
+    const originalFetch = globalThis.fetch;
+    const originalRmSync = fs.rmSync;
+    globalThis.fetch = async (url) => {
+        if (String(url).endsWith('/status')) return new Response(JSON.stringify({ value: { ready: true } }));
+        throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    };
+    fs.rmSync = () => {
+        const error = new Error('simulated profile lock');
+        error.code = 'EBUSY';
+        throw error;
+    };
+    let failure = null;
+    try {
+        await startFirefoxSession({ geckodriver: process.execPath, firefox: process.execPath, startupTimeoutMs: 2000 });
+    } catch (error) {
+        failure = error;
+    } finally {
+        globalThis.fetch = originalFetch;
+        fs.rmSync = originalRmSync;
+    }
+    const profile = /\(([^()]*astra-firefox-webdriver-[^()]*)\)/.exec(failure?.message || '')?.[1];
+    if (profile && fs.existsSync(profile)) fs.rmSync(profile, { recursive: true, force: true });
+    assert.ok(failure, 'startup must fail');
+    assert.match(failure.message, /aborted due to timeout/, 'the startup error is what gets reported');
+    assert.match(failure.message, /profile cleanup failed: simulated profile lock/, 'with the cleanup failure after it');
 });
 
 test('userscript-manager smoke closes its fixture when Firefox startup fails', async () => {
