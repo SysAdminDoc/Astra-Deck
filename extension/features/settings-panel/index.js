@@ -11,7 +11,10 @@
     // Groups a feature can declare that the panel has no category for. The
     // grouping below keeps only the panel's ten, so the 22 features in these
     // (Return YouTube Dislike among them) never had a card or a search hit.
+    // Interface is cssFeature's fourth argument for the notification bell,
+    // which a scan for group literals in object form didn't see.
     const PANEL_CATEGORY_FOR_GROUP = Object.freeze({
+        Interface: 'Home / Subscriptions',
         Research: 'Watch Page',
         Ratings: 'Watch Page',
         Integrations: 'Watch Page',
@@ -29,8 +32,16 @@
 
     function groupFeaturesBySettingsPresentation(featureList, categoryOrder, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
         const grouped = categoryOrder.reduce((acc, category) => ({ ...acc, [category]: [] }), {});
+        const byId = new Map((featureList || []).map((feature) => [feature?.id, feature]));
         for (const feature of featureList || []) {
-            const category = resolveSettingsPresentationCategory(feature, shortsSettingKeys);
+            // A sub-card is drawn under its parent, so it goes where the parent
+            // goes. By its own group, Hide End Screen Cards (Watch Page) landed
+            // on a page its parent (Video Player) isn't on, and neither page
+            // drew it. The Shorts rule still moves its own keys on purpose.
+            const parent = feature?.isSubFeature && !shortsSettingKeys.includes(feature.id)
+                ? byId.get(feature.parentId)
+                : null;
+            const category = resolveSettingsPresentationCategory(parent || feature, shortsSettingKeys);
             if (grouped[category]) grouped[category].push(feature);
         }
         return grouped;

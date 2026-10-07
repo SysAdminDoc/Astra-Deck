@@ -15489,6 +15489,7 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 (() => {
 	'use strict';
 	const PANEL_CATEGORY_FOR_GROUP = Object.freeze({
+		Interface: 'Home / Subscriptions',
 		Research: 'Watch Page',
 		Ratings: 'Watch Page',
 		Integrations: 'Watch Page',
@@ -15504,8 +15505,12 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 	}
 	function groupFeaturesBySettingsPresentation(featureList, categoryOrder, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
 		const grouped = categoryOrder.reduce((acc, category) => ({ ...acc, [category]: [] }), {});
+		const byId = new Map((featureList || []).map((feature) => [feature?.id, feature]));
 		for (const feature of featureList || []) {
-			const category = resolveSettingsPresentationCategory(feature, shortsSettingKeys);
+			const parent = feature?.isSubFeature && !shortsSettingKeys.includes(feature.id)
+				? byId.get(feature.parentId)
+				: null;
+			const category = resolveSettingsPresentationCategory(parent || feature, shortsSettingKeys);
 			if (grouped[category]) grouped[category].push(feature);
 		}
 		return grouped;

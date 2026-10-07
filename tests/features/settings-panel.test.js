@@ -178,10 +178,26 @@ test('every group a feature declares lands in a panel category', () => {
             .map((dir) => path.join(extensionRoot, 'features', dir, 'index.js'))
             .filter((file) => fs.existsSync(file))];
     const groups = new Set();
+    // cssFeature(id, name, description, group, ...) takes its group as an
+    // argument. Scanning only the object-literal form missed the notification
+    // bell's 'Interface', so that card stayed missing with this test green.
+    const textArgument = String.raw`(?:'(?:[^'\\]|\\.)*'|t\(\s*'[^']*',\s*'(?:[^'\\]|\\.)*'\s*\))`;
+    const cssFeatureGroup = new RegExp(String.raw`cssFeature\(\s*'[^']+',\s*${textArgument},\s*${textArgument},\s*'([^']+)'`, 'g');
+    let cssFeatureCalls = 0;
+    let cssFeatureGroups = 0;
     for (const file of sources) {
-        for (const [, group] of fs.readFileSync(file, 'utf8').matchAll(/group:\s*'([^']+)'/g)) groups.add(group);
+        const source = fs.readFileSync(file, 'utf8');
+        for (const [, group] of source.matchAll(/group:\s*'([^']+)'/g)) groups.add(group);
+        cssFeatureCalls += (source.match(/\bcssFeature\(\s*'/g) || []).length;
+        for (const [, group] of source.matchAll(cssFeatureGroup)) {
+            groups.add(group);
+            cssFeatureGroups += 1;
+        }
     }
-    assert.ok(groups.has('Ratings') && groups.size >= 17, 'the scan has to see the groups this test was written for');
+    assert.ok(cssFeatureCalls >= 40, `the scan has to see the cssFeature calls, saw ${cssFeatureCalls}`);
+    assert.equal(cssFeatureGroups, cssFeatureCalls, 'every cssFeature call has to yield its group, or one can hide here');
+    assert.ok(groups.has('Ratings') && groups.has('Interface') && groups.size >= 18,
+        'the scan has to see the groups this test was written for');
     const lost = [...groups].filter((group) => !categoryOrder.includes(resolveSettingsPresentationCategory({ group }, [])));
     assert.deepEqual(lost, [], 'give each a category in PANEL_CATEGORY_FOR_GROUP');
 });
@@ -193,6 +209,113 @@ test('a sub-feature stays under its parent when their group moves to another cat
         { id: 'returnDislikeOnCards', group: 'Ratings', isSubFeature: true, parentId: 'returnDislike' }
     ], ['Watch Page'], []);
     assert.deepEqual(grouped['Watch Page'].map((feature) => feature.id), ['returnDislike', 'returnDislikeOnCards']);
+});
+
+test('a sub-feature whose own group lands elsewhere goes where its parent goes', () => {
+    // Hide End Screen Cards is in Watch Page and its parent in Video Player.
+    // A sub-card is only drawn under its parent, so neither page drew it.
+    const { groupFeaturesBySettingsPresentation } = loadModule();
+    const grouped = groupFeaturesBySettingsPresentation([
+        { id: 'hideVideoEndContent', group: 'Video Player' },
+        { id: 'hideEndCards', group: 'Watch Page', isSubFeature: true, parentId: 'hideVideoEndContent' },
+        { id: 'shortsDailyLimit', group: 'Video Player', isSubFeature: true, parentId: 'hideVideoEndContent' }
+    ], ['Video Player', 'Watch Page', 'Content'], ['shortsDailyLimit']);
+    assert.deepEqual(grouped['Video Player'].map((feature) => feature.id), ['hideVideoEndContent', 'hideEndCards']);
+    assert.deepEqual(grouped['Watch Page'], []);
+    assert.deepEqual(grouped.Content.map((feature) => feature.id), ['shortsDailyLimit'],
+        'a key the Shorts rule moves still moves');
+});
+
+// The real panel build, on the fake tree document from tests/helpers. The
+// tests above call the grouping helper; this is the code that draws from it.
+function buildRealPanel(features, settings = {}) {
+    const { fakeTreeDocument } = require('../helpers/monolith');
+    const doc = fakeTreeDocument();
+    const saved = { document: globalThis.document, chrome: globalThis.chrome, YTKitCore: globalThis.YTKitCore };
+    globalThis.document = doc;
+    globalThis.chrome = { i18n: { getUILanguage: () => 'en-US', getMessage: () => '' } };
+    // A core another test loaded adds the Shorts ledger card to the build.
+    delete globalThis.YTKitCore;
+    try {
+        const byId = new Map(features.map((feature) => [feature.id, feature]));
+        const noop = () => {};
+        const runtime = loadModule().createSettingsPanelRuntime({
+            PANEL_OPEN_CLASS,
+            BRAND: { name: 'Astra Deck' },
+            CATEGORY_CONFIG: {},
+            CATEGORY_META: {},
+            CONFLICT_MAP: {},
+            FEATURE_PREVIEWS: {},
+            ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
+            LEGACY_STORAGE_KEYS: {},
+            STORAGE_KEYS: {},
+            YTKIT_VERSION: '0.0.0',
+            _i18n: { overrideLocale: '', locale: 'en', availableLocales: ['en'], messages: {} },
+            MediaDLManager: {},
+            appState: { settings },
+            DebugManager: { log: noop },
+            StorageManager: { get: (_key, fallback) => fallback, set: noop, setSync: async () => ({ ok: true }) },
+            shouldBuildPrimaryUI: () => true,
+            createToast: noop,
+            createBrandImage: () => doc.createElement('img'),
+            injectStyle: () => ({ remove: noop }),
+            ensurePanelStyles: noop,
+            isBooleanFeature: (feature) => feature?.type === 'checkbox',
+            getFeatureById: (id) => byId.get(id) || null,
+            getFeatureName: (feature) => feature?.name || '',
+            getFeatureDescription: () => '',
+            getFocusableUiElements: () => [],
+            formatPageLabel: (page) => String(page),
+            liveFeatureList: features,
+            normalizeSelectOptions: (options) => options || [],
+            settingsManager: { defaults: {}, save: async () => ({ ok: true }) },
+            showToast: noop,
+            t: (_key, fallback) => fallback,
+            trapFocusWithin: noop,
+            storageRead: () => null,
+            storageReadJSON: () => null,
+            storageWrite: noop
+        });
+        runtime.buildSettingsPanel();
+        const placed = {};
+        for (const card of doc.querySelectorAll('.ytkit-feature-card')) {
+            const where = { pane: null, under: null, promoted: false };
+            for (let node = card.parentElement; node; node = node.parentElement) {
+                if (node.classList?.contains('ytkit-sub-features') && where.under === null) {
+                    where.under = node.dataset.parentId;
+                    where.promoted = node.classList.contains('ytkit-promoted-sub-features');
+                }
+                if (node.classList?.contains('ytkit-pane')) {
+                    where.pane = node.dataset.category;
+                    break;
+                }
+            }
+            (placed[card.dataset.featureId] ||= []).push(where);
+        }
+        return placed;
+    } finally {
+        globalThis.document = saved.document;
+        globalThis.chrome = saved.chrome;
+        if (saved.YTKitCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = saved.YTKitCore;
+    }
+}
+
+test('the built panel draws every feature once, sub-cards under their parent', () => {
+    const placed = buildRealPanel([
+        { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' },
+        { id: 'hideEndCards', name: 'Hide End Screen Cards', group: 'Watch Page', type: 'checkbox', isSubFeature: true, parentId: 'hideVideoEndContent' },
+        { id: 'hideNotificationButton', name: 'Hide Notification Bell', group: 'Interface', type: 'checkbox' },
+        { id: 'returnDislike', name: 'Return YouTube Dislike', group: 'Ratings', type: 'checkbox' },
+        { id: 'returnDislikeOnCards', name: 'Dislikes on thumbnails', group: 'Ratings', type: 'checkbox', isSubFeature: true, parentId: 'returnDislike' }
+    ]);
+    assert.deepEqual(placed.hideEndCards, [{ pane: 'Video-Player', under: 'hideVideoEndContent', promoted: false }]);
+    assert.deepEqual(placed.hideNotificationButton, [{ pane: 'Home-Subscriptions', under: null, promoted: false }]);
+    // Ratings maps to Watch Page. A parent check against the raw group instead
+    // of the page would read this sub-card as one the Shorts rule moved and
+    // draw it apart from its parent.
+    assert.deepEqual(placed.returnDislikeOnCards, [{ pane: 'Watch-Page', under: 'returnDislike', promoted: false }]);
+    assert.equal(Object.keys(placed).length, 5, 'one card per feature, none dropped and none twice');
 });
 
 test('settingsPanel does not count a feature whose setting is absent from the sparse bag', () => {
