@@ -40,6 +40,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Release checks
 
+- The live bridge smoke now fails when YouTube's own in-app navigation isn't admitted, or when the bridge token is still on the page as its first script runs. It also scans `window` for anything shaped like a bridge reader.
+
 - eslint is on 10.12 and acorn on 8.19.
 
 - When Firefox took too long to start and its profile then wouldn't delete, the WebDriver helper crashed with "Cannot set property message" and the startup error was lost. It reports both now.

@@ -107,9 +107,16 @@
     // at document_start, ahead of anything a page script can add. It judges
     // each dispatch once, so an event object the page re-dispatches is refused
     // here before the listeners below ask `_isOwnNavigate` about it.
+    // The count of admitted navigates goes on the guard's page-visible state:
+    // a number, never which event, and the page sees every navigate anyway.
+    // The live bridge smoke reads it to prove a real in-app navigation got in.
+    var _navigatesAdmitted = 0;
     if (_bridgeReader && typeof _NATIVE.addEventListener === 'function') {
         _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
-            _bridgeReader.admitNavigate(event);
+            if (_bridgeReader.admitNavigate(event) && _mainRuntimeGuard) {
+                _navigatesAdmitted += 1;
+                _mainRuntimeGuard.update({ navigatesAdmitted: _navigatesAdmitted });
+            }
         }, true);
     }
 

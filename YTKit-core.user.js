@@ -23680,9 +23680,13 @@ void 0;
 		? _createInjectionGuard({ key: '__ytkitMainRuntime', owner: 'main-world-bridge' })
 		: null;
 	if (_mainRuntimeGuard && !_mainRuntimeGuard.claimed) return;
+	var _navigatesAdmitted = 0;
 	if (_bridgeReader && typeof _NATIVE.addEventListener === 'function') {
 		_NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
-			_bridgeReader.admitNavigate(event);
+			if (_bridgeReader.admitNavigate(event) && _mainRuntimeGuard) {
+				_navigatesAdmitted += 1;
+				_mainRuntimeGuard.update({ navigatesAdmitted: _navigatesAdmitted });
+			}
 		}, true);
 	}
 	var _createTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.createPlayerTaskManager;

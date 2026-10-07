@@ -4,21 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P3 — A page's yt-navigate-finish still gets a sealed navigate out of the isolated world, and the live bridge smoke misses three checks
-  Why: the 2026-10-06 review of the bridge commits left these after the MAIN task manager
-  stopped listening to raw navigate events. (1) The isolated world turns YouTube's
-  `yt-navigate-finish` into the sealed navigate, and the DOM is shared, so a page that
-  dispatches that event still gets a sealed navigate out of the isolated world. Handlers re-read
-  sealed state, so it's a re-run, never a forged value. (2) `scripts/smoke-main-bridge-live.js`
-  doesn't check that a real in-app navigation is admitted as a sealed navigate, that the token
-  attribute is gone before page scripts run, or that no bridge reader is reachable from `window`.
-  Where: the sealed-navigate relay in `extension/core/navigation.js`,
-  `scripts/smoke-main-bridge-live.js`.
-  Acceptance: the live bridge smoke SHALL fail when a real in-app navigation isn't admitted,
-  when the token attribute is readable after document_start, or when a reader is reachable
-  from `window`.
-  Complexity: M
-
 - [ ] P3 — Finish the English UI strings built outside the copy gate's sinks
   Why: the 2026-09-23 audit swept every untagged template literal with `${}` in extension
   code and found user-facing English the UI-copy gate cannot see (copy built in a `return`,
