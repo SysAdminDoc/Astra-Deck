@@ -15,15 +15,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   an editor its chip lands on, or the chip says where it is changed.
   Complexity: S
 
-- [ ] P3 — A card's Reset chip sits on top of its switch
-  Why: seen 2026-10-06 in the headless Reset check. The chip is absolutely placed 8px from the
-  card's top-right corner, and on a toggle card (Custom CSS) it overlaps the top edge of the
-  switch by about 7px.
-  Where: `extension/features/settings-panel/index.js` (`.ytkit-card-reset`, ~859).
-  Acceptance: on a changed toggle card the chip's box SHALL NOT intersect the switch's box, in
-  both themes, at 1400 and 900 px wide (checked from getBoundingClientRect in a headless panel).
-  Complexity: S
-
 - [ ] P3 — A page's yt-navigate-finish still gets a sealed navigate out of the isolated world, and the live bridge smoke misses three checks
   Why: the 2026-10-06 review of the bridge commits left these after the MAIN task manager
   stopped listening to raw navigate events. (1) The isolated world turns YouTube's
@@ -176,15 +167,16 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   (for example from the feature's settings card or an empty-state pill).
   Complexity: S
 
-- [ ] P3 — Firefox extension: first YouTube load after a temporary install logs "Runtime module load failed undefined"
-  Why: 2026-09-29, seen in headless Firefox during the userscript parity pass. The first
-  YouTube page after `about:debugging` loads the add-on logs the failure once, then every later
-  load is clean. It looks like a race between the runtime bootstrap and the module loader on the
-  very first page, and the error value is lost on the way to the log (`undefined`).
-  Where: `extension/runtime-bootstrap.js`, `extension/runtime-core-loader.mjs` (the catch that
-  logs it).
-  Acceptance: a fresh temporary install's first YouTube load SHALL log no module failure, and a
-  real failure SHALL log its message and the module that failed.
+- [ ] P3 — Confirm the Firefox first-load module failure is gone
+  Why: the runtime loader now names the failing module and retries once when a load rejects with
+  no value, aimed at the "Runtime module load failed undefined" line seen 2026-09-29 on the first
+  YouTube load after a temporary install. The race hasn't been reproduced since, so the retry
+  guards the symptom and isn't a confirmed fix. A 2026-10-06 run of
+  `scripts/smoke-firefox-webext.js` from a worktree timed out at 280 s, and the smoke listens only
+  to `log.entryAdded`, so it can't assert extension console errors anyway.
+  Where: `scripts/smoke-firefox-webext.js`, `extension/runtime-core-loader.mjs`.
+  Acceptance: the Firefox smoke SHALL capture the extension's console, and a fresh temporary
+  install's first YouTube load SHALL log no module failure there.
   Complexity: S
 
 - [ ] P3 — Finish the 2026-09-28 audit sweep
@@ -249,16 +241,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   Touches: `README.md` (a tested-pairs line), then a pull request to that list.
   Acceptance: README names the browser and manager pairs the smokes cover, and a pull request
   following that CONTRIBUTING.md is open.
-  Complexity: S
-
-- [ ] P3 — Bump eslint to 10.12 and acorn to 8.19
-  Why: eslint 10.12.0 shipped 2026-10-02 and acorn 8.19.0 is out. `package.json` pins acorn at
-  exactly 8.16.0 and eslint at `^10.9.1`. Updates here are manual by policy.
-  Evidence: `package.json:117-118`; `npm view eslint version` and `npm view acorn version` on
-  2026-10-05. Confidence: Verified.
-  Touches: `package.json`, `package-lock.json`, any lint or parse output that shifts.
-  Acceptance: both bumped, and `npm run check` and `npm test` give the same results as before
-  apart from the known deps finding.
   Complexity: S
 
 - [ ] P3 — Check the Shorts settings against Shorts Series on desktop web

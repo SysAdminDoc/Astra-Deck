@@ -16,6 +16,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The Reset chip on a changed setting card doesn't cover its switch or dropdown anymore. It sits beside the title now.
+
+- When a core module fails to load, the log names the module and its error instead of "undefined". A load that fails with no error at all gets one retry.
+
 - Jump to Most Replayed clicked during an ad used to end the ad and start the video at 0:00. Now it waits for the video and then jumps to the peak. Heatmap Smart Speed also stopped steering ads by the video's curve, so an ad plays at your own speed.
 
 - Blocked channels hide in the watch page sidebar now. Those cards don't link their channel, so the blocklist couldn't tell whose video they were and showed them anyway. Astra reads the channel from YouTube's own card data instead, by channel ID, so two channels with the same name can't be mixed up. A channel you blocked from a feed card is matched there too once Astra has seen it on any card, and the allowlist judges sidebar cards the same way.
@@ -33,6 +37,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - A card's Reset button could switch a hide on. On a Guide, chat or player list you'd never changed, turning an item on and off again made Reset turn it back on, because the switch had quietly moved the default too. Undo on the Reset toast works after you've closed the panel now, and a Reset that needs host access waits for your answer before it says anything was reset.
 
 ### Release checks
+
+- eslint is on 10.12 and acorn on 8.19.
 
 - When Firefox took too long to start and its profile then wouldn't delete, the WebDriver helper crashed with "Cannot set property message" and the startup error was lost. It reports both now.
 
