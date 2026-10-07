@@ -2,7 +2,7 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.parseCompactCount && core.escapeRegExp) return;
+    if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText) return;
 
     function hex(value, width = 2) {
         return value.toString(16).padStart(width, '0');
@@ -221,8 +221,21 @@
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
+    // The words a card uses for a premiere or a scheduled stream. A 2026-09
+    // lockup carries no structural marker for either: an "Upcoming" badge and
+    // a "Scheduled for" or "Premieres" row are all there is, so Video Hider
+    // and Watch Feed both read the words. Latin terms are written without
+    // diacritics because the text is folded first. NFD also splits Hangul
+    // into Jamo, which \p{M} leaves alone, so NFC puts the syllables back.
+    const UPCOMING_CARD_PATTERN = /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i;
+
+    function isUpcomingCardText(text) {
+        const folded = String(text || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+        return UPCOMING_CARD_PATTERN.test(folded);
+    }
+
     // normalizeDigits is shared: the transcript scraper needs the same
     // Arabic-Indic / Devanagari / Thai / fullwidth table when it reads a
     // rendered timestamp out of YouTube's own DOM.
-    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
+    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText });
 })();

@@ -18,6 +18,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- An upcoming premiere or scheduled stream in the watch sidebar isn't mistaken for a Mix anymore. Hide Mixes leaves it alone, and it keeps its Watch Feed button. YouTube's newer cards only say "Upcoming" in words, which both features now read in every supported language.
+
 - If the settings panel's code fails to load, opening the panel now tells you to reload the page. Before, it quietly showed an older built-in copy that had fallen behind: some cards were missing (Return YouTube Dislike and the notification bell among them) and a few messages stayed in English. That copy, about 3,900 lines, is gone, and the build checks keep it from coming back.
 
 - Theater Split's comments count lines up with the header text again, and the collapsed edge now says "Show comments" when you hover or tab to it. The standalone Theater Split userscript gets the same fix as 1.0.20.

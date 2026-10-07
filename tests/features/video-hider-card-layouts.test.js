@@ -476,6 +476,41 @@ test('a live stream linked into a radio is live, not a Mix', () => {
     assert.equal(metadata.isMix, false);
 });
 
+// Captured live on 2026-10-06 from a channel's Live tab. A 2026-09 upcoming
+// lockup has no overlay-style or upcoming attribute: an "Upcoming" badge and a
+// "Scheduled for" row are its only markers. No upcoming card was in a watch
+// sidebar at capture time, so the radio link music sidebars use is added here.
+function upcomingRadioCard() {
+    return parseCard(CURRENT['lockup: channel live tab, upcoming']
+        .replaceAll('href="/watch?v=dGSqblvgLIE"', 'href="/watch?v=dGSqblvgLIE&amp;list=RDdGSqblvgLIE&amp;start_radio=1"'));
+}
+
+test('an upcoming premiere linked into a radio is upcoming, not a Mix', () => {
+    const card = upcomingRadioCard();
+    assert.match(card.querySelector('a').getAttribute('href'), /start_radio=1/, 'fixture really is radio-linked');
+    assert.equal(card.querySelector('[overlay-style], [data-upcoming], [is-upcoming]'), null,
+        'the capture really has none of the old upcoming markers');
+    const hider = feature({ hideVideosHideMixes: true });
+    const metadata = hider._extractVideoMetadata(card);
+    assert.equal(metadata.isUpcoming, true);
+    assert.equal(metadata.isMix, false);
+    assert.deepEqual(hider._matchesMetadataFilters(card), { hide: false, reason: '' });
+});
+
+test('Watch Feed keeps its button on an upcoming premiere linked into a radio', () => {
+    const { loadFeature } = require('../helpers/monolith');
+    // A vm context has no URL, and the collection check parses the href.
+    const watchFeed = loadFeature('persistentQueue', {
+        URL,
+        YTKitCore: globalThis.YTKitCore,
+        getVideoId: (value) => new URL(value, 'https://www.youtube.com').searchParams.get('v')
+    });
+    const data = watchFeed._extractCardData(upcomingRadioCard());
+    assert.equal(data?.id, 'dGSqblvgLIE', 'an upcoming video is one video, so it gets the button');
+    // The same check still drops a real Mix, so the case above can fail.
+    assert.equal(watchFeed._extractCardData(parseCard(CURRENT['lockup: watch sidebar mix'])), null);
+});
+
 test('a new search starts a fresh count even though the path stays /results', () => {
     const source = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
     const start = source.indexOf("addNavigateRule('hideVideosFromHomeNav'");

@@ -23600,6 +23600,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const badges = card?.querySelectorAll?.('ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model') || [];
                 if (Array.from(badges).some((badge) => /\d+:\d{2}/.test(badge.textContent || ''))) return false;
                 if (card?.querySelector?.('.ytBadgeShapeThumbnailLive, .ytBadgeShapeLive, ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]')) return false;
+                // A 2026-09 lockup's premiere has no structural badge, only an
+                // "Upcoming" badge and a "Scheduled for" or "Premieres" row.
+                const rows = card?.querySelectorAll?.('yt-thumbnail-badge-view-model, yt-content-metadata-view-model, #metadata-line') || [];
+                if (globalThis.YTKitCore?.isUpcomingCardText?.(Array.from(rows, (row) => row.textContent || '').join(' '))) return false;
                 try {
                     const url = new URL(href, 'https://www.youtube.com');
                     return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';

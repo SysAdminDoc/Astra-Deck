@@ -236,3 +236,22 @@ test('settings search escapes literal filter text', () => {
             `${rel} must escape the user-supplied search query before matching`);
     }
 });
+
+// Shared by Video Hider and Watch Feed: a 2026-09 lockup says it is upcoming
+// only in words. Accents and Hangul survive the fold.
+test('isUpcomingCardText reads upcoming wording in every shipped language', () => {
+    const { isUpcomingCardText } = loadCore();
+    for (const text of [
+        'Upcoming 9 waiting Scheduled for 10/7/26, 7:45 AM',
+        'Premieres 10/10/26, 12:00 PM',
+        'Programado para mañana · Establecer recordatorio',
+        'Première prévue pour demain',
+        '配信予定 · リマインダーを設定',
+        '예정 · 알림 설정',
+        'مجدول · تعيين تذكير',
+        'Премьера состоится завтра'
+    ]) assert.equal(isUpcomingCardText(text), true, text);
+    for (const text of ['Mix · Cyndi Lauper, Rick Astley, a-ha, and more', '1.1M views 6d ago', '4:12', '', null]) {
+        assert.equal(isUpcomingCardText(text), false, String(text));
+    }
+});

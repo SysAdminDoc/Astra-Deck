@@ -2050,11 +2050,15 @@
                 const isMembersOnly = element.querySelector('[aria-label="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
                 const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], .ytBadgeShapeLive, .ytBadgeShapeThumbnailLive');
                 const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
+                // A 2026-09 lockup has none of those markers. Its premiere or
+                // scheduled stream says so only in words: an "Upcoming" badge
+                // and a "Scheduled for" or "Premieres" row.
+                const rowsSayUpcoming = globalThis.YTKitCore?.isUpcomingCardText?.(normalizedRowsText) === true;
                 // Music watch pages link plain videos into a radio as well, so
                 // a radio link marks a Mix only on a card with no running
                 // time. A Mix has none; a video always shows one, except a
-                // live stream or premiere, which carries its own badge.
-                const radioCandidate = !hasDuration && !hasLiveMarker && !hasUpcomingMarker;
+                // live stream or premiere, which shows its badge instead.
+                const radioCandidate = !hasDuration && !hasLiveMarker && !hasUpcomingMarker && !rowsSayUpcoming;
                 const hasRadioLink = radioCandidate && !!element.querySelector('a[href*="start_radio=1"], a[href*="list=RD"]');
                 const hasMixMarker = hasRadioLink || !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"]');
                 const hasPlaylistMarker = !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer, ytd-playlist-video-renderer, [is-playlist], [data-list-type="playlist"]');
@@ -2076,8 +2080,7 @@
                     uploadCadencePerDay: extractUploadCadencePerDay(`${metadataText} ${descriptionText} ${channelText}`),
                     isLive: hasLiveMarker
                         || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
-                    isUpcoming: hasUpcomingMarker
-                        || /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i.test(normalizedRowsText),
+                    isUpcoming: hasUpcomingMarker || rowsSayUpcoming,
                     // Type detection reads ONLY badge/metadata rows — matching
                     // against the title hid videos titled "How to mix audio",
                     // "movie review", or "top 5 videos".

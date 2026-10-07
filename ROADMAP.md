@@ -27,17 +27,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   keys present in all 11 locales, with counts through `tCount`.
   Complexity: M
 
-- [ ] P3 — Tell an upcoming premiere lockup linked into a radio from a Mix
-  Why: Hide Mixes and Watch Feed treat a card with no running time and a radio link as a Mix
-  unless it carries a live or upcoming marker. The upcoming checks look for
-  `[overlay-style="UPCOMING"]`, `[data-upcoming]` and `[is-upcoming]`, which 2026-09 lockup cards
-  don't have, so a premiere in the music sidebar still reads as a Mix (fourth verification pass).
-  Where: `extension/features/video-hider/index.js` `radioCandidate` (~1798),
-  `extension/ytkit.js` Watch Feed's copy (~23551).
-  Acceptance: a fixture trimmed from a live capture of an upcoming lockup in a watch sidebar,
-  and a test that it is not a Mix and keeps its Watch Feed button.
-  Complexity: S
-
 - [ ] P3 — Selector asset hardening
   Why: 2026-09-28 audit, confirmed. The stored `ytkit-selector-asset` is never re-verified and
   outlives upgrades (the disable feed got a `-v2` key bump for this; the asset didn't). Any old
@@ -142,6 +131,18 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   `scripts/generate-pseudolocale.js`, `extension/popup.js` locale selection.
   Acceptance: WHEN the a11y smoke runs the popup surface, THEN the pseudo lane SHALL render
   pseudo-locale copy and pass, and a test SHALL fail if the lane quietly renders real copy.
+  Complexity: S
+
+- [ ] P3 — Hide Planned Livestreams reads its own upcoming wording
+  Why: three features decide whether a card is upcoming. Video Hider and Watch Feed share
+  `isUpcomingCardText` in `extension/core/text-metrics.js` (11 languages, accents folded) since
+  2026-10-06, but Hide Planned Livestreams keeps `_SCHEDULED_RE` in `extension/ytkit.js`, which
+  covers six languages and adds "waiting for" and "starts in N" that the shared one lacks. A
+  Japanese or Korean "upcoming" card is upcoming to Video Hider and not to this feature.
+  Where: `extension/ytkit.js` (`hidePlannedLivestreams`, `_SCHEDULED_RE`),
+  `extension/core/text-metrics.js`, `tests/features/hide-planned-livestreams.test.js`.
+  Acceptance: WHEN a card's rows carry upcoming wording in any shipped language, THEN Hide Planned
+  Livestreams, Video Hider and Watch Feed SHALL agree it is upcoming, through one shared pattern.
   Complexity: S
 
 ## Research-Driven Additions

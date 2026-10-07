@@ -817,8 +817,9 @@ test('Video Hider live/upcoming regex pins read metadata rows', () => {
 
     assert.match(block, /isLive:[\s\S]*?\.test\(normalizedRowsText\) && !hasDuration/,
         'module live fallback must inspect metadata rows');
-    assert.match(block, /isUpcoming:[\s\S]*?\.test\(normalizedRowsText\)/,
+    assert.match(block, /const rowsSayUpcoming = [^\n]*isUpcomingCardText\?\.\(normalizedRowsText\)/,
         'module upcoming detection must inspect metadata rows');
+    assert.match(block, /isUpcoming: hasUpcomingMarker \|\| rowsSayUpcoming,/);
     assert.doesNotMatch(block, /\.test\(metadataText\)/,
         'module type detection must not scan the title-inclusive metadata text');
 });

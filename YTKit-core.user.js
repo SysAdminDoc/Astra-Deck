@@ -10536,7 +10536,7 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 (() => {
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-	if (core.parseCompactCount && core.escapeRegExp) return;
+	if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText) return;
 	function hex(value, width = 2) {
 		return value.toString(16).padStart(width, '0');
 	}
@@ -10713,7 +10713,12 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 		if (!token) return missingValue;
 		return Math.round(token.number * parseSuffix(token.suffix));
 	}
-	Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
+	const UPCOMING_CARD_PATTERN = /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i;
+	function isUpcomingCardText(text) {
+		const folded = String(text || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+		return UPCOMING_CARD_PATTERN.test(folded);
+	}
+	Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText });
 })();
 };
 __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes) {
