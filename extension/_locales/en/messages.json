@@ -9481,5 +9481,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "Show comments"
+  },
+  "settingsPanelUnavailable": {
+    "message": "The settings panel didn't load. Reload the page to try again."
   }
 }

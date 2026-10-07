@@ -64,7 +64,7 @@ test('the observer that existed only to drain it is gone too', () => {
 test('the reason the panel needs no per-open teardown is written down', () => {
     // Without this the next reader re-adds the registry, having found the same
     // six unremoved document listeners the audit did.
-    for (const [label, source] of [['settings-panel', settingsPanel], ['ytkit.js', monolith]]) {
+    for (const [label, source] of [['settings-panel', settingsPanel]]) {
         assert.match(source, /No per-open cleanup registry here on purpose/, label);
         assert.match(source, /guarded by\s*\n\s*\/\/ isSettingsPanelOpen\(\)/, label);
     }

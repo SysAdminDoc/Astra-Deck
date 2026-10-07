@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "显示评论"
+  },
+  "settingsPanelUnavailable": {
+    "message": "设置面板未能加载。请重新加载页面后重试。"
   }
 }

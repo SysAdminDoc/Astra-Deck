@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "إظهار التعليقات"
+  },
+  "settingsPanelUnavailable": {
+    "message": "لم يتم تحميل لوحة الإعدادات. أعد تحميل الصفحة للمحاولة مرة أخرى."
   }
 }

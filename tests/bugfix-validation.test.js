@@ -417,7 +417,7 @@ test('video hider exposes split hide-all and restore-page controls', () => {
     const path = require('path');
     const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
-    const ytkitSource = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const panelSource = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
 
     const start = source.indexOf("id: 'hideVideosFromHome'");
     assert.ok(start > -1, 'video hider module should exist');
@@ -507,18 +507,18 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should keep restore controls in sync with page state');
     assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-remove-btn')"),
         'video hider should keep remove controls in sync with page state');
-    assert.ok(ytkitSource.includes('Allowed Videos')
-        && ytkitSource.includes('Add Hidden Video')
-        && ytkitSource.includes('Add Allowed Video')
-        && ytkitSource.includes('Remove From List')
-        && ytkitSource.includes('Clear Hidden List Only')
-        && ytkitSource.includes('Restore & Allow')
-        && ytkitSource.includes('Hidden Card Behavior')
-        && ytkitSource.includes('Thumbnail Controls')
-        && ytkitSource.includes('Run On')
-        && ytkitSource.includes('Content Type Filters')
-        && ytkitSource.includes('Low-View Threshold')
-        && ytkitSource.includes('Hide Watched Ratio'),
+    assert.ok(panelSource.includes('Allowed Videos')
+        && panelSource.includes('Add Hidden Video')
+        && panelSource.includes('Add Allowed Video')
+        && panelSource.includes('Remove From List')
+        && panelSource.includes('Clear Hidden List Only')
+        && panelSource.includes('Restore & Allow')
+        && panelSource.includes('Hidden Card Behavior')
+        && panelSource.includes('Thumbnail Controls')
+        && panelSource.includes('Run On')
+        && panelSource.includes('Content Type Filters')
+        && panelSource.includes('Low-View Threshold')
+        && panelSource.includes('Hide Watched Ratio'),
         'video hider settings should expose manual list editing, allowlist, behavior, controls, scope, and content-type sections');
 });
 
@@ -1324,7 +1324,7 @@ test('videoScreenshot exposes capture states and mutation-driven reinjection', (
 test('textarea input handler uses debounce for feature reinit', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
 
     // Find the textarea input handler section
     const idx = source.indexOf('_textareaReinitTimer');
@@ -1343,7 +1343,7 @@ test('textarea input handler uses debounce for feature reinit', () => {
 test('textarea value uses nullish coalescing to preserve falsy values', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
 
     // The textarea value assignment should use ?? not ||
     const textareaValueMatch = source.match(/textarea\.value\s*=\s*appState\.settings\[f\.settingKey \|\| f\.id\]\s*\?\?/);
@@ -1575,7 +1575,7 @@ test('subtitle download no longer carries the unused unsafe _decode helper', () 
 test('blocked channel avatar initial survives surrogate-pair names', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
 
     // Array.from() iterates by code point so emoji/CJK-only channel names
     // no longer render half of a surrogate pair in the avatar bubble.

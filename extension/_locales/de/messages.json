@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "Kommentare anzeigen"
+  },
+  "settingsPanelUnavailable": {
+    "message": "Das Einstellungsfenster wurde nicht geladen. Lade die Seite neu, um es erneut zu versuchen."
   }
 }

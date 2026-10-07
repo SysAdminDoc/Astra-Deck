@@ -91,12 +91,51 @@ function measure() {
     };
 }
 
+// A peeled surface can also leave a full inline copy behind as a "fallback"
+// for when its module fails to load. That copy runs on nobody's machine, so it
+// drifts: the settings panel's ran to about 3,900 lines with English literals
+// the module had long since routed through t(). The baseline's
+// retiredFallbacks records each copy that was cut: its delegates must stay
+// stubs that call the module and report the surface unavailable, and the
+// functions that held the copy must not come back.
+const RETIRED_DELEGATE_MAX_LINES = 8;
+
+function functionLineCount(source, name) {
+    const match = new RegExp(`\\n( +)(?:async )?function ${name}\\(`).exec(source);
+    if (!match) return null;
+    const start = match.index + 1;
+    const end = source.indexOf(`\n${match[1]}}\n`, start);
+    if (end < 0) return null;
+    return source.slice(start, end + match[1].length + 2).split('\n').length;
+}
+
+function checkRetiredFallbacks(source, retiredFallbacks) {
+    const problems = [];
+    for (const [surface, entry] of Object.entries(retiredFallbacks || {})) {
+        for (const name of entry.delegates || []) {
+            const lines = functionLineCount(source, name);
+            if (lines === null) {
+                problems.push(`${surface}: delegate ${name}() is gone from extension/ytkit.js; update the baseline if it moved`);
+            } else if (lines > RETIRED_DELEGATE_MAX_LINES) {
+                problems.push(`${surface}: ${name}() is ${lines} lines, over the ${RETIRED_DELEGATE_MAX_LINES}-line stub cap; `
+                    + `the inline copy retired on ${entry.retiredAt} is growing back`);
+            }
+        }
+        for (const name of entry.removed || []) {
+            if (functionLineCount(source, name) !== null) {
+                problems.push(`${surface}: ${name}() is back in extension/ytkit.js; it held the inline copy retired on ${entry.retiredAt}`);
+            }
+        }
+    }
+    return problems;
+}
+
 function readBaseline() {
     if (!fs.existsSync(BASELINE_PATH)) return null;
     return JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8'));
 }
 
-function writeBaseline(current, reason) {
+function writeBaseline(current, reason, retiredFallbacks) {
     const baseline = {
         schemaVersion: 1,
         recordedAt: new Date().toISOString().slice(0, 10),
@@ -107,6 +146,7 @@ function writeBaseline(current, reason) {
         // to be able to name which feature moved rather than saying "one more".
         inlineOnlyFeatureIds: current.inlineOnly,
     };
+    if (retiredFallbacks) baseline.retiredFallbacks = retiredFallbacks;
     fs.writeFileSync(BASELINE_PATH, `${JSON.stringify(baseline, null, 2)}\n`, 'utf8');
     return baseline;
 }
@@ -144,6 +184,15 @@ function main(argv) {
         return 0;
     }
 
+    const retiredProblems = checkRetiredFallbacks(fs.readFileSync(MONOLITH_PATH, 'utf8'), baseline.retiredFallbacks);
+    if (retiredProblems.length) {
+        console.error('[monolith-peel] FAIL — a retired inline fallback is coming back:');
+        for (const problem of retiredProblems) console.error(`[monolith-peel]   ${problem}`);
+        return 1;
+    }
+    const retiredCount = Object.keys(baseline.retiredFallbacks || {}).length;
+    if (retiredCount) console.log(`[monolith-peel] ${retiredCount} retired inline fallback(s) still stubs`);
+
     const previous = new Set(baseline.inlineOnlyFeatureIds || []);
     const currentSet = new Set(current.inlineOnly);
     const added = current.inlineOnly.filter((id) => !previous.has(id));
@@ -170,7 +219,7 @@ function main(argv) {
     }
 
     if (record) {
-        const written = writeBaseline(current, baseline.reason || 'Ratchet lowered after a peel.');
+        const written = writeBaseline(current, baseline.reason || 'Ratchet lowered after a peel.', baseline.retiredFallbacks);
         console.log(`[monolith-peel] recorded ${written.inlineOnlyFeatureIdCount} inline feature id(s) `
             + `(was ${baseline.inlineOnlyFeatureIdCount}).`);
         return 0;
@@ -190,4 +239,4 @@ if (require.main === module) {
     process.exitCode = main(process.argv.slice(2));
 }
 
-module.exports = { measure, main, BASELINE_PATH };
+module.exports = { measure, main, checkRetiredFallbacks, functionLineCount, BASELINE_PATH, RETIRED_DELEGATE_MAX_LINES };

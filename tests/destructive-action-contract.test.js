@@ -40,7 +40,6 @@ function hiddenListDeleteHandler(label, source) {
 
 test('per-entry hidden-list delete offers the same undo its bulk siblings do', () => {
     for (const [label, source] of [
-        ['monolith', ytkitSource],
         ['settings-panel module', settingsPanelSource]
     ]) {
         const block = hiddenListDeleteHandler(label, source);
@@ -56,14 +55,15 @@ test('per-entry hidden-list delete offers the same undo its bulk siblings do', (
     }
 });
 
-test('both hidden-list copies stayed in step', () => {
-    // The peel left two implementations of this panel; a fix applied to one and
-    // not the other is the failure mode this repo keeps hitting.
-    const monolith = hiddenListDeleteHandler('monolith', ytkitSource);
+test('the hidden-list delete has one copy, so no fix can miss the other', () => {
+    // The peel left two implementations of this panel, and a fix applied to
+    // one and not the other was the failure mode this repo kept hitting. The
+    // ytkit.js copy was retired on 2026-10-06; it must not come back.
+    assert.ok(!ytkitSource.includes('videoHiderRemoveHiddenVideoAriaTpl'),
+        'ytkit.js must not build a second hidden-list delete action');
     const module = hiddenListDeleteHandler('settings-panel module', settingsPanelSource);
     for (const marker of ['_addHiddenVideos?.(removed)', 'toastActionUndo', 'if (removed.length === 0)']) {
-        assert.ok(monolith.includes(marker) && module.includes(marker),
-            `both copies must carry ${marker}`);
+        assert.ok(module.includes(marker), `the module copy must carry ${marker}`);
     }
 });
 

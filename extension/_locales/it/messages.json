@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "Mostra commenti"
+  },
+  "settingsPanelUnavailable": {
+    "message": "Il pannello delle impostazioni non è stato caricato. Ricarica la pagina per riprovare."
   }
 }

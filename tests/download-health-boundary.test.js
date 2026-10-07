@@ -349,8 +349,14 @@ test('all normal and recovery auto-start paths use the documented cold-start bud
     assert.ok(callArgs.length >= 4, 'module should cover the initial, recovery, and UI retry paths');
     assert.ok(callArgs.every((arg) => arg === 'AUTO_START_RETRY_BUDGET'
         || arg === 'likelyNeverInstalled ? 2 : AUTO_START_RETRY_BUDGET'));
-    assert.match(monolithSource, /const AUTO_START_RETRY_BUDGET = 8;/);
-    assert.match(monolithSource, /MediaDLManager\.tryAutoStart\(AUTO_START_RETRY_BUDGET\)/);
+    // The other caller was the inline settings-panel copy in ytkit.js, retired
+    // on 2026-10-06. The module's panel takes the default, which is the budget.
+    const panelSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'),
+        'utf8'
+    );
+    assert.match(panelSource, /MediaDLManager\.tryAutoStart\(\)/);
+    assert.doesNotMatch(monolithSource, /\.tryAutoStart\(/);
 
     // The userscript used to ship a SEPARATE GM downloader implementation, so
     // this fix had to be hand-ported, and the pin that was supposed to protect

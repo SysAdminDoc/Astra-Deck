@@ -211,8 +211,10 @@ function featureSourceFrom(source, id) {
         `feature '${id}' has ${opens.length} array entries in this source; name the copy you mean`);
     const start = opens[0];
     const needle = source.slice(start, source.indexOf(marker, start) + marker.length);
-    const nextId = source.indexOf("\n            id: '", start + needle.length);
-    assert.ok(nextId > start, `feature '${id}' must be followed by another feature`);
+    const arrayEnd = source.indexOf('\n    ];', start + needle.length);
+    let nextId = source.indexOf("\n            id: '", start + needle.length);
+    if (nextId < 0 || (arrayEnd > 0 && arrayEnd < nextId)) nextId = arrayEnd;
+    assert.ok(nextId > start, `feature '${id}' must be followed by another feature or the array's end`);
     const region = source.slice(start + 1, nextId);
     FEATURE_CLOSE.lastIndex = 0;
     const closes = [];

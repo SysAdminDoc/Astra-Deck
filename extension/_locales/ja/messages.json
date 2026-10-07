@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "コメントを表示"
+  },
+  "settingsPanelUnavailable": {
+    "message": "設定パネルを読み込めませんでした。ページを再読み込みしてもう一度お試しください。"
   }
 }

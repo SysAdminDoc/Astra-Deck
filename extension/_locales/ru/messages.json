@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "Показать комментарии"
+  },
+  "settingsPanelUnavailable": {
+    "message": "Панель настроек не загрузилась. Перезагрузите страницу и попробуйте снова."
   }
 }

@@ -32,15 +32,15 @@ const defaultSettings = JSON.parse(read('extension', 'default-settings.json'));
 const schemaModule = require('../extension/core/settings-schema.js');
 const { readUserscriptBuild, userscriptBundles } = require('./helpers/source');
 
-// The userscript used to carry its own settings panel copy, pinned alongside
-// the module and the monolith below. It is generated from extension/ now and
-// runs the same settings-panel module and ytkit.js, so those two sources are
-// the whole contract; these checks prove the userscript ships them.
+// The userscript used to carry its own settings panel copy, and ytkit.js had
+// an inline one too. Both are gone: the settings-panel module builds the panel
+// everywhere and ytkit.js keeps the panel CSS, so those two sources are the
+// whole contract; these checks prove the userscript ships them.
 function assertUserscriptRunsSettingsPanel() {
     assert.ok(userscriptBundles('features/settings-panel/index.js'),
         'the userscript must ship the settings-panel module');
     assert.equal(readUserscriptBuild().modules.app, 'ytkit.js',
-        'the userscript must run the same ytkit.js panel fallback and CSS');
+        'the userscript must run the same ytkit.js panel CSS');
 }
 
 const LOCALES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'];
@@ -155,8 +155,7 @@ test('masthead trigger focus ring alpha raised to 0.8', () => {
 
 test('settings panel search indexes metadata beyond visible name and description', () => {
     for (const [label, source] of [
-        ['module', settingsPanelModuleSource],
-        ['monolith', ytkitSource]
+        ['module', settingsPanelModuleSource]
     ]) {
         assert.ok(source.includes('card.dataset.searchText = ['),
             `${label} settings panel must build a searchable metadata index`);
@@ -172,18 +171,13 @@ test('settings panel search indexes metadata beyond visible name and description
 
 test('settings panel exposes persistent live status feedback for save/import/export/reset', () => {
     for (const [label, source] of [
-        ['module', settingsPanelModuleSource],
-        ['monolith', ytkitSource]
+        ['module', settingsPanelModuleSource]
     ]) {
         assert.ok(source.includes("footerStatus.id = 'ytkit-panel-status'"),
             `${label} settings panel must render the footer status live region`);
         assert.ok(source.includes("footerStatus.setAttribute('role', 'status')"),
             `${label} footer status must announce changes to assistive tech`);
-        // The module routes this copy through a locale key; the monolith
-        // fallback still carries the English literal.
-        assert.ok(source.includes(label === 'module'
-            ? "setPanelStatus(t('settingsExportedStatus', 'Settings exported. The download is ready.'), 'success')"
-            : "setPanelStatus('Settings exported. The download is ready.', 'success')"),
+        assert.ok(source.includes("setPanelStatus(t('settingsExportedStatus', 'Settings exported. The download is ready.'), 'success')"),
             `${label} export path must update the live status`);
         assert.ok(source.includes('reset to defaults. Undo is available in the toast.'),
             `${label} reset path must explain the undo recovery state`);
@@ -195,8 +189,7 @@ test('settings panel exposes persistent live status feedback for save/import/exp
 
 test('extension Takeout import keeps large-file and undo recovery parity', () => {
     for (const [label, source] of [
-        ['settings module', settingsPanelModuleSource],
-        ['extension fallback', ytkitSource]
+        ['settings module', settingsPanelModuleSource]
     ]) {
         const start = source.indexOf("if (e.target.closest('#ytkit-import-history'))");
         assert.ok(start > -1, `${label} must handle Takeout import from the settings panel`);
@@ -226,7 +219,7 @@ test('settings panel search copy matches the expanded filter behavior', () => {
     assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, controls…');
     assert.equal(en.panelSearchAria.message, 'Search settings by name, page, category, or control type');
     assert.equal(en.panelSearchHint.message, 'Search by name, page, category, control type, or description.');
-    for (const source of [settingsPanelModuleSource, ytkitSource]) {
+    for (const source of [settingsPanelModuleSource]) {
         assert.ok(source.includes('Search by name, page, category, control type, or description.'),
             'settings panel search hint must describe every indexed field');
         assert.ok(source.includes("mark.className = 'ytkit-search-mark'"),
@@ -261,24 +254,16 @@ test('settings command-deck shell contracts live in the DOM builders and the v3 
         'extension settings module must render the premium right-side insights rail');
     assert.ok(settingsPanelModuleSource.includes("statusHero.className = 'ytkit-status-hero'"),
         'extension settings module must render the mockup-style status hero in the inspector rail');
-    assert.ok(ytkitSource.includes("rail.className = 'ytkit-insights'"),
-        'extension settings monolith fallback must render the premium right-side insights rail');
-    assert.ok(ytkitSource.includes("statusHeroIcon.className = 'ytkit-status-hero-icon'"),
+    assert.ok(settingsPanelModuleSource.includes("statusHeroIcon.className = 'ytkit-status-hero-icon'"),
         'settings inspector status hero must carry the green operational badge from the mockup');
     assert.ok(settingsVisualSystemSource.includes('.ytkit-status-hero-icon'),
         'v3 visual system must style the status hero operational badge');
     assert.ok(settingsPanelModuleSource.includes("stateSpan.className = 'ytkit-nav-state'"),
         'extension settings module must render nav completion indicators');
-    assert.ok(ytkitSource.includes("stateSpan.className = 'ytkit-nav-state'"),
-        'extension settings monolith fallback must render nav completion indicators');
     assert.ok(settingsPanelModuleSource.includes("id: 'ytkit-reset-active-section'"),
         'extension settings module must route a visible reset action to the active section');
-    assert.ok(ytkitSource.includes("id: 'ytkit-reset-active-section'"),
-        'extension settings monolith fallback must route a visible reset action to the active section');
     assert.ok(settingsPanelModuleSource.includes("['Last import', 'ytkit-insight-last-import', 'Not yet']"),
         'extension settings module must render the expanded recent activity rows');
-    assert.ok(ytkitSource.includes("['Last import', 'ytkit-insight-last-import', 'Not yet']"),
-        'extension settings monolith fallback must render the expanded recent activity rows');
     // Cascade contracts inherited from the folded layers, now owned by v3.
     assert.ok(settingsVisualSystemSource.includes('z-index: 2147483646 !important;'),
         'v3 must keep the settings panel above YouTube player chrome and ad overlays');
@@ -465,7 +450,7 @@ test('companion toasts standardize on "Astra Downloader" (no MediaDL prefix)', (
 test('feature preview tooltips trigger on focus-within and mirror into aria-description', () => {
     assert.ok(ytkitSource.includes('.ytkit-feature-card.ytkit-has-preview:focus-within::after'),
         'preview tooltip must also open via :focus-within for keyboard users');
-    assert.ok(ytkitSource.includes("card.setAttribute('aria-description', previewText)"),
+    assert.ok(settingsPanelModuleSource.includes("card.setAttribute('aria-description', previewText)"),
         'data-preview must be mirrored into aria-description for assistive tech');
 });
 
@@ -475,8 +460,6 @@ test('render smoke keeps mobile navigation and footer bounded', () => {
     // The "Premium command-deck correction layer" that once carried these
     // mobile fixes in ytkit.js is gone; v3 owns the cascade and the render
     // smoke is the behavioral gate.
-    assert.match(settingsOverlaySmokeSource, /--fallback-only/,
-        'render smoke must expose a fallback-only mode');
     assert.match(settingsOverlaySmokeSource, /mobile footer consumes/,
         'render smoke must fail oversized mobile footers');
     assert.match(settingsOverlaySmokeSource, /mobile navigation consumes/,
@@ -489,8 +472,7 @@ test('render smoke keeps mobile navigation and footer bounded', () => {
 
 test('settings command search mirrors icon and actions without RTL overlap', () => {
     const moduleSource = read('extension/features/settings-panel/index.js');
-    const monolithSource = read('extension/ytkit.js');
-    for (const source of [moduleSource, monolithSource]) {
+    for (const source of [moduleSource]) {
         assert.match(source, /\[dir="rtl"\] \.ytkit-command-search \.ytkit-search-icon \{ left: auto !important; right: 16px !important; \}/);
         assert.match(source, /\[dir="rtl"\] \.ytkit-command-search \.ytkit-search-actions \{ right: auto !important; left: 8px !important; \}/);
         assert.match(source, /\[dir="rtl"\] \.ytkit-command-search \.ytkit-search-input \{ padding: 0 44px 0 78px !important; \}/);
@@ -554,19 +536,13 @@ test('blue light filter stays opt-in with a master toggle and nested intensity c
         'the userscript must ship the Blue Light Filter module');
 });
 
-test('fallback Takeout import exposes the same Undo toast contract as the module', () => {
-    const marker = "if (e.target.closest('#ytkit-import-history'))";
-    const fallbackStart = ytkitSource.indexOf(marker, ytkitSource.indexOf('function attachUIEventListeners'));
-    assert.ok(fallbackStart > -1, 'fallback Takeout handler must exist');
-    // Bound on the handler's own closing landmark rather than a fixed byte
-    // window, which silently truncates as the handler grows.
-    const fallbackEnd = ytkitSource.indexOf('maxBytes: 500 * 1024 * 1024', fallbackStart);
-    assert.ok(fallbackEnd > fallbackStart, 'fallback Takeout handler must end at its size policy');
-    const fallbackBlock = ytkitSource.slice(fallbackStart, fallbackEnd);
+// ytkit.js used to carry a second copy of this handler in its inline panel
+// fallback, which drifted. The module's is the only one now.
+test('Takeout import offers a localized Undo toast from the one panel that has it', () => {
+    assert.ok(!ytkitSource.includes("e.target.closest('#ytkit-import-history')"),
+        'ytkit.js must not grow a second Takeout import handler back');
     // The Undo label goes through the locale pipeline like every other action
-    // label; it used to be a bare English literal in both copies.
-    assert.match(fallbackBlock, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*t\('toastActionUndo', 'Undo'\)/,
-        'fallback Takeout success must use the action-capable toast API with a localized label');
+    // label; it used to be a bare English literal.
     assert.match(settingsPanelModuleSource, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*t\('toastActionUndo', 'Undo'\)/,
         'module Takeout success must retain the same action-capable toast API with a localized label');
 });
@@ -625,9 +601,6 @@ test('an open toast is re-raised when the settings panel popover opens', () => {
     assert.match(toastCore, /toast\._restackDepth = \(toast\._restackDepth \|\| 0\) \+ 1;[\s\S]{0,120}?hidePopover\(\);[\s\S]{0,40}?showPopover\(\);/,
         're-stacking must close and reopen the popover under a restack counter');
 
-    // Both panel copies must trigger it.
-    assert.match(ytkitSource, /panel\.showPopover\(\);[\s\S]{0,260}?raiseActiveToasts\?\.\(\)/,
-        'the monolith panel must re-raise toasts after showing');
     assert.match(settingsPanelModuleSource, /panel\.showPopover\(\);[\s\S]{0,260}?raiseActiveToasts\?\.\(\)/,
         'the settings-panel module must re-raise toasts after showing');
 

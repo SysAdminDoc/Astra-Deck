@@ -118,7 +118,7 @@ test('every reinit debounce is per feature, not shared', () => {
     // editing feature A then feature B within 600ms cancelled A's pending
     // destroy/init. A's value was saved and the panel said so, but it was
     // never applied.
-    for (const [label, source] of [['settings-panel module', settingsPanel], ['ytkit.js', monolith]]) {
+    for (const [label, source] of [['settings-panel module', settingsPanel]]) {
         assert.ok(!source.includes('let _textareaReinitTimer = null;'),
             `${label} must not keep a shared reinit timer`);
         assert.ok(!source.includes('_textareaReinitTimer = setTimeout('),

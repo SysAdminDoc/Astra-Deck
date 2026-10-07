@@ -427,14 +427,12 @@ test('settingsPanel refuses to open when the host says this is not the primary U
 test('Video Hider pane uses its own toggle and shared settings reconciliation', () => {
     const moduleSource = fs.readFileSync(
         require.resolve(MODULE_PATH), 'utf8');
-    // The userscript used to carry a third copy of this pane. It now runs the
-    // settings-panel module and ytkit.js below, so those two are the contract.
+    // The userscript used to carry a third copy of this pane, and ytkit.js a
+    // second one. Both now run the settings-panel module, the only copy.
     assert.ok(userscriptBundles('features/settings-panel/index.js'),
         'the userscript must ship the settings-panel module');
     for (const [label, source] of [
-        ['settings-panel module', moduleSource],
-        ['extension inline fallback', fs.readFileSync(
-            require.resolve('../../extension/ytkit.js'), 'utf8')]
+        ['settings-panel module', moduleSource]
     ]) {
         assert.match(source, /ytkit-video-hider-enabled/,
             `${label} must give the dedicated Video Hider toggle a unique id`);
@@ -449,7 +447,7 @@ test('Video Hider pane uses its own toggle and shared settings reconciliation', 
     }
 });
 
-test('Video Hider channels tab follows Channel Allowlist mode in both panes', () => {
+test('Video Hider channels tab follows Channel Allowlist mode', () => {
     // The peeled pane always listed, counted and cleared the blocklist, so
     // in allowlist mode it managed the wrong channels, had no paste-a-channel
     // form, and its summary cards read "0 videos hidden" over "Hidden Videos".
@@ -458,8 +456,7 @@ test('Video Hider channels tab follows Channel Allowlist mode in both panes', ()
         source.indexOf("} else if (tab === 'keywords') {")
     );
     for (const [label, source] of [
-        ['settings-panel module', fs.readFileSync(require.resolve(MODULE_PATH), 'utf8')],
-        ['extension inline fallback', fs.readFileSync(require.resolve('../../extension/ytkit.js'), 'utf8')]
+        ['settings-panel module', fs.readFileSync(require.resolve(MODULE_PATH), 'utf8')]
     ]) {
         assert.match(source, /const isChannelAllowlistMode = \(\) => appState\.settings\.hideVideosChannelAllowlist === true;/,
             `${label} must read Channel Allowlist mode`);

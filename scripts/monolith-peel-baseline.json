@@ -285,5 +285,25 @@
     "watchTimeTracker",
     "wheelSeek",
     "zenMode"
-  ]
+  ],
+  "retiredFallbacks": {
+    "settings-panel": {
+      "retiredAt": "2026-10-06",
+      "module": "extension/features/settings-panel/index.js",
+      "delegates": [
+        "isSettingsPanelOpen",
+        "setSettingsPanelOpen",
+        "toggleSettingsPanel",
+        "updateAllToggleStates",
+        "attachUIEventListeners"
+      ],
+      "removed": [
+        "buildSettingsPanel",
+        "buildFeatureCard",
+        "countEnabledToggleFeatures",
+        "syncPanelCategorySelection",
+        "updatePanelInsightState"
+      ]
+    }
+  }
 }

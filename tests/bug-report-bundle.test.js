@@ -287,9 +287,9 @@ test('both routes are wired and named where a userscript user will look', () => 
     assert.match(ytkitSource,
         /message\.type === 'YTKIT_BUILD_BUG_REPORT'\) \{\s*buildBugReportBundle\(\)\.then\(/);
 
-    // Both settings panels carry the bug button.
+    // The settings panel (the module, the only copy) carries the bug button.
     const panelSource = read('extension', 'features', 'settings-panel', 'index.js');
-    for (const [name, source] of [['settings-panel module', panelSource], ['ytkit.js fallback panel', ytkitSource]]) {
+    for (const [name, source] of [['settings-panel module', panelSource]]) {
         assert.match(source, /diagnosticsBtn\.id = 'ytkit-copy-diagnostics'/, `${name} must build the bug button`);
         assert.match(source, /await copyBugReportBundle\(\)/, `${name} must copy through the shared builder`);
     }

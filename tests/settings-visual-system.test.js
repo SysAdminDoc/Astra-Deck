@@ -23,8 +23,9 @@ const commandDeckCss = visualSystemSource.slice(
 );
 
 // The userscript used to carry its own settings panel, pinned beside these
-// sources. It is generated from extension/ now and runs this settings-panel
-// module and this ytkit.js, so pins on those two cover it; this proves it
+// sources, and ytkit.js had an inline copy until 2026-10-06. The settings-panel
+// module builds the panel everywhere and ytkit.js holds the feature
+// definitions, so pins on those two cover it; this proves the userscript
 // ships them.
 function assertUserscriptRunsSettingsPanel() {
     assert.ok(userscriptBundles('features/settings-panel/index.js'),
@@ -59,7 +60,7 @@ test('settings visual system renders the flat command-deck hierarchy', () => {
     assert.match(commandDeckCss, /\.ytkit-panel-status::before\s*\{[\s\S]*?content:\s*"✓"/);
     assert.match(settingsPanel, /categoryGroupLabels = \{[\s\S]*?panelNavGroupPlayer[\s\S]*?panelNavGroupSystem/);
     assert.match(settingsPanel, /paneContextFeatures[\s\S]*?ytkit-pane-context-value/);
-    for (const source of [settingsPanel, shell]) {
+    for (const source of [settingsPanel]) {
         assert.match(source, /categorySections\[cat\]/);
         assert.match(source, /featureSection\.className = 'ytkit-feature-section'/);
         assert.match(source, /sortedParentFeatures\.slice\(0, 3\)/);
@@ -94,7 +95,7 @@ test('settings visual system renders the flat command-deck hierarchy', () => {
 });
 
 test('Element Zapper stays inside the Content category pane', () => {
-    for (const source of [settingsPanel, shell]) {
+    for (const source of [settingsPanel]) {
         assert.match(source, /if \(zapperPane\) pane\.appendChild\(zapperPane\)/);
         assert.doesNotMatch(source, /if \(zapperPane\) content\.appendChild\(zapperPane\)/);
     }
@@ -166,7 +167,6 @@ test('every shell and subtitle setting renders a real settings card', () => {
     assert.equal(visualSettingKeys.length, 61);
     assert.deepEqual(visualSettingKeys.filter((key) => !featureIds.has(key)), []);
     assert.match(settingsPanel, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
-    assert.match(shell, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
     assertUserscriptRunsSettingsPanel();
     assert.match(overlaySmoke, /visual-settings[\s\S]*?desktop-dark[\s\S]*?desktop-light/);
 });
@@ -224,7 +224,7 @@ test('v6 desktop settings parity keeps labels readable and gives Video Hider a s
         visualSystemSource,
         /\.ytkit-vh-summary\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/
     );
-    for (const source of [settingsPanel, shell]) {
+    for (const source of [settingsPanel]) {
         assert.match(source, /paneSummary\.className = 'ytkit-vh-summary'/);
         assert.match(source, /paneIcon\.appendChild\(\(ICONS\['eye-off'\]/);
         assert.match(source, /paneHeader\.appendChild\(paneLead\)/);
@@ -298,7 +298,7 @@ test('the settings panel keeps three distinct elevation planes', () => {
         visualSystemSource,
         /\.ytkit-panel-status\s*\{[\s\S]*?border:\s*0[\s\S]*?background:\s*transparent[\s\S]*?text-align:\s*start/
     );
-    for (const source of [settingsPanel, shell]) {
+    for (const source of [settingsPanel]) {
         assert.match(source, /footerStatus\.textContent = (?:'Saved'|t\('settingsFooterSaved', 'Saved'\))/);
         assert.match(source, /id: 'ytkit-close-footer',[\s\S]*?label: (?:'Done'|t\('commonDone', 'Done'\))/);
         assert.match(source, /paneDescription\.title = paneDescription\.textContent/);
@@ -419,9 +419,9 @@ test('the Shorts section owns every Shorts schema key without changing schema ca
         assert.match(card.dataset.searchText, /13 min watched today/);
         assert.equal(refreshShortsLedgerPresentation({ querySelector: () => null }, {}, undefined, now), false);
 
-        for (const source of [settingsPanel, shell]) {
+        for (const source of [settingsPanel]) {
             assert.match(source, /refreshShortsLedgerPresentation\?\.\(document, appState\.settings, t\)/,
-                'module and fallback must refresh the ledger after its initial build');
+                'the module must refresh the ledger after its initial build');
         }
     } finally {
         globalThis.YTKitCore = previousCore;
@@ -439,7 +439,7 @@ test('insight-rail curation keys on stable data attributes, not nth-child positi
     for (const key of ['extension', 'enabled', 'profile']) {
         assert.match(visualSystemSource, new RegExp(`data-ytkit-insight="${key}"`));
     }
-    for (const source of [settingsPanel, shell]) {
+    for (const source of [settingsPanel]) {
         assert.match(source, /dataset\.ytkitInsightSection = insightKey/);
         assert.match(source, /dataset\.ytkitInsight = insightKey/);
         assert.match(source, /makeInsightSection\('Recent Activity', 'recent-activity'\)/);
@@ -534,19 +534,16 @@ test('settings brand lockup cannot collapse into stacked oversized labels', () =
         settingsPanel,
         /brandLockup\.appendChild\(eyebrow\);\s*brandLockup\.appendChild\(title\);\s*brandCopy\.appendChild\(brandLockup\);/
     );
-    assert.match(shell, /brandCopy\.appendChild\(brandLockup\);/);
     assert.match(overlaySmoke, /name:\s*'tablet-dark',\s*width:\s*760/);
 });
 
 test('settings version is passive text without a dismiss-only notification badge', () => {
     for (const [label, source] of [
-        ['settings module', settingsPanel],
-        ['fallback shell', shell]
+        ['settings module', settingsPanel]
     ]) {
         assert.doesNotMatch(source, /ytkit-whats-new-badge/, `${label} must not render the obsolete badge`);
     }
     assert.doesNotMatch(settingsPanel, /versionSpan\.(?:onclick|style\.cursor)/);
-    assert.doesNotMatch(shell, /versionSpan\.(?:onclick|style\.cursor)/);
     assertUserscriptRunsSettingsPanel();
     assert.match(overlaySmoke, /obsolete version notification badge is visible/);
 });

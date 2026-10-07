@@ -229,8 +229,8 @@ test('peeled feature runtimes delegate compact-count parsing to the shared core 
         'the monolith must not retain the peeled Subscription Groups parser');
 });
 
-test('settings search escapes literal filter text in both runtimes', () => {
-    for (const rel of ['extension/features/settings-panel/index.js', 'extension/ytkit.js']) {
+test('settings search escapes literal filter text', () => {
+    for (const rel of ['extension/features/settings-panel/index.js']) {
         const src = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
         assert.match(src, /new RegExp\(escapeRegExp\(q\), 'u'\)/,
             `${rel} must escape the user-supplied search query before matching`);

@@ -1759,15 +1759,15 @@ test('settingsPanel module loads before ytkit.js in content scripts', () => {
     }
 });
 
-test('settingsPanel monolith prefers the module runtime before inline fallback', () => {
+test('settingsPanel monolith delegates to the module runtime and keeps no inline copy', () => {
     const factoryNeedle = 'globalThis.YTKitFeatures?.settingsPanel?.createSettingsPanelRuntime';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must resolve settingsPanel through the module factory');
     const factoryCallIndex = sources.ytkit.indexOf('_settingsPanelRuntime = factory({', factoryIndex);
     assert.ok(factoryCallIndex > factoryIndex, 'ytkit.js must construct the settingsPanel runtime through the factory');
-    const fallbackIndex = sources.ytkit.indexOf('function buildSettingsPanel()', factoryCallIndex);
-    assert.ok(fallbackIndex > factoryCallIndex, 'ytkit.js must retain the inline buildSettingsPanel fallback after the factory call');
-    const dependencyBag = sources.ytkit.slice(factoryCallIndex, fallbackIndex);
+    const factoryCallEnd = sources.ytkit.indexOf('\n            });', factoryCallIndex);
+    assert.ok(factoryCallEnd > factoryCallIndex, 'the settingsPanel factory call must close');
+    const dependencyBag = sources.ytkit.slice(factoryCallIndex, factoryCallEnd);
 
     for (const dep of [
         'BRAND',
@@ -1826,13 +1826,14 @@ test('settingsPanel monolith prefers the module runtime before inline fallback',
         'isSettingsPanelOpen',
         'setSettingsPanelOpen',
         'toggleSettingsPanel',
-        'countEnabledToggleFeatures',
-        'buildSettingsPanel',
-        'buildFeatureCard',
         'updateAllToggleStates',
         'attachUIEventListeners'
     ]) {
         assert.ok(sources.ytkit.includes(`runtime?.${method}`), 'ytkit.js must delegate ' + method + ' through the settingsPanel runtime');
+    }
+    for (const retired of ['buildSettingsPanel', 'buildFeatureCard', 'countEnabledToggleFeatures']) {
+        assert.ok(!sources.ytkit.includes(`function ${retired}(`),
+            `ytkit.js must not carry its own ${retired}; the module builds the panel`);
     }
 });
 
@@ -1841,8 +1842,7 @@ test('settingsPanel requests optional hosts before enabling and rolls back denia
         '../../extension/features/settings-panel/index.js'
     ), 'utf8');
     for (const [label, source] of [
-        ['module', moduleSource],
-        ['inline fallback', sources.ytkit]
+        ['module', moduleSource]
     ]) {
         const handlerStart = source.indexOf("doc.addEventListener('change', async (e) =>");
         assert.ok(handlerStart > -1, `${label} must use an async settings change handler`);

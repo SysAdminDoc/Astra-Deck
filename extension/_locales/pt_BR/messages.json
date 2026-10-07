@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "Mostrar comentários"
+  },
+  "settingsPanelUnavailable": {
+    "message": "O painel de configurações não carregou. Recarregue a página para tentar de novo."
   }
 }

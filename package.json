@@ -93,7 +93,6 @@
     "smoke:a11y": "node scripts/smoke-headless-a11y.js",
     "smoke:transcript-index": "node scripts/smoke-transcript-index.js",
     "smoke:mv3-lifecycle": "node scripts/smoke-mv3-worker-lifecycle.js",
-    "smoke:settings-overlay:fallback": "node scripts/smoke-settings-overlay.js --fallback-only",
     "bench:startup": "node scripts/bench-startup.js",
     "check:startup": "node scripts/bench-startup.js --check --allow-synthetic",
     "check:startup:captured": "node scripts/bench-startup.js --check",

@@ -2707,9 +2707,9 @@ test('all locales carry feature-definition name and description messages', () =>
 });
 
 test('settings panel feature cards render labels through feature i18n helpers', () => {
-    const start = ytkitSource.indexOf('function buildFeatureCard');
-    assert.ok(start > -1, 'buildFeatureCard must exist');
-    const block = ytkitSource.slice(start, start + 4500);
+    const start = settingsPanelSource.indexOf('function buildFeatureCard');
+    assert.ok(start > -1, 'buildFeatureCard must exist in the settings-panel module');
+    const block = settingsPanelSource.slice(start, start + 4500);
     assert.match(block, /const featureName = getFeatureName\(f\)/,
         'feature cards must resolve the display name through getFeatureName');
     assert.match(block, /getFeatureDescription\(f\)/,
@@ -4544,8 +4544,6 @@ test('YouTube Takeout watch-history import feeds local analytics with dedupe led
         'Takeout merge must rebuild daily totals from surviving imported entries');
     assert.match(ytkitSource, /StorageManager\.setSync\(STORAGE_KEYS\.watchTime, result\.stats\)/,
         'Takeout import must write only the local watch-time store');
-    assert.match(ytkitSource, /id = 'ytkit-import-history'/,
-        'inline settings fallback must expose the Takeout import action');
     assert.match(settingsPanelSource, /id = 'ytkit-import-history'/,
         'settings-panel module must expose the Takeout import action');
     assert.doesNotMatch(ytkitSource, /importYouTubeTakeoutWatchHistory[\s\S]{0,2500}fetch\(/,
@@ -13116,7 +13114,7 @@ test('settings focus trap includes actionable Undo toasts without timing them ou
     const toastDom = read('extension/core/toast-dom.js');
     const ytkit = read('extension/ytkit.js');
 
-    for (const source of [settingsPanel, ytkit]) {
+    for (const source of [settingsPanel]) {
         assert.match(source, /\.ytkit-global-toast\[data-ytkit-focus-portal="true"\]/,
             'settings panel trap must discover the active actionable toast portal');
         assert.match(source, /trapFocusWithin\(activeDialog,\s*e,\s*toastPortal \? \[toastPortal\] : \[\]\)/,
@@ -13149,7 +13147,6 @@ test('section Reset/Undo follows settingKey and refreshes every control type', (
     // showing the pre-reset value until the panel was rebuilt.
     for (const [label, source] of [
         ['settings-panel module', settingsPanelSource],
-        ['ytkit.js fallback', ytkitSource],
     ]) {
         const start = source.indexOf('resetBtn.onclick');
         assert.ok(start > -1, `${label} must define the group reset handler`);

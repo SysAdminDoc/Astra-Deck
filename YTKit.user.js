@@ -3661,8 +3661,8 @@ const ASTRA_DECK_BUILD = {
 		"importPreviewReplaceTplOther": "{count} items replace",
 		"importPreviewMergeTplOne": "{count} setting merges",
 		"importPreviewMergeTplOther": "{count} settings merge",
-		"importPreviewDroppedTplOne": "{count} dropped",
-		"importPreviewDroppedTplOther": "{count} dropped",
+		"importPreviewDroppedTplOne": "{count} item dropped",
+		"importPreviewDroppedTplOther": "{count} items dropped",
 		"importPreviewExcludedTplOne": "{count} cache, runtime, diagnostic, or credential domain intentionally excluded",
 		"importPreviewExcludedTplOther": "{count} cache, runtime, diagnostic, or credential domains intentionally excluded",
 		"externalHealthAgeNever": "never",
@@ -3696,7 +3696,8 @@ const ASTRA_DECK_BUILD = {
 		"importSummaryDuplicatesTplOne": "{count} duplicate",
 		"importSummaryDuplicatesTplOther": "{count} duplicates",
 		"dlInstallerRunHint": "Open Downloads and double-click the setup file to install.",
-		"stickyVideoShowCommentsLabel": "Show comments"
+		"stickyVideoShowCommentsLabel": "Show comments",
+		"settingsPanelUnavailable": "The settings panel didn't load. Reload the page to try again."
 	}
 };
 

@@ -70,3 +70,36 @@ test('the ratchet is wired into the check runner under its own floor', () => {
     assert.ok(fs.existsSync(path.join(REPO_ROOT, 'scripts', gate.script)),
         'the gate script the runner names must exist');
 });
+
+// The settings panel's inline copy (about 3,900 lines) was cut on 2026-10-06.
+// These check the gate catches it growing back, not just that it passes today.
+test('a retired inline fallback stays a stub, and the gate fails when it grows back', () => {
+    const baseline = JSON.parse(fs.readFileSync(ratchet.BASELINE_PATH, 'utf8'));
+    const retired = baseline.retiredFallbacks;
+    assert.ok(retired?.['settings-panel'], 'the baseline records the retired settings-panel copy');
+    const monolith = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'ytkit.js'), 'utf8');
+    assert.deepEqual(ratchet.checkRetiredFallbacks(monolith, retired), []);
+
+    const stub = [
+        '',
+        '    function attachUIEventListeners() {',
+        '        const runtime = getSettingsPanelRuntime();',
+        '        if (runtime?.attachUIEventListeners) return runtime.attachUIEventListeners();',
+        '    }',
+        ''
+    ].join('\n');
+    const grown = stub.replace('    }\n', `${'        doc.addEventListener("keydown", () => {});\n'.repeat(5)}    }\n`);
+    const entry = { 'settings-panel': { retiredAt: '2026-10-06', delegates: ['attachUIEventListeners'], removed: ['buildFeatureCard'] } };
+    assert.deepEqual(ratchet.checkRetiredFallbacks(stub, entry), []);
+    assert.match(ratchet.checkRetiredFallbacks(grown, entry).join('\n'), /attachUIEventListeners\(\) is 9 lines, over the 8-line stub cap/);
+    const revived = `${stub}\n    function buildFeatureCard(f) {\n        return f;\n    }\n`;
+    assert.match(ratchet.checkRetiredFallbacks(revived, entry).join('\n'), /buildFeatureCard\(\) is back/);
+});
+
+test('with no settings-panel module, opening the panel reports it unavailable instead of building a copy', () => {
+    const monolith = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'ytkit.js'), 'utf8');
+    assert.match(monolith, /if \(runtime\?\.setSettingsPanelOpen\) return runtime\.setSettingsPanelOpen\(open\);\n\s+return open \? reportSettingsPanelUnavailable\(\) : false;/);
+    assert.match(monolith, /t\('settingsPanelUnavailable', /);
+    const en = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+    assert.ok(en.settingsPanelUnavailable?.message, 'the unavailable notice has an English message');
+});

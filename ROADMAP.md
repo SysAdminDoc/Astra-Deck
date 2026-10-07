@@ -27,21 +27,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   keys present in all 11 locales, with counts through `tCount`.
   Complexity: M
 
-- [ ] P3 — Retire the drifted settings-panel fallback copy in ytkit.js
-  Why: `attachUIEventListeners()` in `extension/ytkit.js` (~43586) delegates to the
-  settings-panel module and otherwise runs a full inline copy of the panel's handlers. That
-  copy only runs when the module failed to load, and it has already drifted: its reset and
-  export statuses are English literals where the module now routes them through `t()`. It also
-  files cards by their raw `group` (~40607), so the features the module places through its
-  group map, Return YouTube Dislike and the notification bell among them, get no card there. The
-  same peel was finished for Theater Split, whose monolith copy is a descriptor stub.
-  Where: `extension/ytkit.js` (the inline fallback around ~43586 onward),
-  `tests/ux-theming-fixes.test.js` (pins the fallback's literals), `scripts/check-monolith-peel.js`.
-  Acceptance: WHEN the settings-panel module is unavailable, ytkit.js SHALL fall back to a
-  stub that reports the panel as unavailable rather than to a second implementation, and the
-  monolith-peel gate SHALL record the removal.
-  Complexity: M
-
 - [ ] P3 — Tell an upcoming premiere lockup linked into a radio from a Mix
   Why: Hide Mixes and Watch Feed treat a card with no running time and a radio link as a Mix
   unless it carries a live or upcoming marker. The upcoming checks look for

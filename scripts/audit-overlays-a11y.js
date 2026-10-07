@@ -310,13 +310,13 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // would have silently ended announcements for screen-reader users while
     // every visual check still passed.
     add('Overlay settings status is a polite live region',
-        ytkit.includes("footerStatus.id = 'ytkit-panel-status'")
-        && ytkit.includes("footerStatus.setAttribute('role', 'status')")
-        && ytkit.includes("footerStatus.setAttribute('aria-live', 'polite')"),
+        settingsPanel.includes("footerStatus.id = 'ytkit-panel-status'")
+        && settingsPanel.includes("footerStatus.setAttribute('role', 'status')")
+        && settingsPanel.includes("footerStatus.setAttribute('aria-live', 'polite')"),
         'The in-page settings panel status must be role=status aria-live=polite');
     add('Overlay settings outcomes reach that live region',
-        (ytkit.match(/setPanelStatus\(/g) || []).length >= 10
-        && ytkit.includes("const status = document.getElementById('ytkit-panel-status')"),
+        (settingsPanel.match(/setPanelStatus\(/g) || []).length >= 10
+        && settingsPanel.includes("const status = document.getElementById('ytkit-panel-status')"),
         'Settings reset, import and export outcomes must route through setPanelStatus');
     add('Popup status is a polite live region',
         popupHtml.includes('id="status"') && /id="status"[^>]*aria-live="polite"/.test(popupHtml),

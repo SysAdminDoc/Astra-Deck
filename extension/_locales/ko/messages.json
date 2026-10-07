@@ -9420,5 +9420,8 @@
   },
   "stickyVideoShowCommentsLabel": {
     "message": "댓글 표시"
+  },
+  "settingsPanelUnavailable": {
+    "message": "설정 패널을 불러오지 못했습니다. 페이지를 새로고침한 후 다시 시도하세요."
   }
 }

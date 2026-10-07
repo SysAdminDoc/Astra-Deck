@@ -54,7 +54,6 @@ function parseArgs(argv) {
     const opts = {
         browser: '',
         keepStage: false,
-        fallbackOnly: false,
         healthOnly: false,
         headedPrivate: false,
         desktopOnly: false,
@@ -64,7 +63,6 @@ function parseArgs(argv) {
         const arg = argv[i];
         if (arg === '--browser') { opts.browser = path.resolve(argv[++i] || ''); continue; }
         if (arg === '--keep-stage') { opts.keepStage = true; continue; }
-        if (arg === '--fallback-only') { opts.fallbackOnly = true; continue; }
         if (arg === '--health-only') { opts.healthOnly = true; continue; }
         if (arg === '--headed-private') { opts.headedPrivate = true; continue; }
         if (arg === '--desktop-only') { opts.desktopOnly = true; continue; }
@@ -792,7 +790,7 @@ function buildChromeStub(runtimeSettings = null) {
     );
 }
 
-function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null } = {}) {
+function buildFixture(stageDir, { runtimeSettings = null } = {}) {
     copyDir(EXT_DIR, stageDir);
     const chromeStub = buildChromeStub(runtimeSettings);
     fs.writeFileSync(path.join(stageDir, 'chrome-stub.js'), chromeStub, 'utf8');
@@ -803,10 +801,7 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
             && !scripts.includes('ytkit-main.js') && !group.all_frames;
     });
     if (!isolatedGroup) throw new Error('could not locate the ISOLATED-world content-script group in manifest.json');
-    const runtimeScripts = isolatedGroup['x-ytkit-runtime-modules'] || isolatedGroup.js;
-    const isolatedScripts = fallbackOnly
-        ? runtimeScripts.filter((src) => src !== 'features/settings-panel/index.js')
-        : ['runtime-bootstrap.js'];
+    const isolatedScripts = ['runtime-bootstrap.js'];
     const scriptTags = ['chrome-stub.js', ...isolatedScripts, 'a11y-fixture-driver.js']
         .map((src) => `    <script src="${src}"></script>`)
         .join('\n');
@@ -1252,7 +1247,7 @@ async function main() {
     const stageDir = path.join(REPO_ROOT, 'build', 'settings-overlay-smoke-stage');
     fs.rmSync(stageDir, { recursive: true, force: true });
     const fixturePath = buildFixture(stageDir, opts);
-    const outDir = opts.fallbackOnly ? path.join(OUT_DIR, 'fallback') : OUT_DIR;
+    const outDir = OUT_DIR;
     fs.rmSync(outDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
     fs.mkdirSync(outDir, { recursive: true });
 
@@ -1597,7 +1592,7 @@ async function main() {
                     failuresByState[state.name].push(
                         ...(parityReport.failures || []).map((failure) => `${categoryId}: ${failure}`)
                     );
-                    if (!opts.fallbackOnly && !opts.healthOnly) {
+                    if (!opts.healthOnly) {
                         await client.evaluate('window.scrollTo(0, 0)');
                         const categoryShot = await client.send('Page.captureScreenshot', {
                             format: 'png',
@@ -1608,7 +1603,7 @@ async function main() {
                             Buffer.from(categoryShot.data, 'base64')
                         );
                     }
-                    if (!opts.fallbackOnly && !opts.healthOnly && ['desktop-dark', 'desktop-light'].includes(state.name)) {
+                    if (!opts.healthOnly && ['desktop-dark', 'desktop-light'].includes(state.name)) {
                         failuresByState[state.name].push(...await captureVisualSettingCards(
                             client,
                             outDir,
@@ -1748,7 +1743,7 @@ async function main() {
                     );
                 }
             }
-            if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
+            if (state.name === 'desktop-dark') {
                 const attributionSearchReady = await client.evaluate(`(() => {
                     const search = document.getElementById('ytkit-search');
                     if (!search) return false;
@@ -1809,7 +1804,7 @@ async function main() {
                     await sleep(300);
                 }
             }
-            if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
+            if (state.name === 'desktop-dark') {
                 const featureReady = await client.evaluate(`(() => {
                     const toggle = document.getElementById('ytkit-toggle-blueLightFilter');
                     const intensity = document.getElementById('ytkit-range-blueLightIntensity');
@@ -1874,10 +1869,10 @@ async function main() {
                 }
                 await client.evaluate('globalThis.__ytkitA11y?.closeDownload?.()');
             }
-            console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
+            console.log(`[settings-overlay-smoke:module] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
             fs.writeFileSync(progressPath, `${JSON.stringify({ completedState: state.name, failuresByState }, null, 2)}\n`, 'utf8');
         }
-        if (!opts.fallbackOnly && !opts.healthOnly) {
+        if (!opts.healthOnly) {
             const coverageFailures = [];
             for (const key of VISUAL_SETTING_KEYS) {
                 const evidence = visualSettingCoverage.get(key);
@@ -1924,7 +1919,7 @@ async function main() {
         }
     }
     const result = {
-        mode: opts.fallbackOnly ? 'fallback' : 'module',
+        mode: 'module',
         captureScreenshots: !opts.healthOnly,
         browserMode: opts.headedPrivate ? 'headed-private' : 'headless',
         passed: !failed,
@@ -1953,9 +1948,7 @@ if (require.main === module) {
     main().catch((err) => {
         console.error('[settings-overlay-smoke] ' + err.message);
         try {
-            const outDir = process.argv.includes('--fallback-only')
-                ? path.join(OUT_DIR, 'fallback')
-                : OUT_DIR;
+            const outDir = OUT_DIR;
             fs.mkdirSync(outDir, { recursive: true });
             fs.writeFileSync(
                 path.join(outDir, 'fatal-result.json'),

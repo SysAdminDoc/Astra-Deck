@@ -90,3 +90,56 @@ test('settings panel runtime does not memoise null before the module registers',
         globalThis.YTKitFeatures = previousFeatures;
     }
 });
+
+// The inline copy those comments describe was retired on 2026-10-06. With no
+// module, opening the panel now says it didn't load and builds nothing, and
+// the calls that only refresh or wire an open panel do nothing at all.
+test('without the settings-panel module, an open request reports the panel unavailable', () => {
+    const { loadDeclarationsFrom } = require('./helpers/monolith');
+    const src = fs.readFileSync(YTKIT_PATH, 'utf8');
+    const toasts = [];
+    const warnings = [];
+    const body = { classList: { contains: () => false, toggle() { throw new Error('nothing may mark the body open'); } } };
+    const api = loadDeclarationsFrom(src, [
+        'reportSettingsPanelUnavailable', 'isSettingsPanelOpen', 'setSettingsPanelOpen',
+        'toggleSettingsPanel', 'updateAllToggleStates', 'attachUIEventListeners'
+    ], {
+        console: { warn: (...args) => warnings.push(args.join(' ')) },
+        document: { body, getElementById: () => { throw new Error('nothing may look for a panel to build'); } },
+        PANEL_OPEN_CLASS: 'ytkit-panel-open',
+        getSettingsPanelRuntime: () => null,
+        showToast: (message, color) => toasts.push({ message, color }),
+        t: (_key, fallback) => fallback
+    });
+
+    assert.equal(api.setSettingsPanelOpen(true), false);
+    assert.equal(toasts.length, 1);
+    assert.match(toasts[0].message, /settings panel didn't load\. Reload the page/);
+    assert.equal(toasts[0].color, '#ef4444');
+    assert.ok(warnings.some((line) => /panel is unavailable/.test(line)));
+
+    // Closing, refreshing and wiring have nothing to act on, so they stay quiet.
+    assert.equal(api.setSettingsPanelOpen(false), false);
+    assert.equal(api.updateAllToggleStates(), undefined);
+    assert.equal(api.attachUIEventListeners(), undefined);
+    assert.equal(api.isSettingsPanelOpen(), false);
+    assert.equal(toasts.length, 1, 'only an open request tells the user');
+});
+
+test('the toggle path reaches the same notice', async () => {
+    const { loadDeclarationsFrom } = require('./helpers/monolith');
+    const src = fs.readFileSync(YTKIT_PATH, 'utf8');
+    const toasts = [];
+    const api = loadDeclarationsFrom(src, [
+        'reportSettingsPanelUnavailable', 'isSettingsPanelOpen', 'setSettingsPanelOpen', 'toggleSettingsPanel'
+    ], {
+        console: { warn() {} },
+        document: { body: { classList: { contains: () => false } } },
+        PANEL_OPEN_CLASS: 'ytkit-panel-open',
+        getSettingsPanelRuntime: () => null,
+        showToast: (message) => toasts.push(message),
+        t: (_key, fallback) => fallback
+    });
+    assert.equal(await api.toggleSettingsPanel(), false);
+    assert.equal(toasts.length, 1);
+});
