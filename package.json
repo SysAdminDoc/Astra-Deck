@@ -115,8 +115,8 @@
   },
   "devDependencies": {
     "@devicefarmer/adbkit": "file:./scripts/npm-stubs/devicefarmer-adbkit",
-    "acorn": "8.16.0",
-    "eslint": "^10.9.1",
+    "acorn": "8.19.0",
+    "eslint": "^10.12.0",
     "web-ext": "10.7.0",
     "ws": "8.21.3"
   },
