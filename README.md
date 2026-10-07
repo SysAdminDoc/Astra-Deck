@@ -59,8 +59,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.96.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `488` entries across `18` categories |
-| Runtime graph | `123` modules, including `31` peeled feature modules and `303` declared feature IDs |
+| Settings schema | `490` entries across `18` categories |
+| Runtime graph | `123` modules, including `31` peeled feature modules and `305` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -472,7 +472,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **483 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **485 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -817,7 +817,7 @@ This generated knowledgebase documents all **483 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Video Hider and content filtering</strong>: 47 settings</summary>
+<summary><strong>Video Hider and content filtering</strong>: 49 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -845,6 +845,8 @@ This generated knowledgebase documents all **483 user-facing settings** in the c
 | <a id="setting-hideVideosLowViewFilter"></a><strong>Hide videos low view filter</strong><br><code>hideVideosLowViewFilter</code> | Enables hiding cards whose exposed view count is below the configured threshold. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosLowViewThreshold"></a><strong>Hide videos low view threshold</strong><br><code>hideVideosLowViewThreshold</code> | Sets the minimum visible view count accepted by the low-view filter. | Default: <code>1000</code><br>Range: <code>0 to 10000000</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosSyntheticNarrationFilter"></a><strong>Synthetic Narration Markers</strong><br><code>hideVideosSyntheticNarrationFilter</code> | Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
+| <a id="setting-hideVideosMadeWithAiFilter"></a><strong>Made With AI Label</strong><br><code>hideVideosMadeWithAiFilter</code> | Hide videos YouTube labels as made with AI. Astra learns the label when you open a video, then hides that video's cards everywhere. Sends nothing. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.97.0</code> |
+| <a id="setting-hideVideosMadeWithAiLookups"></a><strong>Look Up AI Labels</strong><br><code>hideVideosMadeWithAiLookups</code> | Works with Made With AI Label. Asks YouTube for each card's label so labeled videos hide before you open them: one small request per card, four at a time, without your cookies. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.97.0</code> |
 | <a id="setting-hideVideosLowSignalFilter"></a><strong>Hide Low-Signal Videos</strong><br><code>hideVideosLowSignalFilter</code> | Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
 | <a id="setting-hideVideosLowSignalMinViews"></a><strong>Low-Signal View Threshold</strong><br><code>hideVideosLowSignalMinViews</code> | Minimum views used by the low-signal heuristic. Set to 0 to disable its view side. | Default: <code>1000</code><br>Range: <code>0 to 10000000</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
 | <a id="setting-hideVideosLowSignalMinAgeDays"></a><strong>Low-Signal Age Threshold</strong><br><code>hideVideosLowSignalMinAgeDays</code> | Only treat a low-view card as low-signal after this many days. Missing age metadata fails open. | Default: <code>30</code><br>Range: <code>0 to 3650</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |

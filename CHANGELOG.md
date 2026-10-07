@@ -8,6 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- **Made With AI Label** (Video Hider, off by default) hides videos YouTube itself labels "Made with AI". YouTube only shows that label on the watch page, so Astra remembers it when you open a labeled video and hides that video's cards everywhere after, with the reason in the hide note. It sends nothing. Turn on **Look Up AI Labels** too and Astra asks YouTube about each card before you open it, four small requests at a time and without your cookies, then caches the answer (labels for 180 days, clean videos for 30).
+
 - **Hide Thumbnail Badges** (Content page, off by default) hides the "New", "4K" and "CC" badges YouTube stamps on video cards in search, the sidebar, channel pages and Shorts. The duration and the watched bar stay, so you'll still see how long a video is.
 
 - Each userscript `@require` and translation `@resource` now ends in the SHA-256 of the exact file it should load. If a release tag were ever moved or re-pushed, Tampermonkey refuses the changed file instead of running it. Violentmonkey doesn't check these hashes yet.

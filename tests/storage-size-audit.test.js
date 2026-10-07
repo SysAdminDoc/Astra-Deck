@@ -146,7 +146,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Block Comment Authors adds 53: its toggle and the empty author list.
     // Action Notices adds 21 for its toggle, off by default.
     // Retiring Buffer / Preload trims 87: its toggle and target.
-    assert.equal(assessment.totalBytes, 186400);
+    // Hide Thumbnail Badges adds 28, and the Made With AI pair 71.
+    assert.equal(assessment.totalBytes, 186499);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

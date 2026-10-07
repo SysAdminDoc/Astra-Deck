@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "Impossible de copier le diagnostic. Ouvrez les paramètres et utilisez le bouton de bug en bas de la barre latérale."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "Label « Créé avec l'IA »"
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "Masque les vidéos que YouTube signale comme créées avec l'IA. Astra apprend le label quand vous ouvrez une vidéo, puis masque ses cartes partout. N'envoie rien."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "Rechercher les labels IA"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "Fonctionne avec le label « Créé avec l'IA ». Demande à YouTube le label de chaque carte pour masquer les vidéos signalées avant leur ouverture : une petite requête par carte, quatre à la fois, sans vos cookies."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "le label « Créé avec l'IA » de YouTube"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "Le label IA de YouTube"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube n'affiche son label « Créé avec l'IA » que sur la page de lecture, jamais sur une carte."
   }
 }

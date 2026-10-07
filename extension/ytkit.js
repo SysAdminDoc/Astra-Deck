@@ -4150,6 +4150,8 @@ const STORAGE_KEYS = Object.freeze({
             hideVideosLowViewFilter: false,
             hideVideosLowViewThreshold: 1000,
             hideVideosSyntheticNarrationFilter: false,
+            hideVideosMadeWithAiFilter: false,
+            hideVideosMadeWithAiLookups: false,
             hideVideosLowSignalFilter: false,
             hideVideosLowSignalMinViews: 1000,
             hideVideosLowSignalMinAgeDays: 30,
@@ -14192,6 +14194,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             getFeatureName,
             setFeatureHealth,
             getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+            getInitialDataGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialData : null),
+            getInnertubeClientVersion: () => TranscriptService?._getClientVersion?.() || '',
             extensionFetchJson,
             storageWriteJSON,
             filterListCodec: globalThis.YTKitCore?.persistedDomains,
@@ -14219,6 +14223,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             descriptionKey: 'feature_hideVideosSyntheticNarrationFilter_desc',
             group: 'Content',
             icon: 'bot-off',
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosMadeWithAiFilter',
+            name: t('feature_hideVideosMadeWithAiFilter_name', 'Made With AI Label'),
+            description: t('feature_hideVideosMadeWithAiFilter_desc', "Hide videos YouTube labels as made with AI. Astra learns the label when you open a video, then hides that video's cards everywhere. Sends nothing."),
+            nameKey: 'feature_hideVideosMadeWithAiFilter_name',
+            descriptionKey: 'feature_hideVideosMadeWithAiFilter_desc',
+            group: 'Content',
+            icon: 'bot-off',
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosMadeWithAiLookups',
+            name: t('feature_hideVideosMadeWithAiLookups_name', 'Look Up AI Labels'),
+            description: t('feature_hideVideosMadeWithAiLookups_desc', "Works with Made With AI Label. Asks YouTube for each card's label so labeled videos hide before you open them: one small request per card, four at a time, without your cookies."),
+            nameKey: 'feature_hideVideosMadeWithAiLookups_name',
+            descriptionKey: 'feature_hideVideosMadeWithAiLookups_desc',
+            group: 'Content',
+            icon: 'list-filter',
             isSubFeature: true,
             parentId: 'hideVideosFromHome',
             init() {},
@@ -41305,6 +41335,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || appState.settings.hideVideosLowViewFilter === true
                     || (appState.settings.hideVideosLowViewThreshold || 1000) !== 1000
                     || appState.settings.hideVideosSyntheticNarrationFilter === true
+                    || appState.settings.hideVideosMadeWithAiFilter === true
                     || appState.settings.hideVideosLowSignalFilter === true
                     || (appState.settings.hideVideosLowSignalMinViews || 1000) !== 1000
                     || (appState.settings.hideVideosLowSignalMinAgeDays || 30) !== 30
@@ -42344,6 +42375,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         defaultValue: 5
                     }));
                     typeSection.appendChild(localHeuristicsSection);
+
+                    // Its own section: the heuristics above promise no
+                    // network, and lookups send some.
+                    const aiLabelSection = createVideoHiderSection(
+                        t('videoHiderAiLabelTitle', "YouTube's AI label"),
+                        t('videoHiderAiLabelDesc', 'YouTube only shows its "Made with AI" label on the watch page, never on a card.')
+                    );
+                    aiLabelSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosMadeWithAiFilter',
+                        title: t('feature_hideVideosMadeWithAiFilter_name', 'Made With AI Label'),
+                        description: t('feature_hideVideosMadeWithAiFilter_desc', "Hide videos YouTube labels as made with AI. Astra learns the label when you open a video, then hides that video's cards everywhere. Sends nothing."),
+                        defaultChecked: false
+                    }));
+                    aiLabelSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosMadeWithAiLookups',
+                        title: t('feature_hideVideosMadeWithAiLookups_name', 'Look Up AI Labels'),
+                        description: t('feature_hideVideosMadeWithAiLookups_desc', "Works with Made With AI Label. Asks YouTube for each card's label so labeled videos hide before you open them: one small request per card, four at a time, without your cookies."),
+                        defaultChecked: false
+                    }));
+                    typeSection.appendChild(aiLabelSection);
 
                     const watchedField = document.createElement('label');
                     watchedField.className = 'ytkit-vh-field';

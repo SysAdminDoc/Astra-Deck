@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "Impossibile copiare la diagnostica. Apri le impostazioni e usa il pulsante bug in fondo alla barra laterale."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "Etichetta \"Creato con l'IA\""
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "Nasconde i video che YouTube etichetta come creati con l'IA. Astra impara l'etichetta quando apri un video, poi nasconde le sue schede ovunque. Non invia nulla."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "Cerca etichette IA"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "Funziona con l'etichetta \"Creato con l'IA\". Chiede a YouTube l'etichetta di ogni scheda, così i video etichettati spariscono prima che tu li apra: una piccola richiesta per scheda, quattro alla volta, senza i tuoi cookie."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "l'etichetta \"Creato con l'IA\" di YouTube"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "L'etichetta IA di YouTube"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube mostra la sua etichetta \"Creato con l'IA\" solo nella pagina di riproduzione, mai su una scheda."
   }
 }

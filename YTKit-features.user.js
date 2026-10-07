@@ -8226,6 +8226,21 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 		}
 		return null;
 	}
+	const AI_LABEL_CACHE_KEY = 'ytkit-ai-label-verdicts';
+	const AI_LABEL_CACHE_MAX = 10000;
+	const AI_LABEL_TTL_DAYS = Object.freeze({ labeled: 180, clean: 30 });
+	const AI_LABEL_LOOKUP_FIELDS = 'contents.twoColumnWatchNextResults.results.results.contents.videoPrimaryInfoRenderer.badges';
+	const AI_LABEL_LOOKUP_CONCURRENCY = 4;
+	const AI_LABEL_LOOKUP_BACKOFF_MS = 60000;
+	const AI_LABEL_LOOKUP_MAX_ATTEMPTS = 2;
+	function readMadeWithAiLabel(data) {
+		const contents = data?.contents?.twoColumnWatchNextResults?.results?.results?.contents;
+		if (!Array.isArray(contents)) return null;
+		const primary = contents.map(item => item?.videoPrimaryInfoRenderer).filter(Boolean);
+		if (!primary.length) return null;
+		return primary.some(info => Array.isArray(info.badges)
+			&& info.badges.some(badge => badge?.metadataBadgeRenderer?.icon?.iconType === 'INFO'));
+	}
 	const FILTER_REASON_MESSAGES = Object.freeze({
 		manual: ['videoHiderReasonManual', 'your saved hidden list'],
 		blockedChannel: ['videoHiderReasonBlockedChannel', 'a blocked channel rule'],
@@ -8241,6 +8256,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 		lowView: ['videoHiderReasonLowView', 'the low-view filter'],
 		'synthetic-narration': ['videoHiderReasonSyntheticNarration', 'the synthetic-narration marker filter'],
 		'synthetic-disclosed': ['videoHiderReasonSyntheticDisclosed', "YouTube's own altered-or-synthetic disclosure"],
+		'made-with-ai': ['videoHiderReasonMadeWithAi', 'YouTube\'s "Made with AI" label'],
 		'low-signal': ['videoHiderReasonLowSignal', 'the low-signal view/age filter'],
 		'upload-cadence': ['videoHiderReasonUploadCadence', 'the upload-cadence filter'],
 		watchedRatio: ['videoHiderReasonWatchedRatio', 'the watched-ratio filter'],
@@ -8350,6 +8366,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			getCurrentPath = () => globalThis.location?.pathname || '',
 			setFeatureHealth = () => {},
 			getPlayerResponseGlobal = () => globalThis.ytInitialPlayerResponse || null,
+			getInitialDataGlobal = () => globalThis.ytInitialData || null,
+			getInnertubeClientVersion = () => '',
 			extensionFetchJson = null,
 			storageWriteJSON = storageWrite,
 			filterListCodec = null,
@@ -9791,6 +9809,150 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				if (!cardId || String(details.videoId || '') !== String(cardId)) return null;
 				return findSyntheticDisclosure(response);
 			},
+			_aiVerdicts: null,
+			_aiLookupQueue: [],
+			_aiLookupQueued: new Set(),
+			_aiLookupAttempts: new Map(),
+			_aiLookupRunning: 0,
+			_aiLookupPausedUntil: 0,
+			_aiLookupResumeTimer: null,
+			_aiNavigateListener: null,
+			_aiDay() {
+				return Math.floor(nowFn() / 86400000);
+			},
+			_getAiVerdicts() {
+				if (this._aiVerdicts === null) {
+					const stored = storageRead(AI_LABEL_CACHE_KEY, {});
+					const verdicts = Object.create(null);
+					if (isPlainObject(stored)) {
+						for (const [id, entry] of Object.entries(stored)) {
+							if (VIDEO_ID_PATTERN.test(id) && Array.isArray(entry)
+								&& (entry[0] === 0 || entry[0] === 1) && Number.isInteger(entry[1])) {
+								verdicts[id] = [entry[0], entry[1]];
+							}
+						}
+					}
+					this._aiVerdicts = verdicts;
+				}
+				return this._aiVerdicts;
+			},
+			_aiVerdict(videoId) {
+				const entry = this._getAiVerdicts()[videoId];
+				if (!entry) return undefined;
+				const ttl = entry[0] === 1 ? AI_LABEL_TTL_DAYS.labeled : AI_LABEL_TTL_DAYS.clean;
+				return this._aiDay() - entry[1] > ttl ? undefined : entry[0] === 1;
+			},
+			_recordAiVerdict(videoId, labeled) {
+				if (!VIDEO_ID_PATTERN.test(String(videoId || '')) || typeof labeled !== 'boolean') return;
+				const verdicts = this._getAiVerdicts();
+				const previous = verdicts[videoId]?.[0];
+				verdicts[videoId] = [labeled ? 1 : 0, this._aiDay()];
+				const ids = Object.keys(verdicts);
+				if (ids.length > AI_LABEL_CACHE_MAX) {
+					ids.sort((a, b) => verdicts[a][1] - verdicts[b][1]);
+					for (const id of ids.slice(0, ids.length - AI_LABEL_CACHE_MAX)) delete verdicts[id];
+				}
+				storageWrite(AI_LABEL_CACHE_KEY, { ...verdicts });
+				if (labeled && previous !== 1 && !this._destroyed) {
+					documentRef?.querySelectorAll?.(`[data-ytkit-video-id="${videoId}"]`)
+						?.forEach?.(card => this._processVideoElement(card));
+				}
+			},
+			_captureAiLabel(data) {
+				if (appState.settings.hideVideosMadeWithAiFilter !== true) return;
+				const videoId = data?.currentVideoEndpoint?.watchEndpoint?.videoId;
+				const labeled = readMadeWithAiLabel(data);
+				if (labeled !== null) this._recordAiVerdict(videoId, labeled);
+			},
+			_installAiLabelCapture() {
+				this._resetAiLabelState();
+				try {
+					this._captureAiLabel(getInitialDataGlobal());
+				} catch (_) {
+				}
+				this._aiNavigateListener = (event) => {
+					if (appState.settings.hideVideosMadeWithAiFilter !== true) return;
+					try {
+						this._captureAiLabel(event?.detail?.response?.response);
+					} catch (_) {
+					}
+				};
+				documentRef?.addEventListener?.('yt-navigate-finish', this._aiNavigateListener);
+			},
+			_queueAiLookup(videoId) {
+				if (appState.settings.hideVideosMadeWithAiLookups !== true || typeof extensionFetchJson !== 'function') return;
+				if (this._destroyed || this._aiLookupQueued.has(videoId)
+					|| (this._aiLookupAttempts.get(videoId) || 0) >= AI_LABEL_LOOKUP_MAX_ATTEMPTS) return;
+				this._aiLookupQueued.add(videoId);
+				this._aiLookupQueue.push(videoId);
+				this._pumpAiLookups();
+			},
+			_pumpAiLookups() {
+				if (this._destroyed) return;
+				const wait = this._aiLookupPausedUntil - nowFn();
+				if (wait > 0) {
+					if (!this._aiLookupResumeTimer) {
+						this._aiLookupResumeTimer = setTimeoutFn(() => {
+							this._aiLookupResumeTimer = null;
+							this._pumpAiLookups();
+						}, wait);
+					}
+					return;
+				}
+				while (this._aiLookupRunning < AI_LABEL_LOOKUP_CONCURRENCY && this._aiLookupQueue.length) {
+					const videoId = this._aiLookupQueue.shift();
+					this._aiLookupRunning += 1;
+					this._lookupAiLabel(videoId).finally(() => {
+						this._aiLookupRunning -= 1;
+						this._pumpAiLookups();
+					});
+				}
+			},
+			async _lookupAiLabel(videoId) {
+				this._aiLookupAttempts.set(videoId, (this._aiLookupAttempts.get(videoId) || 0) + 1);
+				try {
+					const { data } = await extensionFetchJson({
+						method: 'POST',
+						url: `https://www.youtube.com/youtubei/v1/next?prettyPrint=false&fields=${encodeURIComponent(AI_LABEL_LOOKUP_FIELDS)}`,
+						headers: { 'Content-Type': 'application/json' },
+						data: JSON.stringify({
+							context: { client: { clientName: 'WEB', clientVersion: getInnertubeClientVersion() || '2.20261001.00.00' } },
+							videoId
+						}),
+						timeout: 10000,
+						retry: false
+					});
+					if (this._destroyed) return;
+					const labeled = readMadeWithAiLabel(data);
+					if (labeled !== null) this._recordAiVerdict(videoId, labeled);
+					this._aiLookupQueued.delete(videoId);
+					if (labeled === null) this._aiLookupAttempts.set(videoId, AI_LABEL_LOOKUP_MAX_ATTEMPTS);
+				} catch (error) {
+					if (this._destroyed) return;
+					const status = error?.response?.status;
+					if (status === 429 || status >= 500 || !status) {
+						this._aiLookupPausedUntil = nowFn() + AI_LABEL_LOOKUP_BACKOFF_MS;
+					}
+					this._aiLookupQueued.delete(videoId);
+					if ((this._aiLookupAttempts.get(videoId) || 0) < AI_LABEL_LOOKUP_MAX_ATTEMPTS) this._queueAiLookup(videoId);
+					DebugManager.log('VideoHider', `AI label lookup failed (${status || 'network'})`);
+				}
+			},
+			_resetAiLabelState() {
+				if (this._aiNavigateListener) {
+					documentRef?.removeEventListener?.('yt-navigate-finish', this._aiNavigateListener);
+					this._aiNavigateListener = null;
+				}
+				if (this._aiLookupResumeTimer) {
+					clearTimeoutFn(this._aiLookupResumeTimer);
+					this._aiLookupResumeTimer = null;
+				}
+				this._aiLookupQueue = [];
+				this._aiLookupQueued = new Set();
+				this._aiLookupAttempts = new Map();
+				this._aiLookupPausedUntil = 0;
+				this._aiVerdicts = null;
+			},
 			_extractVideoMetadata(element) {
 				const title = this._extractTitle(element);
 				const descriptionText = this._extractDescriptionText(element);
@@ -9940,6 +10102,12 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					if (metadata.syntheticNarration) {
 						return { hide: true, reason: 'synthetic-narration' };
 					}
+				}
+				if (appState.settings.hideVideosMadeWithAiFilter === true) {
+					const videoId = element?.dataset?.ytkitVideoId || this._extractVideoId(element);
+					const labeled = videoId ? this._aiVerdict(videoId) : false;
+					if (labeled === true) return { hide: true, reason: 'made-with-ai' };
+					if (labeled === undefined) this._queueAiLookup(videoId);
 				}
 				if (appState.settings.hideVideosLowSignalFilter === true) {
 					const minViews = Math.max(0, Number(appState.settings.hideVideosLowSignalMinViews) || 0);
@@ -10784,6 +10952,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			init() {
 				this._destroyed = false;
 				this._initializeFilterListSubscription();
+				this._installAiLabelCapture();
 				const css = `
                     /* Both overlay controls sit on the INLINE-END corner and
                        stay visible. That corner is also where YouTube mounts
@@ -11106,6 +11275,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				this._directWatchResumeAfterDecision = false;
 				this._inputReadability = null;
 				this._inputHealthDegraded = false;
+				this._resetAiLabelState();
 				this._restoreRemovedVideoNodes();
 				documentRef?.querySelectorAll?.('.ytkit-video-hidden-placeholder')
 					?.forEach?.((placeholder) => placeholder.remove());
@@ -11131,7 +11301,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 	});
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = {
-			createHideVideosFromHomeFeature
+			createHideVideosFromHomeFeature,
+			readMadeWithAiLabel
 		};
 	}
 })();

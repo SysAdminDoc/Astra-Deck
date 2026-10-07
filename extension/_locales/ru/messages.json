@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "Не удалось скопировать диагностику. Откройте настройки и нажмите кнопку с жуком внизу боковой панели."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "Метка «Создано с помощью ИИ»"
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "Скрывает видео, которые YouTube помечает как созданные с помощью ИИ. Astra запоминает метку, когда вы открываете видео, и затем везде скрывает его карточки. Ничего не отправляет."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "Проверять метки ИИ"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "Работает вместе с меткой «Создано с помощью ИИ». Запрашивает у YouTube метку каждой карточки, чтобы помеченные видео скрывались до открытия: один небольшой запрос на карточку, по четыре одновременно, без ваших cookie."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "метка YouTube «Создано с помощью ИИ»"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "Метка ИИ от YouTube"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube показывает метку «Создано с помощью ИИ» только на странице просмотра, а не на карточках."
   }
 }

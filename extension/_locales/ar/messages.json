@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "تعذّر نسخ التشخيص. افتح لوحة الإعدادات واستخدم زر الخطأ أسفل الشريط الجانبي."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "تصنيف \"مصنوع بالذكاء الاصطناعي\""
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "إخفاء الفيديوهات التي يصنفها YouTube بأنها مصنوعة بالذكاء الاصطناعي. يتعرّف Astra على التصنيف عند فتح الفيديو، ثم يخفي بطاقاته في كل مكان. لا يرسل أي شيء."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "البحث عن تصنيفات الذكاء الاصطناعي"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "يعمل مع تصنيف \"مصنوع بالذكاء الاصطناعي\". يسأل YouTube عن تصنيف كل بطاقة لتختفي الفيديوهات المصنفة قبل فتحها: طلب صغير لكل بطاقة، أربعة في كل مرة، دون ملفات تعريف الارتباط الخاصة بك."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "تصنيف YouTube \"مصنوع بالذكاء الاصطناعي\""
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "تصنيف YouTube للذكاء الاصطناعي"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "لا يعرض YouTube تصنيف \"مصنوع بالذكاء الاصطناعي\" إلا في صفحة المشاهدة، وليس على البطاقات أبدًا."
   }
 }

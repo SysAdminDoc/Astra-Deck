@@ -18,8 +18,8 @@ companion, on the user's machine:
 - Hidden-video lists, blocked channels, allowed restored videos, subscription
   groups, dead-channel staging records, and per-channel preferences.
 - Watch progress, watch-time summaries, timestamp bookmarks, video notes,
-  transcript index data, SponsorBlock/DeArrow/RYD caches, and thumbnail/cache
-  metadata.
+  transcript index data, SponsorBlock/DeArrow/RYD caches, the cache of
+  YouTube "Made with AI" labels, and thumbnail/cache metadata.
 - Local diagnostic ring-buffer entries and selector-health snapshots used for
   user-downloaded support bundles.
 - Astra Downloader local configuration, download history, logs, and temporary
@@ -49,6 +49,7 @@ Store-safe builds can contact these origins for user-visible features:
 | Destination | Data sent | When |
 | --- | --- | --- |
 | YouTube / YouTube-nocookie / youtu.be / i.ytimg.com | YouTube page requests, video IDs, caption/thumbnail requests, and page context needed by YouTube features. | When the extension runs on YouTube pages or the user uses transcript/thumbnail features. |
+| YouTube InnerTube (`www.youtube.com/youtubei/v1/next`) | One video ID per feed card, with a field mask that asks only for the watch page's label badges. No cookies are sent, so the lookup isn't tied to your account. At most four run at once. | Only when Look Up AI Labels and Made With AI Label are both on. Made With AI Label alone sends nothing: it reads the label from watch pages you open. |
 | SponsorBlock / DeArrow (`sponsor.ajay.app`) | Video IDs and feature requests for sponsor segments, titles, and thumbnails. | Only when SponsorBlock or DeArrow features are enabled. |
 | Return YouTube Dislike | Video IDs for estimated dislike counts. | Only when RYD features are enabled. |
 | Reddit | YouTube video URL or search context for Reddit discussion lookup. | Only when the Reddit discussion panel is enabled. |

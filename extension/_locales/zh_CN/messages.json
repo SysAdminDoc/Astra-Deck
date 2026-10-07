@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "无法复制诊断信息。请打开设置面板，使用侧边栏底部的错误按钮。"
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "“AI 制作”标签"
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "隐藏 YouTube 标记为 AI 制作的视频。你打开视频时 Astra 会记下该标签，之后在所有地方隐藏这个视频的卡片。不发送任何内容。"
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "查询 AI 标签"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "配合“AI 制作”标签使用。向 YouTube 查询每张卡片的标签，让带标签的视频在打开前就隐藏：每张卡片一个小请求，最多同时四个，不带你的 Cookie。"
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "YouTube 的“AI 制作”标签"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "YouTube 的 AI 标签"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube 只在播放页显示“AI 制作”标签，从不在卡片上显示。"
   }
 }

@@ -3608,7 +3608,14 @@ const ASTRA_DECK_BUILD = {
 		"zapRuleRemoveAriaTpl": "Remove the rule for {selector}",
 		"zapRuleToggleAriaTpl": "Apply the rule for {selector}",
 		"settingsCopyDiagnosticsTitle": "Copy diagnostics for a bug report",
-		"diagnosticsMenuCopyFailed": "Couldn't copy the diagnostics. Open the settings panel and use the bug button under the sidebar."
+		"diagnosticsMenuCopyFailed": "Couldn't copy the diagnostics. Open the settings panel and use the bug button under the sidebar.",
+		"feature_hideVideosMadeWithAiFilter_name": "Made With AI Label",
+		"feature_hideVideosMadeWithAiFilter_desc": "Hide videos YouTube labels as made with AI. Astra learns the label when you open a video, then hides that video's cards everywhere. Sends nothing.",
+		"feature_hideVideosMadeWithAiLookups_name": "Look Up AI Labels",
+		"feature_hideVideosMadeWithAiLookups_desc": "Works with Made With AI Label. Asks YouTube for each card's label so labeled videos hide before you open them: one small request per card, four at a time, without your cookies.",
+		"videoHiderReasonMadeWithAi": "YouTube's \"Made with AI\" label",
+		"videoHiderAiLabelTitle": "YouTube's AI label",
+		"videoHiderAiLabelDesc": "YouTube only shows its \"Made with AI\" label on the watch page, never on a card."
 	}
 };
 

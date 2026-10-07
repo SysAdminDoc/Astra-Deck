@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "Die Diagnose konnte nicht kopiert werden. Öffne die Einstellungen und nutze die Fehler-Schaltfläche unten in der Seitenleiste."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "Label „Mit KI erstellt“"
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "Blendet Videos aus, die YouTube als mit KI erstellt kennzeichnet. Astra erkennt das Label, wenn du ein Video öffnest, und blendet danach überall dessen Karten aus. Sendet nichts."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "KI-Labels nachschlagen"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "Funktioniert zusammen mit „Mit KI erstellt“. Fragt YouTube nach dem Label jeder Karte, damit gekennzeichnete Videos schon vor dem Öffnen verschwinden: eine kleine Anfrage pro Karte, vier gleichzeitig, ohne deine Cookies."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "YouTubes Label „Mit KI erstellt“"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "YouTubes KI-Label"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube zeigt sein Label „Mit KI erstellt“ nur auf der Wiedergabeseite, nie auf einer Karte."
   }
 }

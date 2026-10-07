@@ -236,25 +236,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   it SHALL hide.
   Complexity: S
 
-- [ ] P2 — Hide videos YouTube labels "Made with AI"
-  Why: the strongest request of the window (Weedout's Show HN reached 185 points on
-  2026-09-01), and YouTube made the label more visible on 2026-05-27. Astra's
-  `hideVideosSyntheticNarrationFilter` matches text markers, not YouTube's own label. The other
-  existing AI item (Roadmap_Blocked "Hide the new AI surfaces") covers Ask and search carousels,
-  not this.
-  Evidence: https://github.com/masteranza/weedout-for-youtube (MIT). The label exists only in
-  watch-page data at `videoPrimaryInfoRenderer.badges[].metadataBadgeRenderer` (icon `INFO`,
-  label "AI"). Feed cards carry nothing, so Weedout makes one InnerTube `next` call per card with
-  a `fields` mask and caches the verdict. Confidence: Verified mechanism, Likely for Astra.
-  Touches: a new module under `extension/features/`, the MAIN-world bridge for watch-page data, a
-  `storage.local` verdict cache, `extension/core/settings-schema.js` (two keys),
-  `extension/_locales/**`, `docs/privacy-policy.md` for the lookup mode, tests, license notices
-  if Weedout code is adapted.
-  Acceptance: stage one sends nothing. WHEN a watch page carries the label, THEN its video ID
-  SHALL be cached and its cards hidden everywhere after, with hide-attribution. Stage two is
-  opt-in and default off: masked lookups behind a concurrency cap chosen from a measured live run.
-  Complexity: L
-
 - [ ] P3 — Bring the What's New note to userscript users
   Why: the extension popup shows a What's New banner after an update, but the userscript has no
   popup and the in-page panel shows nothing. Userscript installs update themselves from main, so

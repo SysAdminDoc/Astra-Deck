@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "Não foi possível copiar o diagnóstico. Abra as configurações e use o botão de bug no rodapé da barra lateral."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "Rótulo \"Feito com IA\""
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "Oculta vídeos que o YouTube rotula como feitos com IA. O Astra aprende o rótulo quando você abre um vídeo e depois oculta os cards dele em todo lugar. Não envia nada."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "Consultar rótulos de IA"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "Funciona com o rótulo \"Feito com IA\". Pergunta ao YouTube o rótulo de cada card para que vídeos rotulados sumam antes de você abri-los: uma pequena solicitação por card, quatro por vez, sem seus cookies."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "o rótulo \"Feito com IA\" do YouTube"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "O rótulo de IA do YouTube"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "O YouTube só mostra o rótulo \"Feito com IA\" na página do vídeo, nunca em um card."
   }
 }

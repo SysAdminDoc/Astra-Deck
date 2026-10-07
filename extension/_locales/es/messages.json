@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "No se pudo copiar el diagnóstico. Abre los ajustes y usa el botón de error al pie de la barra lateral."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "Etiqueta \"Hecho con IA\""
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "Oculta los videos que YouTube etiqueta como hechos con IA. Astra aprende la etiqueta al abrir un video y luego oculta sus tarjetas en todas partes. No envía nada."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "Consultar etiquetas de IA"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "Funciona con la etiqueta \"Hecho con IA\". Pregunta a YouTube la etiqueta de cada tarjeta para que los videos etiquetados se oculten antes de abrirlos: una pequeña solicitud por tarjeta, cuatro a la vez, sin tus cookies."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "la etiqueta \"Hecho con IA\" de YouTube"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "La etiqueta de IA de YouTube"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube solo muestra su etiqueta \"Hecho con IA\" en la página de reproducción, nunca en una tarjeta."
   }
 }

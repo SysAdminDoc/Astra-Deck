@@ -22,7 +22,8 @@ test('settings reference covers every user-facing schema entry with audited purp
     const entries = collectReferenceEntries();
     const expectedKeys = schema.SETTINGS_SCHEMA.filter((entry) => !entry.internal).map((entry) => entry.key);
     // 483 since Hide Thumbnail Badges joined the Content group.
-    assert.equal(entries.length, 483);
+    // 485 since Made With AI Label and Look Up AI Labels joined it.
+    assert.equal(entries.length, 485);
     assert.deepEqual(entries.map((entry) => entry.key), expectedKeys);
     for (const entry of entries) {
         assert.ok(entry.title.length >= 2, `${entry.key} needs a readable title`);

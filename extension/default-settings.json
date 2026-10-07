@@ -140,6 +140,8 @@
   "hideVideosLowViewFilter": false,
   "hideVideosLowViewThreshold": 1000,
   "hideVideosSyntheticNarrationFilter": false,
+  "hideVideosMadeWithAiFilter": false,
+  "hideVideosMadeWithAiLookups": false,
   "hideVideosLowSignalFilter": false,
   "hideVideosLowSignalMinViews": 1000,
   "hideVideosLowSignalMinAgeDays": 30,

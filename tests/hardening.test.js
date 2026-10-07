@@ -5827,10 +5827,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Action Notices adds the switch that quiets confirmation toasts (489).
     // Buffer / Preload is retired with its target slider (489 → 487).
     // Hide Thumbnail Badges adds one toggle (488).
+    // Made With AI Label and its lookup switch add two (490).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 488,
-        'SETTINGS_SCHEMA must cover all 488 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 490,
+        'SETTINGS_SCHEMA must cover all 490 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -8289,8 +8290,15 @@ test('v4.46.12 userscript drift checker fails on a record that differs from a fr
                 cwd: scratch,
                 stdio: 'pipe',
                 // The copy has no node_modules; the generator's parser comes
-                // from the real tree.
-                env: { ...process.env, NODE_PATH: path.join(repoRoot, 'node_modules') }
+                // from the real tree. It has no git either, and the SRI pins
+                // name the release tag's blobs, so tags come from the real
+                // repository too (without them every pin reads as drift).
+                env: {
+                    ...process.env,
+                    NODE_PATH: path.join(repoRoot, 'node_modules'),
+                    GIT_DIR: require('child_process').execFileSync('git', ['rev-parse', '--absolute-git-dir'],
+                        { cwd: repoRoot, windowsHide: true }).toString().trim()
+                }
             });
 
         const clean = run();

@@ -117,6 +117,7 @@
         { id: 'deArrowCache', location: 'extension-local', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'sponsorBlockCache', location: 'extension-local', key: 'sb_segments_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'returnDislikeCache', location: 'extension-local', key: 'ytkit-ryd-cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'aiLabelVerdicts', location: 'extension-local', key: 'ytkit-ai-label-verdicts', backup: 'exclude', reason: 'Rebuildable cache of YouTube\'s own AI labels.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'featureCrashCounts', location: 'extension-local', key: 'ytkit_crash_counts', backup: 'exclude', reason: 'Installation-specific diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'safeModeState', location: 'extension-local', key: 'ytkit_safe_mode', backup: 'exclude', reason: 'Installation-specific crash recovery state.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'diagnosticErrors', location: 'settings-nested', key: '_errors', backup: 'exclude', reason: 'Installation-specific diagnostics are scrubbed from settings.', credentialScrub: 'entire-domain', migration: 'none' },

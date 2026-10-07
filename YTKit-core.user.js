@@ -8103,6 +8103,7 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		{ id: 'deArrowCache', location: 'extension-local', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'sponsorBlockCache', location: 'extension-local', key: 'sb_segments_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'returnDislikeCache', location: 'extension-local', key: 'ytkit-ryd-cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+		{ id: 'aiLabelVerdicts', location: 'extension-local', key: 'ytkit-ai-label-verdicts', backup: 'exclude', reason: 'Rebuildable cache of YouTube\'s own AI labels.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'featureCrashCounts', location: 'extension-local', key: 'ytkit_crash_counts', backup: 'exclude', reason: 'Installation-specific diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'safeModeState', location: 'extension-local', key: 'ytkit_safe_mode', backup: 'exclude', reason: 'Installation-specific crash recovery state.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'diagnosticErrors', location: 'settings-nested', key: '_errors', backup: 'exclude', reason: 'Installation-specific diagnostics are scrubbed from settings.', credentialScrub: 'entire-domain', migration: 'none' },
@@ -12561,6 +12562,8 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "hideVideosLowViewFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideVideosLowViewThreshold", category: "content-filter", type: "number", defaultValue: 1000, min: 0, max: 10000000, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideVideosSyntheticNarrationFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
+	Object.freeze({ key: "hideVideosMadeWithAiFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.97.0" }),
+	Object.freeze({ key: "hideVideosMadeWithAiLookups", category: "content-filter", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.97.0" }),
 	Object.freeze({ key: "hideVideosLowSignalFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
 	Object.freeze({ key: "hideVideosLowSignalMinViews", category: "content-filter", type: "number", defaultValue: 1000, min: 0, max: 10000000, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
 	Object.freeze({ key: "hideVideosLowSignalMinAgeDays", category: "content-filter", type: "number", defaultValue: 30, min: 0, max: 3650, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
@@ -17569,8 +17572,8 @@ __astraDeckRegistry["core/data-flow.js"] = function (globalThis, self, window, c
 	const ORIGIN_CATALOGUE = Object.freeze([
 		Object.freeze({
 			origin: 'https://*.youtube.com',
-			purpose: 'YouTube DOM, InnerTube fallback player response, caption tracks, and opt-in video insights.',
-			requiredByFeatures: ['transcriptViewer', 'autoSubtitles', 'videoInsights'],
+			purpose: 'YouTube DOM, InnerTube fallback player response, caption tracks, opt-in video insights, and opt-in AI label lookups.',
+			requiredByFeatures: ['transcriptViewer', 'autoSubtitles', 'videoInsights', 'hideVideosMadeWithAiLookups'],
 			credentialsPolicy: 'no-cookies',
 			profile: 'store-safe',
 			hostGrant: 'required',

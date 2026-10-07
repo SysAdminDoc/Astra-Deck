@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "診断をコピーできませんでした。設定パネルを開き、サイドバー下部のバグボタンを使ってください。"
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "「AI で作成」ラベル"
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "YouTube が AI で作成されたとラベル付けした動画を非表示にします。動画を開いたときに Astra がラベルを記録し、その後はどこでもその動画のカードを隠します。何も送信しません。"
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "AI ラベルを照会"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "「AI で作成」ラベルと併用します。各カードのラベルを YouTube に問い合わせ、ラベル付きの動画を開く前に隠します。カードごとに小さなリクエストを 1 件、同時に 4 件まで、Cookie なしで送信します。"
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "YouTube の「AI で作成」ラベル"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "YouTube の AI ラベル"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube は「AI で作成」ラベルを再生ページにのみ表示し、カードには表示しません。"
   }
 }

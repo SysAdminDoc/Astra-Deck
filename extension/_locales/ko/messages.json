@@ -9156,5 +9156,26 @@
   },
   "diagnosticsMenuCopyFailed": {
     "message": "진단을 복사할 수 없습니다. 설정 패널을 열고 사이드바 아래쪽의 버그 버튼을 사용하세요."
+  },
+  "feature_hideVideosMadeWithAiFilter_name": {
+    "message": "'AI로 제작' 라벨"
+  },
+  "feature_hideVideosMadeWithAiFilter_desc": {
+    "message": "YouTube가 AI로 제작되었다고 표시한 동영상을 숨깁니다. 동영상을 열 때 Astra가 라벨을 기억하고, 이후 모든 곳에서 해당 동영상 카드를 숨깁니다. 아무것도 전송하지 않습니다."
+  },
+  "feature_hideVideosMadeWithAiLookups_name": {
+    "message": "AI 라벨 조회"
+  },
+  "feature_hideVideosMadeWithAiLookups_desc": {
+    "message": "'AI로 제작' 라벨과 함께 작동합니다. 각 카드의 라벨을 YouTube에 물어 라벨이 붙은 동영상을 열기 전에 숨깁니다. 카드당 작은 요청 하나, 한 번에 네 개까지, 쿠키 없이 보냅니다."
+  },
+  "videoHiderReasonMadeWithAi": {
+    "message": "YouTube의 'AI로 제작' 라벨"
+  },
+  "videoHiderAiLabelTitle": {
+    "message": "YouTube의 AI 라벨"
+  },
+  "videoHiderAiLabelDesc": {
+    "message": "YouTube는 'AI로 제작' 라벨을 시청 페이지에만 표시하고 카드에는 표시하지 않습니다."
   }
 }
