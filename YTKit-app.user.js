@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.96.0
+// @version      4.97.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -742,7 +742,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.96.0';
+	const YTKIT_VERSION = '4.97.0';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;

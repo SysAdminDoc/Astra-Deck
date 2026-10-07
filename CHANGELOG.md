@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.97.0] (2026-10-07)
+
 ### Added
 
 - The popup and side panel now follow your system's light or dark setting, so they no longer stay dark when everything else is light. Faded rows in the popup's data-flow list are readable again in dark mode too.
