@@ -388,3 +388,75 @@ summary:active {
     box-shadow: none;
   }
 }
+
+/* Light theme. The popup and side panel used to be dark only while the in-page
+   settings panel followed YouTube's theme, so a light-mode user got a bright
+   panel and a dark toolbar popup. Every colour above flows through these
+   tokens, so repainting them is most of the job; the literals that don't are
+   relit in popup.css and sidepanel.css under the same media query. Text and
+   status inks are darkened until they clear 4.5:1 on their own tinted wash. */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --astra-canvas: #eef1f6;
+    --astra-surface: #ffffff;
+    --astra-surface-raised: #f6f8fb;
+    --astra-surface-inset: #e9edf3;
+    --astra-surface-hover: #e3e9f1;
+    --astra-border: #c3ccd8;
+    --astra-border-subtle: #d8dee7;
+    --astra-border-strong: #6f7d90;
+    --astra-text: #10151c;
+    --astra-text-secondary: #333e4d;
+    --astra-text-muted: #516073;
+    --astra-accent: #c4301e;
+    --astra-accent-strong: #a8230f;
+    --astra-accent-ink: #ffffff;
+    --astra-accent-soft: rgba(196, 48, 30, 0.1);
+    --astra-amber: #8a5300;
+    --astra-info: #1d5cb8;
+    --astra-success: #14693a;
+    --astra-warning: #8a5300;
+    --astra-error: #b0222e;
+    --astra-focus: 0 0 0 2px var(--astra-canvas), 0 0 0 4px rgba(168, 35, 15, 0.85);
+    --astra-highlight: rgba(255, 255, 255, 0.7);
+    --astra-scrollbar: #b3bdcb;
+    --astra-scrollbar-hover: #94a1b3;
+    --astra-shadow-low: 0 8px 22px rgba(30, 45, 70, 0.1);
+    --astra-shadow-high: 0 20px 52px rgba(30, 45, 70, 0.2);
+
+    --astra-accent-050: #7a1d0e;
+    --astra-accent-100: #8a2312;
+    --astra-accent-200: #8a2312;
+    --astra-accent-300: #962815;
+    --astra-amber-100: #6e4000;
+    --astra-amber-200: #7a4700;
+    --astra-amber-300: #7a4700;
+    --astra-error-100: #8f1a26;
+    --astra-error-200: #8f1a26;
+    --astra-error-300: #9c1e2b;
+    --astra-error-400: #a8212e;
+    --astra-success-100: #0f5a30;
+    --astra-success-200: #0f6a3f;
+    --astra-success-300: #12704a;
+    --astra-info-100: #174c9a;
+    --astra-violet-200: #5a30a6;
+    --astra-violet-300: #6a3cc0;
+    --astra-neutral-300: #4a4f57;
+
+    --astra-brand-from: #cf3a24;
+    --astra-brand-to: #b02a18;
+    --astra-knob-off: linear-gradient(180deg, #ffffff, #dde2ea);
+    --astra-knob-on: linear-gradient(180deg, #ffffff, #f2f3f5);
+
+    --border-hover: #a9b4c3;
+    --border-strong: #6f7d90;
+    --text-subtle: #5b6a7d;
+    --accent-softer: rgba(196, 48, 30, 0.06);
+    --accent-border: rgba(196, 48, 30, 0.45);
+  }
+
+  :is(.cta-button:not(.cta-secondary), .sp-refresh-btn) {
+    border-color: var(--astra-accent-strong);
+  }
+}

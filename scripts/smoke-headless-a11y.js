@@ -77,7 +77,8 @@ const SURFACES = Object.freeze([
         width: 420,
         height: 800,
         settleMs: 2200,
-        themes: Object.freeze(['dark']),
+        themes: Object.freeze(['dark', 'light']),
+        textContrast: true,
         settingsDiff: true,
         filterGrant: true,
         localeStates: LOCALE_STATES,
@@ -91,7 +92,8 @@ const SURFACES = Object.freeze([
         width: 420,
         height: 800,
         settleMs: 1000,
-        themes: Object.freeze(['dark']),
+        themes: Object.freeze(['dark', 'light']),
+        textContrast: true,
         rtlLocales: Object.freeze(['ar']),
         localeStates: LOCALE_STATES,
         ownsDocument: true,
@@ -1176,6 +1178,123 @@ async function auditRtlLayout(client, surface, locale) {
     if (failures.length) throw new Error(`${surface.name}/${locale}/zoom-200: ${failures.join('; ')}`);
 }
 
+// Computed text contrast for the extension-owned pages. The in-page surfaces
+// get theirs from probe-light-surfaces.js; the popup and side panel own their
+// document, so this reads the cascade the same way: each text node's colour
+// against the background composited from its ancestors, WCAG AA for the size
+// class. A gradient is checked at every colour stop; an image is not read.
+async function auditTextContrast(client, surface, stateName) {
+    if (!surface.textContrast) return 0;
+    client.context = `${surface.name}/${stateName} text contrast`;
+    // Banners, the welcome card and collapsed disclosures start hidden, so a
+    // scan of the first paint would never see their colours. A constructed
+    // sheet shows them for the scan (the pages' CSP refuses an inline <style>)
+    // and is removed afterwards. Toggling the hidden and open attributes
+    // instead woke the pages' own observers.
+    await client.evaluate(`(() => {
+        const reveal = new CSSStyleSheet();
+        reveal.replaceSync('html body [hidden]:not(#astra-r1):not(#astra-r2):not(#astra-r3) { display: block !important; }'
+            + ' details:not([open])::details-content { content-visibility: visible !important; display: block !important; }');
+        globalThis.__astraReveal = reveal;
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, reveal];
+        return true;
+    })()`);
+    if (process.env.ASTRA_CONTRAST_SHOT) {
+        const image = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+        fs.writeFileSync(path.join(OUT_DIR, `${surface.name}-${stateName.split('/')[0]}-revealed.png`), Buffer.from(image.data, 'base64'));
+    }
+    const result = await client.evaluate(`(() => {
+        const parse = (value) => {
+            const m = value.match(/rgba?\\(([^)]+)\\)/);
+            if (!m) return null;
+            const p = m[1].split(/[ ,/]+/).filter(Boolean).map(Number);
+            return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+        };
+        const over = (top, bottom) => {
+            const a = top.a + bottom.a * (1 - top.a);
+            if (a === 0) return { r: 0, g: 0, b: 0, a: 0 };
+            const mix = (t, b) => (t * top.a + b * bottom.a * (1 - top.a)) / a;
+            return { r: mix(top.r, bottom.r), g: mix(top.g, bottom.g), b: mix(top.b, bottom.b), a };
+        };
+        const lum = (c) => {
+            const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+            return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+        };
+        const canvas = parse(getComputedStyle(document.documentElement).backgroundColor);
+        const base = canvas && canvas.a > 0 ? canvas : { r: 255, g: 255, b: 255, a: 1 };
+        // Every backdrop the text can sit on. A gradient contributes each of its
+        // colour stops as a separate candidate, so a dark stop under light text
+        // fails even when the element's own background-color is transparent.
+        const backdrops = (element) => {
+            const chain = [];
+            for (let node = element; node && node.nodeType === 1; node = node.parentElement) chain.push(node);
+            let candidates = [{ ...base, a: 1 }];
+            for (const node of chain.reverse()) {
+                const style = getComputedStyle(node);
+                const bg = parse(style.backgroundColor);
+                if (bg && bg.a > 0) candidates = candidates.map((c) => over(bg, c));
+                const stops = (style.backgroundImage.match(/rgba?\\([^)]+\\)/g) || [])
+                    .map(parse).filter((c) => c && c.a > 0);
+                if (stops.length) {
+                    candidates = candidates.flatMap((c) => stops.map((stop) => over(stop, c)));
+                    const unique = new Map(candidates.map((c) => [[c.r, c.g, c.b].map(Math.round).join(), c]));
+                    candidates = [...unique.values()].slice(0, 24);
+                }
+            }
+            return candidates;
+        };
+        const failures = [];
+        const seen = new Set();
+        let checked = 0;
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+            if (!text.nodeValue.trim()) continue;
+            const el = text.parentElement;
+            if (!el || seen.has(el) || ['SCRIPT', 'STYLE', 'OPTION'].includes(el.tagName)) continue;
+            seen.add(el);
+            const style = getComputedStyle(el);
+            if (style.visibility === 'hidden' || style.display === 'none') continue;
+            const rect = el.getBoundingClientRect();
+            if (rect.width < 1 || rect.height < 1) continue;
+            if (el.closest('[disabled], [aria-disabled="true"], [inert]')) continue;
+            const fg0 = parse(style.color);
+            if (!fg0) continue;
+            const candidates = backdrops(el);
+            let opacity = 1;
+            for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                opacity *= Number(getComputedStyle(node).opacity);
+            }
+            let ratio = Infinity;
+            let bg = candidates[0];
+            for (const candidate of candidates) {
+                const l1 = lum(over({ ...fg0, a: fg0.a * opacity }, candidate)), l2 = lum(candidate);
+                const r = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+                if (r < ratio) { ratio = r; bg = candidate; }
+            }
+            const size = parseFloat(style.fontSize);
+            const large = size >= 24 || (size >= 18.66 && Number(style.fontWeight) >= 700);
+            checked += 1;
+            if (ratio < (large ? 3 : 4.5)) {
+                const name = (node) => (node.id ? '#' + node.id : '')
+                    + (String(node.className).split(' ')[0] ? '.' + String(node.className).split(' ')[0] : node.tagName.toLowerCase());
+                const label = (el.parentElement ? name(el.parentElement) + ' > ' : '') + name(el);
+                const detail = label + ' ' + ratio.toFixed(2) + ' fg=' + style.color
+                    + ' bg=rgb(' + [bg.r, bg.g, bg.b].map(Math.round) + ')';
+                if (!failures.includes(detail)) failures.push(detail);
+            }
+        }
+        return { checked, failures };
+    })()`);
+    await client.evaluate(`(() => {
+        document.adoptedStyleSheets = document.adoptedStyleSheets.filter((sheet) => sheet !== globalThis.__astraReveal);
+        return true;
+    })()`);
+    if (result.failures.length) {
+        throw new Error(`${surface.name}/${stateName}: ${result.failures.length} text contrast failure(s): ${result.failures.slice(0, 80).join(' | ')}`);
+    }
+    return result.checked;
+}
+
 async function captureSurface(client, surface, theme) {
     await client.evaluate(`(() => {
         const root = document.querySelector(${JSON.stringify(surface.selector)});
@@ -1561,6 +1680,9 @@ async function auditSurface(client, stageDir, surface, timeoutMs, fixtureOrigin 
                 viewport = await configureRenderedState(client, surface, theme, mode);
             }
             if (mode === 'normal') await captureSurface(client, surface, theme);
+            const contrastChecks = mode === 'normal'
+                ? await auditTextContrast(client, surface, `${theme}/${mode}`)
+                : 0;
             const controls = await auditKeyboardPath(client, surface, `${theme}/${mode}`);
             const focusTrapChecks = mode === 'normal'
                 ? await auditFocusTrap(client, surface, `${theme}/${mode}`)
@@ -1584,7 +1706,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs, fixtureOrigin 
                 ? await auditCommentSearchStates(client, surface, `${theme}/${mode}`)
                 : 0;
             const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${theme}/${mode}`);
-            reports.push({ busyFocusChecks, commentSearchChecks, controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
+            reports.push({ busyFocusChecks, commentSearchChecks, contrastChecks, controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -1944,6 +2066,7 @@ async function runFixtureStates(options) {
             console.log(
                 `[headless-a11y] ${surface.name}: ${reports.length} state(s), `
                 + `${total} keyboard focus visits, `
+                + `${reports.reduce((sum, report) => sum + (report.contrastChecks || 0), 0)} text-contrast checks, `
                 + `${reports.reduce((sum, report) => sum + (report.focusTrapChecks || 0), 0)} focus-trap assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.busyFocusChecks || 0), 0)} busy-focus assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.settingsDiffChecks || 0), 0)} settings-diff assertions, `
