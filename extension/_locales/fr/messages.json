@@ -9180,5 +9180,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "Saut vers le moment le plus revu dès la fin de la pub"
+  },
+  "schemaSurfaceBackup": {
+    "message": "fichier de sauvegarde"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "Ce réglage n'a pas encore d'éditeur. Exportez une sauvegarde, modifiez la valeur dans le fichier, puis réimportez-la."
   }
 }

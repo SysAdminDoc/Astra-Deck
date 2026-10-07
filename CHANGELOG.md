@@ -16,6 +16,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- In the popup's Settings Overview, the chips on feature schedules and the sync allowlist used to open the in-page panel on nothing. They now point you to the backup file, which is where those two get changed.
+
 - The Reset chip on a changed setting card doesn't cover its switch or dropdown anymore. It sits beside the title now.
 
 - When a core module fails to load, the log names the module and its error instead of "undefined". A load that fails with no error at all gets one retry.

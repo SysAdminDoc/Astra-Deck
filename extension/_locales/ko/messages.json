@@ -9180,5 +9180,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "광고가 끝나면 가장 많이 다시 본 장면으로 이동합니다"
+  },
+  "schemaSurfaceBackup": {
+    "message": "백업 파일"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "이 설정은 아직 편집기가 없습니다. 백업을 내보내 파일에서 값을 바꾼 뒤 다시 가져오세요."
   }
 }

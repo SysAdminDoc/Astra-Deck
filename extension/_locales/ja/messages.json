@@ -9180,5 +9180,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "広告が終わったら最も繰り返し再生された場面へ移動します"
+  },
+  "schemaSurfaceBackup": {
+    "message": "バックアップファイル"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "この設定にはまだ編集画面がありません。バックアップをエクスポートし、ファイル内の値を変更してからインポートしてください。"
   }
 }

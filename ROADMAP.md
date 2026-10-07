@@ -4,17 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P3 — Two popup "in-page panel" settings have no editor anywhere
-  Why: found 2026-10-06. `featureSchedules` and `syncSafePrefsAllowlist` show the popup's
-  "in-page panel" button, which promises the panel edits them, but nothing does. The panel now
-  reports `focused: false` for them and opens on its last page. The popup doesn't read that
-  reply yet (`sendPanelOpenMessage` in `extension/popup.js` only checks `ok`), so it can't say so.
-  Where: `extension/popup.js` (`createSchemaSurfaceChip`), `extension/ytkit.js` (schedules ~6245,
-  sync allowlist ~4915).
-  Acceptance: neither key SHALL offer a button that opens the panel on nothing: each either gets
-  an editor its chip lands on, or the chip says where it is changed.
-  Complexity: S
-
 - [ ] P3 — A page's yt-navigate-finish still gets a sealed navigate out of the isolated world, and the live bridge smoke misses three checks
   Why: the 2026-10-06 review of the bridge commits left these after the MAIN task manager
   stopped listening to raw navigate events. (1) The isolated world turns YouTube's

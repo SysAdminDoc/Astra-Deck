@@ -9180,5 +9180,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "广告结束后跳到重播最多的片段"
+  },
+  "schemaSurfaceBackup": {
+    "message": "备份文件"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "此设置暂无编辑器。请导出备份，在文件中修改该值，然后重新导入。"
   }
 }

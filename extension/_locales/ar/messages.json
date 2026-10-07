@@ -9180,5 +9180,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "سيتم الانتقال إلى اللحظة الأكثر إعادة بعد انتهاء الإعلان"
+  },
+  "schemaSurfaceBackup": {
+    "message": "ملف النسخة الاحتياطية"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "لا يوجد محرر لهذا الإعداد بعد. صدّر نسخة احتياطية، وغيّر القيمة في الملف، ثم استوردها."
   }
 }

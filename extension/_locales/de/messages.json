@@ -9180,5 +9180,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "Springt zur meistwiederholten Stelle, sobald die Werbung endet"
+  },
+  "schemaSurfaceBackup": {
+    "message": "Sicherungsdatei"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "Dafür gibt es noch keinen Editor. Exportiere eine Sicherung, ändere den Wert in der Datei und importiere sie wieder."
   }
 }

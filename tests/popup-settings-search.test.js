@@ -98,7 +98,7 @@ test('a search that matches nothing renders guidance, not a blank list', () => {
 test('every row says which surface owns the setting', () => {
     const surfaceFor = new Function('entry',
         `${popupSource.slice(
-            popupSource.indexOf('function schemaSurfaceForEntry(entry) {'),
+            popupSource.indexOf('const SCHEMA_KEYS_EDITED_BY_BACKUP'),
             popupSource.indexOf('function createSchemaSurfaceChip(')
         )}\nreturn schemaSurfaceForEntry(entry);`);
 
@@ -110,10 +110,27 @@ test('every row says which surface owns the setting', () => {
     assert.equal(surfaceFor({ type: 'array' }), 'panel');
     assert.equal(surfaceFor({ type: 'object' }), 'panel');
 
-    // Every non-internal schema entry must resolve to one of the two.
-    for (const entry of schema.SETTINGS_SCHEMA.filter((e) => !e.internal)) {
-        assert.ok(['popup', 'panel'].includes(surfaceFor(entry)), entry.key);
+    // No surface edits these two yet. Their chip opened the panel on nothing,
+    // so it now points at the backup file instead; a key renamed out of the
+    // schema would leave the exception silently dead, hence the lookup.
+    for (const key of ['featureSchedules', 'syncSafePrefsAllowlist']) {
+        const entry = schema.SETTINGS_SCHEMA.find((e) => e.key === key);
+        assert.ok(entry && !entry.internal, `${key} must still be a visible schema key`);
+        assert.equal(surfaceFor(entry), 'backup', key);
     }
+
+    // Every non-internal schema entry must resolve to one of the three.
+    for (const entry of schema.SETTINGS_SCHEMA.filter((e) => !e.internal)) {
+        assert.ok(['popup', 'panel', 'backup'].includes(surfaceFor(entry)), entry.key);
+    }
+});
+
+test('a backup-file chip is a label, not a button that opens nothing', () => {
+    const chip = popupSource.slice(popupSource.indexOf('function createSchemaSurfaceChip('));
+    const backup = chip.slice(chip.indexOf("if (surface === 'backup')"), chip.indexOf("chip.type = 'button'"));
+    assert.match(backup, /t\('schemaSurfaceBackup'/);
+    assert.match(backup, /return chip;/, 'it returns before the click handler is attached');
+    assert.match(chip.slice(0, 200), /surface === 'panel' \? 'button' : 'span'/);
 });
 
 test('a setting owned by another surface can be opened there', () => {

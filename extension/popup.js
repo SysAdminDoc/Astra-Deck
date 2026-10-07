@@ -4648,16 +4648,29 @@ function refocusSchemaOverviewKey(entry) {
 // The popup edits booleans, numbers, strings, and finite selects inline. An
 // array or object value (a channel list, a notes store, a group tree) has no
 // inline editor here and belongs to the in-page panel.
+// Two values have no editor on any surface yet: a feature's active-hours
+// window and the sync allowlist. Their chip used to open the panel, which
+// landed on nothing, so it says where they can be changed instead.
+const SCHEMA_KEYS_EDITED_BY_BACKUP = new Set(['featureSchedules', 'syncSafePrefsAllowlist']);
+
 function schemaSurfaceForEntry(entry) {
+    if (SCHEMA_KEYS_EDITED_BY_BACKUP.has(entry.key)) return 'backup';
     return entry.type === 'array' || entry.type === 'object' ? 'panel' : 'popup';
 }
 
 function createSchemaSurfaceChip(entry) {
-    const chip = document.createElement(schemaSurfaceForEntry(entry) === 'popup' ? 'span' : 'button');
+    const surface = schemaSurfaceForEntry(entry);
+    const chip = document.createElement(surface === 'panel' ? 'button' : 'span');
     chip.className = 'so-key-profile-badge so-key-surface';
-    if (schemaSurfaceForEntry(entry) === 'popup') {
+    if (surface === 'popup') {
         chip.textContent = t('schemaSurfaceHere', 'here');
         chip.title = t('schemaSurfaceHereTitle', 'This setting can be changed in the popup.');
+        return chip;
+    }
+    if (surface === 'backup') {
+        chip.textContent = t('schemaSurfaceBackup', 'backup file');
+        chip.title = t('schemaSurfaceBackupTitle',
+            'No editor for this one yet. Export a backup, change the value in the file, then import it.');
         return chip;
     }
     chip.type = 'button';

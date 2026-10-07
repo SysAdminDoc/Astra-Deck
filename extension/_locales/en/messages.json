@@ -9241,5 +9241,11 @@
   },
   "heatmapJumpAfterAdToast": {
     "message": "Jumping to the most replayed moment once the ad ends"
+  },
+  "schemaSurfaceBackup": {
+    "message": "backup file"
+  },
+  "schemaSurfaceBackupTitle": {
+    "message": "No editor for this one yet. Export a backup, change the value in the file, then import it."
   }
 }

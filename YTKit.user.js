@@ -3616,7 +3616,9 @@ const ASTRA_DECK_BUILD = {
 		"videoHiderReasonMadeWithAi": "YouTube's \"Made with AI\" label",
 		"videoHiderAiLabelTitle": "YouTube's AI label",
 		"videoHiderAiLabelDesc": "YouTube only shows its \"Made with AI\" label on the watch page, never on a card.",
-		"heatmapJumpAfterAdToast": "Jumping to the most replayed moment once the ad ends"
+		"heatmapJumpAfterAdToast": "Jumping to the most replayed moment once the ad ends",
+		"schemaSurfaceBackup": "backup file",
+		"schemaSurfaceBackupTitle": "No editor for this one yet. Export a backup, change the value in the file, then import it."
 	}
 };
 
