@@ -30,7 +30,15 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 - [ ] P3 — Smaller audit leftovers
   Why: 2026-09-28 audit. (1) Channel landing tab: non-Videos tabs only work on a hard load;
   after in-app navigation the embedded page data belongs to the previous page (`ytkit.js`
-  ~10892). (2) Plausible: a dismissed "Still watching?" dialog stays in the DOM and keeps the
+  ~10892). Measured live 2026-10-07: `navigatesuccess` (which runs the rules) fires about 500 ms
+  before `yt-navigate-finish`, whose `detail.response.response` carries the new channel's tab
+  list, so the rule settles on /videos first. A tried fix (copy the tab list in
+  `captureNavigatedPageData`, answer "wait" from `channelHasTab` while the payload is left over)
+  passed unit tests but failed live: ytkit.js can boot after the in-app move (the search filter
+  hard-reloads results first), so a "hard load path" read at script start was `/@NASA`, not
+  `/results`, and the finish event can fire before the listener exists. Next try: take the
+  document's load path from `performance.getEntriesByType('navigation')[0].name`, and handle a
+  finish event that came before boot. (2) Plausible: a dismissed "Still watching?" dialog stays in the DOM and keeps the
   gate open, so the auto-dismiss clicks Play when the user opens Save or Share
   (`_isYouTherePrompt`, ~15705). (3) The audio track status
   attribute keeps the previous video's `selected:<id>` after an in-app navigation to a video with
