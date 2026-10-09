@@ -1793,7 +1793,7 @@
     "message": "Anti-Tradução de Faixa de Áudio"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "Restaura os títulos dos capítulos no idioma original na lista de capítulos e no rótulo do player ao passar o mouse. Eles são lidos da descrição original, que é de onde o YouTube monta os capítulos em primeiro lugar."
   },
   "feature_antiTranslateChapters_name": {
     "message": "Anti-Tradução de Capítulos"
@@ -1985,7 +1985,7 @@
     "message": "Modo cinema auto"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Aplica um tom quente para reduzir a emissão de luz azul. A intensidade é configurável."
   },
   "feature_blueLightFilter_name": {
     "message": "Filtro de luz azul"
@@ -2453,7 +2453,7 @@
     "message": "Bem-estar digital"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Impede que o próximo vídeo seja reproduzido automaticamente quando o atual termina"
   },
   "feature_disableAutoplayNext_name": {
     "message": "Sem reprodução automática"
@@ -6838,7 +6838,7 @@
     "message": "Links rápidos"
   },
   "stickyVideoResizePanelsLabel": {
-    "message": "Redimensionar painéis do Theater Split"
+    "message": "Redimensionar painéis da Divisão em Modo Cinema"
   },
   "stickyVideoSubscriptionsLink": {
     "message": "Ir para inscrições"

@@ -1793,7 +1793,7 @@
     "message": "Антиперевод аудиодорожки"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "Возвращает названия глав на языке оригинала в списке глав и во всплывающей подсказке плеера. Названия берутся из исходного описания, на основе которого YouTube и строит главы."
   },
   "feature_antiTranslateChapters_name": {
     "message": "Антиперевод глав"
@@ -1979,13 +1979,13 @@
     "message": "Автовключение субтитров"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "Автоматически включает режим кинотеатра (широкий режим) при открытии видео"
   },
   "feature_autoTheaterMode_name": {
     "message": "Авто-театр"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Накладывает тёплый оттенок, чтобы уменьшить излучение синего света. Интенсивность настраивается."
   },
   "feature_blueLightFilter_name": {
     "message": "Фильтр синего света"
@@ -2165,7 +2165,7 @@
     "message": "Классический интерфейс плеера"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "Удаляет параметры отслеживания (si, pp, feature) из скопированных и общих ссылок YouTube"
   },
   "feature_cleanShareUrls_name": {
     "message": "Чистые URL"
@@ -2237,7 +2237,7 @@
     "message": "Навигатор по комментариям"
   },
   "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "Добавляет над комментариями строку поиска для фильтрации и поиска нужных комментариев"
   },
   "feature_commentSearch_name": {
     "message": "Поиск в комментариях"
@@ -2429,7 +2429,7 @@
     "message": "Кнопка просмотра DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "Включает подробный диагностический вывод в консоль"
   },
   "feature_debugMode_name": {
     "message": "Режим отладки"
@@ -2447,19 +2447,19 @@
     "message": "Журнал диагностических ошибок"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "Напоминания о перерывах через каждые N минут воспроизведения и дополнительный дневной лимит времени просмотра. Таймеры сохраняются при переходах внутри SPA."
   },
   "feature_digitalWellbeing_name": {
     "message": "Цифровое благополучие"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Не позволяет следующему видео запускаться автоматически, когда текущее заканчивается"
   },
   "feature_disableAutoplayNext_name": {
     "message": "Без автовоспроизведения"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "Заменяет бесконечную прокрутку кнопкой «Загрузить ещё» на главной, в поиске и на страницах подписок"
   },
   "feature_disableInfiniteScroll_name": {
     "message": "Ограничить прокрутку"
@@ -3089,7 +3089,7 @@
     "message": "Скрыть «Добавить в очередь» на миниатюрах"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "Убирает панель похожих видео на страницах просмотра"
   },
   "feature_hideRelatedVideos_name": {
     "message": "Скрыть похожие"
@@ -3269,7 +3269,7 @@
     "message": "Профиль низкого энергопотребления"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "Показывает плавающую панель мини-плеера внизу, когда вы прокручиваете страницу ниже видео"
   },
   "feature_miniPlayerBar_name": {
     "message": "Мини-плеер"
@@ -3341,7 +3341,7 @@
     "message": "Полоса прогресса Nyan Cat"
   },
   "feature_oledTheme_desc": {
-    "message": "Настоящий OLED-чёрный (#000) фон через токены --yt-sys-color-baseline. Выдерживает переключения тем YouTube, так как мы перехватываем сами токены, а не классы поверхностей."
+    "message": "Настоящий чёрный цвет OLED (#000) для фона через токены --yt-sys-color-baseline. Не сбивается при переключении встроенных тем YouTube, потому что мы подключаемся к самим токенам, а не к классам поверхностей."
   },
   "feature_oledTheme_name": {
     "message": "Тема OLED"
@@ -3413,10 +3413,10 @@
     "message": "Кнопка субтитров"
   },
   "feature_pcHide_theater_desc": {
-    "message": "Скрыть кнопку режима Theater в плеере"
+    "message": "Скрыть кнопку режима кинотеатра в плеере"
   },
   "feature_pcHide_theater_name": {
-    "message": "Кнопка режима Theater"
+    "message": "Кнопка режима кинотеатра"
   },
   "feature_pcHide_ytLogo_desc": {
     "message": "Скрыть стандартную кнопку бренда из элементов управления плеера"
@@ -3449,7 +3449,7 @@
     "message": "Лента просмотра"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "Запоминает выбранную скорость воспроизведения для всех видео и автоматически применяет её к каждому ролику"
   },
   "feature_persistentSpeed_name": {
     "message": "Постоянная скорость"
@@ -3581,7 +3581,7 @@
     "message": "Запретить автовоспроизведение"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "Задать различные качества по умолчанию для обычного / Theater / полноэкранного / фонового / встроенного режимов. ISOLATED-мир определяет контекст и записывает data-ytkit-quality-context на <html>; мост MAIN-мира повторно применяет соответствующее качество через movie_player.setPlaybackQualityRange()."
+    "message": "Задайте разное качество по умолчанию для обычного режима / режима кинотеатра / полноэкранного режима / фонового режима / встроенного плеера. Мир ISOLATED определяет контекст и записывает data-ytkit-quality-context в <html>; мост мира MAIN повторно применяет подходящее качество через movie_player.setPlaybackQualityRange()."
   },
   "feature_qualityProfileMatrix_name": {
     "message": "Качество по контексту"
@@ -3635,7 +3635,7 @@
     "message": "Каналы → вкладка «Видео»"
   },
   "feature_reducedMotion_desc": {
-    "message": "Делает все анимации, переходы и поведение прокрутки Astra практически мгновенными. Автоматически учитывает настройку ОС prefers-reduced-motion; этот переключатель добавляет безусловное принудительное переопределение."
+    "message": "Делает любые анимации, переходы и прокрутку, добавленные Astra, почти мгновенными. Автоматически учитывает системную настройку prefers-reduced-motion; этот переключатель добавляет безусловное переопределение поверх неё."
   },
   "feature_reducedMotion_name": {
     "message": "Уменьшение движения (сильное)"
@@ -3665,7 +3665,7 @@
     "message": "Запоминание громкости"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "Скрывает все видео Shorts в лентах и рекомендациях"
   },
   "feature_removeAllShorts_name": {
     "message": "Скрыть Shorts"
@@ -4007,7 +4007,7 @@
     "message": "Полноэкранное видео на страницах просмотра. Прокрутите вниз, чтобы увидеть комментарии рядом. Прокрутите обратно для возврата к полноэкранному режиму."
   },
   "feature_stickyVideo_name": {
-    "message": "Разделённый Theater"
+    "message": "Разделённый режим кинотеатра"
   },
   "feature_storageQuotaLRU_desc": {
     "message": "LRU-ограничение растущих настроек (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) для предотвращения исчерпания квоты"
@@ -4100,10 +4100,10 @@
     "message": "Субтитры при перемотке назад"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Автопрокрутка видео в полный вид при активации режима Theater"
+    "message": "Прокручивает страницу так, чтобы видео было видно целиком при включении режима кинотеатра"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Автопрокрутка Theater"
+    "message": "Автопрокрутка в режиме кинотеатра"
   },
   "feature_themeAccentColor_desc": {
     "message": "Пользовательский акцентный цвет для выделений, полосы прогресса и активных элементов интерфейса"
@@ -4154,7 +4154,7 @@
     "message": "Нормализация кликбейтных заголовков"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "Передаёт themeAccentColor пользователя в нативные токены YouTube --yt-sys-color-*, чтобы стандартные значки, состояния наведения и кнопки следовали акценту Astra без перестилизации каждой поверхности."
+    "message": "Передаёт themeAccentColor пользователя во встроенные токены YouTube --yt-sys-color-*, чтобы значки, состояния при наведении и основные кнопки следовали акцентному цвету Astra без отдельной стилизации каждого элемента."
   },
   "feature_tokenThemeBridge_name": {
     "message": "Мост нативных токенов темы"
@@ -4172,7 +4172,7 @@
     "message": "Провайдер вопросов по расшифровке"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "Добавляет в боковую панель интерактивную расшифровку с переходом по меткам времени и экспортом (txt/srt/буфер обмена/запрос для LLM)"
   },
   "feature_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
@@ -5075,7 +5075,7 @@
     "message": "Поток просмотра"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Открывать видео в режиме Theater"
+    "message": "Открывать видео в режиме кинотеатра"
   },
   "qt_autoTheaterMode_name": {
     "message": "Авто-театр"
@@ -6838,7 +6838,7 @@
     "message": "Быстрые ссылки"
   },
   "stickyVideoResizePanelsLabel": {
-    "message": "Изменить размер панелей Theater Split"
+    "message": "Изменить размер панелей разделённого режима кинотеатра"
   },
   "stickyVideoSubscriptionsLink": {
     "message": "Перейти к подпискам"

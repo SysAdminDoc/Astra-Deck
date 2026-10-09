@@ -1793,7 +1793,7 @@
     "message": "Anti-traduzione traccia audio"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "Ripristina i titoli dei capitoli nella lingua originale nell'elenco dei capitoli e nell'etichetta del player al passaggio del mouse. Li legge dalla descrizione originale, che è la fonte da cui YouTube costruisce i capitoli."
   },
   "feature_antiTranslateChapters_name": {
     "message": "Anti-traduzione capitoli"
@@ -1985,7 +1985,7 @@
     "message": "Auto teatro"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Applica una tonalità calda per ridurre l'emissione di luce blu. Intensità configurabile."
   },
   "feature_blueLightFilter_name": {
     "message": "Filtro luce blu"
@@ -2453,7 +2453,7 @@
     "message": "Benessere digitale"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Impedisce che il video successivo parta in automatico quando finisce quello attuale"
   },
   "feature_disableAutoplayNext_name": {
     "message": "No riproduzione automatica"
@@ -3413,10 +3413,10 @@
     "message": "Pulsante sottotitoli"
   },
   "feature_pcHide_theater_desc": {
-    "message": "Nascondi il pulsante modalita Theater dal player"
+    "message": "Nascondi il pulsante della modalità cinema dal player"
   },
   "feature_pcHide_theater_name": {
-    "message": "Pulsante modalita Theater"
+    "message": "Pulsante modalità cinema"
   },
   "feature_pcHide_ytLogo_desc": {
     "message": "Nascondi il pulsante brand nativo dai controlli del player"
@@ -3581,7 +3581,7 @@
     "message": "Impedisci riproduzione automatica"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "Imposta qualita predefinite diverse per i contesti normale / Theater / schermo intero / background / incorporato. Il mondo ISOLATED rileva il contesto e scrive data-ytkit-quality-context su <html>; il bridge del mondo MAIN riapplica la qualita corrispondente tramite movie_player.setPlaybackQualityRange()."
+    "message": "Imposta qualità predefinite diverse per i contesti normale / modalità cinema / schermo intero / sfondo / incorporato. Il mondo ISOLATED rileva il contesto e scrive data-ytkit-quality-context su <html>; il ponte del mondo MAIN riapplica la qualità corrispondente tramite movie_player.setPlaybackQualityRange()."
   },
   "feature_qualityProfileMatrix_name": {
     "message": "Qualita per contesto"
@@ -4100,10 +4100,10 @@
     "message": "Sottotitoli al riavvolgimento"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Scorri il video completamente in vista quando si attiva la modalita Theater"
+    "message": "Scorre la pagina per mostrare il video per intero quando si attiva la modalità cinema"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Scorrimento automatico Theater"
+    "message": "Scorrimento automatico in modalità cinema"
   },
   "feature_themeAccentColor_desc": {
     "message": "Colore di accento personalizzato per evidenziazioni, barra di avanzamento e elementi interfaccia attivi"
@@ -5075,7 +5075,7 @@
     "message": "Flusso visione"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Apri video nella vista Theater"
+    "message": "Apri i video in modalità cinema"
   },
   "qt_autoTheaterMode_name": {
     "message": "Auto teatro"
@@ -6838,7 +6838,7 @@
     "message": "Collegamenti rapidi"
   },
   "stickyVideoResizePanelsLabel": {
-    "message": "Ridimensiona i pannelli Theater Split"
+    "message": "Ridimensiona i pannelli della Modalità cinema divisa"
   },
   "stickyVideoSubscriptionsLink": {
     "message": "Vai alle iscrizioni"

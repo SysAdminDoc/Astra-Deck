@@ -3341,7 +3341,7 @@
     "message": "شريط تقدم Nyan Cat"
   },
   "feature_oledTheme_desc": {
-    "message": "خلفيات OLED سوداء حقيقية (#000) عبر رموز --yt-sys-color-baseline. تصمد أمام تبديلات سمة YouTube الأصلية لأننا نربط الرموز نفسها، وليس فئات السطح."
+    "message": "خلفيات سوداء حقيقية لشاشات OLED (#000) عبر رموز --yt-sys-color-baseline. تبقى فعّالة عند تبديل YouTube لسماته الأصلية لأننا نرتبط بالرموز نفسها لا بفئات الأسطح."
   },
   "feature_oledTheme_name": {
     "message": "سمة OLED"
@@ -3581,7 +3581,7 @@
     "message": "منع التشغيل التلقائي"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "عيّن جودة افتراضية مختلفة لسياقات العادي / وضع المسرح / ملء الشاشة / الخلفية / التضمين. يكتشف العالم المعزول (ISOLATED-world) السياق ويكتب data-ytkit-quality-context على <html>، ثم يعيد جسر العالم الرئيسي (MAIN-world) تطبيق الجودة المطابقة عبر movie_player.setPlaybackQualityRange()."
+    "message": "عيّن جودات افتراضية مختلفة لسياقات العرض العادي / وضع المسرح / ملء الشاشة / الخلفية / التضمين. يكتشف عالم ISOLATED السياق ويكتب data-ytkit-quality-context على <html>، ثم يعيد جسر عالم MAIN تطبيق الجودة المطابقة عبر movie_player.setPlaybackQualityRange()."
   },
   "feature_qualityProfileMatrix_name": {
     "message": "جودة لكل سياق"
@@ -3635,7 +3635,7 @@
     "message": "القنوات ← تبويبة الفيديوهات"
   },
   "feature_reducedMotion_desc": {
-    "message": "يجبر كل رسوم متحركة وانتقال وسلوك تمرير محقون من Astra على أن يكون شبه فوري. يحترم إعداد prefers-reduced-motion في النظام تلقائياً، ويضيف هذا المفتاح تجاوزاً غير مشروط فوقه."
+    "message": "يجعل كل الرسوم المتحركة والانتقالات وسلوك التمرير التي يضيفها Astra شبه فورية. يحترم تلقائيًا إعداد prefers-reduced-motion في نظام التشغيل، ويضيف هذا المفتاح تجاوزًا غير مشروط فوقه."
   },
   "feature_reducedMotion_name": {
     "message": "تقليل الحركة (قوي)"
@@ -4154,7 +4154,7 @@
     "message": "تسوية العناوين المضلِّلة"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "ينقل themeAccentColor الخاص بالمستخدم إلى رموز YouTube الأصلية --yt-sys-color-* حتى تتبع الشارات الأصلية وحالات التمرير والأزرار الأساسية لون Astra المميز دون إعادة تنسيق كل سطح."
+    "message": "ينقل themeAccentColor الخاص بالمستخدم إلى رموز YouTube الأصلية --yt-sys-color-* لتتبع الشارات وحالات التمرير والأزرار الرئيسية لون Astra المميز دون إعادة تنسيق كل سطح على حدة."
   },
   "feature_tokenThemeBridge_name": {
     "message": "جسر سمة الرموز الأصلية"

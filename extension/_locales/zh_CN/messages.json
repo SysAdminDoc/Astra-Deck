@@ -21,7 +21,7 @@
     "message": "新凭据"
   },
   "aiCredentialNote": {
-    "message": "存储的值绝不会被显示,也不会包含在设置导出中。"
+    "message": "存储的值绝不会被显示，也不会包含在设置导出中。"
   },
   "aiCredentialProviderLabel": {
     "message": "提供商"
@@ -39,7 +39,7 @@
     "message": "无法保存凭据。"
   },
   "aiCredentialSaved": {
-    "message": "已保存 AI 凭据,且未暴露其值。"
+    "message": "已保存 AI 凭据，且未暴露其值。"
   },
   "aiCredentialStatusError": {
     "message": "凭据状态不可用。"
@@ -3341,7 +3341,7 @@
     "message": "Nyan Cat 进度条"
   },
   "feature_oledTheme_desc": {
-    "message": "通过 --yt-sys-color-baseline 令牌实现真正的 OLED 纯黑（#000）背景。因为挂钩的是令牌本身而非表面类，所以能在 YouTube 原生主题切换时保持。"
+    "message": "通过 --yt-sys-color-baseline 令牌实现纯 OLED 黑（#000）背景。由于我们挂钩的是令牌本身，而不是界面元素的类名，因此即使 YouTube 原生主题切换也不会失效。"
   },
   "feature_oledTheme_name": {
     "message": "OLED 主题"
@@ -3413,10 +3413,10 @@
     "message": "字幕按钮"
   },
   "feature_pcHide_theater_desc": {
-    "message": "隐藏播放器中的 Theater 模式按钮"
+    "message": "隐藏播放器中的影院模式按钮"
   },
   "feature_pcHide_theater_name": {
-    "message": "Theater 模式按钮"
+    "message": "影院模式按钮"
   },
   "feature_pcHide_ytLogo_desc": {
     "message": "隐藏播放器控件中的原生品牌按钮"
@@ -3581,7 +3581,7 @@
     "message": "阻止自动播放"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "为普通/影院/全屏/后台/嵌入场景设置不同的默认画质。ISOLATED-world 检测场景并在 <html> 上写入 data-ytkit-quality-context；MAIN-world 桥接通过 movie_player.setPlaybackQualityRange() 重新应用匹配的画质。"
+    "message": "为普通 / 影院模式 / 全屏 / 后台 / 嵌入这几种情境分别设置不同的默认画质。ISOLATED 环境检测情境并在 <html> 上写入 data-ytkit-quality-context；MAIN 环境的桥接再通过 movie_player.setPlaybackQualityRange() 重新应用对应的画质。"
   },
   "feature_qualityProfileMatrix_name": {
     "message": "按场景画质"
@@ -3635,7 +3635,7 @@
     "message": "频道 → 视频标签页"
   },
   "feature_reducedMotion_desc": {
-    "message": "强制所有 Astra 注入的动画、过渡和滚动行为近乎瞬时完成。自动遵循操作系统的 prefers-reduced-motion 设置；此开关在其之上添加无条件覆盖。"
+    "message": "让 Astra 注入的所有动画、过渡和滚动效果几乎瞬间完成。会自动遵循系统的 prefers-reduced-motion 设置，此开关则在其基础上添加无条件的强制覆盖。"
   },
   "feature_reducedMotion_name": {
     "message": "减少动效（强）"
@@ -4007,7 +4007,7 @@
     "message": "观看页全屏视频。向下滚动可并排显示评论。滚回顶部恢复全屏。"
   },
   "feature_stickyVideo_name": {
-    "message": "Theater 分屏"
+    "message": "影院模式分屏"
   },
   "feature_storageQuotaLRU_desc": {
     "message": "LRU 限制增长中的设置（hiddenVideos、hiddenChannels、timestampBookmarks、da_branding_cache、sb_segments_cache）以防配额耗尽"
@@ -4100,10 +4100,10 @@
     "message": "倒退时显示字幕"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Theater 模式激活时将视频滚动到完全可见"
+    "message": "启用影院模式时，滚动页面使视频完整显示"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Theater 自动滚动"
+    "message": "影院模式自动滚动"
   },
   "feature_themeAccentColor_desc": {
     "message": "自定义高亮、进度条和活跃界面元素的强调色"
@@ -4154,7 +4154,7 @@
     "message": "规范化标题党标题"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "将用户的 themeAccentColor 传递到 YouTube 原生 --yt-sys-color-* 令牌，使原生徽章、悬停状态和主按钮跟随 Astra 强调色，无需逐个重新设置各界面的样式。"
+    "message": "将用户的 themeAccentColor 传递给 YouTube 原生的 --yt-sys-color-* 令牌，使原生徽章、悬停状态和主要按钮跟随 Astra 强调色，无需逐个重设界面元素的样式。"
   },
   "feature_tokenThemeBridge_name": {
     "message": "原生令牌主题桥接"
@@ -5384,7 +5384,7 @@
     "message": "仅限本地"
   },
   "schemaBadgeLocalOnlyTitle": {
-    "message": "该值存储在此设备的扩展存储中。绝不会与 Google 账号同步,绝不会发送到 Astra Deck 服务器,并会从错误报告包中隐去(诊断 → 保存)。"
+    "message": "该值存储在此设备的扩展存储中。绝不会与 Google 账号同步，绝不会发送到 Astra Deck 服务器，并会从错误报告包中隐去（诊断 → 保存）。"
   },
   "schemaBadgeNoEditorTpl": {
     "message": "{type}(无内联编辑器)"
@@ -5393,7 +5393,7 @@
     "message": "不可用"
   },
   "schemaBadgeUnavailableTitleTpl": {
-    "message": "此设置需要此浏览器不具备的能力:{capabilities}。在该能力可用之前,切换此设置不会产生任何效果。"
+    "message": "此设置需要此浏览器不具备的能力：{capabilities}。在该能力可用之前，切换此设置不会产生任何效果。"
   },
   "schemaJsonExpectedArray": {
     "message": "应为数组"
@@ -6838,7 +6838,7 @@
     "message": "快速链接"
   },
   "stickyVideoResizePanelsLabel": {
-    "message": "调整 Theater Split 面板大小"
+    "message": "调整影院模式分屏面板的大小"
   },
   "stickyVideoSubscriptionsLink": {
     "message": "前往订阅"

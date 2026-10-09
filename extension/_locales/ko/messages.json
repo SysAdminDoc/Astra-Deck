@@ -1793,7 +1793,7 @@
     "message": "오디오 트랙 자동 번역 방지"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "챕터 목록과 플레이어 호버 라벨에서 챕터 제목을 원래 언어로 되돌립니다. YouTube가 챕터를 만드는 근원인 원본 설명에서 제목을 읽어 옵니다."
   },
   "feature_antiTranslateChapters_name": {
     "message": "챕터 자동 번역 방지"
@@ -1979,13 +1979,13 @@
     "message": "자막 자동 활성화"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "동영상을 열 때 자동으로 시어터 모드(와이드 화면)로 전환합니다"
   },
   "feature_autoTheaterMode_name": {
     "message": "자동 시어터"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "따뜻한 색조를 입혀 블루라이트 방출을 줄여요. 강도를 조절할 수 있어요."
   },
   "feature_blueLightFilter_name": {
     "message": "블루라이트 필터"
@@ -2165,7 +2165,7 @@
     "message": "클래식 플레이어 크롬"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "복사하거나 공유한 YouTube 링크에서 추적 매개변수(si, pp, feature)를 제거합니다"
   },
   "feature_cleanShareUrls_name": {
     "message": "깨끗한 URL"
@@ -2237,7 +2237,7 @@
     "message": "댓글 네비게이터"
   },
   "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "댓글 위에 검색창을 추가해 원하는 댓글을 걸러 내고 찾을 수 있습니다"
   },
   "feature_commentSearch_name": {
     "message": "댓글 검색"
@@ -2429,7 +2429,7 @@
     "message": "DeArrow 미리보기 버튼"
   },
   "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "콘솔에 자세한 진단 로그를 출력합니다"
   },
   "feature_debugMode_name": {
     "message": "디버그 모드"
@@ -2447,19 +2447,19 @@
     "message": "진단 오류 로그"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "재생 시간이 N분 지날 때마다 휴식 알림을 보내고, 선택적으로 하루 시청 시간 한도를 설정할 수 있어요. 타이머는 SPA 이동 중에도 유지됩니다."
   },
   "feature_digitalWellbeing_name": {
     "message": "디지털 웰빙"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "현재 동영상이 끝나도 다음 동영상이 자동으로 재생되지 않게 합니다"
   },
   "feature_disableAutoplayNext_name": {
     "message": "자동재생 없음"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "홈, 검색, 구독 페이지에서 무한 스크롤을 “더보기” 버튼으로 바꿉니다"
   },
   "feature_disableInfiniteScroll_name": {
     "message": "스크롤 제한"
@@ -3089,7 +3089,7 @@
     "message": "썸네일의 \"대기열에 추가\" 숨기기"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "시청 페이지에서 관련 동영상 패널을 제거합니다"
   },
   "feature_hideRelatedVideos_name": {
     "message": "관련 동영상 숨기기"
@@ -3269,7 +3269,7 @@
     "message": "저전력 프로필"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "동영상을 지나 스크롤하면 화면 하단에 떠 있는 미니 플레이어 바를 표시합니다"
   },
   "feature_miniPlayerBar_name": {
     "message": "미니 플레이어 바"
@@ -3341,7 +3341,7 @@
     "message": "냥캣 진행 표시줄"
   },
   "feature_oledTheme_desc": {
-    "message": "--yt-sys-color-baseline 토큰을 통한 완전한 OLED 블랙(#000) 배경. 토큰 자체를 후킹하므로 YouTube의 기본 테마 전환에도 유지됩니다."
+    "message": "--yt-sys-color-baseline 토큰으로 배경을 완전한 OLED 블랙(#000)으로 만듭니다. 표면 클래스가 아니라 토큰 자체에 연결하므로 YouTube 기본 테마가 바뀌어도 유지돼요."
   },
   "feature_oledTheme_name": {
     "message": "OLED 테마"
@@ -3413,10 +3413,10 @@
     "message": "자막 버튼"
   },
   "feature_pcHide_theater_desc": {
-    "message": "플레이어에서 Theater 모드 버튼 숨기기"
+    "message": "플레이어에서 시어터 모드 버튼을 숨깁니다"
   },
   "feature_pcHide_theater_name": {
-    "message": "Theater 모드 버튼"
+    "message": "시어터 모드 버튼"
   },
   "feature_pcHide_ytLogo_desc": {
     "message": "플레이어 컨트롤에서 기본 브랜드 버튼 숨기기"
@@ -3449,7 +3449,7 @@
     "message": "시청 피드"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "선호하는 재생 속도를 전체 동영상에 대해 기억하고 모든 동영상에 자동으로 적용합니다"
   },
   "feature_persistentSpeed_name": {
     "message": "지속적인 속도"
@@ -3581,7 +3581,7 @@
     "message": "자동 재생 방지"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "일반 / Theater / 전체 화면 / 백그라운드 / 임베드 컨텍스트에 대해 각각 다른 기본 화질을 설정합니다. ISOLATED 월드가 컨텍스트를 감지하고 <html>에 data-ytkit-quality-context를 기록하며, MAIN 월드 브릿지가 movie_player.setPlaybackQualityRange()로 일치하는 화질을 재적용합니다."
+    "message": "일반 / 시어터 모드 / 전체 화면 / 백그라운드 / 임베드 상황마다 기본 화질을 다르게 설정합니다. ISOLATED 월드가 상황을 감지해 <html>에 data-ytkit-quality-context를 기록하고, MAIN 월드 브리지가 movie_player.setPlaybackQualityRange()로 해당 화질을 다시 적용합니다."
   },
   "feature_qualityProfileMatrix_name": {
     "message": "컨텍스트별 화질"
@@ -3635,7 +3635,7 @@
     "message": "채널 → 동영상 탭"
   },
   "feature_reducedMotion_desc": {
-    "message": "Astra가 삽입한 모든 애니메이션, 전환, 스크롤 동작을 거의 즉각적으로 만듭니다. OS의 prefers-reduced-motion 설정을 자동으로 존중하며, 이 토글은 무조건적 오버라이드를 추가합니다."
+    "message": "Astra가 추가한 모든 애니메이션, 전환, 스크롤 동작을 거의 즉시 끝나게 합니다. OS의 prefers-reduced-motion 설정은 자동으로 따르며, 이 토글은 그 위에 무조건 적용되는 재정의를 더합니다."
   },
   "feature_reducedMotion_name": {
     "message": "모션 감소 (강력)"
@@ -3665,7 +3665,7 @@
     "message": "볼륨 기억"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "피드와 추천에서 모든 Shorts 동영상을 숨깁니다"
   },
   "feature_removeAllShorts_name": {
     "message": "Shorts 숨기기"
@@ -4007,7 +4007,7 @@
     "message": "시청 페이지에서 동영상을 전체 화면으로 표시. 아래로 스크롤하면 댓글이 나란히 나타납니다. 위로 스크롤하면 전체 화면으로 복귀합니다."
   },
   "feature_stickyVideo_name": {
-    "message": "Theater 분할"
+    "message": "시어터 분할"
   },
   "feature_storageQuotaLRU_desc": {
     "message": "할당량 소진을 방지하기 위해 증가하는 설정(hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache)에 LRU 상한 적용"
@@ -4100,10 +4100,10 @@
     "message": "되감기 시 자막"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Theater 모드 활성화 시 동영상이 전체 보이도록 스크롤"
+    "message": "시어터 모드가 켜지면 동영상이 전부 보이도록 스크롤합니다"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Theater 자동 스크롤"
+    "message": "시어터 모드 자동 스크롤"
   },
   "feature_themeAccentColor_desc": {
     "message": "강조 표시, 진행 표시줄, 활성 UI 요소에 대한 사용자 지정 강조 색상"
@@ -4154,7 +4154,7 @@
     "message": "어그로 제목 정규화"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "사용자의 themeAccentColor를 YouTube 네이티브 --yt-sys-color-* 토큰에 연결하여 네이티브 배지, 호버 상태, 기본 버튼이 각 표면을 개별적으로 리스타일하지 않고도 Astra 강조 색상을 따르도록 합니다."
+    "message": "사용자의 themeAccentColor를 YouTube 기본 --yt-sys-color-* 토큰에 전달해, 배지, 호버 상태, 기본 버튼이 각 표면을 따로 스타일링하지 않아도 Astra 강조 색상을 따르게 합니다."
   },
   "feature_tokenThemeBridge_name": {
     "message": "네이티브 토큰 테마 브릿지"
@@ -4172,7 +4172,7 @@
     "message": "대본 Q&A 제공자"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "사이드바에 클릭할 수 있는 스크립트 패널을 추가하고, 타임스탬프 이동과 내보내기(txt/srt/클립보드/LLM 프롬프트)를 지원합니다"
   },
   "feature_transcriptViewer_name": {
     "message": "대본 사이드바"
@@ -5075,7 +5075,7 @@
     "message": "시청 흐름"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "동영상을 Theater 뷰에서 열기"
+    "message": "동영상을 시어터 보기로 엽니다"
   },
   "qt_autoTheaterMode_name": {
     "message": "자동 시어터"

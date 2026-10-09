@@ -1793,7 +1793,7 @@
     "message": "音声トラック翻訳防止"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "チャプター一覧とプレーヤーのホバーラベルで、チャプターのタイトルを元の言語に戻します。YouTube がもともとチャプターを作成する元の説明文から読み取ります。"
   },
   "feature_antiTranslateChapters_name": {
     "message": "チャプター翻訳防止"
@@ -1979,13 +1979,13 @@
     "message": "字幕の自動有効化"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "動画を開いたときに、自動的にシアターモード(ワイド表示)にします"
   },
   "feature_autoTheaterMode_name": {
     "message": "自動シアター"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "暖色系の色合いを重ねて、ブルーライトの放出を抑えます。強さは調整できます。"
   },
   "feature_blueLightFilter_name": {
     "message": "ブルーライトフィルター"
@@ -2165,7 +2165,7 @@
     "message": "クラシックプレーヤークローム"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "コピーまたは共有した YouTube リンクから、トラッキング用パラメータ(si、pp、feature)を取り除きます"
   },
   "feature_cleanShareUrls_name": {
     "message": "クリーンな URL"
@@ -2237,7 +2237,7 @@
     "message": "コメントナビゲーター"
   },
   "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "コメント欄の上に検索バーを追加し、特定のコメントを絞り込んで探せるようにします"
   },
   "feature_commentSearch_name": {
     "message": "コメント検索"
@@ -2429,7 +2429,7 @@
     "message": "DeArrow ピークボタン"
   },
   "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "詳細な診断ログをコンソールに出力します"
   },
   "feature_debugMode_name": {
     "message": "デバッグモード"
@@ -2447,19 +2447,19 @@
     "message": "診断エラーログ"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "再生時間が N 分たつごとに休憩を知らせ、1 日の視聴時間の上限も設定できます(任意)。タイマーは SPA 内の移動をまたいで保持されます。"
   },
   "feature_digitalWellbeing_name": {
     "message": "デジタルウェルビーイング"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "現在の動画が終わっても、次の動画が自動で再生されないようにします"
   },
   "feature_disableAutoplayNext_name": {
     "message": "自動再生なし"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "ホーム、検索、登録チャンネルのページで、無限スクロールを「もっと読み込む」ボタンに置き換えます"
   },
   "feature_disableInfiniteScroll_name": {
     "message": "スクロール制限"
@@ -3089,7 +3089,7 @@
     "message": "サムネイルの「キューに追加」を非表示"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "視聴ページの関連動画パネルを非表示にします"
   },
   "feature_hideRelatedVideos_name": {
     "message": "関連を非表示"
@@ -3269,7 +3269,7 @@
     "message": "省電力プロファイル"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "動画より下にスクロールしたとき、画面下部にフローティングのミニプレーヤーバーを表示します"
   },
   "feature_miniPlayerBar_name": {
     "message": "ミニプレーヤーバー"
@@ -3341,7 +3341,7 @@
     "message": "Nyan Cat プログレスバー"
   },
   "feature_oledTheme_desc": {
-    "message": "--yt-sys-color-baseline トークンによる真の OLED ブラック (#000) 背景。YouTube のネイティブテーマ切り替えを乗り越えます。サーフェスクラスではなくトークン自体をフックするため。"
+    "message": "--yt-sys-color-baseline トークンを使って、背景を完全な OLED ブラック(#000)にします。サーフェスのクラスではトークン自体にフックしているため、YouTube 標準のテーマが切り替わっても維持されます。"
   },
   "feature_oledTheme_name": {
     "message": "OLED テーマ"
@@ -3449,7 +3449,7 @@
     "message": "ウォッチフィード"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "好みの再生速度をグローバルに記憶し、すべての動画に自動で適用します"
   },
   "feature_persistentSpeed_name": {
     "message": "持続的な速度"
@@ -3581,7 +3581,7 @@
     "message": "自動再生の防止"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "通常/シアター/フルスクリーン/バックグラウンド/埋め込みのコンテキストごとに異なるデフォルト画質を設定。ISOLATED ワールドがコンテキストを検出し <html> に data-ytkit-quality-context を書き込み、MAIN ワールドブリッジが movie_player.setPlaybackQualityRange() で対応する画質を再適用。"
+    "message": "通常 / シアターモード / フルスクリーン / バックグラウンド / 埋め込みの各状況ごとに、既定の画質を個別に設定します。ISOLATED ワールドが状況を検出して <html> に data-ytkit-quality-context を書き込み、MAIN ワールドのブリッジが movie_player.setPlaybackQualityRange() で対応する画質を再適用します。"
   },
   "feature_qualityProfileMatrix_name": {
     "message": "コンテキスト別画質"
@@ -3635,7 +3635,7 @@
     "message": "チャンネル → 動画タブ"
   },
   "feature_reducedMotion_desc": {
-    "message": "Astra が注入するすべてのアニメーション、トランジション、スクロール動作をほぼ瞬時にします。OS の prefers-reduced-motion 設定を自動で尊重しますが、このトグルはその上に無条件のオーバーライドを追加。"
+    "message": "Astra が追加するすべてのアニメーション、トランジション、スクロール動作をほぼ瞬時にします。OS の prefers-reduced-motion 設定は自動的に尊重され、このトグルはその上に無条件の上書きを加えます。"
   },
   "feature_reducedMotion_name": {
     "message": "モーション軽減（強）"
@@ -3665,7 +3665,7 @@
     "message": "音量を記憶"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "フィードとおすすめから、すべての Shorts 動画を非表示にします"
   },
   "feature_removeAllShorts_name": {
     "message": "Shorts を非表示"
@@ -4154,7 +4154,7 @@
     "message": "煽りタイトルの正規化"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "ユーザーの themeAccentColor を YouTube のネイティブ --yt-sys-color-* トークンに流し込み、ネイティブバッジ、ホバー状態、プライマリボタンが Astra のアクセントに追従するようにします。各サーフェスの再スタイリング不要。"
+    "message": "ユーザーの themeAccentColor を YouTube 標準の --yt-sys-color-* トークンに反映し、各サーフェスを個別にスタイルし直さなくても、バッジ、ホバー状態、メインボタンが Astra のアクセントカラーに従うようにします。"
   },
   "feature_tokenThemeBridge_name": {
     "message": "ネイティブトークンテーマブリッジ"
@@ -4172,7 +4172,7 @@
     "message": "文字起こし Q&A プロバイダー"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "サイドバーにクリックできる文字起こしパネルを追加し、タイムスタンプでの移動とエクスポート(txt/srt/クリップボード/LLM プロンプト)に対応します"
   },
   "feature_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"

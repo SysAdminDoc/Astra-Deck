@@ -1793,7 +1793,7 @@
     "message": "Anti-Übersetzung Audiospur"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "Stellt die Kapiteltitel in der Originalsprache in der Kapitelliste und im Hover-Label des Players wieder her. Sie werden aus der Originalbeschreibung gelesen, denn dort baut YouTube die Kapitel ursprünglich auf."
   },
   "feature_antiTranslateChapters_name": {
     "message": "Anti-Übersetzung Kapitel"
@@ -1985,7 +1985,7 @@
     "message": "Auto-Kino"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Legt einen warmen Farbton über das Bild, um den Blaulichtanteil zu verringern. Die Intensität ist einstellbar."
   },
   "feature_blueLightFilter_name": {
     "message": "Blaulichtfilter"
@@ -2453,7 +2453,7 @@
     "message": "Digitales Wohlbefinden"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Verhindert, dass das nächste Video automatisch startet, wenn das aktuelle zu Ende ist"
   },
   "feature_disableAutoplayNext_name": {
     "message": "Keine automatische Wiedergabe"
