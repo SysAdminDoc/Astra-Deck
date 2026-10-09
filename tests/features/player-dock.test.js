@@ -33,13 +33,56 @@ test('Player Dock peeled module exports a factory function', () => {
         'Module must register on the YTKitFeatures namespace');
 });
 
+function playerDock() {
+    return require('../../extension/features/player-dock/index.js').createFloatingLogoOnWatchFeature({
+        appState: { settings: { showLocalDownloadButton: true, persistentSpeedValue: 1.5 } },
+        getFeatureById: () => null,
+        ICONS: new Proxy({}, { get: () => () => fakeNode({ tag: 'svg' }) }),
+        t: (_key, fallback) => fallback,
+        BRAND: { name: 'Astra Deck' }
+    });
+}
+
+test('Player Dock goes into the watch player, not the hover preview that comes first', () => {
+    // The home feed's inline preview player precedes ytd-page-manager and has
+    // its own .ytp-right-controls. A dock put there left the real player with
+    // its native controls hidden and nothing in their place.
+    const originalDocument = globalThis.document;
+    const originalWindow = globalThis.window;
+    const previewControls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    const watchControls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector === '.ytp-right-controls') return previewControls;
+        if (selector === '#movie_player .ytp-right-controls') return watchControls;
+        return null;
+    });
+    documentRef.body.appendChild(previewControls);
+    documentRef.body.appendChild(watchControls);
+    const stray = fakeNode({ tag: 'div', attributes: { id: 'ytkit-player-controls' } });
+    previewControls.appendChild(stray);
+    globalThis.document = documentRef;
+    globalThis.window = { location: { pathname: '/watch' } };
+    try {
+        const feature = playerDock();
+        feature._inject();
+        assert.equal(previewControls.children.length, 0, 'a dock left in the preview player is taken out');
+        assert.equal(watchControls.children.length, 1);
+        assert.equal(watchControls.children[0].id, 'ytkit-player-controls');
+        assert.ok(watchControls.children[0].querySelector('.ytkit-po-gear'), 'it is a freshly built dock');
+        feature.destroy();
+    } finally {
+        globalThis.document = originalDocument;
+        globalThis.window = originalWindow;
+    }
+});
+
 test('Player Dock renders one accessible control group and tears it down', () => {
     const originalDocument = globalThis.document;
     const originalWindow = globalThis.window;
     const rightControls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
     const nativeCc = fakeNode({ tag: 'button', attributes: { 'aria-pressed': 'true' } });
     const documentRef = fakeTreeDocument((selector) => {
-        if (selector === '.ytp-right-controls') return rightControls;
+        if (selector === '#movie_player .ytp-right-controls') return rightControls;
         if (selector === '#movie_player .ytp-subtitles-button' || selector === '.ytp-subtitles-button') return nativeCc;
         return null;
     });
@@ -47,14 +90,7 @@ test('Player Dock renders one accessible control group and tears it down', () =>
     globalThis.document = documentRef;
     globalThis.window = { location: { pathname: '/watch' } };
     try {
-        const module = require('../../extension/features/player-dock/index.js');
-        const feature = module.createFloatingLogoOnWatchFeature({
-            appState: { settings: { showLocalDownloadButton: true, persistentSpeedValue: 1.5 } },
-            getFeatureById: () => null,
-            ICONS: new Proxy({}, { get: () => () => fakeNode({ tag: 'svg' }) }),
-            t: (_key, fallback) => fallback,
-            BRAND: { name: 'Astra Deck' }
-        });
+        const feature = playerDock();
 
         feature._inject();
         feature._inject();
@@ -276,7 +312,7 @@ test('Repeat button mirrors the mode and the dock teardown releases the loop', (
     const originalDocument = globalThis.document;
     const originalWindow = globalThis.window;
     const rightControls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
-    const documentRef = fakeTreeDocument((selector) => (selector === '.ytp-right-controls' ? rightControls : null));
+    const documentRef = fakeTreeDocument((selector) => (selector === '#movie_player .ytp-right-controls' ? rightControls : null));
     documentRef.body.appendChild(rightControls);
     globalThis.document = documentRef;
     globalThis.window = { location: { pathname: '/watch' } };

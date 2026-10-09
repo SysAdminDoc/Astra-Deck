@@ -74,6 +74,15 @@
                 return document.querySelector('#movie_player .ytp-subtitles-button')
                     || document.querySelector('.ytp-subtitles-button');
             },
+            // The watch player's own right controls, never the first in the
+            // document: the inline hover-preview player comes first and has
+            // its own, so the dock landed in the hidden preview and the hide
+            // rule below took the real player's fullscreen and settings away.
+            _getRightControls() {
+                return typeof document !== 'undefined'
+                    ? document.querySelector('#movie_player .ytp-right-controls')
+                    : null;
+            },
             _syncCcButton() {
                 const button = this._ccButton;
                 if (!button) return;
@@ -99,9 +108,7 @@
                 // non-watch navigation re-attached a subtree observer whose
                 // callback had no button to sync.
                 if (!this._ccButton) return;
-                const rightControls = typeof document !== 'undefined'
-                    ? document.querySelector('.ytp-right-controls')
-                    : null;
+                const rightControls = this._getRightControls();
                 if (!rightControls || typeof MutationObserver !== 'function') return;
                 this._ccObserver = new MutationObserver((records) => {
                     // Ignore attribute changes made to our mirror button so
@@ -210,9 +217,15 @@
                     this._repeatButton = null;
                     return;
                 }
-                const rightControls = document.querySelector('.ytp-right-controls');
+                const rightControls = this._getRightControls();
                 if (!rightControls) return;
-                const existingControls = document.getElementById('ytkit-player-controls');
+                let existingControls = document.getElementById('ytkit-player-controls');
+                // A dock sitting anywhere else (the preview player, or controls
+                // YouTube has since rebuilt) is rebuilt here rather than reused.
+                if (existingControls && existingControls.parentElement !== rightControls) {
+                    existingControls.remove();
+                    existingControls = null;
+                }
                 if (existingControls) {
                     this._ccButton = existingControls.querySelector('.ytkit-po-cc') || this._ccButton;
                     this._repeatButton = existingControls.querySelector('.ytkit-po-repeat') || this._repeatButton;

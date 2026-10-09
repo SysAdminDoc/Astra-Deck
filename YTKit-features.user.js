@@ -20326,6 +20326,11 @@ __astraDeckRegistry["features/player-dock/index.js"] = function (globalThis, sel
 				return document.querySelector('#movie_player .ytp-subtitles-button')
 					|| document.querySelector('.ytp-subtitles-button');
 			},
+			_getRightControls() {
+				return typeof document !== 'undefined'
+					? document.querySelector('#movie_player .ytp-right-controls')
+					: null;
+			},
 			_syncCcButton() {
 				const button = this._ccButton;
 				if (!button) return;
@@ -20346,9 +20351,7 @@ __astraDeckRegistry["features/player-dock/index.js"] = function (globalThis, sel
 				this._ccObserver?.disconnect();
 				this._ccObserver = null;
 				if (!this._ccButton) return;
-				const rightControls = typeof document !== 'undefined'
-					? document.querySelector('.ytp-right-controls')
-					: null;
+				const rightControls = this._getRightControls();
 				if (!rightControls || typeof MutationObserver !== 'function') return;
 				this._ccObserver = new MutationObserver((records) => {
 					if (records.length > 0 && records.every(record => this._ccButton?.contains(record.target))) return;
@@ -20447,9 +20450,13 @@ __astraDeckRegistry["features/player-dock/index.js"] = function (globalThis, sel
 					this._repeatButton = null;
 					return;
 				}
-				const rightControls = document.querySelector('.ytp-right-controls');
+				const rightControls = this._getRightControls();
 				if (!rightControls) return;
-				const existingControls = document.getElementById('ytkit-player-controls');
+				let existingControls = document.getElementById('ytkit-player-controls');
+				if (existingControls && existingControls.parentElement !== rightControls) {
+					existingControls.remove();
+					existingControls = null;
+				}
 				if (existingControls) {
 					this._ccButton = existingControls.querySelector('.ytkit-po-cc') || this._ccButton;
 					this._repeatButton = existingControls.querySelector('.ytkit-po-repeat') || this._repeatButton;
