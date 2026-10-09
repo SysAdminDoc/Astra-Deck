@@ -8,7 +8,7 @@ Reference locale: **en** (3222 keys; 902 feature name/description keys).
 | --- | ---:| ---:| ---:| ---:| ---:|
 | ar | 2312 (71.8%) | 13 (0.4%) | 897 (27.8%) | 0 (0%) | 71.8% |
 | de | 3148 (97.7%) | 20 (0.6%) | 54 (1.7%) | 0 (0%) | 97.7% |
-| es | 2296 (71.3%) | 21 (0.7%) | 905 (28.1%) | 0 (0%) | 71.3% |
+| es | 3156 (98%) | 18 (0.6%) | 48 (1.5%) | 0 (0%) | 98.0% |
 | fr | 2286 (70.9%) | 30 (0.9%) | 906 (28.1%) | 0 (0%) | 70.9% |
 | it | 2292 (71.1%) | 20 (0.6%) | 910 (28.2%) | 0 (0%) | 71.1% |
 | ja | 2322 (72.1%) | 16 (0.5%) | 884 (27.4%) | 0 (0%) | 72.1% |
@@ -25,7 +25,7 @@ The queue below lists `feature_*_(name|desc)` messages that still match EN after
 | --- | ---:| ---:| ---:| ---:| --- |
 | ar | 67 | 75 | 142 | 2 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | de | 4 | 0 | 4 | 4 | feature_guideHide_gaming_name, feature_guideHide_live_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
-| es | 67 | 76 | 143 | 7 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
+| es | 3 | 0 | 3 | 5 | feature_guideHide_gaming_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | fr | 69 | 76 | 145 | 7 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | it | 68 | 76 | 144 | 6 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | ja | 67 | 76 | 143 | 4 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
