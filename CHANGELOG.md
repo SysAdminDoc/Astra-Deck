@@ -1548,7 +1548,7 @@ change recorded in the v4.85.0 through v4.88.5 development entries below.
   with a related message that had never been translated at all.
 
 - The popup's five storage cards start at zero instead of five dashes, and when
-  extension storage genuinely isn't there they say "Unavailable" next to the
+  extension storage really isn't there they say "Unavailable" next to the
   message explaining what to do about it. Before, the empty state and the broken
   state looked identical.
 
@@ -2639,7 +2639,7 @@ and reopening the popup. It was reachable with no effort at all when a
 - Destructive actions now behave consistently. Removing a single video from the
   hidden list offers Undo, the same as the two bulk buttons beside it. Undoing a
   YouTube Takeout import works even on a first-ever import, which previously got
-  no Undo at all. And deleting a stored AI key, the one action that genuinely
+  no Undo at all. And deleting a stored AI key, the one action that really
   cannot be reversed, since the key is never shown again, now says so instead
   of reading like the reversible ones.
 - Astra Deck now tells you when it could not read your saved settings. If the
@@ -10452,7 +10452,7 @@ download failures.
 Repo-wide audit pass, defensive hardening of security boundaries,
 storage growth limits, lifecycle gaps, and UX rough edges flagged by
 parallel deep-dives across `background.js`, `popup.js`, `core/*`,
-`ytkit-main.js`, and `astra_downloader.py`. No new user-facing features, this release is purely "make existing surfaces more robust."
+`ytkit-main.js`, and `astra_downloader.py`. No new user-facing features, this release is purely "make existing surfaces sturdier."
 
 ### Security (extension)
 
