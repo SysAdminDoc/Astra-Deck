@@ -19867,6 +19867,11 @@ function attachUIEventListeners() {
 			updateSearchState(rawLabel, query, matchCount, visibleSectionCount);
 		}
 		_panelSearchUpdater = _handleSearch;
+		function syncFollowingNotes(key) {
+			for (const note of doc.querySelectorAll(`[data-follows-setting="${key}"]`)) {
+				note.hidden = appState.settings[key] === false;
+			}
+		}
 		doc.addEventListener('change', async (e) => {
 			const run = onControlChange(e);
 			if (e.target?.dataset?.ytkitDriven === 'true') e.target.ytkitDrivenEdit = run;
@@ -19978,6 +19983,7 @@ function attachUIEventListeners() {
 						appState.settings[featureId] = isEnabled;
 						settingsManager.save(appState.settings);
 					}
+					syncFollowingNotes(featureId);
 					if (isEnabled && CONFLICT_MAP[featureId]) {
 						const conflicts = CONFLICT_MAP[featureId].conflicts || [];
 						const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
@@ -20000,6 +20006,7 @@ function attachUIEventListeners() {
 								}
 								const select = document.getElementById(`ytkit-select-${cid}`);
 								if (select) select.value = String(appState.settings[cid]);
+								syncFollowingNotes(cid);
 							});
 							const conflictNames = activeConflicts.map(cid => {
 								const cf = getFeatureById(cid);

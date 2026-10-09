@@ -32,13 +32,26 @@ test('the Video Loop Button card points to the dock Repeat while Player Dock is 
         assert.equal(info.children.length, 1, `dock ${JSON.stringify(settings)}: one note`);
         assert.match(info.children[0].textContent, /Player Dock is on, it hides this button/);
         assert.ok(info.children[0].classList.contains('ytkit-feature-desc'));
+        assert.equal(info.children[0].hidden, false);
     }
 });
 
-test('with Player Dock off the card carries no note, because the button shows', () => {
+test('with Player Dock off the note is hidden, and it follows the dock switch', () => {
     const { feature, card, info } = settingsCard({ floatingLogoOnWatch: false });
     feature.render(card);
-    assert.equal(info.children.length, 0);
+    assert.equal(info.children.length, 1);
+    assert.equal(info.children[0].hidden, true, 'the button shows with the dock off');
+    assert.equal(info.children[0].dataset.followsSetting, 'floatingLogoOnWatch',
+        'the panel finds the note by the setting it follows');
+});
+
+test('switching a setting updates the notes that follow it', () => {
+    const source = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
+    assert.match(source,
+        /function syncFollowingNotes\(key\) \{\s*for \(const note of doc\.querySelectorAll\(`\[data-follows-setting="\$\{key\}"\]`\)\) \{\s*note\.hidden = appState\.settings\[key\] === false;/);
+    assert.match(source, /settingsManager\.save\(appState\.settings\);\s*\}\s*syncFollowingNotes\(featureId\);/,
+        'a switched setting updates its notes');
+    assert.match(source, /syncFollowingNotes\(cid\);/, 'so does a setting conflict enforcement turns off');
 });
 
 test('the dock note is translated in every shipped locale', () => {

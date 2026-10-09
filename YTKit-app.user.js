@@ -12666,9 +12666,10 @@ const STORAGE_KEYS = Object.freeze({
 			_btn: null,
 			_injectTimer: null,
 			render(card) {
-				if (appState.settings?.floatingLogoOnWatch === false) return null;
 				const note = document.createElement('p');
 				note.className = 'ytkit-feature-desc ytkit-feature-dock-note';
+				note.dataset.followsSetting = 'floatingLogoOnWatch';
+				note.hidden = appState.settings?.floatingLogoOnWatch === false;
 				note.textContent = t('videoLoopButtonDockNote', "While Astra Player Dock is on, it hides this button. Use the dock's Repeat button instead.");
 				card.querySelector('.ytkit-feature-info')?.appendChild(note);
 				return null;
