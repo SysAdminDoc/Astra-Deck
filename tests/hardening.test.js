@@ -12535,8 +12535,10 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
     const renderBlock = popupSource.slice(renderStart, renderStart + 3500);
     assert.match(renderBlock, /if \(!firstRunSeen\)/,
         'renderFirstRunSurfaces must show the welcome card only when firstRunSeen is false');
-    assert.match(renderBlock, /firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion/,
-        'renderFirstRunSurfaces must gate whats-new on firstRunSeen && version mismatch');
+    // The gate itself moved to core/persisted-domains.js so the userscript's
+    // in-page note shares it; tests/release-note.test.js runs it.
+    assert.match(renderBlock, /resolveReleaseNoteState\(\{ version: manifestVersion, lastSeen, firstRunSeen \}\)/,
+        'renderFirstRunSurfaces must gate whats-new on the shared release-note rule');
 
     // 5. pickWelcomeProfile writes githubFullProfile (true or false)
     // via the existing writeSetting choke point so the schema

@@ -720,6 +720,11 @@ const FIRST_RUN_PENDING_KEY = 'ytkit_first_run_pending';
 // Anchor pattern documented in CHANGELOG.md: GitHub renders the
 // version inside ## brackets as #<lowercase-major-minor-patch>.
 const CHANGELOG_BASE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md';
+// Shared with the userscript's in-page note (core/persisted-domains.js).
+const resolveReleaseNoteState = persistedDomains?.resolveReleaseNoteState
+    || (() => ({ show: false, version: '', previous: '' }));
+const formatReleaseNoteDetail = persistedDomains?.formatReleaseNoteDetail
+    || ((_note, _t) => '');
 
 // selector-health dashboard refs.
 const selectorHealthSection = $('#selector-health');
@@ -5640,8 +5645,11 @@ async function renderFirstRunSurfaces() {
         // upgrade guard above (same version → no diff → already
         // handled by the firstRunSeen && lastSeen !== manifestVersion
         // gate below).
-        if (firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion) {
-            showWhatsNew(lastSeen);
+        // The rule lives in core/persisted-domains.js so the userscript's
+        // in-page note decides the same way.
+        const releaseNote = resolveReleaseNoteState({ version: manifestVersion, lastSeen, firstRunSeen });
+        if (releaseNote.show) {
+            showWhatsNew(releaseNote);
         }
 
         // Opening the popup is the acknowledgement of the install badge that
@@ -5771,20 +5779,11 @@ async function pickWelcomePreset(presetKey) {
     }
 }
 
-function showWhatsNew(lastSeen) {
+function showWhatsNew(releaseNote) {
     if (!whatsNewBanner || !whatsNewDetail) return;
-    // Dynamic content — render directly. The t() helper does not
-    // interpolate placeholders, so routing this through it would
-    // erase the version detail in any translated build. Brand name
-    // is omitted because the popup header already carries it; the
-    // banner sits inside the same surface and adding "Astra Deck"
-    // here is redundant.
-    whatsNewDetail.textContent = lastSeen
-        ? t('whatsNewDetailFromTpl', 'Updated to v{version} (from v{previous}). See what changed.')
-            .replace('{version}', manifestVersion)
-            .replace('{previous}', lastSeen)
-        : t('whatsNewDetailTpl', 'Updated to v{version}. See what changed.')
-            .replace('{version}', manifestVersion);
+    // Brand name is omitted because the popup header already carries it;
+    // the banner sits inside the same surface.
+    whatsNewDetail.textContent = formatReleaseNoteDetail(releaseNote, t);
     whatsNewBanner.hidden = false;
 }
 

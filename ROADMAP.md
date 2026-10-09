@@ -128,20 +128,6 @@ Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`
   it SHALL hide.
   Complexity: S
 
-- [ ] P3 — Bring the What's New note to userscript users
-  Why: the extension popup shows a What's New banner after an update, but the userscript has no
-  popup and the in-page panel shows nothing. Userscript installs update themselves from main, so
-  new settings like v4.94.0's Repeat arrive unseen. ZeroDelay v1.5.0 does the same kind of note.
-  Evidence: `extension/popup.js` ~5592-5861 (`showWhatsNew`, `ytkit_last_seen_version`, declared
-  in `extension/core/persisted-domains.js:125`); no reference in `extension/ytkit.js`,
-  `extension/features/` or `userscript/`. Confidence: Verified.
-  Touches: the in-page settings panel header, a shared last-seen check moved out of `popup.js`,
-  `extension/_locales/**` (reuse `whatsNewDetailTpl` and `whatsNewDetailFromTpl`), tests.
-  Acceptance: WHEN the userscript's version is newer than the stored last-seen one, THEN the
-  panel SHALL show the same dismissible note once, linking the release notes, with no network
-  request and no toast on page load. The extension popup's behavior stays the same.
-  Complexity: S
-
 - [ ] P3 — List Astra Deck on awesome-userscripts
   Why: users browse that list (3,548 stars) for scripts, and Astra isn't on it. Its rules ask for
   a stable install URL, docs, an issue tracker and tested browser and manager pairs, and v4.93.0

@@ -656,6 +656,56 @@ function updatePanelInsightState() {
         if (savedValue) savedValue.textContent = t('settingsInsightsSavedLocally', 'Saved locally');
     }
 
+    // The userscript has no popup, so its "Updated to vX" note sits under the
+    // panel header. The extension leaves it to the popup's banner, and both
+    // decide through core/persisted-domains.js. A first sight of the key stamps
+    // it silently, the same as the popup's upgrade guard.
+    function buildReleaseNote() {
+        if (!globalThis.__astraDeckUserscript) return null;
+        const domains = globalThis.YTKitCore?.persistedDomains;
+        if (typeof domains?.resolveReleaseNoteState !== 'function') return null;
+        const key = domains.LAST_SEEN_VERSION_KEY;
+        const stored = storageRead(key, null);
+        if (typeof stored !== 'string') {
+            storageWrite(key, YTKIT_VERSION);
+            return null;
+        }
+        const state = domains.resolveReleaseNoteState({ version: YTKIT_VERSION, lastSeen: stored, firstRunSeen: true });
+        if (!state.show) return null;
+
+        const note = document.createElement('aside');
+        note.className = 'ytkit-release-note';
+        note.setAttribute('role', 'status');
+        const copy = document.createElement('span');
+        copy.className = 'ytkit-release-note-copy';
+        const heading = document.createElement('strong');
+        heading.textContent = t('whatsNewTitle', 'Updated');
+        const detail = document.createElement('span');
+        detail.textContent = domains.formatReleaseNoteDetail(state, t);
+        copy.append(heading, detail);
+        const markSeen = () => {
+            note.remove();
+            storageWrite(key, state.version);
+        };
+        // A plain link: no extension message to route, nothing fetched
+        // until the user clicks.
+        const open = document.createElement('a');
+        open.className = 'ytkit-release-note-open';
+        open.href = domains.RELEASE_NOTES_URL;
+        open.target = '_blank';
+        open.rel = 'noopener noreferrer';
+        open.textContent = t('whatsNewOpen', 'Read changelog');
+        open.addEventListener('click', markSeen);
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.className = 'ytkit-release-note-dismiss';
+        dismiss.textContent = t('whatsNewDismiss', 'Dismiss');
+        dismiss.setAttribute('aria-label', t('whatsNewDismissAria', 'Dismiss'));
+        dismiss.addEventListener('click', markSeen);
+        note.append(copy, open, dismiss);
+        return note;
+    }
+
 function buildSettingsPanel() {
         // The module runtime can open the panel directly (without going
         // through ytkit.js's inline wrapper), so it must trigger the lazy
@@ -3674,6 +3724,8 @@ function buildSettingsPanel() {
         footer.appendChild(footerRight);
 
         panel.appendChild(header);
+        const releaseNote = buildReleaseNote();
+        if (releaseNote) panel.appendChild(releaseNote);
         panel.appendChild(body);
         panel.appendChild(footer);
 

@@ -1144,7 +1144,8 @@ function loadRenderFirstRunSurfaces(overrides = {}) {
         storageGet: async () => overrides.stored ?? {},
         storageSet: async (patch) => { calls.writes.push(patch); },
         showWelcomeCard: () => { calls.welcome += 1; },
-        showWhatsNew: (seen) => { calls.whatsNew.push(seen); },
+        showWhatsNew: (note) => { calls.whatsNew.push(note.previous); },
+        resolveReleaseNoteState: require('../extension/core/persisted-domains.js').resolveReleaseNoteState,
         clearFirstRunPending: async () => {}
     };
     sandbox.globalThis = sandbox;

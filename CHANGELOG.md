@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- The userscript now tells you when it's updated. The next time you open its settings panel after an update, a short note under the header says which version you're on and links the changelog. Dismiss it or open the changelog and it won't show again until the next update. Nothing is fetched to show it, and there's no pop-up on page load. The extension keeps its banner in the toolbar popup.
+
 ### Changed
 
 - **Hide All** on Subscriptions keeps going as YouTube loads more. One press hides what's on screen, then each page as it arrives, until it reaches videos you'd already hidden last time (or 20 pages). Then loading pauses, with a Resume button on the banner. Home still hides just what's on screen and keeps loading forever.

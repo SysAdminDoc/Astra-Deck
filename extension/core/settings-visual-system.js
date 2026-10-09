@@ -432,6 +432,59 @@
             color: var(--ytkit-v3-text) !important;
         }
 
+        /* Userscript-only "Updated to vX" note between header and body. */
+        #ytkit-settings-panel .ytkit-release-note {
+            display: flex !important;
+            flex: 0 0 auto !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 8px 12px !important;
+            padding: 10px 20px !important;
+            border-bottom: 1px solid var(--ytkit-v3-border) !important;
+            background: rgba(var(--ytkit-v3-accent-rgb), 0.08) !important;
+            color: var(--ytkit-v3-text) !important;
+            font-size: 13px !important;
+            line-height: 1.4 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-release-note-copy {
+            display: flex !important;
+            flex: 1 1 260px !important;
+            flex-wrap: wrap !important;
+            gap: 4px 8px !important;
+            min-width: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-release-note-copy span {
+            color: var(--ytkit-v3-muted) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-release-note-open,
+        #ytkit-settings-panel .ytkit-release-note-dismiss {
+            display: inline-flex !important;
+            align-items: center !important;
+            min-height: 30px !important;
+            padding: 0 12px !important;
+            border-radius: 8px !important;
+            border: 1px solid var(--ytkit-v3-control-stroke) !important;
+            background: var(--ytkit-v3-surface) !important;
+            color: var(--ytkit-v3-text) !important;
+            font: inherit !important;
+            font-weight: 600 !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+        }
+
+        #ytkit-settings-panel .ytkit-release-note-open {
+            border-color: rgba(var(--ytkit-v3-accent-rgb), 0.45) !important;
+            color: var(--ytkit-v3-accent) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-release-note-open:hover,
+        #ytkit-settings-panel .ytkit-release-note-dismiss:hover {
+            background: var(--ytkit-v3-surface-raised) !important;
+        }
+
         #ytkit-settings-panel .ytkit-body {
             display: grid !important;
             grid-template-columns: 260px minmax(0, 1fr) !important;

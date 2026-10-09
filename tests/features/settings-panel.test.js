@@ -229,16 +229,22 @@ test('a sub-feature whose own group lands elsewhere goes where its parent goes',
 // The real panel build, on the fake tree document from tests/helpers. The
 // tests above call the grouping helper; this is the code that draws from it.
 // `act` runs against the built panel while its document is still installed.
-function buildRealPanel(features, settings = {}, { shortsKeys, act } = {}) {
+function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storage, userscriptHost, version = '0.0.0' } = {}) {
     const { fakeTreeDocument } = require('../helpers/monolith');
     const doc = fakeTreeDocument();
-    const saved = { document: globalThis.document, chrome: globalThis.chrome, YTKitCore: globalThis.YTKitCore, CSS: globalThis.CSS };
+    const saved = {
+        document: globalThis.document, chrome: globalThis.chrome, YTKitCore: globalThis.YTKitCore, CSS: globalThis.CSS,
+        host: globalThis.__astraDeckUserscript
+    };
     globalThis.document = doc;
     globalThis.chrome = { i18n: { getUILanguage: () => 'en-US', getMessage: () => '' } };
     globalThis.CSS = { escape: (value) => String(value) };
     // A core another test loaded adds the Shorts ledger card to the build.
     delete globalThis.YTKitCore;
     if (shortsKeys) globalThis.YTKitCore = { SHORTS_PANEL_SETTING_KEYS: shortsKeys };
+    if (core) globalThis.YTKitCore = { ...(globalThis.YTKitCore || {}), ...core };
+    if (userscriptHost) globalThis.__astraDeckUserscript = userscriptHost;
+    else delete globalThis.__astraDeckUserscript;
     try {
         const byId = new Map(features.map((feature) => [feature.id, feature]));
         const noop = () => {};
@@ -252,7 +258,7 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act } = {}) {
             ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
             LEGACY_STORAGE_KEYS: {},
             STORAGE_KEYS: {},
-            YTKIT_VERSION: '0.0.0',
+            YTKIT_VERSION: version,
             _i18n: { overrideLocale: '', locale: 'en', availableLocales: ['en'], messages: {} },
             MediaDLManager: {},
             appState: { settings },
@@ -275,9 +281,9 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act } = {}) {
             showToast: noop,
             t: (_key, fallback) => fallback,
             trapFocusWithin: noop,
-            storageRead: () => null,
+            storageRead: storage ? (key, fallback) => (key in storage ? storage[key] : fallback) : () => null,
             storageReadJSON: () => null,
-            storageWrite: noop
+            storageWrite: storage ? (key, value) => { storage[key] = value; } : noop
         });
         runtime.buildSettingsPanel();
         const placed = {};
@@ -301,6 +307,8 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act } = {}) {
         globalThis.document = saved.document;
         globalThis.chrome = saved.chrome;
         globalThis.CSS = saved.CSS;
+        if (saved.host === undefined) delete globalThis.__astraDeckUserscript;
+        else globalThis.__astraDeckUserscript = saved.host;
         if (saved.YTKitCore === undefined) delete globalThis.YTKitCore;
         else globalThis.YTKitCore = saved.YTKitCore;
     }
@@ -1025,4 +1033,63 @@ test('a card Reset chip anchors to the text column so it cannot sit on the switc
     assert.match(rule[1], /grid-row:\s*1 \/ 2;/);
     assert.match(rule[1], /justify-self:\s*end;/);
     assert.match(source, /\.ytkit-feature-card\[data-changed="1"\] > \.ytkit-feature-main \{ padding-inline-end: \d+px; \}/);
+});
+
+// ── What's New for userscript installs ──
+// The userscript has no popup, so its "Updated to vX" note sits under the
+// panel header. It shares the popup's rule from core/persisted-domains.js.
+
+function buildReleaseNotePanel({ storage, userscript = true, version = '4.97.0' }) {
+    const persistedDomains = require('../../extension/core/persisted-domains.js');
+    let note = null;
+    let afterDismiss = null;
+    buildRealPanel([
+        { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' }
+    ], {}, {
+        core: { persistedDomains },
+        storage,
+        version,
+        userscriptHost: userscript ? { version, manager: 'Tampermonkey 5.3', errors: [] } : null,
+        act: (doc) => {
+            const found = doc.querySelector('.ytkit-release-note');
+            if (!found) return;
+            note = {
+                text: found.textContent,
+                href: found.querySelector('.ytkit-release-note-open')?.href,
+                beforeBody: found.parentElement?.children?.indexOf?.(found)
+                    < found.parentElement?.children?.indexOf?.(doc.querySelector('.ytkit-body'))
+            };
+            found.querySelector('.ytkit-release-note-dismiss').dispatchEvent({ type: 'click' });
+            afterDismiss = !!doc.querySelector('.ytkit-release-note');
+        }
+    });
+    return { note, afterDismiss };
+}
+
+test('a userscript update shows the release note once, and dismissing it records the version', () => {
+    const storage = { ytkit_last_seen_version: '4.96.0' };
+    const { note, afterDismiss } = buildReleaseNotePanel({ storage });
+    assert.ok(note, 'the panel must carry the note after an update');
+    assert.match(note.text, /Updated to v4\.97\.0 \(from v4\.96\.0\)\. See what changed\./);
+    assert.equal(note.href, 'https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md');
+    assert.equal(note.beforeBody, true, 'the note sits between the header and the body');
+    assert.equal(afterDismiss, false, 'dismissing removes it');
+    assert.equal(storage.ytkit_last_seen_version, '4.97.0');
+
+    const again = buildReleaseNotePanel({ storage });
+    assert.equal(again.note, null, 'a dismissed note never comes back for the same version');
+});
+
+test('a userscript install with no last-seen version stamps it silently', () => {
+    const storage = {};
+    const { note } = buildReleaseNotePanel({ storage });
+    assert.equal(note, null, 'a first sight is not an update');
+    assert.equal(storage.ytkit_last_seen_version, '4.97.0');
+});
+
+test('the extension leaves the release note to its popup', () => {
+    const storage = { ytkit_last_seen_version: '4.96.0' };
+    const { note } = buildReleaseNotePanel({ storage, userscript: false });
+    assert.equal(note, null);
+    assert.equal(storage.ytkit_last_seen_version, '4.96.0', 'the popup owns this key in the extension');
 });

@@ -1279,7 +1279,36 @@
         }
     }
 
+    // The popupReleaseState domain's one rule, shared by the extension popup's
+    // banner and the userscript's in-page note. An install that hasn't been
+    // through first run never sees it; one that last saw another version does,
+    // until the note is dismissed or opened. Nothing here touches the network.
+    const LAST_SEEN_VERSION_KEY = 'ytkit_last_seen_version';
+    const RELEASE_NOTES_URL = 'https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md';
+
+    function resolveReleaseNoteState({ version, lastSeen, firstRunSeen } = {}) {
+        const current = typeof version === 'string' && version !== '—' ? version.trim() : '';
+        const previous = typeof lastSeen === 'string' ? lastSeen : '';
+        return { show: !!(firstRunSeen && current && previous !== current), version: current, previous };
+    }
+
+    function formatReleaseNoteDetail(state, translate) {
+        const t = typeof translate === 'function' ? translate : (_key, fallback) => fallback;
+        const version = String(state?.version || '');
+        const previous = String(state?.previous || '');
+        return previous
+            ? t('whatsNewDetailFromTpl', 'Updated to v{version} (from v{previous}). See what changed.')
+                .replace('{version}', () => version)
+                .replace('{previous}', () => previous)
+            : t('whatsNewDetailTpl', 'Updated to v{version}. See what changed.')
+                .replace('{version}', () => version);
+    }
+
     return Object.freeze({
+        LAST_SEEN_VERSION_KEY,
+        RELEASE_NOTES_URL,
+        resolveReleaseNoteState,
+        formatReleaseNoteDetail,
         BACKUP_EXPORT_VERSION,
         BACKUP_SCHEMA_VERSION,
         MAX_BACKUP_BYTES,
