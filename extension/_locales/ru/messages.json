@@ -60,7 +60,7 @@
     "message": "Учётные данные провайдера ИИ"
   },
   "aiSummaryButtonTitle": {
-    "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
+    "message": "AI-резюме (укажите ключ провайдера во всплывающем окне Astra Deck на панели инструментов или в меню менеджера скриптов)"
   },
   "aiSummaryByoFallbackNotice": {
     "message": "Вместо этого используется настроенный вами провайдер с собственным ключом."
@@ -69,7 +69,7 @@
     "message": "Обращение к ИИ-провайдеру…"
   },
   "aiSummaryCallingTruncated": {
-    "message": "Calling AI provider with the first 120,000 transcript characters…"
+    "message": "Обращение к AI-провайдеру с первыми 120 000 символов транскрипта…"
   },
   "aiSummaryCitationLabel": {
     "message": "Ссылка на расшифровку"
@@ -87,7 +87,7 @@
     "message": "Удалить"
   },
   "aiSummaryDeleted": {
-    "message": "Saved summary deleted"
+    "message": "Сохранённое резюме удалено"
   },
   "aiSummaryDialogLabel": {
     "message": "ИИ-сводка видео"
@@ -96,31 +96,31 @@
     "message": "Экспортировать архив"
   },
   "aiSummaryExported": {
-    "message": "Saved summaries exported"
+    "message": "Сохранённые резюме экспортированы"
   },
   "aiSummaryFailed": {
-    "message": "Summary failed"
+    "message": "Не удалось создать резюме"
   },
   "aiSummaryFetchingTranscript": {
     "message": "Получение расшифровки…"
   },
   "aiSummaryInvalid": {
-    "message": "The saved summary is invalid and cannot be displayed."
+    "message": "Сохранённое резюме повреждено и не может быть показано."
   },
   "aiSummaryLibrary": {
     "message": "Сохранённые сводки"
   },
   "aiSummaryNoExport": {
-    "message": "No saved summaries to export."
+    "message": "Нет сохранённых резюме для экспорта."
   },
   "aiSummaryNoSaved": {
     "message": "Нет сохранённых сводок, соответствующих поиску."
   },
   "aiSummaryRestored": {
-    "message": "Saved summary restored"
+    "message": "Сохранённое резюме восстановлено"
   },
   "aiSummarySaveFailed": {
-    "message": "Saving the summary failed. It may disappear after a reload."
+    "message": "Не удалось сохранить резюме. После перезагрузки оно может исчезнуть."
   },
   "aiSummarySearchLabel": {
     "message": "Искать сохранённые сводки"
@@ -189,7 +189,7 @@
     "message": "Проверка воспроизведения YouTube"
   },
   "astraContextMenuAria": {
-    "message": "Astra actions"
+    "message": "Действия Astra"
   },
   "audioOnlyActive": {
     "message": "Только звук"
@@ -228,7 +228,7 @@
     "message": "Выключает и снова включает ваши функции половинами, чтобы вы сузили 291 функцию до одной примерно за десять перезагрузок. Настройки восстанавливаются по завершении, при остановке и автоматически, если вы отвлеклись."
   },
   "bisectIntroCountUnknown": {
-    "message": "your features"
+    "message": "ваши функции"
   },
   "bisectNo": {
     "message": "Пропало"
@@ -261,22 +261,22 @@
     "message": "Всё ещё происходит"
   },
   "blockedWatchAllowOnce": {
-    "message": "Allow once"
+    "message": "Разрешить один раз"
   },
   "blockedWatchBack": {
-    "message": "Back"
+    "message": "Назад"
   },
   "blockedWatchDescription": {
-    "message": "This video is from a channel you blocked."
+    "message": "Это видео с канала, который вы заблокировали."
   },
   "blockedWatchTitle": {
-    "message": "Blocked channel"
+    "message": "Заблокированный канал"
   },
   "blockedWatchUnblock": {
-    "message": "Unblock"
+    "message": "Разблокировать"
   },
   "blockedWatchUnknownChannel": {
-    "message": "Unknown channel"
+    "message": "Неизвестный канал"
   },
   "brandName": {
     "message": "Astra Deck"
@@ -286,181 +286,181 @@
     "description": "Buffer target slider value rendered in seconds"
   },
   "bulkActionsAria": {
-    "message": "Bulk card actions"
+    "message": "Массовые действия с карточками"
   },
   "bulkAllow": {
-    "message": "Allow"
+    "message": "Разрешить"
   },
   "bulkAllowedTpl": {
-    "message": "Allowed {count} videos"
+    "message": "Разрешено видео: {count}"
   },
   "bulkCopiedTpl": {
-    "message": "Copied {count} URLs"
+    "message": "Скопировано URL: {count}"
   },
   "bulkCopyUrls": {
-    "message": "Copy URLs"
+    "message": "Копировать URL"
   },
   "bulkDontRecommend": {
-    "message": "Don’t recommend"
+    "message": "Не рекомендовать"
   },
   "bulkDontRecommendTitleTpl": {
-    "message": "Apply YouTube’s native “Don’t recommend channel” to up to {count} selected cards, hide them locally, and log the session."
+    "message": "Применить встроенную функцию YouTube «Не рекомендовать канал» к выбранным карточкам (не более {count}), скрыть их локально и записать сеанс в журнал."
   },
   "bulkExportLog": {
-    "message": "Export log"
+    "message": "Экспорт журнала"
   },
   "bulkExportLogTitle": {
-    "message": "Download the local scrub-session summary as JSON. Nothing leaves this device."
+    "message": "Скачать сводку локальных сеансов чистки в формате JSON. Данные не покидают это устройство."
   },
   "bulkExportedScrubTpl": {
-    "message": "Exported {count} scrub sessions"
+    "message": "Экспортировано сеансов чистки: {count}"
   },
   "bulkHiddenTpl": {
-    "message": "Hidden {count} videos"
+    "message": "Скрыто видео: {count}"
   },
   "videoHiderHideAllSweepingTpl": {
     "message": "Скрыто видео: {count}. Остальные будут скрыты по мере загрузки."
   },
   "bulkHide": {
-    "message": "Hide"
+    "message": "Скрыть"
   },
   "bulkNoScrubSessions": {
-    "message": "No scrub sessions recorded yet."
+    "message": "Сеансов чистки пока нет."
   },
   "bulkNotInterested": {
-    "message": "Not interested"
+    "message": "Не интересно"
   },
   "bulkNotInterestedTitleTpl": {
-    "message": "Apply YouTube’s native “Not interested” to up to {count} selected cards, hide them locally, and log the session."
+    "message": "Применить встроенную функцию YouTube «Не интересно» к выбранным карточкам (не более {count}), скрыть их локально и записать сеанс в журнал."
   },
   "bulkRestoredTpl": {
-    "message": "Restored {count} local hides (native feedback stays applied)"
+    "message": "Восстановлено локально скрытых: {count} (отзывы в YouTube сохраняются)"
   },
   "bulkScrubCapTpl": {
-    "message": " ({skipped} over the {cap}-per-run cap left selected)"
+    "message": " (выбранными остались {skipped}, превысившие лимит {cap} за запуск)"
   },
   "bulkScrubDoneTpl": {
-    "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
+    "message": "Обработано: {count}. Через YouTube: {native}, скрыто локально: {count}{capNote}"
   },
   "bulkScrubPartialTpl": {
-    "message": "YouTube’s menu item wasn’t found. 0 native, {count} hidden locally only{capNote}"
+    "message": "Пункт меню YouTube не найден. Через YouTube: 0, только локально скрыто: {count}{capNote}"
   },
   "bulkScrubRunning": {
-    "message": "A scrub session is already running."
+    "message": "Сеанс чистки уже выполняется."
   },
   "bulkScrubSelectFirst": {
-    "message": "Select cards to scrub first."
+    "message": "Сначала выберите карточки для чистки."
   },
   "bulkSelect": {
-    "message": "Bulk Select"
+    "message": "Выбор нескольких"
   },
   "bulkSelectedTpl": {
-    "message": "{count} selected"
+    "message": "Выбрано: {count}"
   },
   "bulkUndoHides": {
-    "message": "Undo hides"
+    "message": "Отменить скрытие"
   },
   "categoryMeta_accessibility_description": {
-    "message": "Reduced motion, contrast, focus, and reading comfort."
+    "message": "Уменьшение движения, контраст, фокус и удобство чтения."
   },
   "categoryMeta_accessibility_summary": {
-    "message": "Motion, contrast & reading comfort"
+    "message": "Движение, контраст и удобство чтения"
   },
   "categoryMeta_advanced_description": {
-    "message": "Diagnostics, experiments, and power-user controls."
+    "message": "Диагностика, эксперименты и инструменты для опытных пользователей."
   },
   "categoryMeta_advanced_summary": {
-    "message": "Power-user toggles & experimental controls"
+    "message": "Переключатели для опытных и экспериментальные настройки"
   },
   "categoryMeta_comments_description": {
-    "message": "Readability, filtering, and focused comment threads."
+    "message": "Удобочитаемость, фильтрация и сфокусированные ветки комментариев."
   },
   "categoryMeta_comments_summary": {
-    "message": "Readability, filtering & creator context"
+    "message": "Удобочитаемость, фильтрация и контекст автора"
   },
   "categoryMeta_content_description": {
-    "message": "What reaches your feeds, and what gets filtered out."
+    "message": "Что попадает в ваши ленты и что отфильтровывается."
   },
   "categoryMeta_content_summary": {
-    "message": "Hiding, filtering & what reaches your feeds"
+    "message": "Скрытие, фильтрация и что попадает в ленты"
   },
   "categoryMeta_downloads_description": {
-    "message": "Download quality, formats, and companion service."
+    "message": "Качество и форматы загрузки, сопутствующая служба."
   },
   "categoryMeta_downloads_summary": {
-    "message": "Local yt-dlp downloads and server status"
+    "message": "Локальные загрузки через yt-dlp и состояние сервера"
   },
   "categoryMeta_homeSubscriptions_description": {
-    "message": "Layout and density for the home and subscription feeds."
+    "message": "Макет и плотность главной ленты и ленты подписок."
   },
   "categoryMeta_homeSubscriptions_summary": {
-    "message": "Feed layout, density & subscription views"
+    "message": "Макет ленты, плотность и виды подписок"
   },
   "categoryMeta_integrations_description": {
-    "message": "Handing video to other players and services you choose."
+    "message": "Передача видео в другие плееры и сервисы по вашему выбору."
   },
   "categoryMeta_integrations_summary": {
-    "message": "External players and third-party services"
+    "message": "Внешние плееры и сторонние сервисы"
   },
   "categoryMeta_liveChat_description": {
-    "message": "Filtering, spacing, and visibility for live streams."
+    "message": "Фильтрация, интервалы и видимость для прямых трансляций."
   },
   "categoryMeta_liveChat_summary": {
-    "message": "Filters, density & live viewing comfort"
+    "message": "Фильтры, плотность и удобство просмотра трансляций"
   },
   "categoryMeta_navigation_description": {
-    "message": "The guide, the masthead, and moving around YouTube."
+    "message": "Меню навигации, верхняя панель и перемещение по YouTube."
   },
   "categoryMeta_navigation_summary": {
-    "message": "Guide, masthead & moving around the site"
+    "message": "Меню, верхняя панель и перемещение по сайту"
   },
   "categoryMeta_playback_description": {
-    "message": "Resuming, looping, timing, and tab-aware playback."
+    "message": "Возобновление, зацикливание, время и воспроизведение с учётом вкладок."
   },
   "categoryMeta_playback_summary": {
-    "message": "Speed, looping & tab-aware behavior"
+    "message": "Скорость, зацикливание и поведение с учётом вкладок"
   },
   "categoryMeta_playlists_description": {
-    "message": "The queue, Watch Later, and playlist management."
+    "message": "Очередь, «Смотреть позже» и управление плейлистами."
   },
   "categoryMeta_playlists_summary": {
-    "message": "Queue, Watch Later & playlist tools"
+    "message": "Очередь, «Смотреть позже» и инструменты плейлистов"
   },
   "categoryMeta_ratings_description": {
-    "message": "Like and dislike counts, and community rating signal."
+    "message": "Количество лайков и дизлайков, оценка сообщества."
   },
   "categoryMeta_ratings_summary": {
-    "message": "Likes, dislikes & community signal"
+    "message": "Лайки, дизлайки и оценка сообщества"
   },
   "categoryMeta_research_description": {
-    "message": "Transcripts, summaries, questions, and notes."
+    "message": "Транскрипты, резюме, вопросы и заметки."
   },
   "categoryMeta_research_summary": {
-    "message": "Transcripts, summaries & note taking"
+    "message": "Транскрипты, резюме и заметки"
   },
   "categoryMeta_subscriptions_description": {
-    "message": "Grouping, tagging, and managing the channels you follow."
+    "message": "Группировка, теги и управление каналами, на которые вы подписаны."
   },
   "categoryMeta_subscriptions_summary": {
-    "message": "Groups, tags & managing who you follow"
+    "message": "Группы, теги и управление подписками"
   },
   "categoryMeta_theme_description": {
-    "message": "Color, contrast, density, and custom appearance."
+    "message": "Цвет, контраст, плотность и собственное оформление."
   },
   "categoryMeta_theme_summary": {
-    "message": "Color, density & visual polish"
+    "message": "Цвет, плотность и визуальная доработка"
   },
   "categoryMeta_videoPlayer_description": {
-    "message": "Playback defaults, quality, and player behavior."
+    "message": "Параметры воспроизведения по умолчанию, качество и поведение плеера."
   },
   "categoryMeta_videoPlayer_summary": {
-    "message": "Layout, theater behavior & player chrome"
+    "message": "Макет, режим театра и интерфейс плеера"
   },
   "categoryMeta_watchPage_description": {
-    "message": "Actions, utilities, and helpers for the watch page."
+    "message": "Действия, утилиты и помощники для страницы просмотра."
   },
   "categoryMeta_watchPage_summary": {
-    "message": "Actions, utilities & page-level helpers"
+    "message": "Действия, утилиты и помощники страницы"
   },
   "channelAgePublishedOnTpl": {
     "message": "Опубликовано: {date}"
@@ -493,10 +493,10 @@
     "message": "{author} разблокирован"
   },
   "commentDuplicateHide": {
-    "message": "Hide similar comments"
+    "message": "Скрыть похожие комментарии"
   },
   "commentDuplicateShowTpl": {
-    "message": "Show {count} similar comments"
+    "message": "Показать похожие комментарии: {count}"
   },
   "commentHeatLikesTplOne": {
     "message": "Лайков: {count}"
@@ -670,13 +670,13 @@
     "message": "Перевод…"
   },
   "commonActive": {
-    "message": "Active"
+    "message": "Активно"
   },
   "commonAll": {
-    "message": "All"
+    "message": "Все"
   },
   "commonChecking": {
-    "message": "Checking…"
+    "message": "Проверка…"
   },
   "commonClear": {
     "message": "Очистить"
@@ -685,10 +685,10 @@
     "message": "Закрыть"
   },
   "commonCopyFailed": {
-    "message": "Copy failed"
+    "message": "Не удалось скопировать"
   },
   "commonDone": {
-    "message": "Done"
+    "message": "Готово"
   },
   "commonExport": {
     "message": "Экспорт"
@@ -697,19 +697,19 @@
     "message": "Импорт"
   },
   "commonJustNow": {
-    "message": "Just now"
+    "message": "Только что"
   },
   "commonLoading": {
     "message": "Загрузка…"
   },
   "commonPreparing": {
-    "message": "Preparing…"
+    "message": "Подготовка…"
   },
   "commonReady": {
     "message": "Готово"
   },
   "commonRefresh": {
-    "message": "Refresh"
+    "message": "Обновить"
   },
   "commonReset": {
     "message": "Сбросить"
@@ -718,10 +718,10 @@
     "message": "Повторить"
   },
   "commonUnexpectedError": {
-    "message": "unexpected error"
+    "message": "непредвиденная ошибка"
   },
   "commonUntitled": {
-    "message": "Untitled"
+    "message": "Без названия"
   },
   "contextNoteAnyTab": {
     "message": "Быстрые переключатели сохраняются и синхронизируются при открытии YouTube."
@@ -766,13 +766,13 @@
     "message": "Video Hider может получать данные с этого сайта, пока доступ не будет удалён."
   },
   "dataFlowGrant": {
-    "message": "grant"
+    "message": "разрешить"
   },
   "dataFlowGrantActive": {
-    "message": "granted"
+    "message": "разрешено"
   },
   "dataFlowGrantNeeded": {
-    "message": "permission needed"
+    "message": "требуется разрешение"
   },
   "dataFlowGrantRemove": {
     "message": "Удалить доступ"
@@ -865,43 +865,43 @@
     "message": "новее этого расширения"
   },
   "dlHealthAuth": {
-    "message": "Auth"
+    "message": "Авторизация"
   },
   "dlHealthDenoFailed": {
-    "message": "Deno provision failed"
+    "message": "Не удалось подготовить Deno"
   },
   "dlHealthDenoFailedLabel": {
-    "message": "Deno: failed"
+    "message": "Deno: ошибка"
   },
   "dlHealthDenoFailedTpl": {
-    "message": "Deno provision failed: {error}"
+    "message": "Не удалось подготовить Deno: {error}"
   },
   "dlHealthDenoProvisioned": {
-    "message": "Deno provisioned successfully"
+    "message": "Deno успешно подготовлен"
   },
   "dlHealthDownloader": {
-    "message": "Downloader"
+    "message": "Загрузчик"
   },
   "dlHealthLegacy": {
-    "message": "legacy"
+    "message": "устаревший"
   },
   "dlHealthLegacyAuthTitle": {
-    "message": "Using legacy /health token bootstrap because native messaging is unavailable."
+    "message": "Используется устаревший способ получения токена через /health, так как обмен сообщениями с приложением недоступен."
   },
   "dlHealthLive": {
-    "message": "live"
+    "message": "работает"
   },
   "dlHealthNative": {
-    "message": "native"
+    "message": "нативный"
   },
   "dlHealthNativeAuthTitle": {
-    "message": "Token received over browser native messaging; /health token echo suppressed."
+    "message": "Токен получен через встроенный обмен сообщениями браузера, возврат токена в /health отключён."
   },
   "dlHealthNotRunning": {
-    "message": "not running"
+    "message": "не запущен"
   },
   "dlHealthOffline": {
-    "message": "offline"
+    "message": "не в сети"
   },
   "dlHealthPillAriaTpl": {
     "message": "{label}, {value}"
@@ -910,19 +910,19 @@
     "message": "{label} — {value}"
   },
   "dlHealthProvisioning": {
-    "message": "Provisioning…"
+    "message": "Подготовка…"
   },
   "dlHealthRegionAria": {
-    "message": "Downloader health"
+    "message": "Состояние загрузчика"
   },
   "dlHealthSabrLimitedTitle": {
-    "message": "Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482."
+    "message": "Некоторые видео YouTube используют форматы только SABR, которые yt-dlp пока не умеет загружать напрямую. См. задачу yt-dlp #12482."
   },
   "dlHealthUnknown": {
-    "message": "unknown"
+    "message": "неизвестно"
   },
   "dlHealthUnreachable": {
-    "message": "unreachable"
+    "message": "недоступен"
   },
   "dlHealthUserscriptAuthTitle": {
     "message": "Токен из однократного сопряжения юзерскрипта в Astra Downloader."
@@ -931,82 +931,82 @@
     "message": "сопряжено"
   },
   "dlHistoryAllFormats": {
-    "message": "All formats"
+    "message": "Все форматы"
   },
   "dlHistoryAllStatuses": {
-    "message": "All statuses"
+    "message": "Все статусы"
   },
   "dlHistoryButton": {
-    "message": "History"
+    "message": "История"
   },
   "dlHistoryButtonTitle": {
-    "message": "View recent downloads"
+    "message": "Показать недавние загрузки"
   },
   "dlHistoryCloseAria": {
-    "message": "Close recent downloads"
+    "message": "Закрыть недавние загрузки"
   },
   "dlHistoryComplete": {
     "message": "Завершено"
   },
   "dlHistoryCount": {
-    "message": "{start}-{end} of {filtered} filtered · {total} retained"
+    "message": "{start}-{end} из {filtered} отфильтрованных · сохранено: {total}"
   },
   "dlHistoryDateFromAria": {
-    "message": "Filter history saved from date"
+    "message": "Фильтр истории: сохранено с даты"
   },
   "dlHistoryDateToAria": {
-    "message": "Filter history saved through date"
+    "message": "Фильтр истории: сохранено по дату"
   },
   "dlHistoryEmpty": {
-    "message": "No completed downloads yet."
+    "message": "Завершённых загрузок пока нет."
   },
   "dlHistoryExportTruncatedTpl": {
-    "message": "Exported the most recent {count} downloads. Narrow the filters to export older entries."
+    "message": "Экспортировано последних загрузок: {count}. Сузьте фильтры, чтобы экспортировать более старые записи."
   },
   "dlHistoryExporting": {
-    "message": "Exporting…"
+    "message": "Экспорт…"
   },
   "dlHistoryFormatAria": {
-    "message": "Filter history by format"
+    "message": "Фильтр истории по формату"
   },
   "dlHistoryNewest": {
-    "message": "Newest first"
+    "message": "Сначала новые"
   },
   "dlHistoryNext": {
-    "message": "Next"
+    "message": "Далее"
   },
   "dlHistoryNoMatches": {
-    "message": "No downloads match these filters."
+    "message": "Нет загрузок, подходящих под эти фильтры."
   },
   "dlHistoryOldest": {
-    "message": "Oldest first"
+    "message": "Сначала старые"
   },
   "dlHistoryPrevious": {
-    "message": "Previous"
+    "message": "Назад"
   },
   "dlHistoryRegionAria": {
-    "message": "Recent downloads"
+    "message": "Недавние загрузки"
   },
   "dlHistorySearchAria": {
-    "message": "Search download history"
+    "message": "Поиск по истории загрузок"
   },
   "dlHistorySearchPlaceholder": {
-    "message": "Search title or filename"
+    "message": "Поиск по названию или имени файла"
   },
   "dlHistorySortAria": {
-    "message": "Sort download history"
+    "message": "Сортировка истории загрузок"
   },
   "dlHistoryStatusAria": {
-    "message": "Filter history by status"
+    "message": "Фильтр истории по статусу"
   },
   "dlHistoryTitle": {
-    "message": "Recent Downloads"
+    "message": "Недавние загрузки"
   },
   "dlHistoryUnavailableCount": {
-    "message": "History unavailable"
+    "message": "История недоступна"
   },
   "dlHistoryUnreachable": {
-    "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
+    "message": "Astra Downloader недоступен. Запустите Astra Downloader и повторите попытку."
   },
   "dlInstallApiMismatchTpl": {
     "message": "Astra Downloader работает, но этот Astra Deck использует более старый API, чем он принимает{versions}. Обновите расширение и снова выберите «Проверить»."
@@ -1015,124 +1015,124 @@
     "message": " (нужен как минимум API {minimum})"
   },
   "dlInstallCheckAgain": {
-    "message": "Check again"
+    "message": "Проверить снова"
   },
   "dlInstallCheckDetail": {
-    "message": "Use this after running the setup file."
+    "message": "Используйте после запуска установочного файла."
   },
   "dlInstallCheckingService": {
-    "message": "Checking for the Astra Downloader service…"
+    "message": "Поиск службы Astra Downloader…"
   },
   "dlInstallCloseAria": {
-    "message": "Close local downloader prompt"
+    "message": "Закрыть запрос о локальном загрузчике"
   },
   "dlInstallCommandCopied": {
-    "message": "Command copied"
+    "message": "Команда скопирована"
   },
   "dlInstallCommandCopiedHint": {
-    "message": "Fallback command copied. Use it in PowerShell only if the setup file cannot run."
+    "message": "Резервная команда скопирована. Выполните её в PowerShell, только если установочный файл не запускается."
   },
   "dlInstallCommandDetail": {
-    "message": "Use only if the downloaded setup file cannot run."
+    "message": "Используйте, только если скачанный установочный файл не запускается."
   },
   "dlInstallConnectionCheck": {
-    "message": "Connection check"
+    "message": "Проверка подключения"
   },
   "dlInstallCopyCommand": {
-    "message": "Copy fallback command"
+    "message": "Копировать резервную команду"
   },
   "dlInstallDownloadDetail": {
-    "message": "Recommended. Installs or repairs Astra Downloader."
+    "message": "Рекомендуется. Устанавливает или восстанавливает Astra Downloader."
   },
   "dlInstallDownloadSetup": {
-    "message": "Download setup"
+    "message": "Скачать установщик"
   },
   "dlInstallDownloadedHint": {
-    "message": "Setup downloaded. Open the file, finish installation, then choose Check again."
+    "message": "Установщик скачан. Откройте файл, завершите установку и нажмите «Проверить снова»."
   },
   "dlInstallDownloadingSetup": {
-    "message": "Downloading the setup file…"
+    "message": "Скачивание установочного файла…"
   },
   "dlInstallDownloadingSetupShort": {
-    "message": "Downloading setup…"
+    "message": "Скачивание установщика…"
   },
   "dlInstallLocalDownloads": {
-    "message": "Local downloads"
+    "message": "Локальные загрузки"
   },
   "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
+    "message": "Astra Downloader запущен, но эта версия не может передать свой закрытый токен браузеру. Обновите его с помощью кнопки «Скачать установщик» ниже, затем нажмите «Проверить снова»."
   },
   "dlInstallNoResponse": {
-    "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
+    "message": "Служба не отвечает. Запустите установщик ниже, чтобы восстановить Astra Downloader, затем проверьте снова."
   },
   "dlInstallNotDetected": {
-    "message": "Not detected yet"
+    "message": "Пока не обнаружено"
   },
   "dlInstallNotDetectedHint": {
-    "message": "Setup was not detected yet. Make sure the installer finished, then check again."
+    "message": "Установка пока не обнаружена. Убедитесь, что установщик завершил работу, и проверьте снова."
   },
   "dlInstallNotPaired": {
     "message": "Ещё не сопряжено"
   },
   "dlInstallOpenSetup": {
-    "message": "Open setup file"
+    "message": "Открыть установочный файл"
   },
   "dlInstallOpenedHint": {
-    "message": "The setup file should be open. Finish installation, then choose Check again."
+    "message": "Установочный файл должен быть открыт. Завершите установку и нажмите «Проверить снова»."
   },
   "dlInstallPortConflictTpl": {
-    "message": "Another program is answering on Astra Downloader’s port {port}{version}. It is usually a leftover downloader from an earlier install. Close it, remove it from Startup apps (look for “YTYT-Downloader” or “Astra Deck Downloader”), then start Astra Downloader and choose Check again."
+    "message": "Другая программа отвечает на порту Astra Downloader {port}{version}. Обычно это остаток загрузчика от предыдущей установки. Закройте её, удалите из автозагрузки (ищите «YTYT-Downloader» или «Astra Deck Downloader»), затем запустите Astra Downloader и нажмите «Проверить снова»."
   },
   "dlInstallPortVersionTpl": {
-    "message": " (reporting version {version})"
+    "message": " (сообщает версию {version})"
   },
   "dlInstallReconnectTitle": {
-    "message": "Reconnect Astra Downloader"
+    "message": "Повторное подключение Astra Downloader"
   },
   "dlInstallRepairDesc": {
-    "message": "Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service."
+    "message": "Astra Deck сейчас не может связаться со службой загрузчика. Запустите её снова, если она установлена, или запустите установщик для восстановления локальной службы."
   },
   "dlInstallRepairHint": {
-    "message": "Fastest path: start the service again first. If it still does not respond, run setup to repair the install."
+    "message": "Самый быстрый путь: сначала снова запустите службу. Если она по-прежнему не отвечает, запустите установщик для восстановления."
   },
   "dlInstallSetupDesc": {
-    "message": "Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads."
+    "message": "Включите надёжную загрузку аудио и видео, установив Astra Downloader на это устройство. Одной установки хватит для всех будущих загрузок."
   },
   "dlInstallSetupHint": {
-    "message": "Recommended path: download setup, open the file, then return here and check again."
+    "message": "Рекомендуемый путь: скачайте установщик, откройте файл, затем вернитесь сюда и проверьте снова."
   },
   "dlInstallSetupReady": {
-    "message": "Setup ready"
+    "message": "Установщик готов"
   },
   "dlInstallSetupTitle": {
-    "message": "Set up local downloads"
+    "message": "Настройка локальных загрузок"
   },
   "dlInstallSkip": {
-    "message": "Skip for now"
+    "message": "Пропустить пока"
   },
   "dlInstallStartDetail": {
-    "message": "Fastest fix if the downloader is installed but idle."
+    "message": "Самое быстрое решение, если загрузчик установлен, но не работает."
   },
   "dlInstallStartService": {
-    "message": "Start service"
+    "message": "Запустить службу"
   },
   "dlInstallStarting": {
-    "message": "Starting…"
+    "message": "Запуск…"
   },
   "dlInstallStartingService": {
-    "message": "Starting the Astra Downloader service…"
+    "message": "Запуск службы Astra Downloader…"
   },
   "dlInstallStepCheck": {
-    "message": "Choose Check again so Astra Deck can confirm the service is ready."
+    "message": "Нажмите «Проверить снова», чтобы Astra Deck убедился, что служба готова."
   },
   "dlInstallStepDownload": {
-    "message": "Download the Astra Downloader setup file."
+    "message": "Скачайте установочный файл Astra Downloader."
   },
   "dlInstallStepOpen": {
-    "message": "Open the setup file from Downloads and finish installation."
+    "message": "Откройте установочный файл из папки «Загрузки» и завершите установку."
   },
   "dlInstallStepStart": {
-    "message": "Start the service again if the downloader is already installed."
+    "message": "Снова запустите службу, если загрузчик уже установлен."
   },
   "dlInstallUserscriptNotPairedHint": {
     "message": "Astra Downloader запущен, но сопряжение не прошло. Сначала выберите в нём Pair userscript, затем проверьте снова в течение двух минут."
@@ -1154,28 +1154,28 @@
     "message": "Выбрать папку загрузки"
   },
   "dlPopupClipEndAria": {
-    "message": "Clip end timestamp"
+    "message": "Метка времени конца фрагмента"
   },
   "dlPopupClipEndPlaceholder": {
-    "message": "End · 1:30"
+    "message": "Конец · 1:30"
   },
   "dlPopupClipFormat": {
     "message": "Укажите оба времени клипа в секундах или в формате ММ:СС либо ЧЧ:ММ:СС."
   },
   "dlPopupClipHint": {
-    "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
+    "message": "Оставьте пустым, чтобы скачать видео целиком. Фрагменты точно по кадрам перерезаются после загрузки."
   },
   "dlPopupClipInvalid": {
-    "message": "Enter a valid clip range with an end later than its start."
+    "message": "Укажите корректный диапазон фрагмента: конец должен быть позже начала."
   },
   "dlPopupClipRange": {
-    "message": "Clip range (optional)"
+    "message": "Диапазон фрагмента (необязательно)"
   },
   "dlPopupClipStartAria": {
-    "message": "Clip start timestamp"
+    "message": "Метка времени начала фрагмента"
   },
   "dlPopupClipStartPlaceholder": {
-    "message": "Start · 0:00"
+    "message": "Начало · 0:00"
   },
   "dlPopupClipTooShort": {
     "message": "Клип должен длиться не меньше 0,1 секунды."
@@ -1205,37 +1205,37 @@
     "message": "Формат"
   },
   "dlPopupFormatsAdjusted": {
-    "message": "switched to Best"
+    "message": "переключено на «Лучшее»"
   },
   "dlPopupFormatsHint": {
     "message": "Спросите Astra Downloader, какие разрешения доступны для этого видео."
   },
   "dlPopupFormatsLoading": {
-    "message": "Checking…"
+    "message": "Проверка…"
   },
   "dlPopupFormatsNone": {
     "message": "Astra Downloader не сообщил видеопотоков для этого URL."
   },
   "dlPopupFormatsProbe": {
-    "message": "Check what's available"
+    "message": "Проверить доступное"
   },
   "dlPopupFormatsRecheck": {
-    "message": "Check again"
+    "message": "Проверить снова"
   },
   "dlPopupFormatsRungUnavailableTpl": {
-    "message": "Not available. This video tops out at {max}p"
+    "message": "Недоступно. Максимум для этого видео: {max}p"
   },
   "dlPopupFormatsSummaryTpl": {
-    "message": "{count} formats · {min}p to {max}p available"
+    "message": "Форматов: {count} · доступно от {min}p до {max}p"
   },
   "dlPopupFormatsUnavailable": {
-    "message": "Format list unavailable."
+    "message": "Список форматов недоступен."
   },
   "dlPopupLoading": {
     "message": "Загрузка…"
   },
   "dlPopupOutsideRoots": {
-    "message": "That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path."
+    "message": "Эта папка находится вне разрешённых мест загрузки и будет отклонена. Добавьте её в ExtraOutputRoots или выберите подпапку своего пути загрузки."
   },
   "dlPopupPickerUnavailable": {
     "message": "Выбор папки недоступен"
@@ -1247,40 +1247,40 @@
     "message": "Очистить"
   },
   "dlPopupPlaylistClipConflict": {
-    "message": "Choose either a clip range or playlist items."
+    "message": "Выберите либо диапазон фрагмента, либо элементы плейлиста."
   },
   "dlPopupPlaylistHint": {
-    "message": "Preview to choose a bounded subset. Without a selection, this video downloads normally."
+    "message": "Откройте предпросмотр, чтобы выбрать ограниченный набор. Без выбора это видео загружается как обычно."
   },
   "dlPopupPlaylistItems": {
-    "message": "Playlist items"
+    "message": "Элементы плейлиста"
   },
   "dlPopupPlaylistListAria": {
-    "message": "Playlist item selection"
+    "message": "Выбор элементов плейлиста"
   },
   "dlPopupPlaylistLoading": {
     "message": "Загрузка…"
   },
   "dlPopupPlaylistPreview": {
-    "message": "Preview playlist"
+    "message": "Предпросмотр плейлиста"
   },
   "dlPopupPlaylistRefresh": {
-    "message": "Refresh preview"
+    "message": "Обновить предпросмотр"
   },
   "dlPopupPlaylistSelectAll": {
-    "message": "Select all"
+    "message": "Выбрать все"
   },
   "dlPopupPlaylistSelectionTpl": {
-    "message": "{selected} selected · {shown} shown · {total} total"
+    "message": "Выбрано: {selected} · показано: {shown} · всего: {total}"
   },
   "dlPopupPlaylistUnavailable": {
-    "message": "Playlist preview unavailable."
+    "message": "Предпросмотр плейлиста недоступен."
   },
   "dlPopupQuality": {
     "message": "Качество"
   },
   "dlPopupQualitySizeTitleTpl": {
-    "message": "Estimated download size: {size}"
+    "message": "Примерный размер загрузки: {size}"
   },
   "dlPopupQualitySizeTpl": {
     "message": "{quality} · {size}"
@@ -1337,7 +1337,7 @@
     "message": "Закрыть прогресс загрузки"
   },
   "dlProgressEtaPrefix": {
-    "message": "ETA"
+    "message": "Осталось"
   },
   "dlProgressFailureDefault": {
     "message": "Ошибка Astra Downloader"
@@ -1358,10 +1358,10 @@
     "message": "Связь с Astra Downloader потеряна."
   },
   "dlProgressLostTrackCopy": {
-    "message": "Astra Downloader reported an unrecognized status. Check its window for the result."
+    "message": "Astra Downloader сообщил неизвестный статус. Проверьте результат в его окне."
   },
   "dlProgressLostTrackTitle": {
-    "message": "Lost track of this download"
+    "message": "Не удаётся отследить эту загрузку"
   },
   "dlProgressPreparing": {
     "message": "Подготовка загрузки…"
@@ -1412,7 +1412,7 @@
     "message": "Пропущено"
   },
   "dlProgressStateUnknown": {
-    "message": "Status Unknown"
+    "message": "Статус неизвестен"
   },
   "dlProgressWaiting": {
     "message": "Ожидание"
@@ -1427,31 +1427,31 @@
     "message": "Восстановить загрузчик"
   },
   "dlStreamButtonTitle": {
-    "message": "Show adaptive format URLs"
+    "message": "Показать URL адаптивных форматов"
   },
   "dlStreamCopied": {
-    "message": "Stream URL copied"
+    "message": "URL потока скопирован"
   },
   "dlStreamCopyUrl": {
-    "message": "Copy URL"
+    "message": "Копировать URL"
   },
   "dlStreamEmpty": {
-    "message": "No stream URLs parsed. YouTube may have served SABR-only formats. Astra Downloader handles those through youtube:formats=duplicate."
+    "message": "URL потоков не найдены. Возможно, YouTube отдал форматы только SABR. Astra Downloader обрабатывает их через youtube:formats=duplicate."
   },
   "dlStreamLinksTitle": {
-    "message": "Stream Links"
+    "message": "Ссылки на потоки"
   },
   "dlStreamSabrOnly": {
-    "message": "SABR-only"
+    "message": "только SABR"
   },
   "dlStreamWarning": {
-    "message": "URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead."
+    "message": "Срок действия URL невелик, и в вашем браузере они могут не работать. Используйте Astra Downloader или передайте поток в yt-dlp/VLC."
   },
   "dualSubtitleLanguageAuto": {
-    "message": "Automatic alternate language"
+    "message": "Альтернативный язык автоматически"
   },
   "dualSubtitleTrackAria": {
-    "message": "Secondary subtitles"
+    "message": "Дополнительные субтитры"
   },
   "dwBreakTitle": {
     "message": "Сделайте перерыв"
@@ -1460,28 +1460,28 @@
     "message": "Достигнут дневной лимит"
   },
   "dwShortsHardBlockHint": {
-    "message": "This hard block resets at your next local midnight."
+    "message": "Эта блокировка сбрасывается в ближайшую локальную полночь."
   },
   "dwShortsHardBlockMessage": {
-    "message": "You have reached your {limit}-minute Shorts budget for today. Leave Shorts to continue watching other YouTube videos."
+    "message": "Вы исчерпали дневной лимит Shorts: {limit} мин. Выйдите из Shorts, чтобы продолжить смотреть другие видео YouTube."
   },
   "dwShortsLeaveButton": {
-    "message": "Leave Shorts"
+    "message": "Выйти из Shorts"
   },
   "dwShortsLimitEyebrow": {
-    "message": "Shorts Guard"
+    "message": "Защита от Shorts"
   },
   "dwShortsLimitResetHint": {
-    "message": "The Shorts budget resets at your next local midnight."
+    "message": "Лимит Shorts сбрасывается в ближайшую локальную полночь."
   },
   "dwShortsLimitTitle": {
-    "message": "Shorts Limit Reached"
+    "message": "Лимит Shorts достигнут"
   },
   "dwShortsSnoozeButton": {
-    "message": "Snooze 5 Minutes"
+    "message": "Отложить на 5 минут"
   },
   "dwShortsSnoozeMessage": {
-    "message": "You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes."
+    "message": "Сегодня вы смотрели Shorts {minutes} мин. Сделайте перерыв или отложите защиту ещё на пять минут."
   },
   "emptyNoMatch": {
     "message": "Нет совпадающих переключателей"
@@ -1517,46 +1517,46 @@
     "description": "The extension name displayed in the browser UI."
   },
   "externalHealthAria": {
-    "message": "External API health"
+    "message": "Состояние внешних API"
   },
   "externalHealthAvailabilityTpl": {
-    "message": "availability {state}"
+    "message": "доступность: {state}"
   },
   "externalHealthCopyAria": {
-    "message": "Copy external API health report to clipboard"
+    "message": "Скопировать отчёт о состоянии внешних API в буфер обмена"
   },
   "externalHealthCopyBtn": {
-    "message": "Copy report"
+    "message": "Копировать отчёт"
   },
   "externalHealthCopyDone": {
-    "message": "Copied."
+    "message": "Скопировано. Вставьте отчёт в задачу на GitHub."
   },
   "externalHealthCopyFail": {
-    "message": "Could not copy."
+    "message": "Не удалось скопировать."
   },
   "externalHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
+    "message": "Откройте вкладку YouTube, чтобы создать отчёт."
   },
   "externalHealthCopyPending": {
-    "message": "Building report..."
+    "message": "Создание отчёта…"
   },
   "externalHealthDetailEmpty": {
-    "message": "No requests observed in this tab yet."
+    "message": "В этой вкладке пока не замечено запросов."
   },
   "externalHealthEmpty": {
-    "message": "No external API services tracked yet."
+    "message": "Внешние API-сервисы пока не отслеживаются."
   },
   "externalHealthRefreshTpl": {
-    "message": "refreshed {age} ago"
+    "message": "обновлено {age} назад"
   },
   "externalHealthSourceTpl": {
-    "message": "source {source}"
+    "message": "источник: {source}"
   },
   "externalHealthTitle": {
-    "message": "External API health"
+    "message": "Состояние внешних API"
   },
   "externalHealthTotalTpl": {
-    "message": "{count} services"
+    "message": "Сервисов: {count}"
   },
   "failureCauseAuth": {
     "message": "Учётные данные отклонены. Проверьте ключ в настройках и повторите попытку."
@@ -1613,25 +1613,25 @@
     "message": "{count} с назад"
   },
   "featureHealthAllWellTpl": {
-    "message": "{healthy} features working"
+    "message": "Работает функций: {healthy}"
   },
   "featureHealthDegradedTpl": {
-    "message": "{count} degraded"
+    "message": "С проблемами: {count}"
   },
   "featureHealthEmpty": {
-    "message": "No enabled features sampled yet."
+    "message": "Включённых функций для проверки пока нет."
   },
   "featureHealthFailedTpl": {
-    "message": "{count} failed"
+    "message": "С ошибкой: {count}"
   },
   "featureHealthHealthyTpl": {
-    "message": "{count} working"
+    "message": "Работает: {count}"
   },
   "featureHealthMoreTpl": {
-    "message": "+{count} more"
+    "message": "+ ещё {count}"
   },
   "featureHealthNote": {
-    "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
+    "message": "«С проблемами» значит, что функция загрузилась, но то, от чего она зависит, перестало отвечать. Перезагрузите YouTube, чтобы проверить снова."
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "Предупреждение YouTube через {selector}; воспроизведение {state}"
@@ -1646,34 +1646,34 @@
     "message": "Элемент страницы “{surface}” совпал только с резервным правилом"
   },
   "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
+    "message": "Элемент страницы «{surface}» больше не найден"
   },
   "featureHealthStatusDegraded": {
-    "message": "Degraded"
+    "message": "С проблемами"
   },
   "featureHealthStatusFailed": {
     "message": "Ошибка"
   },
   "featureHealthStatusHealthy": {
-    "message": "Working"
+    "message": "Работает"
   },
   "featureHealthStatusIdle": {
-    "message": "Not active here"
+    "message": "Здесь не активно"
   },
   "featureHealthTitle": {
-    "message": "Feature health"
+    "message": "Состояние функций"
   },
   "featurePerfAria": {
-    "message": "Feature performance"
+    "message": "Производительность функций"
   },
   "featurePerfEmpty": {
-    "message": "No features initialized yet."
+    "message": "Функции пока не инициализированы."
   },
   "featurePerfTitle": {
-    "message": "Feature init timing"
+    "message": "Время инициализации функций"
   },
   "featurePerfTotalTpl": {
-    "message": "{count} features measured"
+    "message": "Измерено функций: {count}"
   },
   "featureReportChangedTpl": {
     "message": "Настройки, отличающиеся от значений по умолчанию ({count}):"
@@ -1697,10 +1697,10 @@
     "message": "Только названия, без значений. Ничего никуда не отправлено. Это в вашем буфере обмена, и вы сами решаете, вставлять ли это."
   },
   "featureScheduleDaysTpl": {
-    "message": "Active {window} on {days}"
+    "message": "Активно {window}: {days}"
   },
   "featureScheduleEveryDayTpl": {
-    "message": "Active {window} every day"
+    "message": "Активно {window} каждый день"
   },
   "feature_abHide_ask_desc": {
     "message": "Скрыть кнопку «Спросить» или AI под видео"
@@ -1796,13 +1796,13 @@
     "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
   },
   "feature_antiTranslateChapters_name": {
-    "message": "Anti-Translate Chapters"
+    "message": "Антиперевод глав"
   },
   "feature_antiTranslateThumbnails_desc": {
-    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
+    "message": "Возвращает миниатюру на оригинальном языке на карточках, текст которых был локализован. Использует ответ плеера на странице просмотра и собственную конечную точку oEmbed YouTube на том же источнике в остальных местах, поэтому дополнительный доступ к сайтам не нужен."
   },
   "feature_antiTranslateThumbnails_name": {
-    "message": "Anti-Translate Thumbnails"
+    "message": "Антиперевод миниатюр"
   },
   "feature_antiTranslateTranscript_desc": {
     "message": "Убирает параметры перевода из URL транскрипта, чтобы YouTube показывал субтитры на оригинальном языке. Наилучшие усилия; работает при доступности оригинальной дорожки."
@@ -1823,34 +1823,34 @@
     "message": "Контекстное меню Astra"
   },
   "feature_audioAutoGain_desc": {
-    "message": "Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage."
+    "message": "Подтягивает тихие видео к комфортному уровню прослушивания с помощью ограниченного адаптивного каскада усиления Web Audio."
   },
   "feature_audioAutoGain_name": {
-    "message": "Audio Auto-Gain"
+    "message": "Автоусиление звука"
   },
   "feature_audioEqHighGainDb_desc": {
-    "message": "High-shelf gain centered at 8 kHz, from -12 dB to +12 dB."
+    "message": "Усиление высокочастотной полки с центром на 8 кГц, от -12 дБ до +12 дБ."
   },
   "feature_audioEqHighGainDb_name": {
-    "message": "EQ High Band"
+    "message": "Высокие частоты эквалайзера"
   },
   "feature_audioEqLowGainDb_desc": {
-    "message": "Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB."
+    "message": "Усиление низкочастотной полки с центром на 120 Гц, от -12 дБ до +12 дБ."
   },
   "feature_audioEqLowGainDb_name": {
-    "message": "EQ Low Band"
+    "message": "Низкие частоты эквалайзера"
   },
   "feature_audioEqMidGainDb_desc": {
-    "message": "Peaking gain centered at 1 kHz, from -12 dB to +12 dB."
+    "message": "Усиление пиковой полосы с центром на 1 кГц, от -12 дБ до +12 дБ."
   },
   "feature_audioEqMidGainDb_name": {
-    "message": "EQ Mid Band"
+    "message": "Средние частоты эквалайзера"
   },
   "feature_audioHighPass_desc": {
-    "message": "Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph."
+    "message": "Убирает гул и бубнение на низких частотах с помощью фильтра высоких частот на 80 Гц в аудиографе MAIN-world."
   },
   "feature_audioHighPass_name": {
-    "message": "Audio High-Pass Filter"
+    "message": "Фильтр высоких частот"
   },
   "feature_audioNormalization_desc": {
     "message": "Сжимает динамический диапазон, чтобы тихие и громкие фрагменты воспроизводились на одинаковой громкости."
@@ -1871,10 +1871,10 @@
     "message": "Панорамирование"
   },
   "feature_audioParametricEq_desc": {
-    "message": "Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB."
+    "message": "Применяет трёхполосный эквалайзер (низкие, средние и высокие частоты) в аудиографе MAIN-world. По умолчанию выключен, каждая полоса ограничена диапазоном от -12 дБ до +12 дБ."
   },
   "feature_audioParametricEq_name": {
-    "message": "Parametric EQ"
+    "message": "Параметрический эквалайзер"
   },
   "feature_audioSyncOffsetMs_desc": {
     "message": "Настройте тайминг аудио относительно видео от -500 до +500 мс. Положительные значения добавляют задержку аудио, а отрицательные используют минимальную доступную задержку Web Audio."
@@ -1913,10 +1913,10 @@
     "message": "Автозагрузка видео"
   },
   "feature_autoExitFullscreen_desc": {
-    "message": "Leave fullscreen automatically when a video finishes, unless a playlist or queue advances to a next video"
+    "message": "Автоматически выходить из полноэкранного режима по окончании видео, если только плейлист или очередь не переходят к следующему видео"
   },
   "feature_autoExitFullscreen_name": {
-    "message": "Auto-Exit Fullscreen at End"
+    "message": "Выход из полноэкранного режима в конце"
   },
   "feature_autoExpandComments_desc": {
     "message": "Автоматически разворачивать обрезанные комментарии, чтобы весь текст был виден"
@@ -1967,10 +1967,10 @@
     "message": "Автопропуск глав"
   },
   "feature_autoSubtitlesWhenMuted_desc": {
-    "message": "Turn captions on automatically while the video is muted and restore the previous caption state on unmute"
+    "message": "Автоматически включать субтитры, пока звук видео отключён, и возвращать прежнее состояние при включении звука"
   },
   "feature_autoSubtitlesWhenMuted_name": {
-    "message": "Subtitles While Muted"
+    "message": "Субтитры при отключённом звуке"
   },
   "feature_autoSubtitles_desc": {
     "message": "Автоматически включает субтитры при начале воспроизведения видео"
@@ -1991,10 +1991,10 @@
     "message": "Фильтр синего света"
   },
   "feature_blueLightIntensity_desc": {
-    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+    "message": "Задайте силу тёплого оттенка при включённом фильтре синего света."
   },
   "feature_blueLightIntensity_name": {
-    "message": "Blue Light Intensity"
+    "message": "Интенсивность фильтра синего света"
   },
   "feature_bulkCardActions_desc": {
     "message": "Включите режим выделения для множественного выбора карточек ленты, затем массово скройте, разрешите или скопируйте URL. Плавающая панель действий появляется при выделении."
@@ -2201,10 +2201,10 @@
     "message": "Заблокированные авторы комментариев"
   },
   "feature_commentDuplicateCollapse_desc": {
-    "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."
+    "message": "Сворачивает почти одинаковые комментарии под доступным раскрывающимся блоком, используя только локальное сравнение текста."
   },
   "feature_commentDuplicateCollapse_name": {
-    "message": "Collapse Similar Comments"
+    "message": "Сворачивать похожие комментарии"
   },
   "feature_commentEnhancements_desc": {
     "message": "Выделять ответы автора/OP, показывать индикаторы популярности лайков и добавлять переключатель сворачивания всех ответов в ветке"
@@ -2225,10 +2225,10 @@
     "message": "Правила фильтра комментариев"
   },
   "feature_commentLanguageAllowlist_desc": {
-    "message": "Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain."
+    "message": "Показывать только комментарии на этих языках (коды, например en, es или fr). Оставьте пустым, чтобы разрешить все языки. Определение языка выполняется локально и при неуверенности ничего не скрывает."
   },
   "feature_commentLanguageAllowlist_name": {
-    "message": "Comment Language Allowlist"
+    "message": "Разрешённые языки комментариев"
   },
   "feature_commentNavigator_desc": {
     "message": "Плавающий навигатор по веткам с подсчётом видимых комментариев и отфильтрованных результатов в реальном времени"
@@ -2549,22 +2549,22 @@
     "message": "Формат видео"
   },
   "feature_dualLanguageSubtitles_desc": {
-    "message": "Show an independently selected second caption track below YouTube captions when available"
+    "message": "Показывать под субтитрами YouTube отдельно выбранную вторую дорожку, если она доступна"
   },
   "feature_dualLanguageSubtitles_name": {
-    "message": "Dual-language Subtitles"
+    "message": "Двуязычные субтитры"
   },
   "feature_dualSubtitleLanguage_desc": {
-    "message": "Choose the caption language rendered below native YouTube captions"
+    "message": "Выберите язык субтитров, отображаемых под встроенными субтитрами YouTube"
   },
   "feature_dualSubtitleLanguage_name": {
-    "message": "Second Subtitle Language"
+    "message": "Язык вторых субтитров"
   },
   "feature_elementZapper_desc": {
-    "message": "Click a shelf, panel, or promo to hide it, and keep hiding it."
+    "message": "Нажмите на полку, панель или рекламный блок, чтобы скрыть его и не показывать в дальнейшем."
   },
   "feature_elementZapper_name": {
-    "message": "Element Zapper"
+    "message": "Скрытие элементов кликом"
   },
   "feature_enableCPU_Tamer_desc": {
     "message": "Снизить нагрузку на CPU путём ограничения фоновых таймеров через requestAnimationFrame"
@@ -2591,10 +2591,10 @@
     "message": "Уведомления об известных сбоях"
   },
   "feature_feedPrefilter_desc": {
-    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
+    "message": "Удаляет заблокированные каналы из данных ленты YouTube до того, как страница построит из них карточку, а не скрывает карточку после. Плейлисты и видеоплеер не затрагиваются."
   },
   "feature_feedPrefilter_name": {
-    "message": "Filter Feeds Before Render"
+    "message": "Фильтровать ленты до отрисовки"
   },
   "feature_feedTriageProfile_desc": {
     "message": "Включить кураторский фокус-рецепт: скрывает Shorts, прямые эфиры, ожидающие премьеры, миксы, просмотренные видео и AI-резюме. Выключение восстанавливает прежние значения."
@@ -2633,10 +2633,10 @@
     "message": "Принудительная тёмная тема на всех страницах YouTube"
   },
   "feature_forceDvr_desc": {
-    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+    "message": "Просит YouTube включить перемотку назад для трансляций, у которых DVR объявлен отключённым. Экспериментально и по умолчанию выключено. Если формат ответа плеера изменится, Astra Deck ничего не тронет и сообщит о сбое."
   },
   "feature_forceDvr_name": {
-    "message": "Force DVR for Live Streams"
+    "message": "Принудительный DVR для трансляций"
   },
   "feature_forceH264_desc": {
     "message": "Предпочитать H.264 (AVC) вместо VP9/AV1 для снижения нагрузки на CPU на старом оборудовании. Может снизить максимальное качество. Использует мост кодеков MAIN-мира."
@@ -2681,10 +2681,10 @@
     "message": "Полноэкранный режим по двойному клику"
   },
   "feature_fullscreenScroll_desc": {
-    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+    "message": "Прокручивайте вниз в полноэкранном режиме, чтобы читать описание, комментарии и похожие видео, и вверх, чтобы вернуться к видео"
   },
   "feature_fullscreenScroll_name": {
-    "message": "Scroll in Fullscreen"
+    "message": "Прокрутка в полноэкранном режиме"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Монтирует единый скрытый контейнер role=status / aria-live=polite в body документа. Программы чтения с экрана объявляют текст, который Astra записывает в него (уведомления, результаты фильтрации, изменения статуса загрузки)."
@@ -2699,136 +2699,136 @@
     "message": "Серые миниатюры"
   },
   "feature_guideHide_footer_desc": {
-    "message": "Hide the Guide footer links"
+    "message": "Скрыть ссылки внизу меню навигации"
   },
   "feature_guideHide_footer_name": {
-    "message": "Footer"
+    "message": "Нижняя часть"
   },
   "feature_guideHide_gaming_desc": {
-    "message": "Hide the Gaming entry"
+    "message": "Скрыть пункт «Игры»"
   },
   "feature_guideHide_gaming_name": {
-    "message": "Gaming"
+    "message": "Игры"
   },
   "feature_guideHide_help_desc": {
-    "message": "Hide the Help entry"
+    "message": "Скрыть пункт «Справка»"
   },
   "feature_guideHide_help_name": {
-    "message": "Help"
+    "message": "Справка"
   },
   "feature_guideHide_history_desc": {
-    "message": "Hide the History entry"
+    "message": "Скрыть пункт «История»"
   },
   "feature_guideHide_history_name": {
-    "message": "History"
+    "message": "История"
   },
   "feature_guideHide_home_desc": {
-    "message": "Hide the Home entry in the Guide"
+    "message": "Скрыть пункт «Главная» в меню навигации"
   },
   "feature_guideHide_home_name": {
     "message": "Главная"
   },
   "feature_guideHide_learning_desc": {
-    "message": "Hide the Learning topic entry"
+    "message": "Скрыть тематический пункт «Обучение»"
   },
   "feature_guideHide_learning_name": {
-    "message": "Learning"
+    "message": "Обучение"
   },
   "feature_guideHide_likedVideos_desc": {
-    "message": "Hide the Liked Videos entry"
+    "message": "Скрыть пункт «Понравившиеся»"
   },
   "feature_guideHide_likedVideos_name": {
-    "message": "Liked Videos"
+    "message": "Понравившиеся"
   },
   "feature_guideHide_live_desc": {
-    "message": "Hide the Live topic entry"
+    "message": "Скрыть тематический пункт «Трансляции»"
   },
   "feature_guideHide_live_name": {
     "message": "Активно"
   },
   "feature_guideHide_movies_desc": {
-    "message": "Hide the Movies & TV entry"
+    "message": "Скрыть пункт «Фильмы и ТВ»"
   },
   "feature_guideHide_movies_name": {
-    "message": "Movies & TV"
+    "message": "Фильмы и ТВ"
   },
   "feature_guideHide_music_desc": {
-    "message": "Hide the Music topic entry"
+    "message": "Скрыть тематический пункт «Музыка»"
   },
   "feature_guideHide_music_name": {
-    "message": "Music"
+    "message": "Музыка"
   },
   "feature_guideHide_news_desc": {
-    "message": "Hide the News topic entry"
+    "message": "Скрыть тематический пункт «Новости»"
   },
   "feature_guideHide_news_name": {
-    "message": "News"
+    "message": "Новости"
   },
   "feature_guideHide_playlists_desc": {
-    "message": "Hide the Playlists entry"
+    "message": "Скрыть пункт «Плейлисты»"
   },
   "feature_guideHide_playlists_name": {
     "message": "Плейлисты"
   },
   "feature_guideHide_premium_desc": {
-    "message": "Hide the YouTube Premium entry"
+    "message": "Скрыть пункт YouTube Premium"
   },
   "feature_guideHide_premium_name": {
     "message": "YouTube Premium"
   },
   "feature_guideHide_reportHistory_desc": {
-    "message": "Hide the Report History entry"
+    "message": "Скрыть пункт «История жалоб»"
   },
   "feature_guideHide_reportHistory_name": {
-    "message": "Report History"
+    "message": "История жалоб"
   },
   "feature_guideHide_settings_desc": {
-    "message": "Hide the Settings entry"
+    "message": "Скрыть пункт «Настройки»"
   },
   "feature_guideHide_settings_name": {
     "message": "Настройки"
   },
   "feature_guideHide_sports_desc": {
-    "message": "Hide the Sports topic entry"
+    "message": "Скрыть тематический пункт «Спорт»"
   },
   "feature_guideHide_sports_name": {
-    "message": "Sports"
+    "message": "Спорт"
   },
   "feature_guideHide_studio_desc": {
-    "message": "Hide the YouTube Studio entry"
+    "message": "Скрыть пункт YouTube Studio"
   },
   "feature_guideHide_studio_name": {
     "message": "YouTube Studio"
   },
   "feature_guideHide_subscriptions_desc": {
-    "message": "Hide the Subscriptions entry"
+    "message": "Скрыть пункт «Подписки»"
   },
   "feature_guideHide_subscriptions_name": {
     "message": "Подписки"
   },
   "feature_guideHide_trending_desc": {
-    "message": "Hide the Trending entry"
+    "message": "Скрыть пункт «В тренде»"
   },
   "feature_guideHide_trending_name": {
-    "message": "Trending"
+    "message": "В тренде"
   },
   "feature_guideHide_watchLater_desc": {
-    "message": "Hide the Watch Later entry"
+    "message": "Скрыть пункт «Смотреть позже»"
   },
   "feature_guideHide_watchLater_name": {
-    "message": "Watch Later"
+    "message": "Смотреть позже"
   },
   "feature_guideHide_yourVideos_desc": {
-    "message": "Hide the Your Videos / Studio entry"
+    "message": "Скрыть пункт «Ваши видео» / Studio"
   },
   "feature_guideHide_yourVideos_name": {
-    "message": "Your Videos"
+    "message": "Ваши видео"
   },
   "feature_heatmapSmartSpeed_desc": {
-    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
+    "message": "Ускоряет фрагменты, которые никто не пересматривает, и возвращает вашу скорость на самых часто повторяемых моментах. По умолчанию выключено. Нужно видео с данными тепловой карты."
   },
   "feature_heatmapSmartSpeed_name": {
-    "message": "Heatmap Smart Speed"
+    "message": "Умная скорость по тепловой карте"
   },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "Выберите, какие кнопки действий скрыть под видео"
@@ -2843,10 +2843,10 @@
     "message": "Скрытие элементов чата"
   },
   "feature_hiddenGuideElementsManager_desc": {
-    "message": "Choose individual left-navigation (Guide) entries to hide"
+    "message": "Выберите отдельные пункты левого меню навигации, которые нужно скрыть"
   },
   "feature_hiddenGuideElementsManager_name": {
-    "message": "Hide Guide Elements"
+    "message": "Скрытие элементов меню навигации"
   },
   "feature_hiddenPlayerControlsManager_desc": {
     "message": "Выберите, какие кнопки управления плеером скрыть"
@@ -2861,10 +2861,10 @@
     "message": "Скрытие элементов страницы просмотра"
   },
   "feature_hideAiContextPanels_desc": {
-    "message": "Remove fact-checking and contextual information panels"
+    "message": "Убрать панели проверки фактов и справочной информации"
   },
   "feature_hideAiContextPanels_name": {
-    "message": "Hide AI Context Panels"
+    "message": "Скрыть AI-панели контекста"
   },
   "feature_hideAiSummary_desc": {
     "message": "Убрать AI-генерированные резюме и кнопки «Спросить AI»"
@@ -2879,10 +2879,10 @@
     "message": "Скрыть кнопку Airplay"
   },
   "feature_hideAskAi_desc": {
-    "message": "Remove Ask AI buttons and conversational sections"
+    "message": "Убрать кнопки «Спросить ИИ» и разговорные разделы"
   },
   "feature_hideAskAi_name": {
-    "message": "Hide Ask AI"
+    "message": "Скрыть «Спросить ИИ»"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "Убрать переключатель автовоспроизведения из элементов управления плеера"
@@ -2909,10 +2909,10 @@
     "message": "Скрыть действия комментариев"
   },
   "feature_hideCommentComposer_desc": {
-    "message": "Remove the \"Add a comment\" text field above comments"
+    "message": "Убрать текстовое поле «Оставьте комментарий» над комментариями"
   },
   "feature_hideCommentComposer_name": {
-    "message": "Hide Comment Composer"
+    "message": "Скрыть поле ввода комментария"
   },
   "feature_hideCommentDislikeButton_desc": {
     "message": "Убрать кнопку «Не нравится» из действий комментариев, так как она не несёт полезной обратной связи"
@@ -2921,10 +2921,10 @@
     "message": "Скрыть «Не нравится» в комментариях"
   },
   "feature_hideCommentReplyButton_desc": {
-    "message": "Remove the Reply button on individual comments"
+    "message": "Убрать кнопку «Ответить» у отдельных комментариев"
   },
   "feature_hideCommentReplyButton_name": {
-    "message": "Hide Comment Reply Button"
+    "message": "Скрыть кнопку «Ответить»"
   },
   "feature_hideCommentTeaser_desc": {
     "message": "Убрать подсказку «Прокрутите к комментариям» на страницах просмотра"
@@ -2963,10 +2963,10 @@
     "message": "Скрыть сборы средств"
   },
   "feature_hideGeminiButtons_desc": {
-    "message": "Remove Gemini-branded actions without hiding other AI surfaces"
+    "message": "Убрать действия с брендом Gemini, не скрывая остальные AI-элементы"
   },
   "feature_hideGeminiButtons_name": {
-    "message": "Hide Gemini Buttons"
+    "message": "Скрыть кнопки Gemini"
   },
   "feature_hideHashtags_desc": {
     "message": "Убрать ссылки хештегов над названиями видео"
@@ -3041,10 +3041,10 @@
     "message": "Скрыть колокольчик уведомлений"
   },
   "feature_hideOwnAvatar_desc": {
-    "message": "Remove your account avatar button from the header"
+    "message": "Убрать кнопку аватара вашего аккаунта из шапки"
   },
   "feature_hideOwnAvatar_name": {
-    "message": "Hide Own Avatar"
+    "message": "Скрыть свой аватар"
   },
   "feature_hidePaidContentOverlay_desc": {
     "message": "Убрать наклейки «Содержит платную рекламу» с миниатюр и страниц просмотра"
@@ -3065,10 +3065,10 @@
     "message": "Скрыть закреплённые комментарии"
   },
   "feature_hidePlannedLivestreams_desc": {
-    "message": "On the Subscriptions page, hide scheduled livestreams and premieres that only show a \"Notify me\" button. They reappear automatically once they go live."
+    "message": "На странице подписок скрывать запланированные трансляции и премьеры, у которых есть только кнопка «Уведомить». Они появятся автоматически, как только начнутся."
   },
   "feature_hidePlannedLivestreams_name": {
-    "message": "Hide Planned Livestreams"
+    "message": "Скрыть запланированные трансляции"
   },
   "feature_hidePlayables_desc": {
     "message": "Скрыть игровой контент YouTube Playables из лент"
@@ -3095,10 +3095,10 @@
     "message": "Скрыть похожие"
   },
   "feature_hideSearchSidebar_desc": {
-    "message": "Remove the right-hand sidebar on search results pages"
+    "message": "Убрать правую боковую панель на страницах результатов поиска"
   },
   "feature_hideSearchSidebar_name": {
-    "message": "Hide Search Sidebar"
+    "message": "Скрыть боковую панель поиска"
   },
   "feature_hideSidebar_desc": {
     "message": "Полностью убрать левую навигационную боковую панель"
@@ -3125,40 +3125,40 @@
     "message": "Скрытие видео"
   },
   "feature_hideVideosLowSignalFilter_desc": {
-    "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
+    "message": "Скрывать видео, у которых после порога возраста просмотров меньше порога. Если метаданных карточки нет, видео остаётся видимым."
   },
   "feature_hideVideosLowSignalFilter_name": {
-    "message": "Hide low-signal videos"
+    "message": "Скрыть малозаметные видео"
   },
   "feature_hideVideosLowSignalMinAgeDays_desc": {
-    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+    "message": "Считать карточку с малым числом просмотров малозаметной только по истечении этого числа дней. Если возраст неизвестен, карточка остаётся видимой."
   },
   "feature_hideVideosLowSignalMinAgeDays_name": {
-    "message": "Low-signal age threshold"
+    "message": "Порог возраста для малозаметных"
   },
   "feature_hideVideosLowSignalMinViews_desc": {
-    "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
+    "message": "Минимум просмотров для эвристики малозаметности. Укажите 0, чтобы отключить проверку по просмотрам."
   },
   "feature_hideVideosLowSignalMinViews_name": {
-    "message": "Low-signal view threshold"
+    "message": "Порог просмотров для малозаметных"
   },
   "feature_hideVideosSyntheticNarrationFilter_desc": {
-    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
+    "message": "Скрывать карточки, в названии, описании или тексте канала которых есть явные признаки синтетической озвучки. Работает локально, без сети и общей базы."
   },
   "feature_hideVideosSyntheticNarrationFilter_name": {
-    "message": "Synthetic narration markers"
+    "message": "Признаки синтетической озвучки"
   },
   "feature_hideVideosUploadCadenceFilter_desc": {
-    "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
+    "message": "Скрывать карточки, у которых частота загрузок превышает локальный порог в день. Карточки без текста о частоте остаются видимыми."
   },
   "feature_hideVideosUploadCadenceFilter_name": {
-    "message": "Upload cadence filter"
+    "message": "Фильтр частоты загрузок"
   },
   "feature_hideVideosUploadCadencePerDay_desc": {
-    "message": "Maximum uploads per day accepted by the upload-cadence heuristic."
+    "message": "Максимальное число загрузок в день, допустимое для эвристики частоты загрузок."
   },
   "feature_hideVideosUploadCadencePerDay_name": {
-    "message": "Upload cadence threshold"
+    "message": "Порог частоты загрузок"
   },
   "feature_hideVoiceSearch_desc": {
     "message": "Убрать значок микрофона из строки поиска"
@@ -3191,10 +3191,10 @@
     "message": "Начальное состояние плеера (передний план)"
   },
   "feature_jumpToMostReplayed_desc": {
-    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
+    "message": "Добавляет в плеер кнопку, которая сразу перематывает к самому часто повторяемому моменту. Появляется только у видео, для которых YouTube предоставляет тепловую карту."
   },
   "feature_jumpToMostReplayed_name": {
-    "message": "Jump to Most Replayed"
+    "message": "Перейти к самому повторяемому моменту"
   },
   "feature_keyMoments_desc": {
     "message": "Подсвечивает маркеры глав на полосе прогресса цветными сегментами для быстрой визуальной навигации"
@@ -3209,34 +3209,34 @@
     "message": "Соотношение лайков к просмотрам"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row."
+    "message": "Показывать карточки видео на главной, в подписках и поиске строками: миниатюра слева, сведения справа. По умолчанию выключено и несовместимо с настройкой «Видео в ряду»."
   },
   "feature_listFeedLayout_name": {
-    "message": "List Feed Layout"
+    "message": "Макет ленты списком"
   },
   "feature_liveLatencyCatchup_desc": {
-    "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
+    "message": "Показывает задержку и буфер трансляции в интерфейсе плеера, затем использует ограниченное ускорение воспроизведения, чтобы достичь заданной точки прямого эфира."
   },
   "feature_liveLatencyCatchup_name": {
-    "message": "Live Latency Catch-up"
+    "message": "Догон прямого эфира"
   },
   "feature_liveLatencyMaxRate_desc": {
-    "message": "Maximum playback rate used while catching up; your saved channel speed is restored afterward."
+    "message": "Максимальная скорость воспроизведения при догоне. После этого сохранённая скорость канала возвращается."
   },
   "feature_liveLatencyMaxRate_name": {
-    "message": "Live Catch-up Max Rate"
+    "message": "Максимальная скорость догона"
   },
   "feature_liveLatencyTargetSeconds_desc": {
-    "message": "Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often."
+    "message": "Начинать догон при отставании от прямого эфира больше этого значения. Меньшие значения догоняют раньше, но могут чаще менять скорость."
   },
   "feature_liveLatencyTargetSeconds_name": {
-    "message": "Live Latency Target"
+    "message": "Целевая задержка эфира"
   },
   "feature_liveSpeedReset_desc": {
-    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
+    "message": "Когда трансляция, воспроизводимая быстрее 1x, догоняет прямой эфир, скорость сбрасывается до 1x. Ваша скорость возвращается, если вы перемотаете назад."
   },
   "feature_liveSpeedReset_name": {
-    "message": "Live Catch-Up Speed Reset"
+    "message": "Сброс скорости после догона эфира"
   },
   "feature_localAiSummary_desc": {
     "message": "Использовать встроенный API Summarizer Chrome при наличии. При недоступности показывает понятное сообщение — никогда не перенаправляет на удалённого провайдера. Добавляет кнопку «Локальное резюме» рядом с существующей кнопкой AI-резюме."
@@ -3251,10 +3251,10 @@
     "message": "Вопросы по расшифровке"
   },
   "feature_logarithmicVolume_desc": {
-    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
+    "message": "Переназначает встроенный ползунок громкости на логарифмическую кривую усиления для более тонкой регулировки на тихих уровнях."
   },
   "feature_logarithmicVolume_name": {
-    "message": "Logarithmic Volume Curve"
+    "message": "Логарифмическая кривая громкости"
   },
   "feature_logoToSubscriptions_desc": {
     "message": "Перенаправить клик по логотипу YouTube на ленту подписок"
@@ -3317,16 +3317,16 @@
     "message": "«Не интересно» на миниатюрах"
   },
   "feature_notificationHideRead_desc": {
-    "message": "Hide notifications that YouTube marks as already read."
+    "message": "Скрывать уведомления, которые YouTube отметил как прочитанные."
   },
   "feature_notificationHideRead_name": {
-    "message": "Hide Read Notifications"
+    "message": "Скрыть прочитанные уведомления"
   },
   "feature_notificationMaxCount_desc": {
-    "message": "Limit the number of notifications shown. Set to 0 to show all."
+    "message": "Ограничивает число показываемых уведомлений. Укажите 0, чтобы показывать все."
   },
   "feature_notificationMaxCount_name": {
-    "message": "Notification Count"
+    "message": "Число уведомлений"
   },
   "feature_notifyAutoDubbedAudio_desc": {
     "message": "Показать одноразовое уведомление, когда YouTube автоматически выбирает AI-дублированную аудиодорожку (например, английский дубляж корейского видео). Вы можете вручную переключиться на оригинальную дорожку в настройках плеера."
@@ -3437,16 +3437,16 @@
     "message": "Память скорости по каналам"
   },
   "feature_persistentQueueAutoAdvance_desc": {
-    "message": "Play the next queue entry automatically when the current video ends"
+    "message": "Удалять просмотренное видео и автоматически запускать следующий элемент ленты просмотра."
   },
   "feature_persistentQueueAutoAdvance_name": {
-    "message": "Queue Auto-Advance"
+    "message": "Автопереход в ленте просмотра"
   },
   "feature_persistentQueue_desc": {
-    "message": "Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance"
+    "message": "Соберите локальную ленту просмотра из страниц видео и миниатюр и воспроизводите её по порядку."
   },
   "feature_persistentQueue_name": {
-    "message": "Persistent Queue"
+    "message": "Лента просмотра"
   },
   "feature_persistentSpeed_desc": {
     "message": "Keep playback speed consistent"
@@ -3479,10 +3479,10 @@
     "message": "Кнопка «Картинка в картинке»"
   },
   "feature_playbackErrorRecovery_desc": {
-    "message": "When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)"
+    "message": "Если плеер показывает экран ошибки, страница перезагружается, а позиция и скорость восстанавливаются автоматически (не более 3 попыток на видео)"
   },
   "feature_playbackErrorRecovery_name": {
-    "message": "Playback Error Auto-Recovery"
+    "message": "Автовосстановление после ошибки воспроизведения"
   },
   "feature_playbackSpeedOSD_desc": {
     "message": "Показывать наложение скорости на видеоплеере (как в VLC) вместо уведомления в углу"
@@ -3497,10 +3497,10 @@
     "message": "Наложение статистики воспроизведения"
   },
   "feature_playlistAutoSkipWatched_desc": {
-    "message": "When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled."
+    "message": "Когда элемент плейлиста просмотрен минимум на 90%, переходить к следующему элементу ниже этого порога. Пока вы не включите, функция выключена."
   },
   "feature_playlistAutoSkipWatched_name": {
-    "message": "Auto-skip watched playlist items"
+    "message": "Автопропуск просмотренных элементов плейлиста"
   },
   "feature_playlistEnhancer_desc": {
     "message": "Добавляет инструменты перемешивания, копирования и скрытия дубликатов в панели плейлистов"
@@ -3641,10 +3641,10 @@
     "message": "Уменьшение движения (сильное)"
   },
   "feature_remainingTimeCompact_desc": {
-    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+    "message": "Показывать оставшееся время в минутах (например, -1h24m) вместо полного формата ч:мм:сс."
   },
   "feature_remainingTimeCompact_name": {
-    "message": "Compact Remaining Time"
+    "message": "Компактное оставшееся время"
   },
   "feature_remainingTimeDisplay_desc": {
     "message": "Показывать оставшееся время рядом с текущим в плеере с учётом скорости воспроизведения"
@@ -3653,10 +3653,10 @@
     "message": "Отображение оставшегося времени"
   },
   "feature_remainingTimeHideFullscreen_desc": {
-    "message": "Hide the remaining time readout while the player is fullscreen"
+    "message": "Скрывать счётчик оставшегося времени, когда плеер в полноэкранном режиме"
   },
   "feature_remainingTimeHideFullscreen_name": {
-    "message": "Hide in Fullscreen"
+    "message": "Скрывать в полноэкранном режиме"
   },
   "feature_rememberVolume_desc": {
     "message": "Сохранять уровень громкости между видео и сессиями"
@@ -3671,16 +3671,16 @@
     "message": "Скрыть Shorts"
   },
   "feature_removeScrubber_desc": {
-    "message": "Remove the round scrubber handle from the video progress bar"
+    "message": "Убрать круглый ползунок с полосы прогресса видео"
   },
   "feature_removeScrubber_name": {
-    "message": "Hide Scrubber Handle"
+    "message": "Скрыть ползунок перемотки"
   },
   "feature_replayChatDensity_desc": {
-    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
+    "message": "Показывает над полосой прогресса необязательный график активности для видео с чатом повтора, с подсветкой для перемотки по клику."
   },
   "feature_replayChatDensity_name": {
-    "message": "Replay Chat Density"
+    "message": "Плотность чата повтора"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Экспорт данных режима учёбы/работы в Markdown или CSV: итоги времени просмотра, состояние режима фокуса, состояние цифрового благополучия и закладки с таймкодами с глубокими ссылками."
@@ -3689,7 +3689,7 @@
     "message": "Экспорт учёбы / работы"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
+    "message": "Индексирует субтитры посещённых подходящих видео через общую службу транскриптов, не открывая панель транскрипта YouTube. Поиск остаётся локальным в IndexedDB, телеметрии нет."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "Индекс поиска по транскриптам"
@@ -3869,28 +3869,28 @@
     "message": "Элементы управления плеера Shorts"
   },
   "feature_shortsAutoAdvance_desc": {
-    "message": "Stop Shorts from looping and scroll to the next Short automatically when one finishes"
+    "message": "Не зацикливать Shorts и автоматически переходить к следующему ролику, когда текущий закончился"
   },
   "feature_shortsAutoAdvance_name": {
-    "message": "Shorts Auto-Advance"
+    "message": "Автопереход в Shorts"
   },
   "feature_shortsDailyLimitMin_desc": {
-    "message": "Maximum minutes of Shorts playback per local day. Set to 0 to disable."
+    "message": "Максимум минут просмотра Shorts в локальные сутки. Укажите 0, чтобы отключить."
   },
   "feature_shortsDailyLimitMin_name": {
-    "message": "Shorts Daily Limit"
+    "message": "Дневной лимит Shorts"
   },
   "feature_shortsDailyLimitMode_desc": {
-    "message": "Choose whether reaching the limit blocks Shorts or offers five-minute snoozes."
+    "message": "Выберите, будет ли достижение лимита блокировать Shorts или предлагать отложить на пять минут."
   },
   "feature_shortsDailyLimitMode_name": {
-    "message": "Shorts Limit Action"
+    "message": "Действие при лимите Shorts"
   },
   "feature_shortsSpeedControl_desc": {
-    "message": "Adds a click-to-cycle playback speed chip to the Shorts player (0.5x-2x), honoring your persistent speed default"
+    "message": "Добавляет в плеер Shorts чип смены скорости по клику (0.5x-2x) с учётом вашей постоянной скорости по умолчанию"
   },
   "feature_shortsSpeedControl_name": {
-    "message": "Shorts Speed Control"
+    "message": "Управление скоростью Shorts"
   },
   "feature_showChannelVideoCount_desc": {
     "message": "Отображать общее количество загруженных видео рядом с названием канала на страницах просмотра"
@@ -3929,10 +3929,10 @@
     "message": "Таймер сна"
   },
   "feature_softBottomGradient_desc": {
-    "message": "Reduce the dark gradient behind the player control bar"
+    "message": "Уменьшить тёмный градиент под панелью управления плеера"
   },
   "feature_softBottomGradient_name": {
-    "message": "Soften Bottom Gradient"
+    "message": "Смягчить нижний градиент"
   },
   "feature_sortCommentsNewest_desc": {
     "message": "Автоматически переключать сортировку комментариев на «Сначала новые» для каждого видео"
@@ -4094,10 +4094,10 @@
     "message": "Стилизация субтитров"
   },
   "feature_subtitlesOnRewind_desc": {
-    "message": "After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state"
+    "message": "После перемотки назад показывать субтитры 10 секунд, чтобы вы успели прочитать пропущенную реплику, а затем возвращать прежнее состояние субтитров"
   },
   "feature_subtitlesOnRewind_name": {
-    "message": "Subtitles on Rewind"
+    "message": "Субтитры при перемотке назад"
   },
   "feature_theaterAutoScroll_desc": {
     "message": "Автопрокрутка видео в полный вид при активации режима Theater"
@@ -4184,10 +4184,10 @@
     "message": "Шрифт интерфейса"
   },
   "feature_uiFontSize_desc": {
-    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+    "message": "Переопределить базовый размер шрифта интерфейса (0 = по умолчанию в YouTube, иначе от 8 до 20px)"
   },
   "feature_uiFontSize_name": {
-    "message": "UI Font Size"
+    "message": "Размер шрифта интерфейса"
   },
   "feature_uiStyleManager_desc": {
     "message": "Выберите скруглённые или квадратные элементы интерфейса"
@@ -4316,7 +4316,7 @@
     "message": "Инструменты плейлиста «Смотреть позже»: фильтрация по возрасту, длительности, состоянию просмотра, каналу или названию, просмотр и сортировка результатов, экспорт CSV/JSON и удаление в ограниченных восстанавливаемых сеансах"
   },
   "feature_watchLaterWorkbench_name": {
-    "message": "Watch Later Workbench"
+    "message": "Рабочая область «Смотреть позже»"
   },
   "feature_watchPageRestyle_desc": {
     "message": "Премиум-макет страницы просмотра для заголовка, описания и метаданных без скрытия стандартных элементов управления"
@@ -4544,7 +4544,7 @@
     "message": "Сохраните резервную копию правил Video Hider, восстановите их из файла или подпишитесь на список фильтров с сайта, которому доверяете."
   },
   "filterListToolsEyebrow": {
-    "message": "Video Hider"
+    "message": "Скрытие видео"
   },
   "filterListToolsTitle": {
     "message": "Списки фильтров"
@@ -4568,22 +4568,22 @@
     "message": "Фильтр — попробуйте risk:api или category:downloads"
   },
   "floatingChatControlsAria": {
-    "message": "Floating chat controls"
+    "message": "Элементы управления плавающим чатом"
   },
   "floatingChatDragAria": {
-    "message": "Move floating chat"
+    "message": "Переместить плавающий чат"
   },
   "floatingChatDragKeysAria": {
-    "message": "Use the arrow keys to move the panel, or hold Shift to move it further."
+    "message": "Клавишами со стрелками перемещайте панель, с зажатой клавишей Shift перемещение будет больше."
   },
   "floatingChatDragTitle": {
-    "message": "Drag to move"
+    "message": "Перетащите, чтобы переместить"
   },
   "floatingChatOpacityAria": {
-    "message": "Chat opacity"
+    "message": "Непрозрачность чата"
   },
   "forceDvrDegraded": {
-    "message": "DVR could not be enabled because the live player response changed."
+    "message": "Не удалось включить DVR, потому что изменился ответ плеера трансляции."
   },
   "groupQuickControls": {
     "message": "Быстрые элементы"
@@ -4619,22 +4619,22 @@
     "message": "Диагностика"
   },
   "heatmapJumpAria": {
-    "message": "Jump to the most replayed moment"
+    "message": "Перейти к самому повторяемому моменту"
   },
   "heatmapJumpedToast": {
-    "message": "Jumped to the most replayed moment"
+    "message": "Выполнен переход к самому повторяемому моменту"
   },
   "hiddenCardNoteTpl": {
-    "message": "Hidden by {feature}: {rule}"
+    "message": "Скрыто функцией «{feature}»: {rule}"
   },
   "hiddenRuleCollaboration": {
-    "message": "multi-creator upload"
+    "message": "загрузка нескольких авторов"
   },
   "hiddenRuleScheduled": {
-    "message": "scheduled livestream or premiere"
+    "message": "запланированная трансляция или премьера"
   },
   "hiddenRuleShorts": {
-    "message": "Shorts video"
+    "message": "видео Shorts"
   },
   "hideAllButtonLabel": {
     "message": "Скрыть все",
@@ -4708,77 +4708,77 @@
     "message": "Лайков: {likes}, просмотров: {views}"
   },
   "liveLatencyReadout": {
-    "message": "Live {latency}s · buffer {buffer}s",
+    "message": "Эфир {latency} с · буфер {buffer} с",
     "description": "Live-stream latency and buffered-ahead player readout"
   },
   "loadingState": {
     "message": "Загрузка"
   },
   "maintenanceMenu": {
-    "message": "Maintenance"
+    "message": "Обслуживание"
   },
   "openDashboard": {
-    "message": "Dashboard"
+    "message": "Панель"
   },
   "openFullSettings": {
     "message": "Открыть рабочую область"
   },
   "openThumbnailChecking": {
-    "message": "Checking…"
+    "message": "Проверка…"
   },
   "openThumbnailFailed": {
-    "message": "Could not open the thumbnail. Try again in a moment."
+    "message": "Не удалось открыть миниатюру. Повторите попытку через минуту."
   },
   "openThumbnailLabel": {
     "message": "Вид"
   },
   "openThumbnailRetry": {
-    "message": "Retry"
+    "message": "Повторить"
   },
   "openThumbnailTitle": {
-    "message": "Open thumbnail at full size"
+    "message": "Открыть миниатюру в полном размере"
   },
   "openYouTube": {
     "message": "Открыть YouTube"
   },
   "optionalHostBannerDetailMany": {
-    "message": "{count} enabled enrichment features need host access: {origins}."
+    "message": "Включённым функциям обогащения ({count}) нужен доступ к хостам: {origins}."
   },
   "optionalHostBannerDetailOne": {
-    "message": "1 enabled enrichment feature needs host access: {origins}."
+    "message": "Одной включённой функции обогащения нужен доступ к хосту: {origins}."
   },
   "optionalHostBannerTitle": {
-    "message": "External access needed"
+    "message": "Нужен внешний доступ"
   },
   "optionalHostGrantAria": {
-    "message": "Grant optional host access"
+    "message": "Предоставить дополнительный доступ к хостам"
   },
   "optionalHostGrantBtn": {
-    "message": "Grant access"
+    "message": "Предоставить доступ"
   },
   "optionalHostGrantName": {
-    "message": "optional host access"
+    "message": "дополнительный доступ к хостам"
   },
   "optionalHostPermissionAria": {
-    "message": "Permission needed."
+    "message": "Требуется разрешение."
   },
   "optionalHostPermissionBadge": {
-    "message": "permission needed"
+    "message": "требуется разрешение"
   },
   "optionalHostPermissionGranted": {
-    "message": "Optional host access granted."
+    "message": "Дополнительный доступ к хостам предоставлен."
   },
   "optionalHostPermissionMissingTooltip": {
-    "message": "Host access for this optional feature is denied or was revoked. Enable the setting again to grant access."
+    "message": "Доступ к хостам для этой дополнительной функции отклонён или отозван. Включите настройку снова, чтобы предоставить доступ."
   },
   "optionalHostPermissionRevoked": {
-    "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
+    "message": "Дополнительный доступ к хостам отозван. Включите затронутую настройку снова, чтобы предоставить доступ."
   },
   "optionalHostPrevious": {
     "message": "предыдущий хост"
   },
   "optionalHostUnknown": {
-    "message": "optional host access"
+    "message": "дополнительный доступ к хостам"
   },
   "pageControlDismissTpl": {
     "message": "Скрыть «{label}»",
@@ -4797,37 +4797,37 @@
     "message": "Применять сразу"
   },
   "panelNavGroupCommunity": {
-    "message": "Community"
+    "message": "Сообщество"
   },
   "panelNavGroupInteraction": {
-    "message": "Interaction"
+    "message": "Взаимодействие"
   },
   "panelNavGroupPersonalization": {
-    "message": "Personalization"
+    "message": "Персонализация"
   },
   "panelNavGroupPlayer": {
-    "message": "Player"
+    "message": "Плеер"
   },
   "panelNavGroupSystem": {
-    "message": "System"
+    "message": "Система"
   },
   "panelPaneContextAriaTpl": {
-    "message": "{category} current preferences"
+    "message": "Текущие настройки: {category}"
   },
   "panelReorderAria": {
-    "message": "Reorder categories"
+    "message": "Изменить порядок категорий"
   },
   "panelReorderDown": {
-    "message": "Move the selected category down"
+    "message": "Переместить выбранную категорию вниз"
   },
   "panelReorderMoved": {
-    "message": "Category moved."
+    "message": "Категория перемещена."
   },
   "panelReorderUp": {
-    "message": "Move the selected category up"
+    "message": "Переместить выбранную категорию вверх"
   },
   "panelSearchAria": {
-    "message": "Search settings by name, page, category, or control type"
+    "message": "Поиск настроек по названию, странице, категории или типу элемента управления"
   },
   "panelSearchClearAria": {
     "message": "Очистить поиск настроек"
@@ -4836,10 +4836,10 @@
     "message": "Очистить поиск"
   },
   "panelSearchHint": {
-    "message": "Search by name, page, category, control type, or description."
+    "message": "Ищите по названию, странице, категории, типу элемента управления или описанию."
   },
   "panelSearchPlaceholder": {
-    "message": "Search settings, pages, controls..."
+    "message": "Поиск настроек, страниц, элементов…"
   },
   "panelSearchStateBadge": {
     "message": "Найти"
@@ -4848,10 +4848,10 @@
     "message": "Очистить поиск"
   },
   "panelSearchStateCopy": {
-    "message": "Type a control, page, or category to narrow the menu instantly."
+    "message": "Введите название элемента управления, страницы или категории, чтобы мгновенно сузить меню."
   },
   "panelSearchStateTitle": {
-    "message": "Search across all settings"
+    "message": "Поиск по всем настройкам"
   },
   "panelSidebarAria": {
     "message": "Категории настроек"
@@ -4863,16 +4863,16 @@
     "message": "Обнаружен мерцающий контент — затемнено"
   },
   "playbackStatsDataChecking": {
-    "message": "Checking with Astra Downloader…"
+    "message": "Запрос к Astra Downloader…"
   },
   "playbackStatsDataQualityTpl": {
     "message": "{quality}: {size}"
   },
   "playbackStatsDataUnavailable": {
-    "message": "Unavailable"
+    "message": "Недоступно"
   },
   "playbackStatsDataUsage": {
-    "message": "Download size estimates"
+    "message": "Оценки размера загрузки"
   },
   "playerCcAria": {
     "message": "Включить или выключить субтитры"
@@ -4908,103 +4908,103 @@
     "message": "Повтор"
   },
   "playlistAutoSkipOff": {
-    "message": "Auto-skip: Off"
+    "message": "Автопропуск: выкл."
   },
   "playlistAutoSkipOn": {
-    "message": "Auto-skip: On"
+    "message": "Автопропуск: вкл."
   },
   "playlistAutoSkipTitle": {
-    "message": "Skip playlist entries with at least 90% watched progress"
+    "message": "Пропускать элементы плейлиста, просмотренные минимум на 90%"
   },
   "playlistCopied": {
-    "message": "Copied"
+    "message": "Скопировано"
   },
   "playlistCopyAllTitle": {
-    "message": "Copy all playlist video URLs"
+    "message": "Копировать URL всех видео плейлиста"
   },
   "playlistCopyBlocked": {
-    "message": "Clipboard access was blocked. Try again or use the browser copy shortcut."
+    "message": "Доступ к буферу обмена заблокирован. Повторите попытку или используйте сочетание клавиш браузера для копирования."
   },
   "playlistCopyRetry": {
-    "message": "Retry"
+    "message": "Повторить"
   },
   "playlistCopyUrls": {
-    "message": "Copy URLs"
+    "message": "Копировать URL"
   },
   "playlistCopyVisibleTitle": {
-    "message": "Copy the visible playlist video URLs"
+    "message": "Копировать URL видимых видео плейлиста"
   },
   "playlistCopying": {
-    "message": "Copying…"
+    "message": "Копирование…"
   },
   "playlistCurrentIsLast": {
-    "message": "Resume Last"
+    "message": "Продолжить с последнего"
   },
   "playlistDuplicateCountTpl": {
-    "message": "{count} duplicates"
+    "message": "Дубликатов: {count}"
   },
   "playlistDurationLongest": {
-    "message": "Duration ↓"
+    "message": "Длительность ↓"
   },
   "playlistDurationShortest": {
-    "message": "Duration ↑"
+    "message": "Длительность ↑"
   },
   "playlistHiddenDuplicatesTpl": {
-    "message": "{count} duplicates hidden"
+    "message": "Скрыто дубликатов: {count}"
   },
   "playlistHideDuplicates": {
-    "message": "Hide Duplicates"
+    "message": "Скрыть дубликаты"
   },
   "playlistHideDuplicatesTitle": {
-    "message": "Hide repeated videos in this playlist panel"
+    "message": "Скрыть повторяющиеся видео в этой панели плейлиста"
   },
   "playlistNoResumeTitle": {
-    "message": "No earlier video is remembered for this playlist"
+    "message": "Для этого плейлиста не запомнено более раннее видео"
   },
   "playlistNoUrls": {
-    "message": "No URLs"
+    "message": "Нет URL"
   },
   "playlistNoUrlsToast": {
-    "message": "No playlist URLs are ready to copy yet."
+    "message": "URL плейлиста для копирования пока не готовы."
   },
   "playlistRestoreOrderTitle": {
-    "message": "Restore the original playlist order"
+    "message": "Восстановить исходный порядок плейлиста"
   },
   "playlistResumeLast": {
-    "message": "Resume Last"
+    "message": "Продолжить с последнего"
   },
   "playlistResumeLastTitle": {
-    "message": "Open the last video remembered for this playlist"
+    "message": "Открыть последнее видео, запомненное для этого плейлиста"
   },
   "playlistShowDuplicates": {
-    "message": "Show Duplicates"
+    "message": "Показать дубликаты"
   },
   "playlistShowDuplicatesTitle": {
-    "message": "Show repeated videos in this playlist panel"
+    "message": "Показать повторяющиеся видео в этой панели плейлиста"
   },
   "playlistShuffle": {
-    "message": "Shuffle"
+    "message": "Перемешать"
   },
   "playlistShuffleNeedTwo": {
-    "message": "Need at least 2 playlist items to shuffle."
+    "message": "Для перемешивания нужно не менее 2 элементов плейлиста."
   },
   "playlistShuffleTitle": {
-    "message": "Play a random visible video from this playlist panel"
+    "message": "Воспроизвести случайное видимое видео из этой панели плейлиста"
   },
   "playlistSortDuration": {
-    "message": "Sort Duration"
+    "message": "Сортировка по длительности"
   },
   "playlistSortDurationTitle": {
-    "message": "Sort playlist items by duration; activate again to reverse"
+    "message": "Сортировать элементы плейлиста по длительности, повторное нажатие меняет порядок"
   },
   "playlistStatusLoading": {
-    "message": "Playlist"
+    "message": "Плейлист"
   },
   "playlistToolsTitle": {
-    "message": "Playlist Tools"
+    "message": "Инструменты плейлиста"
   },
   "playlistVideoCountTpl": {
-    "message": "{count} videos"
+    "message": "Видео: {count}"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -5177,10 +5177,10 @@
     "message": "SponsorBlock"
   },
   "qt_syncSettings_desc": {
-    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+    "message": "Включите синхронизацию безопасных настроек и списков блокировки скрытия видео"
   },
   "qt_syncSettings_name": {
-    "message": "Browser Sync"
+    "message": "Синхронизация браузера"
   },
   "qt_transcriptViewer_desc": {
     "message": "Читать, переходить и экспортировать субтитры"
@@ -5195,7 +5195,7 @@
     "message": "Закрыть"
   },
   "queueCleared": {
-    "message": "Queue cleared"
+    "message": "Лента просмотра очищена"
   },
   "queueExport": {
     "message": "Экспорт"
@@ -5204,13 +5204,13 @@
     "message": "Импорт"
   },
   "queuePanelAria": {
-    "message": "Astra persistent queue"
+    "message": "Лента просмотра Astra"
   },
   "queuePanelTitle": {
-    "message": "Persistent Queue"
+    "message": "Лента просмотра"
   },
   "queuePlayNext": {
-    "message": "Play next"
+    "message": "Начать просмотр"
   },
   "quickGroupCountTpl": {
     "message": "{enabled}/{total}"
@@ -5264,10 +5264,10 @@
     "message": "Отправка реакций: YouTube может ограничивать или помечать частые реакции. Используйте на свой риск."
   },
   "reactionSenderRunningTplOne": {
-    "message": "Running with {count} reaction."
+    "message": "Запущено с {count} реакцией."
   },
   "reactionSenderRunningTplOther": {
-    "message": "Running with {count} reactions."
+    "message": "Запущено с реакциями: {count}."
   },
   "reactionSenderRunningWaiting": {
     "message": "Работает, ожидание выбранных реакций."
@@ -5276,10 +5276,10 @@
     "message": "Выберите хотя бы одну реакцию."
   },
   "reactionSenderSelectedTplOne": {
-    "message": "{count} reaction selected."
+    "message": "Выбрана {count} реакция."
   },
   "reactionSenderSelectedTplOther": {
-    "message": "{count} reactions selected."
+    "message": "Выбрано реакций: {count}."
   },
   "reactionSenderSentTpl": {
     "message": "Отправлено {emoji}"
@@ -5327,10 +5327,10 @@
     "message": "Обновить список"
   },
   "replayChatDensityAria": {
-    "message": "Chat activity across this video. Click the chart to seek."
+    "message": "Активность чата в этом видео. Нажмите на график, чтобы перемотать."
   },
   "replayChatDensityTitle": {
-    "message": "Chat activity. Click to seek."
+    "message": "Активность чата. Нажмите для перемотки."
   },
   "resetBtn": {
     "message": "Сбросить"
@@ -5502,7 +5502,7 @@
     "message": "Искать во время просмотра…"
   },
   "searchWatchResultsStatus": {
-    "message": "{count} results for \"{query}\""
+    "message": "Результатов по запросу «{query}»: {count}"
   },
   "searchWatchRetry": {
     "message": "Повторить"
@@ -5514,13 +5514,13 @@
     "message": "Поиск без остановки воспроизведения"
   },
   "selectorAutoRefreshCheckedTpl": {
-    "message": "auto-checked {age}"
+    "message": "автопроверка {age}"
   },
   "selectorAutoRefreshNeverChecked": {
-    "message": "auto-refresh on, no check yet"
+    "message": "автообновление включено, проверок ещё не было"
   },
   "selectorAutoRefreshUpdatedTpl": {
-    "message": "last update {age}"
+    "message": "последнее обновление {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "текущая версия"
@@ -5592,7 +5592,7 @@
     "message": "{service} не отвечает. Дело в самом сервисе, а не в Astra Deck."
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: {value}"
+    "message": "Не распознано: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "Видеопроигрыватель"
@@ -5604,7 +5604,7 @@
     "message": "Сбросить"
   },
   "settingsCardResetTitleTpl": {
-    "message": "Reset “{name}” to its default"
+    "message": "Сбросить «{name}» к значению по умолчанию"
   },
   "settingsCategoryAriaTpl": {
     "message": "{category}. {summary}"
@@ -5625,13 +5625,13 @@
     "message": "Изменено: {count}"
   },
   "settingsChangedFilter": {
-    "message": "Changed"
+    "message": "Изменённые"
   },
   "settingsChangedFilterTitle": {
-    "message": "Show only settings you have changed from their defaults"
+    "message": "Показать только настройки, которые вы изменили по сравнению со значениями по умолчанию"
   },
   "settingsChangedNone": {
-    "message": "Nothing changed"
+    "message": "Ничего не изменено"
   },
   "settingsChoiceChangedTpl": {
     "message": "«{name}»: {value}."
@@ -5646,61 +5646,61 @@
     "message": "конфликтует с {featureName}"
   },
   "settingsDlActionsAria": {
-    "message": "Downloader actions"
+    "message": "Действия загрузчика"
   },
   "settingsDlCheckingStatus": {
-    "message": "Checking downloader status…"
+    "message": "Проверка состояния загрузчика…"
   },
   "settingsDlCommandCopied": {
-    "message": "Fallback command copied. Use it only if the setup file cannot run."
+    "message": "Резервная команда скопирована. Используйте её, только если установочный файл не запускается."
   },
   "settingsDlCopyCommand": {
-    "message": "Copy command"
+    "message": "Копировать команду"
   },
   "settingsDlCopyCommandTitle": {
-    "message": "Copy the fallback PowerShell install command"
+    "message": "Копировать резервную команду установки PowerShell"
   },
   "settingsDlDownloadTitle": {
     "message": "Скачать установщик Astra Downloader и показать его в Загрузках"
   },
   "settingsDlGetSetup": {
-    "message": "Get setup file"
+    "message": "Получить установщик"
   },
   "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+    "message": "Скачать текущий установочный файл Astra Downloader для установки или обновления"
   },
   "settingsDlNotConnected": {
-    "message": "Not connected. Local downloads need the setup helper."
+    "message": "Нет подключения. Для локальных загрузок нужен вспомогательный установщик."
   },
   "settingsDlOpenSetup": {
-    "message": "Open setup"
+    "message": "Открыть установщик"
   },
   "settingsDlPreparingSetup": {
-    "message": "Preparing the setup file…"
+    "message": "Подготовка установочного файла…"
   },
   "settingsDlRunning": {
-    "message": "Running"
+    "message": "Работает"
   },
   "settingsDlRunningTpl": {
-    "message": "Running{version}. yt-dlp server ready."
+    "message": "Работает{version}. Сервер yt-dlp готов."
   },
   "settingsDlSetupDownloaded": {
-    "message": "Setup downloaded. Open the file, finish installation, then refresh."
+    "message": "Установщик скачан. Откройте файл, завершите установку и обновите страницу."
   },
   "settingsDlSetupOpened": {
-    "message": "Setup opened. Finish installation, then refresh."
+    "message": "Установщик открыт. Завершите установку и обновите страницу."
   },
   "settingsDlStartFailed": {
-    "message": "The service did not start. Run setup to repair Astra Downloader."
+    "message": "Служба не запустилась. Запустите установщик, чтобы восстановить Astra Downloader."
   },
   "settingsDlStartFailedToast": {
-    "message": "Astra Downloader did not start. Run setup to repair it."
+    "message": "Astra Downloader не запустился. Запустите установщик, чтобы восстановить его."
   },
   "settingsDlStartTitle": {
-    "message": "Try to start the Astra Downloader service"
+    "message": "Попробовать запустить службу Astra Downloader"
   },
   "settingsDlTryingStart": {
-    "message": "Trying to start the Astra Downloader service…"
+    "message": "Попытка запустить службу Astra Downloader…"
   },
   "settingsDownloaderSetupTitle": {
     "message": "Скачать файл установки загрузчика Astra Deck"
@@ -5709,7 +5709,7 @@
     "message": "Astra Downloader"
   },
   "settingsEnableAllAriaTpl": {
-    "message": "Enable all settings in {category}"
+    "message": "Включить все настройки в разделе «{category}»"
   },
   "settingsExportAriaTpl": {
     "message": "Экспортировать настройки {brand}"
@@ -5751,64 +5751,64 @@
     "message": "Импортировать настройки {brand}"
   },
   "settingsImportDoneTpl": {
-    "message": "{message} Undo is available in the toast."
+    "message": "{message} Отменить можно в уведомлении."
   },
   "settingsImportHistoryAriaLabel": {
-    "message": "Import YouTube Takeout watch history"
+    "message": "Импорт истории просмотров из YouTube Takeout"
   },
   "settingsImportHistoryLabel": {
-    "message": "Import History"
+    "message": "Импорт истории"
   },
   "settingsImportInvalid": {
-    "message": "Import failed. Choose a valid Astra Deck settings export."
+    "message": "Не удалось импортировать. Выберите корректный файл экспорта настроек Astra Deck."
   },
   "settingsImportReadFailed": {
     "message": "Не удалось прочитать файл импорта"
   },
   "settingsImportUndoUnavailable": {
-    "message": "Import undo is no longer available."
+    "message": "Отмена импорта больше недоступна."
   },
   "settingsInsightsAria": {
-    "message": "Settings status and backup actions"
+    "message": "Состояние настроек и действия резервного копирования"
   },
   "settingsInsightsEnabled": {
     "message": "Включено"
   },
   "settingsInsightsExtension": {
-    "message": "Extension"
+    "message": "Расширение"
   },
   "settingsInsightsHealth": {
-    "message": "Health"
+    "message": "Состояние"
   },
   "settingsInsightsLastSave": {
-    "message": "Last save"
+    "message": "Последнее сохранение"
   },
   "settingsInsightsLiveApply": {
     "message": "Применять сразу"
   },
   "settingsInsightsProfile": {
-    "message": "Profile"
+    "message": "Профиль"
   },
   "settingsInsightsReadyDesc": {
-    "message": "Controls are loaded. Service health appears beside affected features."
+    "message": "Элементы управления загружены. Состояние служб отображается рядом с затронутыми функциями."
   },
   "settingsInsightsRecovery": {
-    "message": "Recovery"
+    "message": "Восстановление"
   },
   "settingsInsightsRuleEngine": {
-    "message": "Rule engine"
+    "message": "Движок правил"
   },
   "settingsInsightsSavedLocally": {
-    "message": "Saved locally"
+    "message": "Сохранено локально"
   },
   "settingsInsightsSections": {
-    "message": "Sections"
+    "message": "Разделы"
   },
   "settingsInsightsStatus": {
-    "message": "Status"
+    "message": "Статус"
   },
   "settingsInsightsUndoToasts": {
-    "message": "Undo toasts"
+    "message": "Уведомления об отмене"
   },
   "settingsPaneDescriptionFallback": {
     "message": "Настройте поведение этой части YouTube."
@@ -5820,40 +5820,40 @@
     "message": "Настройка диапазона"
   },
   "settingsResetChooseSection": {
-    "message": "Choose a settings section before resetting."
+    "message": "Перед сбросом выберите раздел настроек."
   },
   "settingsResetDoneTpl": {
-    "message": "{category} reset to defaults. Undo is available in the toast."
+    "message": "Раздел «{category}» сброшен к значениям по умолчанию. Отменить можно в уведомлении."
   },
   "settingsResetGroupTitle": {
-    "message": "Reset this group to defaults"
+    "message": "Сбросить эту группу к значениям по умолчанию"
   },
   "settingsResetRestoredToastTpl": {
-    "message": "“{category}” restored"
+    "message": "Раздел «{category}» восстановлен"
   },
   "settingsResetRestoredTpl": {
-    "message": "{category} restored."
+    "message": "Раздел «{category}» восстановлен."
   },
   "settingsResetToastTpl": {
-    "message": "“{category}” reset to defaults"
+    "message": "Раздел «{category}» сброшен к значениям по умолчанию"
   },
   "settingsSearchHint": {
-    "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
+    "message": "Введите название функции, страницу или слова вроде «комментарии», «транскрипт», «загрузка» или «тема»."
   },
   "settingsSearchMatchesTpl": {
     "message": "{count} совпадений"
   },
   "settingsSearchMatchingTpl": {
-    "message": "{count} matching settings"
+    "message": "Подходящих настроек: {count}"
   },
   "settingsSearchNoMatches": {
     "message": "Нет совпадений"
   },
   "settingsSearchNoneTpl": {
-    "message": "No settings found for “{query}”"
+    "message": "По запросу «{query}» настроек не найдено"
   },
   "settingsSearchShowingTpl": {
-    "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+    "message": "Результаты по запросу «{query}» в разделах: {sections}. Изменения сохраняются автоматически при переключении или правке результата."
   },
   "settingsSectionAiContent": {
     "message": "ИИ-контент"
@@ -6009,40 +6009,40 @@
     "message": "Сегодня просмотрено {minutes} мин."
   },
   "settingsSingleResetToastTpl": {
-    "message": "“{name}” reset to default"
+    "message": "«{name}» сброшено к значению по умолчанию"
   },
   "settingsSubFeatureBadge": {
     "message": "Подфункция"
   },
   "settingsSyncDesc": {
-    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
+    "message": "По желанию: синхронизируйте проверенные настройки и списки блокировки скрытия видео через аккаунт браузера. Секреты и согласия остаются локальными."
   },
   "settingsSyncOff": {
-    "message": "Off. This device only."
+    "message": "Выключено. Только это устройство."
   },
   "settingsSyncOn": {
-    "message": "On. Preferences and blocklists sync through your browser account."
+    "message": "Включено. Настройки и списки блокировки синхронизируются через аккаунт браузера."
   },
   "settingsSyncTitle": {
-    "message": "Browser sync"
+    "message": "Синхронизация браузера"
   },
   "settingsSyncUnavailable": {
-    "message": "Browser sync is unavailable in this browser."
+    "message": "Синхронизация браузера недоступна в этом браузере."
   },
   "settingsSyncUndo": {
-    "message": "Undo last sync"
+    "message": "Отменить последнюю синхронизацию"
   },
   "settingsSyncUndoAria": {
-    "message": "Restore the local state from before the last browser sync"
+    "message": "Восстановить локальное состояние, которое было до последней синхронизации браузера"
   },
   "settingsSyncUndoDone": {
-    "message": "Last browser sync undone locally."
+    "message": "Последняя синхронизация браузера отменена локально."
   },
   "settingsSyncUndoFailed": {
-    "message": "Could not undo the last browser sync."
+    "message": "Не удалось отменить последнюю синхронизацию браузера."
   },
   "settingsTakeoutImportInvalid": {
-    "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+    "message": "Не удалось импортировать. Выберите корректный JSON-файл истории просмотров YouTube Takeout."
   },
   "settingsTextSettingFallback": {
     "message": "Текстовая настройка"
@@ -6057,10 +6057,10 @@
     "message": "Не удалось сохранить настройки"
   },
   "shortsDailyLimitMode_hard": {
-    "message": "Hard block"
+    "message": "Жёсткая блокировка"
   },
   "shortsDailyLimitMode_snooze": {
-    "message": "Snooze 5 minutes"
+    "message": "Отложить на 5 минут"
   },
   "sidebarDocTitle": {
     "message": "Astra Deck — боковая панель Firefox"
@@ -6272,7 +6272,7 @@
     "message": "Список таймингов инициализации функций"
   },
   "spPerfRowAriaTpl": {
-    "message": "{feature}: {ms}ms"
+    "message": "{feature}: {ms} мс"
   },
   "spPerfTitle": {
     "message": "Тайминги инициализации функций"
@@ -6620,13 +6620,13 @@
     "message": "Копирование здесь недоступно. Выделите текст и скопируйте его вручную."
   },
   "statusCompanionCurrentTpl": {
-    "message": "Astra Downloader already at v{version}."
+    "message": "Astra Downloader уже версии v{version}."
   },
   "statusCompanionReadyTpl": {
-    "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
+    "message": "Обновление Astra Downloader готово: v{current} → v{latest}. Перезапуск, версия v{rollback} сохранена для автоматического отката."
   },
   "statusCompanionUpdateFailedTpl": {
-    "message": "Astra Downloader update failed. {error}"
+    "message": "Не удалось обновить Astra Downloader. {error}"
   },
   "statusDiagClearFail": {
     "message": "Не удалось очистить журнал"
@@ -6673,10 +6673,10 @@
     "message": "Предпросмотр: {preview}."
   },
   "statusImportSkippedKeysTplOne": {
-    "message": "{count} setting from a newer version was skipped: {keys}"
+    "message": "Пропущена {count} настройка из более новой версии: {keys}"
   },
   "statusImportSkippedKeysTplOther": {
-    "message": "{count} settings from a newer version were skipped: {keys}"
+    "message": "Пропущено настроек из более новой версии: {count}. Список: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "Импорт остановлен. Astra Deck не смог сохранить точку отмены в хранилище расширения. Сначала экспортируйте резервную копию."
@@ -6688,7 +6688,7 @@
     "message": "«Отменить импорт» больше недоступно: точка отмены истекла через 7 дней."
   },
   "statusImportUndoFail": {
-    "message": "Undo Import failed"
+    "message": "Не удалось отменить импорт"
   },
   "statusImportWrongFile": {
     "message": "Этот файл не является резервной копией Astra Deck, поэтому ничего не импортировано. Выберите файл .json, сохранённый при экспорте."
@@ -6700,13 +6700,13 @@
     "message": "Подсказки установки Astra Downloader включены — перезагрузите вкладку YouTube, чтобы увидеть их."
   },
   "statusOpenDashboardFail": {
-    "message": "Could not open dashboard"
+    "message": "Не удалось открыть панель"
   },
   "statusOpenWorkspaceFail": {
     "message": "Не удалось открыть полную рабочую область. Попробуйте ещё раз."
   },
   "statusPerKeyResetFail": {
-    "message": "Could not reset"
+    "message": "Не удалось сбросить"
   },
   "statusPerKeyResetTpl": {
     "message": "{key} сброшен к значению по умолчанию."
@@ -6736,88 +6736,88 @@
     "message": "Сброс отменён — все данные восстановлены."
   },
   "statusSettingsImportFailed": {
-    "message": "Import failed while applying data; previous state was restored."
+    "message": "Не удалось применить данные при импорте, прежнее состояние восстановлено."
   },
   "statusSettingsImportNoEntries": {
-    "message": "No importable settings or local data found."
+    "message": "Не найдено настроек или локальных данных для импорта."
   },
   "statusSettingsImportNoKnown": {
-    "message": "No known settings found in file."
+    "message": "В файле не найдено известных настроек."
   },
   "statusSettingsImportUndone": {
-    "message": "Import undone. Previous settings and local data restored."
+    "message": "Импорт отменён. Прежние настройки и локальные данные восстановлены."
   },
   "statusStorageReadFail": {
     "message": "Ошибка чтения хранилища"
   },
   "statusTakeoutImportUndone": {
-    "message": "Takeout import undone"
+    "message": "Импорт Takeout отменён"
   },
   "statusTakeoutNoEntries": {
-    "message": "No valid YouTube Takeout watch-history entries found."
+    "message": "Корректных записей истории просмотров YouTube Takeout не найдено."
   },
   "statusUpdateFailed": {
-    "message": "Update failed."
+    "message": "Не удалось обновить."
   },
   "statusUpdateYtdlpNoTab": {
     "message": "Сначала откройте вкладку YouTube — попапу она нужна для связи с Astra Downloader."
   },
   "statusWelcomePresetFail": {
-    "message": "Could not apply preset"
+    "message": "Не удалось применить предустановку"
   },
   "statusWelcomeProfileFail": {
-    "message": "Could not apply profile"
+    "message": "Не удалось применить профиль"
   },
   "statusWelcomeProfileFull": {
     "message": "Профиль GitHub-Full включён. Astra Downloader и провайдеры ИИ теперь доступны."
   },
   "statusWelcomeProfileSafe": {
-    "message": "Store-safe profile active. Open Full Settings to explore features."
+    "message": "Включён профиль для магазинов. Откройте полные настройки, чтобы изучить функции."
   },
   "statusYoutubeStateChanged": {
-    "message": "YouTube changed its page state before reset, so nothing was cleared."
+    "message": "YouTube изменил состояние страницы перед сбросом, поэтому ничего не очищено."
   },
   "statusYoutubeStateEmpty": {
-    "message": "No stale YouTube page-state keys were found."
+    "message": "Устаревших ключей состояния страницы YouTube не найдено."
   },
   "statusYoutubeStateNoTab": {
-    "message": "Open a YouTube tab before resetting its local page state."
+    "message": "Откройте вкладку YouTube, прежде чем сбрасывать локальное состояние страницы."
   },
   "statusYoutubeStateReset": {
-    "message": "Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open."
+    "message": "Очищено устаревших ключей состояния страницы YouTube: {count}. Перезагрузите YouTube, чтобы применить. Отмена доступна, пока открыта исходная вкладка."
   },
   "statusYoutubeStateResetFail": {
-    "message": "YouTube state reset failed"
+    "message": "Не удалось сбросить состояние YouTube"
   },
   "statusYoutubeStateResetPartialUndo": {
-    "message": "Cleared {count} stale YouTube page-state keys. {big} exceeded the backup limit, so Undo cannot restore them."
+    "message": "Очищено устаревших ключей состояния страницы YouTube: {count}. Ключи в количестве {big} превысили лимит резервной копии, поэтому отмена не сможет их восстановить."
   },
   "statusYoutubeStateRestored": {
-    "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
+    "message": "Восстановлено ключей состояния страницы YouTube: {count}. Перезагрузите YouTube, чтобы применить их."
   },
   "statusYoutubeStateUndoExpired": {
-    "message": "YouTube state Undo is no longer available for the original tab."
+    "message": "Отмена состояния YouTube для исходной вкладки больше недоступна."
   },
   "statusYoutubeStateUndoFail": {
-    "message": "YouTube state Undo failed"
+    "message": "Не удалось отменить сброс состояния YouTube"
   },
   "statusYtdlpCurrentTpl": {
-    "message": "yt-dlp already at v{version}"
+    "message": "yt-dlp уже версии v{version}"
   },
   "statusYtdlpFromTpl": {
-    "message": " (from v{version})"
+    "message": " (с v{version})"
   },
   "statusYtdlpRestoredTpl": {
-    "message": " Active version restored to v{version}."
+    "message": " Активная версия восстановлена до v{version}."
   },
   "statusYtdlpRollbackTpl": {
-    "message": " Last-known-good: v{version}."
+    "message": " Последняя рабочая версия: v{version}."
   },
   "statusYtdlpUpdateFailedTpl": {
-    "message": "yt-dlp update failed. {error}{recovery}"
+    "message": "Не удалось обновить yt-dlp. {error}{recovery}"
   },
   "statusYtdlpUpdatedTpl": {
-    "message": "yt-dlp updated to v{version}{from}"
+    "message": "yt-dlp обновлён до v{version}{from}"
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Закрыть боковую панель"
@@ -6907,19 +6907,19 @@
     "message": "Все подписки"
   },
   "subscriptionArchiveAdded": {
-    "message": "Scheduled"
+    "message": "Запланировано"
   },
   "subscriptionArchiveExisting": {
-    "message": "already configured"
+    "message": "уже настроено"
   },
   "subscriptionArchiveNoChannels": {
-    "message": "Add channels to this group before scheduling downloads."
+    "message": "Добавьте каналы в эту группу, прежде чем планировать загрузки."
   },
   "subscriptionArchiveStartCompanion": {
-    "message": "Start Astra Downloader before scheduling channel downloads."
+    "message": "Запустите Astra Downloader, прежде чем планировать загрузки каналов."
   },
   "subscriptionArchiveUnavailable": {
-    "message": "The Astra Downloader companion is not available."
+    "message": "Вспомогательное приложение Astra Downloader недоступно."
   },
   "subscriptionBatchFallbackLabel": {
     "message": "subscription-groups:fallback"
@@ -6946,64 +6946,64 @@
     "message": "Создать"
   },
   "subscriptionDigestCloseAria": {
-    "message": "Close group notifications digest"
+    "message": "Закрыть сводку уведомлений групп"
   },
   "subscriptionDigestEmpty": {
-    "message": "Create subscription groups with + Group to split new-video counts by topic."
+    "message": "Создайте группы подписок кнопкой «+ Группа», чтобы разделить счётчики новых видео по темам."
   },
   "subscriptionDigestMarkAllRead": {
-    "message": "Mark all read"
+    "message": "Отметить все прочитанными"
   },
   "subscriptionDigestMarkAllReadAria": {
-    "message": "Mark every rendered channel as read"
+    "message": "Отметить прочитанными все показанные каналы"
   },
   "subscriptionDigestMarkAllReadEmpty": {
-    "message": "Nothing new since your last visit"
+    "message": "С прошлого посещения ничего нового"
   },
   "subscriptionDigestMarkRead": {
-    "message": "Mark read"
+    "message": "Отметить прочитанным"
   },
   "subscriptionDigestMarkReadAriaTpl": {
-    "message": "Mark {group} digest as read"
+    "message": "Отметить сводку группы {group} прочитанной"
   },
   "subscriptionDigestMetaTpl": {
-    "message": "{newCount} new of {renderedCount} rendered videos"
+    "message": "Новых: {newCount} из показанных видео: {renderedCount}"
   },
   "subscriptionDigestNewTpl": {
-    "message": "{count} new"
+    "message": "Новых: {count}"
   },
   "subscriptionDigestOpen": {
-    "message": "Open Digest"
+    "message": "Открыть сводку"
   },
   "subscriptionDigestOpenAria": {
-    "message": "Open the per-group notifications digest"
+    "message": "Открыть сводку уведомлений по группам"
   },
   "subscriptionDigestRegionAria": {
-    "message": "Group notifications digest"
+    "message": "Сводка уведомлений групп"
   },
   "subscriptionDigestRenderedTpl": {
-    "message": "{shown} shown / {channels} channels"
+    "message": "Показано: {shown} / каналов: {channels}"
   },
   "subscriptionDigestTitle": {
-    "message": "Group Digest"
+    "message": "Сводка групп"
   },
   "subscriptionDigestView": {
     "message": "Вид"
   },
   "subscriptionDigestViewAriaTpl": {
-    "message": "View {group} subscriptions"
+    "message": "Показать подписки группы {group}"
   },
   "subscriptionExportCsvAria": {
-    "message": "Export subscription groups as CSV"
+    "message": "Экспортировать группы подписок в CSV"
   },
   "subscriptionExportCsvLabel": {
     "message": "CSV"
   },
   "subscriptionExportJsonAria": {
-    "message": "Export subscription groups as JSON"
+    "message": "Экспортировать группы подписок в JSON"
   },
   "subscriptionExportOpmlAria": {
-    "message": "Export subscription groups as OPML"
+    "message": "Экспортировать группы подписок в OPML"
   },
   "subscriptionExportOpmlLabel": {
     "message": "OPML"
@@ -7033,7 +7033,7 @@
     "message": "Назвать эту группу"
   },
   "subscriptionGroupEmpty": {
-    "message": "No channels in this group yet. Choose Edit Channels to add some."
+    "message": "В этой группе пока нет каналов. Нажмите «Изменить каналы», чтобы добавить."
   },
   "subscriptionGroupNameAria": {
     "message": "Название группы"
@@ -7090,103 +7090,103 @@
     "message": "Предыдущие группы подписок восстановлены"
   },
   "subscriptionHealthCloseAria": {
-    "message": "Close subscription health center"
+    "message": "Закрыть центр состояния подписок"
   },
   "subscriptionHealthFailedTpl": {
     "message": "Проверка не удалась: {error} Лента, возможно, ещё загружается, поэтому повторная проверка может помочь."
   },
   "subscriptionHealthMetaTpl": {
-    "message": "{channels} rendered channels · {groups} groups"
+    "message": "Показано каналов: {channels} · групп: {groups}"
   },
   "subscriptionHealthMoreTpl": {
-    "message": "+{count} more. Use Stage Stale in the toolbar to stage every candidate at once."
+    "message": "+ ещё {count}. Нажмите «Отобрать неактивные» на панели, чтобы отобрать всех кандидатов сразу."
   },
   "subscriptionHealthNewEmpty": {
-    "message": "Nothing new since your last visit stamp."
+    "message": "С момента вашего последнего посещения ничего нового."
   },
   "subscriptionHealthNewHeading": {
     "message": "Новые с последнего посещения"
   },
   "subscriptionHealthNewSummaryTpl": {
-    "message": "{videos} new videos from {channels} channels since your last visit."
+    "message": "Новых видео: {videos} с каналов: {channels} с момента вашего последнего посещения."
   },
   "subscriptionHealthNoStaleCards": {
-    "message": "No stale subscription cards found in the rendered feed."
+    "message": "В показанной ленте неактивных карточек подписок не найдено."
   },
   "subscriptionHealthOpenAria": {
-    "message": "Open the subscription health center"
+    "message": "Открыть центр состояния подписок"
   },
   "subscriptionHealthRegionAria": {
-    "message": "Subscription health center"
+    "message": "Центр состояния подписок"
   },
   "subscriptionHealthRemovedStagedTpl": {
-    "message": "Removed {count} staged unsubscribes"
+    "message": "Удалено отобранных отписок: {count}"
   },
   "subscriptionHealthRescan": {
-    "message": "Rescan"
+    "message": "Сканировать снова"
   },
   "subscriptionHealthRescanAria": {
-    "message": "Rescan the rendered feed for subscription health"
+    "message": "Повторно просканировать показанную ленту на состояние подписок"
   },
   "subscriptionHealthStage": {
-    "message": "Stage"
+    "message": "Отобрать"
   },
   "subscriptionHealthStageAriaTpl": {
-    "message": "Stage {channel} for unsubscribe review"
+    "message": "Отобрать канал {channel} для проверки перед отпиской"
   },
   "subscriptionHealthStaged": {
-    "message": "staged"
+    "message": "отобрано"
   },
   "subscriptionHealthStagedCountTpl": {
-    "message": "Staged {count} stale channels for unsubscribe review"
+    "message": "Отобрано неактивных каналов для проверки перед отпиской: {count}"
   },
   "subscriptionHealthStagedEmpty": {
-    "message": "Nothing staged. Staging flags channels for your review — it never clicks YouTube unsubscribe controls."
+    "message": "Ничего не отобрано. Отберите неактивные каналы, чтобы проверить их перед ограниченным сеансом отписки."
   },
   "subscriptionHealthStagedHeading": {
-    "message": "Staged unsubscribes (review-only, 30-day undo window)"
+    "message": "Отобранные отписки (проверьте перед применением, 30 дней на восстановление)"
   },
   "subscriptionHealthStaleEmpty": {
-    "message": "No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan."
+    "message": "Среди показанных карточек неактивных каналов не обнаружено. Прокрутите, чтобы загрузить больше ленты, затем сканируйте снова."
   },
   "subscriptionHealthStaleHeadingTpl": {
-    "message": "Stale channels (≥{days} days, rendered feed)"
+    "message": "Неактивные каналы (≥{days} дн., показанная лента)"
   },
   "subscriptionHealthStatNewChannels": {
-    "message": "new channels"
+    "message": "новых каналов"
   },
   "subscriptionHealthStatNewVideos": {
-    "message": "new videos"
+    "message": "новых видео"
   },
   "subscriptionHealthStatStaged": {
-    "message": "staged for review"
+    "message": "отобрано для проверки"
   },
   "subscriptionHealthStatStale": {
-    "message": "stale candidates"
+    "message": "кандидатов на отписку"
   },
   "subscriptionHealthTitle": {
-    "message": "Subscription Health"
+    "message": "Состояние подписок"
   },
   "subscriptionHealthUndoAllAria": {
-    "message": "Undo every staged unsubscribe"
+    "message": "Отменить все отобранные отписки"
   },
   "subscriptionHealthUndoAllTpl": {
-    "message": "Undo all staged ({count})"
+    "message": "Отменить все отобранные ({count})"
   },
   "subscriptionHealthUndoByTpl": {
-    "message": "undo by {date}"
+    "message": "отмена до {date}"
   },
   "subscriptionHealthUndoStage": {
-    "message": "Undo stage"
+    "message": "Отменить отбор"
   },
   "subscriptionHealthUndoStageAriaTpl": {
-    "message": "Undo staged unsubscribe for {channel}"
+    "message": "Отменить отобранную отписку от канала {channel}"
   },
   "subscriptionImportAria": {
-    "message": "Import subscription groups"
+    "message": "Импорт групп подписок"
   },
   "subscriptionImportTitle": {
-    "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
+    "message": "Импорт групп подписок (объединяется с вашими группами; Shift+клик заменяет их)"
   },
   "subscriptionImportedOpml": {
     "message": "Импортированный OPML"
@@ -7195,43 +7195,43 @@
     "message": "Сортировка по новизне применяется только к видео, загруженным на этой странице. Прокрутите, чтобы загрузить ещё."
   },
   "subscriptionMembersAdded": {
-    "message": "Channel added to group"
+    "message": "Канал добавлен в группу"
   },
   "subscriptionMembersCapped": {
     "message": "В группе уже 1000 каналов. Сначала удалите один."
   },
   "subscriptionMembersCloseAria": {
-    "message": "Close the channel membership editor"
+    "message": "Закрыть редактор состава канала"
   },
   "subscriptionMembersEmpty": {
-    "message": "No channels rendered yet. Scroll the subscriptions feed, then reopen this panel."
+    "message": "Каналов пока не показано. Прокрутите ленту подписок и снова откройте эту панель."
   },
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Включить {channel} в {group}"
   },
   "subscriptionMembersListAria": {
-    "message": "Rendered channels"
+    "message": "Показанные каналы"
   },
   "subscriptionMembersMeta": {
-    "message": "Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels."
+    "message": "Отметьте канал, чтобы добавить его в эту группу. Изменения сохраняются сразу. Прокрутите ленту, чтобы появилось больше каналов."
   },
   "subscriptionMembersRegionAriaTpl": {
-    "message": "Edit channels in {group}"
+    "message": "Изменить каналы в группе {group}"
   },
   "subscriptionMembersRemoved": {
-    "message": "Channel removed from group"
+    "message": "Канал удалён из группы"
   },
   "subscriptionMembersTitleTpl": {
-    "message": "Edit channels in {group}"
+    "message": "Изменить каналы в группе {group}"
   },
   "subscriptionMenuUnsubscribe": {
-    "message": "Unsubscribe"
+    "message": "Отписаться"
   },
   "subscriptionNewBadge": {
     "message": "НОВОЕ"
   },
   "subscriptionOrderGroupsHint": {
-    "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
+    "message": "Сортировка на панели групп определяет порядок этой ленты. Сохранённый порядок применяется, когда «Группы подписок» выключены."
   },
   "subscriptionOrderLabel": {
     "message": "Порядок"
@@ -7294,121 +7294,121 @@
     "message": "Локальный суммаризатор недоступен; включите пробную функцию Chrome AI."
   },
   "subscriptionToolbarAllAria": {
-    "message": "Show all subscriptions"
+    "message": "Показать все подписки"
   },
   "subscriptionToolbarArchive": {
-    "message": "Auto-download"
+    "message": "Автозагрузка"
   },
   "subscriptionToolbarArchiveAriaTpl": {
-    "message": "Schedule new uploads from {group}"
+    "message": "Запланировать новые видео из группы {group}"
   },
   "subscriptionToolbarArchiveTitle": {
-    "message": "Schedule this group in Astra Downloader. Existing uploads are deduplicated by the companion archive."
+    "message": "Запланировать эту группу в Astra Downloader. Уже существующие загрузки исключаются архивом приложения."
   },
   "subscriptionToolbarAria": {
-    "message": "Subscription group controls"
+    "message": "Элементы управления группами подписок"
   },
   "subscriptionToolbarDigest": {
-    "message": "Digest"
+    "message": "Сводка"
   },
   "subscriptionToolbarEditChannels": {
-    "message": "Edit Channels"
+    "message": "Изменить каналы"
   },
   "subscriptionToolbarGroups": {
-    "message": "Groups"
+    "message": "Группы"
   },
   "subscriptionToolbarHealth": {
-    "message": "Health"
+    "message": "Состояние"
   },
   "subscriptionToolbarHealthCountTpl": {
-    "message": "Health ({count})"
+    "message": "Состояние ({count})"
   },
   "subscriptionToolbarHealthTitle": {
-    "message": "Stale channels, staged unsubscribes, new-video counts, and exports in one panel."
+    "message": "Неактивные каналы, отобранные отписки, счётчики новых видео и экспорт в одной панели."
   },
   "subscriptionToolbarNewGroup": {
-    "message": "+ Group"
+    "message": "+ Группа"
   },
   "subscriptionToolbarNewGroupAria": {
     "message": "Создать группу подписок"
   },
   "subscriptionToolbarNewSubgroup": {
-    "message": "+ Subgroup"
+    "message": "+ Подгруппа"
   },
   "subscriptionToolbarNewSubgroupAria": {
     "message": "Создать подгруппу подписок"
   },
   "subscriptionToolbarPlayAll": {
-    "message": "Play All"
+    "message": "Воспроизвести все"
   },
   "subscriptionToolbarPlayAllAriaTpl": {
     "message": "Воспроизвести все видео из группы {group}"
   },
   "subscriptionToolbarScanStale": {
-    "message": "Scan Stale"
+    "message": "Сканировать неактивные"
   },
   "subscriptionToolbarScanStaleAria": {
-    "message": "Scan rendered subscriptions for stale channels"
+    "message": "Просканировать показанные подписки на неактивные каналы"
   },
   "subscriptionToolbarSort": {
-    "message": "Sort"
+    "message": "Сортировка"
   },
   "subscriptionToolbarSortAria": {
-    "message": "Sort subscriptions"
+    "message": "Сортировка подписок"
   },
   "subscriptionToolbarStageStale": {
-    "message": "Stage Stale"
+    "message": "Отобрать неактивные"
   },
   "subscriptionToolbarStageStaleAria": {
-    "message": "Stage rendered stale channels for unsubscribe review"
+    "message": "Отобрать показанные неактивные каналы для проверки перед отпиской"
   },
   "subscriptionToolbarStageStaleTitle": {
-    "message": "Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked."
+    "message": "Отобрать показанные неактивные каналы для проверки. Кнопки отписки YouTube не нажимаются."
   },
   "subscriptionToolbarStale": {
-    "message": "Stale"
+    "message": "Неактивные"
   },
   "subscriptionToolbarStaleFlaggedTpl": {
-    "message": "{count} stale channels flagged"
+    "message": "Помечено неактивных каналов: {count}"
   },
   "subscriptionToolbarUndoStagedAriaTpl": {
-    "message": "Undo {count} staged unsubscribe items"
+    "message": "Отменить отобранные отписки: {count}"
   },
   "subscriptionToolbarUndoStagedTpl": {
-    "message": "Undo Staged ({count})"
+    "message": "Отменить отобранные ({count})"
   },
   "subscriptionUnsubscribeCapTpl": {
-    "message": "{count} remain staged beyond the {cap}-per-run cap."
+    "message": "Ещё {count} остаются отобранными сверх лимита {cap} за запуск."
   },
   "subscriptionUnsubscribeEmpty": {
-    "message": "Nothing is staged for unsubscribe."
+    "message": "Для отписки ничего не отобрано."
   },
   "subscriptionUnsubscribeLogAria": {
-    "message": "Export the local unsubscribe session log as JSON"
+    "message": "Экспортировать локальный журнал сеансов отписки в JSON"
   },
   "subscriptionUnsubscribeLogButton": {
-    "message": "Unsubscribe log"
+    "message": "Журнал отписок"
   },
   "subscriptionUnsubscribeLogEmpty": {
-    "message": "No unsubscribe sessions recorded yet."
+    "message": "Сеансов отписки пока не записано."
   },
   "subscriptionUnsubscribeLogExportedTpl": {
-    "message": "Exported {count} unsubscribe sessions"
+    "message": "Экспортировано сеансов отписки: {count}"
   },
   "subscriptionUnsubscribeRunAriaTpl": {
-    "message": "Unsubscribe up to {count} staged channels in this bounded session"
+    "message": "Отписаться от отобранных каналов (до {count}) в этом ограниченном сеансе"
   },
   "subscriptionUnsubscribeRunTitleTpl": {
-    "message": "Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing."
+    "message": "Выполнить отписку в YouTube только для списка отобранных каналов, до {count} каналов с паузой 400 мс."
   },
   "subscriptionUnsubscribeRunTpl": {
-    "message": "Unsubscribe staged ({count})"
+    "message": "Отписаться от отобранных ({count})"
   },
   "subscriptionUnsubscribeRunning": {
-    "message": "An unsubscribe session is already running."
+    "message": "Сеанс отписки уже выполняется."
   },
   "subscriptionUnsubscribeSessionTpl": {
-    "message": "{removed} unsubscribed, {failed} unchanged; {remaining} remain staged."
+    "message": "Отписок: {removed}, без изменений: {failed}. Остаются отобранными: {remaining}."
   },
   "subscriptionViewCompact": {
     "message": "Компактно"
@@ -7519,28 +7519,28 @@
     "message": "Сохранено: {count}"
   },
   "timestampHighlightExport": {
-    "message": "Export Highlight Pack"
+    "message": "Экспорт набора выделений"
   },
   "timestampHighlightExportAria": {
-    "message": "Export this video’s highlights, notes, bookmarks, and summary"
+    "message": "Экспортировать выделения, заметки, закладки и резюме этого видео"
   },
   "timestampHighlightExportFailed": {
-    "message": "Highlight export failed. Your saved data is unchanged."
+    "message": "Не удалось экспортировать выделения. Ваши сохранённые данные не изменились."
   },
   "timestampHighlightExported": {
-    "message": "Highlight pack exported as Markdown and JSON."
+    "message": "Набор выделений экспортирован в Markdown и JSON."
   },
   "timestampHighlightExporting": {
-    "message": "Preparing highlight pack…"
+    "message": "Подготовка набора выделений…"
   },
   "timestampHighlightNoVideo": {
-    "message": "No video is currently open."
+    "message": "Сейчас нет открытого видео."
   },
   "toastActionManage": {
-    "message": "Manage"
+    "message": "Управление"
   },
   "toastActionOpen": {
-    "message": "Open"
+    "message": "Открыть"
   },
   "toastActionUndo": {
     "message": "Отменить"
@@ -7552,7 +7552,7 @@
     "message": "Авторизованное скачивание: в Astra Downloader на этом устройстве отправляются только необходимые файлы cookie для входа в YouTube."
   },
   "toastDismissAria": {
-    "message": "Dismiss notification"
+    "message": "Закрыть уведомление"
   },
   "toastDlCmdCopied": {
     "message": "Резервная команда установки скопирована. Используйте её, только если не можете запустить загруженный файл установки."
@@ -7564,10 +7564,10 @@
     "message": "Установите Astra Downloader для загрузки видео."
   },
   "toastDlPreparingAudio": {
-    "message": "Preparing your audio download…"
+    "message": "Подготовка загрузки аудио…"
   },
   "toastDlPreparingVideo": {
-    "message": "Preparing your video download…"
+    "message": "Подготовка загрузки видео…"
   },
   "toastDlReady": {
     "message": "Astra Downloader готов."
@@ -7594,16 +7594,16 @@
     "message": "Astra Deck не может сохранить данные в этом профиле браузера. Недавние изменения могут быть потеряны."
   },
   "toggleRiskTooltip_api": {
-    "message": "Talks to an external API server"
+    "message": "Обращается к внешнему API-серверу"
   },
   "toggleRiskTooltip_experimental": {
-    "message": "Experimental feature; behaviour may change"
+    "message": "Экспериментальная функция, поведение может измениться"
   },
   "toggleRiskTooltip_local_companion": {
-    "message": "Talks to the local Astra Downloader (127.0.0.1)"
+    "message": "Обращается к локальному Astra Downloader (127.0.0.1)"
   },
   "toggleRiskTooltip_store_risk": {
-    "message": "Higher review-policy sensitivity. GitHub-full only."
+    "message": "Повышенная чувствительность к правилам проверки. Только в версии GitHub-full."
   },
   "toggleStateOff": {
     "message": "Отключено"
@@ -7639,64 +7639,64 @@
     "message": "Учебный пакет расшифровок"
   },
   "transcriptCaptions": {
-    "message": "Captions"
+    "message": "Субтитры"
   },
   "transcriptCollapse": {
-    "message": "Collapse"
+    "message": "Свернуть"
   },
   "transcriptCollapseAria": {
-    "message": "Collapse transcript"
+    "message": "Свернуть транскрипт"
   },
   "transcriptCopiedTpl": {
-    "message": "{label} copied to clipboard"
+    "message": "{label}: скопировано в буфер обмена"
   },
   "transcriptCopyAiPrompt": {
-    "message": "Copy AI Prompt"
+    "message": "Копировать AI-запрос"
   },
   "transcriptCopyAiPromptTitle": {
-    "message": "Copy a ready-to-paste summary prompt"
+    "message": "Копировать готовый запрос для резюме"
   },
   "transcriptCopyFailedTpl": {
-    "message": "Failed to copy {label}"
+    "message": "Не удалось скопировать: {label}"
   },
   "transcriptCopyText": {
-    "message": "Copy Text"
+    "message": "Копировать текст"
   },
   "transcriptCopyTextTitle": {
-    "message": "Copy plain-text transcript to clipboard"
+    "message": "Копировать транскрипт простым текстом в буфер обмена"
   },
   "transcriptDownloadFailed": {
-    "message": "Download failed"
+    "message": "Не удалось скачать"
   },
   "transcriptDownloadSrt": {
-    "message": "Download SRT"
+    "message": "Скачать SRT"
   },
   "transcriptDownloadSrtTitle": {
-    "message": "Download SubRip subtitle file"
+    "message": "Скачать файл субтитров SubRip"
   },
   "transcriptDownloadTxt": {
-    "message": "Download TXT"
+    "message": "Скачать TXT"
   },
   "transcriptDownloadTxtTitle": {
-    "message": "Download plain-text transcript"
+    "message": "Скачать транскрипт простым текстом"
   },
   "transcriptDownloadedTpl": {
     "message": "Расшифровка загружена! ({count} сегм.)"
   },
   "transcriptExpand": {
-    "message": "Expand"
+    "message": "Развернуть"
   },
   "transcriptExpandAria": {
-    "message": "Expand transcript"
+    "message": "Развернуть транскрипт"
   },
   "transcriptExpiryUnknown": {
     "message": "не указано"
   },
   "transcriptExportActionsAria": {
-    "message": "Transcript export actions"
+    "message": "Действия экспорта транскрипта"
   },
   "transcriptEyebrow": {
-    "message": "Captions & Exports"
+    "message": "Субтитры и экспорт"
   },
   "transcriptFetching": {
     "message": "Получение расшифровки…"
@@ -7711,13 +7711,13 @@
     "message": "Проиндексировано {count} из {maxCount} видео, {size} из {budget}. Самые старые записи удаляются первыми."
   },
   "transcriptJumpAriaTpl": {
-    "message": "Jump to {time} in the transcript"
+    "message": "Перейти к {time} в транскрипте"
   },
   "transcriptLanguageUnknown": {
     "message": "язык неизвестен"
   },
   "transcriptLlmPrompt": {
-    "message": "LLM prompt"
+    "message": "Запрос для LLM"
   },
   "transcriptLoadFailed": {
     "message": "Не удалось загрузить расшифровку"
@@ -7744,7 +7744,7 @@
     "message": "Резервная панель"
   },
   "transcriptPreparingControls": {
-    "message": "Preparing transcript controls for this video."
+    "message": "Подготовка элементов управления транскриптом для этого видео."
   },
   "transcriptQaAsk": {
     "message": "Спросить"
@@ -7822,7 +7822,7 @@
     "message": "Обновите страницу или повторите попытку через несколько секунд, если субтитры ещё обрабатываются."
   },
   "transcriptShowOriginal": {
-    "message": "Show Original"
+    "message": "Показать оригинал"
   },
   "transcriptSourceInnertube": {
     "message": "обновлённые данные проигрывателя YouTube"
@@ -7840,10 +7840,10 @@
     "message": "обновлённая страница просмотра YouTube"
   },
   "transcriptStoreChecking": {
-    "message": "Checking the transcript store…"
+    "message": "Проверка хранилища транскриптов…"
   },
   "transcriptStoreClearFailed": {
-    "message": "The export was saved, but the store could not be cleared."
+    "message": "Экспорт сохранён, но очистить хранилище не удалось."
   },
   "transcriptStoreClearNow": {
     "message": "Очистить хранилище"
@@ -7852,67 +7852,67 @@
     "message": "Очистить хранилище после проверки экспортированного файла"
   },
   "transcriptStoreDamagedTplOne": {
-    "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
+    "message": "Хранилище транскриптов: {size}, {count} видео, нечитаемых: {corrupt}."
   },
   "transcriptStoreDamagedTplOther": {
-    "message": "Transcript store: {size} across {count} videos, {corrupt} of them unreadable."
+    "message": "Хранилище транскриптов: {size}, видео: {count}, нечитаемых: {corrupt}."
   },
   "transcriptStoreEmpty": {
-    "message": "Transcript store: empty."
+    "message": "Хранилище транскриптов: пусто."
   },
   "transcriptStoreExportFailed": {
-    "message": "Could not export the transcript store. Nothing was cleared."
+    "message": "Не удалось экспортировать хранилище транскриптов. Ничего не очищено."
   },
   "transcriptStoreExportUnconfirmed": {
     "message": "Astra Deck не может подтвердить, что экспорт сохранён в загрузках, поэтому пока ничего не удалено. Найдите файл astra-deck-transcripts-recovery.json, затем нажмите «Очистить хранилище»."
   },
   "transcriptStoreFailed": {
-    "message": "Transcript store: could not be measured."
+    "message": "Хранилище транскриптов: не удалось измерить."
   },
   "transcriptStoreNoTab": {
-    "message": "Transcript store: open a YouTube tab to measure it."
+    "message": "Хранилище транскриптов: откройте вкладку YouTube, чтобы измерить."
   },
   "transcriptStoreOkTplOne": {
-    "message": "Transcript store: {size} across {count} video."
+    "message": "Хранилище транскриптов: {size}, {count} видео."
   },
   "transcriptStoreOkTplOther": {
-    "message": "Transcript store: {size} across {count} videos."
+    "message": "Хранилище транскриптов: {size}, видео: {count}."
   },
   "transcriptStoreRecover": {
-    "message": "Export and clear"
+    "message": "Экспортировать и очистить"
   },
   "transcriptStoreRecoverAria": {
-    "message": "Export the readable transcripts, then clear the damaged store"
+    "message": "Экспортировать читаемые транскрипты, затем очистить повреждённое хранилище"
   },
   "transcriptStoreRecoveredTplOne": {
-    "message": "Exported {count} readable transcript and cleared the store."
+    "message": "Экспортирован {count} читаемый транскрипт, хранилище очищено."
   },
   "transcriptStoreRecoveredTplOther": {
-    "message": "Exported {count} readable transcripts and cleared the store."
+    "message": "Экспортировано читаемых транскриптов: {count}, хранилище очищено."
   },
   "transcriptTimeUnknown": {
     "message": "в неизвестное время"
   },
   "transcriptTitle": {
-    "message": "Transcript"
+    "message": "Транскрипт"
   },
   "transcriptTranslate": {
     "message": "Перевести"
   },
   "transcriptTranslateTitle": {
-    "message": "Translate transcript on-device using Chrome Translator API"
+    "message": "Перевести транскрипт на устройстве с помощью Chrome Translator API"
   },
   "transcriptTranslateUnavailable": {
-    "message": "Chrome Translator API not available in this browser"
+    "message": "Chrome Translator API недоступен в этом браузере"
   },
   "transcriptTranslatedTpl": {
-    "message": "Translated to {language}"
+    "message": "Переведено на язык: {language}"
   },
   "transcriptTranslating": {
     "message": "Перевод…"
   },
   "transcriptTranslationFailedTpl": {
-    "message": "Translation failed: {error}"
+    "message": "Не удалось перевести: {error}"
   },
   "transcriptUnavailable": {
     "message": "Для этого видео нет доступной расшифровки"
@@ -7990,10 +7990,10 @@
     "message": "Отменить"
   },
   "undoImportAria": {
-    "message": "Restore data from the most recent Import"
+    "message": "Восстановить данные до последнего импорта"
   },
   "undoImportBtn": {
-    "message": "Undo Import"
+    "message": "Отменить импорт"
   },
   "undoResetAria": {
     "message": "Восстановить данные из последнего сброса"
@@ -8005,22 +8005,22 @@
     "message": "Неизвестно"
   },
   "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
+    "message": "Обновить вспомогательное приложение Astra Downloader"
   },
   "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
+    "message": "Обновить Astra Downloader"
   },
   "updateYtdlpAria": {
-    "message": "Force yt-dlp self-update"
+    "message": "Принудительно обновить yt-dlp"
   },
   "updateYtdlpBtn": {
-    "message": "Update yt-dlp"
+    "message": "Обновить yt-dlp"
   },
   "videoHiderAddAllowedChannelCopy": {
-    "message": "Paste a channel URL, handle, or channel ID. Only channels in this list are filtered by allowlist mode; an empty list is safe and applies no channel filter."
+    "message": "Вставьте URL канала, имя пользователя (@handle) или ID канала. Режим списка разрешённых фильтрует только каналы из этого списка. Пустой список безопасен и не применяет фильтрацию по каналам."
   },
   "videoHiderAddAllowedChannelTitle": {
-    "message": "Add Allowed Channel"
+    "message": "Добавить разрешённый канал"
   },
   "videoHiderAddAllowedVideoCopy": {
     "message": "Вставьте URL YouTube или ID видео, чтобы оставить его видимым даже при совпадении фильтра."
@@ -8029,10 +8029,10 @@
     "message": "Добавить разрешённое видео"
   },
   "videoHiderAddBlockedChannelCopy": {
-    "message": "Paste a channel URL, handle, or channel ID to add it to the channel blocklist."
+    "message": "Вставьте URL канала, имя пользователя (@handle) или ID канала, чтобы добавить его в список блокировки."
   },
   "videoHiderAddBlockedChannelTitle": {
-    "message": "Add Blocked Channel"
+    "message": "Добавить заблокированный канал"
   },
   "videoHiderAddHiddenVideoCopy": {
     "message": "Вставьте URL YouTube или ID видео, чтобы добавить его в список скрытых."
@@ -8047,7 +8047,7 @@
     "message": "Видео добавлено в список скрытых"
   },
   "videoHiderAllowChannelButton": {
-    "message": "Allow Channel"
+    "message": "Разрешить канал"
   },
   "videoHiderAllowRightClickBlockDesc": {
     "message": "Нажмите правой кнопкой по X на миниатюре, чтобы заблокировать весь канал."
@@ -8059,19 +8059,19 @@
     "message": "Разрешить видео"
   },
   "videoHiderAllowedChannelLabel": {
-    "message": "Allowed Channel"
+    "message": "Разрешённый канал"
   },
   "videoHiderAllowedChannelToast": {
-    "message": "Channel allowed: {name}"
+    "message": "Канал разрешён: {name}"
   },
   "videoHiderAllowedChannelsCountTpl": {
     "message": "{count} разрешенных каналов"
   },
   "videoHiderAllowedChannelsStatus": {
-    "message": "Allowed"
+    "message": "Разрешённые"
   },
   "videoHiderAllowedChannelsTab": {
-    "message": "Allowed Channels"
+    "message": "Разрешённые каналы"
   },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "Миниатюра разрешённого видео {videoId}"
@@ -8086,7 +8086,7 @@
     "message": "Разрешённые видео"
   },
   "videoHiderAlreadyAllowedChannelToast": {
-    "message": "{name} is already allowed"
+    "message": "{name} уже разрешён"
   },
   "videoHiderAlreadyAllowedVideoToast": {
     "message": "Видео уже разрешено"
@@ -8113,10 +8113,10 @@
     "message": "пачки"
   },
   "videoHiderBlockChannelButton": {
-    "message": "Block Channel"
+    "message": "Заблокировать канал"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
+    "message": "Заблокированный канал"
   },
   "videoHiderBlockedChannelToast": {
     "message": "Заблокировано: {name}"
@@ -8125,55 +8125,55 @@
     "message": "Заблокировано"
   },
   "videoHiderBlockedChannelsTab": {
-    "message": "Blocked Channels"
+    "message": "Заблокированные каналы"
   },
   "videoHiderChannelActionToggle": {
-    "message": "Allow right-click channel actions"
+    "message": "Разрешить действия с каналом по правому клику"
   },
   "videoHiderChannelActionToggleDesc": {
-    "message": "Use right-click on the thumbnail X button to add the channel to the active channel list."
+    "message": "Правый клик по кнопке X на миниатюре добавляет канал в активный список каналов."
   },
   "videoHiderChannelAllowlistCopy": {
-    "message": "Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
+    "message": "Только каналы из этого списка остаются доступными для фильтрации по каналам. Удалите запись, чтобы канал снова проходил проверку списка разрешённых. Astra Deck сначала сопоставляет канонический ID канала, затем имя пользователя, короткий путь, URL и устаревший ID."
   },
   "videoHiderChannelAllowlistEmptyCopy": {
-    "message": "Add channels here or right-click the thumbnail X button to allow a channel. An empty allowlist is safe and applies no channel filter."
+    "message": "Добавьте каналы здесь или щёлкните правой кнопкой по кнопке X на миниатюре, чтобы разрешить канал. Пустой список разрешённых безопасен и не применяет фильтрацию по каналам."
   },
   "videoHiderChannelAllowlistEmptyEyebrow": {
-    "message": "Allowlist is empty"
+    "message": "Список разрешённых пуст"
   },
   "videoHiderChannelAllowlistEmptyTitle": {
-    "message": "No allowed channels yet"
+    "message": "Разрешённых каналов пока нет"
   },
   "videoHiderChannelAllowlistEyebrow": {
-    "message": "Allowlist"
+    "message": "Список разрешённых"
   },
   "videoHiderChannelAllowlistPlaceholder": {
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelAllowlistToggle": {
-    "message": "Use channel allowlist mode"
+    "message": "Использовать режим списка разрешённых каналов"
   },
   "videoHiderChannelAllowlistToggleDesc": {
-    "message": "Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter."
+    "message": "При фильтрации по каналам учитываются только каналы из списка «Разрешённые каналы». Пустой список безопасен и не применяет фильтрацию по каналам."
   },
   "videoHiderChannelBlockingDisabled": {
     "message": "Блокировка каналов отключена"
   },
   "videoHiderChannelBlocklistCopy": {
-    "message": "Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
+    "message": "Заблокированные каналы остаются скрытыми во всех поддерживаемых лентах, пока вы не удалите их здесь. Astra Deck сначала сопоставляет канонический ID канала, затем имя пользователя, короткий путь, URL и устаревший ID."
   },
   "videoHiderChannelBlocklistEmptyCopy": {
-    "message": "Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks."
+    "message": "Щёлкните правой кнопкой по кнопке X на миниатюре, чтобы заблокировать канал везде, где работает скрытие видео. Предпочтение отдаётся ID каналов, а имена пользователей и URL служат запасным вариантом."
   },
   "videoHiderChannelBlocklistEmptyEyebrow": {
-    "message": "Channel Blocks"
+    "message": "Блокировки каналов"
   },
   "videoHiderChannelBlocklistEmptyTitle": {
-    "message": "No blocked channels yet"
+    "message": "Заблокированных каналов пока нет"
   },
   "videoHiderChannelBlocklistEyebrow": {
-    "message": "Blocklist"
+    "message": "Список блокировки"
   },
   "videoHiderChannelBlocklistPlaceholder": {
     "message": "https://youtube.com/@channel or @handle"
@@ -8185,7 +8185,7 @@
     "message": "Каналы восстановлены"
   },
   "videoHiderClearAllowedChannels": {
-    "message": "Clear Allowed Channels"
+    "message": "Очистить разрешённые каналы"
   },
   "videoHiderClearAllowedTpl": {
     "message": "Очистить разрешённые видео ({count})"
@@ -8194,7 +8194,7 @@
     "message": "Очищено разрешённых видео: {count}"
   },
   "videoHiderClearBlockedChannels": {
-    "message": "Unblock All Channels"
+    "message": "Разблокировать все каналы"
   },
   "videoHiderClearBlockedChannelsTpl": {
     "message": "Разблокировать все каналы ({count})"
@@ -8212,7 +8212,7 @@
     "message": "Последовательные скрытые пачки"
   },
   "videoHiderDaysSuffix": {
-    "message": "days old"
+    "message": "дн. назад"
   },
   "videoHiderDurationFilterDesc": {
     "message": "Автоматически скрывать видео короче выбранной минимальной длительности."
@@ -8266,10 +8266,10 @@
     "message": "Скрывать видео с автодублированием"
   },
   "videoHiderHideButtonAllowChannel": {
-    "message": "Hide this video (right-click to allow channel)"
+    "message": "Скрыть это видео (правый клик: разрешить канал)"
   },
   "videoHiderHideButtonBlockChannel": {
-    "message": "Hide this video (right-click to block channel)"
+    "message": "Скрыть это видео (правый клик: заблокировать канал)"
   },
   "videoHiderHideLiveDesc": {
     "message": "Скрывать карточки текущих трансляций и прямые рекомендации в поддерживаемых лентах."
@@ -8311,7 +8311,7 @@
     "message": "Скрыть видео"
   },
   "videoHiderInvalidChannelInput": {
-    "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+    "message": "Введите корректный URL канала YouTube, имя пользователя (@handle) или ID канала."
   },
   "videoHiderInvalidVideoInput": {
     "message": "Введите корректный URL видео YouTube или 11-значный ID видео."
@@ -8356,10 +8356,10 @@
     "message": "Включить ограничитель загрузки"
   },
   "videoHiderLocalHeuristicsDesc": {
-    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+    "message": "Необязательные проверки на уровне карточки: явная синтетическая озвучка, давние видео с малым числом просмотров и необычно высокая частота загрузок. Сеть и общая база не используются."
   },
   "videoHiderLocalHeuristicsTitle": {
-    "message": "Local low-signal heuristics"
+    "message": "Локальная эвристика малозаметности"
   },
   "videoHiderLowViewThresholdDesc": {
     "message": "Видео с меньшим числом просмотров скрываются только при включённом фильтре малой популярности."
@@ -8368,16 +8368,16 @@
     "message": "Порог малой популярности"
   },
   "videoHiderMarkWatched": {
-    "message": "Mark as watched"
+    "message": "Отметить как просмотренное"
   },
   "videoHiderMarkWatchedToggle": {
-    "message": "Show mark-as-watched button"
+    "message": "Показывать кнопку «Отметить как просмотренное»"
   },
   "videoHiderMarkWatchedToggleDesc": {
-    "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
+    "message": "Добавляет на каждую карточку кнопку, которая локально отмечает видео как просмотренное. Отмеченные карточки тускнеют или скрываются, если включено удаление скрытых карточек."
   },
   "videoHiderMarkedWatched": {
-    "message": "Marked as watched"
+    "message": "Отмечено как просмотренное"
   },
   "videoHiderMinimumDurationDesc": {
     "message": "Используйте 0, чтобы отключить это правило."
@@ -8410,7 +8410,7 @@
     "message": "Открыть на YouTube"
   },
   "videoHiderPaneDescription": {
-    "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
+    "message": "Просматривайте скрытые видео, управляйте списками каналов и настраивайте автоматические фильтры, не покидая страницу."
   },
   "videoHiderPreviewUnavailable": {
     "message": "Предпросмотр недоступен"
@@ -8443,7 +8443,7 @@
     "message": "фильтр прямых трансляций"
   },
   "videoHiderReasonLowSignal": {
-    "message": "the low-signal view/age filter"
+    "message": "фильтр малозаметных по просмотрам и возрасту"
   },
   "videoHiderReasonLowView": {
     "message": "фильтр малопросматриваемых видео"
@@ -8470,13 +8470,13 @@
     "message": "собственная пометка YouTube об изменённом или синтетическом содержании"
   },
   "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
+    "message": "фильтр признаков синтетической озвучки"
   },
   "videoHiderReasonUpcoming": {
     "message": "фильтр предстоящих премьер"
   },
   "videoHiderReasonUploadCadence": {
-    "message": "the upload-cadence filter"
+    "message": "фильтр частоты загрузок"
   },
   "videoHiderReasonWatchedRatio": {
     "message": "фильтр доли просмотра"
@@ -8488,7 +8488,7 @@
     "message": "Запоминать восстановленные видео"
   },
   "videoHiderRemoveAllowedChannel": {
-    "message": "Remove from Allowlist"
+    "message": "Убрать из списка разрешённых"
   },
   "videoHiderRemoveAllowedVideoAriaTpl": {
     "message": "Удалить исключение разрешённого видео {videoId}"
@@ -8644,7 +8644,7 @@
     "message": "Разделы Video Hider"
   },
   "videoHiderUnblockChannel": {
-    "message": "Unblock"
+    "message": "Разблокировать"
   },
   "videoHiderUnblockChannelAriaTpl": {
     "message": "Разблокировать канал {channelName}"
@@ -8656,13 +8656,13 @@
     "message": "Отменить всё"
   },
   "videoHiderUnmarkWatched": {
-    "message": "Unmark as watched"
+    "message": "Снять отметку «просмотрено»"
   },
   "videoHiderUnmarkedWatched": {
     "message": "Отметка о просмотре снята"
   },
   "videoHiderUploadsPerDaySuffix": {
-    "message": "uploads/day"
+    "message": "загрузок/день"
   },
   "videoHiderVideoIdLabel": {
     "message": "ID видео"
@@ -8671,7 +8671,7 @@
     "message": "https://youtube.com/watch?v=ID_VIDEO"
   },
   "videoHiderViewsSuffix": {
-    "message": "views"
+    "message": "просмотров"
   },
   "videoHiderWatchedRatioDesc": {
     "message": "Используйте 0, чтобы отключить. Карточки с полосой продолжения на этом проценте или выше скрываются."
@@ -8698,7 +8698,7 @@
     "message": "Кешированные сведения YouTube"
   },
   "videoInsightsSourceDegraded": {
-    "message": "From this page. YouTube lookup unavailable."
+    "message": "С этой страницы. Запрос к YouTube недоступен."
   },
   "videoInsightsSourceNetwork": {
     "message": "Обновлено с YouTube"
@@ -8707,7 +8707,7 @@
     "message": "С этой страницы"
   },
   "videoInsightsSourceThrottled": {
-    "message": "From this page. YouTube lookup paused."
+    "message": "С этой страницы. Запрос к YouTube приостановлен."
   },
   "videoInsightsTags": {
     "message": "Теги"
@@ -8719,7 +8719,7 @@
     "message": "Не указано"
   },
   "videoInsightsUnchecked": {
-    "message": "Not checked"
+    "message": "Не проверено"
   },
   "videoInsightsUploaded": {
     "message": "Загружено"
@@ -8788,64 +8788,64 @@
     "message": "Заметки видео"
   },
   "watchFeedAddButton": {
-    "message": "Add to Watch Feed"
+    "message": "Добавить в ленту просмотра"
   },
   "watchFeedAddCurrent": {
-    "message": "Add this video to Watch Feed"
+    "message": "Добавить это видео в ленту просмотра"
   },
   "watchFeedAdded": {
-    "message": "Added to Watch Feed"
+    "message": "Добавлено в ленту просмотра"
   },
   "watchFeedAddedButton": {
-    "message": "In Watch Feed"
+    "message": "В ленте просмотра"
   },
   "watchFeedAddVideoTpl": {
-    "message": "Add {title} to Watch Feed"
+    "message": "Добавить «{title}» в ленту просмотра"
   },
   "watchFeedAlreadyAdded": {
-    "message": "Already in Watch Feed"
+    "message": "Уже в ленте просмотра"
   },
   "watchFeedFullTpl": {
-    "message": "Watch Feed is full ({count})"
+    "message": "Лента просмотра заполнена ({count})"
   },
   "watchFeedImportFullTpl": {
     "message": "Импорт Watch Feed: добавлено {added}, уже были {duplicates}, пропущено {full}, потому что в списке помещается {count}"
   },
   "watchFeedImportInvalid": {
-    "message": "Import failed: not a valid Watch Feed JSON file"
+    "message": "Не удалось импортировать: это не корректный JSON-файл ленты просмотра"
   },
   "watchFeedImportResultTpl": {
-    "message": "Watch Feed import: {added} added, {duplicates} already present"
+    "message": "Импорт ленты просмотра: добавлено {added}, уже были {duplicates}"
   },
   "watchFeedMoveDownTpl": {
-    "message": "Move down: {title}"
+    "message": "Переместить вниз: {title}"
   },
   "watchFeedMoveUpTpl": {
-    "message": "Move up: {title}"
+    "message": "Переместить вверх: {title}"
   },
   "watchFeedOpenAriaOne": {
-    "message": "Open Watch Feed ({count} video)"
+    "message": "Открыть ленту просмотра ({count} видео)"
   },
   "watchFeedOpenAriaOther": {
-    "message": "Open Watch Feed ({count} videos)"
+    "message": "Открыть ленту просмотра (видео: {count})"
   },
   "watchFeedPillTpl": {
-    "message": "Watch Feed · {count}"
+    "message": "Лента просмотра · {count}"
   },
   "watchFeedPlayingNow": {
-    "message": "Playing now"
+    "message": "Сейчас играет"
   },
   "watchFeedRemoveCurrent": {
-    "message": "Remove this video from Watch Feed"
+    "message": "Убрать это видео из ленты просмотра"
   },
   "watchFeedRemoved": {
-    "message": "Removed from Watch Feed"
+    "message": "Убрано из ленты просмотра"
   },
   "watchFeedRemoveTpl": {
-    "message": "Remove from Watch Feed: {title}"
+    "message": "Убрать из ленты просмотра: {title}"
   },
   "watchFeedRemoveVideoTpl": {
-    "message": "Remove {title} from Watch Feed"
+    "message": "Убрать «{title}» из ленты просмотра"
   },
   "watchFeedRowTooltipTpl": {
     "message": "{title}, {channel}"
@@ -8857,10 +8857,10 @@
     "message": "Нечего удалять"
   },
   "watchLaterRemoveFailedOne": {
-    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+    "message": "Не удалось удалить {count} видео. Пункт меню YouTube не найден."
   },
   "watchLaterRemoveFailedOther": {
-    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
+    "message": "Не удалось удалить видео: {count}. Пункт меню YouTube не найден."
   },
   "watchLaterRemoveWatched": {
     "message": "Удалить просмотренные"
@@ -8884,67 +8884,67 @@
     "message": "Сканирование…"
   },
   "welcomeBody": {
-    "message": "Pick a profile to start. You can change it any time in Settings."
+    "message": "Выберите профиль, чтобы начать. Его можно изменить в любой момент в настройках."
   },
   "welcomeDismiss": {
-    "message": "Skip"
+    "message": "Пропустить"
   },
   "welcomeDismissAria": {
-    "message": "Dismiss welcome card"
+    "message": "Закрыть приветственную карточку"
   },
   "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+    "message": "Как вы используете YouTube? Выберите предустановку или пропустите, чтобы настроить вручную."
   },
   "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+    "message": "Меньше Shorts, похожих видео, бесконечной прокрутки, автовоспроизведения и отвлечения."
   },
   "welcomePresetFocusTitle": {
     "message": "Фокус"
   },
   "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
+    "message": "Выберите предустановку использования"
   },
   "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+    "message": "Постоянная скорость, цикл A-B, наложение статистики, «Картинка в картинке» и режим фокуса."
   },
   "welcomePresetPowerTitle": {
-    "message": "Power User"
+    "message": "Продвинутый"
   },
   "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+    "message": "Чистые URL, скрытие Shorts, блокировка бесконечной прокрутки и отключённые AI-резюме."
   },
   "welcomePresetPrivacyTitle": {
     "message": "Конфиденциальность"
   },
   "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+    "message": "Транскрипты, закладки, время просмотра, резюме и поиск по комментариям."
   },
   "welcomePresetResearcherTitle": {
-    "message": "Researcher"
+    "message": "Исследователь"
   },
   "welcomePresetSkip": {
     "message": "Пропустить и настроить вручную"
   },
   "welcomeProfileFullDesc": {
-    "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."
+    "message": "Добавляет локальный загрузчик, резервный Cobalt, собственный CSS и провайдеров AI-резюме."
   },
   "welcomeProfileFullTitle": {
     "message": "GitHub-Full"
   },
   "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
+    "message": "Выберите начальный профиль"
   },
   "welcomeProfileRecommended": {
-    "message": "Recommended"
+    "message": "Рекомендуется"
   },
   "welcomeProfileSafeDesc": {
-    "message": "Everything that ships on extension stores. No download companion, no BYO AI keys."
+    "message": "Всё, что публикуется в магазинах расширений. Без вспомогательного загрузчика и собственных ключей ИИ."
   },
   "welcomeProfileSafeTitle": {
-    "message": "Store-Safe"
+    "message": "Для магазинов"
   },
   "welcomeTitle": {
-    "message": "Welcome to Astra Deck"
+    "message": "Добро пожаловать в Astra Deck"
   },
   "whaCloseAria": {
     "message": "Закрыть панель времени просмотра",
@@ -8993,10 +8993,10 @@
     "message": "Закрыть"
   },
   "whatsNewOpen": {
-    "message": "Read changelog"
+    "message": "Список изменений"
   },
   "whatsNewTitle": {
-    "message": "Updated"
+    "message": "Обновлено"
   },
   "wlwbAgeAria": {
     "message": "Минимальный возраст видео в днях"
@@ -9011,10 +9011,10 @@
     "message": "Старше (дней)…"
   },
   "wlwbAgeUnavailableTplOne": {
-    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+    "message": "У {count} загруженной строки нет читаемого возраста загрузки, она исключена из фильтрации по возрасту."
   },
   "wlwbAgeUnavailableTplOther": {
-    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
+    "message": "У загруженных строк ({count}) нет читаемого возраста загрузки, они исключены из фильтрации по возрасту."
   },
   "wlwbChannelAria": {
     "message": "Фильтр по названию канала"
@@ -9074,10 +9074,10 @@
     "message": "Нет удалённых видео, ожидающих восстановления."
   },
   "wlwbRecoveryStatusTplOne": {
-    "message": "{count} removed video is available to restore."
+    "message": "Для восстановления доступно {count} удалённое видео."
   },
   "wlwbRecoveryStatusTplOther": {
-    "message": "{count} removed videos are available to restore."
+    "message": "Для восстановления доступно удалённых видео: {count}."
   },
   "wlwbRecoveryTitle": {
     "message": "Восстановление"
@@ -9092,10 +9092,10 @@
     "message": "— ещё {count} совпадают, запустите снова"
   },
   "wlwbRemovedToastTplOne": {
-    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+    "message": "Удалено {count} видео{remaining}. Список для восстановления находится в журнале удалений."
   },
   "wlwbRemovedToastTplOther": {
-    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
+    "message": "Удалено видео: {count}{remaining}. Список для восстановления находится в журнале удалений."
   },
   "wlwbRemovingTpl": {
     "message": "Удаление: {current} / {total}…"
@@ -9104,10 +9104,10 @@
     "message": "Не удалось восстановить «{title}»: {error}"
   },
   "wlwbRestoredBatchTplOne": {
-    "message": "Restored {restored} of {total} removed video to Watch Later."
+    "message": "Восстановлено {restored} из {total} удалённого видео в «Смотреть позже»."
   },
   "wlwbRestoredBatchTplOther": {
-    "message": "Restored {restored} of {total} removed videos to Watch Later."
+    "message": "Восстановлено {restored} из {total} удалённых видео в «Смотреть позже»."
   },
   "wlwbRestoredItemTpl": {
     "message": "«{title}» восстановлено в «Смотреть позже»"
@@ -9185,67 +9185,67 @@
     "message": "Управление и резервные копии"
   },
   "youtubeStateResetToast": {
-    "message": "YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab."
+    "message": "Состояние YouTube очищено ({count}). Нажмите «Отменить» в Astra Deck, прежде чем закрыть эту вкладку."
   },
   "youtubeStateRestoreToast": {
-    "message": "YouTube state restored ({count}). Reload the page to apply it."
+    "message": "Состояние YouTube восстановлено ({count}). Перезагрузите страницу, чтобы применить его."
   },
   "zapConfidenceBroad": {
-    "message": "Matches this element anywhere it appears"
+    "message": "Совпадает с этим элементом везде, где он встречается"
   },
   "zapConfidenceHigh": {
-    "message": "Scoped to one page section"
+    "message": "Ограничено одним разделом страницы"
   },
   "zapHiddenNote": {
-    "message": "Hidden by an element rule you made."
+    "message": "Скрыто созданным вами правилом для элемента."
   },
   "zapNoRules": {
-    "message": "No rules yet."
+    "message": "Правил пока нет."
   },
   "zapPaneDesc": {
-    "message": "Hide a shelf, panel, or promo by clicking it. Rules are built from YouTube’s own element names, so they keep working after a redesign."
+    "message": "Скрывайте полку, панель или рекламный блок щелчком по нему. Правила строятся на собственных названиях элементов YouTube, поэтому продолжают работать после редизайна."
   },
   "zapPaneTitle": {
-    "message": "Element Zapper"
+    "message": "Скрытие элементов кликом"
   },
   "zapPickCancel": {
     "message": "Отмена"
   },
   "zapPickHint": {
-    "message": "Click a shelf, panel, or promo to hide it. Press Escape to cancel."
+    "message": "Щёлкните по полке, панели или рекламному блоку, чтобы скрыть его. Нажмите Escape для отмены."
   },
   "zapPickHintKeys": {
-    "message": "Or press the arrow keys to move through the page and Enter to choose."
+    "message": "Или нажимайте клавиши со стрелками для перемещения по странице и Enter для выбора."
   },
   "zapPickStart": {
-    "message": "Pick an element to hide"
+    "message": "Выбрать элемент для скрытия"
   },
   "zapRefuseOwnUi": {
-    "message": "That is part of Astra Deck."
+    "message": "Это часть Astra Deck."
   },
   "zapRefusePlayer": {
-    "message": "The player is off limits. Hiding part of it breaks playback."
+    "message": "Плеер трогать нельзя. Скрытие его частей нарушает воспроизведение."
   },
   "zapRefusePlaylist": {
-    "message": "Playlist items are off limits. Hiding one renumbers the list."
+    "message": "Элементы плейлиста трогать нельзя. Скрытие одного меняет нумерацию списка."
   },
   "zapRefuseTooBroad": {
-    "message": "That is the whole page, not an element on it."
+    "message": "Это вся страница, а не элемент на ней."
   },
   "zapRefuseUnknown": {
-    "message": "Nothing here can be turned into a durable rule."
+    "message": "Из этого нельзя создать устойчивое правило."
   },
   "zapRefuseVideoCard": {
-    "message": "That is a single video. Use Video Hider to hide videos and channels."
+    "message": "Это отдельное видео. Для скрытия видео и каналов используйте скрытие видео."
   },
   "zapRuleAdded": {
-    "message": "Element hidden. The rule is saved."
+    "message": "Элемент скрыт. Правило сохранено."
   },
   "zapRuleDuplicate": {
-    "message": "A rule for that element already exists."
+    "message": "Правило для этого элемента уже существует."
   },
   "zapRuleRemove": {
-    "message": "Remove"
+    "message": "Удалить"
   },
   "zapRuleRemoveAriaTpl": {
     "message": "Удалить правило для {selector}"

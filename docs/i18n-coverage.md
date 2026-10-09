@@ -14,7 +14,7 @@ Reference locale: **en** (3241 keys; 902 feature name/description keys).
 | ja | 2341 (72.2%) | 16 (0.5%) | 884 (27.3%) | 0 (0%) | 72.2% |
 | ko | 2336 (72.1%) | 15 (0.5%) | 890 (27.5%) | 0 (0%) | 72.1% |
 | pt_BR | 3174 (97.9%) | 18 (0.6%) | 49 (1.5%) | 0 (0%) | 97.9% |
-| ru | 2337 (72.1%) | 15 (0.5%) | 889 (27.4%) | 0 (0%) | 72.1% |
+| ru | 3198 (98.7%) | 13 (0.4%) | 30 (0.9%) | 0 (0%) | 98.7% |
 | zh_CN | 2345 (72.4%) | 15 (0.5%) | 881 (27.2%) | 0 (0%) | 72.4% |
 
 ## Feature-Copy Proofing Queue
@@ -31,7 +31,7 @@ The queue below lists `feature_*_(name|desc)` messages that still match EN after
 | ja | 67 | 76 | 143 | 4 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | ko | 67 | 76 | 143 | 3 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | pt_BR | 4 | 0 | 4 | 6 | feature_daSurfacePlaylist_name, feature_guideHide_playlists_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
-| ru | 67 | 76 | 143 | 3 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
+| ru | 2 | 0 | 2 | 3 | feature_guideHide_premium_name, feature_guideHide_studio_name |
 | zh_CN | 67 | 75 | 142 | 4 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 
 Reviewed exact do-not-translate messages:
