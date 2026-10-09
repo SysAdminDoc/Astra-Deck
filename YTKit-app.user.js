@@ -1030,17 +1030,43 @@ return response;
 		},
 		_idCache: null,
 		_idCacheHref: '',
-		navigatedPageData: null
+		navigatedPageData: null,
+		navigatedChannelTabs: null
 	};
+	const CHANNEL_HOME_PATH_RE = /^\/(?:@[^/]+|(?:channel|c|user)\/[^/]+)(?:\/featured)?\/?$/;
+	function documentLoadPath() {
+		try {
+			const entry = performance.getEntriesByType('navigation')[0];
+			if (entry?.name) return new URL(entry.name).pathname;
+		} catch (_) {
+		}
+		return location.pathname;
+	}
+	const HARD_LOAD_PATH = documentLoadPath();
 	function captureNavigatedPageData(event) {
 		_rw.navigatedPageData = null;
-		if (!appState.settings?.jumpToMostReplayed && !appState.settings?.heatmapSmartSpeed) return;
+		_rw.navigatedChannelTabs = null;
+		const settings = appState.settings;
+		const wantsCurve = settings?.jumpToMostReplayed || settings?.heatmapSmartSpeed;
+		const wantsTabs = settings?.redirectToVideosTab
+			&& channelLandingTabSuffix(settings.channelLandingTab) !== '/videos'
+			&& CHANNEL_HOME_PATH_RE.test(location.pathname || '');
+		if (!wantsCurve && !wantsTabs) return;
 		try {
-			const frameworkUpdates = event?.detail?.response?.response?.frameworkUpdates;
+			const response = event?.detail?.response?.response;
+			const frameworkUpdates = wantsCurve ? response?.frameworkUpdates : null;
 			if (frameworkUpdates && typeof frameworkUpdates === 'object') {
 				_rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
 			}
+			if (wantsTabs) {
+				_rw.navigatedChannelTabs = {
+					path: location.pathname,
+					base: channelBaseFromTabs(response),
+					suffixes: listChannelTabSuffixes(response)
+				};
+			}
 		} catch (_) {
+			if (wantsTabs) _rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
 		}
 	}
 	const CHANNEL_TAB_SUFFIXES = Object.freeze(['videos', 'shorts', 'streams', 'podcasts', 'playlists', 'posts']);
@@ -1074,9 +1100,13 @@ return response;
 		return '';
 	}
 	function channelHasTab(suffix, channelBase) {
+		if (!channelBase) return false;
+		const navigated = _rw.navigatedChannelTabs;
+		const navigatedHere = navigated?.path === location.pathname;
+		if (navigatedHere && navigated.base === channelBase) return navigated.suffixes.includes(suffix);
 		const data = _rw.ytInitialData;
-		if (!channelBase || channelBaseFromTabs(data) !== channelBase) return false;
-		return listChannelTabSuffixes(data).includes(suffix);
+		if (channelBaseFromTabs(data) === channelBase) return listChannelTabSuffixes(data).includes(suffix);
+		return location.pathname !== HARD_LOAD_PATH && !navigatedHere ? null : false;
 	}
 	const BRAND = Object.freeze({
 		name: 'Astra Deck',
@@ -6449,10 +6479,17 @@ const STORAGE_KEYS = Object.freeze({
 			group: 'Home / Subscriptions',
 			icon: 'folder-video',
 			_mousedownListener: null,
+			_tabListWait: null,
+			_clearTabListWait() {
+				if (this._tabListWait) clearTimeout(this._tabListWait.timer);
+				this._tabListWait = null;
+			},
 			init() {
 				const RX_CHANNEL_HOME = /^https?:\/\/www\.youtube\.com(?:(\/(?:user|channel|c)\/[^/?#]+)(?:\/?(?=$|[?#])|\/featured(?=$|[/?#]))|(\/@[^/?#]+)(?=$|[?#]))/;
 				const DEFAULT_TAB_HREF = "/videos";
-				const videosTabPath = (url, { onThisChannel = false } = {}) => {
+				const PENDING = 'pending';
+				const TAB_LIST_WAIT_MS = 3000;
+				const videosTabPath = (url, { onThisChannel = false, settle = false } = {}) => {
 					const match = RX_CHANNEL_HOME.exec(String(url || ''));
 					if (!match) return null;
 					const base = match[1] || match[2];
@@ -6460,11 +6497,31 @@ const STORAGE_KEYS = Object.freeze({
 					const tab = channelLandingTabSuffix(appState.settings?.channelLandingTab);
 					if (tab === DEFAULT_TAB_HREF) return base + DEFAULT_TAB_HREF;
 					if (!onThisChannel) return null;
-					return channelHasTab(tab, base) ? base + tab : base + DEFAULT_TAB_HREF;
+					const hasTab = channelHasTab(tab, base);
+					if (hasTab === null) return settle ? base + DEFAULT_TAB_HREF : PENDING;
+					return hasTab ? base + tab : base + DEFAULT_TAB_HREF;
+				};
+				const goTo = (target) => {
+					if (target && location.pathname !== target) location.href = target;
 				};
 				const handleDirectNavigation = () => {
 					const target = videosTabPath(location.href, { onThisChannel: true });
-					if (target && location.pathname !== target) location.href = target;
+					if (target !== PENDING) {
+						this._clearTabListWait();
+						goTo(target);
+						return;
+					}
+					const path = location.pathname;
+					if (this._tabListWait?.path === path) return;
+					this._clearTabListWait();
+					this._tabListWait = {
+						path,
+						timer: setTimeout(() => {
+							this._tabListWait = null;
+							if (location.pathname !== path) return;
+							goTo(videosTabPath(location.href, { onThisChannel: true, settle: true }));
+						}, TAB_LIST_WAIT_MS)
+					};
 				};
 				handleDirectNavigation();
 				addNavigateRule('channelRedirectorNav', handleDirectNavigation);
@@ -6479,6 +6536,7 @@ const STORAGE_KEYS = Object.freeze({
 			destroy() {
 				if (this._mousedownListener) document.removeEventListener('mousedown', this._mousedownListener, true);
 				removeNavigateRule('channelRedirectorNav');
+				this._clearTabListWait();
 			}
 		},
 		cssFeature('hidePlayables', 'Hide Playables', 'Hide YouTube Playables gaming content from feeds', 'Home / Subscriptions', 'gamepad',

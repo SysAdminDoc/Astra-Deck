@@ -26,6 +26,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - After moving from a video with several audio languages to one with a single track, the audio track status kept naming the old video's track, and the new video retried the track switch on every player event. It reports "no-tracks" and stops once the video has loaded.
 
+- **Channels → Videos Tab** with a landing tab other than Videos (Live, Podcasts, Shorts and so on) only worked when a channel page was loaded fresh. Opening a channel from inside YouTube always landed on Videos, because the redirect ran before YouTube had sent the new channel's tab list. It now waits for that list, up to three seconds, then lands on the tab you picked if the channel has it.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added

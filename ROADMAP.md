@@ -27,25 +27,19 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   keys present in all 11 locales, with counts through `tCount`.
   Complexity: M
 
-- [ ] P3 — Smaller audit leftovers
-  Why: 2026-09-28 audit. (1) Channel landing tab: non-Videos tabs only work on a hard load;
-  after in-app navigation the embedded page data belongs to the previous page (`ytkit.js`
-  ~10892). Measured live 2026-10-07: `navigatesuccess` (which runs the rules) fires about 500 ms
-  before `yt-navigate-finish`, whose `detail.response.response` carries the new channel's tab
-  list, so the rule settles on /videos first. A tried fix (copy the tab list in
-  `captureNavigatedPageData`, answer "wait" from `channelHasTab` while the payload is left over)
-  passed unit tests but failed live: ytkit.js can boot after the in-app move (the search filter
-  hard-reloads results first), so a "hard load path" read at script start was `/@NASA`, not
-  `/results`, and the finish event can fire before the listener exists. Next try: take the
-  document's load path from `performance.getEntriesByType('navigation')[0].name`, and handle a
-  finish event that came before boot. (2) Plausible: a dismissed "Still watching?" dialog stays in the DOM and keeps the
-  gate open, so the auto-dismiss clicks Play when the user opens Save or Share
-  (`_isYouTherePrompt`, ~15705). (3) The audio track status
-  attribute keeps the previous video's `selected:<id>` after an in-app navigation to a video with
-  no alternate tracks, and that video retries the whole ladder every time
-  (`core/audio-track.js` `apply`, the `tracks.length === 0` return). Diagnostic only today.
-  Acceptance: each item fixed with a regression test, or closed with evidence it can't happen.
-  Complexity: M
+- [ ] P3 — Live-check the channel landing tab after an in-app move
+  Why: 2026-10-09 shipped the fix code-only (no browser runs without the owner's word). The
+  rule now waits for the tab list `yt-navigate-finish` brings (`_rw.navigatedChannelTabs`),
+  reads the document's load path from the Navigation Timing entry (`HARD_LOAD_PATH`), and
+  lands on Videos after 3 s if nothing arrives (ytkit.js booted after the move). The first
+  attempt passed unit tests and failed live, so this one needs the live run too.
+  Where: `extension/ytkit.js` (`documentLoadPath`, `captureNavigatedPageData`, `channelHasTab`,
+  `redirectToVideosTab`), `tests/channel-landing-tab.test.js`.
+  Acceptance: WHEN Channel Landing Tab is Live and the user clicks `/@NASA` from search results
+  in headless Chromium with the staged extension, THEN the page SHALL end on `/@NASA/streams`;
+  and WHEN the click lands before ytkit.js boots, THEN it SHALL end on `/@NASA/videos` within
+  about 3 s.
+  Complexity: S
 
 - [ ] P3 — Popup Settings Overview shows internal category slugs
   Why: 2026-09-28 polish pass. Each overview row is headed with the schema's raw category

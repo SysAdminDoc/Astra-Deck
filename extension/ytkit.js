@@ -1264,8 +1264,32 @@ return response;
 
         // The last in-app navigation's frameworkUpdates, copied by
         // captureNavigatedPageData below.
-        navigatedPageData: null
+        navigatedPageData: null,
+        // The channel tab list that same navigation carried, as
+        // { path, base, suffixes }. ytInitialData above still describes the
+        // page the document was loaded on.
+        navigatedChannelTabs: null
     };
+
+    // A channel's Home tab, the one redirectToVideosTab moves off.
+    const CHANNEL_HOME_PATH_RE = /^\/(?:@[^/]+|(?:channel|c|user)\/[^/]+)(?:\/featured)?\/?$/;
+
+    // The path the document was loaded on, which is where the inline payload
+    // was written. Not location.pathname at boot: ytkit.js runs at
+    // document_idle, so an in-app click made while the page was still loading
+    // has already moved the URL (seen live 2026-10-07: a search results load,
+    // a click to /@NASA, then boot). The navigation entry keeps the URL the
+    // document was fetched for; history.pushState doesn't touch it.
+    function documentLoadPath() {
+        try {
+            const entry = performance.getEntriesByType('navigation')[0];
+            if (entry?.name) return new URL(entry.name).pathname;
+        } catch (_) {
+            // reason: no Navigation Timing entry; the current path is the best guess left
+        }
+        return location.pathname;
+    }
+    const HARD_LOAD_PATH = documentLoadPath();
 
     // YouTube hands every navigation its page data on yt-navigate-finish, the
     // most-replayed curve included, and strips the curve from that object
@@ -1279,16 +1303,37 @@ return response;
     // serialized here, during the dispatch. A page script can dispatch the
     // event too, and heatmapMarkersFor still takes a curve only when it names
     // the video that is playing.
+    //
+    // The channel landing tab needs the same thing for a different part: an
+    // in-app click onto a channel's Home tab brings that channel's tab list
+    // here and nowhere else, so without it every choice but Videos only
+    // worked on a hard load. Taken only on a channel's Home path with a
+    // non-Videos tab chosen, which is the only time it is read.
     function captureNavigatedPageData(event) {
         _rw.navigatedPageData = null;
-        if (!appState.settings?.jumpToMostReplayed && !appState.settings?.heatmapSmartSpeed) return;
+        _rw.navigatedChannelTabs = null;
+        const settings = appState.settings;
+        const wantsCurve = settings?.jumpToMostReplayed || settings?.heatmapSmartSpeed;
+        const wantsTabs = settings?.redirectToVideosTab
+            && channelLandingTabSuffix(settings.channelLandingTab) !== '/videos'
+            && CHANNEL_HOME_PATH_RE.test(location.pathname || '');
+        if (!wantsCurve && !wantsTabs) return;
         try {
-            const frameworkUpdates = event?.detail?.response?.response?.frameworkUpdates;
+            const response = event?.detail?.response?.response;
+            const frameworkUpdates = wantsCurve ? response?.frameworkUpdates : null;
             if (frameworkUpdates && typeof frameworkUpdates === 'object') {
                 _rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
             }
+            if (wantsTabs) {
+                _rw.navigatedChannelTabs = {
+                    path: location.pathname,
+                    base: channelBaseFromTabs(response),
+                    suffixes: listChannelTabSuffixes(response)
+                };
+            }
         } catch (_) {
-            // reason: a detail that throws is no curve, never a broken navigation
+            // reason: a detail that throws is no curve and no tab list, never a broken navigation
+            if (wantsTabs) _rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
         }
     }
 
@@ -1342,18 +1387,26 @@ return response;
         return '';
     }
 
-    // Only ever asked about the channel whose payload is loaded. An unreadable
-    // payload answers false, and the one caller turns that into /videos: the
-    // tab every channel carries, and what this feature did before the setting
-    // existed. "Do not know" and "not there" deliberately share an answer here
-    // because they deserve the same safe landing.
+    // Only ever asked about the channel at location.pathname. Answers true or
+    // false once a payload about that channel is in hand, and null while an
+    // in-app move's own payload is still on its way: YouTube moves the URL
+    // (navigatesuccess, which runs the rules) about half a second before
+    // yt-navigate-finish brings the new page's data, and settling then sent
+    // every in-app visit to /videos. An unreadable payload on the page the
+    // document was loaded on, or a navigation that brought no tab list, still
+    // answers false, and the caller turns that into /videos: the tab every
+    // channel carries, and what this feature did before the setting existed.
     function channelHasTab(suffix, channelBase) {
+        if (!channelBase) return false;
+        const navigated = _rw.navigatedChannelTabs;
+        const navigatedHere = navigated?.path === location.pathname;
+        if (navigatedHere && navigated.base === channelBase) return navigated.suffixes.includes(suffix);
         const data = _rw.ytInitialData;
         // The payload has to be about the channel being asked about. Without
         // this, a soft navigation from channel A to channel B answered with A's
         // tab list, which is how B could be sent to a tab it does not have.
-        if (!channelBase || channelBaseFromTabs(data) !== channelBase) return false;
-        return listChannelTabSuffixes(data).includes(suffix);
+        if (channelBaseFromTabs(data) === channelBase) return listChannelTabSuffixes(data).includes(suffix);
+        return location.pathname !== HARD_LOAD_PATH && !navigatedHere ? null : false;
     }
 
 
@@ -10940,6 +10993,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Home / Subscriptions',
             icon: 'folder-video',
             _mousedownListener: null,
+            // { path, timer } while an in-app move waits for its tab list.
+            _tabListWait: null,
+            _clearTabListWait() {
+                if (this._tabListWait) clearTimeout(this._tabListWait.timer);
+                this._tabListWait = null;
+            },
             init() {
                 // `\/featured[^/]` CONSUMED the character after "featured", so
                 // /c/foo/featured?bp=x produced "/c/foo/featured?/videos" — and
@@ -10948,11 +11007,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // /featured with no trailing character never matched at all.
                 const RX_CHANNEL_HOME = /^https?:\/\/www\.youtube\.com(?:(\/(?:user|channel|c)\/[^/?#]+)(?:\/?(?=$|[?#])|\/featured(?=$|[/?#]))|(\/@[^/?#]+)(?=$|[?#]))/;
                 const DEFAULT_TAB_HREF = "/videos";
+                // A null from channelHasTab means the tab list hasn't arrived:
+                // yt-page-data-updated brings it and runs this rule again. If
+                // ytkit.js booted after the move, that list came before it was
+                // listening and nothing will bring it, so the wait is bounded
+                // and then lands on Videos.
+                const PENDING = 'pending';
+                const TAB_LIST_WAIT_MS = 3000;
                 // `onThisChannel` says whether the loaded browse payload
                 // describes the channel in `url`. It is true for the page we are
                 // standing on and false for an arbitrary anchor, and it decides
                 // whether the tab list can be trusted for this URL at all.
-                const videosTabPath = (url, { onThisChannel = false } = {}) => {
+                // `settle` turns a pending answer into Videos.
+                const videosTabPath = (url, { onThisChannel = false, settle = false } = {}) => {
                     const match = RX_CHANNEL_HOME.exec(String(url || ''));
                     if (!match) return null;
                     const base = match[1] || match[2];
@@ -10974,14 +11041,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // `base` is the channel in the URL being resolved, and the
                     // payload is only trusted when it says it is about that same
                     // channel. A stale one from a soft navigation answers no.
-                    return channelHasTab(tab, base) ? base + tab : base + DEFAULT_TAB_HREF;
+                    const hasTab = channelHasTab(tab, base);
+                    if (hasTab === null) return settle ? base + DEFAULT_TAB_HREF : PENDING;
+                    return hasTab ? base + tab : base + DEFAULT_TAB_HREF;
+                };
+                // Compare against pathname: the target is relative, so an href
+                // comparison is always unequal and loops.
+                const goTo = (target) => {
+                    if (target && location.pathname !== target) location.href = target;
                 };
                 const handleDirectNavigation = () => {
                     // We are on this channel, so its tab list is the loaded one.
                     const target = videosTabPath(location.href, { onThisChannel: true });
-                    // Compare against pathname: the target is relative, so an
-                    // href comparison is always unequal and loops.
-                    if (target && location.pathname !== target) location.href = target;
+                    if (target !== PENDING) {
+                        this._clearTabListWait();
+                        goTo(target);
+                        return;
+                    }
+                    // The rules run again on every page-data update; one wait
+                    // per path, so they can't keep pushing it back.
+                    const path = location.pathname;
+                    if (this._tabListWait?.path === path) return;
+                    this._clearTabListWait();
+                    this._tabListWait = {
+                        path,
+                        timer: setTimeout(() => {
+                            this._tabListWait = null;
+                            if (location.pathname !== path) return;
+                            goTo(videosTabPath(location.href, { onThisChannel: true, settle: true }));
+                        }, TAB_LIST_WAIT_MS)
+                    };
                 };
                 handleDirectNavigation();
                 addNavigateRule('channelRedirectorNav', handleDirectNavigation);
@@ -10996,6 +11085,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._mousedownListener) document.removeEventListener('mousedown', this._mousedownListener, true);
                 removeNavigateRule('channelRedirectorNav');
+                this._clearTabListWait();
             }
         },
         cssFeature('hidePlayables', 'Hide Playables', 'Hide YouTube Playables gaming content from feeds', 'Home / Subscriptions', 'gamepad',

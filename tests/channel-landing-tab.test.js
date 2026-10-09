@@ -24,10 +24,17 @@ const { loadDeclarations, loadFeature } = require('./helpers/monolith');
 const REPO_ROOT = path.join(__dirname, '..');
 const CAPTURE = path.join(REPO_ROOT, 'mhtml', 'Channel.mhtml');
 
-function api(settings = {}, initialData = null) {
+// `location` is where the user is now and `hardLoadPath` is where the
+// document, and so its inline payload, was loaded. They differ after an
+// in-app move.
+function api(settings = {}, initialData = null, {
+    location = { pathname: '/@YouTube' },
+    hardLoadPath = location.pathname,
+    rw = { ytInitialData: initialData, navigatedChannelTabs: null }
+} = {}) {
     return loadDeclarations(
         ['channelLandingTabSuffix', 'listChannelTabSuffixes', 'channelBaseFromTabs', 'channelHasTab', 'CHANNEL_TAB_SUFFIXES'],
-        { appState: { settings }, _rw: { ytInitialData: initialData } }
+        { appState: { settings }, _rw: rw, location, HARD_LOAD_PATH: hardLoadPath }
     );
 }
 
@@ -158,9 +165,11 @@ test('the setting is declared with exactly the tabs the runtime accepts', () => 
 // real feature: the helpers are loaded from the monolith and injected into the
 // feature's sandbox, so a mutation to either half fails here.
 
-function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube', payloadChannel = null } = {}) {
+function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube', payloadChannel = null, hardLoadPath = null } = {}) {
     const rules = new Map();
     const documentListeners = new Map();
+    const timers = new Map();
+    let nextTimer = 1;
     let href = `https://www.youtube.com${startPath}`;
     const location = {
         get href() { return href; },
@@ -181,14 +190,23 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube', pa
         })) } }
     };
 
-    const helpers = api({}, initialData);
+    // Defaults to a hard load of startPath. A different hardLoadPath is an
+    // in-app move from there, whose own tab list arrives later through arrive().
+    const rw = { ytInitialData: initialData, navigatedChannelTabs: null };
+    const helpers = api({}, initialData, {
+        location,
+        hardLoadPath: hardLoadPath ?? location.pathname,
+        rw
+    });
 
     const feature = loadFeature('redirectToVideosTab', {
         appState: { settings: { channelLandingTab: tab } },
-        _rw: { ytInitialData: initialData },
+        _rw: rw,
         addNavigateRule: (id, fn) => rules.set(id, fn),
         removeNavigateRule: (id) => rules.delete(id),
         location,
+        setTimeout: (fn, ms) => { const id = nextTimer++; timers.set(id, { fn, ms }); return id; },
+        clearTimeout: (id) => timers.delete(id),
         document: {
             addEventListener: (type, handler) => { if (type === 'mousedown') documentListeners.set(type, handler); },
             removeEventListener: (type) => documentListeners.delete(type)
@@ -206,7 +224,24 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube', pa
         return anchor.href;
     };
 
-    return { landedOn: location.pathname, rules, clickAnchor };
+    /** yt-navigate-finish brings this page's tab list (null: none), then the rules rerun. */
+    const arrive = (suffixes) => {
+        const here = location.pathname;
+        rw.navigatedChannelTabs = { path: here, base: suffixes ? here : '', suffixes: suffixes || [] };
+        rules.get('channelRedirectorNav')();
+        return location.pathname;
+    };
+
+    /** Fire every pending timer, the way time passing would. */
+    const elapse = () => {
+        for (const [id, timer] of [...timers]) {
+            timers.delete(id);
+            timer.fn();
+        }
+        return location.pathname;
+    };
+
+    return { landedOn: location.pathname, rules, clickAnchor, arrive, elapse, timers, feature, location };
 }
 
 test('the redirect sends the user to the tab they chose', () => {
@@ -338,4 +373,164 @@ test('a payload carried over from a watch page decides nothing', () => {
     });
 
     assert.equal(landedOn, '/@Beta/videos');
+});
+
+// An in-app move, measured live on 2026-10-07: navigatesuccess (which runs
+// the rules) came at 38 ms and yt-navigate-finish, carrying the new channel's
+// tab list, at 542 ms. Settling at 38 ms sent every in-app visit to Videos.
+
+test('an in-app visit waits for its own tab list, then lands on the chosen tab', () => {
+    const { landedOn, arrive, timers } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos'],
+        startPath: '/@NASA',
+        payloadChannel: '/results',
+        hardLoadPath: '/results'
+    });
+
+    assert.equal(landedOn, '/@NASA', 'nothing is decided before the tab list arrives');
+    assert.equal(timers.size, 1, 'and the wait is bounded');
+    assert.equal(arrive(['/videos', '/shorts', '/streams']), '/@NASA/streams');
+    assert.equal(timers.size, 0, 'an answer ends the wait');
+});
+
+test('an in-app visit from another channel is answered by its own list, not the old one', () => {
+    // We moved from Alpha to Beta. The document still holds Alpha's payload,
+    // and Alpha has a Live tab.
+    const { landedOn, arrive } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos', '/streams'],
+        startPath: '/@Beta',
+        payloadChannel: '/@Alpha',
+        hardLoadPath: '/@Alpha'
+    });
+
+    assert.equal(landedOn, '/@Beta');
+    assert.equal(arrive(['/videos', '/shorts']), '/@Beta/videos',
+        'Beta must not be sent to a tab only Alpha was known to have');
+});
+
+test('an in-app visit whose navigation brings no tab list falls back to Videos', () => {
+    const { arrive } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos', '/streams'],
+        startPath: '/@Beta',
+        payloadChannel: '/@Alpha',
+        hardLoadPath: '/@Alpha'
+    });
+
+    assert.equal(arrive(null), '/@Beta/videos');
+});
+
+test('a move made before ytkit.js booted lands on Videos when the wait runs out', () => {
+    // The live failure of the first attempt: results hard-loaded, the click to
+    // /@NASA happened, then ytkit.js booted. yt-navigate-finish had already
+    // fired, so no tab list is ever coming.
+    const { landedOn, rules, timers, elapse } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos'],
+        startPath: '/@NASA',
+        payloadChannel: '/results',
+        hardLoadPath: '/results'
+    });
+
+    assert.equal(landedOn, '/@NASA');
+    // Page-data updates rerun the rule; they must not push the deadline back.
+    rules.get('channelRedirectorNav')();
+    rules.get('channelRedirectorNav')();
+    assert.equal(timers.size, 1);
+    assert.equal([...timers.values()][0].ms, 3000);
+    assert.equal(elapse(), '/@NASA/videos');
+});
+
+test('a wait that outlives its page does nothing', () => {
+    const { location, elapse } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos'],
+        startPath: '/@NASA',
+        payloadChannel: '/results',
+        hardLoadPath: '/results'
+    });
+
+    location.href = 'https://www.youtube.com/watch?v=abc12345678';
+    assert.equal(elapse(), '/watch', 'the user moved on, so the old channel is not forced back');
+});
+
+test('turning the feature off ends the wait', () => {
+    const { feature, timers } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos'],
+        startPath: '/@NASA',
+        payloadChannel: '/results',
+        hardLoadPath: '/results'
+    });
+
+    assert.equal(timers.size, 1);
+    feature.destroy();
+    assert.equal(timers.size, 0);
+});
+
+test('the load path comes from the navigation entry, not the URL at boot', () => {
+    const load = (globals) => loadDeclarations(['documentLoadPath'], { URL, ...globals }).documentLoadPath();
+    const performance = {
+        getEntriesByType: (type) => (type === 'navigation'
+            ? [{ name: 'https://www.youtube.com/results?search_query=nasa&sp=CAI%3D' }]
+            : [])
+    };
+
+    assert.equal(load({ performance, location: { pathname: '/@NASA' } }), '/results');
+    assert.equal(load({ performance: { getEntriesByType: () => [] }, location: { pathname: '/@NASA' } }), '/@NASA',
+        'no entry: the current path is the best guess left');
+    assert.equal(load({ location: { pathname: '/@NASA' } }), '/@NASA', 'no performance object at all');
+});
+
+// The capture itself, fed the event shape a live in-app click onto /@NASA
+// produced on 2026-10-07.
+function tabCapture(settings, pathname) {
+    return loadDeclarations(
+        ['_rw', 'captureNavigatedPageData', 'CHANNEL_HOME_PATH_RE', 'channelLandingTabSuffix',
+            'CHANNEL_TAB_SUFFIXES', 'channelBaseFromTabs', 'listChannelTabSuffixes'],
+        {
+            appState: { settings },
+            document: { querySelectorAll: () => [] },
+            location: { href: `https://www.youtube.com${pathname}`, pathname }
+        }
+    );
+}
+
+function channelFinish(owner) {
+    const urls = ['featured', 'videos', 'shorts', 'streams', 'podcasts', 'playlists', 'posts', 'search']
+        .map((tab) => `${owner}/${tab}`);
+    return { detail: { pageType: 'channel', response: { response: { contents: { twoColumnBrowseResultsRenderer: {
+        tabs: urls.map((url) => ({ tabRenderer: { endpoint: { commandMetadata: { webCommandMetadata: { url } } } } }))
+    } } } } } };
+}
+
+test('an in-app visit to a channel Home tab keeps that channel\'s tab list', () => {
+    const on = { redirectToVideosTab: true, channelLandingTab: 'streams' };
+    const { _rw, captureNavigatedPageData } = tabCapture(on, '/@NASA');
+    captureNavigatedPageData(channelFinish('/@NASA'));
+    assert.deepEqual(JSON.parse(JSON.stringify(_rw.navigatedChannelTabs)), {
+        path: '/@NASA',
+        base: '/@NASA',
+        suffixes: ['/videos', '/shorts', '/streams', '/podcasts', '/playlists', '/posts']
+    });
+
+    const broken = tabCapture(on, '/@NASA');
+    broken.captureNavigatedPageData({ get detail() { throw new Error('page-made getter'); } });
+    assert.deepEqual(JSON.parse(JSON.stringify(broken._rw.navigatedChannelTabs)), { path: '/@NASA', base: '', suffixes: [] },
+        'a detail that throws still answers for this path, so the rule settles instead of waiting');
+
+    for (const [settings, pathname, why] of [
+        [{ redirectToVideosTab: true, channelLandingTab: 'videos' }, '/@NASA', 'Videos needs no list'],
+        [{ redirectToVideosTab: false, channelLandingTab: 'streams' }, '/@NASA', 'the feature is off'],
+        [on, '/@NASA/videos', 'not a Home tab'],
+        [on, '/watch', 'not a channel']
+    ]) {
+        const quiet = tabCapture(settings, pathname);
+        let read = false;
+        quiet.captureNavigatedPageData({ get detail() { read = true; return channelFinish('/@NASA').detail; } });
+        assert.equal(read, false, `the response is not copied when ${why}`);
+        assert.equal(quiet._rw.navigatedChannelTabs, null);
+    }
 });
