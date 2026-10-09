@@ -175,7 +175,11 @@
     const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
     const LOCKUP_LABELLED_TEXT_SELECTOR = '.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]';
     const INPUT_HEALTH_MIN_CARDS = 12;
-    const INPUT_HEALTH_NAMES = Object.freeze({ views: 'view counts', ages: 'upload ages', durations: 'durations' });
+    const INPUT_HEALTH_NAMES = Object.freeze({
+        views: ['videoHiderInputViews', 'view counts'],
+        ages: ['videoHiderInputAges', 'upload ages'],
+        durations: ['videoHiderInputDurations', 'durations']
+    });
 
     function filterListError(code, message) {
         const error = new Error(message);
@@ -2204,14 +2208,19 @@
                 const unreadable = needed
                     .filter(input => (state.seen[input] || 0) >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
                 if (unreadable.length) {
-                    const names = unreadable.map(input => INPUT_HEALTH_NAMES[input]);
-                    const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
+                    const names = unreadable.map(input => t(...INPUT_HEALTH_NAMES[input]));
+                    const fill = (template) => template.replace('{first}', () => names[0])
+                        .replace('{second}', () => names[1] || '').replace('{third}', () => names[2] || '');
+                    const list = names.length > 2 ? fill(t('videoHiderInputTrioTpl', '{first}, {second} or {third}'))
+                        : names.length > 1 ? fill(t('videoHiderInputPairTpl', '{first} or {second}'))
+                            : names[0];
                     this._inputHealthDegraded = true;
                     setFeatureHealth(this.id, {
                         status: 'degraded',
                         source: 'video-hider-inputs',
                         initialized: true,
-                        lastError: `Can't read ${list} on this page's cards, so the filters that need them aren't hiding anything.`
+                        lastError: t('videoHiderInputsUnreadableTpl', "Can't read {inputs} on this page's cards, so the filters that need them aren't hiding anything.")
+                            .replace('{inputs}', () => list)
                     });
                 } else if (this._inputHealthDegraded) {
                     this._inputHealthDegraded = false;

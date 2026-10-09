@@ -7986,9 +7986,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8044,9 +8041,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9456,5 +9450,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "设置面板未能加载。请重新加载页面后重试。"
+  },
+  "quickLinksRemovedTpl": {
+    "message": "已删除“{name}”"
+  },
+  "quickLinksAddedTpl": {
+    "message": "已添加“{name}”"
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "已达上限（{count}/{max}）。请先删除上方的一项再添加新项。"
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "请使用 /feed/history 这样的路径或完整的 https:// 网址。（已用 {count}/{max}）"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "快捷链接已达上限（{max}）。请删除一个后再添加。"
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "睡眠定时器已设为 {count} 分钟。"
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "睡眠定时器已设为 {count} 分钟。"
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "睡眠定时器已延长 {count} 分钟。"
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "睡眠定时器已延长 {count} 分钟。"
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "将睡眠定时器设为 {count} 分钟"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "将睡眠定时器设为 {count} 分钟"
+  },
+  "watchTimeStatsTpl": {
+    "message": "今天：{today} | 本周：{week} | 累计：{total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "已跳过：“{title}”"
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{visible} / {total}"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "{count} 项"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "{count} 项"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "第 {current} 个匹配，共 {total} 个"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "第 {current} 个讨论串，共 {total} 个"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "{total} 个讨论串中有 {visible} 个已就绪"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "已保存配置：{name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "找不到配置：{name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "已应用配置：{name}。正在重新加载…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "已删除配置：{name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "已导入 {count} 个配置"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "已导入 {count} 个配置"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "已将 {count} 个章节复制为 Markdown"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "已将 {count} 个章节复制为 Markdown"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "AI 配音音轨"
+  },
+  "autoDubbedToastTpl": {
+    "message": "音频：YouTube 选择了{track}。如有需要，可在播放器设置中切换为原始音轨。"
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "当前音轨为{track}；原始音轨可能可在播放器设置中选择。"
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "原始"
+  },
+  "deArrowModeOff": {
+    "message": "关闭"
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow：{mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "点击可切换此频道的 DeArrow 模式（DeArrow / 原始 / 关闭）"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "此频道的 DeArrow 已设为“{mode}”。"
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "已排队 {count}/{max}，每个视频最多重试一次"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "正在获取 {current}/{total}，每个视频最多重试一次"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "当前视频仍在建立索引。"
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "没有与“{query}”匹配的字幕文本。"
+  },
+  "protocolHandoffToastTpl": {
+    "message": "已交给 {player}。如果没有打开，请先在系统中注册该协议处理程序。"
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "已开启 {count} 项"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "{count} 个快捷项"
+  },
+  "pageModalAppliesLive": {
+    "message": "即时生效"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "无法撤销导入。"
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "文件格式无效。"
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "文件中没有可识别的设置。"
+  },
+  "statusSettingsImportNothing": {
+    "message": "没有可导入的设置或本地数据。"
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "查看与恢复"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "{count} 个已隐藏视频待查看"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "{count} 个已隐藏视频待查看"
+  },
+  "videoHiderReviewCopy": {
+    "message": "可以逐个恢复，或在不创建例外的情况下从列表中移除条目；如果想让 YouTube 推荐重新开始，可以重置整个列表。"
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "手动例外"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "{count} 个允许的视频不受过滤影响"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "{count} 个允许的视频不受过滤影响"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "移除例外后，自动规则会重新判断该视频；再次隐藏则会把它移回隐藏列表。"
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "{count} 个允许的频道"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "{count} 个允许的频道"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "{count} 个已屏蔽的频道"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "{count} 个已屏蔽的频道"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "{count} 个匹配"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "{count} 个匹配"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "部分设置需要网站访问权限。请重试，并在浏览器提示中允许。"
+  },
+  "videoHiderInputViews": {
+    "message": "观看次数"
+  },
+  "videoHiderInputAges": {
+    "message": "上传时间"
+  },
+  "videoHiderInputDurations": {
+    "message": "时长"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first}或{second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first}、{second}或{third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "无法读取此页面卡片上的{inputs}，因此依赖它们的过滤器没有隐藏任何内容。"
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "未安装"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "未验证"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "就绪"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · 修复"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status}（内置）"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "修复已配置的 {runtime} 运行时"
   }
 }

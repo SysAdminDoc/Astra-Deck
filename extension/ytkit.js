@@ -5351,7 +5351,7 @@ const STORAGE_KEYS = Object.freeze({
         async importAllSettingsDetailed(jsonString) {
             try {
                 const importedData = JSON.parse(jsonString);
-                if (!isPlainObject(importedData)) return { ok: false, message: 'Invalid file format.' };
+                if (!isPlainObject(importedData)) return { ok: false, message: t('statusSettingsImportInvalidFormat', 'Invalid file format.') };
 
                 // Handle different export versions
                 let settings, hiddenVideos, allowedVideos, markedWatchedVideos, blockedChannels, allowedChannels, bookmarks;
@@ -5426,8 +5426,8 @@ const STORAGE_KEYS = Object.freeze({
                     || (allowedChannels !== null && allowedChannels.length > 0)
                     || (bookmarks !== null && Object.keys(bookmarks).length > 0)
                     || (aiSummaries !== null && Object.keys(aiSummaries).length > 0);
-                if (Object.keys(settings).length > 0 && !hasValidKey) return { ok: false, message: 'No known settings found in file.' };
-                if (!hasImportedData) return { ok: false, message: 'No importable settings or local data found.' };
+                if (Object.keys(settings).length > 0 && !hasValidKey) return { ok: false, message: t('statusSettingsImportNoKnownKeys', 'No known settings found in file.') };
+                if (!hasImportedData) return { ok: false, message: t('statusSettingsImportNothing', 'No importable settings or local data found.') };
 
                 // Backup current state before applying
                 const backup = {
@@ -5566,7 +5566,7 @@ const STORAGE_KEYS = Object.freeze({
         },
         async undoLastSettingsImport() {
             const outcome = await this._getSettingsImportTransaction()?.undo();
-            if (!outcome?.ok) return { ok: false, message: outcome?.message || 'Import undo failed.' };
+            if (!outcome?.ok) return { ok: false, message: outcome?.message || t('statusSettingsImportUndoFailed', 'Import undo failed.') };
             return {
                 ok: true,
                 message: t('statusSettingsImportUndone', 'Import undone. Previous settings and local data restored.'),
@@ -15031,7 +15031,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         appState.settings.quickLinkItems = newRaw;
                         settingsManager.save(appState.settings);
                         self.rebuildMenus();
-                        showToast(`Removed "${item.text}"`, '#ef4444');
+                        showToast(t('quickLinksRemovedTpl', 'Removed "{name}"').replace('{name}', () => item.text), '#ef4444');
                     };
                     row.appendChild(del);
                     menu.appendChild(row);
@@ -15117,11 +15117,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const atCap = currentCount >= self._QL_MAX_ITEMS;
                                 addBtn.disabled = !name || !url || !isValidUrl || atCap;
                                 if (atCap) {
-                                    formNote.textContent = `Limit reached (${currentCount}/${self._QL_MAX_ITEMS}). Remove an entry above to add a new one.`;
+                                    formNote.textContent = t('quickLinksLimitNoteTpl', 'Limit reached ({count}/{max}). Remove an entry above to add a new one.')
+                                        .replace('{count}', () => String(currentCount)).replace('{max}', () => String(self._QL_MAX_ITEMS));
                                 } else if (!isValidUrl) {
                                     formNote.textContent = 'Use a path that starts with / or a full https:// URL.';
                                 } else {
-                                    formNote.textContent = `Use a site path like /feed/history or a full https:// URL. (${currentCount}/${self._QL_MAX_ITEMS} used)`;
+                                    formNote.textContent = t('quickLinksUsageNoteTpl', 'Use a site path like /feed/history or a full https:// URL. ({count}/{max} used)')
+                                        .replace('{count}', () => String(currentCount)).replace('{max}', () => String(self._QL_MAX_ITEMS));
                                 }
                                 return isValidUrl && !atCap;
                             };
@@ -15144,7 +15146,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 // could let a stale add slip past.
                                 if (self._parseItems().length >= self._QL_MAX_ITEMS) {
                                     showToast(
-                                        `Quick Links limit reached (${self._QL_MAX_ITEMS}). Remove one to add a new entry.`,
+                                        t('quickLinksLimitToastTpl', 'Quick Links limit reached ({max}). Remove one to add a new entry.').replace('{max}', () => String(self._QL_MAX_ITEMS)),
                                         '#f59e0b',
                                     );
                                     validateForm();
@@ -15154,7 +15156,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 appState.settings.quickLinkItems = current + (current ? '\n' : '') + `${name} | ${url}`;
                                 settingsManager.save(appState.settings);
                                 self.rebuildMenus();
-                                showToast(`Added "${name}"`, '#22c55e');
+                                showToast(t('quickLinksAddedTpl', 'Added "{name}"').replace('{name}', () => name), '#22c55e');
                             };
                             validateForm();
                             addForm.appendChild(formNote);
@@ -17502,14 +17504,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._interval = setInterval(() => this._tick(), 1000);
                 this._dismissPopover();
                 this._renderChip();
-                announceA11y(`Sleep timer set for ${span} minutes.`);
+                announceA11y(tCount(span, 'sleepTimerSetAnnounceTpl', 'Sleep timer set for {count} minute.', 'Sleep timer set for {count} minutes.').replace('{count}', () => String(span)));
             },
             _extend(minutes) {
                 if (!this._interval) return;
                 const span = Math.max(1, Math.min(60, Number(minutes) || 5));
                 this._endsAt += span * 60 * 1000;
                 this._tick();
-                announceA11y(`Sleep timer extended by ${span} minutes.`);
+                announceA11y(tCount(span, 'sleepTimerExtendedAnnounceTpl', 'Sleep timer extended by {count} minute.', 'Sleep timer extended by {count} minutes.').replace('{count}', () => String(span)));
             },
             _stop() {
                 if (this._interval) {
@@ -17631,7 +17633,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const preset = document.createElement('button');
                     preset.type = 'button';
                     preset.textContent = `${minutes}`;
-                    preset.setAttribute('aria-label', `Set sleep timer for ${minutes} minutes`);
+                    preset.setAttribute('aria-label', tCount(minutes, 'sleepTimerPresetAriaTpl', 'Set sleep timer for {count} minute', 'Set sleep timer for {count} minutes').replace('{count}', () => String(minutes)));
                     preset.style.cssText = 'height:32px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.07);color:#f4f6fb;font:600 12px system-ui;cursor:pointer;';
                     wireFocus(preset);
                     preset.addEventListener('click', () => {
@@ -19097,7 +19099,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     weekKeys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
                 }
                 const weekTotal = weekKeys.reduce((sum, k) => sum + (stats.days[k] || 0), 0);
-                return `Today: ${this._formatDuration(today)} | This week: ${this._formatDuration(weekTotal)} | All time: ${this._formatDuration(stats.total || 0)}`;
+                return t('watchTimeStatsTpl', 'Today: {today} | This week: {week} | All time: {total}')
+                    .replace('{today}', () => this._formatDuration(today))
+                    .replace('{week}', () => this._formatDuration(weekTotal))
+                    .replace('{total}', () => this._formatDuration(stats.total || 0));
             },
 
             init() {
@@ -19337,7 +19342,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             this._skippedAt = ch.time;
                             video.currentTime = nextTime;
                             if (!ch.title.includes('sponsor')) {
-                                showToast(`Skipped: "${ch.title}"`, '#6b7280', { duration: 3 });
+                                showToast(t('chapterSkippedToastTpl', 'Skipped: "{title}"').replace('{title}', () => ch.title), '#6b7280', { duration: 3 });
                             }
                             DebugManager.log('AutoSkipChapter', `Skipped "${ch.title}" at ${ch.time}s`);
                         }
@@ -24647,8 +24652,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const count = this._bar.querySelector('.ytkit-playlist-search-count');
                     if (count) {
                         count.textContent = query
-                            ? `${visible} of ${items.length}`
-                            : `${items.length} item${items.length === 1 ? '' : 's'}`;
+                            ? t('watchFeedFilteredCountTpl', '{visible} of {total}').replace('{visible}', () => String(visible)).replace('{total}', () => String(items.length))
+                            : tCount(items.length, 'watchFeedItemCountTpl', '{count} item', '{count} items').replace('{count}', () => String(items.length));
                     }
                 }
             },
@@ -27263,10 +27268,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         : 'Waiting for comments to load…';
                 } else if (this._currentIndex >= 0) {
                     this._statusEl.textContent = query
-                        ? `Match ${this._formatCount(this._currentIndex + 1)} of ${this._formatCount(threads.length)}`
-                        : `Thread ${this._formatCount(this._currentIndex + 1)} of ${this._formatCount(threads.length)}`;
+                        ? t('commentSearchMatchPositionTpl', 'Match {current} of {total}')
+                            .replace('{current}', () => this._formatCount(this._currentIndex + 1)).replace('{total}', () => this._formatCount(threads.length))
+                        : t('commentSearchThreadPositionTpl', 'Thread {current} of {total}')
+                            .replace('{current}', () => this._formatCount(this._currentIndex + 1)).replace('{total}', () => this._formatCount(threads.length));
                 } else if (query) {
-                    this._statusEl.textContent = `${this._formatCount(threads.length)} of ${this._formatCount(totalCount)} threads ready`;
+                    this._statusEl.textContent = t('commentSearchThreadsReadyTpl', '{visible} of {total} threads ready')
+                        .replace('{visible}', () => this._formatCount(threads.length)).replace('{total}', () => this._formatCount(totalCount));
                 } else {
                     this._statusEl.textContent = 'Visible threads ready';
                 }
@@ -28824,14 +28832,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 appState.settings._profiles = profiles;
                 appState.settings._activeProfile = name;
                 settingsManager.save(appState.settings);
-                if (typeof showToast === 'function') showToast(`Profile saved: ${name}`, '#22c55e');
+                if (typeof showToast === 'function') showToast(t('settingsProfileSavedTpl', 'Profile saved: {name}').replace('{name}', () => name), '#22c55e');
                 return true;
             },
 
             load(name) {
                 const profiles = this._profiles();
                 if (!profiles[name]) {
-                    if (typeof showToast === 'function') showToast(`Profile not found: ${name}`, '#ef4444');
+                    if (typeof showToast === 'function') showToast(t('settingsProfileNotFoundTpl', 'Profile not found: {name}').replace('{name}', () => name), '#ef4444');
                     return false;
                 }
                 // Shallow-merge snapshot over defaults so missing keys get default values
@@ -28846,7 +28854,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const currentVersion = settingsManager._normalizeVersion(appState?.settings?._settingsVersion);
                 merged._settingsVersion = Math.max(snapshotVersion, currentVersion, settingsManager.SETTINGS_VERSION);
                 settingsManager.save(merged);
-                if (typeof showToast === 'function') showToast(`Applied profile: ${name}. Reloading…`, '#22c55e');
+                if (typeof showToast === 'function') showToast(t('settingsProfileAppliedTpl', 'Applied profile: {name}. Reloading…').replace('{name}', () => name), '#22c55e');
                 setTimeout(() => location.reload(), 600);
                 return true;
             },
@@ -28858,7 +28866,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 appState.settings._profiles = profiles;
                 if (this._activeName() === name) appState.settings._activeProfile = 'default';
                 settingsManager.save(appState.settings);
-                if (typeof showToast === 'function') showToast(`Profile deleted: ${name}`, '#f59e0b');
+                if (typeof showToast === 'function') showToast(t('settingsProfileDeletedTpl', 'Profile deleted: {name}').replace('{name}', () => name), '#f59e0b');
                 return true;
             },
 
@@ -28907,7 +28915,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const profiles = { ...this._profiles(), ...importedProfiles };
                     appState.settings._profiles = profiles;
                     settingsManager.save(appState.settings);
-                    if (typeof showToast === 'function') showToast(`Imported ${Object.keys(data.profiles).length} profile(s)`, '#22c55e');
+                    if (typeof showToast === 'function') showToast(tCount(Object.keys(data.profiles).length, 'settingsProfilesImportedTpl', 'Imported {count} profile', 'Imported {count} profiles')
+                        .replace('{count}', () => String(Object.keys(data.profiles).length)), '#22c55e');
                     return true;
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(failureText('profile-import', e, 'profileImportFailed', 'Profile import failed'), '#ef4444');
@@ -32125,7 +32134,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return `- [${c.time}](https://youtu.be/${vid}?t=${secs}) ${c.title}`;
                 }).join('\n');
                 navigator.clipboard.writeText(mk).then(
-                    () => showToast(`${chapters.length} chapters copied as markdown`, '#22c55e'),
+                    () => showToast(tCount(chapters.length, 'chaptersCopiedMarkdownTpl', '{count} chapter copied as Markdown', '{count} chapters copied as Markdown')
+                        .replace('{count}', () => String(chapters.length)), '#22c55e'),
                     () => showToast('Clipboard write failed', '#ef4444')
                 );
             },
@@ -33782,13 +33792,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const videoId = getVideoId();
                     if (!videoId || this._seenVideos.has(videoId)) return;
                     this._seenVideos.add(videoId);
-                    const label = displayName || 'an AI-dubbed track';
+                    const label = displayName || t('autoDubbedTrackFallback', 'an AI-dubbed track');
                     showToast(
-                        `Audio: YouTube selected ${label}. Switch to Original in the player settings if preferred.`,
+                        t('autoDubbedToastTpl', 'Audio: YouTube selected {track}. Switch to Original in the player settings if preferred.').replace('{track}', () => label),
                         '#f59e0b',
                         { duration: 8 },
                     );
-                    announceA11y(`Audio track is ${label}; the original track may be available in the player settings.`);
+                    announceA11y(t('autoDubbedAnnounceTpl', 'Audio track is {track}; the original track may be available in the player settings.').replace('{track}', () => label));
                 } catch (e) {
                     DebugManager?.log?.('NotifyAutoDubbed', `check skipped: ${e?.message || e}`);
                 }
@@ -36362,6 +36372,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
+            // The chip names the mode in words; the stored values stay ids.
+            _modeLabel(mode) {
+                if (mode === 'original') return t('deArrowModeOriginal', 'Original');
+                if (mode === 'off') return t('deArrowModeOff', 'Off');
+                return t('deArrowModeDearrow', 'DeArrow');
+            },
+
+            _chipText(mode) {
+                return t('deArrowChannelChipTpl', 'DeArrow: {mode}').replace('{mode}', () => this._modeLabel(mode));
+            },
+
             _cycleMode(current) {
                 if (current === 'dearrow') return 'original';
                 if (current === 'original') return 'off';
@@ -36379,7 +36400,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (existing) {
                         const mode = this._readMode(channelId);
                         existing.dataset.mode = mode;
-                        existing.textContent = `DeArrow: ${mode}`;
+                        existing.textContent = this._chipText(mode);
                     }
                     return;
                 }
@@ -36388,8 +36409,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 chip.className = 'ytkit-da-channel-chip';
                 const mode = this._readMode(channelId);
                 chip.dataset.mode = mode;
-                chip.textContent = `DeArrow: ${mode}`;
-                chip.title = 'Click to cycle DeArrow mode for this channel (DeArrow / Original / Off)';
+                chip.textContent = this._chipText(mode);
+                chip.title = t('deArrowChannelChipTitle', 'Click to cycle DeArrow mode for this channel (DeArrow / Original / Off)');
                 chip.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -36398,8 +36419,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const next = this._cycleMode(this._readMode(id));
                     this._writeMode(id, next);
                     chip.dataset.mode = next;
-                    chip.textContent = `DeArrow: ${next}`;
-                    if (typeof showToast === 'function') showToast(`DeArrow override set to "${next}" for this channel.`, '#7c3aed');
+                    chip.textContent = this._chipText(next);
+                    if (typeof showToast === 'function') {
+                        showToast(t('deArrowChannelOverrideToastTpl', 'DeArrow override set to "{mode}" for this channel.')
+                            .replace('{mode}', () => this._modeLabel(next)), '#7c3aed');
+                    }
                 });
                 host.appendChild(chip);
                 this._btn = chip;
@@ -37723,7 +37747,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     list.appendChild(row);
                 }
                 panel.hidden = false;
-                this._setBatchSummary(`${items.length}/${this._BATCH_MAX} queued; one recovery pass per video`);
+                this._setBatchSummary(t('transcriptBatchQueuedTpl', '{count}/{max} queued; one recovery pass per video')
+                    .replace('{count}', () => String(items.length)).replace('{max}', () => String(this._BATCH_MAX)));
             },
 
             _setBatchRow(videoId, state, detail = '') {
@@ -37892,7 +37917,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     for (let i = 0; i < items.length; i++) {
                         const item = items[i];
-                        this._setBatchSummary(`Fetching ${i + 1}/${items.length}; one recovery pass per video`);
+                        this._setBatchSummary(t('transcriptBatchFetchingTpl', 'Fetching {current}/{total}; one recovery pass per video')
+                            .replace('{current}', () => String(i + 1)).replace('{total}', () => String(items.length)));
                         this._setBatchRow(item.videoId, 'running');
                         const result = await this._fetchTranscriptForBatchItem(item, controller.signal);
                         results.push(result);
@@ -38691,8 +38717,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (generation !== this._queryGeneration || !this._panel) return;
                 if (!hits?.length) {
                     const status = window.__ytkitTranscriptIndexStatus?.();
-                    const suffix = status?.state === 'indexing' ? ' The current video is still being indexed.' : '';
-                    this._setResultsState(ul, `No transcripts matched "${query}".${suffix}`);
+                    const suffix = status?.state === 'indexing' ? ` ${t('transcriptSearchStillIndexing', 'The current video is still being indexed.')}` : '';
+                    this._setResultsState(ul, t('transcriptSearchNoMatchesTpl', 'No transcripts matched "{query}".').replace('{query}', () => query) + suffix);
                     return;
                 }
                 ul.replaceChildren();
@@ -39680,7 +39706,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 a.click();
                 setTimeout(() => a.remove(), 500);
                 if (typeof showToast === 'function') {
-                    showToast(`${scheme.toUpperCase()} handoff fired. If nothing opened, register the handler on your OS first.`, '#7c3aed', { duration: 6 });
+                    showToast(t('protocolHandoffToastTpl', '{player} handoff fired. If nothing opened, register the handler on your OS first.')
+                        .replace('{player}', () => scheme.toUpperCase()), '#7c3aed', { duration: 6 });
                 }
             },
 
@@ -42663,7 +42690,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
     function updatePageModalEnabledCount(enabledCount) {
         const countChip = document.getElementById('ytkit-pm-enabled-count');
         if (countChip) {
-            countChip.textContent = `${enabledCount} Enabled`;
+            countChip.textContent = t('pageModalEnabledCountTpl', '{count} Enabled').replace('{count}', () => String(enabledCount));
         }
     }
 
@@ -42774,9 +42801,9 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         const statRow = document.createElement('div');
         statRow.className = 'ytkit-pm-stats';
         [
-            { id: 'ytkit-pm-enabled-count', text: `${enabledCount} Enabled` },
-            { text: `${availableFeatures.length} Shortcuts` },
-            { text: 'Applies Live' }
+            { id: 'ytkit-pm-enabled-count', text: t('pageModalEnabledCountTpl', '{count} Enabled').replace('{count}', () => String(enabledCount)) },
+            { text: t('pageModalShortcutCountTpl', '{count} Shortcuts').replace('{count}', () => String(availableFeatures.length)) },
+            { text: t('pageModalAppliesLive', 'Applies Live') }
         ].forEach((item) => {
             const stat = document.createElement('span');
             stat.className = 'ytkit-pm-stat';

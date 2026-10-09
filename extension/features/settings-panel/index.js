@@ -131,6 +131,13 @@
                 : value => String(value ?? '')
                     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
                     .replace(/-/g, '\\x2d');
+        // Chrome's i18n has no plurals, so a count picks between a key pair
+        // (key + 'One' / key + 'Other'), the same way ytkit.js's tCount does,
+        // and fills {count}. Appending "s" to a translated word was English
+        // grammar in every locale.
+        const tCount = (count, key, one, other) => (
+            Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other)
+        ).replace('{count}', () => String(count));
 
         // A thrown value becomes one of the closed, localized cause sentences
         // in core/failure-copy.js. Raw exception text never reaches a panel
@@ -1343,8 +1350,6 @@ function buildSettingsPanel() {
         //  Video Hider Custom Pane
         function buildVideoHiderPane(config) {
             const videoHiderFeature = getFeatureById('hideVideosFromHome');
-            const countLabel = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
-
             const pane = document.createElement('section');
             pane.id = 'ytkit-pane-Video-Hider';
             pane.className = 'ytkit-pane ytkit-vh-pane';
@@ -1925,9 +1930,9 @@ function buildSettingsPanel() {
                         const grid = document.createElement('div');
                         grid.className = 'ytkit-vh-grid';
                         tabContent.appendChild(createVideoHiderLead(
-                            'Restore & Review',
-                            `${countLabel(videos.length, 'Hidden Video')} Ready to Review`,
-                            'Restore one item at a time, remove an entry from the list without creating an exception, or reset the whole list if you want YouTube recommendations to start fresh again.'
+                            t('videoHiderReviewEyebrow', 'Restore & Review'),
+                            tCount(videos.length, 'videoHiderHiddenReadyTpl', '{count} Hidden Video Ready to Review', '{count} Hidden Videos Ready to Review'),
+                            t('videoHiderReviewCopy', 'Restore one item at a time, remove an entry from the list without creating an exception, or reset the whole list if you want YouTube recommendations to start fresh again.')
                         ));
                         tabContent.appendChild(createHiddenEntryForm());
                         videos.forEach(vid => {
@@ -2138,9 +2143,9 @@ function buildSettingsPanel() {
                         const grid = document.createElement('div');
                         grid.className = 'ytkit-vh-grid';
                         tabContent.appendChild(createVideoHiderLead(
-                            'Manual Exceptions',
-                            `${countLabel(allowed.length, 'Allowed Video')} Protected From Filters`,
-                            'Remove an exception to let automatic rules evaluate the video again, or hide it again to move it back to the hidden list.'
+                            t('videoHiderExceptionsEyebrow', 'Manual Exceptions'),
+                            tCount(allowed.length, 'videoHiderAllowedProtectedTpl', '{count} Allowed Video Protected From Filters', '{count} Allowed Videos Protected From Filters'),
+                            t('videoHiderExceptionsCopy', 'Remove an exception to let automatic rules evaluate the video again, or hide it again to move it back to the hidden list.')
                         ));
                         tabContent.appendChild(createAllowedEntryForm());
                         allowed.forEach(vid => {
@@ -2284,7 +2289,9 @@ function buildSettingsPanel() {
                         list.className = 'ytkit-vh-stack';
                         tabContent.appendChild(createVideoHiderLead(
                             allowlist ? t('videoHiderChannelAllowlistEyebrow', 'Allowlist') : t('videoHiderChannelBlocklistEyebrow', 'Blocklist'),
-                            t('videoHiderChannelListCount', '{count} in Your List').replace('{count}', countLabel(channels.length, allowlist ? t('videoHiderAllowedChannelSingular', 'Allowed Channel') : t('videoHiderBlockedChannelSingular', 'Blocked Channel'))),
+                            t('videoHiderChannelListCount', '{count} in Your List').replace('{count}', () => (allowlist
+                                ? tCount(channels.length, 'videoHiderAllowedChannelCountTpl', '{count} Allowed Channel', '{count} Allowed Channels')
+                                : tCount(channels.length, 'videoHiderBlockedChannelCountTpl', '{count} Blocked Channel', '{count} Blocked Channels'))),
                             allowlist
                                 ? t('videoHiderChannelAllowlistCopy', 'Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
                                 : t('videoHiderChannelBlocklistCopy', 'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
@@ -4511,7 +4518,9 @@ function attachUIEventListeners() {
                     btn.classList.toggle('ytkit-search-empty-nav', directMatches === 0);
                     if (visibleCards > 0) visibleSectionCount++;
                     if (countEl) {
-                        countEl.textContent = directMatches > 0 ? `${directMatches} match${directMatches !== 1 ? 'es' : ''}` : '0';
+                        countEl.textContent = directMatches > 0
+                            ? tCount(directMatches, 'settingsSearchSectionMatchesTpl', '{count} match', '{count} matches')
+                            : '0';
                         countEl.style.color = directMatches > 0 ? '#ffb19a' : '';
                     }
                 }
@@ -4756,7 +4765,7 @@ function attachUIEventListeners() {
                         // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
-                            : 'Some settings need host access. Try again and approve the browser prompt.';
+                            : t('settingsHostAccessNeededAll', 'Some settings need host access. Try again and approve the browser prompt.');
                         showToast(message, '#ef4444', { duration: 6 });
                         setPanelStatus(message, 'error');
                         DebugManager.log('Permissions', `Enable-all blocked: ${error?.message || 'host access denied'}`);

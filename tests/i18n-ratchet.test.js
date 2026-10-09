@@ -215,7 +215,9 @@ test('Comment Search keeps its rendered copy localized in every shipped locale',
     const localesRoot = path.join(repoRoot, 'extension', '_locales');
     const en = JSON.parse(fs.readFileSync(path.join(localesRoot, 'en', 'messages.json'), 'utf8'));
     const keys = Object.keys(en).filter((key) => key.startsWith('commentSearch'));
-    assert.equal(keys.length, 22, 'the complete Comment Search state model needs 22 locale keys');
+    // 25 since 2026-10-09: the match, thread and threads-ready status lines
+    // were template literals the gate couldn't see.
+    assert.equal(keys.length, 25, 'the complete Comment Search state model needs 25 locale keys');
     const locales = fs.readdirSync(localesRoot, { withFileTypes: true })
         .filter((entry) => entry.isDirectory() && entry.name !== 'en')
         .map((entry) => entry.name);

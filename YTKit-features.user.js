@@ -2794,15 +2794,18 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 						? deno.runtime.charAt(0).toUpperCase() + deno.runtime.slice(1)
 						: 'JavaScript';
 					const tone = supported ? 'ok' : 'warn';
+					const version = deno.version ? `v${deno.version}` : '';
 					const label = !deno.installed
-						? 'missing'
+						? t('dlHealthRuntimeMissing', 'missing')
 						: !supported
-							? `${deno.version ? `v${deno.version}` : 'unverified'} · repair`
-							: (deno.version ? `v${deno.version}` : 'ready');
-					const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
-					const pill = this._renderPill(runtimeName, label + suffix, tone);
+							? t('dlHealthRuntimeRepairTpl', '{version} · repair').replace('{version}', () => version || t('dlHealthRuntimeUnverified', 'unverified'))
+							: (version || t('dlHealthRuntimeReady', 'ready'));
+					const pillValue = deno.source === 'bundled'
+						? t('dlHealthRuntimeBundledTpl', '{status} (bundled)').replace('{status}', () => label)
+						: label;
+					const pill = this._renderPill(runtimeName, pillValue, tone);
 					if (!supported) {
-						pill.title = deno.advice || `Repair the configured ${runtimeName} runtime`;
+						pill.title = deno.advice || t('dlHealthRuntimeRepairTitleTpl', 'Repair the configured {runtime} runtime').replace('{runtime}', () => runtimeName);
 						if (deno.canProvisionDeno) {
 							pill.style.cursor = 'pointer';
 							pill.addEventListener('click', async () => {
@@ -8362,7 +8365,11 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 	const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
 	const LOCKUP_LABELLED_TEXT_SELECTOR = '.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]';
 	const INPUT_HEALTH_MIN_CARDS = 12;
-	const INPUT_HEALTH_NAMES = Object.freeze({ views: 'view counts', ages: 'upload ages', durations: 'durations' });
+	const INPUT_HEALTH_NAMES = Object.freeze({
+		views: ['videoHiderInputViews', 'view counts'],
+		ages: ['videoHiderInputAges', 'upload ages'],
+		durations: ['videoHiderInputDurations', 'durations']
+	});
 	function filterListError(code, message) {
 		const error = new Error(message);
 		error.code = code;
@@ -10152,14 +10159,19 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const unreadable = needed
 					.filter(input => (state.seen[input] || 0) >= INPUT_HEALTH_MIN_CARDS && !state.read[input]);
 				if (unreadable.length) {
-					const names = unreadable.map(input => INPUT_HEALTH_NAMES[input]);
-					const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
+					const names = unreadable.map(input => t(...INPUT_HEALTH_NAMES[input]));
+					const fill = (template) => template.replace('{first}', () => names[0])
+						.replace('{second}', () => names[1] || '').replace('{third}', () => names[2] || '');
+					const list = names.length > 2 ? fill(t('videoHiderInputTrioTpl', '{first}, {second} or {third}'))
+						: names.length > 1 ? fill(t('videoHiderInputPairTpl', '{first} or {second}'))
+							: names[0];
 					this._inputHealthDegraded = true;
 					setFeatureHealth(this.id, {
 						status: 'degraded',
 						source: 'video-hider-inputs',
 						initialized: true,
-						lastError: `Can't read ${list} on this page's cards, so the filters that need them aren't hiding anything.`
+						lastError: t('videoHiderInputsUnreadableTpl', "Can't read {inputs} on this page's cards, so the filters that need them aren't hiding anything.")
+							.replace('{inputs}', () => list)
 					});
 				} else if (this._inputHealthDegraded) {
 					this._inputHealthDegraded = false;
@@ -16102,6 +16114,9 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 				: value => String(value ?? '')
 					.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
 					.replace(/-/g, '\\x2d');
+		const tCount = (count, key, one, other) => (
+			Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other)
+		).replace('{count}', () => String(count));
 		function describeHealthBadgeCopy(badgeLabel, subject, error) {
 			const compose = globalThis.YTKitCore?.describeFailureBadge;
 			if (typeof compose === 'function') return compose(badgeLabel, subject, error, t);
@@ -16949,7 +16964,6 @@ function buildSettingsPanel() {
 		content.appendChild(searchState);
 		function buildVideoHiderPane(config) {
 			const videoHiderFeature = getFeatureById('hideVideosFromHome');
-			const countLabel = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
 			const pane = document.createElement('section');
 			pane.id = 'ytkit-pane-Video-Hider';
 			pane.className = 'ytkit-pane ytkit-vh-pane';
@@ -17488,9 +17502,9 @@ function buildSettingsPanel() {
 						const grid = document.createElement('div');
 						grid.className = 'ytkit-vh-grid';
 						tabContent.appendChild(createVideoHiderLead(
-							'Restore & Review',
-							`${countLabel(videos.length, 'Hidden Video')} Ready to Review`,
-							'Restore one item at a time, remove an entry from the list without creating an exception, or reset the whole list if you want YouTube recommendations to start fresh again.'
+							t('videoHiderReviewEyebrow', 'Restore & Review'),
+							tCount(videos.length, 'videoHiderHiddenReadyTpl', '{count} Hidden Video Ready to Review', '{count} Hidden Videos Ready to Review'),
+							t('videoHiderReviewCopy', 'Restore one item at a time, remove an entry from the list without creating an exception, or reset the whole list if you want YouTube recommendations to start fresh again.')
 						));
 						tabContent.appendChild(createHiddenEntryForm());
 						videos.forEach(vid => {
@@ -17697,9 +17711,9 @@ function buildSettingsPanel() {
 						const grid = document.createElement('div');
 						grid.className = 'ytkit-vh-grid';
 						tabContent.appendChild(createVideoHiderLead(
-							'Manual Exceptions',
-							`${countLabel(allowed.length, 'Allowed Video')} Protected From Filters`,
-							'Remove an exception to let automatic rules evaluate the video again, or hide it again to move it back to the hidden list.'
+							t('videoHiderExceptionsEyebrow', 'Manual Exceptions'),
+							tCount(allowed.length, 'videoHiderAllowedProtectedTpl', '{count} Allowed Video Protected From Filters', '{count} Allowed Videos Protected From Filters'),
+							t('videoHiderExceptionsCopy', 'Remove an exception to let automatic rules evaluate the video again, or hide it again to move it back to the hidden list.')
 						));
 						tabContent.appendChild(createAllowedEntryForm());
 						allowed.forEach(vid => {
@@ -17843,7 +17857,9 @@ function buildSettingsPanel() {
 						list.className = 'ytkit-vh-stack';
 						tabContent.appendChild(createVideoHiderLead(
 							allowlist ? t('videoHiderChannelAllowlistEyebrow', 'Allowlist') : t('videoHiderChannelBlocklistEyebrow', 'Blocklist'),
-							t('videoHiderChannelListCount', '{count} in Your List').replace('{count}', countLabel(channels.length, allowlist ? t('videoHiderAllowedChannelSingular', 'Allowed Channel') : t('videoHiderBlockedChannelSingular', 'Blocked Channel'))),
+							t('videoHiderChannelListCount', '{count} in Your List').replace('{count}', () => (allowlist
+								? tCount(channels.length, 'videoHiderAllowedChannelCountTpl', '{count} Allowed Channel', '{count} Allowed Channels')
+								: tCount(channels.length, 'videoHiderBlockedChannelCountTpl', '{count} Blocked Channel', '{count} Blocked Channels'))),
 							allowlist
 								? t('videoHiderChannelAllowlistCopy', 'Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
 								: t('videoHiderChannelBlocklistCopy', 'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
@@ -19796,7 +19812,9 @@ function attachUIEventListeners() {
 					btn.classList.toggle('ytkit-search-empty-nav', directMatches === 0);
 					if (visibleCards > 0) visibleSectionCount++;
 					if (countEl) {
-						countEl.textContent = directMatches > 0 ? `${directMatches} match${directMatches !== 1 ? 'es' : ''}` : '0';
+						countEl.textContent = directMatches > 0
+							? tCount(directMatches, 'settingsSearchSectionMatchesTpl', '{count} match', '{count} matches')
+							: '0';
 						countEl.style.color = directMatches > 0 ? '#ffb19a' : '';
 					}
 				}
@@ -20007,7 +20025,7 @@ function attachUIEventListeners() {
 						if (deniedSwitch) deniedSwitch.classList.remove('active');
 						const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
 							? error.message
-							: 'Some settings need host access. Try again and approve the browser prompt.';
+							: t('settingsHostAccessNeededAll', 'Some settings need host access. Try again and approve the browser prompt.');
 						showToast(message, '#ef4444', { duration: 6 });
 						setPanelStatus(message, 'error');
 						DebugManager.log('Permissions', `Enable-all blocked: ${error?.message || 'host access denied'}`);

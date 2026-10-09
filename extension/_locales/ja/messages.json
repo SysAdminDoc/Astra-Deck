@@ -7986,9 +7986,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8044,9 +8041,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9456,5 +9450,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "設定パネルを読み込めませんでした。ページを再読み込みしてもう一度お試しください。"
+  },
+  "quickLinksRemovedTpl": {
+    "message": "「{name}」を削除しました"
+  },
+  "quickLinksAddedTpl": {
+    "message": "「{name}」を追加しました"
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "上限に達しました（{count}/{max}）。新しく追加するには上の項目を削除してください。"
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "/feed/history のようなパス、または完全な https:// URL を入力してください。（{count}/{max} 使用中）"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "クイックリンクの上限（{max}）に達しました。新しく追加するには 1 つ削除してください。"
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "スリープタイマーを {count} 分に設定しました。"
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "スリープタイマーを {count} 分に設定しました。"
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "スリープタイマーを {count} 分延長しました。"
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "スリープタイマーを {count} 分延長しました。"
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "スリープタイマーを {count} 分に設定"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "スリープタイマーを {count} 分に設定"
+  },
+  "watchTimeStatsTpl": {
+    "message": "今日: {today} | 今週: {week} | 合計: {total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "スキップしました:「{title}」"
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{visible} / {total}"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "{count} 件"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "{count} 件"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "一致 {current} / {total}"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "スレッド {current} / {total}"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "{total} 件中 {visible} 件のスレッドを表示可能"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "プロファイルを保存しました: {name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "プロファイルが見つかりません: {name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "プロファイルを適用しました: {name}。再読み込みしています…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "プロファイルを削除しました: {name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "{count} 件のプロファイルを読み込みました"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "{count} 件のプロファイルを読み込みました"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "{count} 件のチャプターを Markdown でコピーしました"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "{count} 件のチャプターを Markdown でコピーしました"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "AI 吹き替えトラック"
+  },
+  "autoDubbedToastTpl": {
+    "message": "音声: YouTube が {track} を選択しました。必要ならプレーヤーの設定でオリジナルに切り替えてください。"
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "音声トラックは {track} です。オリジナルのトラックはプレーヤーの設定で選べる場合があります。"
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "オリジナル"
+  },
+  "deArrowModeOff": {
+    "message": "オフ"
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow: {mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "クリックするとこのチャンネルの DeArrow モードを切り替えます（DeArrow / オリジナル / オフ）"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "このチャンネルの DeArrow を「{mode}」に設定しました。"
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "{count}/{max} 件を待機中（動画ごとに再取得は 1 回）"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "取得中 {current}/{total}（動画ごとに再取得は 1 回）"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "現在の動画はまだインデックス作成中です。"
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "「{query}」に一致する文字起こしはありません。"
+  },
+  "protocolHandoffToastTpl": {
+    "message": "{player} に渡しました。何も開かない場合は、先に OS でハンドラーを登録してください。"
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "{count} 件オン"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "ショートカット {count} 件"
+  },
+  "pageModalAppliesLive": {
+    "message": "すぐに反映"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "読み込みを元に戻せませんでした。"
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "ファイル形式が正しくありません。"
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "ファイルに既知の設定がありません。"
+  },
+  "statusSettingsImportNothing": {
+    "message": "読み込める設定やローカルデータがありません。"
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "確認と復元"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "確認できる非表示の動画: {count} 本"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "確認できる非表示の動画: {count} 本"
+  },
+  "videoHiderReviewCopy": {
+    "message": "1 件ずつ復元したり、例外を作らずにリストから削除したりできます。YouTube のおすすめを最初からやり直したいときはリスト全体をリセットしてください。"
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "手動の例外"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "フィルターから保護された許可済み動画: {count} 本"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "フィルターから保護された許可済み動画: {count} 本"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "例外を削除すると自動ルールが動画を再び判定します。もう一度非表示にすると非表示リストに戻ります。"
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "許可したチャンネル {count} 件"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "許可したチャンネル {count} 件"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "ブロックしたチャンネル {count} 件"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "ブロックしたチャンネル {count} 件"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "{count} 件一致"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "{count} 件一致"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "一部の設定にはサイトへのアクセス許可が必要です。もう一度試して、ブラウザーの確認を承認してください。"
+  },
+  "videoHiderInputViews": {
+    "message": "再生回数"
+  },
+  "videoHiderInputAges": {
+    "message": "アップロードからの経過時間"
+  },
+  "videoHiderInputDurations": {
+    "message": "動画の長さ"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first}または{second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first}、{second}、または{third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "このページのカードから{inputs}を読み取れないため、それを使うフィルターは何も非表示にしていません。"
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "未インストール"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "未確認"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "準備完了"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · 修復"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status}（同梱）"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "設定済みの {runtime} ランタイムを修復"
   }
 }

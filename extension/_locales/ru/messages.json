@@ -7986,9 +7986,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8044,9 +8041,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9456,5 +9450,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "Панель настроек не загрузилась. Перезагрузите страницу и попробуйте снова."
+  },
+  "quickLinksRemovedTpl": {
+    "message": "«{name}» удалено"
+  },
+  "quickLinksAddedTpl": {
+    "message": "«{name}» добавлено"
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "Достигнут предел ({count}/{max}). Удалите запись выше, чтобы добавить новую."
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "Укажите путь вроде /feed/history или полный адрес https://. (Занято {count}/{max})"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "Достигнут предел быстрых ссылок ({max}). Удалите одну, чтобы добавить новую."
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "Таймер сна установлен на {count} минуту."
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "Таймер сна установлен на {count} мин."
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "Таймер сна продлён на {count} минуту."
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "Таймер сна продлён на {count} мин."
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "Установить таймер сна на {count} минуту"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "Установить таймер сна на {count} мин."
+  },
+  "watchTimeStatsTpl": {
+    "message": "Сегодня: {today} | За неделю: {week} | Всего: {total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "Пропущено: «{title}»"
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{visible} из {total}"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "{count} элемент"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "Элементов: {count}"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "Совпадение {current} из {total}"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "Ветка {current} из {total}"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "Готово веток: {visible} из {total}"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "Профиль сохранён: {name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "Профиль не найден: {name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "Профиль применён: {name}. Перезагрузка…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "Профиль удалён: {name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "Импортирован профиль: {count}"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "Импортировано профилей: {count}"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "Скопирована глава в Markdown: {count}"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "Скопировано глав в Markdown: {count}"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "дорожку с ИИ-дубляжом"
+  },
+  "autoDubbedToastTpl": {
+    "message": "Звук: YouTube выбрал {track}. При желании переключитесь на оригинал в настройках плеера."
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "Звуковая дорожка: {track}. Оригинальная может быть доступна в настройках плеера."
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "Оригинал"
+  },
+  "deArrowModeOff": {
+    "message": "Выкл."
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow: {mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "Нажмите, чтобы сменить режим DeArrow для этого канала (DeArrow / Оригинал / Выкл.)"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "Для этого канала DeArrow теперь в режиме «{mode}»."
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "В очереди {count}/{max}, одна повторная попытка на видео"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "Загрузка {current}/{total}, одна повторная попытка на видео"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "Текущее видео ещё индексируется."
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "Нет расшифровок по запросу «{query}»."
+  },
+  "protocolHandoffToastTpl": {
+    "message": "Передано в {player}. Если ничего не открылось, сначала зарегистрируйте обработчик в системе."
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "Включено: {count}"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "Ярлыков: {count}"
+  },
+  "pageModalAppliesLive": {
+    "message": "Применяется сразу"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "Не удалось отменить импорт."
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "Неверный формат файла."
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "В файле нет известных настроек."
+  },
+  "statusSettingsImportNothing": {
+    "message": "Нет настроек или локальных данных для импорта."
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "Просмотр и восстановление"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "Скрытых видео для просмотра: {count}"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "Скрытых видео для просмотра: {count}"
+  },
+  "videoHiderReviewCopy": {
+    "message": "Восстанавливайте записи по одной, удаляйте запись из списка без создания исключения или сбросьте весь список, если хотите, чтобы рекомендации YouTube начались заново."
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "Ручные исключения"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "Разрешённых видео, защищённых от фильтров: {count}"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "Разрешённых видео, защищённых от фильтров: {count}"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "Удалите исключение, чтобы автоматические правила снова проверяли видео, или скройте его снова, чтобы вернуть в список скрытых."
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "Разрешённых каналов: {count}"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "Разрешённых каналов: {count}"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "Заблокированных каналов: {count}"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "Заблокированных каналов: {count}"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "Совпадений: {count}"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "Совпадений: {count}"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "Некоторым настройкам нужен доступ к сайтам. Повторите попытку и подтвердите запрос браузера."
+  },
+  "videoHiderInputViews": {
+    "message": "число просмотров"
+  },
+  "videoHiderInputAges": {
+    "message": "давность загрузки"
+  },
+  "videoHiderInputDurations": {
+    "message": "длительность"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first} или {second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first}, {second} или {third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "На карточках этой страницы не удаётся прочитать {inputs}, поэтому фильтры, которым это нужно, ничего не скрывают."
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "не установлен"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "не проверен"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "готов"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · исправить"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status} (встроенный)"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "Исправить настроенную среду {runtime}"
   }
 }

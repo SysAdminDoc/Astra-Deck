@@ -4,28 +4,18 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Requested
 
-- [ ] P3 — English UI strings the 2026-10-06 sweep found outside the copy gate's sinks
-  Why: re-running the template-literal sweep for the "built outside the sinks" item turned up
-  more English UI copy than that item listed, all English in every locale. In `extension/ytkit.js`:
-  Quick Links' add/remove/limit toasts, the sleep timer's set/extend toasts and its menu label,
-  the watch-time stats line ("Today: … | This week: …"), the channel-skip "Skipped:" toast, the
-  Watch Feed "N of M" / "N items" counters, the comment search "Match N of M" / "Thread N of M"
-  lines, the settings profile saved/not-found/imported toasts (with "profile(s)"), the AI
-  summary citation counts ("invented citation(s)"), the audio-track notices, the DeArrow
-  per-channel override toast, the transcript batch progress and "No transcripts matched", the
-  protocol handoff note, the panel's reset/undo and "needs host access" toasts, and the
-  "saved" toasts for text and range settings. Elsewhere: `features/settings-panel/index.js`
-  ("Hidden Video … Ready to Review" through an English `countLabel`), `features/video-hider`
-  (the "Can't read … on this page's cards" notice), `features/download-ui` (the runtime repair
-  label and both Cobalt fallback notices), `core/date-time.js` (the relative-time fallback) and
-  `core/external-api-health.js` ("cache is … old"). Each is a template literal assigned to a
-  variable or returned before it reaches a sink, so the gate can't see it.
-  Where: the files above, `extension/_locales/*/messages.json`. The sweep: an acorn walk over
-  TemplateLiteral nodes with English words in their static text, minus logs, errors, AI prompt
-  bodies, file names and selectors.
-  Acceptance: WHEN the UI locale is not English, each string above SHALL render from catalogue
-  keys present in all 11 locales, with counts through `tCount`.
-  Complexity: M
+- [ ] P3 — About 900 catalogue keys per locale are still English placeholders
+  Why: `docs/i18n-coverage.md` shows 27.5–28.4% "placeholder identical" in every non-English
+  locale (2026-10-09: 830 keys are English in all ten). Some are whole features: Watch Feed's
+  name is still the retired "Persistent Queue" everywhere, and 19 `watchFeed*` keys plus
+  `blockedWatch*`, `bulk*` and `aiSummary*` copy are untranslated. A user who picks German sees
+  those surfaces in English.
+  Where: `extension/_locales/*/messages.json`; `node scripts/i18n-coverage.js` lists them, and
+  `scripts/export-i18n-proofing.js` exports a proofing sheet.
+  Acceptance: placeholder-identical under 5% in every locale, starting with whole surfaces
+  (Watch Feed, the blocked-channel watch page, bulk actions), with the coverage report and
+  placeholder baseline regenerated.
+  Complexity: L
 
 - [ ] P3 — Live-check the channel landing tab after an in-app move
   Why: 2026-10-09 shipped the fix code-only (no browser runs without the owner's word). The

@@ -32,6 +32,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The popup's Settings Overview headed each group with an internal name like "playback-audio" or "a11y-perf", in every language. Each group now has a translated name, and searching for that name finds its settings. The side panel showed half-English names for eight of the same groups ("A11y Perf", "Quality Codec"), and those are translated now too.
 
+- About 45 messages showed in English whatever language you picked, because they were put together in code before reaching the screen. They're translated in all 11 languages now: Quick Links' added, removed and limit messages, the sleep timer's spoken updates and preset labels, the watch-time stats line, the chapter "Skipped" toast, Watch Feed and comment search counters, settings profile messages, the dubbed-audio notice, the DeArrow channel chip, transcript batch progress and search, the VLC/MPV handoff note, the page menu's counts, settings import errors, Video Hider's review and exception headers, and the downloader's runtime status. Counts also read as proper plurals instead of "profile(s)" or a translated word with an English "s" stuck on.
+
 - Turning on **Video Loop Button** showed nothing while **Astra Player Dock** was on, because the dock hides the player's other buttons. Its settings card now says so and points to the dock's own Repeat button, which does the same thing. With the dock off, the loop button works as before.
 
 ## [4.97.0] (2026-10-07)

@@ -7986,9 +7986,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8044,9 +8041,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9456,5 +9450,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "لم يتم تحميل لوحة الإعدادات. أعد تحميل الصفحة للمحاولة مرة أخرى."
+  },
+  "quickLinksRemovedTpl": {
+    "message": "تمت إزالة \"{name}\""
+  },
+  "quickLinksAddedTpl": {
+    "message": "تمت إضافة \"{name}\""
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "تم بلوغ الحد ({count}/{max}). أزل إدخالاً من الأعلى لإضافة إدخال جديد."
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "استخدم مسارًا مثل /feed/history أو عنوان https:// كاملاً. (المستخدم {count}/{max})"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "تم بلوغ حد الروابط السريعة ({max}). أزل رابطًا لإضافة رابط جديد."
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "تم ضبط مؤقت النوم على {count} دقيقة."
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "تم ضبط مؤقت النوم على {count} دقائق."
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "تم تمديد مؤقت النوم {count} دقيقة."
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "تم تمديد مؤقت النوم {count} دقائق."
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "ضبط مؤقت النوم على {count} دقيقة"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "ضبط مؤقت النوم على {count} دقائق"
+  },
+  "watchTimeStatsTpl": {
+    "message": "اليوم: {today} | هذا الأسبوع: {week} | الإجمالي: {total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "تم التخطي: \"{title}\""
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{visible} من {total}"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "عنصر واحد ({count})"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "{count} عناصر"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "التطابق {current} من {total}"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "السلسلة {current} من {total}"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "{visible} من {total} سلاسل جاهزة"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "تم حفظ الملف: {name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "لم يُعثر على الملف: {name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "تم تطبيق الملف: {name}. جارٍ إعادة التحميل…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "تم حذف الملف: {name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "تم استيراد ملف واحد ({count})"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "تم استيراد {count} ملفات"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "تم نسخ فصل واحد ({count}) بتنسيق Markdown"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "تم نسخ {count} فصول بتنسيق Markdown"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "مسارًا مدبلجًا بالذكاء الاصطناعي"
+  },
+  "autoDubbedToastTpl": {
+    "message": "الصوت: اختار YouTube {track}. إن أردت، بدّل إلى الأصلي من إعدادات المشغّل."
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "المسار الصوتي هو {track}، وقد يتوفر المسار الأصلي في إعدادات المشغّل."
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "الأصلي"
+  },
+  "deArrowModeOff": {
+    "message": "متوقف"
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow: {mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "انقر لتبديل وضع DeArrow لهذه القناة (DeArrow / الأصلي / متوقف)"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "تم ضبط DeArrow على \"{mode}\" لهذه القناة."
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "{count}/{max} في قائمة الانتظار، محاولة استرداد واحدة لكل فيديو"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "جارٍ الجلب {current}/{total}، محاولة استرداد واحدة لكل فيديو"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "لا يزال الفيديو الحالي قيد الفهرسة."
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "لا توجد نصوص مطابقة لـ \"{query}\"."
+  },
+  "protocolHandoffToastTpl": {
+    "message": "تم التسليم إلى {player}. إن لم يُفتح شيء، سجّل المعالج في نظام التشغيل أولاً."
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "المفعّلة: {count}"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "الاختصارات: {count}"
+  },
+  "pageModalAppliesLive": {
+    "message": "يُطبَّق فورًا"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "تعذّر التراجع عن الاستيراد."
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "تنسيق الملف غير صالح."
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "لا توجد إعدادات معروفة في الملف."
+  },
+  "statusSettingsImportNothing": {
+    "message": "لا توجد إعدادات أو بيانات محلية قابلة للاستيراد."
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "المراجعة والاستعادة"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "فيديو مخفي واحد ({count}) جاهز للمراجعة"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "{count} فيديوهات مخفية جاهزة للمراجعة"
+  },
+  "videoHiderReviewCopy": {
+    "message": "استعد العناصر واحدًا تلو الآخر، أو أزل إدخالاً من القائمة دون إنشاء استثناء، أو أعد ضبط القائمة كلها إن أردت أن تبدأ توصيات YouTube من جديد."
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "الاستثناءات اليدوية"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "فيديو مسموح واحد ({count}) محمي من الفلاتر"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "{count} فيديوهات مسموحة محمية من الفلاتر"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "أزل الاستثناء لتعيد القواعد التلقائية تقييم الفيديو، أو أخفه مجددًا لإعادته إلى قائمة المخفية."
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "قناة مسموحة واحدة ({count})"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "{count} قنوات مسموحة"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "قناة محظورة واحدة ({count})"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "{count} قنوات محظورة"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "تطابق واحد ({count})"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "{count} تطابقات"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "تحتاج بعض الإعدادات إلى إذن الوصول إلى المواقع. أعد المحاولة ووافق على طلب المتصفح."
+  },
+  "videoHiderInputViews": {
+    "message": "عدد المشاهدات"
+  },
+  "videoHiderInputAges": {
+    "message": "عمر الرفع"
+  },
+  "videoHiderInputDurations": {
+    "message": "المدة"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first} أو {second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first} أو {second} أو {third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "تعذّرت قراءة {inputs} في بطاقات هذه الصفحة، لذا لا تُخفي الفلاتر التي تحتاجها أي شيء."
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "غير مثبّت"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "غير متحقق منه"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "جاهز"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · إصلاح"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status} (مضمّن)"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "إصلاح بيئة تشغيل {runtime} المضبوطة"
   }
 }

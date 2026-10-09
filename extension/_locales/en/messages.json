@@ -8045,9 +8045,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8103,9 +8100,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9517,5 +9511,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "The settings panel didn't load. Reload the page to try again."
+  },
+  "quickLinksRemovedTpl": {
+    "message": "Removed \"{name}\""
+  },
+  "quickLinksAddedTpl": {
+    "message": "Added \"{name}\""
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "Limit reached ({count}/{max}). Remove an entry above to add a new one."
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "Use a site path like /feed/history or a full https:// URL. ({count}/{max} used)"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "Quick Links limit reached ({max}). Remove one to add a new entry."
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "Sleep timer set for {count} minute."
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "Sleep timer set for {count} minutes."
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "Sleep timer extended by {count} minute."
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "Sleep timer extended by {count} minutes."
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "Set sleep timer for {count} minute"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "Set sleep timer for {count} minutes"
+  },
+  "watchTimeStatsTpl": {
+    "message": "Today: {today} | This week: {week} | All time: {total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "Skipped: \"{title}\""
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{visible} of {total}"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "{count} item"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "{count} items"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "Match {current} of {total}"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "Thread {current} of {total}"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "{visible} of {total} threads ready"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "Profile saved: {name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "Profile not found: {name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "Applied profile: {name}. Reloading…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "Profile deleted: {name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "Imported {count} profile"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "Imported {count} profiles"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "{count} chapter copied as Markdown"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "{count} chapters copied as Markdown"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "an AI-dubbed track"
+  },
+  "autoDubbedToastTpl": {
+    "message": "Audio: YouTube selected {track}. Switch to Original in the player settings if preferred."
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "Audio track is {track}; the original track may be available in the player settings."
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "Original"
+  },
+  "deArrowModeOff": {
+    "message": "Off"
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow: {mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "Click to cycle DeArrow mode for this channel (DeArrow / Original / Off)"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "DeArrow override set to \"{mode}\" for this channel."
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "{count}/{max} queued; one recovery pass per video"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "Fetching {current}/{total}; one recovery pass per video"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "The current video is still being indexed."
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "No transcripts matched \"{query}\"."
+  },
+  "protocolHandoffToastTpl": {
+    "message": "{player} handoff fired. If nothing opened, register the handler on your OS first."
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "{count} Enabled"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "{count} Shortcuts"
+  },
+  "pageModalAppliesLive": {
+    "message": "Applies Live"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "Import undo failed."
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "Invalid file format."
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "No known settings found in file."
+  },
+  "statusSettingsImportNothing": {
+    "message": "No importable settings or local data found."
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "Restore & Review"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "{count} Hidden Video Ready to Review"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "{count} Hidden Videos Ready to Review"
+  },
+  "videoHiderReviewCopy": {
+    "message": "Restore one item at a time, remove an entry from the list without creating an exception, or reset the whole list if you want YouTube recommendations to start fresh again."
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "Manual Exceptions"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "{count} Allowed Video Protected From Filters"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "{count} Allowed Videos Protected From Filters"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "Remove an exception to let automatic rules evaluate the video again, or hide it again to move it back to the hidden list."
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "{count} Allowed Channel"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "{count} Allowed Channels"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "{count} Blocked Channel"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "{count} Blocked Channels"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "{count} match"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "{count} matches"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "Some settings need host access. Try again and approve the browser prompt."
+  },
+  "videoHiderInputViews": {
+    "message": "view counts"
+  },
+  "videoHiderInputAges": {
+    "message": "upload ages"
+  },
+  "videoHiderInputDurations": {
+    "message": "durations"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first} or {second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first}, {second} or {third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "Can't read {inputs} on this page's cards, so the filters that need them aren't hiding anything."
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "missing"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "unverified"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "ready"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · repair"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status} (bundled)"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "Repair the configured {runtime} runtime"
   }
 }

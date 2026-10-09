@@ -12136,8 +12136,8 @@ test('v4.47.0 — Quick Links menu caps at 10 slots (10-slot parity)', () => {
         'validateForm must compute atCap from the current parsed-items count');
     assert.match(block, /addBtn\.disabled = !name \|\| !url \|\| !isValidUrl \|\| atCap/,
         'validateForm must disable the Add button when atCap is true');
-    assert.match(block, /Limit reached \(\$\{currentCount\}\/\$\{self\._QL_MAX_ITEMS\}\)/,
-        'validateForm must surface a "Limit reached (N/MAX)" message when atCap');
+    assert.match(block, /t\('quickLinksLimitNoteTpl', 'Limit reached \(\{count\}\/\{max\}\)[^']*'\)\s*\.replace\('\{count\}', \(\) => String\(currentCount\)\)\.replace\('\{max\}', \(\) => String\(self\._QL_MAX_ITEMS\)\)/,
+        'validateForm must surface a localized "Limit reached (N/MAX)" message when atCap');
 
     // 4. addBtn.onclick has a defensive re-check at click time —
     // handles the race between two rapid clicks that both passed
@@ -12145,8 +12145,8 @@ test('v4.47.0 — Quick Links menu caps at 10 slots (10-slot parity)', () => {
     // the user at the remove-to-add path.
     assert.match(block, /if \(self\._parseItems\(\)\.length >= self\._QL_MAX_ITEMS\)/,
         'addBtn.onclick must re-check the cap at click time (defensive against rapid double-click)');
-    assert.match(block, /Quick Links limit reached \(\$\{self\._QL_MAX_ITEMS\}\)/,
-        'addBtn.onclick must surface a toast on the cap-race path');
+    assert.match(block, /t\('quickLinksLimitToastTpl', 'Quick Links limit reached \(\{max\}\)[^']*'\)\.replace\('\{max\}', \(\) => String\(self\._QL_MAX_ITEMS\)\)/,
+        'addBtn.onclick must surface a localized toast on the cap-race path');
 });
 
 test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup button round-trips through MediaDLManager', () => {

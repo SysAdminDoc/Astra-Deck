@@ -3434,15 +3434,18 @@
                         ? deno.runtime.charAt(0).toUpperCase() + deno.runtime.slice(1)
                         : 'JavaScript';
                     const tone = supported ? 'ok' : 'warn';
+                    const version = deno.version ? `v${deno.version}` : '';
                     const label = !deno.installed
-                        ? 'missing'
+                        ? t('dlHealthRuntimeMissing', 'missing')
                         : !supported
-                            ? `${deno.version ? `v${deno.version}` : 'unverified'} · repair`
-                            : (deno.version ? `v${deno.version}` : 'ready');
-                    const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
-                    const pill = this._renderPill(runtimeName, label + suffix, tone);
+                            ? t('dlHealthRuntimeRepairTpl', '{version} · repair').replace('{version}', () => version || t('dlHealthRuntimeUnverified', 'unverified'))
+                            : (version || t('dlHealthRuntimeReady', 'ready'));
+                    const pillValue = deno.source === 'bundled'
+                        ? t('dlHealthRuntimeBundledTpl', '{status} (bundled)').replace('{status}', () => label)
+                        : label;
+                    const pill = this._renderPill(runtimeName, pillValue, tone);
                     if (!supported) {
-                        pill.title = deno.advice || `Repair the configured ${runtimeName} runtime`;
+                        pill.title = deno.advice || t('dlHealthRuntimeRepairTitleTpl', 'Repair the configured {runtime} runtime').replace('{runtime}', () => runtimeName);
                         if (deno.canProvisionDeno) {
                             pill.style.cursor = 'pointer';
                             pill.addEventListener('click', async () => {

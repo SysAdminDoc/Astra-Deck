@@ -10927,6 +10927,10 @@ __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, c
 		try {
 			return new Intl.RelativeTimeFormat(options.locale, { numeric: 'auto' }).format(amount, unit);
 		} catch (_) {
+		}
+		try {
+			return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(amount, unit);
+		} catch (_) {
 			const magnitude = Math.abs(amount);
 			const label = `${unit}${magnitude === 1 ? '' : 's'}`;
 			return amount > 0 ? `in ${magnitude} ${label}` : `${magnitude} ${label} ago`;

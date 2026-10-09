@@ -7986,9 +7986,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8044,9 +8041,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9456,5 +9450,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "Il pannello delle impostazioni non è stato caricato. Ricarica la pagina per riprovare."
+  },
+  "quickLinksRemovedTpl": {
+    "message": "«{name}» rimosso"
+  },
+  "quickLinksAddedTpl": {
+    "message": "«{name}» aggiunto"
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "Limite raggiunto ({count}/{max}). Rimuovi una voce qui sopra per aggiungerne una nuova."
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "Usa un percorso come /feed/history o un URL https:// completo. ({count}/{max} usati)"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "Limite dei Link rapidi raggiunto ({max}). Rimuovine uno per aggiungerne uno nuovo."
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "Timer di spegnimento impostato su {count} minuto."
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "Timer di spegnimento impostato su {count} minuti."
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "Timer di spegnimento prolungato di {count} minuto."
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "Timer di spegnimento prolungato di {count} minuti."
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "Imposta il timer di spegnimento su {count} minuto"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "Imposta il timer di spegnimento su {count} minuti"
+  },
+  "watchTimeStatsTpl": {
+    "message": "Oggi: {today} | Questa settimana: {week} | In totale: {total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "Saltato: «{title}»"
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{visible} di {total}"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "{count} elemento"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "{count} elementi"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "Risultato {current} di {total}"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "Thread {current} di {total}"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "{visible} thread pronti su {total}"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "Profilo salvato: {name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "Profilo non trovato: {name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "Profilo applicato: {name}. Ricaricamento…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "Profilo eliminato: {name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "{count} profilo importato"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "{count} profili importati"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "{count} capitolo copiato come Markdown"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "{count} capitoli copiati come Markdown"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "una traccia doppiata con l’IA"
+  },
+  "autoDubbedToastTpl": {
+    "message": "Audio: YouTube ha scelto {track}. Se preferisci, passa a Originale nelle impostazioni del player."
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "La traccia audio è {track}. Quella originale potrebbe essere disponibile nelle impostazioni del player."
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "Originale"
+  },
+  "deArrowModeOff": {
+    "message": "Disattivato"
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow: {mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "Fai clic per cambiare la modalità DeArrow per questo canale (DeArrow / Originale / Disattivato)"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "DeArrow è ora impostato su «{mode}» per questo canale."
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "{count}/{max} in coda, un tentativo di recupero per video"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "Recupero {current}/{total}, un tentativo di recupero per video"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "Il video attuale è ancora in fase di indicizzazione."
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "Nessuna trascrizione corrisponde a «{query}»."
+  },
+  "protocolHandoffToastTpl": {
+    "message": "Inviato a {player}. Se non si è aperto nulla, registra prima il gestore nel sistema operativo."
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "{count} attive"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "{count} scorciatoie"
+  },
+  "pageModalAppliesLive": {
+    "message": "Si applica subito"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "Impossibile annullare l’importazione."
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "Formato del file non valido."
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "Nel file non ci sono impostazioni riconosciute."
+  },
+  "statusSettingsImportNothing": {
+    "message": "Nessuna impostazione o dato locale da importare."
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "Rivedi e ripristina"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "{count} video nascosto da rivedere"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "{count} video nascosti da rivedere"
+  },
+  "videoHiderReviewCopy": {
+    "message": "Ripristina un elemento alla volta, togli una voce dall’elenco senza creare un’eccezione oppure azzera l’intero elenco se vuoi che i consigli di YouTube ripartano da capo."
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "Eccezioni manuali"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "{count} video consentito protetto dai filtri"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "{count} video consentiti protetti dai filtri"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "Togli un’eccezione per far valutare di nuovo il video alle regole automatiche, oppure nascondilo di nuovo per rimetterlo nell’elenco dei nascosti."
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "{count} canale consentito"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "{count} canali consentiti"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "{count} canale bloccato"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "{count} canali bloccati"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "{count} risultato"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "{count} risultati"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "Alcune impostazioni richiedono l’accesso ai siti. Riprova e accetta la richiesta del browser."
+  },
+  "videoHiderInputViews": {
+    "message": "le visualizzazioni"
+  },
+  "videoHiderInputAges": {
+    "message": "la data di caricamento"
+  },
+  "videoHiderInputDurations": {
+    "message": "la durata"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first} o {second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first}, {second} o {third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "Non è possibile leggere {inputs} sulle schede di questa pagina, quindi i filtri che ne hanno bisogno non nascondono nulla."
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "mancante"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "non verificato"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "pronto"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · ripara"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status} (incluso)"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "Ripara il runtime {runtime} configurato"
   }
 }

@@ -7986,9 +7986,6 @@
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
   },
-  "videoHiderAllowedChannelSingular": {
-    "message": "Allowed Channel"
-  },
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
@@ -8044,9 +8041,6 @@
     "message": "Block Channel"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
-  },
-  "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
   "videoHiderBlockedChannelToast": {
@@ -9456,5 +9450,230 @@
   },
   "settingsPanelUnavailable": {
     "message": "설정 패널을 불러오지 못했습니다. 페이지를 새로고침한 후 다시 시도하세요."
+  },
+  "quickLinksRemovedTpl": {
+    "message": "\"{name}\" 삭제됨"
+  },
+  "quickLinksAddedTpl": {
+    "message": "\"{name}\" 추가됨"
+  },
+  "quickLinksLimitNoteTpl": {
+    "message": "한도에 도달했습니다({count}/{max}). 새 항목을 추가하려면 위의 항목을 삭제하세요."
+  },
+  "quickLinksUsageNoteTpl": {
+    "message": "/feed/history 같은 경로나 전체 https:// URL을 입력하세요. ({count}/{max} 사용 중)"
+  },
+  "quickLinksLimitToastTpl": {
+    "message": "빠른 링크 한도({max})에 도달했습니다. 새로 추가하려면 하나를 삭제하세요."
+  },
+  "sleepTimerSetAnnounceTplOne": {
+    "message": "취침 타이머를 {count}분으로 설정했습니다."
+  },
+  "sleepTimerSetAnnounceTplOther": {
+    "message": "취침 타이머를 {count}분으로 설정했습니다."
+  },
+  "sleepTimerExtendedAnnounceTplOne": {
+    "message": "취침 타이머를 {count}분 연장했습니다."
+  },
+  "sleepTimerExtendedAnnounceTplOther": {
+    "message": "취침 타이머를 {count}분 연장했습니다."
+  },
+  "sleepTimerPresetAriaTplOne": {
+    "message": "취침 타이머를 {count}분으로 설정"
+  },
+  "sleepTimerPresetAriaTplOther": {
+    "message": "취침 타이머를 {count}분으로 설정"
+  },
+  "watchTimeStatsTpl": {
+    "message": "오늘: {today} | 이번 주: {week} | 전체: {total}"
+  },
+  "chapterSkippedToastTpl": {
+    "message": "건너뜀: \"{title}\""
+  },
+  "watchFeedFilteredCountTpl": {
+    "message": "{total}개 중 {visible}개"
+  },
+  "watchFeedItemCountTplOne": {
+    "message": "{count}개 항목"
+  },
+  "watchFeedItemCountTplOther": {
+    "message": "{count}개 항목"
+  },
+  "commentSearchMatchPositionTpl": {
+    "message": "일치 항목 {current}/{total}"
+  },
+  "commentSearchThreadPositionTpl": {
+    "message": "스레드 {current}/{total}"
+  },
+  "commentSearchThreadsReadyTpl": {
+    "message": "스레드 {total}개 중 {visible}개 준비됨"
+  },
+  "settingsProfileSavedTpl": {
+    "message": "프로필 저장됨: {name}"
+  },
+  "settingsProfileNotFoundTpl": {
+    "message": "프로필을 찾을 수 없음: {name}"
+  },
+  "settingsProfileAppliedTpl": {
+    "message": "프로필 적용됨: {name}. 다시 불러오는 중…"
+  },
+  "settingsProfileDeletedTpl": {
+    "message": "프로필 삭제됨: {name}"
+  },
+  "settingsProfilesImportedTplOne": {
+    "message": "프로필 {count}개를 가져왔습니다"
+  },
+  "settingsProfilesImportedTplOther": {
+    "message": "프로필 {count}개를 가져왔습니다"
+  },
+  "chaptersCopiedMarkdownTplOne": {
+    "message": "챕터 {count}개를 마크다운으로 복사했습니다"
+  },
+  "chaptersCopiedMarkdownTplOther": {
+    "message": "챕터 {count}개를 마크다운으로 복사했습니다"
+  },
+  "autoDubbedTrackFallback": {
+    "message": "AI 더빙 트랙"
+  },
+  "autoDubbedToastTpl": {
+    "message": "오디오: YouTube가 {track}을(를) 선택했습니다. 원하면 플레이어 설정에서 원본으로 바꾸세요."
+  },
+  "autoDubbedAnnounceTpl": {
+    "message": "오디오 트랙은 {track}입니다. 원본 트랙은 플레이어 설정에서 선택할 수 있습니다."
+  },
+  "deArrowModeDearrow": {
+    "message": "DeArrow"
+  },
+  "deArrowModeOriginal": {
+    "message": "원본"
+  },
+  "deArrowModeOff": {
+    "message": "끔"
+  },
+  "deArrowChannelChipTpl": {
+    "message": "DeArrow: {mode}"
+  },
+  "deArrowChannelChipTitle": {
+    "message": "클릭하면 이 채널의 DeArrow 모드를 바꿉니다(DeArrow / 원본 / 끔)"
+  },
+  "deArrowChannelOverrideToastTpl": {
+    "message": "이 채널의 DeArrow를 \"{mode}\"(으)로 설정했습니다."
+  },
+  "transcriptBatchQueuedTpl": {
+    "message": "{count}/{max}개 대기 중, 동영상마다 복구 시도 1회"
+  },
+  "transcriptBatchFetchingTpl": {
+    "message": "가져오는 중 {current}/{total}, 동영상마다 복구 시도 1회"
+  },
+  "transcriptSearchStillIndexing": {
+    "message": "현재 동영상은 아직 색인 중입니다."
+  },
+  "transcriptSearchNoMatchesTpl": {
+    "message": "\"{query}\"와(과) 일치하는 스크립트가 없습니다."
+  },
+  "protocolHandoffToastTpl": {
+    "message": "{player}(으)로 넘겼습니다. 아무것도 열리지 않으면 먼저 OS에 핸들러를 등록하세요."
+  },
+  "pageModalEnabledCountTpl": {
+    "message": "{count}개 켜짐"
+  },
+  "pageModalShortcutCountTpl": {
+    "message": "바로가기 {count}개"
+  },
+  "pageModalAppliesLive": {
+    "message": "즉시 적용"
+  },
+  "statusSettingsImportUndoFailed": {
+    "message": "가져오기를 되돌리지 못했습니다."
+  },
+  "statusSettingsImportInvalidFormat": {
+    "message": "파일 형식이 올바르지 않습니다."
+  },
+  "statusSettingsImportNoKnownKeys": {
+    "message": "파일에 알려진 설정이 없습니다."
+  },
+  "statusSettingsImportNothing": {
+    "message": "가져올 설정이나 로컬 데이터가 없습니다."
+  },
+  "videoHiderReviewEyebrow": {
+    "message": "검토 및 복원"
+  },
+  "videoHiderHiddenReadyTplOne": {
+    "message": "검토할 숨긴 동영상 {count}개"
+  },
+  "videoHiderHiddenReadyTplOther": {
+    "message": "검토할 숨긴 동영상 {count}개"
+  },
+  "videoHiderReviewCopy": {
+    "message": "항목을 하나씩 복원하거나, 예외를 만들지 않고 목록에서 항목을 빼거나, YouTube 추천을 처음부터 다시 받고 싶다면 목록 전체를 초기화하세요."
+  },
+  "videoHiderExceptionsEyebrow": {
+    "message": "수동 예외"
+  },
+  "videoHiderAllowedProtectedTplOne": {
+    "message": "필터에서 보호되는 허용 동영상 {count}개"
+  },
+  "videoHiderAllowedProtectedTplOther": {
+    "message": "필터에서 보호되는 허용 동영상 {count}개"
+  },
+  "videoHiderExceptionsCopy": {
+    "message": "예외를 삭제하면 자동 규칙이 동영상을 다시 평가합니다. 다시 숨기면 숨긴 목록으로 돌아갑니다."
+  },
+  "videoHiderAllowedChannelCountTplOne": {
+    "message": "허용한 채널 {count}개"
+  },
+  "videoHiderAllowedChannelCountTplOther": {
+    "message": "허용한 채널 {count}개"
+  },
+  "videoHiderBlockedChannelCountTplOne": {
+    "message": "차단한 채널 {count}개"
+  },
+  "videoHiderBlockedChannelCountTplOther": {
+    "message": "차단한 채널 {count}개"
+  },
+  "settingsSearchSectionMatchesTplOne": {
+    "message": "{count}개 일치"
+  },
+  "settingsSearchSectionMatchesTplOther": {
+    "message": "{count}개 일치"
+  },
+  "settingsHostAccessNeededAll": {
+    "message": "일부 설정에는 사이트 액세스 권한이 필요합니다. 다시 시도하고 브라우저 요청을 승인하세요."
+  },
+  "videoHiderInputViews": {
+    "message": "조회수"
+  },
+  "videoHiderInputAges": {
+    "message": "업로드 시기"
+  },
+  "videoHiderInputDurations": {
+    "message": "재생 시간"
+  },
+  "videoHiderInputPairTpl": {
+    "message": "{first} 또는 {second}"
+  },
+  "videoHiderInputTrioTpl": {
+    "message": "{first}, {second} 또는 {third}"
+  },
+  "videoHiderInputsUnreadableTpl": {
+    "message": "이 페이지의 카드에서 {inputs}을(를) 읽을 수 없어, 이를 사용하는 필터가 아무것도 숨기지 않습니다."
+  },
+  "dlHealthRuntimeMissing": {
+    "message": "없음"
+  },
+  "dlHealthRuntimeUnverified": {
+    "message": "확인 안 됨"
+  },
+  "dlHealthRuntimeReady": {
+    "message": "준비됨"
+  },
+  "dlHealthRuntimeRepairTpl": {
+    "message": "{version} · 복구"
+  },
+  "dlHealthRuntimeBundledTpl": {
+    "message": "{status}(번들)"
+  },
+  "dlHealthRuntimeRepairTitleTpl": {
+    "message": "설정된 {runtime} 런타임 복구"
   }
 }
