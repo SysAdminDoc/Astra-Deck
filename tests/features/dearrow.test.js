@@ -312,6 +312,91 @@ test('a title gets one DeArrow replacement, and the announcement is translated',
     assert.deepEqual(announced, ['Titel von DeArrow ersetzt: Second title']);
 });
 
+test('a feed append keeps finished cards, and a reused card starts over', async () => {
+    // Navigate rules also run on same-URL page-data updates, which YouTube
+    // fires on every feed append. Each one stripped every DeArrow title, and
+    // a renderer YouTube reused for another video kept the old video's title.
+    const matches = (el, selector) => {
+        if (selector.startsWith('.')) return el.classes.has(selector.slice(1));
+        if (selector === '[data-da-processed]') return el.dataset.daProcessed !== undefined;
+        if (selector === '[data-da-video-id]') return el.dataset.daVideoId !== undefined;
+        if (selector.includes('[href*="/watch"]')) return String(el.href || '').includes('/watch');
+        return false;
+    };
+    const node = ({ className = '', dataset = {}, href = null } = {}) => {
+        const attrs = new Map();
+        const el = {
+            classes: new Set(className.split(' ').filter(Boolean)),
+            dataset: { ...dataset }, style: { display: '' }, children: [], parent: null, href,
+            getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
+            setAttribute: (name, value) => attrs.set(name, String(value)),
+            removeAttribute: (name) => attrs.delete(name),
+            append(...kids) {
+                for (const kid of kids) { kid.parent = el; el.children.push(kid); }
+                return el;
+            },
+            remove() {
+                if (el.parent) el.parent.children.splice(el.parent.children.indexOf(el), 1);
+                el.parent = null;
+            },
+            descendants: () => el.children.flatMap((kid) => [kid, ...kid.descendants()]),
+            querySelectorAll: (selector) => el.descendants()
+                .filter((candidate) => selector.split(',').some((part) => matches(candidate, part.trim()))),
+            querySelector: (selector) => el.querySelectorAll(selector)[0] || null
+        };
+        el.classList = { add: (name) => el.classes.add(name), remove: (name) => el.classes.delete(name) };
+        return el;
+    };
+    const finishedCard = (shownId, renderedId) => {
+        const original = node({ className: 'daOriginalTitle', dataset: { daProcessed: '1' } });
+        original.setAttribute('data-da-original-display', '');
+        return node({ dataset: { daProcessed: '1', daVideoId: renderedId } }).append(
+            node({ href: `https://www.youtube.com/watch?v=${shownId}` }),
+            node({ className: 'daCustomTitle' }),
+            node({ className: 'ytkit-dearrow-attribution' }),
+            original
+        );
+    };
+    const doc = node();
+    doc.body = {};
+    const loc = { origin: 'https://www.youtube.com', pathname: '/', href: 'https://www.youtube.com/' };
+    let navRule = null;
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        injectStyle: () => ({ remove() {} }),
+        addNavigateRule: (_id, rule) => { navRule = rule; }
+    });
+    feature._processPage = () => {};
+
+    await withGlobals({
+        document: doc,
+        location: loc,
+        MutationObserver: class { observe() {} disconnect() {} }
+    }, () => {
+        feature.init();
+        navRule();
+        const kept = finishedCard('abc123DEF45', 'abc123DEF45');
+        const reused = finishedCard('xyz789GHI01', 'old45678901');
+        doc.append(kept, reused);
+        const route = feature._routeToken;
+
+        navRule();
+        assert.equal(feature._routeToken, route, 'a same-URL update is not a new route');
+        assert.equal(kept.querySelectorAll('.daCustomTitle').length, 1, 'a finished card keeps its DeArrow title');
+        assert.equal(kept.dataset.daVideoId, 'abc123DEF45');
+        assert.equal(reused.querySelectorAll('.daCustomTitle, .ytkit-dearrow-attribution').length, 0,
+            'a reused card drops the old title and its attribution');
+        assert.equal(reused.dataset.daProcessed, undefined, 'a reused card is processed again');
+        assert.equal(reused.querySelectorAll('.daOriginalTitle').length, 0, 'the original title shows again');
+
+        loc.href = 'https://www.youtube.com/results?search_query=x';
+        navRule();
+        assert.equal(feature._routeToken, route + 1, 'a new URL is a new route');
+        assert.equal(doc.querySelectorAll('.daCustomTitle').length, 0, 'a new route resets every card');
+        feature.destroy();
+    });
+});
+
 test('the watch mask blocks primary-title requests without blocking related cards', async () => {
     const settings = surfaceSettings({ daSurfaceWatch: false, daSurfaceRelated: true });
     const watchTitle = { dataset: {} };
@@ -492,7 +577,7 @@ test('DeArrow attributes remote titles and thumbnails but not local fallback for
         'remote thumbnail replacements must receive attribution');
     assert.match(source, /\.ytkit-dearrow-attribution[\s\S]*?CC BY-NC-SA 4\.0/,
         'the visible attribution surface must identify the licensed SponsorBlock data');
-    assert.match(source, /document\.querySelectorAll\('\.ytkit-dearrow-attribution'\)\.forEach\(c => c\.remove\(\)\)/,
+    assert.match(source, /root\.querySelectorAll\('\.daCustomTitle, \.ytkit-dearrow-attribution'\)\.forEach\(c => c\.remove\(\)\)/,
         'navigation and teardown must remove attribution when transformed data disappears');
     assert.match(source, /href = 'https:\/\/sponsor\.ajay\.app\/'/,
         'the attribution must link to the upstream data source');
@@ -512,7 +597,7 @@ test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision
     assert.match(block, /\[data-da-processed\]|data-da-processed/);
     // Be defensive: marker classes must NOT be generic words like "title"
     // or "thumb" alone. They must keep the "da" / "da-" prefix.
-    const markerLine = (block.match(/'\.daCustomTitle'[^;]*?(?:;|\n)/) || [''])[0];
+    const markerLine = (block.match(/'\.daCustomTitle[^']*'[^;]*?(?:;|\n)/) || [''])[0];
     assert.ok(markerLine.includes('daCustomTitle'),
         'marker class must keep the "da" prefix to avoid colliding with YouTube namespace');
 });

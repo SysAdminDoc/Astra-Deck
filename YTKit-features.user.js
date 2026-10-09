@@ -23611,6 +23611,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 			_navRuleId: 'deArrowNav',
 			_generation: 0,
 			_routeToken: 0,
+			_lastRouteHref: null,
 			_processTimer: null,
 			_resetTimer: null,
 			_TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
@@ -23638,24 +23639,18 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				const css = `.daCustomTitle{display:block!important}.daCustomTitle:not([data-da-together="1"]) + [id="video-title"],.daCustomTitle:not([data-da-together="1"]) + a#video-title-link{display:none!important}.daCustomTitle[data-da-together="1"]{margin-bottom:2px!important}.daOriginalTitle[data-da-original-title="1"]{display:block!important;margin-top:2px!important;padding-inline-start:6px!important;border-inline-start:2px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.2))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font-size:0.86em!important;font-weight:400!important;opacity:0.74!important}.daCustomTitle[data-da-fallback="1"]{opacity:0.78!important}.ytkit-dearrow-attribution{display:inline-flex!important;align-items:center!important;width:fit-content!important;margin-top:3px!important;padding:2px 6px!important;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.16))!important;border-radius:8px!important;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.08))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font:600 10px/1.2 Roboto,Arial,sans-serif!important;letter-spacing:0.01em!important;text-decoration:none!important}.ytkit-dearrow-attribution:hover,.ytkit-dearrow-attribution:focus-visible{border-color:var(--yt-spec-text-secondary,#aaa)!important;color:var(--yt-spec-text-primary,#fff)!important;outline:2px solid rgba(255,107,74,0.62)!important;outline-offset:1px!important}html:not([dark]) .ytkit-dearrow-attribution{border-color:rgba(15,23,42,0.18)!important;background:rgba(15,23,42,0.06)!important;color:#475569!important}html:not([dark]) .ytkit-dearrow-attribution:hover,html:not([dark]) .ytkit-dearrow-attribution:focus-visible{border-color:rgba(15,23,42,0.4)!important;background:rgba(255,255,255,0.96)!important;color:#0f172a!important}`;
 				this._styleEl = injectStyle(css, this.id, true);
 				const resetAndProcess = () => {
+					const href = typeof location !== 'undefined' ? location.href : '';
+					if (self._lastRouteHref !== null && href === self._lastRouteHref) {
+						self._resetReusedCards();
+						clearTimeout(self._processTimer);
+						self._processTimer = setTimeout(() => self._processPage(), 300);
+						return;
+					}
+					self._lastRouteHref = href;
 					self._routeToken++;
 					clearTimeout(self._processTimer);
 					clearTimeout(self._resetTimer);
-					document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
-					document.querySelectorAll('.ytkit-dearrow-attribution').forEach(c => c.remove());
-					document.querySelectorAll('[data-da-processed]').forEach(el => {
-						const originalDisplay = el.getAttribute('data-da-original-display');
-						el.style.display = originalDisplay === null ? '' : originalDisplay;
-						el.removeAttribute('data-da-original-display');
-						el.classList.remove('daOriginalTitle');
-						el.removeAttribute('data-da-original-title');
-						delete el.dataset.daProcessed;
-						delete el.dataset.daSurfaceSkipped;
-					});
-					document.querySelectorAll('.da-replaced-thumb').forEach(el => {
-						if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
-						el.classList.remove('da-replaced-thumb');
-					});
+					self._resetCard(document);
 					self._resetTimer = setTimeout(() => {
 						self._resetTimer = null;
 						self._processPage();
@@ -23958,11 +23953,9 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					if (gen !== this._generation || route !== this._routeToken) return;
 					if (el.dataset.daProcessed) continue;
 					el.dataset.daProcessed = '1';
-					const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
-					if (!link) continue;
-					const url = new URL(link.href, location.origin);
-					const videoId = url.searchParams.get('v');
+					const videoId = this._cardVideoId(el);
 					if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
+					el.dataset.daVideoId = videoId;
 					const surface = this._surfaceOf(el);
 					if (!this._surfaceEnabled(surface)) {
 						el.dataset.daSurfaceSkipped = surface;
@@ -24052,9 +24045,14 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				this._observer?.disconnect();
 				this._observing = false;
 				this._styleEl?.remove();
-				document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
-				document.querySelectorAll('.ytkit-dearrow-attribution').forEach(c => c.remove());
-				document.querySelectorAll('[data-da-processed]').forEach(el => {
+				this._lastRouteHref = null;
+				this._resetCard(document);
+			},
+			_resetCard(root) {
+				root.querySelectorAll('.daCustomTitle, .ytkit-dearrow-attribution').forEach(c => c.remove());
+				const flagged = [...root.querySelectorAll('[data-da-processed]')];
+				if (root.dataset?.daProcessed !== undefined) flagged.push(root);
+				for (const el of flagged) {
 					const originalDisplay = el.getAttribute('data-da-original-display');
 					el.style.display = originalDisplay === null ? '' : originalDisplay;
 					el.removeAttribute('data-da-original-display');
@@ -24062,11 +24060,26 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					el.removeAttribute('data-da-original-title');
 					delete el.dataset.daProcessed;
 					delete el.dataset.daSurfaceSkipped;
-				});
-				document.querySelectorAll('.da-replaced-thumb').forEach(el => {
+					delete el.dataset.daVideoId;
+				}
+				root.querySelectorAll('.da-replaced-thumb').forEach(el => {
 					if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
 					el.classList.remove('da-replaced-thumb');
 				});
+			},
+			_cardVideoId(el) {
+				const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
+				if (!link) return null;
+				try {
+					return new URL(link.href, location.origin).searchParams.get('v');
+				} catch (_) {
+					return null;
+				}
+			},
+			_resetReusedCards() {
+				for (const card of document.querySelectorAll('[data-da-video-id]')) {
+					if (this._cardVideoId(card) !== card.dataset.daVideoId) this._resetCard(card);
+				}
 			}
 		};
 	}

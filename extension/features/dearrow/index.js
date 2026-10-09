@@ -67,6 +67,7 @@
             _navRuleId: 'deArrowNav',
             _generation: 0,
             _routeToken: 0,
+            _lastRouteHref: null,
             _processTimer: null,
             _resetTimer: null,
             _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
@@ -150,24 +151,23 @@
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
+                    // Navigate rules also run on same-URL page-data updates,
+                    // which YouTube fires on every feed append. Treating those
+                    // as a new page put every title back to the original for a
+                    // second and redid the whole feed on each scroll. Same URL:
+                    // keep finished cards, restart only reused ones.
+                    const href = typeof location !== 'undefined' ? location.href : '';
+                    if (self._lastRouteHref !== null && href === self._lastRouteHref) {
+                        self._resetReusedCards();
+                        clearTimeout(self._processTimer);
+                        self._processTimer = setTimeout(() => self._processPage(), 300);
+                        return;
+                    }
+                    self._lastRouteHref = href;
                     self._routeToken++;
                     clearTimeout(self._processTimer);
                     clearTimeout(self._resetTimer);
-                    document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
-                    document.querySelectorAll('.ytkit-dearrow-attribution').forEach(c => c.remove());
-                    document.querySelectorAll('[data-da-processed]').forEach(el => {
-                        const originalDisplay = el.getAttribute('data-da-original-display');
-                        el.style.display = originalDisplay === null ? '' : originalDisplay;
-                        el.removeAttribute('data-da-original-display');
-                        el.classList.remove('daOriginalTitle');
-                        el.removeAttribute('data-da-original-title');
-                        delete el.dataset.daProcessed;
-                        delete el.dataset.daSurfaceSkipped;
-                    });
-                    document.querySelectorAll('.da-replaced-thumb').forEach(el => {
-                        if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
-                        el.classList.remove('da-replaced-thumb');
-                    });
+                    self._resetCard(document);
                     // Run one pass on every page, including watch pages: the
                     // related rail (ytd-compact-video-renderer) is the most
                     // clickbait-heavy surface DeArrow targets. The churning
@@ -532,11 +532,9 @@
                     // it again stacked a second DeArrow title on it.
                     if (el.dataset.daProcessed) continue;
                     el.dataset.daProcessed = '1';
-                    const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
-                    if (!link) continue;
-                    const url = new URL(link.href, location.origin);
-                    const videoId = url.searchParams.get('v');
+                    const videoId = this._cardVideoId(el);
                     if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
+                    el.dataset.daVideoId = videoId;
                     // v3.28 deferred → v4.0+: honor per-channel override.
                     // 'off'      → skip title + thumb replacement entirely for this card
                     // 'original' → also skip (channel author wants original metadata)
@@ -638,9 +636,16 @@
                 this._observer?.disconnect();
                 this._observing = false;
                 this._styleEl?.remove();
-                document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
-                document.querySelectorAll('.ytkit-dearrow-attribution').forEach(c => c.remove());
-                document.querySelectorAll('[data-da-processed]').forEach(el => {
+                this._lastRouteHref = null;
+                this._resetCard(document);
+            },
+            // Undo DeArrow's work under root: the whole document on a route
+            // change or teardown, or one card YouTube reused for another video.
+            _resetCard(root) {
+                root.querySelectorAll('.daCustomTitle, .ytkit-dearrow-attribution').forEach(c => c.remove());
+                const flagged = [...root.querySelectorAll('[data-da-processed]')];
+                if (root.dataset?.daProcessed !== undefined) flagged.push(root);
+                for (const el of flagged) {
                     const originalDisplay = el.getAttribute('data-da-original-display');
                     el.style.display = originalDisplay === null ? '' : originalDisplay;
                     el.removeAttribute('data-da-original-display');
@@ -648,11 +653,28 @@
                     el.removeAttribute('data-da-original-title');
                     delete el.dataset.daProcessed;
                     delete el.dataset.daSurfaceSkipped;
-                });
-                document.querySelectorAll('.da-replaced-thumb').forEach(el => {
+                    delete el.dataset.daVideoId;
+                }
+                root.querySelectorAll('.da-replaced-thumb').forEach(el => {
                     if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                     el.classList.remove('da-replaced-thumb');
                 });
+            },
+            _cardVideoId(el) {
+                const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
+                if (!link) return null;
+                try {
+                    return new URL(link.href, location.origin).searchParams.get('v');
+                } catch (_) {
+                    return null; // reason: a malformed href is not a video card.
+                }
+            },
+            // YouTube can reuse a renderer for another video without a route
+            // change; that card kept the old video's title and thumbnail.
+            _resetReusedCards() {
+                for (const card of document.querySelectorAll('[data-da-video-id]')) {
+                    if (this._cardVideoId(card) !== card.dataset.daVideoId) this._resetCard(card);
+                }
             }
         };
     }
