@@ -233,6 +233,11 @@
                     });
                 }
                 if (!isValueValid(rawValue, entry)) {
+                    // A stored value this write leaves alone passes as it is.
+                    // Older builds stored values the schema now refuses, and
+                    // failing here froze every in-page save over one key the
+                    // user never touched.
+                    if (Object.prototype.hasOwnProperty.call(current, key) && sameValue(current[key], rawValue)) continue;
                     return failure('INVALID_SETTING_VALUE', `Invalid value for ${key}; expected ${entry.type}.`, {
                         key, previous: current[key], value: current[key], settings: current
                     });

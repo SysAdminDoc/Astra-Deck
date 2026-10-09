@@ -14115,6 +14115,7 @@ __astraDeckRegistry["core/settings-controller.js"] = function (globalThis, self,
 					});
 				}
 				if (!isValueValid(rawValue, entry)) {
+					if (Object.prototype.hasOwnProperty.call(current, key) && sameValue(current[key], rawValue)) continue;
 					return failure('INVALID_SETTING_VALUE', `Invalid value for ${key}; expected ${entry.type}.`, {
 						key, previous: current[key], value: current[key], settings: current
 					});

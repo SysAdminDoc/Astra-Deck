@@ -150,6 +150,21 @@ test('replacement rejects new unknown keys but preserves unchanged future-versio
     assert.equal(rejected.error.code, 'UNKNOWN_SETTING');
 });
 
+test('a stored value the schema now refuses does not block saving other settings', async () => {
+    // mutateMany and replace re-check the whole bag. One stale value an older
+    // build stored (here a number left as null) failed every in-page save,
+    // so the panel rolled back each toggle the user flipped.
+    const harness = createHarness({ boundedNumber: null, ordinaryToggle: false });
+    const saved = await harness.controller.mutateMany({ ordinaryToggle: true });
+    assert.equal(saved.ok, true, 'an unrelated change saves');
+    assert.equal(harness.settings.ordinaryToggle, true);
+    assert.equal(harness.settings.boundedNumber, null, 'the untouched value is left as it was');
+
+    const refused = await harness.controller.mutateMany({ boundedNumber: 'eleven' });
+    assert.equal(refused.ok, false, 'a new invalid value is still refused');
+    assert.equal(refused.error.code, 'INVALID_SETTING_VALUE');
+});
+
 test('client controller forwards the same contract through runtime messaging', async () => {
     const messages = [];
     const client = createSettingsMutationController({
