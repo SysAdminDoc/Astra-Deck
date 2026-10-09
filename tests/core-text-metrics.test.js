@@ -254,7 +254,14 @@ test('isUpcomingCardText reads upcoming wording in every shipped language', () =
         'Live in 45 minutes',
         'Starts in 2 hours',
         'Comienza en 5 minutos',
+        // A countdown of 10 or more has two digits.
+        'Starts in 10 minutes',
+        'Comienza en 45 minutos',
+        'Commence dans 12 minutes',
+        'Inizia tra 15 minuti',
+        'Beginnt in 30 Minuten',
         'قادم',
+        'قادمة',
         '예약됨',
         '5분 후 시작',
         // Folding strips Arabic hamza and keeps kana voicing marks, on the
@@ -286,6 +293,7 @@ test('isUpcomingCardText never reads a finished premiere or a channel name as up
         'Life Starts In Kitchen',
         'Todo comienza en casa',
         'قناة الجيل القادم',
+        'قناة الأيام القادمة',
         '예약왕'
     ]) assert.equal(isUpcomingCardText(text), false, text);
 });
@@ -300,7 +308,11 @@ test('cardTextWithoutByline drops a lockup byline row and a meta block channel n
             get textContent() { return this.children.map((c) => (typeof c === 'string' ? c : c.textContent)).join(''); },
             matches(selector) {
                 return selector.split(',').some((one) => {
-                    const s = one.trim();
+                    let s = one.trim();
+                    if (s.endsWith('[aria-label]') && s !== '[aria-label]') {
+                        if (!('aria-label' in attrs)) return false;
+                        s = s.slice(0, -'[aria-label]'.length);
+                    }
                     if (s.startsWith('.')) return String(attrs.class || '').split(' ').includes(s.slice(1));
                     if (s.startsWith('#')) return attrs.id === s.slice(1);
                     if (s === '[aria-label]') return 'aria-label' in attrs;
@@ -338,6 +350,13 @@ test('cardTextWithoutByline drops a lockup byline row and a meta block channel n
     assert.doesNotMatch(cardTextWithoutByline(model), /venir/);
     assert.match(cardTextWithoutByline(model), /412M/);
     assert.equal(cardTextWithoutByline(views), '412M');
+
+    // A verified badge's aria-label in the byline row doesn't make it metadata.
+    const verified = el('yt-content-metadata-view-model', {}, [
+        row(span('Le meilleur est à venir'), el('span', { class: 'ytIconWrapperHost', 'aria-label': 'Verified' }, [])),
+        row(span('412M', '412 million views'))
+    ]);
+    assert.doesNotMatch(cardTextWithoutByline(verified), /venir/);
 
     // A channel page prints no byline: its only row is the schedule.
     const scheduled = span('Scheduled for 10/7/26, 7:45 AM');

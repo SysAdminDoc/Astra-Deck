@@ -10809,16 +10809,17 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 	function foldCardText(text) {
 		return String(text || '').normalize('NFD').replace(FOLDED_MARK, '').normalize('NFC');
 	}
-	const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in \d|waiting for|live in \d+|próximamente|programad[ao] para|establecer recordatorio|comienza en \d|à venir|programmé pour|prévue? pour|définir un rappel|commence dans \d|in programma|programmat[oa] per|imposta promemoria|inizia tra \d|bevorstehend|geplant für|erinnerung festlegen|beginnt in \d)\b|запланир|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약됨|알림 설정|\d+\s*(?:초|분|시간|일)\s*후 시작|即将|预定|设置提醒|开始于|(?<![؀-ۿ])قادم(?![؀-ۿ])|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
+	const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in \d+|waiting for|live in \d+|próximamente|programad[ao] para|establecer recordatorio|comienza en \d+|à venir|programmé pour|prévue? pour|définir un rappel|commence dans \d+|in programma|programmat[oa] per|imposta promemoria|inizia tra \d+|bevorstehend|geplant für|erinnerung festlegen|beginnt in \d+)\b|запланир|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약됨|알림 설정|\d+\s*(?:초|분|시간|일)\s*후 시작|即将|预定|设置提醒|开始于|(?<![؀-ۿ])قادمة?(?![؀-ۿ])|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
 	function isUpcomingCardText(text) {
 		return UPCOMING_CARD_PATTERN.test(foldCardText(text));
 	}
 	const BYLINE_SELECTOR = 'ytd-channel-name, #byline-container';
 	const LOCKUP_MODEL_SELECTOR = 'yt-content-metadata-view-model';
 	const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
+	const LOCKUP_LABELLED_TEXT_SELECTOR = '.ytContentMetadataViewModelMetadataText[aria-label], .yt-content-metadata-view-model__metadata-text[aria-label]';
 	function lockupBylineRow(model) {
 		const rows = Array.from(model?.querySelectorAll?.(LOCKUP_ROW_SELECTOR) || []);
-		return rows.length > 1 && !rows[0].querySelector?.('[aria-label]') ? rows[0] : null;
+		return rows.length > 1 && !rows[0].querySelector?.(LOCKUP_LABELLED_TEXT_SELECTOR) ? rows[0] : null;
 	}
 	function cardTextWithoutByline(node) {
 		if (!node || node.closest?.(BYLINE_SELECTOR)) return '';
