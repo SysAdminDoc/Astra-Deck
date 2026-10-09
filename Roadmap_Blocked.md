@@ -948,6 +948,25 @@ what's left is a live run.
   Acceptance: a fresh temporary install's first YouTube load logs no module failure in
   the captured console, with the probe line seen.
 
+- [ ] P3 — Open the awesome-userscripts pull request
+  Why: users browse awesome-scripts/awesome-userscripts for scripts, and Astra isn't
+  on it (checked 2026-10-09: no Astra, YTKit or SysAdminDoc entry). README now names
+  the tested pairs (Firefox with Violentmonkey 2.47.0 and with Tampermonkey 5.5.0, from
+  `npm run smoke:userscript-managers`).
+  Blocker: its CONTRIBUTING.md asks that the script be confirmed working on a current
+  browser and manager, with the pair named in the pull request. The manager smoke runs
+  in Firefox, which hangs at session creation on 156 (above), and a run needs the
+  owner's word. A public claim waits for a pass.
+  Ready to send once it passes: fork, add the entry first in the YouTube section
+  (alphabetical, ahead of "Disable YouTube Hotkeys…"), run `npm ci --ignore-scripts`
+  and `npm run lint` there, open the PR naming the browser, manager and versions that
+  passed. Entry, in their markup:
+  `<details> <!-- Astra Deck -->` / `<summary><a href="https://github.com/SysAdminDoc/Astra-Deck">Astra Deck</a> - Adds a settings panel with about 480 YouTube options, including feed and channel filters, player controls, themes and SponsorBlock.</summary><br>`
+  / a screenshot blockquote (the README's settings panel capture) / `💾 Install`
+  (https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js) /
+  `📖 Readme` (#userscript-tampermonkey--violentmonkey) / `🐛 Report bug` (issues).
+  Acceptance: a pull request following that CONTRIBUTING.md is open.
+
 - [ ] P3 — Check the Shorts settings against Shorts Series on desktop web
   Why: YouTube began rolling Shorts Series out to the web on 2026-09-23. If series
   shelves or the series player use new renderers, `removeAllShorts`, `redirectShorts`

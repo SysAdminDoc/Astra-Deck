@@ -32,14 +32,3 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 ## Research-Driven Additions
 
 Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
-
-- [ ] P3 — List Astra Deck on awesome-userscripts
-  Why: users browse that list (3,548 stars) for scripts, and Astra isn't on it. Its rules ask for
-  a stable install URL, docs, an issue tracker and tested browser and manager pairs, and v4.93.0
-  meets all of them.
-  Evidence: https://github.com/awesome-scripts/awesome-userscripts/blob/main/CONTRIBUTING.md.
-  Confidence: Verified.
-  Touches: `README.md` (a tested-pairs line), then a pull request to that list.
-  Acceptance: README names the browser and manager pairs the smokes cover, and a pull request
-  following that CONTRIBUTING.md is open.
-  Complexity: S
