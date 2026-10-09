@@ -698,3 +698,47 @@ test('the service worker policy knows the schema, so sync carries settings', () 
     assert.equal(delta.values[entry.key], true, 'a changed setting must reach the sync payload');
     assert.ok(!delta.resetSettings.includes(entry.key), 'a changed setting must not be sent as a reset');
 });
+
+test('a truncated remote list keeps the older local entries, and Undo restores all of them', async () => {
+    // Remote lists carry only the sender's newest entries once they pass the
+    // sync cap. A pull replaced the local list with that tail, so a device
+    // holding 3000 hides lost 500 of them, and the Undo snapshot was cut to
+    // the same cap, so Undo couldn't bring them back.
+    const mine = videoIds(3000, 'aaaaa');
+    const local = syncFixture(mine);
+    const account = makeStorage({}, 'sync');
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        ...settingsOptions,
+        callApi: (target, method, ...args) => target[method](...args)
+    });
+    controller.installListeners();
+    assert.equal((await controller.initialize()).ok, true);
+
+    const theirs = [...mine, 'bbbbb000000'];
+    const remoteInfo = sync.buildSyncPayload(
+        { syncSettings: true, privacyDataFlowPanel: true },
+        { ...syncFixture(theirs).snapshot() },
+        settingsOptions
+    );
+    assert.ok(remoteInfo.truncatedDomains.includes('hiddenVideos'), 'the remote list is a truncated tail');
+    const previous = readRemotePayload(account).meta;
+    const remoteMeta = makeMeta(remoteInfo, {
+        updatedAt: previous.updatedAt + 1000,
+        sequence: previous.sequence + 1,
+        deviceId: 'remote-device'
+    });
+    const remoteEntries = { [sync.SYNC_META_KEY]: remoteMeta };
+    remoteInfo.chunks.forEach((chunk, index) => {
+        remoteEntries[`${sync.SYNC_CHUNK_PREFIX}${index}`] = chunk;
+    });
+    account.setSilently(remoteEntries);
+
+    const pulled = await controller.handleSyncChanges({ [sync.SYNC_META_KEY]: { newValue: remoteMeta } });
+    assert.equal(pulled.ok, true);
+    assert.deepEqual(local.snapshot()['ytkit-hidden-videos'], theirs, 'older local entries survive the pull');
+
+    assert.equal((await controller.undo()).ok, true);
+    assert.deepEqual(local.snapshot()['ytkit-hidden-videos'], mine, 'Undo restores every entry the device had');
+});

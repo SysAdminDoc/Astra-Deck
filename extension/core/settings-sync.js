@@ -40,7 +40,9 @@
     const SYNC_MAX_PAYLOAD_BYTES = 90 * 1024;
     const SYNC_CHUNK_BYTES = 6000;
     const SYNC_MAX_CHUNKS = 32;
-    const SYNC_MAX_UNDO_BYTES = 512 * 1024;
+    // Room for every list at its local cap (5000 videos, 2000 channels each)
+    // plus the settings bag; it lives in storage.local, not the sync quota.
+    const SYNC_MAX_UNDO_BYTES = 2 * 1024 * 1024;
     const SYNC_QUOTA = Object.freeze({
         totalBytes: 102400,
         bytesPerItem: 8192,
@@ -296,6 +298,16 @@
         return { blocklists, truncatedDomains };
     }
 
+    // A truncated list carries only the sender's newest entries. Replacing
+    // ours with it deleted everything older on this device, so keep the local
+    // entries it doesn't carry ahead of the remote ones, within the local cap.
+    function mergeTruncatedList(id, remote, local, options = {}) {
+        const keyOf = (row) => (typeof row === 'string' ? row : row?.id);
+        const carried = new Set(remote.map(keyOf));
+        const merged = [...local.filter((row) => !carried.has(keyOf(row))), ...clone(remote)];
+        return sanitizeDomain(id, merged, options);
+    }
+
     function buildSyncPayload(settings, items = {}, options = {}) {
         const settingsDelta = buildSettingsDelta(settings, options);
         const lists = buildBlocklists(items, options);
@@ -412,10 +424,11 @@
     function normalizeUndoState(state, options = {}) {
         if (!isPlainObject(state) || !isPlainObject(state.settings) || !isPlainObject(state.blocklists)) return null;
         const settings = copyPlainObject(state.settings);
+        // Local caps (sanitizeDomain's): the Undo state is this device's own
+        // lists, which hold more than the sync payload can carry.
         const blocklists = {};
         for (const domain of BLOCKLIST_DOMAINS) {
-            blocklists[domain.id] = sanitizeDomain(domain.id, state.blocklists[domain.id], options)
-                .slice(-domain.cap);
+            blocklists[domain.id] = sanitizeDomain(domain.id, state.blocklists[domain.id], options);
         }
         return { settings, blocklists };
     }
@@ -547,13 +560,13 @@
         }
 
         function localStateFromItems(items) {
-            // Every cap in this module keeps the TAIL. This one feeds the Undo
-            // snapshot, so head-truncating here meant undoing a sync restored
-            // the oldest entries and permanently lost everything hidden since.
+            // This feeds the Undo snapshot and the truncated-list merge, so it
+            // keeps the local caps (sanitizeDomain's), not the smaller sync
+            // caps. Cutting it to the sync caps meant undoing a sync could
+            // never bring back a heavy user's older entries.
             const blocklists = {};
             for (const domain of BLOCKLIST_DOMAINS) {
-                blocklists[domain.id] = sanitizeDomain(domain.id, items?.[domain.key], settingsOptions)
-                    .slice(-domain.cap);
+                blocklists[domain.id] = sanitizeDomain(domain.id, items?.[domain.key], settingsOptions);
             }
             return {
                 settings: copyPlainObject(items?.[settingsKey]),
@@ -741,7 +754,10 @@
                 [settingsKey]: nextSettings,
                 ...Object.fromEntries(BLOCKLIST_DOMAINS.map((domain) => [
                     domain.key,
-                    clone(payload.blocklists[domain.id])
+                    payload.truncatedDomains.includes(domain.id)
+                        ? mergeTruncatedList(domain.id, payload.blocklists[domain.id],
+                            currentState.blocklists[domain.id], settingsOptions)
+                        : clone(payload.blocklists[domain.id])
                 ]))
             };
             const undo = {

@@ -18486,7 +18486,7 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 	const SYNC_MAX_PAYLOAD_BYTES = 90 * 1024;
 	const SYNC_CHUNK_BYTES = 6000;
 	const SYNC_MAX_CHUNKS = 32;
-	const SYNC_MAX_UNDO_BYTES = 512 * 1024;
+	const SYNC_MAX_UNDO_BYTES = 2 * 1024 * 1024;
 	const SYNC_QUOTA = Object.freeze({
 		totalBytes: 102400,
 		bytesPerItem: 8192,
@@ -18701,6 +18701,12 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 		}
 		return { blocklists, truncatedDomains };
 	}
+	function mergeTruncatedList(id, remote, local, options = {}) {
+		const keyOf = (row) => (typeof row === 'string' ? row : row?.id);
+		const carried = new Set(remote.map(keyOf));
+		const merged = [...local.filter((row) => !carried.has(keyOf(row))), ...clone(remote)];
+		return sanitizeDomain(id, merged, options);
+	}
 	function buildSyncPayload(settings, items = {}, options = {}) {
 		const settingsDelta = buildSettingsDelta(settings, options);
 		const lists = buildBlocklists(items, options);
@@ -18804,8 +18810,7 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 		const settings = copyPlainObject(state.settings);
 		const blocklists = {};
 		for (const domain of BLOCKLIST_DOMAINS) {
-			blocklists[domain.id] = sanitizeDomain(domain.id, state.blocklists[domain.id], options)
-				.slice(-domain.cap);
+			blocklists[domain.id] = sanitizeDomain(domain.id, state.blocklists[domain.id], options);
 		}
 		return { settings, blocklists };
 	}
@@ -18909,8 +18914,7 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 		function localStateFromItems(items) {
 			const blocklists = {};
 			for (const domain of BLOCKLIST_DOMAINS) {
-				blocklists[domain.id] = sanitizeDomain(domain.id, items?.[domain.key], settingsOptions)
-					.slice(-domain.cap);
+				blocklists[domain.id] = sanitizeDomain(domain.id, items?.[domain.key], settingsOptions);
 			}
 			return {
 				settings: copyPlainObject(items?.[settingsKey]),
@@ -19053,7 +19057,10 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 				[settingsKey]: nextSettings,
 				...Object.fromEntries(BLOCKLIST_DOMAINS.map((domain) => [
 					domain.key,
-					clone(payload.blocklists[domain.id])
+					payload.truncatedDomains.includes(domain.id)
+						? mergeTruncatedList(domain.id, payload.blocklists[domain.id],
+							currentState.blocklists[domain.id], settingsOptions)
+						: clone(payload.blocklists[domain.id])
 				]))
 			};
 			const undo = {

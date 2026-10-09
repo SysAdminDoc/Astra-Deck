@@ -74,7 +74,10 @@ test('every blocklist cap in settings-sync keeps the tail', () => {
         // helpers slice strings and are not in scope.
         .filter((entry) => /blocklist|domain\.cap|nextLength|\blist\b|sanitized/i.test(entry.text));
 
-    assert.ok(slices.length >= 5,
+    // Three: the push cap, the quota trim and the pull validation. The local
+    // state and Undo paths keep the local caps through sanitizeDomain and
+    // slice nothing themselves.
+    assert.ok(slices.length >= 3,
         'the blocklist slices must still be findable; got ' + slices.length);
 
     const headKeeping = slices.filter((entry) => /^0\s*,/.test(entry.args));
