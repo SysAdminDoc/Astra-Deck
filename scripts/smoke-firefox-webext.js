@@ -377,6 +377,45 @@ async function proveMatchingRequestBlocked(client, context, timeoutMs) {
     };
 }
 
+// The extension's console, read two ways. Firefox prints content-process
+// console calls (content scripts included) to stdout once
+// devtools.console.stdout.content is on, and geckodriver passes that along;
+// BiDi log.entryAdded covers the page's own realms. The 2026-09-29 first-load
+// failure printed "[YTKit] Runtime module load failed" from the content script.
+const CONSOLE_CAPTURE_LINE = /\[YTKit\]|\[astra-smoke\]/;
+const CONSOLE_PROBE = '[astra-smoke] console capture probe';
+const EXTENSION_FAILURE_LINE = /\[YTKit\] (?:Runtime module load failed|feature module failed to load|Core helpers missing)/;
+
+function findExtensionConsoleFailures(stdoutLines = [], events = []) {
+    const failures = stdoutLines.filter((line) => EXTENSION_FAILURE_LINE.test(line));
+    for (const event of events) {
+        if (event?.method !== 'log.entryAdded') continue;
+        const text = String(event.params?.text || '');
+        if (EXTENSION_FAILURE_LINE.test(text)) failures.push(text);
+    }
+    return failures;
+}
+
+// Fail closed: a capture that hears nothing can't vouch for a clean load. The
+// probe goes through the page's console, the same content-process path the
+// content script's console uses.
+async function assertExtensionConsoleClean(session, context, timeoutMs = 5000) {
+    await evaluateJson(session.client, context, `(() => { console.error(${JSON.stringify(CONSOLE_PROBE)}); return true; })()`);
+    const deadline = Date.now() + timeoutMs;
+    while (!session.capturedLines().some((line) => line.includes(CONSOLE_PROBE))) {
+        if (Date.now() > deadline) {
+            throw new Error('Firefox console capture heard nothing (is devtools.console.stdout.content honored?), so the first load is unverified');
+        }
+        await sleep(200);
+    }
+    const lines = session.capturedLines().filter((line) => !line.includes(CONSOLE_PROBE));
+    const failures = findExtensionConsoleFailures(lines, session.client.events);
+    if (failures.length) {
+        throw new Error(`Astra logged a module failure on Firefox's first YouTube load:\n${failures.join('\n')}`);
+    }
+    return lines;
+}
+
 async function injectDeterministicAdShell(client, context, timeoutMs = 15000) {
     return waitForJson(client, context, `(() => {
         document.querySelector('#astra-firefox-ad-shell')?.remove();
@@ -405,7 +444,9 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
         headed: opts.headed,
         commandTimeoutMs: opts.timeoutMs,
         startupTimeoutMs: Math.min(opts.timeoutMs, 30000),
+        captureLine: CONSOLE_CAPTURE_LINE,
         prefs: {
+            'devtools.console.stdout.content': true,
             'extensions.dnr.feedback': true,
             'extensions.webextensions.uuids': JSON.stringify({
                 [FIREFOX_GECKO_ID]: opts.extensionUuid
@@ -453,6 +494,9 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
             (value) => value?.app && value?.masthead && value?.trigger && value?.ruleset === 'enabled',
             { timeoutMs: opts.timeoutMs, label: 'YouTube shell, Astra runtime, and enabled Firefox ruleset' }
         );
+        // This is the first YouTube load after a temporary install: the case
+        // that once logged a module failure and recovered on the retry.
+        const extensionConsole = await assertExtensionConsoleClean(session, context);
 
         const deterministicShell = await injectDeterministicAdShell(
             client,
@@ -569,6 +613,7 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
             desktopOnly: true,
             dnrProbe,
             enabledRulesets: [ZERO_AD_RULESET_ID],
+            extensionConsole,
             extensionId: installed.extension,
             firefox,
             generatedAt: new Date().toISOString(),
@@ -651,6 +696,7 @@ module.exports = {
     firefoxExtensionUrl,
     firefoxStartUrls,
     firefoxUuidPreference,
+    findExtensionConsoleFailures,
     hasStartupFailure,
     injectDeterministicAdShell,
     isFirefoxExtensionUuid,

@@ -259,8 +259,19 @@ async function startFirefoxSession(options) {
         windowsHide: true
     });
     let logs = '';
+    // Lines matching `captureLine` are kept whole and uncapped. With
+    // devtools.console.stdout.content on, Firefox prints every content-process
+    // console call, content scripts included, to geckodriver's output, and the
+    // rolling tail above can lose an early one.
+    const captured = [];
+    let partial = '';
     const appendLog = (chunk) => {
-        logs = (logs + chunk.toString()).slice(-50000);
+        const text = chunk.toString();
+        logs = (logs + text).slice(-50000);
+        if (!(options.captureLine instanceof RegExp)) return;
+        const lines = (partial + text).split(/\r?\n/);
+        partial = lines.pop();
+        for (const line of lines) if (options.captureLine.test(line)) captured.push(line);
     };
     proc.stdout.on('data', appendLog);
     proc.stderr.on('data', appendLog);
@@ -308,6 +319,7 @@ async function startFirefoxSession(options) {
             client,
             geckodriver,
             logs: () => logs,
+            capturedLines: () => captured.slice(),
             profile: capabilities['moz:profile'] || '',
             sessionId,
             async close() {
