@@ -22,6 +22,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Video Hider's live, playlist, movie and dubbed filters missed some Japanese and Russian cards. "ライブ", "плейлист", "бесплатно с рекламой" and "広告付きで無料" never matched, and the Russian live words ("сейчас смотрят", "в эфире") couldn't match at all. They all do now.
 
+- **Auto-Dismiss "Still Watching?"** could click Play when you paused and opened Save or Share, any time after it had answered a prompt earlier. YouTube closes the prompt without removing it, and the old one kept the gate open. Only a prompt that's actually on screen counts now.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added

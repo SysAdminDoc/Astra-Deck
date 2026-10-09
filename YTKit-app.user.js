@@ -9513,10 +9513,12 @@ const STORAGE_KEYS = Object.freeze({
 				}
 				return false;
 			},
+			_findOnScreen(selector) {
+				return Array.from(document.querySelectorAll(selector)).find((element) => this._isOnScreen(element)) || null;
+			},
 			_isYouTherePrompt() {
-				const musicPrompt = document.querySelector('ytmusic-you-there-renderer');
-				if (musicPrompt) return true;
-				const dialog = document.querySelector('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
+				if (this._findOnScreen('ytmusic-you-there-renderer')) return true;
+				const dialog = this._findOnScreen('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
 				if (!dialog) return false;
 				const text = String(dialog.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
 				if (/continue watching|still watching|video paused/.test(text)) return true;
@@ -9533,7 +9535,7 @@ const STORAGE_KEYS = Object.freeze({
 					playerBtn.click();
 					DebugManager.log('StillWatching', 'Auto-dismissed prompt');
 				} else {
-					const btn = document.querySelector('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
+					const btn = this._findOnScreen('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
 					if (btn && isSafeToAutoClick(btn)) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
 				}
 				const video = getMainVideoElement();

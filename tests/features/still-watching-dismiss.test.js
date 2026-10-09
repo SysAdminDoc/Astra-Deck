@@ -43,21 +43,32 @@ function offScreen(node) {
     return node;
 }
 
-function scenario({ dialogText = null, hasCancelButton = false, playerControl = null, video = null } = {}) {
-    const confirmButton = onScreen(fakeNode({ tag: 'button', attributes: { id: 'confirm-button' } }));
-    const cancelButton = onScreen(fakeNode({ tag: 'button', attributes: { id: 'cancel-button' } }));
+/**
+ * `dialogOpen: false` is a prompt YouTube has closed: still in the DOM with
+ * its text, but inside a hidden paper dialog, so neither it nor its button has
+ * a box. `staleCopy` puts such a closed prompt ahead of the open one in
+ * document order, which is where an earlier prompt sits.
+ */
+function scenario({ dialogText = null, hasCancelButton = false, playerControl = null, video = null, dialogOpen = true, staleCopy = false } = {}) {
+    const place = dialogOpen ? onScreen : offScreen;
+    const confirmButton = place(fakeNode({ tag: 'button', attributes: { id: 'confirm-button' } }));
+    const cancelButton = place(fakeNode({ tag: 'button', attributes: { id: 'cancel-button' } }));
     const dialog = dialogText === null
         ? null
-        : fakeNode({ tag: 'yt-confirm-dialog-renderer', text: dialogText });
+        : place(fakeNode({ tag: 'yt-confirm-dialog-renderer', text: dialogText }));
     if (dialog) {
         dialog.querySelector = (selector) => (hasCancelButton && selector.includes('cancel') ? cancelButton : null);
     }
+    const staleButton = offScreen(fakeNode({ tag: 'button', attributes: { id: 'confirm-button' } }));
+    const staleDialog = offScreen(fakeNode({ tag: 'yt-confirm-dialog-renderer', text: 'Video paused. Continue watching?' }));
+    staleDialog.querySelector = () => null;
+    const withStale = (stale, current) => (staleCopy ? [stale, current].filter(Boolean) : current);
 
     const documentRef = fakeTreeDocument((selector) => {
         if (selector === 'ytmusic-you-there-renderer') return null;
-        if (selector === DIALOG_SELECTOR) return dialog;
+        if (selector === DIALOG_SELECTOR) return withStale(staleDialog, dialog);
         if (selector === PLAYER_CONTROL_SELECTOR) return playerControl;
-        if (selector === CONFIRM_SELECTOR) return confirmButton;
+        if (selector === CONFIRM_SELECTOR) return withStale(staleButton, dialog ? confirmButton : null);
         if (selector.includes('ytp-pause-overlay')) return null;
         if (selector === 'ytd-popup-container') return null;
         return null;
@@ -70,8 +81,65 @@ function scenario({ dialogText = null, hasCancelButton = false, playerControl = 
         getMainVideoElement: () => video
     });
 
-    return { feature, confirmButton, cancelButton, playerControl, dialog };
+    return { feature, confirmButton, cancelButton, playerControl, dialog, staleButton };
 }
+
+function pausedOnScreenVideo() {
+    const video = onScreen(fakeNode({ tag: 'video' }));
+    video.paused = true;
+    video.ended = false;
+    return video;
+}
+
+function playButton() {
+    return onScreen(fakeNode({
+        tag: 'button',
+        attributes: { class: 'ytp-play-button', 'data-title-no-tooltip': 'Play' }
+    }));
+}
+
+test('a prompt YouTube already closed does not hold the gate open', () => {
+    // The 2026-09-28 audit case: the prompt was answered, YouTube closed it
+    // without removing it, and later the user paused and opened Save or Share.
+    // That popup mutation re-ran the gate, the old text passed it, and Play
+    // got clicked under the user's menu.
+    const play = playButton();
+    const { feature, confirmButton, staleButton } = scenario({
+        dialogText: 'Video paused. Continue watching?',
+        dialogOpen: false,
+        playerControl: play,
+        video: pausedOnScreenVideo()
+    });
+    assert.equal(feature._isYouTherePrompt(), false);
+    feature._dismiss();
+    assert.equal(play.clicked, 0, 'Play must not be clicked for a closed prompt');
+    assert.equal(confirmButton.clicked + staleButton.clicked, 0);
+});
+
+test('a new prompt is answered through its own button, not a closed one before it', () => {
+    const { feature, confirmButton, staleButton } = scenario({
+        dialogText: 'Video paused. Continue watching?',
+        staleCopy: true,
+        video: pausedOnScreenVideo()
+    });
+    assert.equal(feature._isYouTherePrompt(), true);
+    feature._dismiss();
+    assert.equal(staleButton.clicked, 0, 'the closed prompt has no box to click');
+    assert.equal(confirmButton.clicked, 1);
+});
+
+test('a cancellable dialog behind a closed prompt is still refused', () => {
+    // The closed prompt's text must not vouch for the open dialog.
+    const { feature, confirmButton } = scenario({
+        dialogText: 'Unsubscribe from this channel?',
+        hasCancelButton: true,
+        staleCopy: true,
+        video: pausedOnScreenVideo()
+    });
+    assert.equal(feature._isYouTherePrompt(), false);
+    feature._dismiss();
+    assert.equal(confirmButton.clicked, 0);
+});
 
 test('no prompt on the page means no click at all', () => {
     // The reported bug: a channel page carrying the player it inherited from

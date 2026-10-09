@@ -15797,10 +15797,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // prompt is only ever raised while playback is PAUSED (pausing is
             // the whole point of it), which is a locale-independent gate that
             // unrelated dialogs — raised during playback — do not satisfy.
+            // A dismissed prompt is closed, not removed: it stays in the DOM
+            // with its "Continue watching?" text and no box. Reading the first
+            // match kept the gate open after every prompt, so opening Save or
+            // Share later (a popup-container mutation) clicked Play. Only a
+            // prompt, or a prompt button, that is on screen counts.
+            _findOnScreen(selector) {
+                return Array.from(document.querySelectorAll(selector)).find((element) => this._isOnScreen(element)) || null;
+            },
+
             _isYouTherePrompt() {
-                const musicPrompt = document.querySelector('ytmusic-you-there-renderer');
-                if (musicPrompt) return true;
-                const dialog = document.querySelector('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
+                if (this._findOnScreen('ytmusic-you-there-renderer')) return true;
+                const dialog = this._findOnScreen('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
                 if (!dialog) return false;
                 const text = String(dialog.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
                 if (/continue watching|still watching|video paused/.test(text)) return true;
@@ -15839,7 +15847,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     playerBtn.click();
                     DebugManager.log('StillWatching', 'Auto-dismissed prompt');
                 } else {
-                    const btn = document.querySelector('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
+                    const btn = this._findOnScreen('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
                     // Never auto-answer a verification/consent surface, and
                     // never click while one is open elsewhere on the page.
                     if (btn && isSafeToAutoClick(btn)) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
