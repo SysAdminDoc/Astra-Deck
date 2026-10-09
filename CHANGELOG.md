@@ -18,6 +18,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Pausing Subscriptions didn't stop YouTube from fetching more pages behind the banner. It holds now.
 
+- **Hide Planned Livestreams**, Video Hider and Watch Feed now read the same "upcoming" wording, so a scheduled stream in Japanese, Korean, Chinese or Italian is upcoming to all three. A channel named something like "Premiere Gal" and a premiere that has already aired are no longer taken for upcoming ones, and Japanese and Arabic words with voicing or hamza marks match again.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added

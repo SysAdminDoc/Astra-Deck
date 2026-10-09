@@ -33532,17 +33532,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _CARD_SELECTOR: 'ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
             // "Notify me" / "Set reminder" button text across common locales.
             _NOTIFY_RE: /(notify me|set reminder|remind me|get reminded|notificarme|avisarme|recordatorio|benachrichtigen|erinnerung|me pr[ée]venir|rappel|notificami|promemoria|напомнить|уведомить|通知する|リマインダー|알림\s*받기|通知我|设置提醒|إعلامي|تذكير)/i,
-            // Scheduled / upcoming metadata, matched in metadata rows + badges
-            // only (never the title) to avoid hiding a normal VOD whose title
-            // merely contains a word like "premiere". Every term must be
-            // FUTURE-anchored: bare "premieres?" substring-matches the
-            // post-premiere "Premiered N hours ago" row and would permanently
-            // hide finished premieres, and loose terms ("live in") can hit
-            // the channel-name byline, which shares the metadata rows on
-            // lockup cards. Ambiguous CJK premiere terms are deliberately
-            // absent — those locales are covered by the notify-button check,
-            // which is the primary signal.
-            _SCHEDULED_RE: /(scheduled for|\bpremieres\b|\bupcoming\b|waiting for|(?:starts|live) in \d|programad|pr[ée]vu pour|geplant für|programmat[oa] per|запланир|مجدول)/i,
             _isNotifyCard(card) {
                 try {
                     const btns = card.querySelectorAll(
@@ -33553,13 +33542,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const text = `${b.textContent || ''} ${label}`.trim();
                         if (text && this._NOTIFY_RE.test(text)) return true;
                     }
+                    // Metadata rows and badges only, never the title, so a VOD
+                    // titled "Premieres of 2026" stays. The rows include the
+                    // channel byline, which is why the shared words are all
+                    // future-anchored (core/text-metrics.js).
                     const metaNodes = card.querySelectorAll(
                         '.ytContentMetadataViewModelMetadataText, yt-content-metadata-view-model, #metadata-line, ytd-video-meta-block, ytd-thumbnail-overlay-time-status-renderer, .ytThumbnailBadgeViewModelHost, ytd-badge-supported-renderer'
                     );
                     for (const n of metaNodes) {
                         const label = (n.getAttribute && n.getAttribute('aria-label')) || '';
                         const text = `${n.textContent || ''} ${label}`;
-                        if (text && this._SCHEDULED_RE.test(text)) return true;
+                        if (text && globalThis.YTKitCore?.isUpcomingCardText?.(text)) return true;
                     }
                 } catch (e) { void e; }
                 return false;

@@ -221,17 +221,27 @@
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
+    // NFD splits accents off Latin and Cyrillic letters so \p{M} can drop
+    // them. It also splits Hangul into Jamo, which are letters, so NFC puts
+    // the syllables back. Kana dakuten and Arabic hamza are marks too and do
+    // not come back, which is why the pattern below is folded the same way.
+    function foldCardText(text) {
+        return String(text || '').normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+    }
+
     // The words a card uses for a premiere or a scheduled stream. A 2026-09
     // lockup carries no structural marker for either: an "Upcoming" badge and
-    // a "Scheduled for" or "Premieres" row are all there is, so Video Hider
-    // and Watch Feed both read the words. Latin terms are written without
-    // diacritics because the text is folded first. NFD also splits Hangul
-    // into Jamo, which \p{M} leaves alone, so NFC puts the syllables back.
-    const UPCOMING_CARD_PATTERN = /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i;
+    // a "Scheduled for" or "Premieres" row are all there is, so Video Hider,
+    // Watch Feed and Hide Planned Livestreams all read the words. Every term
+    // is future-anchored, because a match hides the card: a bare "premiere"
+    // also reads "Premiered 7 hours ago" and a channel called "Premiere Gal",
+    // and the bare premiere word in Spanish, Russian, Japanese, Chinese and
+    // Arabic names a finished premiere as well, so those languages rely on
+    // their upcoming badge and scheduled row instead.
+    const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in|waiting for|live in \d+|próximamente|programad[ao] para|establecer recordatorio|comienza en|à venir|programmé pour|prévue? pour|définir un rappel|commence dans|in programma|programmat[oa] per|imposta promemoria|inizia tra|bevorstehend|geplant für|erinnerung festlegen|beginnt in)\b|запланир|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약|알림 설정|후 시작|即将|预定|设置提醒|开始于|قادم|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
 
     function isUpcomingCardText(text) {
-        const folded = String(text || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
-        return UPCOMING_CARD_PATTERN.test(folded);
+        return UPCOMING_CARD_PATTERN.test(foldCardText(text));
     }
 
     // normalizeDigits is shared: the transcript scraper needs the same

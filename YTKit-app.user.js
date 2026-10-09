@@ -24510,7 +24510,6 @@ const STORAGE_KEYS = Object.freeze({
 			_navRule: null,
 			_CARD_SELECTOR: 'ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
 			_NOTIFY_RE: /(notify me|set reminder|remind me|get reminded|notificarme|avisarme|recordatorio|benachrichtigen|erinnerung|me pr[ée]venir|rappel|notificami|promemoria|напомнить|уведомить|通知する|リマインダー|알림\s*받기|通知我|设置提醒|إعلامي|تذكير)/i,
-			_SCHEDULED_RE: /(scheduled for|\bpremieres\b|\bupcoming\b|waiting for|(?:starts|live) in \d|programad|pr[ée]vu pour|geplant für|programmat[oa] per|запланир|مجدول)/i,
 			_isNotifyCard(card) {
 				try {
 					const btns = card.querySelectorAll(
@@ -24527,7 +24526,7 @@ const STORAGE_KEYS = Object.freeze({
 					for (const n of metaNodes) {
 						const label = (n.getAttribute && n.getAttribute('aria-label')) || '';
 						const text = `${n.textContent || ''} ${label}`;
-						if (text && this._SCHEDULED_RE.test(text)) return true;
+						if (text && globalThis.YTKitCore?.isUpcomingCardText?.(text)) return true;
 					}
 				} catch (e) { void e; }
 				return false;

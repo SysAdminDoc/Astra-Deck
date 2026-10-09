@@ -8,6 +8,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+require('../../extension/core/text-metrics.js');
 
 const {
     loadFeature,
@@ -17,9 +21,12 @@ const {
     selectorMatches,
 } = require('../helpers/monolith');
 
+const { isUpcomingCardText } = globalThis.YTKitCore;
+
 const feature = loadFeature('hidePlannedLivestreams', {
     document: fakeTreeDocument(() => null),
     appState: { settings: {} },
+    YTKitCore: globalThis.YTKitCore,
 });
 
 /** A feed card carrying the given metadata rows and action-button labels. */
@@ -113,11 +120,44 @@ test('a card whose metadata anchors in the future is a planned livestream', () =
         'Programado para mañana',
         'Prévu pour demain',
         'Geplant für morgen',
+        'Programmata per domani',
+        '配信予定',
+        'リマインダーを設定',
+        '예정',
+        '即将开始',
+        'Запланировано на завтра',
+        'يبدأ خلال ساعة',
     ];
     for (const text of futureRows) {
         assert.equal(feature._isNotifyCard(card({ metadata: [text] })), true,
             `"${text}" anchors in the future`);
     }
+});
+
+test('Hide Planned Livestreams, Video Hider and Watch Feed agree on every row', () => {
+    // One shared pattern, so a Japanese or Korean upcoming card can't be
+    // upcoming to Video Hider and published to this feature.
+    const rows = [
+        'Upcoming', 'Scheduled for 7/23/26, 9:45 PM', 'Premieres 10/31/26, 8:00 PM',
+        'Waiting for the creator', 'Live in 45 minutes', 'Próximamente', 'À venir',
+        'Bevorstehend', 'In programma', 'Запланировано', '近日公開', '開始まで 2 時間',
+        '알림 설정', '预定', 'قادم', 'مجدول',
+        'Premiered 7 hours ago', 'Premiere Gal', 'Live in the Studio', 'Se estrenó hace 2 horas',
+        'Премьера состоялась', 'プレミア公開: 2 時間前', '首播于 2 小时前', 'العرض الأول',
+        '12K views · 3 days ago', 'Live now',
+    ];
+    for (const text of rows) {
+        assert.equal(feature._isNotifyCard(card({ metadata: [text] })), isUpcomingCardText(text),
+            `"${text}" must read the same to all three features`);
+    }
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    assert.doesNotMatch(ytkit, /_SCHEDULED_RE/, 'no feature keeps its own upcoming wording');
+    assert.match(featureSource('hidePlannedLivestreams'), /YTKitCore\?\.isUpcomingCardText\?\.\(text\)/);
+    assert.match(featureSource('persistentQueue'), /YTKitCore\?\.isUpcomingCardText\?\./,
+        'Watch Feed reads the shared pattern');
+    const hider = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
+    assert.match(hider, /YTKitCore\?\.isUpcomingCardText\?\.\(normalizedRowsText\)/,
+        'Video Hider reads the shared pattern');
 });
 
 test('a published video is never hidden, however its metadata reads', () => {

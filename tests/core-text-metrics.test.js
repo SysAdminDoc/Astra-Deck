@@ -249,9 +249,32 @@ test('isUpcomingCardText reads upcoming wording in every shipped language', () =
         '配信予定 · リマインダーを設定',
         '예정 · 알림 설정',
         'مجدول · تعيين تذكير',
-        'Премьера состоится завтра'
+        'Премьера состоится завтра',
+        'Waiting for the creator',
+        'Live in 45 minutes',
+        // Folding strips kana dakuten and Arabic hamza from the card text, so
+        // these only match because the pattern is folded the same way.
+        'リマインダー',
+        '開始まで 2 時間',
+        'يبدأ خلال ساعة'
     ]) assert.equal(isUpcomingCardText(text), true, text);
     for (const text of ['Mix · Cyndi Lauper, Rick Astley, a-ha, and more', '1.1M views 6d ago', '4:12', '', null]) {
         assert.equal(isUpcomingCardText(text), false, String(text));
     }
+});
+
+// A match hides the card, and the rows include the channel byline.
+test('isUpcomingCardText never reads a finished premiere or a channel name as upcoming', () => {
+    const { isUpcomingCardText } = loadCore();
+    for (const text of [
+        'Premiered 7 hours ago',
+        'Premiere Gal',
+        'Live in the Studio',
+        'Streamed live 3 hours ago',
+        'Se estrenó hace 2 horas',
+        'Премьера состоялась',
+        'プレミア公開: 2 時間前',
+        '首播于 2 小时前',
+        'العرض الأول'
+    ]) assert.equal(isUpcomingCardText(text), false, text);
 });

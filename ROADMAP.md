@@ -129,16 +129,16 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   pseudo-locale copy and pass, and a test SHALL fail if the lane quietly renders real copy.
   Complexity: S
 
-- [ ] P3 — Hide Planned Livestreams reads its own upcoming wording
-  Why: three features decide whether a card is upcoming. Video Hider and Watch Feed share
-  `isUpcomingCardText` in `extension/core/text-metrics.js` (11 languages, accents folded) since
-  2026-10-06, but Hide Planned Livestreams keeps `_SCHEDULED_RE` in `extension/ytkit.js`, which
-  covers six languages and adds "waiting for" and "starts in N" that the shared one lacks. A
-  Japanese or Korean "upcoming" card is upcoming to Video Hider and not to this feature.
-  Where: `extension/ytkit.js` (`hidePlannedLivestreams`, `_SCHEDULED_RE`),
-  `extension/core/text-metrics.js`, `tests/features/hide-planned-livestreams.test.js`.
-  Acceptance: WHEN a card's rows carry upcoming wording in any shipped language, THEN Hide Planned
-  Livestreams, Video Hider and Watch Feed SHALL agree it is upcoming, through one shared pattern.
+- [ ] P3 — Video Hider's type predicates miss words whose marks the fold strips
+  Why: found 2026-10-09 fixing the shared upcoming pattern. `_extractVideoMetadata` folds the
+  rows (NFD, drop `\p{M}`, NFC), which also strips kana dakuten and Cyrillic `й`, but its live,
+  Mix, playlist, movie and auto-dubbed literals are written unfolded. So `ライブ`, `прямой эфир`
+  and `автоматический дубляж` can never match (other words in the same pattern cover some of
+  it). `core/text-metrics.js` now has `foldCardText`, which folds a pattern source the same way.
+  Where: `extension/features/video-hider/index.js` (`_extractVideoMetadata`, ~2105-2130),
+  `extension/core/text-metrics.js`, `tests/features/video-hider.test.js`.
+  Acceptance: WHEN a row carries `ライブ`, `прямой эфир` or `автоматический дубляж` alone, THEN
+  Video Hider SHALL read it as live or auto-dubbed.
   Complexity: S
 
 - [ ] P3 — Headless Firefox 156 hangs at WebDriver session creation
