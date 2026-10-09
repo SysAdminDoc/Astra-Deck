@@ -3446,7 +3446,7 @@
     "message": "Crea un Watch Feed local a partir de páginas de video y miniaturas y reprodúcelo en orden."
   },
   "feature_persistentQueue_name": {
-    "message": "Persistent Queue"
+    "message": "Watch Feed"
   },
   "feature_persistentSpeed_desc": {
     "message": "Keep playback speed consistent"
@@ -5207,7 +5207,7 @@
     "message": "Watch Feed de Astra"
   },
   "queuePanelTitle": {
-    "message": "Persistent Queue"
+    "message": "Watch Feed"
   },
   "queuePlayNext": {
     "message": "Empezar a ver"

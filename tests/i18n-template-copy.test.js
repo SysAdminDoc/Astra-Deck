@@ -125,6 +125,16 @@ test('the keys a 2026-10-09 review found English are translated', () => {
     }
 });
 
+// Watch Feed was called Persistent Queue until it was renamed; a locale that
+// kept the old English never picked up the new name.
+test('no catalogue names Watch Feed by its retired name', () => {
+    for (const [locale, messages] of Object.entries(catalogues)) {
+        for (const [key, entry] of Object.entries(messages)) {
+            assert.doesNotMatch(entry.message, /Persistent Queue/i, `${locale} ${key}`);
+        }
+    }
+});
+
 test('a relative time with an unusable locale tag still uses the browser locale before English', () => {
     const vm = require('node:vm');
     const asked = [];
