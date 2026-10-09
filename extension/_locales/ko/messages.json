@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "/로 시작하는 경로나 https://로 시작하는 전체 URL을 입력하세요."
   },
+  "commentNavAria": {
+    "message": "댓글 스레드 네비게이터"
+  },
+  "commentNavLabel": {
+    "message": "스레드 네비게이터"
+  },
+  "commentNavPrevious": {
+    "message": "이전"
+  },
+  "commentNavNext": {
+    "message": "다음"
+  },
+  "commentNavPreviousTitle": {
+    "message": "이전에 보이는 댓글 스레드로 이동"
+  },
+  "commentNavNextTitle": {
+    "message": "다음에 보이는 댓글 스레드로 이동"
+  },
+  "quickLinksRemove": {
+    "message": "삭제"
+  },
+  "quickLinksEdit": {
+    "message": "편집"
+  },
+  "quickLinksEditTitle": {
+    "message": "링크 편집"
+  },
+  "quickLinksEditAria": {
+    "message": "런처 링크 편집"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "이름…"
+  },
+  "quickLinksLabelAria": {
+    "message": "런처 링크 이름"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/경로 또는 URL…"
+  },
+  "quickLinksUrlAria": {
+    "message": "런처 링크 대상"
+  },
+  "quickLinksAdd": {
+    "message": "추가"
+  },
+  "quickLinksAddAria": {
+    "message": "런처 링크 추가"
+  },
+  "quickLinksSettings": {
+    "message": "설정"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "설정 열기"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "{brand} 설정 열기"
+  },
   "chaptersNoneFound": {
     "message": "챕터를 찾을 수 없습니다"
   },

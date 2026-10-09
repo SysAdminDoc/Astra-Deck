@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "Use um caminho que comece com / ou uma URL https:// completa."
   },
+  "commentNavAria": {
+    "message": "Navegador de conversas dos comentários"
+  },
+  "commentNavLabel": {
+    "message": "Navegador de conversas"
+  },
+  "commentNavPrevious": {
+    "message": "Anterior"
+  },
+  "commentNavNext": {
+    "message": "Próximo"
+  },
+  "commentNavPreviousTitle": {
+    "message": "Ir para a conversa visível anterior nos comentários"
+  },
+  "commentNavNextTitle": {
+    "message": "Ir para a próxima conversa visível nos comentários"
+  },
+  "quickLinksRemove": {
+    "message": "Remover"
+  },
+  "quickLinksEdit": {
+    "message": "Editar"
+  },
+  "quickLinksEditTitle": {
+    "message": "Editar links"
+  },
+  "quickLinksEditAria": {
+    "message": "Editar links do launcher"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "Rótulo…"
+  },
+  "quickLinksLabelAria": {
+    "message": "Rótulo do link do launcher"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/caminho ou URL…"
+  },
+  "quickLinksUrlAria": {
+    "message": "Destino do link do launcher"
+  },
+  "quickLinksAdd": {
+    "message": "Adicionar"
+  },
+  "quickLinksAddAria": {
+    "message": "Adicionar link ao launcher"
+  },
+  "quickLinksSettings": {
+    "message": "Configurações"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "Abrir configurações"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "Abrir configurações de {brand}"
+  },
   "chaptersNoneFound": {
     "message": "Nenhum capítulo encontrado"
   },

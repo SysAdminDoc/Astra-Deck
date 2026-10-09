@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "请使用以 / 开头的路径或完整的 https:// 网址。"
   },
+  "commentNavAria": {
+    "message": "评论讨论串导航器"
+  },
+  "commentNavLabel": {
+    "message": "讨论串导航器"
+  },
+  "commentNavPrevious": {
+    "message": "上一个"
+  },
+  "commentNavNext": {
+    "message": "下一个"
+  },
+  "commentNavPreviousTitle": {
+    "message": "跳到上一个可见的评论讨论串"
+  },
+  "commentNavNextTitle": {
+    "message": "跳到下一个可见的评论讨论串"
+  },
+  "quickLinksRemove": {
+    "message": "移除"
+  },
+  "quickLinksEdit": {
+    "message": "编辑"
+  },
+  "quickLinksEditTitle": {
+    "message": "编辑链接"
+  },
+  "quickLinksEditAria": {
+    "message": "编辑启动器链接"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "名称…"
+  },
+  "quickLinksLabelAria": {
+    "message": "启动器链接名称"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/路径或网址…"
+  },
+  "quickLinksUrlAria": {
+    "message": "启动器链接目标"
+  },
+  "quickLinksAdd": {
+    "message": "添加"
+  },
+  "quickLinksAddAria": {
+    "message": "添加启动器链接"
+  },
+  "quickLinksSettings": {
+    "message": "设置"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "打开设置"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "打开 {brand} 设置"
+  },
   "chaptersNoneFound": {
     "message": "未找到章节"
   },

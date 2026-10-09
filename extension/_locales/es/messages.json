@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "Usa una ruta que empiece por / o una URL https:// completa."
   },
+  "commentNavAria": {
+    "message": "Navegador de hilos de comentarios"
+  },
+  "commentNavLabel": {
+    "message": "Navegador de hilos"
+  },
+  "commentNavPrevious": {
+    "message": "Anterior"
+  },
+  "commentNavNext": {
+    "message": "Siguiente"
+  },
+  "commentNavPreviousTitle": {
+    "message": "Ir al hilo de comentarios visible anterior"
+  },
+  "commentNavNextTitle": {
+    "message": "Ir al siguiente hilo de comentarios visible"
+  },
+  "quickLinksRemove": {
+    "message": "Quitar"
+  },
+  "quickLinksEdit": {
+    "message": "Editar"
+  },
+  "quickLinksEditTitle": {
+    "message": "Editar enlaces"
+  },
+  "quickLinksEditAria": {
+    "message": "Editar enlaces del lanzador"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "Nombre…"
+  },
+  "quickLinksLabelAria": {
+    "message": "Nombre del enlace del lanzador"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/ruta o URL…"
+  },
+  "quickLinksUrlAria": {
+    "message": "Destino del enlace del lanzador"
+  },
+  "quickLinksAdd": {
+    "message": "Añadir"
+  },
+  "quickLinksAddAria": {
+    "message": "Añadir enlace al lanzador"
+  },
+  "quickLinksSettings": {
+    "message": "Configuración"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "Abrir configuración"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "Abrir configuración de {brand}"
+  },
   "chaptersNoneFound": {
     "message": "No se encontraron capítulos"
   },
@@ -9680,7 +9737,7 @@
     "message": "{first}, {second} o {third}"
   },
   "videoHiderInputsUnreadableTpl": {
-    "message": "Las tarjetas de esta página no muestran {inputs} de forma legible, así que los filtros que dependen de ese dato no ocultan nada."
+    "message": "Las tarjetas de esta página no muestran {inputs} de forma legible, así que los filtros que dependen de esa información no ocultan nada."
   },
   "dlHealthRuntimeMissing": {
     "message": "no instalado"

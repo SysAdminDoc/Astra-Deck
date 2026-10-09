@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "استخدم مسارًا يبدأ بـ / أو عنوان URL كاملًا يبدأ بـ https://."
   },
+  "commentNavAria": {
+    "message": "متصفح سلاسل التعليقات"
+  },
+  "commentNavLabel": {
+    "message": "متصفح السلاسل"
+  },
+  "commentNavPrevious": {
+    "message": "السابق"
+  },
+  "commentNavNext": {
+    "message": "التالي"
+  },
+  "commentNavPreviousTitle": {
+    "message": "الانتقال إلى سلسلة التعليقات الظاهرة السابقة"
+  },
+  "commentNavNextTitle": {
+    "message": "الانتقال إلى سلسلة التعليقات الظاهرة التالية"
+  },
+  "quickLinksRemove": {
+    "message": "إزالة"
+  },
+  "quickLinksEdit": {
+    "message": "تحرير"
+  },
+  "quickLinksEditTitle": {
+    "message": "تحرير الروابط"
+  },
+  "quickLinksEditAria": {
+    "message": "تحرير روابط المُشغّل"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "الاسم…"
+  },
+  "quickLinksLabelAria": {
+    "message": "اسم رابط المُشغّل"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/المسار أو العنوان…"
+  },
+  "quickLinksUrlAria": {
+    "message": "وجهة رابط المُشغّل"
+  },
+  "quickLinksAdd": {
+    "message": "إضافة"
+  },
+  "quickLinksAddAria": {
+    "message": "إضافة رابط إلى المُشغّل"
+  },
+  "quickLinksSettings": {
+    "message": "الإعدادات"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "فتح الإعدادات"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "فتح إعدادات {brand}"
+  },
   "chaptersNoneFound": {
     "message": "لم يتم العثور على فصول"
   },

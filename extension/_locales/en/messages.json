@@ -593,6 +593,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "Use a path that starts with / or a full https:// URL."
   },
+  "commentNavAria": {
+    "message": "Comment thread navigator"
+  },
+  "commentNavLabel": {
+    "message": "Thread Navigator"
+  },
+  "commentNavPrevious": {
+    "message": "Previous"
+  },
+  "commentNavNext": {
+    "message": "Next"
+  },
+  "commentNavPreviousTitle": {
+    "message": "Jump to previous visible comment thread"
+  },
+  "commentNavNextTitle": {
+    "message": "Jump to next visible comment thread"
+  },
+  "quickLinksRemove": {
+    "message": "Remove"
+  },
+  "quickLinksEdit": {
+    "message": "Edit"
+  },
+  "quickLinksEditTitle": {
+    "message": "Edit links"
+  },
+  "quickLinksEditAria": {
+    "message": "Edit launcher links"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "Label…"
+  },
+  "quickLinksLabelAria": {
+    "message": "Launcher link label"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/path or URL…"
+  },
+  "quickLinksUrlAria": {
+    "message": "Launcher link destination"
+  },
+  "quickLinksAdd": {
+    "message": "Add"
+  },
+  "quickLinksAddAria": {
+    "message": "Add launcher link"
+  },
+  "quickLinksSettings": {
+    "message": "Settings"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "Open settings"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "Open {brand} settings"
+  },
   "chaptersNoneFound": {
     "message": "No chapters found"
   },

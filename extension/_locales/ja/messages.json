@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "/ で始まるパスか、https:// から始まる完全な URL を入力してください。"
   },
+  "commentNavAria": {
+    "message": "コメントスレッドナビゲーター"
+  },
+  "commentNavLabel": {
+    "message": "スレッドナビゲーター"
+  },
+  "commentNavPrevious": {
+    "message": "前へ"
+  },
+  "commentNavNext": {
+    "message": "次へ"
+  },
+  "commentNavPreviousTitle": {
+    "message": "前の表示中のコメントスレッドへ移動"
+  },
+  "commentNavNextTitle": {
+    "message": "次の表示中のコメントスレッドへ移動"
+  },
+  "quickLinksRemove": {
+    "message": "削除"
+  },
+  "quickLinksEdit": {
+    "message": "編集"
+  },
+  "quickLinksEditTitle": {
+    "message": "リンクを編集"
+  },
+  "quickLinksEditAria": {
+    "message": "ランチャーリンクを編集"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "ラベル…"
+  },
+  "quickLinksLabelAria": {
+    "message": "ランチャーリンクのラベル"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/パス または URL…"
+  },
+  "quickLinksUrlAria": {
+    "message": "ランチャーリンクのリンク先"
+  },
+  "quickLinksAdd": {
+    "message": "追加"
+  },
+  "quickLinksAddAria": {
+    "message": "ランチャーリンクを追加"
+  },
+  "quickLinksSettings": {
+    "message": "設定"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "設定を開く"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "{brand} の設定を開く"
+  },
   "chaptersNoneFound": {
     "message": "チャプターが見つかりません"
   },

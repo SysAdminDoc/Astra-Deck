@@ -22,6 +22,16 @@ const PANEL = 'extension/features/settings-panel/index.js';
 const HIDER = 'extension/features/video-hider/index.js';
 const DOWNLOAD = 'extension/features/download-ui/index.js';
 
+// The comment navigator and the Quick Links menu kept English beside the
+// strings above until a second 2026-10-09 review.
+const NAV_AND_LAUNCHER_KEYS = [
+    'commentNavAria', 'commentNavLabel', 'commentNavPrevious', 'commentNavNext',
+    'commentNavPreviousTitle', 'commentNavNextTitle', 'quickLinksRemove', 'quickLinksEdit',
+    'quickLinksEditTitle', 'quickLinksEditAria', 'quickLinksLabelPlaceholder', 'quickLinksLabelAria',
+    'quickLinksUrlPlaceholder', 'quickLinksUrlAria', 'quickLinksAdd', 'quickLinksAddAria',
+    'quickLinksSettings', 'quickLinksSettingsTitle', 'quickLinksSettingsAriaTpl'
+];
+
 // [file, key, plural]
 const MOVED = [
     [YTKIT, 'quickLinksRemovedTpl'], [YTKIT, 'quickLinksAddedTpl'], [YTKIT, 'quickLinksLimitNoteTpl'],
@@ -41,6 +51,7 @@ const MOVED = [
     [YTKIT, 'quickLinksInvalidUrlNote'], [YTKIT, 'commentNavNoMatches'], [YTKIT, 'commentNavThreadsReady'],
     [YTKIT, 'commentNavFilterTitleTpl'], [YTKIT, 'chaptersNoneFound'], [YTKIT, 'clipboardWriteFailed'],
     [YTKIT, 'statusSettingsImportUndoFailed'], [YTKIT, 'statusSettingsImportInvalidFormat'],
+    [YTKIT, 'chapterNavLastChapter'], ...NAV_AND_LAUNCHER_KEYS.map((key) => [YTKIT, key]),
     [PANEL, 'videoHiderHiddenReadyTpl', true], [PANEL, 'videoHiderAllowedProtectedTpl', true],
     [PANEL, 'videoHiderAllowedChannelCountTpl', true], [PANEL, 'videoHiderBlockedChannelCountTpl', true],
     [PANEL, 'settingsSearchSectionMatchesTpl', true], [PANEL, 'settingsHostAccessNeededAll'],
@@ -83,7 +94,12 @@ test('the English template literals the sweep found are gone', () => {
         // Left English beside the strings above until a 2026-10-09 review.
         /= 'Use a path that starts/, /= 'Visible threads ready'/, /\? 'No matching threads'/, /`Search filter: \$\{/,
         /showToast\('No chapters found'/, /showToast\('Clipboard write failed'/, /status\.textContent = 'Waiting for comments/,
-        /'watchFeed(?:Item|Filtered)CountTpl'/
+        /'watchFeed(?:Item|Filtered)CountTpl'/, /showToast\('Last chapter'/,
+        /textContent = 'Thread Navigator'/, /makeBtn\('Jump to/, /del\.title = 'Remove'/, /title = 'Edit links'/,
+        /setAttribute\('aria-label', '(?:Comment thread navigator|Edit launcher links|Launcher link (?:label|destination)|Add launcher link)'\)/,
+        /formNote\.textContent = 'Use a site path/, /placeholder = '(?:Label…|\/path or URL…)'/,
+        /addBtn\.textContent = 'Add'/, /gear\.title = 'Open settings'/,
+        /`Open \$\{BRAND\.name\} settings`/, /mountBottomControl\(\w+, \w+, '(?:Edit|Settings)'\)/
     ]) assert.doesNotMatch(ytkit, pattern);
     const panel = read(PANEL);
     assert.doesNotMatch(panel, /countLabel\(/, 'no English "s" plural on translated words');
@@ -97,7 +113,9 @@ test('the English template literals the sweep found are gone', () => {
 test('the keys a 2026-10-09 review found English are translated', () => {
     for (const key of [
         'videoHiderChannelListCount', 'clipboardWriteFailed', 'queueImport', 'quickLinksInvalidUrlNote',
-        'commentNavNoMatches', 'commentNavThreadsReady', 'commentNavFilterTitleTpl', 'chaptersNoneFound'
+        'commentNavNoMatches', 'commentNavThreadsReady', 'commentNavFilterTitleTpl', 'chaptersNoneFound',
+        'chapterNavLastChapter', 'pageModalEnabledCountTplOne', 'pageModalEnabledCountTplOther',
+        'pageModalShortcutCountTplOne', 'pageModalShortcutCountTplOther', ...NAV_AND_LAUNCHER_KEYS
     ]) {
         const english = catalogues.en[key].message;
         for (const [locale, messages] of Object.entries(catalogues)) {

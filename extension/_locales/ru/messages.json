@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "Укажите путь, начинающийся с /, или полный адрес https://."
   },
+  "commentNavAria": {
+    "message": "Навигатор по веткам комментариев"
+  },
+  "commentNavLabel": {
+    "message": "Навигатор по веткам"
+  },
+  "commentNavPrevious": {
+    "message": "Назад"
+  },
+  "commentNavNext": {
+    "message": "Далее"
+  },
+  "commentNavPreviousTitle": {
+    "message": "Перейти к предыдущей видимой ветке комментариев"
+  },
+  "commentNavNextTitle": {
+    "message": "Перейти к следующей видимой ветке комментариев"
+  },
+  "quickLinksRemove": {
+    "message": "Удалить"
+  },
+  "quickLinksEdit": {
+    "message": "Изменить"
+  },
+  "quickLinksEditTitle": {
+    "message": "Изменить ссылки"
+  },
+  "quickLinksEditAria": {
+    "message": "Изменить ссылки запуска"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "Название…"
+  },
+  "quickLinksLabelAria": {
+    "message": "Название ссылки запуска"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/путь или адрес…"
+  },
+  "quickLinksUrlAria": {
+    "message": "Адрес ссылки запуска"
+  },
+  "quickLinksAdd": {
+    "message": "Добавить"
+  },
+  "quickLinksAddAria": {
+    "message": "Добавить ссылку запуска"
+  },
+  "quickLinksSettings": {
+    "message": "Настройки"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "Открыть настройки"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "Открыть настройки {brand}"
+  },
   "chaptersNoneFound": {
     "message": "Главы не найдены"
   },

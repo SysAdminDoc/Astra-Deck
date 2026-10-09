@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/i18n-coverage.js",
   "referenceLocale": "en",
-  "referenceKeys": 3222,
+  "referenceKeys": 3241,
   "translatedPercent": {
     "ar": 72,
     "de": 98,
@@ -11,7 +11,7 @@
     "it": 71,
     "ja": 72,
     "ko": 72,
-    "pt_BR": 71,
+    "pt_BR": 72,
     "ru": 72,
     "zh_CN": 72
   }

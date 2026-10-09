@@ -9160,7 +9160,7 @@ const STORAGE_KEYS = Object.freeze({
 					row.appendChild(a);
 					const del = document.createElement('button');
 					del.className = 'ytkit-ql-del';
-					del.title = 'Remove';
+					del.title = t('quickLinksRemove', 'Remove');
 					const delIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 					delIcon.setAttribute('viewBox', '0 0 24 24');
 					delIcon.setAttribute('width', '14');
@@ -9220,8 +9220,8 @@ const STORAGE_KEYS = Object.freeze({
 				const editBtn = document.createElement('button');
 				editBtn.type = 'button';
 				editBtn.className = 'ytkit-ql-item ytkit-ql-bottom-btn';
-				editBtn.title = 'Edit links';
-				editBtn.setAttribute('aria-label', 'Edit launcher links');
+				editBtn.title = t('quickLinksEditTitle', 'Edit links');
+				editBtn.setAttribute('aria-label', t('quickLinksEditAria', 'Edit launcher links'));
 				editBtn.setAttribute('aria-pressed', 'false');
 				editBtn.onclick = (e) => {
 					e.preventDefault(); e.stopPropagation();
@@ -9234,28 +9234,27 @@ const STORAGE_KEYS = Object.freeze({
 							addForm.className = 'ytkit-ql-add-form';
 							const formNote = document.createElement('p');
 							formNote.className = 'ytkit-ql-form-note';
-							formNote.textContent = 'Use a site path like /feed/history or a full https:// URL.';
 							formNote.setAttribute('aria-live', 'polite');
 							const nameInput = document.createElement('input');
-							nameInput.type = 'text'; nameInput.placeholder = 'Label…';
+							nameInput.type = 'text'; nameInput.placeholder = t('quickLinksLabelPlaceholder', 'Label…');
 							nameInput.className = 'ytkit-ql-input';
 							nameInput.name = 'quickLinkLabel';
 							nameInput.autocomplete = 'off';
 							nameInput.spellcheck = false;
-							nameInput.setAttribute('aria-label', 'Launcher link label');
+							nameInput.setAttribute('aria-label', t('quickLinksLabelAria', 'Launcher link label'));
 							const urlInput = document.createElement('input');
-							urlInput.type = 'text'; urlInput.placeholder = '/path or URL…';
+							urlInput.type = 'text'; urlInput.placeholder = t('quickLinksUrlPlaceholder', '/path or URL…');
 							urlInput.className = 'ytkit-ql-input';
 							urlInput.name = 'quickLinkUrl';
 							urlInput.autocomplete = 'off';
 							urlInput.spellcheck = false;
 							urlInput.inputMode = 'url';
-							urlInput.setAttribute('aria-label', 'Launcher link destination');
+							urlInput.setAttribute('aria-label', t('quickLinksUrlAria', 'Launcher link destination'));
 							const addBtn = document.createElement('button');
 							addBtn.type = 'button';
 							addBtn.className = 'ytkit-ql-add-btn';
-							addBtn.textContent = 'Add';
-							addBtn.setAttribute('aria-label', 'Add launcher link');
+							addBtn.textContent = t('quickLinksAdd', 'Add');
+							addBtn.setAttribute('aria-label', t('quickLinksAddAria', 'Add launcher link'));
 							const validateForm = () => {
 								const name = nameInput.value.trim();
 								const url = urlInput.value.trim();
@@ -9316,16 +9315,16 @@ const STORAGE_KEYS = Object.freeze({
 					}
 				};
 				const editIcon = ICONS.edit();
-				mountBottomControl(editBtn, editIcon, 'Edit');
+				mountBottomControl(editBtn, editIcon, t('quickLinksEdit', 'Edit'));
 				bottomRow.appendChild(editBtn);
 				const gear = document.createElement('button');
 				gear.type = 'button';
 				gear.className = 'ytkit-ql-item ytkit-ql-bottom-btn';
-				gear.title = 'Open settings';
-				gear.setAttribute('aria-label', `Open ${BRAND.name} settings`);
+				gear.title = t('quickLinksSettingsTitle', 'Open settings');
+				gear.setAttribute('aria-label', t('quickLinksSettingsAriaTpl', 'Open {brand} settings').replace('{brand}', () => BRAND.name));
 				gear.onclick = (e) => { e.preventDefault(); toggleSettingsPanel(); };
 				const settingsIcon = ICONS.settings();
-				mountBottomControl(gear, settingsIcon, 'Settings');
+				mountBottomControl(gear, settingsIcon, t('quickLinksSettings', 'Settings'));
 				bottomRow.appendChild(gear);
 				menu.appendChild(bottomRow);
 				parentEl.appendChild(menu);
@@ -19098,7 +19097,7 @@ const STORAGE_KEYS = Object.freeze({
 				const nav = document.createElement('aside');
 				nav.id = 'ytkit-comment-nav';
 				nav.setAttribute('role', 'navigation');
-				nav.setAttribute('aria-label', 'Comment thread navigator');
+				nav.setAttribute('aria-label', t('commentNavAria', 'Comment thread navigator'));
 				nav.dataset.filtered = '0';
 				const header = document.createElement('div');
 				header.className = 'ytkit-comment-nav-head';
@@ -19108,7 +19107,7 @@ const STORAGE_KEYS = Object.freeze({
 				topLine.className = 'ytkit-comment-nav-topline';
 				const label = document.createElement('span');
 				label.className = 'ytkit-comment-nav-label';
-				label.textContent = 'Thread Navigator';
+				label.textContent = t('commentNavLabel', 'Thread Navigator');
 				const filterBadge = document.createElement('span');
 				filterBadge.className = 'ytkit-comment-nav-filter';
 				filterBadge.hidden = true;
@@ -19145,8 +19144,8 @@ const STORAGE_KEYS = Object.freeze({
 					btn.addEventListener('click', () => this._navigate(direction));
 					return btn;
 				};
-				const prevBtn = makeBtn('Jump to previous visible comment thread', '\u2191', 'Previous', -1);
-				const nextBtn = makeBtn('Jump to next visible comment thread', '\u2193', 'Next', 1);
+				const prevBtn = makeBtn(t('commentNavPreviousTitle', 'Jump to previous visible comment thread'), '\u2191', t('commentNavPrevious', 'Previous'), -1);
+				const nextBtn = makeBtn(t('commentNavNextTitle', 'Jump to next visible comment thread'), '\u2193', t('commentNavNext', 'Next'), 1);
 				controls.appendChild(prevBtn);
 				controls.appendChild(nextBtn);
 				header.appendChild(meta);
@@ -30244,8 +30243,8 @@ const STORAGE_KEYS = Object.freeze({
 				btn.id = id;
 				btn.type = 'button';
 				btn.className = `ytkit-trigger-btn ytkit-trigger-btn--${variant}`;
-				btn.title = `${BRAND.name} Settings`;
-				btn.setAttribute('aria-label', `Open ${BRAND.name} settings`);
+				btn.title = t('playerGearTitleTpl', '{brand} Settings').replace('{brand}', () => BRAND.name);
+				btn.setAttribute('aria-label', t('playerGearAriaTpl', 'Open {brand} settings').replace('{brand}', () => BRAND.name));
 				btn.setAttribute('aria-haspopup', 'dialog');
 				const glyph = document.createElement('span');
 				glyph.className = 'ytkit-trigger-btn__glyph';

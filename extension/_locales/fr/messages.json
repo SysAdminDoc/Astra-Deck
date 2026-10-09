@@ -585,6 +585,63 @@
   "quickLinksInvalidUrlNote": {
     "message": "Utilisez un chemin commençant par / ou une URL https:// complète."
   },
+  "commentNavAria": {
+    "message": "Navigateur des fils de commentaires"
+  },
+  "commentNavLabel": {
+    "message": "Navigateur de fils"
+  },
+  "commentNavPrevious": {
+    "message": "Précédent"
+  },
+  "commentNavNext": {
+    "message": "Suivant"
+  },
+  "commentNavPreviousTitle": {
+    "message": "Aller au fil de commentaires visible précédent"
+  },
+  "commentNavNextTitle": {
+    "message": "Aller au fil de commentaires visible suivant"
+  },
+  "quickLinksRemove": {
+    "message": "Retirer"
+  },
+  "quickLinksEdit": {
+    "message": "Modifier"
+  },
+  "quickLinksEditTitle": {
+    "message": "Modifier les liens"
+  },
+  "quickLinksEditAria": {
+    "message": "Modifier les liens du lanceur"
+  },
+  "quickLinksLabelPlaceholder": {
+    "message": "Libellé…"
+  },
+  "quickLinksLabelAria": {
+    "message": "Libellé du lien du lanceur"
+  },
+  "quickLinksUrlPlaceholder": {
+    "message": "/chemin ou URL…"
+  },
+  "quickLinksUrlAria": {
+    "message": "Destination du lien du lanceur"
+  },
+  "quickLinksAdd": {
+    "message": "Ajouter"
+  },
+  "quickLinksAddAria": {
+    "message": "Ajouter un lien au lanceur"
+  },
+  "quickLinksSettings": {
+    "message": "Paramètres"
+  },
+  "quickLinksSettingsTitle": {
+    "message": "Ouvrir les paramètres"
+  },
+  "quickLinksSettingsAriaTpl": {
+    "message": "Ouvrir les paramètres {brand}"
+  },
   "chaptersNoneFound": {
     "message": "Aucun chapitre trouvé"
   },
