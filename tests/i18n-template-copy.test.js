@@ -108,6 +108,20 @@ test('the keys a 2026-10-09 review found English are translated', () => {
 });
 
 test('a relative time with an unusable locale tag still uses the browser locale before English', () => {
-    const source = read('extension/core/date-time.js');
-    assert.match(source, /new Intl\.RelativeTimeFormat\(undefined, \{ numeric: 'auto' \}\)/);
+    const vm = require('node:vm');
+    const asked = [];
+    class RelativeTimeFormat {
+        constructor(locale) {
+            asked.push(locale);
+            if (locale !== undefined) throw new RangeError(`Incorrect locale information provided: ${locale}`);
+        }
+        format(amount, unit) { return `browser:${amount}:${unit}`; }
+    }
+    const sandbox = { Intl: { ...Intl, RelativeTimeFormat }, Date, Number, Math, String };
+    sandbox.globalThis = sandbox;
+    vm.runInNewContext(read('extension/core/date-time.js'), sandbox);
+    const now = Date.UTC(2026, 9, 9, 12);
+    const text = sandbox.YTKitCore.formatRelativeTimestamp(now - 2 * 3600 * 1000, { locale: 'not a tag', now });
+    assert.equal(text, 'browser:-2:hour', 'the browser locale is tried before the English fallback');
+    assert.deepEqual(asked, ['not a tag', undefined]);
 });
