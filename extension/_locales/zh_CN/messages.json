@@ -120,7 +120,7 @@
     "message": "已恢复保存的摘要"
   },
   "aiSummarySaveFailed": {
-    "message": "Saving the summary failed. It may disappear after a reload."
+    "message": "保存摘要失败。重新加载后摘要可能会消失。"
   },
   "aiSummarySearchLabel": {
     "message": "搜索保存的摘要"
@@ -189,7 +189,7 @@
     "message": "YouTube 播放检查"
   },
   "astraContextMenuAria": {
-    "message": "Astra actions"
+    "message": "Astra 操作"
   },
   "audioOnlyActive": {
     "message": "仅音频"
@@ -228,7 +228,7 @@
     "message": "按一半一半地关闭并重新开启你的功能，让你在大约十次刷新内把 291 个功能缩小到一个。设置会在结束时、你停止时以及你离开后自动恢复。"
   },
   "bisectIntroCountUnknown": {
-    "message": "your features"
+    "message": "你的功能"
   },
   "bisectNo": {
     "message": "不再发生"
@@ -261,22 +261,22 @@
     "message": "仍然会发生"
   },
   "blockedWatchAllowOnce": {
-    "message": "Allow once"
+    "message": "允许一次"
   },
   "blockedWatchBack": {
-    "message": "Back"
+    "message": "返回"
   },
   "blockedWatchDescription": {
-    "message": "This video is from a channel you blocked."
+    "message": "此视频来自你已屏蔽的频道。"
   },
   "blockedWatchTitle": {
-    "message": "Blocked channel"
+    "message": "已屏蔽的频道"
   },
   "blockedWatchUnblock": {
-    "message": "Unblock"
+    "message": "取消屏蔽"
   },
   "blockedWatchUnknownChannel": {
-    "message": "Unknown channel"
+    "message": "未知频道"
   },
   "brandName": {
     "message": "Astra Deck"
@@ -286,181 +286,181 @@
     "description": "Buffer target slider value rendered in seconds"
   },
   "bulkActionsAria": {
-    "message": "Bulk card actions"
+    "message": "批量卡片操作"
   },
   "bulkAllow": {
-    "message": "Allow"
+    "message": "允许"
   },
   "bulkAllowedTpl": {
-    "message": "Allowed {count} videos"
+    "message": "已允许 {count} 个视频"
   },
   "bulkCopiedTpl": {
-    "message": "Copied {count} URLs"
+    "message": "已复制 {count} 个网址"
   },
   "bulkCopyUrls": {
-    "message": "Copy URLs"
+    "message": "复制网址"
   },
   "bulkDontRecommend": {
-    "message": "Don’t recommend"
+    "message": "不推荐"
   },
   "bulkDontRecommendTitleTpl": {
-    "message": "Apply YouTube’s native “Don’t recommend channel” to up to {count} selected cards, hide them locally, and log the session."
+    "message": "对最多 {count} 张选中的卡片应用 YouTube 原生的“不推荐此频道”，在本地隐藏它们，并记录本次操作。"
   },
   "bulkExportLog": {
-    "message": "Export log"
+    "message": "导出日志"
   },
   "bulkExportLogTitle": {
-    "message": "Download the local scrub-session summary as JSON. Nothing leaves this device."
+    "message": "以 JSON 格式下载本地清理会话摘要。数据不会离开此设备。"
   },
   "bulkExportedScrubTpl": {
-    "message": "Exported {count} scrub sessions"
+    "message": "已导出 {count} 个清理会话"
   },
   "bulkHiddenTpl": {
-    "message": "Hidden {count} videos"
+    "message": "已隐藏 {count} 个视频"
   },
   "videoHiderHideAllSweepingTpl": {
     "message": "已隐藏 {count} 个视频。其余视频将在加载时隐藏。"
   },
   "bulkHide": {
-    "message": "Hide"
+    "message": "隐藏"
   },
   "bulkNoScrubSessions": {
-    "message": "No scrub sessions recorded yet."
+    "message": "尚无清理会话记录。"
   },
   "bulkNotInterested": {
-    "message": "Not interested"
+    "message": "不感兴趣"
   },
   "bulkNotInterestedTitleTpl": {
-    "message": "Apply YouTube’s native “Not interested” to up to {count} selected cards, hide them locally, and log the session."
+    "message": "对最多 {count} 张选中的卡片应用 YouTube 原生的“不感兴趣”，在本地隐藏它们，并记录本次操作。"
   },
   "bulkRestoredTpl": {
-    "message": "Restored {count} local hides (native feedback stays applied)"
+    "message": "已恢复 {count} 个本地隐藏（原生反馈仍然有效）"
   },
   "bulkScrubCapTpl": {
-    "message": " ({skipped} over the {cap}-per-run cap left selected)"
+    "message": "（超出每次 {cap} 个的上限，其中 {skipped} 个仍保持选中）"
   },
   "bulkScrubDoneTpl": {
-    "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
+    "message": "已清理 {count} 个：{native} 个原生，{count} 个仅在本地隐藏{capNote}"
   },
   "bulkScrubPartialTpl": {
-    "message": "YouTube’s menu item wasn’t found. 0 native, {count} hidden locally only{capNote}"
+    "message": "未找到 YouTube 的菜单项。0 个原生，{count} 个仅在本地隐藏{capNote}"
   },
   "bulkScrubRunning": {
-    "message": "A scrub session is already running."
+    "message": "已有清理会话正在运行。"
   },
   "bulkScrubSelectFirst": {
-    "message": "Select cards to scrub first."
+    "message": "请先选择要清理的卡片。"
   },
   "bulkSelect": {
-    "message": "Bulk Select"
+    "message": "批量选择"
   },
   "bulkSelectedTpl": {
-    "message": "{count} selected"
+    "message": "已选择 {count} 项"
   },
   "bulkUndoHides": {
-    "message": "Undo hides"
+    "message": "撤销隐藏"
   },
   "categoryMeta_accessibility_description": {
-    "message": "Reduced motion, contrast, focus, and reading comfort."
+    "message": "减少动效、对比度、焦点和阅读舒适度。"
   },
   "categoryMeta_accessibility_summary": {
-    "message": "Motion, contrast & reading comfort"
+    "message": "动效、对比度与阅读舒适度"
   },
   "categoryMeta_advanced_description": {
-    "message": "Diagnostics, experiments, and power-user controls."
+    "message": "诊断、实验功能和高级用户控制。"
   },
   "categoryMeta_advanced_summary": {
-    "message": "Power-user toggles & experimental controls"
+    "message": "高级用户开关与实验性控制"
   },
   "categoryMeta_comments_description": {
-    "message": "Readability, filtering, and focused comment threads."
+    "message": "可读性、过滤和专注的评论串。"
   },
   "categoryMeta_comments_summary": {
-    "message": "Readability, filtering & creator context"
+    "message": "可读性、过滤与创作者上下文"
   },
   "categoryMeta_content_description": {
-    "message": "What reaches your feeds, and what gets filtered out."
+    "message": "哪些内容会出现在你的信息流中，哪些会被过滤。"
   },
   "categoryMeta_content_summary": {
-    "message": "Hiding, filtering & what reaches your feeds"
+    "message": "隐藏、过滤与信息流内容"
   },
   "categoryMeta_downloads_description": {
-    "message": "Download quality, formats, and companion service."
+    "message": "下载画质、格式和配套服务。"
   },
   "categoryMeta_downloads_summary": {
-    "message": "Local yt-dlp downloads and server status"
+    "message": "本地 yt-dlp 下载与服务器状态"
   },
   "categoryMeta_homeSubscriptions_description": {
-    "message": "Layout and density for the home and subscription feeds."
+    "message": "首页和订阅信息流的布局与密度。"
   },
   "categoryMeta_homeSubscriptions_summary": {
-    "message": "Feed layout, density & subscription views"
+    "message": "信息流布局、密度与订阅视图"
   },
   "categoryMeta_integrations_description": {
-    "message": "Handing video to other players and services you choose."
+    "message": "将视频交给你选择的其他播放器和服务。"
   },
   "categoryMeta_integrations_summary": {
-    "message": "External players and third-party services"
+    "message": "外部播放器和第三方服务"
   },
   "categoryMeta_liveChat_description": {
-    "message": "Filtering, spacing, and visibility for live streams."
+    "message": "直播的过滤、间距和可见性。"
   },
   "categoryMeta_liveChat_summary": {
-    "message": "Filters, density & live viewing comfort"
+    "message": "过滤、密度与直播观看舒适度"
   },
   "categoryMeta_navigation_description": {
-    "message": "The guide, the masthead, and moving around YouTube."
+    "message": "导览栏、顶栏以及在 YouTube 中的跳转方式。"
   },
   "categoryMeta_navigation_summary": {
-    "message": "Guide, masthead & moving around the site"
+    "message": "导览栏、顶栏与站内跳转"
   },
   "categoryMeta_playback_description": {
-    "message": "Resuming, looping, timing, and tab-aware playback."
+    "message": "续播、循环、计时和标签页感知播放。"
   },
   "categoryMeta_playback_summary": {
-    "message": "Speed, looping & tab-aware behavior"
+    "message": "速度、循环与标签页感知行为"
   },
   "categoryMeta_playlists_description": {
-    "message": "The queue, Watch Later, and playlist management."
+    "message": "队列、稍后观看和播放列表管理。"
   },
   "categoryMeta_playlists_summary": {
-    "message": "Queue, Watch Later & playlist tools"
+    "message": "队列、稍后观看与播放列表工具"
   },
   "categoryMeta_ratings_description": {
-    "message": "Like and dislike counts, and community rating signal."
+    "message": "点赞和踩的数量，以及社区评分信号。"
   },
   "categoryMeta_ratings_summary": {
-    "message": "Likes, dislikes & community signal"
+    "message": "点赞、踩与社区信号"
   },
   "categoryMeta_research_description": {
-    "message": "Transcripts, summaries, questions, and notes."
+    "message": "字幕、摘要、提问和笔记。"
   },
   "categoryMeta_research_summary": {
-    "message": "Transcripts, summaries & note taking"
+    "message": "字幕、摘要与记笔记"
   },
   "categoryMeta_subscriptions_description": {
-    "message": "Grouping, tagging, and managing the channels you follow."
+    "message": "对你关注的频道进行分组、加标签和管理。"
   },
   "categoryMeta_subscriptions_summary": {
-    "message": "Groups, tags & managing who you follow"
+    "message": "分组、标签与管理关注的频道"
   },
   "categoryMeta_theme_description": {
-    "message": "Color, contrast, density, and custom appearance."
+    "message": "颜色、对比度、密度和自定义外观。"
   },
   "categoryMeta_theme_summary": {
-    "message": "Color, density & visual polish"
+    "message": "颜色、密度与视觉细节"
   },
   "categoryMeta_videoPlayer_description": {
-    "message": "Playback defaults, quality, and player behavior."
+    "message": "播放默认值、画质和播放器行为。"
   },
   "categoryMeta_videoPlayer_summary": {
-    "message": "Layout, theater behavior & player chrome"
+    "message": "布局、影院模式行为与播放器外观"
   },
   "categoryMeta_watchPage_description": {
-    "message": "Actions, utilities, and helpers for the watch page."
+    "message": "观看页的操作、实用工具和辅助功能。"
   },
   "categoryMeta_watchPage_summary": {
-    "message": "Actions, utilities & page-level helpers"
+    "message": "操作、实用工具与页面级辅助功能"
   },
   "channelAgePublishedOnTpl": {
     "message": "{date} 发布"
@@ -493,10 +493,10 @@
     "message": "已取消屏蔽 {author}"
   },
   "commentDuplicateHide": {
-    "message": "Hide similar comments"
+    "message": "隐藏相似评论"
   },
   "commentDuplicateShowTpl": {
-    "message": "Show {count} similar comments"
+    "message": "显示 {count} 条相似评论"
   },
   "commentHeatLikesTplOne": {
     "message": "{count} 个赞"
@@ -670,58 +670,58 @@
     "message": "正在翻译…"
   },
   "commonActive": {
-    "message": "Active"
+    "message": "已启用"
   },
   "commonAll": {
-    "message": "All"
+    "message": "全部"
   },
   "commonChecking": {
-    "message": "Checking…"
+    "message": "正在检查…"
   },
   "commonClear": {
-    "message": "Clear"
+    "message": "清除"
   },
   "commonClose": {
-    "message": "Close"
+    "message": "关闭"
   },
   "commonCopyFailed": {
-    "message": "Copy failed"
+    "message": "复制失败"
   },
   "commonDone": {
-    "message": "Done"
+    "message": "完成"
   },
   "commonExport": {
-    "message": "Export"
+    "message": "导出"
   },
   "commonImport": {
-    "message": "Import"
+    "message": "导入"
   },
   "commonJustNow": {
-    "message": "Just now"
+    "message": "刚刚"
   },
   "commonLoading": {
-    "message": "Loading…"
+    "message": "正在加载…"
   },
   "commonPreparing": {
-    "message": "Preparing…"
+    "message": "正在准备…"
   },
   "commonReady": {
-    "message": "Ready"
+    "message": "就绪"
   },
   "commonRefresh": {
-    "message": "Refresh"
+    "message": "刷新"
   },
   "commonReset": {
-    "message": "Reset"
+    "message": "重置"
   },
   "commonTryAgain": {
     "message": "重试"
   },
   "commonUnexpectedError": {
-    "message": "unexpected error"
+    "message": "意外错误"
   },
   "commonUntitled": {
-    "message": "Untitled"
+    "message": "无标题"
   },
   "contextNoteAnyTab": {
     "message": "打开 YouTube 标签页后，快捷开关将开始同步。"
@@ -766,13 +766,13 @@
     "message": "在移除访问权限之前，Video Hider 可以从此网站获取数据。"
   },
   "dataFlowGrant": {
-    "message": "grant"
+    "message": "授权"
   },
   "dataFlowGrantActive": {
-    "message": "granted"
+    "message": "已授权"
   },
   "dataFlowGrantNeeded": {
-    "message": "permission needed"
+    "message": "需要权限"
   },
   "dataFlowGrantRemove": {
     "message": "移除访问权限"
@@ -865,43 +865,43 @@
     "message": "比此扩展更新"
   },
   "dlHealthAuth": {
-    "message": "Auth"
+    "message": "认证"
   },
   "dlHealthDenoFailed": {
-    "message": "Deno provision failed"
+    "message": "Deno 配置失败"
   },
   "dlHealthDenoFailedLabel": {
-    "message": "Deno: failed"
+    "message": "Deno：失败"
   },
   "dlHealthDenoFailedTpl": {
-    "message": "Deno provision failed: {error}"
+    "message": "Deno 配置失败：{error}"
   },
   "dlHealthDenoProvisioned": {
-    "message": "Deno provisioned successfully"
+    "message": "Deno 配置成功"
   },
   "dlHealthDownloader": {
-    "message": "Downloader"
+    "message": "下载器"
   },
   "dlHealthLegacy": {
-    "message": "legacy"
+    "message": "旧版"
   },
   "dlHealthLegacyAuthTitle": {
-    "message": "Using legacy /health token bootstrap because native messaging is unavailable."
+    "message": "由于原生消息传递不可用，正在使用旧版 /health 令牌引导。"
   },
   "dlHealthLive": {
-    "message": "live"
+    "message": "在线"
   },
   "dlHealthNative": {
-    "message": "native"
+    "message": "原生"
   },
   "dlHealthNativeAuthTitle": {
-    "message": "Token received over browser native messaging; /health token echo suppressed."
+    "message": "令牌已通过浏览器原生消息传递接收；已禁止 /health 回显令牌。"
   },
   "dlHealthNotRunning": {
-    "message": "not running"
+    "message": "未运行"
   },
   "dlHealthOffline": {
-    "message": "offline"
+    "message": "离线"
   },
   "dlHealthPillAriaTpl": {
     "message": "{label}，{value}"
@@ -910,19 +910,19 @@
     "message": "{label}：{value}"
   },
   "dlHealthProvisioning": {
-    "message": "Provisioning…"
+    "message": "正在配置…"
   },
   "dlHealthRegionAria": {
-    "message": "Downloader health"
+    "message": "下载器健康状态"
   },
   "dlHealthSabrLimitedTitle": {
-    "message": "Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482."
+    "message": "部分 YouTube 视频使用仅限 SABR 的格式，yt-dlp 目前还无法原生下载。请参阅 yt-dlp issue #12482。"
   },
   "dlHealthUnknown": {
-    "message": "unknown"
+    "message": "未知"
   },
   "dlHealthUnreachable": {
-    "message": "unreachable"
+    "message": "无法连接"
   },
   "dlHealthUserscriptAuthTitle": {
     "message": "来自 Astra Downloader 中一次性用户脚本配对的令牌。"
@@ -931,82 +931,82 @@
     "message": "已配对"
   },
   "dlHistoryAllFormats": {
-    "message": "All formats"
+    "message": "所有格式"
   },
   "dlHistoryAllStatuses": {
-    "message": "All statuses"
+    "message": "所有状态"
   },
   "dlHistoryButton": {
-    "message": "History"
+    "message": "历史记录"
   },
   "dlHistoryButtonTitle": {
-    "message": "View recent downloads"
+    "message": "查看最近的下载"
   },
   "dlHistoryCloseAria": {
-    "message": "Close recent downloads"
+    "message": "关闭最近下载"
   },
   "dlHistoryComplete": {
-    "message": "Complete"
+    "message": "已完成"
   },
   "dlHistoryCount": {
-    "message": "{start}-{end} of {filtered} filtered · {total} retained"
+    "message": "已筛选 {filtered} 项中的第 {start}-{end} 项 · 共保留 {total} 项"
   },
   "dlHistoryDateFromAria": {
-    "message": "Filter history saved from date"
+    "message": "按起始保存日期筛选历史记录"
   },
   "dlHistoryDateToAria": {
-    "message": "Filter history saved through date"
+    "message": "按截止保存日期筛选历史记录"
   },
   "dlHistoryEmpty": {
-    "message": "No completed downloads yet."
+    "message": "还没有已完成的下载。"
   },
   "dlHistoryExportTruncatedTpl": {
-    "message": "Exported the most recent {count} downloads. Narrow the filters to export older entries."
+    "message": "已导出最近的 {count} 个下载。缩小筛选范围可导出更早的条目。"
   },
   "dlHistoryExporting": {
-    "message": "Exporting…"
+    "message": "正在导出…"
   },
   "dlHistoryFormatAria": {
-    "message": "Filter history by format"
+    "message": "按格式筛选历史记录"
   },
   "dlHistoryNewest": {
-    "message": "Newest first"
+    "message": "最新优先"
   },
   "dlHistoryNext": {
-    "message": "Next"
+    "message": "下一页"
   },
   "dlHistoryNoMatches": {
-    "message": "No downloads match these filters."
+    "message": "没有符合这些筛选条件的下载。"
   },
   "dlHistoryOldest": {
-    "message": "Oldest first"
+    "message": "最早优先"
   },
   "dlHistoryPrevious": {
-    "message": "Previous"
+    "message": "上一页"
   },
   "dlHistoryRegionAria": {
-    "message": "Recent downloads"
+    "message": "最近下载"
   },
   "dlHistorySearchAria": {
-    "message": "Search download history"
+    "message": "搜索下载历史记录"
   },
   "dlHistorySearchPlaceholder": {
-    "message": "Search title or filename"
+    "message": "搜索标题或文件名"
   },
   "dlHistorySortAria": {
-    "message": "Sort download history"
+    "message": "排序下载历史记录"
   },
   "dlHistoryStatusAria": {
-    "message": "Filter history by status"
+    "message": "按状态筛选历史记录"
   },
   "dlHistoryTitle": {
-    "message": "Recent Downloads"
+    "message": "最近下载"
   },
   "dlHistoryUnavailableCount": {
-    "message": "History unavailable"
+    "message": "历史记录不可用"
   },
   "dlHistoryUnreachable": {
-    "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
+    "message": "无法连接 Astra Downloader。请启动 Astra Downloader 后重试。"
   },
   "dlInstallApiMismatchTpl": {
     "message": "Astra Downloader 正在运行，但此 Astra Deck 使用的 API 比它接受的更旧{versions}。请更新扩展，然后再次选择“检查”。"
@@ -1015,124 +1015,124 @@
     "message": "（它至少需要 API {minimum}）"
   },
   "dlInstallCheckAgain": {
-    "message": "Check again"
+    "message": "重新检查"
   },
   "dlInstallCheckDetail": {
-    "message": "Use this after running the setup file."
+    "message": "运行安装文件后使用。"
   },
   "dlInstallCheckingService": {
-    "message": "Checking for the Astra Downloader service…"
+    "message": "正在检查 Astra Downloader 服务…"
   },
   "dlInstallCloseAria": {
-    "message": "Close local downloader prompt"
+    "message": "关闭本地下载器提示"
   },
   "dlInstallCommandCopied": {
-    "message": "Command copied"
+    "message": "命令已复制"
   },
   "dlInstallCommandCopiedHint": {
-    "message": "Fallback command copied. Use it in PowerShell only if the setup file cannot run."
+    "message": "备用命令已复制。仅当安装文件无法运行时，才在 PowerShell 中使用。"
   },
   "dlInstallCommandDetail": {
-    "message": "Use only if the downloaded setup file cannot run."
+    "message": "仅当下载的安装文件无法运行时使用。"
   },
   "dlInstallConnectionCheck": {
-    "message": "Connection check"
+    "message": "连接检查"
   },
   "dlInstallCopyCommand": {
-    "message": "Copy fallback command"
+    "message": "复制备用命令"
   },
   "dlInstallDownloadDetail": {
-    "message": "Recommended. Installs or repairs Astra Downloader."
+    "message": "推荐。安装或修复 Astra Downloader。"
   },
   "dlInstallDownloadSetup": {
-    "message": "Download setup"
+    "message": "下载安装程序"
   },
   "dlInstallDownloadedHint": {
-    "message": "Setup downloaded. Open the file, finish installation, then choose Check again."
+    "message": "安装程序已下载。请打开该文件，完成安装，然后选择“重新检查”。"
   },
   "dlInstallDownloadingSetup": {
-    "message": "Downloading the setup file…"
+    "message": "正在下载安装文件…"
   },
   "dlInstallDownloadingSetupShort": {
-    "message": "Downloading setup…"
+    "message": "正在下载安装程序…"
   },
   "dlInstallLocalDownloads": {
-    "message": "Local downloads"
+    "message": "本地下载"
   },
   "dlInstallNativeRequiredDesc": {
-    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
+    "message": "Astra Downloader 正在运行，但此版本无法将其私有令牌交给浏览器。请使用下方的“下载安装程序”进行更新，然后选择“重新检查”。"
   },
   "dlInstallNoResponse": {
-    "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
+    "message": "服务没有响应。请运行下方的安装程序来修复 Astra Downloader，然后重新检查。"
   },
   "dlInstallNotDetected": {
-    "message": "Not detected yet"
+    "message": "尚未检测到"
   },
   "dlInstallNotDetectedHint": {
-    "message": "Setup was not detected yet. Make sure the installer finished, then check again."
+    "message": "尚未检测到安装程序。请确认安装已完成，然后重新检查。"
   },
   "dlInstallNotPaired": {
     "message": "尚未配对"
   },
   "dlInstallOpenSetup": {
-    "message": "Open setup file"
+    "message": "打开安装文件"
   },
   "dlInstallOpenedHint": {
-    "message": "The setup file should be open. Finish installation, then choose Check again."
+    "message": "安装文件应该已经打开。请完成安装，然后选择“重新检查”。"
   },
   "dlInstallPortConflictTpl": {
-    "message": "Another program is answering on Astra Downloader’s port {port}{version}. It is usually a leftover downloader from an earlier install. Close it, remove it from Startup apps (look for “YTYT-Downloader” or “Astra Deck Downloader”), then start Astra Downloader and choose Check again."
+    "message": "有另一个程序正在 Astra Downloader 的端口 {port}{version} 上响应。它通常是早期安装遗留的下载器。请关闭它，并将其从启动应用中移除（查找“YTYT-Downloader”或“Astra Deck Downloader”），然后启动 Astra Downloader 并选择“重新检查”。"
   },
   "dlInstallPortVersionTpl": {
-    "message": " (reporting version {version})"
+    "message": "（报告版本 {version}）"
   },
   "dlInstallReconnectTitle": {
-    "message": "Reconnect Astra Downloader"
+    "message": "重新连接 Astra Downloader"
   },
   "dlInstallRepairDesc": {
-    "message": "Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service."
+    "message": "Astra Deck 目前无法连接下载器服务。如果已安装，请重新启动它；否则请运行安装程序来修复本地服务。"
   },
   "dlInstallRepairHint": {
-    "message": "Fastest path: start the service again first. If it still does not respond, run setup to repair the install."
+    "message": "最快的方法：先重新启动服务。如果仍然没有响应，请运行安装程序修复安装。"
   },
   "dlInstallSetupDesc": {
-    "message": "Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads."
+    "message": "在此设备上安装 Astra Downloader，即可稳定下载音频和视频。只需安装一次，之后的下载都能用。"
   },
   "dlInstallSetupHint": {
-    "message": "Recommended path: download setup, open the file, then return here and check again."
+    "message": "推荐方式：下载安装程序，打开该文件，然后回到这里重新检查。"
   },
   "dlInstallSetupReady": {
-    "message": "Setup ready"
+    "message": "安装程序已就绪"
   },
   "dlInstallSetupTitle": {
-    "message": "Set up local downloads"
+    "message": "设置本地下载"
   },
   "dlInstallSkip": {
-    "message": "Skip for now"
+    "message": "暂时跳过"
   },
   "dlInstallStartDetail": {
-    "message": "Fastest fix if the downloader is installed but idle."
+    "message": "如果下载器已安装但处于空闲状态，这是最快的解决办法。"
   },
   "dlInstallStartService": {
-    "message": "Start service"
+    "message": "启动服务"
   },
   "dlInstallStarting": {
-    "message": "Starting…"
+    "message": "正在启动…"
   },
   "dlInstallStartingService": {
-    "message": "Starting the Astra Downloader service…"
+    "message": "正在启动 Astra Downloader 服务…"
   },
   "dlInstallStepCheck": {
-    "message": "Choose Check again so Astra Deck can confirm the service is ready."
+    "message": "选择“重新检查”，让 Astra Deck 确认服务已就绪。"
   },
   "dlInstallStepDownload": {
-    "message": "Download the Astra Downloader setup file."
+    "message": "下载 Astra Downloader 安装文件。"
   },
   "dlInstallStepOpen": {
-    "message": "Open the setup file from Downloads and finish installation."
+    "message": "从“下载”文件夹中打开安装文件并完成安装。"
   },
   "dlInstallStepStart": {
-    "message": "Start the service again if the downloader is already installed."
+    "message": "如果下载器已经安装，请重新启动服务。"
   },
   "dlInstallUserscriptNotPairedHint": {
     "message": "Astra Downloader 正在运行，但没有完成配对。请先在其中选择 Pair userscript，然后在两分钟内再次检查。"
@@ -1154,28 +1154,28 @@
     "message": "选择下载文件夹"
   },
   "dlPopupClipEndAria": {
-    "message": "Clip end timestamp"
+    "message": "剪辑结束时间戳"
   },
   "dlPopupClipEndPlaceholder": {
-    "message": "End · 1:30"
+    "message": "结束 · 1:30"
   },
   "dlPopupClipFormat": {
     "message": "请以秒、MM:SS 或 HH:MM:SS 格式输入剪辑的开始和结束时间。"
   },
   "dlPopupClipHint": {
-    "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
+    "message": "留空则下载完整视频。下载后会逐帧精确地重新剪辑片段。"
   },
   "dlPopupClipInvalid": {
-    "message": "Enter a valid clip range with an end later than its start."
+    "message": "请输入有效的剪辑范围，结束时间须晚于开始时间。"
   },
   "dlPopupClipRange": {
-    "message": "Clip range (optional)"
+    "message": "剪辑范围（可选）"
   },
   "dlPopupClipStartAria": {
-    "message": "Clip start timestamp"
+    "message": "剪辑开始时间戳"
   },
   "dlPopupClipStartPlaceholder": {
-    "message": "Start · 0:00"
+    "message": "开始 · 0:00"
   },
   "dlPopupClipTooShort": {
     "message": "剪辑长度至少为 0.1 秒。"
@@ -1205,37 +1205,37 @@
     "message": "格式"
   },
   "dlPopupFormatsAdjusted": {
-    "message": "switched to Best"
+    "message": "已切换为最佳"
   },
   "dlPopupFormatsHint": {
     "message": "询问 Astra Downloader 此视频实际提供哪些分辨率。"
   },
   "dlPopupFormatsLoading": {
-    "message": "Checking…"
+    "message": "正在检查…"
   },
   "dlPopupFormatsNone": {
     "message": "Astra Downloader 报告此 URL 没有视频流。"
   },
   "dlPopupFormatsProbe": {
-    "message": "Check what's available"
+    "message": "查看可用格式"
   },
   "dlPopupFormatsRecheck": {
-    "message": "Check again"
+    "message": "重新检查"
   },
   "dlPopupFormatsRungUnavailableTpl": {
-    "message": "Not available. This video tops out at {max}p"
+    "message": "不可用。此视频最高为 {max}p"
   },
   "dlPopupFormatsSummaryTpl": {
-    "message": "{count} formats · {min}p to {max}p available"
+    "message": "{count} 种格式 · 可用 {min}p 至 {max}p"
   },
   "dlPopupFormatsUnavailable": {
-    "message": "Format list unavailable."
+    "message": "格式列表不可用。"
   },
   "dlPopupLoading": {
     "message": "加载中…"
   },
   "dlPopupOutsideRoots": {
-    "message": "That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path."
+    "message": "该文件夹不在允许的下载位置内，将被拒绝。请将它添加到 ExtraOutputRoots，或选择下载路径下的子文件夹。"
   },
   "dlPopupPickerUnavailable": {
     "message": "文件夹选择器不可用"
@@ -1244,43 +1244,43 @@
     "message": "选择中…"
   },
   "dlPopupPlaylistClear": {
-    "message": "Clear"
+    "message": "清除"
   },
   "dlPopupPlaylistClipConflict": {
-    "message": "Choose either a clip range or playlist items."
+    "message": "请在剪辑范围和播放列表项目中二选一。"
   },
   "dlPopupPlaylistHint": {
-    "message": "Preview to choose a bounded subset. Without a selection, this video downloads normally."
+    "message": "预览后可选择有限的子集。未选择时，此视频将正常下载。"
   },
   "dlPopupPlaylistItems": {
-    "message": "Playlist items"
+    "message": "播放列表项目"
   },
   "dlPopupPlaylistListAria": {
-    "message": "Playlist item selection"
+    "message": "播放列表项目选择"
   },
   "dlPopupPlaylistLoading": {
-    "message": "Loading…"
+    "message": "正在加载…"
   },
   "dlPopupPlaylistPreview": {
-    "message": "Preview playlist"
+    "message": "预览播放列表"
   },
   "dlPopupPlaylistRefresh": {
-    "message": "Refresh preview"
+    "message": "刷新预览"
   },
   "dlPopupPlaylistSelectAll": {
-    "message": "Select all"
+    "message": "全选"
   },
   "dlPopupPlaylistSelectionTpl": {
-    "message": "{selected} selected · {shown} shown · {total} total"
+    "message": "已选 {selected} 项 · 显示 {shown} 项 · 共 {total} 项"
   },
   "dlPopupPlaylistUnavailable": {
-    "message": "Playlist preview unavailable."
+    "message": "播放列表预览不可用。"
   },
   "dlPopupQuality": {
     "message": "画质"
   },
   "dlPopupQualitySizeTitleTpl": {
-    "message": "Estimated download size: {size}"
+    "message": "预计下载大小：{size}"
   },
   "dlPopupQualitySizeTpl": {
     "message": "{quality} · {size}"
@@ -1427,31 +1427,31 @@
     "message": "修复下载器"
   },
   "dlStreamButtonTitle": {
-    "message": "Show adaptive format URLs"
+    "message": "显示自适应格式网址"
   },
   "dlStreamCopied": {
-    "message": "Stream URL copied"
+    "message": "流网址已复制"
   },
   "dlStreamCopyUrl": {
-    "message": "Copy URL"
+    "message": "复制网址"
   },
   "dlStreamEmpty": {
-    "message": "No stream URLs parsed. YouTube may have served SABR-only formats. Astra Downloader handles those through youtube:formats=duplicate."
+    "message": "未解析到任何流网址。YouTube 可能提供了仅限 SABR 的格式。Astra Downloader 通过 youtube:formats=duplicate 处理这类格式。"
   },
   "dlStreamLinksTitle": {
-    "message": "Stream Links"
+    "message": "流链接"
   },
   "dlStreamSabrOnly": {
-    "message": "SABR-only"
+    "message": "仅限 SABR"
   },
   "dlStreamWarning": {
-    "message": "URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead."
+    "message": "网址的有效期很短，在浏览器中可能无法使用。请改用 Astra Downloader，或交给 yt-dlp/VLC 处理。"
   },
   "dualSubtitleLanguageAuto": {
-    "message": "Automatic alternate language"
+    "message": "自动选择备用语言"
   },
   "dualSubtitleTrackAria": {
-    "message": "Secondary subtitles"
+    "message": "第二字幕"
   },
   "dwBreakTitle": {
     "message": "休息一下"
@@ -1460,28 +1460,28 @@
     "message": "已达到每日上限"
   },
   "dwShortsHardBlockHint": {
-    "message": "This hard block resets at your next local midnight."
+    "message": "此强制屏蔽将在你本地时间的下一个午夜重置。"
   },
   "dwShortsHardBlockMessage": {
-    "message": "You have reached your {limit}-minute Shorts budget for today. Leave Shorts to continue watching other YouTube videos."
+    "message": "你今天的 Shorts 时长额度（{limit} 分钟）已用完。请离开 Shorts，继续观看其他 YouTube 视频。"
   },
   "dwShortsLeaveButton": {
-    "message": "Leave Shorts"
+    "message": "离开 Shorts"
   },
   "dwShortsLimitEyebrow": {
-    "message": "Shorts Guard"
+    "message": "Shorts 守卫"
   },
   "dwShortsLimitResetHint": {
-    "message": "The Shorts budget resets at your next local midnight."
+    "message": "Shorts 时长额度将在你本地时间的下一个午夜重置。"
   },
   "dwShortsLimitTitle": {
-    "message": "Shorts Limit Reached"
+    "message": "已达到 Shorts 限制"
   },
   "dwShortsSnoozeButton": {
-    "message": "Snooze 5 Minutes"
+    "message": "暂停 5 分钟"
   },
   "dwShortsSnoozeMessage": {
-    "message": "You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes."
+    "message": "你今天已观看 {minutes} 分钟的 Shorts。休息一下，或将守卫再暂停五分钟。"
   },
   "emptyNoMatch": {
     "message": "无匹配的快捷开关"
@@ -1517,46 +1517,46 @@
     "description": "The extension name displayed in the browser UI."
   },
   "externalHealthAria": {
-    "message": "External API health"
+    "message": "外部 API 健康状态"
   },
   "externalHealthAvailabilityTpl": {
-    "message": "availability {state}"
+    "message": "可用性 {state}"
   },
   "externalHealthCopyAria": {
-    "message": "Copy external API health report to clipboard"
+    "message": "将外部 API 健康报告复制到剪贴板"
   },
   "externalHealthCopyBtn": {
-    "message": "Copy report"
+    "message": "复制报告"
   },
   "externalHealthCopyDone": {
-    "message": "Copied."
+    "message": "已复制。请粘贴到 GitHub issue 中。"
   },
   "externalHealthCopyFail": {
-    "message": "Could not copy."
+    "message": "无法复制。"
   },
   "externalHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
+    "message": "请打开 YouTube 标签页来生成报告。"
   },
   "externalHealthCopyPending": {
-    "message": "Building report..."
+    "message": "正在生成报告…"
   },
   "externalHealthDetailEmpty": {
-    "message": "No requests observed in this tab yet."
+    "message": "此标签页尚未观察到任何请求。"
   },
   "externalHealthEmpty": {
-    "message": "No external API services tracked yet."
+    "message": "尚未跟踪任何外部 API 服务。"
   },
   "externalHealthRefreshTpl": {
-    "message": "refreshed {age} ago"
+    "message": "{age}前刷新"
   },
   "externalHealthSourceTpl": {
-    "message": "source {source}"
+    "message": "来源 {source}"
   },
   "externalHealthTitle": {
-    "message": "External API health"
+    "message": "外部 API 健康状态"
   },
   "externalHealthTotalTpl": {
-    "message": "{count} services"
+    "message": "{count} 项服务"
   },
   "failureCauseAuth": {
     "message": "凭据被拒绝。请在设置中检查密钥后再试。"
@@ -1613,31 +1613,31 @@
     "message": "{count} 秒前"
   },
   "featureHealthAllWellTpl": {
-    "message": "{healthy} features working"
+    "message": "{healthy} 项功能正常"
   },
   "featureHealthDegradedTpl": {
-    "message": "{count} degraded"
+    "message": "{count} 项降级"
   },
   "featureHealthEmpty": {
-    "message": "No enabled features sampled yet."
+    "message": "尚未对任何已启用的功能进行采样。"
   },
   "featureHealthFailedTpl": {
-    "message": "{count} failed"
+    "message": "{count} 项失败"
   },
   "featureHealthHealthyTpl": {
-    "message": "{count} working"
+    "message": "{count} 项正常"
   },
   "featureHealthMoreTpl": {
-    "message": "+{count} more"
+    "message": "另有 {count} 项"
   },
   "featureHealthNote": {
-    "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
+    "message": "“降级”表示功能已加载，但它依赖的某项内容不再响应。重新加载 YouTube 可重新检查。"
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "通过 {selector} 检测到 YouTube 警告；播放状态为 {state}"
   },
   "featureHealthReasonApiTpl": {
-    "message": "{service}: {detail}"
+    "message": "{service}：{detail}"
   },
   "featureHealthReasonCanaryTpl": {
     "message": "YouTube {version} 更改了 {surface}"
@@ -1646,34 +1646,34 @@
     "message": "页面元素“{surface}”仅匹配到备用规则"
   },
   "featureHealthReasonSelectorTpl": {
-    "message": "Page element “{surface}” no longer found"
+    "message": "找不到页面元素“{surface}”"
   },
   "featureHealthStatusDegraded": {
-    "message": "Degraded"
+    "message": "降级"
   },
   "featureHealthStatusFailed": {
-    "message": "Failed"
+    "message": "失败"
   },
   "featureHealthStatusHealthy": {
-    "message": "Working"
+    "message": "正常"
   },
   "featureHealthStatusIdle": {
-    "message": "Not active here"
+    "message": "在此处未启用"
   },
   "featureHealthTitle": {
-    "message": "Feature health"
+    "message": "功能健康状态"
   },
   "featurePerfAria": {
-    "message": "Feature performance"
+    "message": "功能性能"
   },
   "featurePerfEmpty": {
-    "message": "No features initialized yet."
+    "message": "尚未初始化任何功能。"
   },
   "featurePerfTitle": {
-    "message": "Feature init timing"
+    "message": "功能初始化耗时"
   },
   "featurePerfTotalTpl": {
-    "message": "{count} features measured"
+    "message": "已测量 {count} 项功能"
   },
   "featureReportChangedTpl": {
     "message": "与默认值不同的设置（{count}）："
@@ -1697,10 +1697,10 @@
     "message": "只有名称，没有值。没有向任何地方发送内容。它在你的剪贴板里，是否粘贴由你决定。"
   },
   "featureScheduleDaysTpl": {
-    "message": "Active {window} on {days}"
+    "message": "在 {days} 的 {window} 启用"
   },
   "featureScheduleEveryDayTpl": {
-    "message": "Active {window} every day"
+    "message": "每天 {window} 启用"
   },
   "feature_abHide_ask_desc": {
     "message": "隐藏视频下方的提问/AI 按钮"
@@ -1793,16 +1793,16 @@
     "message": "反翻译音轨"
   },
   "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+    "message": "在章节列表和播放器悬停标签中恢复原始语言的章节标题。标题取自原始描述，因为 YouTube 本来就是从那里生成章节的。"
   },
   "feature_antiTranslateChapters_name": {
-    "message": "Anti-Translate Chapters"
+    "message": "反翻译章节"
   },
   "feature_antiTranslateThumbnails_desc": {
-    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
+    "message": "在文字已被本地化的卡片上恢复原始语言的缩略图。在观看页使用播放器响应，其他位置使用 YouTube 自己的同源 oEmbed 端点，因此无需额外的网站访问权限。"
   },
   "feature_antiTranslateThumbnails_name": {
-    "message": "Anti-Translate Thumbnails"
+    "message": "反翻译缩略图"
   },
   "feature_antiTranslateTranscript_desc": {
     "message": "从互动面板字幕 URL 中去除翻译轨道参数，使 YouTube 提供原始语言字幕。尽力而为；当原始语言轨道可用时生效。"
@@ -1823,34 +1823,34 @@
     "message": "Astra 右键菜单"
   },
   "feature_audioAutoGain_desc": {
-    "message": "Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage."
+    "message": "通过有界的自适应 Web Audio 增益级，将音量较小的视频调整到舒适的收听水平。"
   },
   "feature_audioAutoGain_name": {
-    "message": "Audio Auto-Gain"
+    "message": "音频自动增益"
   },
   "feature_audioEqHighGainDb_desc": {
-    "message": "High-shelf gain centered at 8 kHz, from -12 dB to +12 dB."
+    "message": "以 8 kHz 为中心的高频搁架增益，范围为 -12 dB 到 +12 dB。"
   },
   "feature_audioEqHighGainDb_name": {
-    "message": "EQ High Band"
+    "message": "均衡器高频段"
   },
   "feature_audioEqLowGainDb_desc": {
-    "message": "Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB."
+    "message": "以 120 Hz 为中心的低频搁架增益，范围为 -12 dB 到 +12 dB。"
   },
   "feature_audioEqLowGainDb_name": {
-    "message": "EQ Low Band"
+    "message": "均衡器低频段"
   },
   "feature_audioEqMidGainDb_desc": {
-    "message": "Peaking gain centered at 1 kHz, from -12 dB to +12 dB."
+    "message": "以 1 kHz 为中心的峰值增益，范围为 -12 dB 到 +12 dB。"
   },
   "feature_audioEqMidGainDb_name": {
-    "message": "EQ Mid Band"
+    "message": "均衡器中频段"
   },
   "feature_audioHighPass_desc": {
-    "message": "Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph."
+    "message": "在 MAIN-world 音频图中使用 80 Hz 高通滤波器，减少浑浊的低频隆隆声。"
   },
   "feature_audioHighPass_name": {
-    "message": "Audio High-Pass Filter"
+    "message": "音频高通滤波器"
   },
   "feature_audioNormalization_desc": {
     "message": "压缩动态范围，使安静和响亮的段落以相似的音量播放。"
@@ -1871,10 +1871,10 @@
     "message": "音频平衡"
   },
   "feature_audioParametricEq_desc": {
-    "message": "Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB."
+    "message": "在 MAIN-world 音频图中应用三段式低、中、高频均衡器。默认关闭，每个频段限制在 -12 dB 到 +12 dB。"
   },
   "feature_audioParametricEq_name": {
-    "message": "Parametric EQ"
+    "message": "参数均衡器"
   },
   "feature_audioSyncOffsetMs_desc": {
     "message": "将音频相对于视频的时间调整为 -500 毫秒至 +500 毫秒。正值会增加音频延迟；负值使用可用的最低 Web Audio 延迟。"
@@ -1913,10 +1913,10 @@
     "message": "自动下载视频"
   },
   "feature_autoExitFullscreen_desc": {
-    "message": "Leave fullscreen automatically when a video finishes, unless a playlist or queue advances to a next video"
+    "message": "视频播放结束时自动退出全屏，除非播放列表或队列将切换到下一个视频"
   },
   "feature_autoExitFullscreen_name": {
-    "message": "Auto-Exit Fullscreen at End"
+    "message": "结束时自动退出全屏"
   },
   "feature_autoExpandComments_desc": {
     "message": "自动展开被截断的评论，始终显示完整文本"
@@ -1967,10 +1967,10 @@
     "message": "自动跳过章节"
   },
   "feature_autoSubtitlesWhenMuted_desc": {
-    "message": "Turn captions on automatically while the video is muted and restore the previous caption state on unmute"
+    "message": "视频静音时自动开启字幕，取消静音后恢复之前的字幕状态"
   },
   "feature_autoSubtitlesWhenMuted_name": {
-    "message": "Subtitles While Muted"
+    "message": "静音时显示字幕"
   },
   "feature_autoSubtitles_desc": {
     "message": "视频开始播放时自动开启字幕"
@@ -1991,10 +1991,10 @@
     "message": "蓝光过滤"
   },
   "feature_blueLightIntensity_desc": {
-    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+    "message": "设置启用蓝光过滤后暖色调的强度。"
   },
   "feature_blueLightIntensity_name": {
-    "message": "Blue Light Intensity"
+    "message": "蓝光强度"
   },
   "feature_bulkCardActions_desc": {
     "message": "开启选择模式批量选取信息流卡片，然后批量隐藏、允许或复制 URL。选择时会出现悬浮操作栏。"
@@ -2201,10 +2201,10 @@
     "message": "已屏蔽的评论作者"
   },
   "feature_commentDuplicateCollapse_desc": {
-    "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."
+    "message": "仅通过本地文本比较，将近乎重复的评论折叠到无障碍展开器中。"
   },
   "feature_commentDuplicateCollapse_name": {
-    "message": "Collapse Similar Comments"
+    "message": "折叠相似评论"
   },
   "feature_commentEnhancements_desc": {
     "message": "高亮创作者/楼主回复，显示点赞热度指标，并为每个评论线程添加折叠全部回复开关"
@@ -2225,10 +2225,10 @@
     "message": "评论过滤规则"
   },
   "feature_commentLanguageAllowlist_desc": {
-    "message": "Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain."
+    "message": "仅显示这些语言代码的评论，例如 en、es 或 fr。留空则允许所有语言；检测在本地完成，不确定时默认放行。"
   },
   "feature_commentLanguageAllowlist_name": {
-    "message": "Comment Language Allowlist"
+    "message": "评论语言白名单"
   },
   "feature_commentNavigator_desc": {
     "message": "浮动线程导航器，实时显示可见评论和过滤结果计数"
@@ -2549,28 +2549,28 @@
     "message": "视频格式"
   },
   "feature_dualLanguageSubtitles_desc": {
-    "message": "Show an independently selected second caption track below YouTube captions when available"
+    "message": "在 YouTube 字幕下方显示单独选择的第二字幕轨道（如果可用）"
   },
   "feature_dualLanguageSubtitles_name": {
-    "message": "Dual-language Subtitles"
+    "message": "双语字幕"
   },
   "feature_dualSubtitleLanguage_desc": {
-    "message": "Choose the caption language rendered below native YouTube captions"
+    "message": "选择显示在 YouTube 原生字幕下方的字幕语言"
   },
   "feature_dualSubtitleLanguage_name": {
-    "message": "Second Subtitle Language"
+    "message": "第二字幕语言"
   },
   "feature_elementZapper_desc": {
-    "message": "Click a shelf, panel, or promo to hide it, and keep hiding it."
+    "message": "点击某个分区、面板或推广内容即可隐藏，并持续隐藏。"
   },
   "feature_elementZapper_name": {
-    "message": "Element Zapper"
+    "message": "元素清除器"
   },
   "feature_enableCPU_Tamer_desc": {
     "message": "通过 requestAnimationFrame 限制后台计时器以降低 CPU 占用"
   },
   "feature_enableCPU_Tamer_name": {
-    "message": "CPU Tamer"
+    "message": "CPU 调节器"
   },
   "feature_enableHandleRevealer_desc": {
     "message": "在评论中的 @用户名旁显示原始频道名称"
@@ -2591,10 +2591,10 @@
     "message": "已知故障通知"
   },
   "feature_feedPrefilter_desc": {
-    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
+    "message": "在页面根据 YouTube 的信息流数据生成卡片之前，先移除已屏蔽的频道，而不是事后再隐藏卡片。播放列表和视频播放器不会受到影响。"
   },
   "feature_feedPrefilter_name": {
-    "message": "Filter Feeds Before Render"
+    "message": "渲染前过滤信息流"
   },
   "feature_feedTriageProfile_desc": {
     "message": "开启精选专注模式：隐藏 Shorts、直播、即将首播、混合播放列表、已观看视频和 AI 摘要。关闭后恢复之前的设置。"
@@ -2633,10 +2633,10 @@
     "message": "所有 YouTube 页面强制深色"
   },
   "feature_forceDvr_desc": {
-    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+    "message": "对声明禁用 DVR 的直播，请求 YouTube 开放回看功能。属于实验功能，默认关闭；如果播放器响应的结构发生变化，Astra Deck 不会改动它，并会报告降级。"
   },
   "feature_forceDvr_name": {
-    "message": "Force DVR for Live Streams"
+    "message": "强制直播 DVR"
   },
   "feature_forceH264_desc": {
     "message": "优先使用 H.264 (AVC) 而非 VP9/AV1，降低旧硬件的 CPU 占用。可能降低最高画质。使用 MAIN world 编解码器桥接。"
@@ -2681,10 +2681,10 @@
     "message": "双击全屏"
   },
   "feature_fullscreenScroll_desc": {
-    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+    "message": "全屏时向下滚动可查看描述、评论和相关视频；向上滚动即可回到视频"
   },
   "feature_fullscreenScroll_name": {
-    "message": "Scroll in Fullscreen"
+    "message": "全屏滚动"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "在文档正文下挂载一个隐藏的 role=status / aria-live=polite 容器。屏幕阅读器会朗读 Astra 写入其中的任何文本（通知内容、过滤结果、下载状态变更）。"
@@ -2699,136 +2699,136 @@
     "message": "灰度缩略图"
   },
   "feature_guideHide_footer_desc": {
-    "message": "Hide the Guide footer links"
+    "message": "隐藏导览栏页脚链接"
   },
   "feature_guideHide_footer_name": {
-    "message": "Footer"
+    "message": "页脚"
   },
   "feature_guideHide_gaming_desc": {
-    "message": "Hide the Gaming entry"
+    "message": "隐藏“游戏”条目"
   },
   "feature_guideHide_gaming_name": {
-    "message": "Gaming"
+    "message": "游戏"
   },
   "feature_guideHide_help_desc": {
-    "message": "Hide the Help entry"
+    "message": "隐藏“帮助”条目"
   },
   "feature_guideHide_help_name": {
-    "message": "Help"
+    "message": "帮助"
   },
   "feature_guideHide_history_desc": {
-    "message": "Hide the History entry"
+    "message": "隐藏“历史记录”条目"
   },
   "feature_guideHide_history_name": {
-    "message": "History"
+    "message": "历史记录"
   },
   "feature_guideHide_home_desc": {
-    "message": "Hide the Home entry in the Guide"
+    "message": "隐藏导览栏中的“首页”条目"
   },
   "feature_guideHide_home_name": {
     "message": "首页"
   },
   "feature_guideHide_learning_desc": {
-    "message": "Hide the Learning topic entry"
+    "message": "隐藏“学习”主题条目"
   },
   "feature_guideHide_learning_name": {
-    "message": "Learning"
+    "message": "学习"
   },
   "feature_guideHide_likedVideos_desc": {
-    "message": "Hide the Liked Videos entry"
+    "message": "隐藏“赞过的视频”条目"
   },
   "feature_guideHide_likedVideos_name": {
-    "message": "Liked Videos"
+    "message": "赞过的视频"
   },
   "feature_guideHide_live_desc": {
-    "message": "Hide the Live topic entry"
+    "message": "隐藏“直播”主题条目"
   },
   "feature_guideHide_live_name": {
     "message": "有内容"
   },
   "feature_guideHide_movies_desc": {
-    "message": "Hide the Movies & TV entry"
+    "message": "隐藏“电影和电视”条目"
   },
   "feature_guideHide_movies_name": {
-    "message": "Movies & TV"
+    "message": "电影和电视"
   },
   "feature_guideHide_music_desc": {
-    "message": "Hide the Music topic entry"
+    "message": "隐藏“音乐”主题条目"
   },
   "feature_guideHide_music_name": {
-    "message": "Music"
+    "message": "音乐"
   },
   "feature_guideHide_news_desc": {
-    "message": "Hide the News topic entry"
+    "message": "隐藏“新闻”主题条目"
   },
   "feature_guideHide_news_name": {
-    "message": "News"
+    "message": "新闻"
   },
   "feature_guideHide_playlists_desc": {
-    "message": "Hide the Playlists entry"
+    "message": "隐藏“播放列表”条目"
   },
   "feature_guideHide_playlists_name": {
     "message": "播放列表"
   },
   "feature_guideHide_premium_desc": {
-    "message": "Hide the YouTube Premium entry"
+    "message": "隐藏 YouTube Premium 条目"
   },
   "feature_guideHide_premium_name": {
     "message": "YouTube Premium"
   },
   "feature_guideHide_reportHistory_desc": {
-    "message": "Hide the Report History entry"
+    "message": "隐藏“举报记录”条目"
   },
   "feature_guideHide_reportHistory_name": {
-    "message": "Report History"
+    "message": "举报记录"
   },
   "feature_guideHide_settings_desc": {
-    "message": "Hide the Settings entry"
+    "message": "隐藏“设置”条目"
   },
   "feature_guideHide_settings_name": {
-    "message": "Settings"
+    "message": "设置"
   },
   "feature_guideHide_sports_desc": {
-    "message": "Hide the Sports topic entry"
+    "message": "隐藏“体育”主题条目"
   },
   "feature_guideHide_sports_name": {
-    "message": "Sports"
+    "message": "体育"
   },
   "feature_guideHide_studio_desc": {
-    "message": "Hide the YouTube Studio entry"
+    "message": "隐藏 YouTube Studio 条目"
   },
   "feature_guideHide_studio_name": {
     "message": "YouTube Studio"
   },
   "feature_guideHide_subscriptions_desc": {
-    "message": "Hide the Subscriptions entry"
+    "message": "隐藏“订阅”条目"
   },
   "feature_guideHide_subscriptions_name": {
     "message": "订阅"
   },
   "feature_guideHide_trending_desc": {
-    "message": "Hide the Trending entry"
+    "message": "隐藏“热门”条目"
   },
   "feature_guideHide_trending_name": {
-    "message": "Trending"
+    "message": "热门"
   },
   "feature_guideHide_watchLater_desc": {
-    "message": "Hide the Watch Later entry"
+    "message": "隐藏“稍后观看”条目"
   },
   "feature_guideHide_watchLater_name": {
-    "message": "Watch Later"
+    "message": "稍后观看"
   },
   "feature_guideHide_yourVideos_desc": {
-    "message": "Hide the Your Videos / Studio entry"
+    "message": "隐藏“你的视频”/ Studio 条目"
   },
   "feature_guideHide_yourVideos_name": {
-    "message": "Your Videos"
+    "message": "你的视频"
   },
   "feature_heatmapSmartSpeed_desc": {
-    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
+    "message": "加快播放没人重看的部分，在最多重播的片段恢复为你自己设定的速度。默认关闭；需要视频带有热度图数据。"
   },
   "feature_heatmapSmartSpeed_name": {
-    "message": "Heatmap Smart Speed"
+    "message": "热度图智能变速"
   },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "选择隐藏视频下方的哪些操作按钮"
@@ -2843,10 +2843,10 @@
     "message": "隐藏聊天元素"
   },
   "feature_hiddenGuideElementsManager_desc": {
-    "message": "Choose individual left-navigation (Guide) entries to hide"
+    "message": "选择要隐藏的左侧导航（导览栏）条目"
   },
   "feature_hiddenGuideElementsManager_name": {
-    "message": "Hide Guide Elements"
+    "message": "隐藏导览栏元素"
   },
   "feature_hiddenPlayerControlsManager_desc": {
     "message": "选择隐藏播放器的哪些控制按钮"
@@ -2861,10 +2861,10 @@
     "message": "隐藏观看页元素"
   },
   "feature_hideAiContextPanels_desc": {
-    "message": "Remove fact-checking and contextual information panels"
+    "message": "移除事实核查和背景信息面板"
   },
   "feature_hideAiContextPanels_name": {
-    "message": "Hide AI Context Panels"
+    "message": "隐藏 AI 背景面板"
   },
   "feature_hideAiSummary_desc": {
     "message": "移除 AI 生成的摘要和提问 AI 按钮"
@@ -2879,10 +2879,10 @@
     "message": "隐藏 Airplay 按钮"
   },
   "feature_hideAskAi_desc": {
-    "message": "Remove Ask AI buttons and conversational sections"
+    "message": "移除“向 AI 提问”按钮和对话式板块"
   },
   "feature_hideAskAi_name": {
-    "message": "Hide Ask AI"
+    "message": "隐藏向 AI 提问"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "从播放器控件中移除自动播放开关"
@@ -2909,10 +2909,10 @@
     "message": "隐藏评论操作"
   },
   "feature_hideCommentComposer_desc": {
-    "message": "Remove the \"Add a comment\" text field above comments"
+    "message": "移除评论上方的“添加评论”文本框"
   },
   "feature_hideCommentComposer_name": {
-    "message": "Hide Comment Composer"
+    "message": "隐藏评论输入框"
   },
   "feature_hideCommentDislikeButton_desc": {
     "message": "移除评论操作中的踩按钮，因其不提供有用的反馈"
@@ -2921,10 +2921,10 @@
     "message": "隐藏评论踩按钮"
   },
   "feature_hideCommentReplyButton_desc": {
-    "message": "Remove the Reply button on individual comments"
+    "message": "移除每条评论上的“回复”按钮"
   },
   "feature_hideCommentReplyButton_name": {
-    "message": "Hide Comment Reply Button"
+    "message": "隐藏评论回复按钮"
   },
   "feature_hideCommentTeaser_desc": {
     "message": "移除观看页上的「滚动查看评论」提示"
@@ -2963,10 +2963,10 @@
     "message": "隐藏募款"
   },
   "feature_hideGeminiButtons_desc": {
-    "message": "Remove Gemini-branded actions without hiding other AI surfaces"
+    "message": "移除带有 Gemini 标识的操作，同时不隐藏其他 AI 界面"
   },
   "feature_hideGeminiButtons_name": {
-    "message": "Hide Gemini Buttons"
+    "message": "隐藏 Gemini 按钮"
   },
   "feature_hideHashtags_desc": {
     "message": "移除视频标题上方的话题标签链接"
@@ -3041,10 +3041,10 @@
     "message": "隐藏通知铃铛"
   },
   "feature_hideOwnAvatar_desc": {
-    "message": "Remove your account avatar button from the header"
+    "message": "移除顶栏中的账号头像按钮"
   },
   "feature_hideOwnAvatar_name": {
-    "message": "Hide Own Avatar"
+    "message": "隐藏自己的头像"
   },
   "feature_hidePaidContentOverlay_desc": {
     "message": "移除缩略图和观看页上的「包含付费推广」覆盖层"
@@ -3095,10 +3095,10 @@
     "message": "隐藏相关视频"
   },
   "feature_hideSearchSidebar_desc": {
-    "message": "Remove the right-hand sidebar on search results pages"
+    "message": "移除搜索结果页右侧的侧边栏"
   },
   "feature_hideSearchSidebar_name": {
-    "message": "Hide Search Sidebar"
+    "message": "隐藏搜索侧边栏"
   },
   "feature_hideSidebar_desc": {
     "message": "完全移除左侧导航侧边栏"
@@ -3125,40 +3125,40 @@
     "message": "视频隐藏器"
   },
   "feature_hideVideosLowSignalFilter_desc": {
-    "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
+    "message": "隐藏超过时间阈值后播放次数仍低于阈值的视频。缺少卡片元数据时默认放行。"
   },
   "feature_hideVideosLowSignalFilter_name": {
-    "message": "Hide low-signal videos"
+    "message": "隐藏低信号视频"
   },
   "feature_hideVideosLowSignalMinAgeDays_desc": {
-    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+    "message": "仅在超过这么多天后，才将低播放量卡片视为低信号。缺少发布时间元数据时默认放行。"
   },
   "feature_hideVideosLowSignalMinAgeDays_name": {
-    "message": "Low-signal age threshold"
+    "message": "低信号时间阈值"
   },
   "feature_hideVideosLowSignalMinViews_desc": {
-    "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
+    "message": "低信号启发式使用的最低播放次数。设为 0 可禁用播放次数这一条件。"
   },
   "feature_hideVideosLowSignalMinViews_name": {
-    "message": "Low-signal view threshold"
+    "message": "低信号播放次数阈值"
   },
   "feature_hideVideosSyntheticNarrationFilter_desc": {
-    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
+    "message": "隐藏标题、描述或频道文字中含有明确合成旁白标记的卡片。在本地运行，不使用网络或众包数据库。"
   },
   "feature_hideVideosSyntheticNarrationFilter_name": {
-    "message": "Synthetic narration markers"
+    "message": "合成旁白标记"
   },
   "feature_hideVideosUploadCadenceFilter_desc": {
-    "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
+    "message": "隐藏显示的上传频率高于本地每日阈值的卡片。没有频率文字的卡片仍会显示。"
   },
   "feature_hideVideosUploadCadenceFilter_name": {
-    "message": "Upload cadence filter"
+    "message": "上传频率过滤器"
   },
   "feature_hideVideosUploadCadencePerDay_desc": {
-    "message": "Maximum uploads per day accepted by the upload-cadence heuristic."
+    "message": "上传频率启发式允许的每日最大上传数。"
   },
   "feature_hideVideosUploadCadencePerDay_name": {
-    "message": "Upload cadence threshold"
+    "message": "上传频率阈值"
   },
   "feature_hideVoiceSearch_desc": {
     "message": "从搜索栏中移除麦克风图标"
@@ -3191,10 +3191,10 @@
     "message": "初始播放器状态（前台）"
   },
   "feature_jumpToMostReplayed_desc": {
-    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
+    "message": "添加一个播放器控件，可直接跳到最多重播的片段。仅在 YouTube 实际提供热度图的视频上显示。"
   },
   "feature_jumpToMostReplayed_name": {
-    "message": "Jump to Most Replayed"
+    "message": "跳到最多重播"
   },
   "feature_keyMoments_desc": {
     "message": "在进度条上以彩色段落高亮章节标记，方便快速视觉导航"
@@ -3209,34 +3209,34 @@
     "message": "点赞播放比"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row."
+    "message": "将首页、订阅和搜索的视频卡片显示为行，缩略图在左，元数据在右。默认关闭，且与“每行视频数”互斥。"
   },
   "feature_listFeedLayout_name": {
-    "message": "List Feed Layout"
+    "message": "列表式信息流布局"
   },
   "feature_liveLatencyCatchup_desc": {
-    "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
+    "message": "在播放器外观中显示直播延迟和缓冲，然后通过有界的播放速度提升来追上设定的直播边缘目标。"
   },
   "feature_liveLatencyCatchup_name": {
-    "message": "Live Latency Catch-up"
+    "message": "直播延迟追赶"
   },
   "feature_liveLatencyMaxRate_desc": {
-    "message": "Maximum playback rate used while catching up; your saved channel speed is restored afterward."
+    "message": "追赶期间使用的最大播放速度；之后会恢复你保存的频道速度。"
   },
   "feature_liveLatencyMaxRate_name": {
-    "message": "Live Catch-up Max Rate"
+    "message": "直播追赶最大速度"
   },
   "feature_liveLatencyTargetSeconds_desc": {
-    "message": "Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often."
+    "message": "直播边缘延迟超过此值时开始追赶。数值越低追赶越早，但速度变化可能更频繁。"
   },
   "feature_liveLatencyTargetSeconds_name": {
-    "message": "Live Latency Target"
+    "message": "直播延迟目标"
   },
   "feature_liveSpeedReset_desc": {
-    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
+    "message": "以高于 1x 的速度播放的直播追上直播边缘后，重置为 1x；如果你向后拖到边缘之后，则会恢复你的速度"
   },
   "feature_liveSpeedReset_name": {
-    "message": "Live Catch-Up Speed Reset"
+    "message": "直播追赶后速度重置"
   },
   "feature_localAiSummary_desc": {
     "message": "可用时使用 Chrome 内置的 Summarizer API。不可用时显示明确的「不可用」消息 — 绝不静默路由到远程提供商。在现有 AI 摘要按钮旁添加「本地摘要」按钮。"
@@ -3251,10 +3251,10 @@
     "message": "转录问答"
   },
   "feature_logarithmicVolume_desc": {
-    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
+    "message": "将原生音量滑块重新映射为对数增益曲线，在小音量时可更精细地控制。"
   },
   "feature_logarithmicVolume_name": {
-    "message": "Logarithmic Volume Curve"
+    "message": "对数音量曲线"
   },
   "feature_logoToSubscriptions_desc": {
     "message": "将 YouTube 原生首页标志指向订阅页"
@@ -3317,16 +3317,16 @@
     "message": "缩略图上的「不感兴趣」"
   },
   "feature_notificationHideRead_desc": {
-    "message": "Hide notifications that YouTube marks as already read."
+    "message": "隐藏 YouTube 标记为已读的通知。"
   },
   "feature_notificationHideRead_name": {
-    "message": "Hide Read Notifications"
+    "message": "隐藏已读通知"
   },
   "feature_notificationMaxCount_desc": {
-    "message": "Limit the number of notifications shown. Set to 0 to show all."
+    "message": "限制显示的通知数量。设为 0 则显示全部。"
   },
   "feature_notificationMaxCount_name": {
-    "message": "Notification Count"
+    "message": "通知数量"
   },
   "feature_notifyAutoDubbedAudio_desc": {
     "message": "当 YouTube 自动选择 AI 配音音轨时显示一次性通知（例如英语配音的韩语视频）。你可以在播放器设置中手动切换到原始音轨。"
@@ -3437,16 +3437,16 @@
     "message": "按频道记忆速度"
   },
   "feature_persistentQueueAutoAdvance_desc": {
-    "message": "Play the next queue entry automatically when the current video ends"
+    "message": "移除已播完的视频，并自动开始播放观看列表中的下一项。"
   },
   "feature_persistentQueueAutoAdvance_name": {
-    "message": "Queue Auto-Advance"
+    "message": "观看列表自动播放下一项"
   },
   "feature_persistentQueue_desc": {
-    "message": "Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance"
+    "message": "根据视频页面和缩略图建立本地观看列表，然后按顺序播放。"
   },
   "feature_persistentQueue_name": {
-    "message": "Persistent Queue"
+    "message": "观看列表"
   },
   "feature_persistentSpeed_desc": {
     "message": "全局记住首选播放速度并自动应用到每个视频"
@@ -3479,10 +3479,10 @@
     "message": "画中画按钮"
   },
   "feature_playbackErrorRecovery_desc": {
-    "message": "When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)"
+    "message": "播放器显示错误画面时，自动重新加载页面并恢复位置和速度（每个视频最多尝试 3 次）"
   },
   "feature_playbackErrorRecovery_name": {
-    "message": "Playback Error Auto-Recovery"
+    "message": "播放错误自动恢复"
   },
   "feature_playbackSpeedOSD_desc": {
     "message": "在视频播放器上显示速度覆盖层（类似 VLC）而非角落通知"
@@ -3497,10 +3497,10 @@
     "message": "播放统计覆盖层"
   },
   "feature_playlistAutoSkipWatched_desc": {
-    "message": "When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled."
+    "message": "当播放列表条目的观看进度达到至少 90% 时，继续播放下一个低于该阈值的条目。启用前保持关闭。"
   },
   "feature_playlistAutoSkipWatched_name": {
-    "message": "Auto-skip watched playlist items"
+    "message": "自动跳过已观看的播放列表项目"
   },
   "feature_playlistEnhancer_desc": {
     "message": "为播放列表面板添加随机播放、复制和隐藏重复项工具"
@@ -3635,16 +3635,16 @@
     "message": "频道 → 视频标签页"
   },
   "feature_reducedMotion_desc": {
-    "message": "强制所有 Astra 注入的动画、过渡和滚动行为近乎瞬时完成。自动尊重操作系统的 prefers-reduced-motion 设置；此开关在其之上添加无条件覆盖。"
+    "message": "强制所有 Astra 注入的动画、过渡和滚动行为近乎瞬时完成。自动遵循操作系统的 prefers-reduced-motion 设置；此开关在其之上添加无条件覆盖。"
   },
   "feature_reducedMotion_name": {
     "message": "减少动效（强）"
   },
   "feature_remainingTimeCompact_desc": {
-    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+    "message": "以分钟显示剩余时间（例如 -1h24m），而不是完整的 h:mm:ss。"
   },
   "feature_remainingTimeCompact_name": {
-    "message": "Compact Remaining Time"
+    "message": "精简剩余时间"
   },
   "feature_remainingTimeDisplay_desc": {
     "message": "在播放器中当前时间旁显示剩余时间，根据播放速度调整"
@@ -3653,10 +3653,10 @@
     "message": "剩余时间显示"
   },
   "feature_remainingTimeHideFullscreen_desc": {
-    "message": "Hide the remaining time readout while the player is fullscreen"
+    "message": "播放器全屏时隐藏剩余时间读数"
   },
   "feature_remainingTimeHideFullscreen_name": {
-    "message": "Hide in Fullscreen"
+    "message": "全屏时隐藏"
   },
   "feature_rememberVolume_desc": {
     "message": "跨视频和会话保持音量级别"
@@ -3671,16 +3671,16 @@
     "message": "隐藏 Shorts"
   },
   "feature_removeScrubber_desc": {
-    "message": "Remove the round scrubber handle from the video progress bar"
+    "message": "移除视频进度条上的圆形拖动手柄"
   },
   "feature_removeScrubber_name": {
-    "message": "Hide Scrubber Handle"
+    "message": "隐藏拖动手柄"
   },
   "feature_replayChatDensity_desc": {
-    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
+    "message": "对带有聊天回放的视频，在进度条上方显示可选的活跃度迷你图，并提供点击跳转的高亮。"
   },
   "feature_replayChatDensity_name": {
-    "message": "Replay Chat Density"
+    "message": "聊天回放密度"
   },
   "feature_researchSpacedReview_desc": {
     "message": "将学习/工作模式数据导出为 Markdown 或 CSV：观看时间汇总、专注模式状态、数字健康状态以及带深层链接的时间戳书签。"
@@ -3689,7 +3689,7 @@
     "message": "学习/工作导出"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
+    "message": "通过共享字幕服务为你访问的符合条件的视频建立字幕索引，无需打开 YouTube 的字幕面板。搜索保存在本地 IndexedDB 中；不发送遥测数据。"
   },
   "feature_researchTranscriptIndex_name": {
     "message": "字幕搜索索引"
@@ -3869,28 +3869,28 @@
     "message": "Shorts 播放器控件"
   },
   "feature_shortsAutoAdvance_desc": {
-    "message": "Stop Shorts from looping and scroll to the next Short automatically when one finishes"
+    "message": "阻止 Shorts 循环播放，并在播完后自动滚动到下一个 Short"
   },
   "feature_shortsAutoAdvance_name": {
-    "message": "Shorts Auto-Advance"
+    "message": "Shorts 自动播放下一个"
   },
   "feature_shortsDailyLimitMin_desc": {
-    "message": "Maximum minutes of Shorts playback per local day. Set to 0 to disable."
+    "message": "每个本地日历日播放 Shorts 的最大分钟数。设为 0 可禁用。"
   },
   "feature_shortsDailyLimitMin_name": {
-    "message": "Shorts Daily Limit"
+    "message": "Shorts 每日限额"
   },
   "feature_shortsDailyLimitMode_desc": {
-    "message": "Choose whether reaching the limit blocks Shorts or offers five-minute snoozes."
+    "message": "选择达到限额后是屏蔽 Shorts，还是提供五分钟的暂停。"
   },
   "feature_shortsDailyLimitMode_name": {
-    "message": "Shorts Limit Action"
+    "message": "Shorts 限额处理方式"
   },
   "feature_shortsSpeedControl_desc": {
-    "message": "Adds a click-to-cycle playback speed chip to the Shorts player (0.5x-2x), honoring your persistent speed default"
+    "message": "在 Shorts 播放器中添加一个点击循环切换播放速度的标签（0.5x-2x），并遵循你的持久速度默认值"
   },
   "feature_shortsSpeedControl_name": {
-    "message": "Shorts Speed Control"
+    "message": "Shorts 速度控制"
   },
   "feature_showChannelVideoCount_desc": {
     "message": "在观看页频道名旁显示频道已上传视频总数"
@@ -3929,10 +3929,10 @@
     "message": "睡眠定时器"
   },
   "feature_softBottomGradient_desc": {
-    "message": "Reduce the dark gradient behind the player control bar"
+    "message": "减弱播放器控制栏背后的深色渐变"
   },
   "feature_softBottomGradient_name": {
-    "message": "Soften Bottom Gradient"
+    "message": "柔化底部渐变"
   },
   "feature_sortCommentsNewest_desc": {
     "message": "在每个视频上自动将评论排序切换为「最新在前」"
@@ -3962,7 +3962,7 @@
     "message": "正式 — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
-    "message": "Disabled"
+    "message": "已禁用"
   },
   "feature_sponsorBlockMirrorHost_label": {
     "message": "镜像 — sponsorblock.kavin.rocks"
@@ -4094,10 +4094,10 @@
     "message": "字幕样式"
   },
   "feature_subtitlesOnRewind_desc": {
-    "message": "After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state"
+    "message": "向后拖动后显示 10 秒字幕，方便你看清错过的那一句，然后恢复之前的字幕状态"
   },
   "feature_subtitlesOnRewind_name": {
-    "message": "Subtitles on Rewind"
+    "message": "倒退时显示字幕"
   },
   "feature_theaterAutoScroll_desc": {
     "message": "Theater 模式激活时将视频滚动到完全可见"
@@ -4154,7 +4154,7 @@
     "message": "规范化标题党标题"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "将用户的 themeAccentColor 传递到 YouTube 原生 --yt-sys-color-* 令牌，使原生徽章、悬停状态和主按钮跟随 Astra 强调色，无需逐个重新样式化。"
+    "message": "将用户的 themeAccentColor 传递到 YouTube 原生 --yt-sys-color-* 令牌，使原生徽章、悬停状态和主按钮跟随 Astra 强调色，无需逐个重新设置各界面的样式。"
   },
   "feature_tokenThemeBridge_name": {
     "message": "原生令牌主题桥接"
@@ -4184,10 +4184,10 @@
     "message": "界面字体"
   },
   "feature_uiFontSize_desc": {
-    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+    "message": "覆盖界面基础字号（0 = YouTube 默认值，否则为 8 到 20px）"
   },
   "feature_uiFontSize_name": {
-    "message": "UI Font Size"
+    "message": "界面字号"
   },
   "feature_uiStyleManager_desc": {
     "message": "选择圆角或方角界面元素"
@@ -4316,7 +4316,7 @@
     "message": "“稍后观看”批量工具：按视频年龄、时长、观看状态、频道或标题筛选，预览并排序结果，导出 CSV/JSON，并在有上限且可恢复的会话中删除"
   },
   "feature_watchLaterWorkbench_name": {
-    "message": "Watch Later Workbench"
+    "message": "稍后观看工作台"
   },
   "feature_watchPageRestyle_desc": {
     "message": "为标题、描述和元数据提供高级观看页布局，不隐藏原生控件"
@@ -4544,7 +4544,7 @@
     "message": "备份你的 Video Hider 规则、从文件恢复，或订阅你信任的网站上发布的过滤列表。"
   },
   "filterListToolsEyebrow": {
-    "message": "Video Hider"
+    "message": "视频隐藏器"
   },
   "filterListToolsTitle": {
     "message": "过滤列表"
@@ -4568,22 +4568,22 @@
     "message": "筛选开关…"
   },
   "floatingChatControlsAria": {
-    "message": "Floating chat controls"
+    "message": "悬浮聊天控件"
   },
   "floatingChatDragAria": {
-    "message": "Move floating chat"
+    "message": "移动悬浮聊天"
   },
   "floatingChatDragKeysAria": {
-    "message": "Use the arrow keys to move the panel, or hold Shift to move it further."
+    "message": "使用方向键移动面板，或按住 Shift 移动更远的距离。"
   },
   "floatingChatDragTitle": {
-    "message": "Drag to move"
+    "message": "拖动以移动"
   },
   "floatingChatOpacityAria": {
-    "message": "Chat opacity"
+    "message": "聊天不透明度"
   },
   "forceDvrDegraded": {
-    "message": "DVR could not be enabled because the live player response changed."
+    "message": "由于直播播放器响应发生变化，无法启用 DVR。"
   },
   "groupQuickControls": {
     "message": "快捷控件"
@@ -4619,22 +4619,22 @@
     "message": "诊断"
   },
   "heatmapJumpAria": {
-    "message": "Jump to the most replayed moment"
+    "message": "跳到最多重播的片段"
   },
   "heatmapJumpedToast": {
-    "message": "Jumped to the most replayed moment"
+    "message": "已跳到最多重播的片段"
   },
   "hiddenCardNoteTpl": {
-    "message": "Hidden by {feature}: {rule}"
+    "message": "已被 {feature} 隐藏：{rule}"
   },
   "hiddenRuleCollaboration": {
-    "message": "multi-creator upload"
+    "message": "多创作者上传"
   },
   "hiddenRuleScheduled": {
-    "message": "scheduled livestream or premiere"
+    "message": "预定的直播或首播"
   },
   "hiddenRuleShorts": {
-    "message": "Shorts video"
+    "message": "Shorts 视频"
   },
   "hideAllButtonLabel": {
     "message": "全部隐藏",
@@ -4708,7 +4708,7 @@
     "message": "{views} 次观看中有 {likes} 个赞"
   },
   "liveLatencyReadout": {
-    "message": "Live {latency}s · buffer {buffer}s",
+    "message": "直播 {latency}s · 缓冲 {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
   },
   "loadingState": {
@@ -4718,67 +4718,67 @@
     "message": "维护"
   },
   "openDashboard": {
-    "message": "Dashboard"
+    "message": "仪表盘"
   },
   "openFullSettings": {
     "message": "打开工作区"
   },
   "openThumbnailChecking": {
-    "message": "Checking…"
+    "message": "正在检查…"
   },
   "openThumbnailFailed": {
-    "message": "Could not open the thumbnail. Try again in a moment."
+    "message": "无法打开缩略图。请稍后重试。"
   },
   "openThumbnailLabel": {
-    "message": "View"
+    "message": "查看"
   },
   "openThumbnailRetry": {
-    "message": "Retry"
+    "message": "重试"
   },
   "openThumbnailTitle": {
-    "message": "Open thumbnail at full size"
+    "message": "以完整尺寸打开缩略图"
   },
   "openYouTube": {
     "message": "打开 YouTube"
   },
   "optionalHostBannerDetailMany": {
-    "message": "{count} enabled enrichment features need host access: {origins}."
+    "message": "{count} 项已启用的增强功能需要主机访问权限：{origins}。"
   },
   "optionalHostBannerDetailOne": {
-    "message": "1 enabled enrichment feature needs host access: {origins}."
+    "message": "1 项已启用的增强功能需要主机访问权限：{origins}。"
   },
   "optionalHostBannerTitle": {
-    "message": "External access needed"
+    "message": "需要外部访问权限"
   },
   "optionalHostGrantAria": {
-    "message": "Grant optional host access"
+    "message": "授予可选的主机访问权限"
   },
   "optionalHostGrantBtn": {
-    "message": "Grant access"
+    "message": "授予权限"
   },
   "optionalHostGrantName": {
-    "message": "optional host access"
+    "message": "可选主机访问权限"
   },
   "optionalHostPermissionAria": {
-    "message": "Permission needed."
+    "message": "需要权限。"
   },
   "optionalHostPermissionBadge": {
-    "message": "permission needed"
+    "message": "需要权限"
   },
   "optionalHostPermissionGranted": {
-    "message": "Optional host access granted."
+    "message": "已授予可选的主机访问权限。"
   },
   "optionalHostPermissionMissingTooltip": {
-    "message": "Host access for this optional feature is denied or was revoked. Enable the setting again to grant access."
+    "message": "此可选功能的主机访问权限被拒绝或已被撤销。请重新启用该设置以授予权限。"
   },
   "optionalHostPermissionRevoked": {
-    "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
+    "message": "可选的主机访问权限已被撤销。请重新启用受影响的设置以再次授予权限。"
   },
   "optionalHostPrevious": {
     "message": "上一个主机"
   },
   "optionalHostUnknown": {
-    "message": "optional host access"
+    "message": "可选主机访问权限"
   },
   "pageControlDismissTpl": {
     "message": "关闭{label}",
@@ -4815,19 +4815,19 @@
     "message": "{category} 当前偏好设置"
   },
   "panelReorderAria": {
-    "message": "Reorder categories"
+    "message": "重新排序类别"
   },
   "panelReorderDown": {
-    "message": "Move the selected category down"
+    "message": "将所选类别下移"
   },
   "panelReorderMoved": {
-    "message": "Category moved."
+    "message": "类别已移动。"
   },
   "panelReorderUp": {
-    "message": "Move the selected category up"
+    "message": "将所选类别上移"
   },
   "panelSearchAria": {
-    "message": "Search settings by name, page, category, or control type"
+    "message": "按名称、页面、类别或控件类型搜索设置"
   },
   "panelSearchClearAria": {
     "message": "清除设置搜索"
@@ -4836,22 +4836,22 @@
     "message": "清除搜索"
   },
   "panelSearchHint": {
-    "message": "Search by name, page, category, control type, or description."
+    "message": "按名称、页面、类别、控件类型或描述搜索。"
   },
   "panelSearchPlaceholder": {
-    "message": "Search settings, pages, controls..."
+    "message": "搜索设置、页面、控件…"
   },
   "panelSearchStateBadge": {
-    "message": "Search"
+    "message": "搜索"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "清除搜索"
   },
   "panelSearchStateCopy": {
-    "message": "Type a control, page, or category to narrow the menu instantly."
+    "message": "输入控件、页面或类别，即可立即缩小菜单范围。"
   },
   "panelSearchStateTitle": {
-    "message": "Search across all settings"
+    "message": "在所有设置中搜索"
   },
   "panelSidebarAria": {
     "message": "设置分类"
@@ -4863,16 +4863,16 @@
     "message": "检测到闪烁内容 — 已调暗"
   },
   "playbackStatsDataChecking": {
-    "message": "Checking with Astra Downloader…"
+    "message": "正在向 Astra Downloader 查询…"
   },
   "playbackStatsDataQualityTpl": {
     "message": "{quality}: {size}"
   },
   "playbackStatsDataUnavailable": {
-    "message": "Unavailable"
+    "message": "不可用"
   },
   "playbackStatsDataUsage": {
-    "message": "Download size estimates"
+    "message": "下载大小估算"
   },
   "playerCcAria": {
     "message": "切换字幕"
@@ -4908,103 +4908,103 @@
     "message": "循环播放"
   },
   "playlistAutoSkipOff": {
-    "message": "Auto-skip: Off"
+    "message": "自动跳过：关"
   },
   "playlistAutoSkipOn": {
-    "message": "Auto-skip: On"
+    "message": "自动跳过：开"
   },
   "playlistAutoSkipTitle": {
-    "message": "Skip playlist entries with at least 90% watched progress"
+    "message": "跳过观看进度至少达到 90% 的播放列表条目"
   },
   "playlistCopied": {
-    "message": "Copied"
+    "message": "已复制"
   },
   "playlistCopyAllTitle": {
-    "message": "Copy all playlist video URLs"
+    "message": "复制所有播放列表视频网址"
   },
   "playlistCopyBlocked": {
-    "message": "Clipboard access was blocked. Try again or use the browser copy shortcut."
+    "message": "剪贴板访问被阻止。请重试，或使用浏览器的复制快捷方式。"
   },
   "playlistCopyRetry": {
-    "message": "Retry"
+    "message": "重试"
   },
   "playlistCopyUrls": {
-    "message": "Copy URLs"
+    "message": "复制网址"
   },
   "playlistCopyVisibleTitle": {
-    "message": "Copy the visible playlist video URLs"
+    "message": "复制可见的播放列表视频网址"
   },
   "playlistCopying": {
-    "message": "Copying…"
+    "message": "正在复制…"
   },
   "playlistCurrentIsLast": {
-    "message": "Resume Last"
+    "message": "继续上次"
   },
   "playlistDuplicateCountTpl": {
-    "message": "{count} duplicates"
+    "message": "{count} 个重复项"
   },
   "playlistDurationLongest": {
-    "message": "Duration ↓"
+    "message": "时长 ↓"
   },
   "playlistDurationShortest": {
-    "message": "Duration ↑"
+    "message": "时长 ↑"
   },
   "playlistHiddenDuplicatesTpl": {
-    "message": "{count} duplicates hidden"
+    "message": "已隐藏 {count} 个重复项"
   },
   "playlistHideDuplicates": {
-    "message": "Hide Duplicates"
+    "message": "隐藏重复项"
   },
   "playlistHideDuplicatesTitle": {
-    "message": "Hide repeated videos in this playlist panel"
+    "message": "隐藏此播放列表面板中重复的视频"
   },
   "playlistNoResumeTitle": {
-    "message": "No earlier video is remembered for this playlist"
+    "message": "此播放列表没有记住更早的视频"
   },
   "playlistNoUrls": {
-    "message": "No URLs"
+    "message": "没有网址"
   },
   "playlistNoUrlsToast": {
-    "message": "No playlist URLs are ready to copy yet."
+    "message": "还没有可复制的播放列表网址。"
   },
   "playlistRestoreOrderTitle": {
-    "message": "Restore the original playlist order"
+    "message": "恢复播放列表的原始顺序"
   },
   "playlistResumeLast": {
-    "message": "Resume Last"
+    "message": "继续上次"
   },
   "playlistResumeLastTitle": {
-    "message": "Open the last video remembered for this playlist"
+    "message": "打开此播放列表记住的上一个视频"
   },
   "playlistShowDuplicates": {
-    "message": "Show Duplicates"
+    "message": "显示重复项"
   },
   "playlistShowDuplicatesTitle": {
-    "message": "Show repeated videos in this playlist panel"
+    "message": "显示此播放列表面板中重复的视频"
   },
   "playlistShuffle": {
-    "message": "Shuffle"
+    "message": "随机播放"
   },
   "playlistShuffleNeedTwo": {
-    "message": "Need at least 2 playlist items to shuffle."
+    "message": "至少需要 2 个播放列表项目才能随机播放。"
   },
   "playlistShuffleTitle": {
-    "message": "Play a random visible video from this playlist panel"
+    "message": "从此播放列表面板中随机播放一个可见的视频"
   },
   "playlistSortDuration": {
-    "message": "Sort Duration"
+    "message": "按时长排序"
   },
   "playlistSortDurationTitle": {
-    "message": "Sort playlist items by duration; activate again to reverse"
+    "message": "按时长排序播放列表项目；再次点击可反向"
   },
   "playlistStatusLoading": {
-    "message": "Playlist"
+    "message": "播放列表"
   },
   "playlistToolsTitle": {
-    "message": "Playlist Tools"
+    "message": "播放列表工具"
   },
   "playlistVideoCountTpl": {
-    "message": "{count} videos"
+    "message": "{count} 个视频"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -5177,10 +5177,10 @@
     "message": "SponsorBlock"
   },
   "qt_syncSettings_desc": {
-    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+    "message": "选择启用后，可同步安全的偏好设置和视频隐藏器屏蔽列表"
   },
   "qt_syncSettings_name": {
-    "message": "Browser Sync"
+    "message": "浏览器同步"
   },
   "qt_transcriptViewer_desc": {
     "message": "可点击的字幕 + 导出"
@@ -5189,28 +5189,28 @@
     "message": "字幕侧边栏"
   },
   "queueClear": {
-    "message": "Clear"
+    "message": "清除"
   },
   "queueClose": {
-    "message": "Close"
+    "message": "关闭"
   },
   "queueCleared": {
-    "message": "Queue cleared"
+    "message": "观看列表已清除"
   },
   "queueExport": {
-    "message": "Export"
+    "message": "导出"
   },
   "queueImport": {
     "message": "导入"
   },
   "queuePanelAria": {
-    "message": "Astra persistent queue"
+    "message": "Astra 观看列表"
   },
   "queuePanelTitle": {
-    "message": "Persistent Queue"
+    "message": "观看列表"
   },
   "queuePlayNext": {
-    "message": "Play next"
+    "message": "开始观看"
   },
   "quickGroupCountTpl": {
     "message": "{enabled}/{total}"
@@ -5264,10 +5264,10 @@
     "message": "表情反应发送器：YouTube 可能会限制或标记快速反应。使用风险自负。"
   },
   "reactionSenderRunningTplOne": {
-    "message": "Running with {count} reaction."
+    "message": "正在发送 {count} 个表情回应。"
   },
   "reactionSenderRunningTplOther": {
-    "message": "Running with {count} reactions."
+    "message": "正在发送 {count} 个表情回应。"
   },
   "reactionSenderRunningWaiting": {
     "message": "正在运行，等待所选表情反应。"
@@ -5276,10 +5276,10 @@
     "message": "请至少选择一个表情反应。"
   },
   "reactionSenderSelectedTplOne": {
-    "message": "{count} reaction selected."
+    "message": "已选择 {count} 个表情回应。"
   },
   "reactionSenderSelectedTplOther": {
-    "message": "{count} reactions selected."
+    "message": "已选择 {count} 个表情回应。"
   },
   "reactionSenderSentTpl": {
     "message": "已发送 {emoji}"
@@ -5327,10 +5327,10 @@
     "message": "立即刷新列表"
   },
   "replayChatDensityAria": {
-    "message": "Chat activity across this video. Click the chart to seek."
+    "message": "此视频的聊天活跃度。点击图表可跳转。"
   },
   "replayChatDensityTitle": {
-    "message": "Chat activity. Click to seek."
+    "message": "聊天活跃度。点击可跳转。"
   },
   "resetBtn": {
     "message": "重置"
@@ -5514,13 +5514,13 @@
     "message": "搜索时不中断播放"
   },
   "selectorAutoRefreshCheckedTpl": {
-    "message": "auto-checked {age}"
+    "message": "自动检查于 {age}"
   },
   "selectorAutoRefreshNeverChecked": {
-    "message": "auto-refresh on, no check yet"
+    "message": "已开启自动刷新，尚未检查"
   },
   "selectorAutoRefreshUpdatedTpl": {
-    "message": "last update {age}"
+    "message": "上次更新 {age}"
   },
   "selectorCanaryBuildUnknown": {
     "message": "当前版本"
@@ -5592,7 +5592,7 @@
     "message": "{service} 没有响应。问题出在该服务，不是 Astra Deck。"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: {value}"
+    "message": "无法识别：{value}"
   },
   "settingsActiveSectionFallback": {
     "message": "视频播放器"
@@ -5601,10 +5601,10 @@
     "message": "已自动停用：{features} — {reason}"
   },
   "settingsCardReset": {
-    "message": "Reset"
+    "message": "重置"
   },
   "settingsCardResetTitleTpl": {
-    "message": "Reset “{name}” to its default"
+    "message": "将“{name}”重置为默认值"
   },
   "settingsCategoryAriaTpl": {
     "message": "{category}。{summary}"
@@ -5625,13 +5625,13 @@
     "message": "已更改 {count} 项"
   },
   "settingsChangedFilter": {
-    "message": "Changed"
+    "message": "已更改"
   },
   "settingsChangedFilterTitle": {
-    "message": "Show only settings you have changed from their defaults"
+    "message": "仅显示你已从默认值更改的设置"
   },
   "settingsChangedNone": {
-    "message": "Nothing changed"
+    "message": "没有任何更改"
   },
   "settingsChoiceChangedTpl": {
     "message": "{name} 已改为 {value}。"
@@ -5646,61 +5646,61 @@
     "message": "与 {featureName} 冲突"
   },
   "settingsDlActionsAria": {
-    "message": "Downloader actions"
+    "message": "下载器操作"
   },
   "settingsDlCheckingStatus": {
-    "message": "Checking downloader status…"
+    "message": "正在检查下载器状态…"
   },
   "settingsDlCommandCopied": {
-    "message": "Fallback command copied. Use it only if the setup file cannot run."
+    "message": "备用命令已复制。仅当安装文件无法运行时才使用。"
   },
   "settingsDlCopyCommand": {
-    "message": "Copy command"
+    "message": "复制命令"
   },
   "settingsDlCopyCommandTitle": {
-    "message": "Copy the fallback PowerShell install command"
+    "message": "复制备用的 PowerShell 安装命令"
   },
   "settingsDlDownloadTitle": {
     "message": "下载 Astra Downloader 安装文件并在下载内容中显示"
   },
   "settingsDlGetSetup": {
-    "message": "Get setup file"
+    "message": "获取安装文件"
   },
   "settingsDlGetSetupTitle": {
-    "message": "Download the current Astra Downloader setup file to install or update it"
+    "message": "下载最新的 Astra Downloader 安装文件以进行安装或更新"
   },
   "settingsDlNotConnected": {
-    "message": "Not connected. Local downloads need the setup helper."
+    "message": "未连接。本地下载需要安装辅助程序。"
   },
   "settingsDlOpenSetup": {
-    "message": "Open setup"
+    "message": "打开安装程序"
   },
   "settingsDlPreparingSetup": {
-    "message": "Preparing the setup file…"
+    "message": "正在准备安装文件…"
   },
   "settingsDlRunning": {
-    "message": "Running"
+    "message": "运行中"
   },
   "settingsDlRunningTpl": {
-    "message": "Running{version}. yt-dlp server ready."
+    "message": "运行中{version}。yt-dlp 服务器已就绪。"
   },
   "settingsDlSetupDownloaded": {
-    "message": "Setup downloaded. Open the file, finish installation, then refresh."
+    "message": "安装程序已下载。请打开该文件，完成安装，然后刷新。"
   },
   "settingsDlSetupOpened": {
-    "message": "Setup opened. Finish installation, then refresh."
+    "message": "安装程序已打开。请完成安装，然后刷新。"
   },
   "settingsDlStartFailed": {
-    "message": "The service did not start. Run setup to repair Astra Downloader."
+    "message": "服务未能启动。请运行安装程序来修复 Astra Downloader。"
   },
   "settingsDlStartFailedToast": {
-    "message": "Astra Downloader did not start. Run setup to repair it."
+    "message": "Astra Downloader 未能启动。请运行安装程序进行修复。"
   },
   "settingsDlStartTitle": {
-    "message": "Try to start the Astra Downloader service"
+    "message": "尝试启动 Astra Downloader 服务"
   },
   "settingsDlTryingStart": {
-    "message": "Trying to start the Astra Downloader service…"
+    "message": "正在尝试启动 Astra Downloader 服务…"
   },
   "settingsDownloaderSetupTitle": {
     "message": "下载 Astra Deck 下载器设置文件"
@@ -5709,7 +5709,7 @@
     "message": "Astra Downloader"
   },
   "settingsEnableAllAriaTpl": {
-    "message": "Enable all settings in {category}"
+    "message": "启用 {category} 中的所有设置"
   },
   "settingsExportAriaTpl": {
     "message": "导出 {brand} 设置"
@@ -5751,7 +5751,7 @@
     "message": "导入 {brand} 设置"
   },
   "settingsImportDoneTpl": {
-    "message": "{message} Undo is available in the toast."
+    "message": "{message} 可在提示中撤销。"
   },
   "settingsImportHistoryAriaLabel": {
     "message": "导入 YouTube Takeout 观看历史记录"
@@ -5760,55 +5760,55 @@
     "message": "导入历史记录"
   },
   "settingsImportInvalid": {
-    "message": "Import failed. Choose a valid Astra Deck settings export."
+    "message": "导入失败。请选择有效的 Astra Deck 设置导出文件。"
   },
   "settingsImportReadFailed": {
     "message": "无法读取导入文件"
   },
   "settingsImportUndoUnavailable": {
-    "message": "Import undo is no longer available."
+    "message": "导入撤销已不可用。"
   },
   "settingsInsightsAria": {
-    "message": "Settings status and backup actions"
+    "message": "设置状态与备份操作"
   },
   "settingsInsightsEnabled": {
-    "message": "Enabled"
+    "message": "已启用"
   },
   "settingsInsightsExtension": {
-    "message": "Extension"
+    "message": "扩展程序"
   },
   "settingsInsightsHealth": {
-    "message": "Health"
+    "message": "健康状态"
   },
   "settingsInsightsLastSave": {
-    "message": "Last save"
+    "message": "上次保存"
   },
   "settingsInsightsLiveApply": {
-    "message": "Live apply"
+    "message": "实时应用"
   },
   "settingsInsightsProfile": {
-    "message": "Profile"
+    "message": "配置"
   },
   "settingsInsightsReadyDesc": {
-    "message": "Controls are loaded. Service health appears beside affected features."
+    "message": "控件已加载。服务健康状态会显示在受影响的功能旁边。"
   },
   "settingsInsightsRecovery": {
-    "message": "Recovery"
+    "message": "恢复"
   },
   "settingsInsightsRuleEngine": {
-    "message": "Rule engine"
+    "message": "规则引擎"
   },
   "settingsInsightsSavedLocally": {
-    "message": "Saved locally"
+    "message": "已保存在本地"
   },
   "settingsInsightsSections": {
-    "message": "Sections"
+    "message": "分区"
   },
   "settingsInsightsStatus": {
-    "message": "Status"
+    "message": "状态"
   },
   "settingsInsightsUndoToasts": {
-    "message": "Undo toasts"
+    "message": "撤销提示"
   },
   "settingsPaneDescriptionFallback": {
     "message": "调整 YouTube 此部分的行为方式。"
@@ -5820,40 +5820,40 @@
     "message": "范围设置"
   },
   "settingsResetChooseSection": {
-    "message": "Choose a settings section before resetting."
+    "message": "重置前请先选择一个设置分区。"
   },
   "settingsResetDoneTpl": {
-    "message": "{category} reset to defaults. Undo is available in the toast."
+    "message": "{category} 已重置为默认值。可在提示中撤销。"
   },
   "settingsResetGroupTitle": {
-    "message": "Reset this group to defaults"
+    "message": "将此组重置为默认值"
   },
   "settingsResetRestoredToastTpl": {
-    "message": "“{category}” restored"
+    "message": "已恢复“{category}”"
   },
   "settingsResetRestoredTpl": {
-    "message": "{category} restored."
+    "message": "已恢复 {category}。"
   },
   "settingsResetToastTpl": {
-    "message": "“{category}” reset to defaults"
+    "message": "“{category}”已重置为默认值"
   },
   "settingsSearchHint": {
-    "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
+    "message": "试试功能名称、页面，或评论、字幕、下载、主题等词语。"
   },
   "settingsSearchMatchesTpl": {
     "message": "{count} 个匹配项"
   },
   "settingsSearchMatchingTpl": {
-    "message": "{count} matching settings"
+    "message": "{count} 项匹配的设置"
   },
   "settingsSearchNoMatches": {
     "message": "没有匹配项"
   },
   "settingsSearchNoneTpl": {
-    "message": "No settings found for “{query}”"
+    "message": "未找到与“{query}”相关的设置"
   },
   "settingsSearchShowingTpl": {
-    "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+    "message": "正在显示“{query}”在 {sections} 个分区中的结果。切换或编辑结果时，更改会自动保存。"
   },
   "settingsSectionAiContent": {
     "message": "AI 内容"
@@ -6009,40 +6009,40 @@
     "message": "今天已观看 {minutes} 分钟。"
   },
   "settingsSingleResetToastTpl": {
-    "message": "“{name}” reset to default"
+    "message": "“{name}”已重置为默认值"
   },
   "settingsSubFeatureBadge": {
     "message": "子功能"
   },
   "settingsSyncDesc": {
-    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
+    "message": "可选：通过你的浏览器账号同步经过验证的偏好设置和视频隐藏器屏蔽列表。密钥和授权同意保留在本地。"
   },
   "settingsSyncOff": {
-    "message": "Off. This device only."
+    "message": "已关闭。仅限此设备。"
   },
   "settingsSyncOn": {
-    "message": "On. Preferences and blocklists sync through your browser account."
+    "message": "已开启。偏好设置和屏蔽列表通过你的浏览器账号同步。"
   },
   "settingsSyncTitle": {
-    "message": "Browser sync"
+    "message": "浏览器同步"
   },
   "settingsSyncUnavailable": {
-    "message": "Browser sync is unavailable in this browser."
+    "message": "此浏览器不支持浏览器同步。"
   },
   "settingsSyncUndo": {
-    "message": "Undo last sync"
+    "message": "撤销上次同步"
   },
   "settingsSyncUndoAria": {
-    "message": "Restore the local state from before the last browser sync"
+    "message": "恢复到上次浏览器同步之前的本地状态"
   },
   "settingsSyncUndoDone": {
-    "message": "Last browser sync undone locally."
+    "message": "已在本地撤销上次浏览器同步。"
   },
   "settingsSyncUndoFailed": {
-    "message": "Could not undo the last browser sync."
+    "message": "无法撤销上次浏览器同步。"
   },
   "settingsTakeoutImportInvalid": {
-    "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+    "message": "导入失败。请选择有效的 YouTube Takeout 观看历史 JSON 文件。"
   },
   "settingsTextSettingFallback": {
     "message": "文本设置"
@@ -6057,10 +6057,10 @@
     "message": "无法保存设置"
   },
   "shortsDailyLimitMode_hard": {
-    "message": "Hard block"
+    "message": "强制屏蔽"
   },
   "shortsDailyLimitMode_snooze": {
-    "message": "Snooze 5 minutes"
+    "message": "暂停 5 分钟"
   },
   "sidebarDocTitle": {
     "message": "Astra Deck - Firefox 侧边栏"
@@ -6233,7 +6233,7 @@
     "message": "打开 YouTube 标签页以实时获取诊断信息，然后使用快速设置进行即时恢复。"
   },
   "spOverviewEnabledLabel": {
-    "message": "Enabled"
+    "message": "已启用"
   },
   "spOverviewKicker": {
     "message": "实时工作区"
@@ -6287,7 +6287,7 @@
     "message": "刷新"
   },
   "spRefreshStatusReady": {
-    "message": "Ready"
+    "message": "就绪"
   },
   "spReloadPanel": {
     "message": "重新加载面板"
@@ -6371,7 +6371,7 @@
     "message": "清除设置筛选"
   },
   "spSettingsClearBtn": {
-    "message": "Clear"
+    "message": "清除"
   },
   "spSettingsClearFilter": {
     "message": "清除筛选"
@@ -6620,13 +6620,13 @@
     "message": "此处无法复制。请选中文本并自行复制。"
   },
   "statusCompanionCurrentTpl": {
-    "message": "Astra Downloader already at v{version}."
+    "message": "Astra Downloader 已是 v{version}。"
   },
   "statusCompanionReadyTpl": {
-    "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
+    "message": "Astra Downloader 更新已就绪：v{current} → v{latest}。正在重新启动，并保留 v{rollback} 用于自动回滚。"
   },
   "statusCompanionUpdateFailedTpl": {
-    "message": "Astra Downloader update failed. {error}"
+    "message": "Astra Downloader 更新失败。{error}"
   },
   "statusDiagClearFail": {
     "message": "无法清除日志"
@@ -6673,10 +6673,10 @@
     "message": "预览:{preview}。"
   },
   "statusImportSkippedKeysTplOne": {
-    "message": "{count} setting from a newer version was skipped: {keys}"
+    "message": "已跳过 {count} 项来自较新版本的设置：{keys}"
   },
   "statusImportSkippedKeysTplOther": {
-    "message": "{count} settings from a newer version were skipped: {keys}"
+    "message": "已跳过 {count} 项来自较新版本的设置：{keys}"
   },
   "statusImportSnapshotFail": {
     "message": "已停止导入。Astra Deck 无法在扩展程序存储中保存撤销点。请先导出备份。"
@@ -6688,7 +6688,7 @@
     "message": "“撤销导入”已不可用：撤销点已在 7 天后过期。"
   },
   "statusImportUndoFail": {
-    "message": "Undo Import failed"
+    "message": "撤销导入失败"
   },
   "statusImportWrongFile": {
     "message": "该文件不是 Astra Deck 备份，因此未导入任何内容。请选择由“导出”保存的 .json 文件。"
@@ -6700,13 +6700,13 @@
     "message": "Astra Downloader 安装提示已重新启用 — 重新加载 YouTube 标签页即可看到。"
   },
   "statusOpenDashboardFail": {
-    "message": "Could not open dashboard"
+    "message": "无法打开仪表盘"
   },
   "statusOpenWorkspaceFail": {
     "message": "无法打开完整工作区。请重试。"
   },
   "statusPerKeyResetFail": {
-    "message": "Could not reset"
+    "message": "无法重置"
   },
   "statusPerKeyResetTpl": {
     "message": "{key} 已重置为默认值。"
@@ -6757,67 +6757,67 @@
     "message": "未找到有效的 YouTube Takeout 观看记录条目。"
   },
   "statusUpdateFailed": {
-    "message": "Update failed."
+    "message": "更新失败。"
   },
   "statusUpdateYtdlpNoTab": {
     "message": "请先打开一个 YouTube 标签页 — 弹窗需要它来连接 Astra Downloader。"
   },
   "statusWelcomePresetFail": {
-    "message": "Could not apply preset"
+    "message": "无法应用预设"
   },
   "statusWelcomeProfileFail": {
-    "message": "Could not apply profile"
+    "message": "无法应用配置"
   },
   "statusWelcomeProfileFull": {
     "message": "GitHub-Full 配置文件已启用。现在可以使用 Astra Downloader 和 AI 提供商。"
   },
   "statusWelcomeProfileSafe": {
-    "message": "Store-safe profile active. Open Full Settings to explore features."
+    "message": "商店安全配置已启用。打开完整设置即可探索各项功能。"
   },
   "statusYoutubeStateChanged": {
-    "message": "YouTube changed its page state before reset, so nothing was cleared."
+    "message": "重置前 YouTube 更改了页面状态，因此没有清除任何内容。"
   },
   "statusYoutubeStateEmpty": {
-    "message": "No stale YouTube page-state keys were found."
+    "message": "未找到过期的 YouTube 页面状态键。"
   },
   "statusYoutubeStateNoTab": {
-    "message": "Open a YouTube tab before resetting its local page state."
+    "message": "重置本地页面状态之前，请先打开 YouTube 标签页。"
   },
   "statusYoutubeStateReset": {
-    "message": "Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open."
+    "message": "已清除 {count} 个过期的 YouTube 页面状态键。重新加载 YouTube 后生效；原标签页保持打开期间可以撤销。"
   },
   "statusYoutubeStateResetFail": {
-    "message": "YouTube state reset failed"
+    "message": "重置 YouTube 状态失败"
   },
   "statusYoutubeStateResetPartialUndo": {
     "message": "已清除 {count} 个过时的 YouTube 页面状态键。其中 {big} 个超出备份限制，撤销无法恢复它们。"
   },
   "statusYoutubeStateRestored": {
-    "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
+    "message": "已恢复 {count} 个 YouTube 页面状态键。重新加载 YouTube 即可应用。"
   },
   "statusYoutubeStateUndoExpired": {
-    "message": "YouTube state Undo is no longer available for the original tab."
+    "message": "原标签页的 YouTube 状态撤销已不可用。"
   },
   "statusYoutubeStateUndoFail": {
-    "message": "YouTube state Undo failed"
+    "message": "撤销 YouTube 状态失败"
   },
   "statusYtdlpCurrentTpl": {
-    "message": "yt-dlp already at v{version}"
+    "message": "yt-dlp 已是 v{version}"
   },
   "statusYtdlpFromTpl": {
-    "message": " (from v{version})"
+    "message": "（从 v{version}）"
   },
   "statusYtdlpRestoredTpl": {
-    "message": " Active version restored to v{version}."
+    "message": "已将当前版本恢复为 v{version}。"
   },
   "statusYtdlpRollbackTpl": {
-    "message": " Last-known-good: v{version}."
+    "message": "上一个已知可用版本：v{version}。"
   },
   "statusYtdlpUpdateFailedTpl": {
-    "message": "yt-dlp update failed. {error}{recovery}"
+    "message": "yt-dlp 更新失败。{error}{recovery}"
   },
   "statusYtdlpUpdatedTpl": {
-    "message": "yt-dlp updated to v{version}{from}"
+    "message": "yt-dlp 已更新到 v{version}{from}"
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "关闭侧边栏"
@@ -6907,19 +6907,19 @@
     "message": "所有订阅"
   },
   "subscriptionArchiveAdded": {
-    "message": "Scheduled"
+    "message": "已安排"
   },
   "subscriptionArchiveExisting": {
-    "message": "already configured"
+    "message": "已配置"
   },
   "subscriptionArchiveNoChannels": {
-    "message": "Add channels to this group before scheduling downloads."
+    "message": "请先向此分组添加频道，再安排下载。"
   },
   "subscriptionArchiveStartCompanion": {
-    "message": "Start Astra Downloader before scheduling channel downloads."
+    "message": "请先启动 Astra Downloader，再安排频道下载。"
   },
   "subscriptionArchiveUnavailable": {
-    "message": "The Astra Downloader companion is not available."
+    "message": "Astra Downloader 配套程序不可用。"
   },
   "subscriptionBatchFallbackLabel": {
     "message": "subscription-groups:fallback"
@@ -6946,64 +6946,64 @@
     "message": "创建"
   },
   "subscriptionDigestCloseAria": {
-    "message": "Close group notifications digest"
+    "message": "关闭分组通知摘要"
   },
   "subscriptionDigestEmpty": {
-    "message": "Create subscription groups with + Group to split new-video counts by topic."
+    "message": "使用“+ 分组”创建订阅分组，即可按主题拆分新视频数量。"
   },
   "subscriptionDigestMarkAllRead": {
-    "message": "Mark all read"
+    "message": "全部标为已读"
   },
   "subscriptionDigestMarkAllReadAria": {
-    "message": "Mark every rendered channel as read"
+    "message": "将所有已显示的频道标为已读"
   },
   "subscriptionDigestMarkAllReadEmpty": {
-    "message": "Nothing new since your last visit"
+    "message": "自你上次访问以来没有新内容"
   },
   "subscriptionDigestMarkRead": {
-    "message": "Mark read"
+    "message": "标为已读"
   },
   "subscriptionDigestMarkReadAriaTpl": {
-    "message": "Mark {group} digest as read"
+    "message": "将 {group} 的摘要标为已读"
   },
   "subscriptionDigestMetaTpl": {
-    "message": "{newCount} new of {renderedCount} rendered videos"
+    "message": "已显示的 {renderedCount} 个视频中有 {newCount} 个新视频"
   },
   "subscriptionDigestNewTpl": {
-    "message": "{count} new"
+    "message": "{count} 个新视频"
   },
   "subscriptionDigestOpen": {
-    "message": "Open Digest"
+    "message": "打开摘要"
   },
   "subscriptionDigestOpenAria": {
-    "message": "Open the per-group notifications digest"
+    "message": "打开按分组划分的通知摘要"
   },
   "subscriptionDigestRegionAria": {
-    "message": "Group notifications digest"
+    "message": "分组通知摘要"
   },
   "subscriptionDigestRenderedTpl": {
-    "message": "{shown} shown / {channels} channels"
+    "message": "显示 {shown} 个 / {channels} 个频道"
   },
   "subscriptionDigestTitle": {
-    "message": "Group Digest"
+    "message": "分组摘要"
   },
   "subscriptionDigestView": {
-    "message": "View"
+    "message": "查看"
   },
   "subscriptionDigestViewAriaTpl": {
-    "message": "View {group} subscriptions"
+    "message": "查看 {group} 的订阅"
   },
   "subscriptionExportCsvAria": {
-    "message": "Export subscription groups as CSV"
+    "message": "将订阅组导出为 CSV"
   },
   "subscriptionExportCsvLabel": {
     "message": "CSV"
   },
   "subscriptionExportJsonAria": {
-    "message": "Export subscription groups as JSON"
+    "message": "将订阅组导出为 JSON"
   },
   "subscriptionExportOpmlAria": {
-    "message": "Export subscription groups as OPML"
+    "message": "将订阅组导出为 OPML"
   },
   "subscriptionExportOpmlLabel": {
     "message": "OPML"
@@ -7033,7 +7033,7 @@
     "message": "命名此组"
   },
   "subscriptionGroupEmpty": {
-    "message": "No channels in this group yet. Choose Edit Channels to add some."
+    "message": "此分组中还没有频道。选择“编辑频道”来添加。"
   },
   "subscriptionGroupNameAria": {
     "message": "组名"
@@ -7090,103 +7090,103 @@
     "message": "已恢复之前的订阅组"
   },
   "subscriptionHealthCloseAria": {
-    "message": "Close subscription health center"
+    "message": "关闭订阅健康中心"
   },
   "subscriptionHealthFailedTpl": {
     "message": "健康扫描失败：{error} 订阅内容可能仍在加载，重新扫描或许有帮助。"
   },
   "subscriptionHealthMetaTpl": {
-    "message": "{channels} rendered channels · {groups} groups"
+    "message": "{channels} 个已显示的频道 · {groups} 个分组"
   },
   "subscriptionHealthMoreTpl": {
-    "message": "+{count} more. Use Stage Stale in the toolbar to stage every candidate at once."
+    "message": "另有 {count} 个。使用工具栏中的“暂存久未更新”可一次暂存所有候选项。"
   },
   "subscriptionHealthNewEmpty": {
-    "message": "Nothing new since your last visit stamp."
+    "message": "自你上次访问标记以来没有新内容。"
   },
   "subscriptionHealthNewHeading": {
     "message": "上次访问后新增"
   },
   "subscriptionHealthNewSummaryTpl": {
-    "message": "{videos} new videos from {channels} channels since your last visit."
+    "message": "自你上次访问以来，{channels} 个频道共有 {videos} 个新视频。"
   },
   "subscriptionHealthNoStaleCards": {
-    "message": "No stale subscription cards found in the rendered feed."
+    "message": "在已显示的信息流中没有发现久未更新的订阅卡片。"
   },
   "subscriptionHealthOpenAria": {
-    "message": "Open the subscription health center"
+    "message": "打开订阅健康中心"
   },
   "subscriptionHealthRegionAria": {
-    "message": "Subscription health center"
+    "message": "订阅健康中心"
   },
   "subscriptionHealthRemovedStagedTpl": {
-    "message": "Removed {count} staged unsubscribes"
+    "message": "已移除 {count} 个暂存的取消订阅"
   },
   "subscriptionHealthRescan": {
-    "message": "Rescan"
+    "message": "重新扫描"
   },
   "subscriptionHealthRescanAria": {
-    "message": "Rescan the rendered feed for subscription health"
+    "message": "重新扫描已显示的信息流以检查订阅健康状态"
   },
   "subscriptionHealthStage": {
-    "message": "Stage"
+    "message": "暂存"
   },
   "subscriptionHealthStageAriaTpl": {
-    "message": "Stage {channel} for unsubscribe review"
+    "message": "暂存 {channel} 以供取消订阅审核"
   },
   "subscriptionHealthStaged": {
-    "message": "staged"
+    "message": "已暂存"
   },
   "subscriptionHealthStagedCountTpl": {
-    "message": "Staged {count} stale channels for unsubscribe review"
+    "message": "已暂存 {count} 个久未更新的频道以供取消订阅审核"
   },
   "subscriptionHealthStagedEmpty": {
-    "message": "Nothing staged. Staging flags channels for your review — it never clicks YouTube unsubscribe controls."
+    "message": "没有暂存内容。请暂存久未更新的频道，在有界的取消订阅会话之前进行审核。"
   },
   "subscriptionHealthStagedHeading": {
-    "message": "Staged unsubscribes (review-only, 30-day undo window)"
+    "message": "已暂存的取消订阅（应用前请先审核，30 天恢复期）"
   },
   "subscriptionHealthStaleEmpty": {
-    "message": "No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan."
+    "message": "在已显示的卡片中没有发现久未更新的频道。请滚动加载更多信息流，然后重新扫描。"
   },
   "subscriptionHealthStaleHeadingTpl": {
-    "message": "Stale channels (≥{days} days, rendered feed)"
+    "message": "久未更新的频道（≥{days} 天，已显示的信息流）"
   },
   "subscriptionHealthStatNewChannels": {
-    "message": "new channels"
+    "message": "新频道"
   },
   "subscriptionHealthStatNewVideos": {
-    "message": "new videos"
+    "message": "新视频"
   },
   "subscriptionHealthStatStaged": {
-    "message": "staged for review"
+    "message": "已暂存待审核"
   },
   "subscriptionHealthStatStale": {
-    "message": "stale candidates"
+    "message": "久未更新的候选项"
   },
   "subscriptionHealthTitle": {
-    "message": "Subscription Health"
+    "message": "订阅健康"
   },
   "subscriptionHealthUndoAllAria": {
-    "message": "Undo every staged unsubscribe"
+    "message": "撤销所有暂存的取消订阅"
   },
   "subscriptionHealthUndoAllTpl": {
-    "message": "Undo all staged ({count})"
+    "message": "全部撤销暂存（{count}）"
   },
   "subscriptionHealthUndoByTpl": {
-    "message": "undo by {date}"
+    "message": "{date} 前可撤销"
   },
   "subscriptionHealthUndoStage": {
-    "message": "Undo stage"
+    "message": "撤销暂存"
   },
   "subscriptionHealthUndoStageAriaTpl": {
-    "message": "Undo staged unsubscribe for {channel}"
+    "message": "撤销 {channel} 的暂存取消订阅"
   },
   "subscriptionImportAria": {
-    "message": "Import subscription groups"
+    "message": "导入订阅组"
   },
   "subscriptionImportTitle": {
-    "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
+    "message": "导入订阅组（与现有分组合并；按住 Shift 点击则替换）"
   },
   "subscriptionImportedOpml": {
     "message": "已导入 OPML"
@@ -7195,43 +7195,43 @@
     "message": "最新优先仅排序本页已加载的视频。滚动以加载更多内容。"
   },
   "subscriptionMembersAdded": {
-    "message": "Channel added to group"
+    "message": "频道已添加到分组"
   },
   "subscriptionMembersCapped": {
     "message": "分组已满 1000 个频道。请先移除一个。"
   },
   "subscriptionMembersCloseAria": {
-    "message": "Close the channel membership editor"
+    "message": "关闭频道成员编辑器"
   },
   "subscriptionMembersEmpty": {
-    "message": "No channels rendered yet. Scroll the subscriptions feed, then reopen this panel."
+    "message": "尚未显示任何频道。请滚动订阅信息流，然后重新打开此面板。"
   },
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "将 {channel} 加入 {group}"
   },
   "subscriptionMembersListAria": {
-    "message": "Rendered channels"
+    "message": "已显示的频道"
   },
   "subscriptionMembersMeta": {
-    "message": "Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels."
+    "message": "勾选频道即可将其添加到此分组。更改会立即保存。滚动信息流可显示更多频道。"
   },
   "subscriptionMembersRegionAriaTpl": {
-    "message": "Edit channels in {group}"
+    "message": "编辑 {group} 中的频道"
   },
   "subscriptionMembersRemoved": {
-    "message": "Channel removed from group"
+    "message": "频道已从分组中移除"
   },
   "subscriptionMembersTitleTpl": {
-    "message": "Edit channels in {group}"
+    "message": "编辑 {group} 中的频道"
   },
   "subscriptionMenuUnsubscribe": {
-    "message": "Unsubscribe"
+    "message": "取消订阅"
   },
   "subscriptionNewBadge": {
     "message": "新"
   },
   "subscriptionOrderGroupsHint": {
-    "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
+    "message": "分组工具栏中的排序决定此信息流的顺序。关闭“订阅分组”后，将使用你保存的顺序。"
   },
   "subscriptionOrderLabel": {
     "message": "顺序"
@@ -7294,121 +7294,121 @@
     "message": "本地摘要器不可用；请启用 Chrome AI 来源试用功能。"
   },
   "subscriptionToolbarAllAria": {
-    "message": "Show all subscriptions"
+    "message": "显示所有订阅"
   },
   "subscriptionToolbarArchive": {
-    "message": "Auto-download"
+    "message": "自动下载"
   },
   "subscriptionToolbarArchiveAriaTpl": {
-    "message": "Schedule new uploads from {group}"
+    "message": "安排下载 {group} 的新上传"
   },
   "subscriptionToolbarArchiveTitle": {
-    "message": "Schedule this group in Astra Downloader. Existing uploads are deduplicated by the companion archive."
+    "message": "在 Astra Downloader 中安排此分组。配套程序的存档会对已有的上传内容去重。"
   },
   "subscriptionToolbarAria": {
-    "message": "Subscription group controls"
+    "message": "订阅分组控件"
   },
   "subscriptionToolbarDigest": {
-    "message": "Digest"
+    "message": "摘要"
   },
   "subscriptionToolbarEditChannels": {
-    "message": "Edit Channels"
+    "message": "编辑频道"
   },
   "subscriptionToolbarGroups": {
-    "message": "Groups"
+    "message": "分组"
   },
   "subscriptionToolbarHealth": {
-    "message": "Health"
+    "message": "健康"
   },
   "subscriptionToolbarHealthCountTpl": {
-    "message": "Health ({count})"
+    "message": "健康（{count}）"
   },
   "subscriptionToolbarHealthTitle": {
-    "message": "Stale channels, staged unsubscribes, new-video counts, and exports in one panel."
+    "message": "在一个面板中查看久未更新的频道、暂存的取消订阅、新视频数量和导出。"
   },
   "subscriptionToolbarNewGroup": {
-    "message": "+ Group"
+    "message": "+ 分组"
   },
   "subscriptionToolbarNewGroupAria": {
     "message": "创建订阅组"
   },
   "subscriptionToolbarNewSubgroup": {
-    "message": "+ Subgroup"
+    "message": "+ 子分组"
   },
   "subscriptionToolbarNewSubgroupAria": {
     "message": "创建订阅子组"
   },
   "subscriptionToolbarPlayAll": {
-    "message": "Play All"
+    "message": "全部播放"
   },
   "subscriptionToolbarPlayAllAriaTpl": {
     "message": "播放 {group} 中的所有视频"
   },
   "subscriptionToolbarScanStale": {
-    "message": "Scan Stale"
+    "message": "扫描久未更新"
   },
   "subscriptionToolbarScanStaleAria": {
-    "message": "Scan rendered subscriptions for stale channels"
+    "message": "扫描已显示的订阅，查找久未更新的频道"
   },
   "subscriptionToolbarSort": {
-    "message": "Sort"
+    "message": "排序"
   },
   "subscriptionToolbarSortAria": {
-    "message": "Sort subscriptions"
+    "message": "排序订阅"
   },
   "subscriptionToolbarStageStale": {
-    "message": "Stage Stale"
+    "message": "暂存久未更新"
   },
   "subscriptionToolbarStageStaleAria": {
-    "message": "Stage rendered stale channels for unsubscribe review"
+    "message": "暂存已显示的久未更新频道以供取消订阅审核"
   },
   "subscriptionToolbarStageStaleTitle": {
-    "message": "Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked."
+    "message": "暂存已显示的久未更新频道以供审核。不会点击任何 YouTube 取消订阅按钮。"
   },
   "subscriptionToolbarStale": {
-    "message": "Stale"
+    "message": "久未更新"
   },
   "subscriptionToolbarStaleFlaggedTpl": {
-    "message": "{count} stale channels flagged"
+    "message": "已标记 {count} 个久未更新的频道"
   },
   "subscriptionToolbarUndoStagedAriaTpl": {
-    "message": "Undo {count} staged unsubscribe items"
+    "message": "撤销 {count} 个暂存的取消订阅项目"
   },
   "subscriptionToolbarUndoStagedTpl": {
-    "message": "Undo Staged ({count})"
+    "message": "撤销暂存（{count}）"
   },
   "subscriptionUnsubscribeCapTpl": {
-    "message": "{count} remain staged beyond the {cap}-per-run cap."
+    "message": "超出每次 {cap} 个的上限，还有 {count} 个保持暂存。"
   },
   "subscriptionUnsubscribeEmpty": {
-    "message": "Nothing is staged for unsubscribe."
+    "message": "没有暂存待取消订阅的内容。"
   },
   "subscriptionUnsubscribeLogAria": {
-    "message": "Export the local unsubscribe session log as JSON"
+    "message": "以 JSON 格式导出本地取消订阅会话日志"
   },
   "subscriptionUnsubscribeLogButton": {
-    "message": "Unsubscribe log"
+    "message": "取消订阅日志"
   },
   "subscriptionUnsubscribeLogEmpty": {
-    "message": "No unsubscribe sessions recorded yet."
+    "message": "尚无取消订阅会话记录。"
   },
   "subscriptionUnsubscribeLogExportedTpl": {
-    "message": "Exported {count} unsubscribe sessions"
+    "message": "已导出 {count} 个取消订阅会话"
   },
   "subscriptionUnsubscribeRunAriaTpl": {
-    "message": "Unsubscribe up to {count} staged channels in this bounded session"
+    "message": "在这次有界会话中最多取消订阅 {count} 个已暂存的频道"
   },
   "subscriptionUnsubscribeRunTitleTpl": {
-    "message": "Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing."
+    "message": "仅对已暂存的审核列表应用 YouTube 取消订阅，最多 {count} 个频道，间隔 400 毫秒。"
   },
   "subscriptionUnsubscribeRunTpl": {
-    "message": "Unsubscribe staged ({count})"
+    "message": "取消订阅已暂存的频道（{count}）"
   },
   "subscriptionUnsubscribeRunning": {
-    "message": "An unsubscribe session is already running."
+    "message": "已有取消订阅会话正在运行。"
   },
   "subscriptionUnsubscribeSessionTpl": {
-    "message": "{removed} unsubscribed, {failed} unchanged; {remaining} remain staged."
+    "message": "已取消订阅 {removed} 个，{failed} 个未更改；还有 {remaining} 个保持暂存。"
   },
   "subscriptionViewCompact": {
     "message": "紧凑"
@@ -7519,28 +7519,28 @@
     "message": "已保存 {count} 个"
   },
   "timestampHighlightExport": {
-    "message": "Export Highlight Pack"
+    "message": "导出精彩片段包"
   },
   "timestampHighlightExportAria": {
-    "message": "Export this video’s highlights, notes, bookmarks, and summary"
+    "message": "导出此视频的精彩片段、笔记、书签和摘要"
   },
   "timestampHighlightExportFailed": {
-    "message": "Highlight export failed. Your saved data is unchanged."
+    "message": "导出精彩片段失败。你保存的数据没有变化。"
   },
   "timestampHighlightExported": {
-    "message": "Highlight pack exported as Markdown and JSON."
+    "message": "精彩片段包已导出为 Markdown 和 JSON。"
   },
   "timestampHighlightExporting": {
-    "message": "Preparing highlight pack…"
+    "message": "正在准备精彩片段包…"
   },
   "timestampHighlightNoVideo": {
-    "message": "No video is currently open."
+    "message": "当前没有打开的视频。"
   },
   "toastActionManage": {
-    "message": "Manage"
+    "message": "管理"
   },
   "toastActionOpen": {
-    "message": "Open"
+    "message": "打开"
   },
   "toastActionUndo": {
     "message": "撤销"
@@ -7552,7 +7552,7 @@
     "message": "身份验证下载：仅将所需的 YouTube 登录 Cookie 发送到此设备上的 Astra Downloader。"
   },
   "toastDismissAria": {
-    "message": "Dismiss notification"
+    "message": "关闭通知"
   },
   "toastDlCmdCopied": {
     "message": "已复制后备安装命令。仅在无法运行已下载的安装文件时使用。"
@@ -7564,10 +7564,10 @@
     "message": "请安装本地下载器以启用下载。"
   },
   "toastDlPreparingAudio": {
-    "message": "Preparing your audio download…"
+    "message": "正在准备音频下载…"
   },
   "toastDlPreparingVideo": {
-    "message": "Preparing your video download…"
+    "message": "正在准备视频下载…"
   },
   "toastDlReady": {
     "message": "本地下载器已就绪。"
@@ -7594,16 +7594,16 @@
     "message": "Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。"
   },
   "toggleRiskTooltip_api": {
-    "message": "Talks to an external API server"
+    "message": "会与外部 API 服务器通信"
   },
   "toggleRiskTooltip_experimental": {
-    "message": "Experimental feature; behaviour may change"
+    "message": "实验功能；行为可能会改变"
   },
   "toggleRiskTooltip_local_companion": {
-    "message": "Talks to the local Astra Downloader (127.0.0.1)"
+    "message": "会与本地 Astra Downloader (127.0.0.1) 通信"
   },
   "toggleRiskTooltip_store_risk": {
-    "message": "Higher review-policy sensitivity. GitHub-full only."
+    "message": "审核政策敏感度较高。仅限 GitHub 完整版。"
   },
   "toggleStateOff": {
     "message": "已禁用"
@@ -7639,64 +7639,64 @@
     "message": "字幕学习包"
   },
   "transcriptCaptions": {
-    "message": "Captions"
+    "message": "字幕"
   },
   "transcriptCollapse": {
-    "message": "Collapse"
+    "message": "收起"
   },
   "transcriptCollapseAria": {
-    "message": "Collapse transcript"
+    "message": "收起字幕稿"
   },
   "transcriptCopiedTpl": {
-    "message": "{label} copied to clipboard"
+    "message": "{label} 已复制到剪贴板"
   },
   "transcriptCopyAiPrompt": {
-    "message": "Copy AI Prompt"
+    "message": "复制 AI 提示词"
   },
   "transcriptCopyAiPromptTitle": {
-    "message": "Copy a ready-to-paste summary prompt"
+    "message": "复制可直接粘贴的摘要提示词"
   },
   "transcriptCopyFailedTpl": {
-    "message": "Failed to copy {label}"
+    "message": "复制 {label} 失败"
   },
   "transcriptCopyText": {
-    "message": "Copy Text"
+    "message": "复制文本"
   },
   "transcriptCopyTextTitle": {
-    "message": "Copy plain-text transcript to clipboard"
+    "message": "将纯文本字幕稿复制到剪贴板"
   },
   "transcriptDownloadFailed": {
-    "message": "Download failed"
+    "message": "下载失败"
   },
   "transcriptDownloadSrt": {
-    "message": "Download SRT"
+    "message": "下载 SRT"
   },
   "transcriptDownloadSrtTitle": {
-    "message": "Download SubRip subtitle file"
+    "message": "下载 SubRip 字幕文件"
   },
   "transcriptDownloadTxt": {
-    "message": "Download TXT"
+    "message": "下载 TXT"
   },
   "transcriptDownloadTxtTitle": {
-    "message": "Download plain-text transcript"
+    "message": "下载纯文本字幕稿"
   },
   "transcriptDownloadedTpl": {
     "message": "字幕已下载！（{count} 个片段）"
   },
   "transcriptExpand": {
-    "message": "Expand"
+    "message": "展开"
   },
   "transcriptExpandAria": {
-    "message": "Expand transcript"
+    "message": "展开字幕稿"
   },
   "transcriptExpiryUnknown": {
     "message": "未提供"
   },
   "transcriptExportActionsAria": {
-    "message": "Transcript export actions"
+    "message": "字幕稿导出操作"
   },
   "transcriptEyebrow": {
-    "message": "Captions & Exports"
+    "message": "字幕与导出"
   },
   "transcriptFetching": {
     "message": "正在获取转录文本…"
@@ -7711,13 +7711,13 @@
     "message": "已索引 {maxCount} 个视频中的 {count} 个，{budget} 中已用 {size}。最早的条目会被优先删除。"
   },
   "transcriptJumpAriaTpl": {
-    "message": "Jump to {time} in the transcript"
+    "message": "跳转到字幕稿中的 {time}"
   },
   "transcriptLanguageUnknown": {
     "message": "未知语言"
   },
   "transcriptLlmPrompt": {
-    "message": "LLM prompt"
+    "message": "LLM 提示词"
   },
   "transcriptLoadFailed": {
     "message": "转写加载失败"
@@ -7744,7 +7744,7 @@
     "message": "面板回退"
   },
   "transcriptPreparingControls": {
-    "message": "Preparing transcript controls for this video."
+    "message": "正在为此视频准备字幕稿控件。"
   },
   "transcriptQaAsk": {
     "message": "提问"
@@ -7822,7 +7822,7 @@
     "message": "如果字幕仍在处理中，请重新加载页面或稍后重试。"
   },
   "transcriptShowOriginal": {
-    "message": "Show Original"
+    "message": "显示原文"
   },
   "transcriptSourceInnertube": {
     "message": "最新的 YouTube 播放器数据"
@@ -7840,10 +7840,10 @@
     "message": "新获取的 YouTube 观看页"
   },
   "transcriptStoreChecking": {
-    "message": "Checking the transcript store…"
+    "message": "正在检查字幕稿存储…"
   },
   "transcriptStoreClearFailed": {
-    "message": "The export was saved, but the store could not be cleared."
+    "message": "导出已保存，但无法清空存储。"
   },
   "transcriptStoreClearNow": {
     "message": "清空存储"
@@ -7852,67 +7852,67 @@
     "message": "清空存储（请先检查导出的文件）"
   },
   "transcriptStoreDamagedTplOne": {
-    "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
+    "message": "字幕稿存储：{count} 个视频共 {size}，其中 {corrupt} 个无法读取。"
   },
   "transcriptStoreDamagedTplOther": {
-    "message": "Transcript store: {size} across {count} videos, {corrupt} of them unreadable."
+    "message": "字幕稿存储：{count} 个视频共 {size}，其中 {corrupt} 个无法读取。"
   },
   "transcriptStoreEmpty": {
-    "message": "Transcript store: empty."
+    "message": "字幕稿存储：空。"
   },
   "transcriptStoreExportFailed": {
-    "message": "Could not export the transcript store. Nothing was cleared."
+    "message": "无法导出字幕稿存储。没有清除任何内容。"
   },
   "transcriptStoreExportUnconfirmed": {
     "message": "Astra Deck 无法确认导出文件已保存到下载文件夹，因此尚未清除任何内容。请确认 astra-deck-transcripts-recovery.json 存在，然后点击“清空存储”。"
   },
   "transcriptStoreFailed": {
-    "message": "Transcript store: could not be measured."
+    "message": "字幕稿存储：无法测量。"
   },
   "transcriptStoreNoTab": {
-    "message": "Transcript store: open a YouTube tab to measure it."
+    "message": "字幕稿存储：请打开 YouTube 标签页来测量。"
   },
   "transcriptStoreOkTplOne": {
-    "message": "Transcript store: {size} across {count} video."
+    "message": "字幕稿存储：{count} 个视频共 {size}。"
   },
   "transcriptStoreOkTplOther": {
-    "message": "Transcript store: {size} across {count} videos."
+    "message": "字幕稿存储：{count} 个视频共 {size}。"
   },
   "transcriptStoreRecover": {
-    "message": "Export and clear"
+    "message": "导出并清空"
   },
   "transcriptStoreRecoverAria": {
-    "message": "Export the readable transcripts, then clear the damaged store"
+    "message": "导出可读取的字幕稿，然后清空已损坏的存储"
   },
   "transcriptStoreRecoveredTplOne": {
-    "message": "Exported {count} readable transcript and cleared the store."
+    "message": "已导出 {count} 份可读取的字幕稿，并清空了存储。"
   },
   "transcriptStoreRecoveredTplOther": {
-    "message": "Exported {count} readable transcripts and cleared the store."
+    "message": "已导出 {count} 份可读取的字幕稿，并清空了存储。"
   },
   "transcriptTimeUnknown": {
     "message": "未知时间"
   },
   "transcriptTitle": {
-    "message": "Transcript"
+    "message": "字幕稿"
   },
   "transcriptTranslate": {
     "message": "翻译"
   },
   "transcriptTranslateTitle": {
-    "message": "Translate transcript on-device using Chrome Translator API"
+    "message": "使用 Chrome Translator API 在设备上翻译字幕稿"
   },
   "transcriptTranslateUnavailable": {
-    "message": "Chrome Translator API not available in this browser"
+    "message": "此浏览器不支持 Chrome Translator API"
   },
   "transcriptTranslatedTpl": {
-    "message": "Translated to {language}"
+    "message": "已翻译为 {language}"
   },
   "transcriptTranslating": {
     "message": "正在翻译…"
   },
   "transcriptTranslationFailedTpl": {
-    "message": "Translation failed: {error}"
+    "message": "翻译失败：{error}"
   },
   "transcriptUnavailable": {
     "message": "此视频没有可用字幕"
@@ -7990,10 +7990,10 @@
     "message": "撤销"
   },
   "undoImportAria": {
-    "message": "Restore data from the most recent Import"
+    "message": "从最近一次导入恢复数据"
   },
   "undoImportBtn": {
-    "message": "Undo Import"
+    "message": "撤销导入"
   },
   "undoResetAria": {
     "message": "从最近一次重置中恢复数据"
@@ -8005,22 +8005,22 @@
     "message": "未知"
   },
   "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
+    "message": "更新 Astra Downloader 配套程序"
   },
   "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
+    "message": "更新 Astra Downloader"
   },
   "updateYtdlpAria": {
-    "message": "Force yt-dlp self-update"
+    "message": "强制 yt-dlp 自我更新"
   },
   "updateYtdlpBtn": {
-    "message": "Update yt-dlp"
+    "message": "更新 yt-dlp"
   },
   "videoHiderAddAllowedChannelCopy": {
-    "message": "Paste a channel URL, handle, or channel ID. Only channels in this list are filtered by allowlist mode; an empty list is safe and applies no channel filter."
+    "message": "粘贴频道网址、用户名或频道 ID。白名单模式只会过滤此列表中的频道；列表为空是安全的，不会应用任何频道过滤。"
   },
   "videoHiderAddAllowedChannelTitle": {
-    "message": "Add Allowed Channel"
+    "message": "添加允许的频道"
   },
   "videoHiderAddAllowedVideoCopy": {
     "message": "粘贴 YouTube 网址或视频 ID，即使匹配筛选规则也保持可见。"
@@ -8029,10 +8029,10 @@
     "message": "添加允许的视频"
   },
   "videoHiderAddBlockedChannelCopy": {
-    "message": "Paste a channel URL, handle, or channel ID to add it to the channel blocklist."
+    "message": "粘贴频道网址、用户名或频道 ID，将其添加到频道屏蔽列表。"
   },
   "videoHiderAddBlockedChannelTitle": {
-    "message": "Add Blocked Channel"
+    "message": "添加屏蔽的频道"
   },
   "videoHiderAddHiddenVideoCopy": {
     "message": "粘贴 YouTube 网址或视频 ID，直接添加到隐藏列表。"
@@ -8047,7 +8047,7 @@
     "message": "视频已添加到隐藏列表"
   },
   "videoHiderAllowChannelButton": {
-    "message": "Allow Channel"
+    "message": "允许频道"
   },
   "videoHiderAllowRightClickBlockDesc": {
     "message": "右键点击缩略图上的 X 按钮即可屏蔽整个频道。"
@@ -8059,19 +8059,19 @@
     "message": "允许视频"
   },
   "videoHiderAllowedChannelLabel": {
-    "message": "Allowed Channel"
+    "message": "允许的频道"
   },
   "videoHiderAllowedChannelToast": {
-    "message": "Channel allowed: {name}"
+    "message": "已允许频道：{name}"
   },
   "videoHiderAllowedChannelsCountTpl": {
     "message": "已允许 {count} 个频道"
   },
   "videoHiderAllowedChannelsStatus": {
-    "message": "Allowed"
+    "message": "已允许"
   },
   "videoHiderAllowedChannelsTab": {
-    "message": "Allowed Channels"
+    "message": "允许的频道"
   },
   "videoHiderAllowedVideoPreviewAltTpl": {
     "message": "允许的视频 {videoId} 的预览缩略图"
@@ -8086,7 +8086,7 @@
     "message": "允许的视频"
   },
   "videoHiderAlreadyAllowedChannelToast": {
-    "message": "{name} is already allowed"
+    "message": "{name} 已在允许列表中"
   },
   "videoHiderAlreadyAllowedVideoToast": {
     "message": "视频已被允许"
@@ -8113,67 +8113,67 @@
     "message": "批次"
   },
   "videoHiderBlockChannelButton": {
-    "message": "Block Channel"
+    "message": "屏蔽频道"
   },
   "videoHiderBlockedChannelLabel": {
-    "message": "Blocked Channel"
+    "message": "已屏蔽的频道"
   },
   "videoHiderBlockedChannelToast": {
     "message": "已屏蔽：{name}"
   },
   "videoHiderBlockedChannelsStatus": {
-    "message": "Blocked"
+    "message": "已屏蔽"
   },
   "videoHiderBlockedChannelsTab": {
-    "message": "Blocked Channels"
+    "message": "已屏蔽的频道"
   },
   "videoHiderChannelActionToggle": {
-    "message": "Allow right-click channel actions"
+    "message": "允许右键频道操作"
   },
   "videoHiderChannelActionToggleDesc": {
-    "message": "Use right-click on the thumbnail X button to add the channel to the active channel list."
+    "message": "在缩略图的 X 按钮上点击右键，即可将该频道添加到当前的频道列表。"
   },
   "videoHiderChannelAllowlistCopy": {
-    "message": "Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
+    "message": "只有此列表中的频道才会参与基于频道的过滤。移除某个条目后，该频道会重新通过白名单检查。Astra Deck 会先匹配规范的频道 ID，然后依次回退到用户名、自定义路径、网址和旧版 ID。"
   },
   "videoHiderChannelAllowlistEmptyCopy": {
-    "message": "Add channels here or right-click the thumbnail X button to allow a channel. An empty allowlist is safe and applies no channel filter."
+    "message": "在此添加频道，或在缩略图的 X 按钮上点击右键来允许某个频道。白名单为空是安全的，不会应用任何频道过滤。"
   },
   "videoHiderChannelAllowlistEmptyEyebrow": {
-    "message": "Allowlist is empty"
+    "message": "白名单为空"
   },
   "videoHiderChannelAllowlistEmptyTitle": {
-    "message": "No allowed channels yet"
+    "message": "还没有允许的频道"
   },
   "videoHiderChannelAllowlistEyebrow": {
-    "message": "Allowlist"
+    "message": "白名单"
   },
   "videoHiderChannelAllowlistPlaceholder": {
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelAllowlistToggle": {
-    "message": "Use channel allowlist mode"
+    "message": "使用频道白名单模式"
   },
   "videoHiderChannelAllowlistToggleDesc": {
-    "message": "Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter."
+    "message": "频道过滤只会考虑“允许的频道”中的频道。列表为空是安全的，不会应用任何频道过滤。"
   },
   "videoHiderChannelBlockingDisabled": {
     "message": "频道屏蔽已禁用"
   },
   "videoHiderChannelBlocklistCopy": {
-    "message": "Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
+    "message": "被屏蔽的频道会在所有支持的信息流中保持隐藏，直到你在此处移除它们。Astra Deck 会先匹配规范的频道 ID，然后依次回退到用户名、自定义路径、网址和旧版 ID。"
   },
   "videoHiderChannelBlocklistEmptyCopy": {
-    "message": "Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks."
+    "message": "想在视频隐藏器运行的所有位置屏蔽某个频道时，请在缩略图的 X 按钮上点击右键。优先使用频道 ID，用户名和网址作为备用。"
   },
   "videoHiderChannelBlocklistEmptyEyebrow": {
-    "message": "Channel Blocks"
+    "message": "频道屏蔽"
   },
   "videoHiderChannelBlocklistEmptyTitle": {
-    "message": "No blocked channels yet"
+    "message": "还没有屏蔽的频道"
   },
   "videoHiderChannelBlocklistEyebrow": {
-    "message": "Blocklist"
+    "message": "屏蔽列表"
   },
   "videoHiderChannelBlocklistPlaceholder": {
     "message": "https://youtube.com/@channel or @handle"
@@ -8185,7 +8185,7 @@
     "message": "频道已恢复"
   },
   "videoHiderClearAllowedChannels": {
-    "message": "Clear Allowed Channels"
+    "message": "清除允许的频道"
   },
   "videoHiderClearAllowedTpl": {
     "message": "清空允许的视频（{count}）"
@@ -8194,7 +8194,7 @@
     "message": "已清除 {count} 个允许的视频"
   },
   "videoHiderClearBlockedChannels": {
-    "message": "Unblock All Channels"
+    "message": "取消屏蔽所有频道"
   },
   "videoHiderClearBlockedChannelsTpl": {
     "message": "解除屏蔽所有频道（{count}）"
@@ -8212,7 +8212,7 @@
     "message": "连续隐藏批次"
   },
   "videoHiderDaysSuffix": {
-    "message": "days old"
+    "message": "天前发布"
   },
   "videoHiderDurationFilterDesc": {
     "message": "自动隐藏短于所选最小时长的视频。"
@@ -8266,10 +8266,10 @@
     "message": "隐藏自动配音视频"
   },
   "videoHiderHideButtonAllowChannel": {
-    "message": "Hide this video (right-click to allow channel)"
+    "message": "隐藏此视频（右键允许该频道）"
   },
   "videoHiderHideButtonBlockChannel": {
-    "message": "Hide this video (right-click to block channel)"
+    "message": "隐藏此视频（右键屏蔽该频道）"
   },
   "videoHiderHideLiveDesc": {
     "message": "在支持的动态中隐藏正在直播的卡片和直播推荐。"
@@ -8311,7 +8311,7 @@
     "message": "隐藏视频"
   },
   "videoHiderInvalidChannelInput": {
-    "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+    "message": "请输入有效的 YouTube 频道网址、用户名或频道 ID。"
   },
   "videoHiderInvalidVideoInput": {
     "message": "请输入有效的 YouTube 视频网址或 11 位视频 ID。"
@@ -8335,7 +8335,7 @@
     "message": "有内容"
   },
   "videoHiderKeywordsPlaceholder": {
-    "message": "reaction, unboxing, prank, shorts…"
+    "message": "反应视频、开箱、整蛊、shorts…"
   },
   "videoHiderKeywordsRulesCopy": {
     "message": "用逗号分隔条目。更新此字段后，规则会立即生效。"
@@ -8356,10 +8356,10 @@
     "message": "启用加载限制器"
   },
   "videoHiderLocalHeuristicsDesc": {
-    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+    "message": "可选的卡片本地检查，针对明确的合成旁白、发布较久且播放量低的视频，以及异常高的上传频率。不使用网络或众包数据库。"
   },
   "videoHiderLocalHeuristicsTitle": {
-    "message": "Local low-signal heuristics"
+    "message": "本地低信号启发式检查"
   },
   "videoHiderLowViewThresholdDesc": {
     "message": "只有启用低观看数筛选时，观看数低于此值的视频才会隐藏。"
@@ -8368,16 +8368,16 @@
     "message": "低观看数阈值"
   },
   "videoHiderMarkWatched": {
-    "message": "Mark as watched"
+    "message": "标为已观看"
   },
   "videoHiderMarkWatchedToggle": {
-    "message": "Show mark-as-watched button"
+    "message": "显示“标为已观看”按钮"
   },
   "videoHiderMarkWatchedToggleDesc": {
-    "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
+    "message": "为每张卡片添加一个控件，可在本地将视频标为已观看。已标记的卡片会变暗；启用“移除已隐藏的卡片”后则会隐藏。"
   },
   "videoHiderMarkedWatched": {
-    "message": "Marked as watched"
+    "message": "已标为已观看"
   },
   "videoHiderMinimumDurationDesc": {
     "message": "使用 0 可停用此规则。"
@@ -8410,7 +8410,7 @@
     "message": "在 YouTube 中打开"
   },
   "videoHiderPaneDescription": {
-    "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
+    "message": "无需离开页面即可查看已隐藏的视频、管理频道列表并调整自动过滤器。"
   },
   "videoHiderPreviewUnavailable": {
     "message": "预览不可用"
@@ -8443,7 +8443,7 @@
     "message": "直播过滤器"
   },
   "videoHiderReasonLowSignal": {
-    "message": "the low-signal view/age filter"
+    "message": "低信号播放量/时间过滤器"
   },
   "videoHiderReasonLowView": {
     "message": "低观看量过滤器"
@@ -8470,13 +8470,13 @@
     "message": "YouTube 自带的经改动或合成内容标示"
   },
   "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
+    "message": "合成旁白标记过滤器"
   },
   "videoHiderReasonUpcoming": {
     "message": "即将首播过滤器"
   },
   "videoHiderReasonUploadCadence": {
-    "message": "the upload-cadence filter"
+    "message": "上传频率过滤器"
   },
   "videoHiderReasonWatchedRatio": {
     "message": "观看比例过滤器"
@@ -8488,7 +8488,7 @@
     "message": "记住恢复的视频"
   },
   "videoHiderRemoveAllowedChannel": {
-    "message": "Remove from Allowlist"
+    "message": "从白名单中移除"
   },
   "videoHiderRemoveAllowedVideoAriaTpl": {
     "message": "移除允许视频 {videoId} 的例外"
@@ -8644,7 +8644,7 @@
     "message": "Video Hider 分区"
   },
   "videoHiderUnblockChannel": {
-    "message": "Unblock"
+    "message": "取消屏蔽"
   },
   "videoHiderUnblockChannelAriaTpl": {
     "message": "解除屏蔽频道 {channelName}"
@@ -8656,13 +8656,13 @@
     "message": "全部撤销"
   },
   "videoHiderUnmarkWatched": {
-    "message": "Unmark as watched"
+    "message": "取消标为已观看"
   },
   "videoHiderUnmarkedWatched": {
     "message": "已移除观看标记"
   },
   "videoHiderUploadsPerDaySuffix": {
-    "message": "uploads/day"
+    "message": "个上传/天"
   },
   "videoHiderVideoIdLabel": {
     "message": "视频 ID"
@@ -8671,7 +8671,7 @@
     "message": "https://youtube.com/watch?v=VIDEO_ID"
   },
   "videoHiderViewsSuffix": {
-    "message": "views"
+    "message": "次播放"
   },
   "videoHiderWatchedRatioDesc": {
     "message": "使用 0 可停用。恢复进度条达到或超过此百分比的视频卡片会隐藏。"
@@ -8698,7 +8698,7 @@
     "message": "已缓存的 YouTube 详细信息"
   },
   "videoInsightsSourceDegraded": {
-    "message": "From this page. YouTube lookup unavailable."
+    "message": "来自此页面。YouTube 查询不可用。"
   },
   "videoInsightsSourceNetwork": {
     "message": "已从 YouTube 刷新"
@@ -8707,7 +8707,7 @@
     "message": "来自此页面"
   },
   "videoInsightsSourceThrottled": {
-    "message": "From this page. YouTube lookup paused."
+    "message": "来自此页面。YouTube 查询已暂停。"
   },
   "videoInsightsTags": {
     "message": "标签"
@@ -8719,7 +8719,7 @@
     "message": "未提供"
   },
   "videoInsightsUnchecked": {
-    "message": "Not checked"
+    "message": "未检查"
   },
   "videoInsightsUploaded": {
     "message": "上传时间"
@@ -8788,64 +8788,64 @@
     "message": "视频笔记"
   },
   "watchFeedAddButton": {
-    "message": "Add to Watch Feed"
+    "message": "添加到观看列表"
   },
   "watchFeedAddCurrent": {
-    "message": "Add this video to Watch Feed"
+    "message": "将此视频添加到观看列表"
   },
   "watchFeedAdded": {
-    "message": "Added to Watch Feed"
+    "message": "已添加到观看列表"
   },
   "watchFeedAddedButton": {
-    "message": "In Watch Feed"
+    "message": "已在观看列表中"
   },
   "watchFeedAddVideoTpl": {
-    "message": "Add {title} to Watch Feed"
+    "message": "将 {title} 添加到观看列表"
   },
   "watchFeedAlreadyAdded": {
-    "message": "Already in Watch Feed"
+    "message": "已在观看列表中"
   },
   "watchFeedFullTpl": {
-    "message": "Watch Feed is full ({count})"
+    "message": "观看列表已满（{count}）"
   },
   "watchFeedImportFullTpl": {
     "message": "Watch Feed 导入：新增 {added} 个，已存在 {duplicates} 个，因上限为 {count} 个而跳过 {full} 个"
   },
   "watchFeedImportInvalid": {
-    "message": "Import failed: not a valid Watch Feed JSON file"
+    "message": "导入失败：不是有效的观看列表 JSON 文件"
   },
   "watchFeedImportResultTpl": {
-    "message": "Watch Feed import: {added} added, {duplicates} already present"
+    "message": "观看列表导入：新增 {added} 个，已存在 {duplicates} 个"
   },
   "watchFeedMoveDownTpl": {
-    "message": "Move down: {title}"
+    "message": "下移：{title}"
   },
   "watchFeedMoveUpTpl": {
-    "message": "Move up: {title}"
+    "message": "上移：{title}"
   },
   "watchFeedOpenAriaOne": {
-    "message": "Open Watch Feed ({count} video)"
+    "message": "打开观看列表（{count} 个视频）"
   },
   "watchFeedOpenAriaOther": {
-    "message": "Open Watch Feed ({count} videos)"
+    "message": "打开观看列表（{count} 个视频）"
   },
   "watchFeedPillTpl": {
-    "message": "Watch Feed · {count}"
+    "message": "观看列表 · {count}"
   },
   "watchFeedPlayingNow": {
-    "message": "Playing now"
+    "message": "正在播放"
   },
   "watchFeedRemoveCurrent": {
-    "message": "Remove this video from Watch Feed"
+    "message": "将此视频从观看列表中移除"
   },
   "watchFeedRemoved": {
-    "message": "Removed from Watch Feed"
+    "message": "已从观看列表中移除"
   },
   "watchFeedRemoveTpl": {
-    "message": "Remove from Watch Feed: {title}"
+    "message": "从观看列表中移除：{title}"
   },
   "watchFeedRemoveVideoTpl": {
-    "message": "Remove {title} from Watch Feed"
+    "message": "将 {title} 从观看列表中移除"
   },
   "watchFeedRowTooltipTpl": {
     "message": "{title}（{channel}）"
@@ -8857,10 +8857,10 @@
     "message": "没有可移除的内容"
   },
   "watchLaterRemoveFailedOne": {
-    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+    "message": "无法移除 {count} 个视频。未找到 YouTube 的菜单项。"
   },
   "watchLaterRemoveFailedOther": {
-    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
+    "message": "无法移除 {count} 个视频。未找到 YouTube 的菜单项。"
   },
   "watchLaterRemoveWatched": {
     "message": "移除已观看"
@@ -8884,67 +8884,67 @@
     "message": "正在扫描…"
   },
   "welcomeBody": {
-    "message": "Pick a profile to start. You can change it any time in Settings."
+    "message": "选择一个配置即可开始。你随时可以在“设置”中更改。"
   },
   "welcomeDismiss": {
-    "message": "Skip"
+    "message": "跳过"
   },
   "welcomeDismissAria": {
-    "message": "Dismiss welcome card"
+    "message": "关闭欢迎卡片"
   },
   "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+    "message": "你打算怎样使用 YouTube？选择一个预设，或跳过并手动配置。"
   },
   "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+    "message": "减少 Shorts、相关视频、无限滚动、自动播放和注意力分散。"
   },
   "welcomePresetFocusTitle": {
-    "message": "Focus"
+    "message": "专注"
   },
   "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
+    "message": "选择使用预设"
   },
   "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+    "message": "持久速度、A-B 循环、统计覆盖层、画中画和专注模式。"
   },
   "welcomePresetPowerTitle": {
-    "message": "Power User"
+    "message": "高级用户"
   },
   "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+    "message": "清理链接、隐藏 Shorts、阻止无限滚动，并保持 AI 摘要关闭。"
   },
   "welcomePresetPrivacyTitle": {
     "message": "隐私"
   },
   "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+    "message": "字幕稿、书签、观看时间、摘要和评论搜索。"
   },
   "welcomePresetResearcherTitle": {
-    "message": "Researcher"
+    "message": "研究者"
   },
   "welcomePresetSkip": {
     "message": "跳过并手动配置"
   },
   "welcomeProfileFullDesc": {
-    "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."
+    "message": "增加本地下载器、Cobalt 备用功能、自定义 CSS 和 AI 摘要提供商。"
   },
   "welcomeProfileFullTitle": {
     "message": "GitHub-Full"
   },
   "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
+    "message": "选择初始配置"
   },
   "welcomeProfileRecommended": {
-    "message": "Recommended"
+    "message": "推荐"
   },
   "welcomeProfileSafeDesc": {
-    "message": "Everything that ships on extension stores. No download companion, no BYO AI keys."
+    "message": "包含所有在扩展商店上架的功能。没有下载配套程序，也不支持自带 AI 密钥。"
   },
   "welcomeProfileSafeTitle": {
-    "message": "Store-Safe"
+    "message": "商店安全"
   },
   "welcomeTitle": {
-    "message": "Welcome to Astra Deck"
+    "message": "欢迎使用 Astra Deck"
   },
   "whaCloseAria": {
     "message": "关闭观看时长面板",
@@ -8993,10 +8993,10 @@
     "message": "关闭"
   },
   "whatsNewOpen": {
-    "message": "Read changelog"
+    "message": "阅读更新日志"
   },
   "whatsNewTitle": {
-    "message": "Updated"
+    "message": "已更新"
   },
   "wlwbAgeAria": {
     "message": "视频最小年龄（天）"
@@ -9011,10 +9011,10 @@
     "message": "早于指定天数…"
   },
   "wlwbAgeUnavailableTplOne": {
-    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+    "message": "已加载的 {count} 行没有可读取的上传时间，已排除在时间过滤之外。"
   },
   "wlwbAgeUnavailableTplOther": {
-    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
+    "message": "已加载的 {count} 行没有可读取的上传时间，已排除在时间过滤之外。"
   },
   "wlwbChannelAria": {
     "message": "频道名称筛选"
@@ -9074,10 +9074,10 @@
     "message": "没有等待恢复的已删除视频。"
   },
   "wlwbRecoveryStatusTplOne": {
-    "message": "{count} removed video is available to restore."
+    "message": "有 {count} 个已移除的视频可以恢复。"
   },
   "wlwbRecoveryStatusTplOther": {
-    "message": "{count} removed videos are available to restore."
+    "message": "有 {count} 个已移除的视频可以恢复。"
   },
   "wlwbRecoveryTitle": {
     "message": "恢复删除"
@@ -9092,10 +9092,10 @@
     "message": "— 仍有 {count} 个匹配，请再次运行"
   },
   "wlwbRemovedToastTplOne": {
-    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+    "message": "已移除 {count} 个视频{remaining}。恢复列表在移除日志中。"
   },
   "wlwbRemovedToastTplOther": {
-    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
+    "message": "已移除 {count} 个视频{remaining}。恢复列表在移除日志中。"
   },
   "wlwbRemovingTpl": {
     "message": "正在移除 {current} / {total}…"
@@ -9104,10 +9104,10 @@
     "message": "无法恢复 {title}：{error}"
   },
   "wlwbRestoredBatchTplOne": {
-    "message": "Restored {restored} of {total} removed video to Watch Later."
+    "message": "已将 {total} 个已移除视频中的 {restored} 个恢复到“稍后观看”。"
   },
   "wlwbRestoredBatchTplOther": {
-    "message": "Restored {restored} of {total} removed videos to Watch Later."
+    "message": "已将 {total} 个已移除视频中的 {restored} 个恢复到“稍后观看”。"
   },
   "wlwbRestoredItemTpl": {
     "message": "已将 {title} 恢复到“稍后观看”"
@@ -9185,67 +9185,67 @@
     "message": "控件与本地数据"
   },
   "youtubeStateResetToast": {
-    "message": "YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab."
+    "message": "已清除 YouTube 状态（{count}）。关闭此标签页之前，可在 Astra Deck 中撤销。"
   },
   "youtubeStateRestoreToast": {
-    "message": "YouTube state restored ({count}). Reload the page to apply it."
+    "message": "已恢复 YouTube 状态（{count}）。重新加载页面即可应用。"
   },
   "zapConfidenceBroad": {
-    "message": "Matches this element anywhere it appears"
+    "message": "匹配出现在任何位置的此元素"
   },
   "zapConfidenceHigh": {
-    "message": "Scoped to one page section"
+    "message": "仅限一个页面分区"
   },
   "zapHiddenNote": {
-    "message": "Hidden by an element rule you made."
+    "message": "已被你创建的元素规则隐藏。"
   },
   "zapNoRules": {
-    "message": "No rules yet."
+    "message": "还没有规则。"
   },
   "zapPaneDesc": {
-    "message": "Hide a shelf, panel, or promo by clicking it. Rules are built from YouTube’s own element names, so they keep working after a redesign."
+    "message": "点击某个分区、面板或推广内容即可隐藏。规则基于 YouTube 自己的元素名称生成，因此改版后仍然有效。"
   },
   "zapPaneTitle": {
-    "message": "Element Zapper"
+    "message": "元素清除器"
   },
   "zapPickCancel": {
     "message": "取消"
   },
   "zapPickHint": {
-    "message": "Click a shelf, panel, or promo to hide it. Press Escape to cancel."
+    "message": "点击某个分区、面板或推广内容即可隐藏。按 Escape 取消。"
   },
   "zapPickHintKeys": {
-    "message": "Or press the arrow keys to move through the page and Enter to choose."
+    "message": "也可以按方向键在页面中移动，并按 Enter 选择。"
   },
   "zapPickStart": {
-    "message": "Pick an element to hide"
+    "message": "选择要隐藏的元素"
   },
   "zapRefuseOwnUi": {
-    "message": "That is part of Astra Deck."
+    "message": "这是 Astra Deck 的一部分。"
   },
   "zapRefusePlayer": {
-    "message": "The player is off limits. Hiding part of it breaks playback."
+    "message": "播放器不可操作。隐藏其中一部分会导致无法播放。"
   },
   "zapRefusePlaylist": {
-    "message": "Playlist items are off limits. Hiding one renumbers the list."
+    "message": "播放列表项目不可操作。隐藏其中一项会使列表重新编号。"
   },
   "zapRefuseTooBroad": {
-    "message": "That is the whole page, not an element on it."
+    "message": "这是整个页面，不是页面上的某个元素。"
   },
   "zapRefuseUnknown": {
-    "message": "Nothing here can be turned into a durable rule."
+    "message": "这里的内容无法转换为持久的规则。"
   },
   "zapRefuseVideoCard": {
-    "message": "That is a single video. Use Video Hider to hide videos and channels."
+    "message": "这是单个视频。请使用视频隐藏器来隐藏视频和频道。"
   },
   "zapRuleAdded": {
-    "message": "Element hidden. The rule is saved."
+    "message": "元素已隐藏。规则已保存。"
   },
   "zapRuleDuplicate": {
-    "message": "A rule for that element already exists."
+    "message": "该元素的规则已存在。"
   },
   "zapRuleRemove": {
-    "message": "Remove"
+    "message": "移除"
   },
   "zapRuleRemoveAriaTpl": {
     "message": "移除 {selector} 的规则"
