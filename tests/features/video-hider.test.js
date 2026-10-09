@@ -1397,6 +1397,22 @@ test('isMovie and isAutoDubbed match localised metadata, not just English', () =
     }
 });
 
+// The fixtures above pass on a neighbouring word in the same row. Alone, these
+// words only match if the pattern is folded like the row (kana dakuten and й
+// are marks) and the Cyrillic sits outside the ASCII-only \b.
+test('type words whose marks the row fold strips still match on their own', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const read = (row) => feature._extractVideoMetadata(fakeVideoCard('Neutral title', row));
+    for (const row of ['ライブ', 'прямой эфир', 'сейчас смотрят', 'в эфире']) {
+        assert.equal(read(row).isLive, true, `${row} is live`);
+    }
+    assert.equal(read('плейлист').isPlaylist, true);
+    assert.equal(read('бесплатно с рекламой').isMovie, true);
+    assert.equal(read('広告付きで無料').isMovie, true);
+    assert.equal(read('автоматический дубляж').isAutoDubbed, true);
+});
+
 test('Video Hider processes a nested lockup card once, not once per matching host', () => {
     const { mod } = loadModule();
     const feature = mod.createHideVideosFromHomeFeature({

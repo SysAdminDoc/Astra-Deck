@@ -129,18 +129,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   pseudo-locale copy and pass, and a test SHALL fail if the lane quietly renders real copy.
   Complexity: S
 
-- [ ] P3 — Video Hider's type predicates miss words whose marks the fold strips
-  Why: found 2026-10-09 fixing the shared upcoming pattern. `_extractVideoMetadata` folds the
-  rows (NFD, drop `\p{M}`, NFC), which also strips kana dakuten and Cyrillic `й`, but its live,
-  Mix, playlist, movie and auto-dubbed literals are written unfolded. So `ライブ`, `прямой эфир`
-  and `автоматический дубляж` can never match (other words in the same pattern cover some of
-  it). `core/text-metrics.js` now has `foldCardText`, which folds a pattern source the same way.
-  Where: `extension/features/video-hider/index.js` (`_extractVideoMetadata`, ~2105-2130),
-  `extension/core/text-metrics.js`, `tests/features/video-hider.test.js`.
-  Acceptance: WHEN a row carries `ライブ`, `прямой эфир` or `автоматический дубляж` alone, THEN
-  Video Hider SHALL read it as live or auto-dubbed.
-  Complexity: S
-
 - [ ] P3 — Headless Firefox 156 hangs at WebDriver session creation
   Why: on 2026-10-07 the system Firefox had auto-updated to 156.0.1. Every `startFirefoxSession`
   call (geckodriver 0.37.1, headless, with or without `--allow-system-access`, on 9222 or a free

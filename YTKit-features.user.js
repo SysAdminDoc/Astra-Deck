@@ -8270,6 +8270,12 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 	const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
 	const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
 	const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
+	const foldedRowPattern = (source) => new RegExp(source.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC'), 'i');
+	const LIVE_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live)\b|сейчас смотрят|прямой эфир|в эфире|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)`);
+	const MIX_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)`);
+	const PLAYLIST_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)`);
+	const MOVIE_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)`);
+	const AUTO_DUBBED_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:auto[-\s]?dubbed|dubbed|audio track|doblado automaticamente|doblado|pista de audio|automatisch synchronisiert|synchronisiert|tonspur|audiospur|doublage|double automatiquement|piste audio|doppiato automaticamente|doppiato|traccia audio|dublado automaticamente|dublado|faixa de audio)\b|автоматический дубляж|дубляж|аудиодорожка|自動吹き替え|吹き替え|音声トラック|자동 더빙|더빙|오디오 트랙|自动配音|配音|音轨|مدبلج تلقائيا|مدبلج|المسار الصوتي)`);
 	const SYNTHETIC_DISCLOSURE_KEYS = Object.freeze([
 		'generativeAi', 'generatedWithAi', 'alteredOrSynthetic', 'madeWithAi'
 	]);
@@ -10086,15 +10092,15 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					syntheticDisclosure: this._readSyntheticDisclosure(element),
 					uploadCadencePerDay: extractUploadCadencePerDay(`${metadataText} ${descriptionText} ${channelText}`),
 					isLive: hasLiveMarker
-						|| /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
+						|| LIVE_ROW_PATTERN.test(normalizedRowsText) && !hasDuration,
 					isUpcoming: hasUpcomingMarker || rowsSayUpcoming,
 					isMix: hasMixMarker
-						|| /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
+						|| MIX_ROW_PATTERN.test(normalizedRowsText)
 						|| (radioCandidate && /(?:start_radio=1|list=rd)/i.test(hrefText)),
 					isPlaylist: hasPlaylistMarker
-						|| /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
-					isMovie: /(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)/i.test(normalizedRowsText),
-					isAutoDubbed: /(?:\b(?:auto[-\s]?dubbed|dubbed|audio track|doblado automaticamente|doblado|pista de audio|automatisch synchronisiert|synchronisiert|tonspur|audiospur|doublage|double automatiquement|piste audio|doppiato automaticamente|doppiato|traccia audio|dublado automaticamente|dublado|faixa de audio)\b|автоматический дубляж|дубляж|аудиодорожка|自動吹き替え|吹き替え|音声トラック|자동 더빙|더빙|오디오 트랙|自动配音|配音|音轨|مدبلج تلقائيا|مدبلج|المسار الصوتي)/i.test(normalizedRowsText),
+						|| PLAYLIST_ROW_PATTERN.test(normalizedRowsText),
+					isMovie: MOVIE_ROW_PATTERN.test(normalizedRowsText),
+					isAutoDubbed: AUTO_DUBBED_ROW_PATTERN.test(normalizedRowsText),
 					isShort,
 					isMembersOnly
 				};
