@@ -683,10 +683,7 @@ function updatePanelInsightState() {
         const detail = document.createElement('span');
         detail.textContent = domains.formatReleaseNoteDetail(state, t);
         copy.append(heading, detail);
-        const markSeen = () => {
-            note.remove();
-            storageWrite(key, state.version);
-        };
+        const markSeen = () => storageWrite(key, state.version);
         // A plain link: no extension message to route, nothing fetched
         // until the user clicks.
         const open = document.createElement('a');
@@ -695,13 +692,25 @@ function updatePanelInsightState() {
         open.target = '_blank';
         open.rel = 'noopener noreferrer';
         open.textContent = t('whatsNewOpen', 'Read changelog');
-        open.addEventListener('click', markSeen);
+        // Hidden at once but removed after the click, so the link is still
+        // in the page while the browser follows it. A middle-click counts.
+        const openedChangelog = (event) => {
+            if (event?.type === 'auxclick' && event.button !== 1) return;
+            note.hidden = true;
+            setTimeout(() => note.remove(), 0);
+            markSeen();
+        };
+        open.addEventListener('click', openedChangelog);
+        open.addEventListener('auxclick', openedChangelog);
         const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.className = 'ytkit-release-note-dismiss';
         dismiss.textContent = t('whatsNewDismiss', 'Dismiss');
         dismiss.setAttribute('aria-label', t('whatsNewDismissAria', 'Dismiss'));
-        dismiss.addEventListener('click', markSeen);
+        dismiss.addEventListener('click', () => {
+            note.remove();
+            markSeen();
+        });
         note.append(copy, open, dismiss);
         return note;
     }
@@ -4080,6 +4089,12 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
 
 function updateAllToggleStates() {
         globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
+        // A card note about another setting (Video Loop Button's Player Dock
+        // note) shows while that setting is on. Every refresh re-reads it, so
+        // the popup, another tab, an import or an undo moves it too.
+        document.querySelectorAll('[data-follows-setting]').forEach((note) => {
+            note.hidden = appState.settings[note.dataset.followsSetting] === false;
+        });
         // The changed marker drives both the per-card reset button's visibility
         // and the "Changed" filter, so it is refreshed wherever controls are.
         document.querySelectorAll('.ytkit-feature-card').forEach((card) => {
@@ -4584,13 +4599,6 @@ function attachUIEventListeners() {
         _panelSearchUpdater = _handleSearch;
 
         // Feature toggles
-        // A card note about another setting (Video Loop Button's Player Dock
-        // note) shows while that setting is on, and follows its switch.
-        function syncFollowingNotes(key) {
-            for (const note of doc.querySelectorAll(`[data-follows-setting="${key}"]`)) {
-                note.hidden = appState.settings[key] === false;
-            }
-        }
         doc.addEventListener('change', async (e) => {
             const run = onControlChange(e);
             // Reset waits on this, not a timer: a switch turned on can sit on
@@ -4717,8 +4725,6 @@ function attachUIEventListeners() {
                         settingsManager.save(appState.settings);
                     }
 
-                    syncFollowingNotes(featureId);
-
                     // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
                         const conflicts = CONFLICT_MAP[featureId].conflicts || [];
@@ -4745,7 +4751,6 @@ function attachUIEventListeners() {
                                 }
                                 const select = document.getElementById(`ytkit-select-${cid}`);
                                 if (select) select.value = String(appState.settings[cid]);
-                                syncFollowingNotes(cid);
                             });
                             const conflictNames = activeConflicts.map(cid => {
                                 const cf = getFeatureById(cid);

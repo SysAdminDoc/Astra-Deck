@@ -16521,23 +16521,30 @@ function updatePanelInsightState() {
 		const detail = document.createElement('span');
 		detail.textContent = domains.formatReleaseNoteDetail(state, t);
 		copy.append(heading, detail);
-		const markSeen = () => {
-			note.remove();
-			storageWrite(key, state.version);
-		};
+		const markSeen = () => storageWrite(key, state.version);
 		const open = document.createElement('a');
 		open.className = 'ytkit-release-note-open';
 		open.href = domains.RELEASE_NOTES_URL;
 		open.target = '_blank';
 		open.rel = 'noopener noreferrer';
 		open.textContent = t('whatsNewOpen', 'Read changelog');
-		open.addEventListener('click', markSeen);
+		const openedChangelog = (event) => {
+			if (event?.type === 'auxclick' && event.button !== 1) return;
+			note.hidden = true;
+			setTimeout(() => note.remove(), 0);
+			markSeen();
+		};
+		open.addEventListener('click', openedChangelog);
+		open.addEventListener('auxclick', openedChangelog);
 		const dismiss = document.createElement('button');
 		dismiss.type = 'button';
 		dismiss.className = 'ytkit-release-note-dismiss';
 		dismiss.textContent = t('whatsNewDismiss', 'Dismiss');
 		dismiss.setAttribute('aria-label', t('whatsNewDismissAria', 'Dismiss'));
-		dismiss.addEventListener('click', markSeen);
+		dismiss.addEventListener('click', () => {
+			note.remove();
+			markSeen();
+		});
 		note.append(copy, open, dismiss);
 		return note;
 	}
@@ -19443,6 +19450,9 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
 	}
 function updateAllToggleStates() {
 		globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
+		document.querySelectorAll('[data-follows-setting]').forEach((note) => {
+			note.hidden = appState.settings[note.dataset.followsSetting] === false;
+		});
 		document.querySelectorAll('.ytkit-feature-card').forEach((card) => {
 			card.dataset.changed = cardDiffersFromDefault(card) ? '1' : '';
 		});
@@ -19867,11 +19877,6 @@ function attachUIEventListeners() {
 			updateSearchState(rawLabel, query, matchCount, visibleSectionCount);
 		}
 		_panelSearchUpdater = _handleSearch;
-		function syncFollowingNotes(key) {
-			for (const note of doc.querySelectorAll(`[data-follows-setting="${key}"]`)) {
-				note.hidden = appState.settings[key] === false;
-			}
-		}
 		doc.addEventListener('change', async (e) => {
 			const run = onControlChange(e);
 			if (e.target?.dataset?.ytkitDriven === 'true') e.target.ytkitDrivenEdit = run;
@@ -19983,7 +19988,6 @@ function attachUIEventListeners() {
 						appState.settings[featureId] = isEnabled;
 						settingsManager.save(appState.settings);
 					}
-					syncFollowingNotes(featureId);
 					if (isEnabled && CONFLICT_MAP[featureId]) {
 						const conflicts = CONFLICT_MAP[featureId].conflicts || [];
 						const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
@@ -20006,7 +20010,6 @@ function attachUIEventListeners() {
 								}
 								const select = document.getElementById(`ytkit-select-${cid}`);
 								if (select) select.value = String(appState.settings[cid]);
-								syncFollowingNotes(cid);
 							});
 							const conflictNames = activeConflicts.map(cid => {
 								const cf = getFeatureById(cid);

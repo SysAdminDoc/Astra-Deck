@@ -1039,10 +1039,12 @@ test('a card Reset chip anchors to the text column so it cannot sit on the switc
 // The userscript has no popup, so its "Updated to vX" note sits under the
 // panel header. It shares the popup's rule from core/persisted-domains.js.
 
-function buildReleaseNotePanel({ storage, userscript = true, version = '4.97.0' }) {
+function buildReleaseNotePanel({ storage, userscript = true, version = '4.97.0', press = 'dismiss', event = { type: 'click' } }) {
     const persistedDomains = require('../../extension/core/persisted-domains.js');
     let note = null;
     let afterDismiss = null;
+    let hiddenAfterPress = null;
+    let builtDoc = null;
     buildRealPanel([
         { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' }
     ], {}, {
@@ -1059,11 +1061,13 @@ function buildReleaseNotePanel({ storage, userscript = true, version = '4.97.0' 
                 beforeBody: found.parentElement?.children?.indexOf?.(found)
                     < found.parentElement?.children?.indexOf?.(doc.querySelector('.ytkit-body'))
             };
-            found.querySelector('.ytkit-release-note-dismiss').dispatchEvent({ type: 'click' });
+            builtDoc = doc;
+            found.querySelector(`.ytkit-release-note-${press}`).dispatchEvent({ ...event });
             afterDismiss = !!doc.querySelector('.ytkit-release-note');
+            hiddenAfterPress = found.hidden === true;
         }
     });
-    return { note, afterDismiss };
+    return { note, afterDismiss, hiddenAfterPress, stillThere: () => !!builtDoc?.querySelector('.ytkit-release-note') };
 }
 
 test('a userscript update shows the release note once, and dismissing it records the version', () => {
@@ -1078,6 +1082,47 @@ test('a userscript update shows the release note once, and dismissing it records
 
     const again = buildReleaseNotePanel({ storage });
     assert.equal(again.note, null, 'a dismissed note never comes back for the same version');
+});
+
+test('the changelog link stays in the page until its click is done, and a middle-click counts', async () => {
+    for (const event of [{ type: 'click' }, { type: 'auxclick', button: 1 }]) {
+        const storage = { ytkit_last_seen_version: '4.96.0' };
+        const pressed = buildReleaseNotePanel({ storage, press: 'open', event });
+        assert.ok(pressed.note, event.type);
+        assert.equal(pressed.afterDismiss, true, `${event.type}: removing the link mid-click can cancel the navigation`);
+        assert.equal(pressed.hiddenAfterPress, true, `${event.type}: the note is hidden at once`);
+        assert.equal(storage.ytkit_last_seen_version, '4.97.0', `${event.type}: the version is recorded`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        assert.equal(pressed.stillThere(), false, `${event.type}: then the note is removed`);
+    }
+
+    const storage = { ytkit_last_seen_version: '4.96.0' };
+    const rightClick = buildReleaseNotePanel({ storage, press: 'open', event: { type: 'auxclick', button: 2 } });
+    assert.equal(rightClick.hiddenAfterPress, false, 'a right-click opens a menu, not the changelog');
+    assert.equal(storage.ytkit_last_seen_version, '4.96.0');
+});
+
+test('a card note follows its setting when the change comes from outside the panel', () => {
+    // The popup, another tab, an import or an undo reach the panel through
+    // updateAllToggleStates, never through the panel's own change handler.
+    const settings = { hideVideoEndContent: true, floatingLogoOnWatch: true };
+    const seen = [];
+    buildRealPanel([
+        { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' }
+    ], settings, {
+        act: (doc, runtime) => {
+            const note = doc.createElement('p');
+            note.dataset.followsSetting = 'floatingLogoOnWatch';
+            doc.querySelector('.ytkit-feature-card').appendChild(note);
+            settings.floatingLogoOnWatch = false;
+            runtime.updateAllToggleStates();
+            seen.push(note.hidden);
+            settings.floatingLogoOnWatch = true;
+            runtime.updateAllToggleStates();
+            seen.push(note.hidden);
+        }
+    });
+    assert.deepEqual(seen, [true, false]);
 });
 
 test('a userscript install with no last-seen version stamps it silently', () => {
