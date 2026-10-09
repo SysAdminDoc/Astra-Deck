@@ -184,7 +184,11 @@ test('README language table matches bundled locale directories', () => {
         .map((match) => match[1])
         .sort();
 
-    assert.match(languageBlock, new RegExp(`ships with ${localeCodes.length} bundled UI locales`));
+    assert.match(languageBlock, new RegExp(`ships in ${localeCodes.length} languages`));
+    // The userscript reads the same catalogues through @resource (host.js
+    // readBundledLocale), so the README must not call it English-only.
+    assert.match(languageBlock, /userscript loads the same catalogues through `@resource`/);
+    assert.doesNotMatch(languageBlock, /userscript tier is English/);
     assert.deepEqual(documentedCodes, localeCodes);
 });
 

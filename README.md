@@ -1235,7 +1235,7 @@ Use at your own risk.
 
 ## Languages
 
-Astra Deck ships with 11 bundled UI locales. These are **extension only**, `YTKit.user.js` bundles no locale catalogues, so the userscript tier is English:
+Astra Deck ships in 11 languages. The extension bundles them, and the userscript loads the same catalogues through `@resource` lines (each pinned by its SHA-256), so both show the same translations. Every language is translated apart from brand names and a few code terms; `docs/i18n-coverage.md` has the figures for each one.
 
 | Code | Language |
 |------|----------|
