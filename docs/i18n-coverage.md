@@ -11,7 +11,7 @@ Reference locale: **en** (3241 keys; 902 feature name/description keys).
 | es | 3175 (98%) | 18 (0.6%) | 48 (1.5%) | 0 (0%) | 98.0% |
 | fr | 3168 (97.7%) | 26 (0.8%) | 47 (1.5%) | 0 (0%) | 97.7% |
 | it | 3172 (97.9%) | 16 (0.5%) | 53 (1.6%) | 0 (0%) | 97.9% |
-| ja | 2341 (72.2%) | 16 (0.5%) | 884 (27.3%) | 0 (0%) | 72.2% |
+| ja | 3204 (98.9%) | 13 (0.4%) | 24 (0.7%) | 0 (0%) | 98.9% |
 | ko | 2336 (72.1%) | 15 (0.5%) | 890 (27.5%) | 0 (0%) | 72.1% |
 | pt_BR | 3174 (97.9%) | 18 (0.6%) | 49 (1.5%) | 0 (0%) | 97.9% |
 | ru | 3198 (98.7%) | 13 (0.4%) | 30 (0.9%) | 0 (0%) | 98.7% |
@@ -28,7 +28,7 @@ The queue below lists `feature_*_(name|desc)` messages that still match EN after
 | es | 3 | 0 | 3 | 5 | feature_guideHide_gaming_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | fr | 4 | 0 | 4 | 6 | feature_daSurfacePlaylist_name, feature_guideHide_playlists_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | it | 4 | 0 | 4 | 4 | feature_guideHide_gaming_name, feature_guideHide_home_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
-| ja | 67 | 76 | 143 | 4 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
+| ja | 2 | 0 | 2 | 3 | feature_guideHide_premium_name, feature_guideHide_studio_name |
 | ko | 67 | 76 | 143 | 3 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | pt_BR | 4 | 0 | 4 | 6 | feature_daSurfacePlaylist_name, feature_guideHide_playlists_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | ru | 2 | 0 | 2 | 3 | feature_guideHide_premium_name, feature_guideHide_studio_name |
