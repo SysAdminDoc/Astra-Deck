@@ -12652,6 +12652,14 @@ const STORAGE_KEYS = Object.freeze({
 			pages: [PageTypes.WATCH],
 			_btn: null,
 			_injectTimer: null,
+			render(card) {
+				if (appState.settings?.floatingLogoOnWatch === false) return null;
+				const note = document.createElement('p');
+				note.className = 'ytkit-feature-desc ytkit-feature-dock-note';
+				note.textContent = t('videoLoopButtonDockNote', "While Astra Player Dock is on, it hides this button. Use the dock's Repeat button instead.");
+				card.querySelector('.ytkit-feature-info')?.appendChild(note);
+				return null;
+			},
 			_scheduleInject(delay = 2000) {
 				if (this._injectTimer) clearTimeout(this._injectTimer);
 				this._injectTimer = setTimeout(() => {

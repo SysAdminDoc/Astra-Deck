@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "Bouton boucle vidéo"
   },
+  "videoLoopButtonDockNote": {
+    "message": "Tant que le Dock Astra du Player est activé, il masque ce bouton. Utilisez plutôt le bouton Répéter du dock."
+  },
   "feature_videoNotes_desc": {
     "message": "Conserve une note locale pour la vidéo actuelle, exporte l’archive de notes et limite le stockage aux 1 000 vidéos modifiées le plus récemment."
   },

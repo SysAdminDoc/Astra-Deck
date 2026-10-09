@@ -89,19 +89,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   text in templates and unbound guards, with findings fixed or logged here.
   Complexity: L
 
-- [ ] P3 — Video Loop Button is invisible while Player Dock is on
-  Why: 2026-10-05, found adding the dock's Repeat button. `videoLoopButton` inserts
-  `.ytkit-loop-btn` into `.ytp-right-controls`, and Player Dock (default On) hides every child
-  of that bar except `#ytkit-player-controls`, so turning the setting on shows nothing. The dock's
-  Repeat now does the same job. Both write `video.loop`, but only one is ever clickable.
-  Where: `extension/ytkit.js` `videoLoopButton` (~19288), `features/player-dock/index.js`
-  `.ytp-right-controls > *:not(#ytkit-player-controls)`.
-  Acceptance: WHEN Player Dock is on, THEN the Video Loop Button setting SHALL either be marked
-  as covered by the dock's Repeat (card note or conflict pair) or be retired through both
-  retirement lists with a CHANGELOG note. WHEN the dock is off, the standalone button SHALL keep
-  working.
-  Complexity: S
-
 - [ ] P3 — Popup pseudo-locale lane of the headless a11y smoke fails
   Why: `node scripts/smoke-headless-a11y.js --fixture-states --surface popup` fails its pseudo
   lane with "popup/pseudo: pseudo-locale copy did not render". It fails on main before the

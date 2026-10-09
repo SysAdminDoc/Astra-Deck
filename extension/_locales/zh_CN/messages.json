@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "视频循环按钮"
   },
+  "videoLoopButtonDockNote": {
+    "message": "开启 Astra 播放器停靠栏时，此按钮会被隐藏。请改用停靠栏中的循环播放按钮。"
+  },
   "feature_videoNotes_desc": {
     "message": "为当前视频保存本地笔记，导出笔记存档，并将存储限制为最近编辑的 1000 个视频。"
   },

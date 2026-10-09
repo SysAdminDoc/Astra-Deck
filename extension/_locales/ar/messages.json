@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "زر تكرار الفيديو"
   },
+  "videoLoopButtonDockNote": {
+    "message": "عند تشغيل لوحة مشغّل Astra يُخفى هذا الزر. استخدم زر تكرار في اللوحة بدلاً منه."
+  },
   "feature_videoNotes_desc": {
     "message": "احتفظ بملاحظة محلية للفيديو الحالي، وصدّر أرشيف الملاحظات، وحدد التخزين بـ1000 فيديو من الأحدث تعديلًا."
   },

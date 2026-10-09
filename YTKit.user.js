@@ -1950,6 +1950,7 @@ const ASTRA_DECK_BUILD = {
 		"feature_videoInsights_name": "Video Insights",
 		"feature_videoLoopButton_desc": "Add a loop toggle button to the player controls for one-click video looping",
 		"feature_videoLoopButton_name": "Video Loop Button",
+		"videoLoopButtonDockNote": "While Astra Player Dock is on, it hides this button. Use the dock's Repeat button instead.",
 		"feature_videoNotes_desc": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.",
 		"feature_videoNotes_name": "Per-Video Notes",
 		"feature_videoResolutionBadge_desc": "Shows a 4K, HD, or SD badge on video thumbnails based on available quality",

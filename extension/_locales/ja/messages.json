@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "動画ループボタン"
   },
+  "videoLoopButtonDockNote": {
+    "message": "Astra プレーヤードックがオンの間、このボタンは表示されません。代わりにドックのリピートボタンを使ってください。"
+  },
   "feature_videoNotes_desc": {
     "message": "現在の動画のローカルメモを保存し、メモのアーカイブをエクスポートし、保存領域を最近編集した動画1,000件に制限します。"
   },

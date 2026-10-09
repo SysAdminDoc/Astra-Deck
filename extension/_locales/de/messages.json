@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "Videoschleife-Schaltfläche"
   },
+  "videoLoopButtonDockNote": {
+    "message": "Solange das Astra Player-Dock aktiv ist, blendet es diese Schaltfläche aus. Verwenden Sie stattdessen die Schaltfläche „Wiederholen“ im Dock."
+  },
   "feature_videoNotes_desc": {
     "message": "Speichert eine lokale Notiz für das aktuelle Video, exportiert das Notizenarchiv und begrenzt den Speicher auf die 1.000 zuletzt bearbeiteten Videos."
   },

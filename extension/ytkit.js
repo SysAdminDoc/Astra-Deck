@@ -19451,6 +19451,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _btn: null,
             _injectTimer: null,
+            // Player Dock (default on) hides every other child of
+            // .ytp-right-controls, this button included, and its own Repeat
+            // writes the same video.loop. The card says so while the dock is
+            // on; with the dock off this button works as before.
+            render(card) {
+                if (appState.settings?.floatingLogoOnWatch === false) return null;
+                const note = document.createElement('p');
+                note.className = 'ytkit-feature-desc ytkit-feature-dock-note';
+                note.textContent = t('videoLoopButtonDockNote', "While Astra Player Dock is on, it hides this button. Use the dock's Repeat button instead.");
+                card.querySelector('.ytkit-feature-info')?.appendChild(note);
+                return null;
+            },
             _scheduleInject(delay = 2000) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = setTimeout(() => {

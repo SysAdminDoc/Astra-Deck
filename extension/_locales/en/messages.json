@@ -4164,6 +4164,9 @@
   "feature_videoLoopButton_name": {
     "message": "Video Loop Button"
   },
+  "videoLoopButtonDockNote": {
+    "message": "While Astra Player Dock is on, it hides this button. Use the dock's Repeat button instead."
+  },
   "feature_videoNotes_desc": {
     "message": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos."
   },

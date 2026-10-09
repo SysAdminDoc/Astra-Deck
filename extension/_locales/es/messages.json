@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "Botón de bucle de video"
   },
+  "videoLoopButtonDockNote": {
+    "message": "Mientras el Panel Astra en el Player está activado, oculta este botón. Usa en su lugar el botón Repetir del panel."
+  },
   "feature_videoNotes_desc": {
     "message": "Guarda una nota local para el vídeo actual, exporta el archivo de notas y limita el almacenamiento a los 1000 vídeos editados más recientemente."
   },

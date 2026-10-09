@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "Pulsante loop video"
   },
+  "videoLoopButtonDockNote": {
+    "message": "Quando il Dock Astra nel Player è attivo, nasconde questo pulsante. Usa invece il pulsante Ripeti del dock."
+  },
   "feature_videoNotes_desc": {
     "message": "Conserva una nota locale per il video corrente, esporta l’archivio delle note e limita l’archivio ai 1000 video modificati più di recente."
   },

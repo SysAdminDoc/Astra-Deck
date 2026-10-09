@@ -4150,6 +4150,9 @@
   "feature_videoLoopButton_name": {
     "message": "동영상 반복 버튼"
   },
+  "videoLoopButtonDockNote": {
+    "message": "Astra 플레이어 독이 켜져 있는 동안에는 이 버튼이 숨겨집니다. 대신 독의 반복 버튼을 사용하세요."
+  },
   "feature_videoNotes_desc": {
     "message": "현재 동영상의 로컬 메모를 보관하고 메모 보관함을 내보내며 저장 공간을 최근 편집한 동영상 1,000개로 제한합니다."
   },
