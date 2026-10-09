@@ -208,7 +208,7 @@ test('the dislike pill re-arms while the actions row hydrates', () => {
 
 test('the video-hider mutation buffer stops growing while subs loading is blocked', () => {
     const src = read('extension', 'features', 'video-hider', 'index.js');
-    assert.match(src, /if \(!this\._subsLoadState\.loadingBlocked\) \{\s*\n\s*batchBuffer\.push/,
+    assert.match(src, /if \((?:entry && )?!this\._subsLoadState\.loadingBlocked\) \{\s*\n\s*batchBuffer\.push/,
         'processBatch only drains when unblocked, so the push must be gated too');
 });
 
