@@ -475,7 +475,7 @@
     "message": "Effacer le filtre"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "Impossible d'écrire dans le presse-papiers"
   },
   "closeBtnAria": {
     "message": "Fermer"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "En attente du chargement des commentaires…"
+  },
+  "commentNavNoMatches": {
+    "message": "Aucun fil correspondant"
+  },
+  "commentNavThreadsReady": {
+    "message": "Fils visibles prêts"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "Filtre de recherche : {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "Utilisez un chemin commençant par / ou une URL https:// complète."
+  },
+  "chaptersNoneFound": {
+    "message": "Aucun chapitre trouvé"
+  },
+  "chapterNavLastChapter": {
+    "message": "Dernier chapitre"
   },
   "commentSearchWaitingForQuery": {
     "message": "En attente du chargement des commentaires pour « {query} »…"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "{count} dans votre liste"
   },
   "videoHiderChannelsRestored": {
     "message": "Chaînes restaurées"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "Passé : « {title} »"
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} sur {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} élément"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} éléments"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "Envoyé à {player}. Si rien ne s’est ouvert, enregistrez d’abord le gestionnaire dans votre système."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
+    "message": "{count} activée"
+  },
+  "pageModalEnabledCountTplOther": {
     "message": "{count} activées"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalShortcutCountTplOne": {
+    "message": "{count} raccourci"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "{count} raccourcis"
   },
   "pageModalAppliesLive": {

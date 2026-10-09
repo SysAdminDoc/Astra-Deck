@@ -475,7 +475,7 @@
     "message": "フィルターをクリア"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "クリップボードに書き込めませんでした"
   },
   "closeBtnAria": {
     "message": "閉じる"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "コメントの読み込みを待っています…"
+  },
+  "commentNavNoMatches": {
+    "message": "一致するスレッドはありません"
+  },
+  "commentNavThreadsReady": {
+    "message": "表示中のスレッドを利用できます"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "検索フィルター: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "/ で始まるパスか、https:// から始まる完全な URL を入力してください。"
+  },
+  "chaptersNoneFound": {
+    "message": "チャプターが見つかりません"
+  },
+  "chapterNavLastChapter": {
+    "message": "最後のチャプターです"
   },
   "commentSearchWaitingForQuery": {
     "message": "「{query}」のコメントを読み込んでいます…"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "リスト内: {count}"
   },
   "videoHiderChannelsRestored": {
     "message": "チャンネルを復元しました"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "スキップしました:「{title}」"
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} / {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} 件"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} 件"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "{player} に渡しました。何も開かない場合は、先に OS でハンドラーを登録してください。"
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
     "message": "{count} 件オン"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalEnabledCountTplOther": {
+    "message": "{count} 件オン"
+  },
+  "pageModalShortcutCountTplOne": {
+    "message": "ショートカット {count} 件"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "ショートカット {count} 件"
   },
   "pageModalAppliesLive": {

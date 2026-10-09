@@ -475,7 +475,7 @@
     "message": "Limpar filtro"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "Não foi possível copiar para a área de transferência"
   },
   "closeBtnAria": {
     "message": "Fechar"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "Aguardando o carregamento dos comentários…"
+  },
+  "commentNavNoMatches": {
+    "message": "Nenhuma conversa correspondente"
+  },
+  "commentNavThreadsReady": {
+    "message": "Conversas visíveis prontas"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "Filtro de busca: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "Use um caminho que comece com / ou uma URL https:// completa."
+  },
+  "chaptersNoneFound": {
+    "message": "Nenhum capítulo encontrado"
+  },
+  "chapterNavLastChapter": {
+    "message": "Último capítulo"
   },
   "commentSearchWaitingForQuery": {
     "message": "Aguardando comentários para “{query}”…"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "{count} na sua lista"
   },
   "videoHiderChannelsRestored": {
     "message": "Canais restaurados"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "Pulado: \"{title}\""
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} de {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} item"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} itens"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "Enviado ao {player}. Se nada abriu, registre primeiro o manipulador no seu sistema operacional."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
+    "message": "{count} ativada"
+  },
+  "pageModalEnabledCountTplOther": {
     "message": "{count} ativadas"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalShortcutCountTplOne": {
+    "message": "{count} atalho"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "{count} atalhos"
   },
   "pageModalAppliesLive": {

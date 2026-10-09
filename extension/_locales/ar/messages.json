@@ -475,7 +475,7 @@
     "message": "مسح الفلتر"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "تعذّرت الكتابة إلى الحافظة"
   },
   "closeBtnAria": {
     "message": "إغلاق"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "في انتظار تحميل التعليقات…"
+  },
+  "commentNavNoMatches": {
+    "message": "لا توجد سلاسل مطابقة"
+  },
+  "commentNavThreadsReady": {
+    "message": "السلاسل الظاهرة جاهزة"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "عامل تصفية البحث: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "استخدم مسارًا يبدأ بـ / أو عنوان URL كاملًا يبدأ بـ https://."
+  },
+  "chaptersNoneFound": {
+    "message": "لم يتم العثور على فصول"
+  },
+  "chapterNavLastChapter": {
+    "message": "الفصل الأخير"
   },
   "commentSearchWaitingForQuery": {
     "message": "في انتظار تحميل التعليقات للبحث «{query}»…"
@@ -5126,7 +5144,7 @@
     "message": "Export"
   },
   "queueImport": {
-    "message": "Import"
+    "message": "استيراد"
   },
   "queuePanelAria": {
     "message": "Astra persistent queue"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "{count} في قائمتك"
   },
   "videoHiderChannelsRestored": {
     "message": "تمت استعادة القنوات"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "تم التخطي: \"{title}\""
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} من {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "عنصر واحد ({count})"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} عناصر"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "تم التسليم إلى {player}. إن لم يُفتح شيء، سجّل المعالج في نظام التشغيل أولاً."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
     "message": "المفعّلة: {count}"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalEnabledCountTplOther": {
+    "message": "المفعّلة: {count}"
+  },
+  "pageModalShortcutCountTplOne": {
+    "message": "الاختصارات: {count}"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "الاختصارات: {count}"
   },
   "pageModalAppliesLive": {

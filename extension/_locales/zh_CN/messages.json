@@ -475,7 +475,7 @@
     "message": "清除筛选"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "无法写入剪贴板"
   },
   "closeBtnAria": {
     "message": "关闭"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "正在等待评论加载…"
+  },
+  "commentNavNoMatches": {
+    "message": "没有匹配的讨论串"
+  },
+  "commentNavThreadsReady": {
+    "message": "可见的讨论串已就绪"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "搜索筛选：{query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "请使用以 / 开头的路径或完整的 https:// 网址。"
+  },
+  "chaptersNoneFound": {
+    "message": "未找到章节"
+  },
+  "chapterNavLastChapter": {
+    "message": "已是最后一章"
   },
   "commentSearchWaitingForQuery": {
     "message": "正在等待加载“{query}”的评论…"
@@ -5126,7 +5144,7 @@
     "message": "Export"
   },
   "queueImport": {
-    "message": "Import"
+    "message": "导入"
   },
   "queuePanelAria": {
     "message": "Astra persistent queue"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "你的列表中有 {count}"
   },
   "videoHiderChannelsRestored": {
     "message": "频道已恢复"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "已跳过：“{title}”"
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} / {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} 项"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} 项"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "已交给 {player}。如果没有打开，请先在系统中注册该协议处理程序。"
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
     "message": "已开启 {count} 项"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalEnabledCountTplOther": {
+    "message": "已开启 {count} 项"
+  },
+  "pageModalShortcutCountTplOne": {
+    "message": "{count} 个快捷项"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "{count} 个快捷项"
   },
   "pageModalAppliesLive": {

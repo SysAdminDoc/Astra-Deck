@@ -581,6 +581,24 @@
   "commentSearchWaiting": {
     "message": "Waiting for comments to load…"
   },
+  "commentNavNoMatches": {
+    "message": "No matching threads"
+  },
+  "commentNavThreadsReady": {
+    "message": "Visible threads ready"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "Search filter: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "Use a path that starts with / or a full https:// URL."
+  },
+  "chaptersNoneFound": {
+    "message": "No chapters found"
+  },
+  "chapterNavLastChapter": {
+    "message": "Last chapter"
+  },
   "commentSearchWaitingForQuery": {
     "message": "Waiting for comments to load for “{query}”…"
   },
@@ -9551,13 +9569,13 @@
   "chapterSkippedToastTpl": {
     "message": "Skipped: \"{title}\""
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} of {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} item"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} items"
   },
   "commentSearchMatchPositionTpl": {
@@ -9635,10 +9653,16 @@
   "protocolHandoffToastTpl": {
     "message": "{player} handoff fired. If nothing opened, register the handler on your OS first."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
     "message": "{count} Enabled"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalEnabledCountTplOther": {
+    "message": "{count} Enabled"
+  },
+  "pageModalShortcutCountTplOne": {
+    "message": "{count} Shortcut"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "{count} Shortcuts"
   },
   "pageModalAppliesLive": {

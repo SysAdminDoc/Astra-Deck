@@ -475,7 +475,7 @@
     "message": "Очистить фильтр"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "Не удалось записать в буфер обмена"
   },
   "closeBtnAria": {
     "message": "Закрыть"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "Ожидание загрузки комментариев…"
+  },
+  "commentNavNoMatches": {
+    "message": "Подходящих веток нет"
+  },
+  "commentNavThreadsReady": {
+    "message": "Видимые ветки готовы"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "Фильтр поиска: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "Укажите путь, начинающийся с /, или полный адрес https://."
+  },
+  "chaptersNoneFound": {
+    "message": "Главы не найдены"
+  },
+  "chapterNavLastChapter": {
+    "message": "Последняя глава"
   },
   "commentSearchWaitingForQuery": {
     "message": "Ожидание загрузки комментариев по запросу «{query}»…"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "{count} в вашем списке"
   },
   "videoHiderChannelsRestored": {
     "message": "Каналы восстановлены"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "Пропущено: «{title}»"
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} из {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} элемент"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "Элементов: {count}"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "Передано в {player}. Если ничего не открылось, сначала зарегистрируйте обработчик в системе."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
     "message": "Включено: {count}"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalEnabledCountTplOther": {
+    "message": "Включено: {count}"
+  },
+  "pageModalShortcutCountTplOne": {
+    "message": "Ярлыков: {count}"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "Ярлыков: {count}"
   },
   "pageModalAppliesLive": {

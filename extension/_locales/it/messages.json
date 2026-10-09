@@ -475,7 +475,7 @@
     "message": "Pulisci filtro"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "Impossibile scrivere negli appunti"
   },
   "closeBtnAria": {
     "message": "Chiudi"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "In attesa del caricamento dei commenti…"
+  },
+  "commentNavNoMatches": {
+    "message": "Nessun thread corrispondente"
+  },
+  "commentNavThreadsReady": {
+    "message": "Thread visibili pronti"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "Filtro di ricerca: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "Usa un percorso che inizia con / o un URL https:// completo."
+  },
+  "chaptersNoneFound": {
+    "message": "Nessun capitolo trovato"
+  },
+  "chapterNavLastChapter": {
+    "message": "Ultimo capitolo"
   },
   "commentSearchWaitingForQuery": {
     "message": "In attesa dei commenti per «{query}»…"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "{count} nella tua lista"
   },
   "videoHiderChannelsRestored": {
     "message": "Canali ripristinati"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "Saltato: «{title}»"
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} di {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} elemento"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} elementi"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "Inviato a {player}. Se non si è aperto nulla, registra prima il gestore nel sistema operativo."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
+    "message": "{count} attiva"
+  },
+  "pageModalEnabledCountTplOther": {
     "message": "{count} attive"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalShortcutCountTplOne": {
+    "message": "{count} scorciatoia"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "{count} scorciatoie"
   },
   "pageModalAppliesLive": {

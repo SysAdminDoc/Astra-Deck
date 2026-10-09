@@ -28,7 +28,7 @@ const MOVED = [
     [YTKIT, 'quickLinksUsageNoteTpl'], [YTKIT, 'quickLinksLimitToastTpl'],
     [YTKIT, 'sleepTimerSetAnnounceTpl', true], [YTKIT, 'sleepTimerExtendedAnnounceTpl', true],
     [YTKIT, 'sleepTimerPresetAriaTpl', true], [YTKIT, 'watchTimeStatsTpl'], [YTKIT, 'chapterSkippedToastTpl'],
-    [YTKIT, 'watchFeedFilteredCountTpl'], [YTKIT, 'watchFeedItemCountTpl', true],
+    [YTKIT, 'playlistSearchFilteredCountTpl'], [YTKIT, 'playlistSearchItemCountTpl', true],
     [YTKIT, 'commentSearchMatchPositionTpl'], [YTKIT, 'commentSearchThreadPositionTpl'],
     [YTKIT, 'commentSearchThreadsReadyTpl'], [YTKIT, 'settingsProfileSavedTpl'],
     [YTKIT, 'settingsProfileNotFoundTpl'], [YTKIT, 'settingsProfileAppliedTpl'],
@@ -37,7 +37,9 @@ const MOVED = [
     [YTKIT, 'deArrowChannelChipTpl'], [YTKIT, 'deArrowChannelOverrideToastTpl'],
     [YTKIT, 'transcriptBatchQueuedTpl'], [YTKIT, 'transcriptBatchFetchingTpl'],
     [YTKIT, 'transcriptSearchNoMatchesTpl'], [YTKIT, 'protocolHandoffToastTpl'],
-    [YTKIT, 'pageModalEnabledCountTpl'], [YTKIT, 'pageModalShortcutCountTpl'],
+    [YTKIT, 'pageModalEnabledCountTpl', true], [YTKIT, 'pageModalShortcutCountTpl', true],
+    [YTKIT, 'quickLinksInvalidUrlNote'], [YTKIT, 'commentNavNoMatches'], [YTKIT, 'commentNavThreadsReady'],
+    [YTKIT, 'commentNavFilterTitleTpl'], [YTKIT, 'chaptersNoneFound'], [YTKIT, 'clipboardWriteFailed'],
     [YTKIT, 'statusSettingsImportUndoFailed'], [YTKIT, 'statusSettingsImportInvalidFormat'],
     [PANEL, 'videoHiderHiddenReadyTpl', true], [PANEL, 'videoHiderAllowedProtectedTpl', true],
     [PANEL, 'videoHiderAllowedChannelCountTpl', true], [PANEL, 'videoHiderBlockedChannelCountTpl', true],
@@ -77,13 +79,32 @@ test('the English template literals the sweep found are gone', () => {
         /chapters copied as markdown`/, /`Audio: YouTube selected/, /`Audio track is \$\{/,
         /`DeArrow: \$\{/, /`DeArrow override set/, /queued; one recovery pass per video`/,
         /`Fetching \$\{i \+ 1\}/, /`No transcripts matched/, /`\$\{scheme\.toUpperCase\(\)\} handoff/,
-        /`\$\{enabledCount\} Enabled`/, /Shortcuts` \}/
+        /`\$\{enabledCount\} Enabled`/, /Shortcuts` \}/,
+        // Left English beside the strings above until a 2026-10-09 review.
+        /= 'Use a path that starts/, /= 'Visible threads ready'/, /\? 'No matching threads'/, /`Search filter: \$\{/,
+        /showToast\('No chapters found'/, /showToast\('Clipboard write failed'/, /status\.textContent = 'Waiting for comments/,
+        /'watchFeed(?:Item|Filtered)CountTpl'/
     ]) assert.doesNotMatch(ytkit, pattern);
     const panel = read(PANEL);
     assert.doesNotMatch(panel, /countLabel\(/, 'no English "s" plural on translated words');
     assert.doesNotMatch(panel, /match\$\{directMatches !== 1/);
     assert.doesNotMatch(read(HIDER), /`Can't read \$\{list\}/);
     assert.doesNotMatch(read(DOWNLOAD), /'unverified'\} · repair`/);
+});
+
+// A key every locale still carries in English shows half-translated copy
+// wherever it wraps a translated piece ("3 blockierte Kanäle in Your List").
+test('the keys a 2026-10-09 review found English are translated', () => {
+    for (const key of [
+        'videoHiderChannelListCount', 'clipboardWriteFailed', 'queueImport', 'quickLinksInvalidUrlNote',
+        'commentNavNoMatches', 'commentNavThreadsReady', 'commentNavFilterTitleTpl', 'chaptersNoneFound'
+    ]) {
+        const english = catalogues.en[key].message;
+        for (const [locale, messages] of Object.entries(catalogues)) {
+            if (locale === 'en') continue;
+            assert.notEqual(messages[key].message, english, `${locale} ${key} is still English`);
+        }
+    }
 });
 
 test('a relative time with an unusable locale tag still uses the browser locale before English', () => {

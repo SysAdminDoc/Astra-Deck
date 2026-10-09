@@ -15120,7 +15120,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     formNote.textContent = t('quickLinksLimitNoteTpl', 'Limit reached ({count}/{max}). Remove an entry above to add a new one.')
                                         .replace('{count}', () => String(currentCount)).replace('{max}', () => String(self._QL_MAX_ITEMS));
                                 } else if (!isValidUrl) {
-                                    formNote.textContent = 'Use a path that starts with / or a full https:// URL.';
+                                    formNote.textContent = t('quickLinksInvalidUrlNote', 'Use a path that starts with / or a full https:// URL.');
                                 } else {
                                     formNote.textContent = t('quickLinksUsageNoteTpl', 'Use a site path like /feed/history or a full https:// URL. ({count}/{max} used)')
                                         .replace('{count}', () => String(currentCount)).replace('{max}', () => String(self._QL_MAX_ITEMS));
@@ -19408,12 +19408,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) return;
                 const chapters = this._getChapterTimes();
-                if (chapters.length === 0) { showToast('No chapters found', '#f97316'); return; }
+                if (chapters.length === 0) { showToast(t('chaptersNoneFound', 'No chapters found'), '#f97316'); return; }
                 const current = video.currentTime;
                 if (direction === 'next') {
-                    const next = chapters.find(t => t > current + 2);
+                    const next = chapters.find(time => time > current + 2);
                     if (next !== undefined) video.currentTime = next;
-                    else showToast('Last chapter', '#f97316');
+                    else showToast(t('chapterNavLastChapter', 'Last chapter'), '#f97316');
                 } else {
                     const prev = [...chapters].reverse().find(t => t < current - 3);
                     if (prev !== undefined) video.currentTime = prev;
@@ -24652,8 +24652,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const count = this._bar.querySelector('.ytkit-playlist-search-count');
                     if (count) {
                         count.textContent = query
-                            ? t('watchFeedFilteredCountTpl', '{visible} of {total}').replace('{visible}', () => String(visible)).replace('{total}', () => String(items.length))
-                            : tCount(items.length, 'watchFeedItemCountTpl', '{count} item', '{count} items').replace('{count}', () => String(items.length));
+                            ? t('playlistSearchFilteredCountTpl', '{visible} of {total}').replace('{visible}', () => String(visible)).replace('{total}', () => String(items.length))
+                            : tCount(items.length, 'playlistSearchItemCountTpl', '{count} item', '{count} items').replace('{count}', () => String(items.length));
                     }
                 }
             },
@@ -27155,7 +27155,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const status = document.createElement('span');
                 status.className = 'ytkit-comment-nav-status';
-                status.textContent = 'Waiting for comments to load…';
+                status.textContent = t('commentSearchWaiting', 'Waiting for comments to load…');
 
                 topLine.appendChild(label);
                 topLine.appendChild(filterBadge);
@@ -27259,13 +27259,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._container.dataset.filtered = query ? '1' : '0';
                 this._filterBadgeEl.hidden = !query;
                 this._filterBadgeEl.textContent = query ? `“${queryPreview}”` : '';
-                if (query) this._filterBadgeEl.title = `Search filter: ${query}`;
+                if (query) this._filterBadgeEl.title = t('commentNavFilterTitleTpl', 'Search filter: {query}').replace('{query}', () => query);
                 else this._filterBadgeEl.removeAttribute('title');
 
                 if (!threads.length) {
                     this._statusEl.textContent = query && !this._filterState?.isPending
-                        ? 'No matching threads'
-                        : 'Waiting for comments to load…';
+                        ? t('commentNavNoMatches', 'No matching threads')
+                        : t('commentSearchWaiting', 'Waiting for comments to load…');
                 } else if (this._currentIndex >= 0) {
                     this._statusEl.textContent = query
                         ? t('commentSearchMatchPositionTpl', 'Match {current} of {total}')
@@ -27276,7 +27276,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._statusEl.textContent = t('commentSearchThreadsReadyTpl', '{visible} of {total} threads ready')
                         .replace('{visible}', () => this._formatCount(threads.length)).replace('{total}', () => this._formatCount(totalCount));
                 } else {
-                    this._statusEl.textContent = 'Visible threads ready';
+                    this._statusEl.textContent = t('commentNavThreadsReady', 'Visible threads ready');
                 }
 
                 const canPrev = threads.length > 0 && (this._currentIndex > 0 || this._currentIndex === -1);
@@ -32127,7 +32127,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _copy() {
                 const chapters = this._extract();
-                if (!chapters.length) { showToast('No chapters found', '#ef4444'); return; }
+                if (!chapters.length) { showToast(t('chaptersNoneFound', 'No chapters found'), '#ef4444'); return; }
                 const vid = getVideoId();
                 const mk = chapters.map(c => {
                     const secs = c.time.split(':').reverse().reduce((acc, v, i) => acc + (parseInt(v, 10) || 0) * ([1, 60, 3600][i] || 0), 0);
@@ -32136,7 +32136,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 navigator.clipboard.writeText(mk).then(
                     () => showToast(tCount(chapters.length, 'chaptersCopiedMarkdownTpl', '{count} chapter copied as Markdown', '{count} chapters copied as Markdown')
                         .replace('{count}', () => String(chapters.length)), '#22c55e'),
-                    () => showToast('Clipboard write failed', '#ef4444')
+                    () => showToast(t('clipboardWriteFailed', 'Clipboard write failed'), '#ef4444')
                 );
             },
             _inject() {
@@ -42690,7 +42690,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
     function updatePageModalEnabledCount(enabledCount) {
         const countChip = document.getElementById('ytkit-pm-enabled-count');
         if (countChip) {
-            countChip.textContent = t('pageModalEnabledCountTpl', '{count} Enabled').replace('{count}', () => String(enabledCount));
+            countChip.textContent = tCount(enabledCount, 'pageModalEnabledCountTpl', '{count} Enabled', '{count} Enabled').replace('{count}', () => String(enabledCount));
         }
     }
 
@@ -42801,8 +42801,8 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         const statRow = document.createElement('div');
         statRow.className = 'ytkit-pm-stats';
         [
-            { id: 'ytkit-pm-enabled-count', text: t('pageModalEnabledCountTpl', '{count} Enabled').replace('{count}', () => String(enabledCount)) },
-            { text: t('pageModalShortcutCountTpl', '{count} Shortcuts').replace('{count}', () => String(availableFeatures.length)) },
+            { id: 'ytkit-pm-enabled-count', text: tCount(enabledCount, 'pageModalEnabledCountTpl', '{count} Enabled', '{count} Enabled').replace('{count}', () => String(enabledCount)) },
+            { text: tCount(availableFeatures.length, 'pageModalShortcutCountTpl', '{count} Shortcut', '{count} Shortcuts').replace('{count}', () => String(availableFeatures.length)) },
             { text: t('pageModalAppliesLive', 'Applies Live') }
         ].forEach((item) => {
             const stat = document.createElement('span');

@@ -475,7 +475,7 @@
     "message": "Limpiar filtro"
   },
   "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
+    "message": "No se pudo copiar al portapapeles"
   },
   "closeBtnAria": {
     "message": "Cerrar"
@@ -572,6 +572,24 @@
   },
   "commentSearchWaiting": {
     "message": "Esperando a que se carguen los comentarios…"
+  },
+  "commentNavNoMatches": {
+    "message": "No hay hilos que coincidan"
+  },
+  "commentNavThreadsReady": {
+    "message": "Hilos visibles listos"
+  },
+  "commentNavFilterTitleTpl": {
+    "message": "Filtro de búsqueda: {query}"
+  },
+  "quickLinksInvalidUrlNote": {
+    "message": "Usa una ruta que empiece por / o una URL https:// completa."
+  },
+  "chaptersNoneFound": {
+    "message": "No se encontraron capítulos"
+  },
+  "chapterNavLastChapter": {
+    "message": "Último capítulo"
   },
   "commentSearchWaitingForQuery": {
     "message": "Esperando a que se carguen comentarios para «{query}»…"
@@ -8104,7 +8122,7 @@
     "message": "https://youtube.com/@channel or @handle"
   },
   "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+    "message": "{count} en tu lista"
   },
   "videoHiderChannelsRestored": {
     "message": "Canales restaurados"
@@ -9490,13 +9508,13 @@
   "chapterSkippedToastTpl": {
     "message": "Saltado: «{title}»"
   },
-  "watchFeedFilteredCountTpl": {
+  "playlistSearchFilteredCountTpl": {
     "message": "{visible} de {total}"
   },
-  "watchFeedItemCountTplOne": {
+  "playlistSearchItemCountTplOne": {
     "message": "{count} elemento"
   },
-  "watchFeedItemCountTplOther": {
+  "playlistSearchItemCountTplOther": {
     "message": "{count} elementos"
   },
   "commentSearchMatchPositionTpl": {
@@ -9574,10 +9592,16 @@
   "protocolHandoffToastTpl": {
     "message": "Enviado a {player}. Si no se abrió nada, registra primero el controlador en tu sistema operativo."
   },
-  "pageModalEnabledCountTpl": {
+  "pageModalEnabledCountTplOne": {
+    "message": "{count} activada"
+  },
+  "pageModalEnabledCountTplOther": {
     "message": "{count} activadas"
   },
-  "pageModalShortcutCountTpl": {
+  "pageModalShortcutCountTplOne": {
+    "message": "{count} acceso directo"
+  },
+  "pageModalShortcutCountTplOther": {
     "message": "{count} accesos directos"
   },
   "pageModalAppliesLive": {
@@ -9656,7 +9680,7 @@
     "message": "{first}, {second} o {third}"
   },
   "videoHiderInputsUnreadableTpl": {
-    "message": "No se puede leer {inputs} en las tarjetas de esta página, así que los filtros que lo necesitan no ocultan nada."
+    "message": "Las tarjetas de esta página no muestran {inputs} de forma legible, así que los filtros que dependen de ese dato no ocultan nada."
   },
   "dlHealthRuntimeMissing": {
     "message": "no instalado"
