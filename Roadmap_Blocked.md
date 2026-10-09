@@ -825,3 +825,119 @@ Blocked items moved from the actionable roadmap:
     spec format is acceptable without a fixture proving the happy path. The
     second is a judgement call, not a coding one: every negative branch is
     testable today, and only the branch that actually draws a frame is not.
+
+## P3 — Needs a browser run, which waits for the owner's word (2026-10-09)
+
+Standing rule since 2026-10-07: no builds, test runs, smokes or browser launches
+without the owner asking. Each item below has its code side done or has none, and
+what's left is a live run.
+
+- [ ] P3 — Userscript: confirm a blocked channel hides in the watch sidebar
+  Why: the 2026-10-05 research pass said the userscript had no MAIN-world bridge, so
+  sidebar cards would name no channel there. That premise was wrong: the host runs
+  `core/bridge-token.js` and then injects the page-world bundle (bridge channel,
+  `core/feed-prefilter.js`, `ytkit-main.js`) with `GM_addElement`, and the ISOLATED
+  runtime loads `parseLockupChannels`. `tests/lockup-channel-tags.test.js` runs the
+  tagger from the shipped `YTKit-core.user.js` bundle and sees the tag land once the
+  hider publishes `data-ytkit-lockup-channels-on`.
+  Blocker: the acceptance is a live run under a real manager (Tampermonkey or
+  Violentmonkey), which needs the owner's word. A manager without `GM_addElement`
+  runs the ISOLATED runtime alone and has no page-world features at all, sidebar
+  tags included.
+  Acceptance: WHEN the userscript runs and a blocked channel's video is in the watch
+  sidebar, THEN it SHALL hide.
+
+- [ ] P3 — Live-check the channel landing tab after an in-app move
+  Why: 2026-10-09 shipped the fix code-only. The rule waits for the tab list
+  `yt-navigate-finish` brings (`_rw.navigatedChannelTabs`), reads the document's load
+  path from the Navigation Timing entry (`HARD_LOAD_PATH`), and lands on Videos after
+  3 s if nothing arrives (ytkit.js booted after the move). The first attempt passed
+  unit tests and failed live. Also check the URL forms a 2026-10-09 review flagged:
+  `channelHasTab` compares the channel base as an exact string, so `/channel/UC…`,
+  `/c/`, `/user/`, a differently capitalised handle or a percent-encoded one never
+  equals the payload's `/@Handle` and lands on Videos even when the tab exists.
+  Where: `extension/ytkit.js` (`documentLoadPath`, `captureNavigatedPageData`,
+  `channelHasTab`, `redirectToVideosTab`), `tests/channel-landing-tab.test.js`.
+  Blocker: headless Chromium with the staged extension on live YouTube.
+  Acceptance: WHEN Channel Landing Tab is Live and the user clicks `/@NASA` from search
+  results, THEN the page SHALL end on `/@NASA/streams`; WHEN the click lands before
+  ytkit.js boots, THEN it SHALL end on `/@NASA/videos` within about 3 s; and a
+  `/channel/UC…` link to a channel with a Live tab SHALL end on its Live tab.
+
+- [ ] P3 — Follow-ups from the 2026-10-09 drain review
+  Why: a read-only review raised these as plausible but unconfirmed. Each needs a live
+  page to settle.
+  - Upcoming wording: with bare "premiere" gone, a French or German premiere card with
+    no "À venir"/"Bevorstehend" badge no longer reads as upcoming in Video Hider, and
+    pt_BR has only "programado para" (`core/text-metrics.js` `UPCOMING_CARD_PATTERN`).
+    The Arabic badge's real wording is unpinned too (قادم and قادمة both match now).
+  - Still Watching: if YouTube reopens the same closed prompt, the `yt-popup-opened`
+    handler may run before layout, the on-screen gate refuses it, and the observer
+    (child-list only) never retries. Separately, the player's Play button is still
+    tried before the prompt's own confirm button, and the confirm button isn't looked
+    up inside the gated dialog (`autoDismissStillWatching` in `extension/ytkit.js`).
+  - Audio track: a track list that fills in after `canplay` (paused or autoplay-off
+    loads) gets no retry until a later `playing` or player-state event
+    (`core/audio-track.js` `apply`).
+  Blocker: each needs live YouTube in headless Chromium.
+  Acceptance: each case reproduced live and either fixed with a fixture test or shown
+  not to happen, with the result written here.
+
+- [ ] P3 — Surfaces the 2026-09-28 polish pass didn't reach
+  Why: that pass covered the Command Deck, popup, side panel, download panel, Video
+  Hider, transcript states, comment search, toasts and the Theater Split captures.
+  These got no light/dark and state review: the live chat enhancements, the AI summary
+  and Transcript Q&A dialogs, the Subscription Groups manager, the player right-click
+  menu, the SponsorBlock segment UI, the Digital Wellbeing prompts, and (new on
+  2026-10-09) the userscript panel's release note.
+  Where: `extension/live-chat.js` / `live-chat.css`, `extension/ytkit.js`
+  (`aiVideoSummary`), `extension/features/subscription-groups`,
+  `extension/features/sponsorblock`, `extension/features/digital-wellbeing`,
+  `extension/core/settings-visual-system.js` (`.ytkit-release-note`).
+  Blocker: headless captures in light and dark.
+  Acceptance: each surface captured in light and dark (default, hover, focus,
+  disabled, empty, error), with findings fixed or logged.
+
+- [ ] P3 — Popup pseudo-locale lane of the headless a11y smoke fails
+  Why: `node scripts/smoke-headless-a11y.js --fixture-states --surface popup` fails its
+  pseudo lane with "popup/pseudo: pseudo-locale copy did not render". It failed on main
+  before the 2026-10-06 light-theme change too, so the lane has been red unseen (the
+  smoke isn't part of `npm run check`).
+  Reading notes (2026-10-09, no run): the lane was added in f259c85e on 2026-08-19 and
+  passed then. The pseudo stage sets `PSEUDO_LOCALE='es'` and checks for the `⟦` marker
+  (~1786); `smoke-settings-overlay.js`'s stub seeds `_localeOverride` from `?locale`
+  and resolves `getURL` as `new URL(p, document.baseURI)`; popup `initI18n` fetches
+  `_locales/<locale>/messages.json`; Chromium launches with
+  `--allow-file-access-from-files` (~2021). No code cause found. Leading hypothesis:
+  newer Chromium refuses `fetch()` on `file://` even with that flag, so the catalogue
+  never loads and the popup renders English. Likely fix: serve the popup and side panel
+  from the smoke's fixture HTTP origin (`httpPath`) instead of `file://`.
+  Where: `scripts/smoke-headless-a11y.js`, `scripts/generate-pseudolocale.js`,
+  `extension/popup.js` locale selection.
+  Blocker: confirming the hypothesis takes a smoke run.
+  Acceptance: the pseudo lane renders pseudo-locale copy and passes, and a test fails if
+  the lane quietly renders real copy.
+
+- [ ] P3 — Headless Firefox 156 hangs at WebDriver session creation
+  Why: on 2026-10-07 the system Firefox had auto-updated to 156.0.1. Every
+  `startFirefoxSession` call (geckodriver 0.37.1, headless, with or without
+  `--allow-system-access`, on 9222 or a free `--websocket-port`) printed "WebDriver BiDi
+  listening" and then timed out at `POST /session`. Each left a firefox.exe that
+  `taskkill /PID /T /F` reports as gone while CIM still lists it, still holding its BiDi
+  port and locking its `astra-firefox-webdriver-*` profile. The heatmap check passed in
+  Firefox 155 earlier the same drain. Blocks `npm run smoke:firefox`.
+  Where: `scripts/firefox-webdriver.js` (`startFirefoxSession`),
+  `scripts/smoke-firefox-webext.js`.
+  Blocker: a Firefox run.
+  Acceptance: `npm run smoke:firefox` passes on the installed Firefox, with any
+  geckodriver or Firefox pin it needs written in the repo CLAUDE.md, and no firefox.exe
+  left behind.
+
+- [ ] P3 — Check the Shorts settings against Shorts Series on desktop web
+  Why: YouTube began rolling Shorts Series out to the web on 2026-09-23. If series
+  shelves or the series player use new renderers, `removeAllShorts`, `redirectShorts`
+  and `shortsAsRegularVideo` may miss them.
+  Evidence: https://www.droid-life.com/2026/09/23/youtube-teases-3-neat-new-features/.
+  Blocker: not seen on desktop web as of 2026-10-05, and a capture needs a live session.
+  Acceptance: once a series surface shows on desktop web, capture it. Each of the three
+  settings either covers it, with a fixture test, or gets the selector it needs.
