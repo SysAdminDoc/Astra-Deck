@@ -17,18 +17,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   placeholder baseline regenerated.
   Complexity: L
 
-- [ ] P3 — Confirm the Firefox first-load module failure is gone
-  Why: the runtime loader now names the failing module and retries once when a load rejects with
-  no value, aimed at the "Runtime module load failed undefined" line seen 2026-09-29 on the first
-  YouTube load after a temporary install. The race hasn't been reproduced since, so the retry
-  guards the symptom and isn't a confirmed fix. A 2026-10-06 run of
-  `scripts/smoke-firefox-webext.js` from a worktree timed out at 280 s, and the smoke listens only
-  to `log.entryAdded`, so it can't assert extension console errors anyway.
-  Where: `scripts/smoke-firefox-webext.js`, `extension/runtime-core-loader.mjs`.
-  Acceptance: the Firefox smoke SHALL capture the extension's console, and a fresh temporary
-  install's first YouTube load SHALL log no module failure there.
-  Complexity: S
-
 - [ ] P3 — Finish the 2026-09-28 audit sweep
   Why: the pass covered the watch-page monolith features it touched, background, popup, side
   panel, Subscription Groups, Video Hider, Digital Wellbeing, Download UI, Video Notes and

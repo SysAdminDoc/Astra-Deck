@@ -933,6 +933,21 @@ what's left is a live run.
   geckodriver or Firefox pin it needs written in the repo CLAUDE.md, and no firefox.exe
   left behind.
 
+- [ ] P3 — Confirm the Firefox first-load module failure is gone
+  Why: the runtime loader names the failing module and retries once when a load
+  rejects with no value, aimed at the "Runtime module load failed undefined" line seen
+  2026-09-29 on the first YouTube load after a temporary install. The race hasn't been
+  reproduced since, so the retry guards the symptom and isn't a confirmed fix. On
+  2026-10-09 `scripts/smoke-firefox-webext.js` learned to read the extension's console:
+  it sets `devtools.console.stdout.content`, keeps `[YTKit]` lines from geckodriver's
+  output (`captureLine` in `scripts/firefox-webdriver.js`), proves the pipe with a page
+  probe line, and fails the first load on a module failure
+  (`tests/firefox-console-capture.test.js`). Whether geckodriver forwards Firefox's
+  stdout at `--log error` is unconfirmed; the probe fails closed if it doesn't.
+  Blocker: a Firefox run, and the Firefox 156 session hang above blocks it today.
+  Acceptance: a fresh temporary install's first YouTube load logs no module failure in
+  the captured console, with the probe line seen.
+
 - [ ] P3 — Check the Shorts settings against Shorts Series on desktop web
   Why: YouTube began rolling Shorts Series out to the web on 2026-09-23. If series
   shelves or the series player use new renderers, `removeAllShorts`, `redirectShorts`
