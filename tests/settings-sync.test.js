@@ -678,3 +678,23 @@ test('the rollback restores what the account holds, not what this device remembe
         .filter((key) => Number(key.slice(sync.SYNC_CHUNK_PREFIX.length)) >= peerMeta.chunkCount);
     assert.deepEqual(strays, [], 'the chunk indexes this push added must not outlive it');
 });
+
+test('the service worker policy knows the schema, so sync carries settings', () => {
+    // An MV3 worker has no window and no module. The policy looked for the
+    // schema on window only, found nothing there, and dropped every key from
+    // the sync snapshot; a pull then reset every synced setting to default.
+    const vm = require('node:vm');
+    const worker = vm.createContext({ console, URL, TextEncoder, structuredClone });
+    for (const file of ['settings-schema.js', 'persisted-domains.js', 'policy-profile.js']) {
+        const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', file), 'utf8');
+        vm.runInContext(source, worker, { filename: file });
+    }
+    const workerPolicy = vm.runInContext('YTKitCore.createPolicyProfile()', worker);
+    const entry = schema.find((candidate) => candidate.type === 'boolean' && !candidate.internal
+        && candidate.defaultValue === false && !sync.NON_SYNC_SETTING_KEYS.includes(candidate.key)
+        && !policy.shouldScrubKey(candidate.key));
+    assert.ok(entry, 'the schema has a syncable boolean setting');
+    const delta = sync.buildSettingsDelta({ [entry.key]: true }, { schema, policy: workerPolicy });
+    assert.equal(delta.values[entry.key], true, 'a changed setting must reach the sync payload');
+    assert.ok(!delta.resetSettings.includes(entry.key), 'a changed setting must not be sent as a reset');
+});

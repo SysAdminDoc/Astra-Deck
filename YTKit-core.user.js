@@ -13531,7 +13531,7 @@ __astraDeckRegistry["core/policy-profile.js"] = function (globalThis, self, wind
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
 	if (core.createPolicyProfile) return;
-	const schemaScope = (typeof window !== 'undefined' && window.__YTKIT_SETTINGS_SCHEMA__)
+	const schemaScope = globalThis.__YTKIT_SETTINGS_SCHEMA__
 		|| (typeof module !== 'undefined' && module.exports && (function tryLoad() {
 			try { return require('./settings-schema'); } catch (_) { return null; }
 		})());

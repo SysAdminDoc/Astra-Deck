@@ -33,7 +33,9 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createPolicyProfile) return;
 
-    const schemaScope = (typeof window !== 'undefined' && window.__YTKIT_SETTINGS_SCHEMA__)
+    // globalThis, not window: the MV3 service worker has no window, and there
+    // an empty schema dropped every key from the settings sync snapshot.
+    const schemaScope = globalThis.__YTKIT_SETTINGS_SCHEMA__
         || (typeof module !== 'undefined' && module.exports && (function tryLoad() {
             try { return require('./settings-schema'); } catch (_) { return null; }
         })());
