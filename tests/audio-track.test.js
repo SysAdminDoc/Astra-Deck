@@ -133,6 +133,31 @@ test('YouTube\'s current track objects are matched through getLanguageInfo()', (
     assert.deepEqual(fixture.calls, [spanish]);
 });
 
+test('a video with no alternate tracks clears the last status and settles once loaded', () => {
+    // The 2026-09-28 audit case: after an in-app move from a multi-language
+    // video, the status kept "selected:es.3", and every player event re-ran
+    // the six-step retry ladder because an empty list always meant "retry".
+    const spanish = new LiveAudioTrack('Spanish', 'es.3');
+    const tracks = [spanish];
+    const fixture = makeBridgeFixture({ [audio.ATTRS.language]: 'es' }, tracks);
+    fixture.bridge.sync('init');
+    assert.equal(fixture.scheduled.callback({ reason: 'navigate', player: fixture.player }), true);
+    assert.equal(fixture.document.documentElement.getAttribute(audio.ATTRS.status), 'selected:es.3');
+
+    tracks.length = 0;
+    const loading = { readyState: 0 };
+    assert.equal(fixture.scheduled.callback({ reason: 'navigate', player: fixture.player, video: loading }), false,
+        'before metadata an empty list may still fill in, so the task retries');
+    assert.equal(fixture.document.documentElement.getAttribute(audio.ATTRS.status), 'no-tracks',
+        'the previous video\'s selection is not reported for this one');
+
+    const loaded = { readyState: 1 };
+    assert.equal(fixture.scheduled.callback({ reason: 'loadedmetadata', player: fixture.player, video: loaded }), true,
+        'with metadata loaded, an empty list is the answer');
+    assert.equal(fixture.document.documentElement.getAttribute(audio.ATTRS.status), 'no-tracks');
+    assert.deepEqual(fixture.calls, [spanish], 'nothing is switched on the single-track video');
+});
+
 test('audio sync offset is shared and clamped to the bounded bridge range', () => {
     assert.equal(audio.ATTRS.syncOffset, 'data-ytkit-audio-sync-offset');
     assert.equal(audio.ATTRS.autoGain, 'data-ytkit-audio-auto-gain');

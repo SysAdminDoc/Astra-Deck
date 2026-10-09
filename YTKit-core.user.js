@@ -23477,7 +23477,11 @@ void 0;
 			} catch (_) {
 				return false;
 			}
-			if (!Array.isArray(tracks) || tracks.length === 0) return false;
+			if (!Array.isArray(tracks)) return false;
+			if (tracks.length === 0) {
+				writeBridgeStatus('no-tracks');
+				return Number(context.video?.readyState) >= 1;
+			}
 			const target = preference.mode === 'original'
 				? selectOriginalTrack(tracks)
 				: selectLanguageTrack(

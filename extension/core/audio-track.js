@@ -245,7 +245,16 @@
             } catch (_) {
                 return false;
             }
-            if (!Array.isArray(tracks) || tracks.length === 0) return false;
+            if (!Array.isArray(tracks)) return false;
+            if (tracks.length === 0) {
+                // Clear the last video's "selected:<id>" after an in-app move.
+                // Once the video has metadata the player knows its formats, so
+                // an empty list means this video has one audio track: settle
+                // instead of running the whole retry ladder on every player
+                // event. Before that it is still loading, so retry.
+                writeBridgeStatus('no-tracks');
+                return Number(context.video?.readyState) >= 1;
+            }
 
             const target = preference.mode === 'original'
                 ? selectOriginalTrack(tracks)

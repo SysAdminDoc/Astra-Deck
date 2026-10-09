@@ -24,6 +24,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Auto-Dismiss "Still Watching?"** could click Play when you paused and opened Save or Share, any time after it had answered a prompt earlier. YouTube closes the prompt without removing it, and the old one kept the gate open. Only a prompt that's actually on screen counts now.
 
+- After moving from a video with several audio languages to one with a single track, the audio track status kept naming the old video's track, and the new video retried the track switch on every player event. It reports "no-tracks" and stops once the video has loaded.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added
