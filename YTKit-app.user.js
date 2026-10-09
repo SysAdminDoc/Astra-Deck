@@ -16127,7 +16127,19 @@ const STORAGE_KEYS = Object.freeze({
 				});
 				input.click();
 			},
+			render() {
+				const actions = document.createElement('div');
+				actions.className = 'ytkit-selector-health__actions';
+				const importButton = document.createElement('button');
+				importButton.type = 'button';
+				importButton.className = 'ytkit-selector-health__btn';
+				importButton.textContent = t('queueImport', 'Import');
+				importButton.addEventListener('click', () => this._importJson());
+				actions.appendChild(importButton);
+				return actions;
+			},
 			_renderPill() {
+				if (appState.settings?.persistentQueue === false) return;
 				const count = this._read().items.length;
 				if (!count) {
 					this._pillCornerCleanup?.();

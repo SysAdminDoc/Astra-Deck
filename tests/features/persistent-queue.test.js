@@ -590,6 +590,43 @@ test('persistentQueue import reports only what fit under the cap', () => {
     assert.equal(toasts.at(-1).options.tone, 'warning');
 });
 
+// The panel's Import is reachable only through the pill, and an empty feed has
+// no pill. A new install or a cleared feed still has to be able to restore a
+// backup, so the settings card carries Import too.
+test('persistentQueue settings card offers Import while the feed is empty', () => {
+    const { feature, doc, store, toasts, created } = queueFixture();
+    feature._renderPill();
+    assert.equal(doc.body.children.length, 0, 'empty feed: no pill, so no panel either');
+
+    const custom = feature.render();
+    const button = descendants(custom).find((node) => node.tagName === 'BUTTON');
+    assert.ok(button, 'the card renders a real button, so Tab reaches it');
+    assert.equal(button.type, 'button');
+    assert.equal(button.textContent, 'Import');
+
+    button.handlers.get('click')();
+    const input = created.filter((node) => node.tagName === 'INPUT').at(-1);
+    assert.equal(input?.type, 'file');
+    assert.equal(input.clicked, 1, 'the card button opens the same picker as the panel');
+    input.files = [{ text: JSON.stringify({ items: [{ id: 'aaaaaaaaaaa', title: 'Restored' }] }) }];
+    input.handlers.get('change')();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'id'), ['aaaaaaaaaaa']);
+    assert.match(toasts.at(-1).message, /1 added/);
+    assert.equal(doc.body.children[0]?.className, 'ytkit-queue-pill', 'the restored feed gets its pill');
+});
+
+test('persistentQueue keeps an import made while it is off and shows no pill until it is on', () => {
+    const { feature, doc, store, appState } = queueFixture();
+    appState.settings.persistentQueue = false;
+    feature._write({ v: 2, items: [entry('aaaaaaaaaaa', 'Restored')] });
+    assert.equal(store.get('ytkit-queue').items.length, 1, 'the file is stored');
+    assert.equal(doc.body.children.length, 0, 'a switched-off feature puts nothing on the page');
+
+    appState.settings.persistentQueue = true;
+    feature._renderPill();
+    assert.equal(doc.body.children[0]?.textContent, 'Watch Feed · 1');
+});
+
 test('persistentQueue Clear offers Undo that restores the cleared entries first', () => {
     const store = new Map([['ytkit-queue', { v: 2, items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')] }]]);
     const { feature, documentRef, toasts } = treeQueue(store);

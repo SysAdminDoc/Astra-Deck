@@ -28,6 +28,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Channels → Videos Tab** with a landing tab other than Videos (Live, Podcasts, Shorts and so on) only worked when a channel page was loaded fresh. Opening a channel from inside YouTube always landed on Videos, because the redirect ran before YouTube had sent the new channel's tab list. It now waits for that list, up to three seconds, then lands on the tab you picked if the channel has it.
 
+- An empty Watch Feed had no way to import a backup, because Import lived in the feed's panel and the panel only opens from the pill, which goes away when the feed is empty. The **Watch Feed** card in settings now has an Import button too. A file imported while Watch Feed is off is kept and shows up when you turn it on.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added

@@ -23417,8 +23417,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 input.click();
             },
+            // The panel that holds Import opens only from the pill, and the
+            // pill is gone while the feed is empty, so a new install or a
+            // cleared feed had no way to restore a backup. The settings card
+            // offers it too (styled like the other card actions). With the
+            // feature off, the file is stored and shows once it's turned on.
+            render() {
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-selector-health__actions';
+                const importButton = document.createElement('button');
+                importButton.type = 'button';
+                importButton.className = 'ytkit-selector-health__btn';
+                importButton.textContent = t('queueImport', 'Import');
+                importButton.addEventListener('click', () => this._importJson());
+                actions.appendChild(importButton);
+                return actions;
+            },
 
             _renderPill() {
+                // An import from the settings card while the feature is off:
+                // no pill until it's turned on.
+                if (appState.settings?.persistentQueue === false) return;
                 const count = this._read().items.length;
                 if (!count) {
                     this._pillCornerCleanup?.();

@@ -65,16 +65,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   disabled, empty, error), with findings fixed or logged here.
   Complexity: M
 
-- [ ] P3 — Watch Feed Import is unreachable when the feed is empty
-  Why: 2026-09-28 audit, confirmed. Import lives in the Watch Feed panel, and the only way into
-  the panel is the pill, which `_renderPill()` removes when the feed is empty. A new install or a
-  cleared feed can't restore a backup.
-  Where: `extension/ytkit.js` persistentQueue `_renderPill` (~23215) and `_togglePanel`
-  (~23351, Import at ~23379).
-  Acceptance: WHEN the feed is empty, THEN Import SHALL still be reachable from the keyboard
-  (for example from the feature's settings card or an empty-state pill).
-  Complexity: S
-
 - [ ] P3 — Confirm the Firefox first-load module failure is gone
   Why: the runtime loader now names the failing module and retries once when a load rejects with
   no value, aimed at the "Runtime module load failed undefined" line seen 2026-09-29 on the first
