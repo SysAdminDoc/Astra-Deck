@@ -10,7 +10,7 @@ Reference locale: **en** (3241 keys; 902 feature name/description keys).
 | de | 3167 (97.7%) | 20 (0.6%) | 54 (1.7%) | 0 (0%) | 97.7% |
 | es | 3175 (98%) | 18 (0.6%) | 48 (1.5%) | 0 (0%) | 98.0% |
 | fr | 3168 (97.7%) | 26 (0.8%) | 47 (1.5%) | 0 (0%) | 97.7% |
-| it | 2311 (71.3%) | 20 (0.6%) | 910 (28.1%) | 0 (0%) | 71.3% |
+| it | 3172 (97.9%) | 16 (0.5%) | 53 (1.6%) | 0 (0%) | 97.9% |
 | ja | 2341 (72.2%) | 16 (0.5%) | 884 (27.3%) | 0 (0%) | 72.2% |
 | ko | 2336 (72.1%) | 15 (0.5%) | 890 (27.5%) | 0 (0%) | 72.1% |
 | pt_BR | 2316 (71.5%) | 19 (0.6%) | 906 (28%) | 0 (0%) | 71.5% |
@@ -27,7 +27,7 @@ The queue below lists `feature_*_(name|desc)` messages that still match EN after
 | de | 4 | 0 | 4 | 4 | feature_guideHide_gaming_name, feature_guideHide_live_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | es | 3 | 0 | 3 | 5 | feature_guideHide_gaming_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | fr | 4 | 0 | 4 | 6 | feature_daSurfacePlaylist_name, feature_guideHide_playlists_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
-| it | 68 | 76 | 144 | 6 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
+| it | 4 | 0 | 4 | 4 | feature_guideHide_gaming_name, feature_guideHide_home_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | ja | 67 | 76 | 143 | 4 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | ko | 67 | 76 | 143 | 3 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
 | pt_BR | 69 | 76 | 145 | 6 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
