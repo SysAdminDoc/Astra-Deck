@@ -28,7 +28,3 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Acceptance: each module read for lifecycle symmetry, late async work after destroy, outside
   text in templates and unbound guards, with findings fixed or logged here.
   Complexity: L
-
-## Research-Driven Additions
-
-Sourced from the 2026-10-05 research pass. Evidence and reasoning: `RESEARCH.md`.
