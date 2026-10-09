@@ -8270,7 +8270,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 	const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
 	const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
 	const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
-	const foldedRowPattern = (source) => new RegExp(source.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC'), 'i');
+	const FOLDED_MARK = /(?![゙゚])\p{M}/gu;
+	const foldRowText = (text) => text.normalize('NFD').replace(FOLDED_MARK, '').normalize('NFC');
+	const foldedRowPattern = (source) => new RegExp(foldRowText(source), 'i');
 	const LIVE_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live)\b|сейчас смотрят|прямой эфир|в эфире|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)`);
 	const MIX_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)`);
 	const PLAYLIST_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)`);
@@ -10064,7 +10066,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 						return `${text} ${node.getAttribute('aria-label') || ''} ${labels}`;
 					})
 					.join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
-				const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+				const normalizedRowsText = foldRowText(rowsText);
 				const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
 				const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
 				const heuristicText = `${title} ${descriptionText} ${channelText} ${hrefText}`;

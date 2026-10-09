@@ -1318,22 +1318,35 @@ return response;
             && channelLandingTabSuffix(settings.channelLandingTab) !== '/videos'
             && CHANNEL_HOME_PATH_RE.test(location.pathname || '');
         if (!wantsCurve && !wantsTabs) return;
+        // `detail` is read once (each read is a copy in Chromium), and the two
+        // parts fail apart: a curve that won't serialize must not blank the
+        // tab list and send the user to Videos.
+        let response = null;
         try {
-            const response = event?.detail?.response?.response;
-            const frameworkUpdates = wantsCurve ? response?.frameworkUpdates : null;
-            if (frameworkUpdates && typeof frameworkUpdates === 'object') {
-                _rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
-            }
-            if (wantsTabs) {
+            response = event?.detail?.response?.response;
+        } catch (_) {
+            // reason: a detail that throws is no curve and no tab list, never a broken navigation
+        }
+        if (wantsTabs) {
+            try {
                 _rw.navigatedChannelTabs = {
                     path: location.pathname,
                     base: channelBaseFromTabs(response),
                     suffixes: listChannelTabSuffixes(response)
                 };
+            } catch (_) {
+                // reason: an unreadable tab list is answered as "no such tab"
+                _rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
+            }
+        }
+        if (!wantsCurve) return;
+        try {
+            const frameworkUpdates = response?.frameworkUpdates;
+            if (frameworkUpdates && typeof frameworkUpdates === 'object') {
+                _rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
             }
         } catch (_) {
-            // reason: a detail that throws is no curve and no tab list, never a broken navigation
-            if (wantsTabs) _rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
+            // reason: a curve that won't copy is no curve; the heatmap features fall back to the inline payload
         }
     }
 
@@ -23746,8 +23759,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (card?.querySelector?.('.ytBadgeShapeThumbnailLive, .ytBadgeShapeLive, ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]')) return false;
                 // A 2026-09 lockup's premiere has no structural badge, only an
                 // "Upcoming" badge and a "Scheduled for" or "Premieres" row.
+                // The channel byline is left out: it's a name, not a schedule.
                 const rows = card?.querySelectorAll?.('yt-thumbnail-badge-view-model, yt-content-metadata-view-model, #metadata-line') || [];
-                if (globalThis.YTKitCore?.isUpcomingCardText?.(Array.from(rows, (row) => row.textContent || '').join(' '))) return false;
+                const rowsText = Array.from(rows, (row) => globalThis.YTKitCore?.cardTextWithoutByline?.(row) ?? (row.textContent || '')).join(' ');
+                if (globalThis.YTKitCore?.isUpcomingCardText?.(rowsText)) return false;
                 try {
                     const url = new URL(href, 'https://www.youtube.com');
                     return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';
@@ -33672,15 +33687,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (text && this._NOTIFY_RE.test(text)) return true;
                     }
                     // Metadata rows and badges only, never the title, so a VOD
-                    // titled "Premieres of 2026" stays. The rows include the
-                    // channel byline, which is why the shared words are all
-                    // future-anchored (core/text-metrics.js).
+                    // titled "Premieres of 2026" stays, and never the channel
+                    // byline, so a channel called "Le meilleur est à venir"
+                    // stays too (core/text-metrics.js).
                     const metaNodes = card.querySelectorAll(
                         '.ytContentMetadataViewModelMetadataText, yt-content-metadata-view-model, #metadata-line, ytd-video-meta-block, ytd-thumbnail-overlay-time-status-renderer, .ytThumbnailBadgeViewModelHost, ytd-badge-supported-renderer'
                     );
+                    const core = globalThis.YTKitCore;
                     for (const n of metaNodes) {
                         const label = (n.getAttribute && n.getAttribute('aria-label')) || '';
-                        const text = `${n.textContent || ''} ${label}`;
+                        const text = `${core?.cardTextWithoutByline?.(n) ?? (n.textContent || '')} ${label}`;
                         if (text && globalThis.YTKitCore?.isUpcomingCardText?.(text)) return true;
                     }
                 } catch (e) { void e; }

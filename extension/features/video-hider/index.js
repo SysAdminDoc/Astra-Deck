@@ -28,12 +28,15 @@
     const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
     const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
     // The card-type words below are matched against rows folded like
-    // isUpcomingCardText's (NFD, marks dropped, NFC). Kana dakuten and
-    // Cyrillic й are marks too, so each pattern is folded the same way or
-    // "ライブ" and "плейлист" never match. Non-Latin words sit outside \b,
-    // which only anchors on ASCII word characters. French bare "double"
-    // (from "doublé") is deliberately absent: it folds onto a common word.
-    const foldedRowPattern = (source) => new RegExp(source.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC'), 'i');
+    // isUpcomingCardText's (NFD, marks dropped except kana voicing, NFC).
+    // Cyrillic й is a mark too, so each pattern is folded the same way or
+    // "плейлист" never matches. Kana voicing marks stay, or ライブ (live)
+    // would read ライフ (life). Non-Latin words sit outside \b, which only
+    // anchors on ASCII word characters. French bare "double" (from "doublé")
+    // is deliberately absent: it folds onto a common word.
+    const FOLDED_MARK = /(?![゙゚])\p{M}/gu;
+    const foldRowText = (text) => text.normalize('NFD').replace(FOLDED_MARK, '').normalize('NFC');
+    const foldedRowPattern = (source) => new RegExp(foldRowText(source), 'i');
     const LIVE_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live)\b|сейчас смотрят|прямой эфир|в эфире|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)`);
     const MIX_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)`);
     const PLAYLIST_ROW_PATTERN = foldedRowPattern(String.raw`(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)`);
@@ -2084,7 +2087,7 @@
                 // the six type predicates below dead on Korean. Re-composing
                 // restores the syllables; the accents cannot come back because
                 // their marks are already gone.
-                const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+                const normalizedRowsText = foldRowText(rowsText);
                 const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                 const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
                 const heuristicText = `${title} ${descriptionText} ${channelText} ${hrefText}`;

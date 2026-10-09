@@ -179,6 +179,45 @@ test('a published video is never hidden, however its metadata reads', () => {
     }
 });
 
+test('a channel byline is never read as a schedule', () => {
+    // Real lockup shape: an unlabelled channel row, then labelled views and
+    // date. "à venir" is the French upcoming badge and a channel name too.
+    const document = fakeTreeDocument(() => null);
+    const build = (tag, attrs = {}, text = '') => {
+        const node = document.createElement(tag);
+        for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
+        if (attrs.class) attrs.class.split(' ').forEach((name) => node.classList.add(name));
+        if (text) node.appendChild(document.createTextNode(text));
+        return node;
+    };
+    const lockup = (channelName) => {
+        const host = build('ytd-rich-item-renderer');
+        const model = build('yt-content-metadata-view-model');
+        const byline = build('div', { class: 'ytContentMetadataViewModelMetadataRow' });
+        byline.appendChild(build('span', { class: 'ytContentMetadataViewModelMetadataText' }, channelName));
+        const stats = build('div', { class: 'ytContentMetadataViewModelMetadataRow' });
+        stats.appendChild(build('span', { class: 'ytContentMetadataViewModelMetadataText', 'aria-label': '12 thousand views' }, '12K views'));
+        stats.appendChild(build('span', { class: 'ytContentMetadataViewModelMetadataText', 'aria-label': '3 days ago' }, '3 days ago'));
+        model.append(byline, stats);
+        host.appendChild(model);
+        return host;
+    };
+    for (const name of ['Le meilleur est à venir', 'Upcoming Artists', 'Waiting for Godot']) {
+        assert.equal(feature._isNotifyCard(lockup(name)), false, `a channel called "${name}" is not a schedule`);
+    }
+    const legacy = build('ytd-grid-video-renderer');
+    const block = build('ytd-video-meta-block');
+    const bylineContainer = build('div', { id: 'byline-container' });
+    bylineContainer.appendChild(build('ytd-channel-name', {}, 'À venir TV'));
+    const line = build('div', { id: 'metadata-line' }, '1.2K views · 3 days ago');
+    block.append(bylineContainer, line);
+    legacy.appendChild(block);
+    assert.equal(feature._isNotifyCard(legacy), false, 'a meta block channel name is not a schedule');
+    // The same reader still sees a schedule in a non-byline row.
+    line.children[0]._text = 'Scheduled for 10/10/26, 12:00 PM';
+    assert.equal(feature._isNotifyCard(legacy), true, 'the positive control: the metadata line is still read');
+});
+
 test('a reminder button marks the card even with no scheduled metadata', () => {
     for (const label of ['Notify me', 'Set reminder', 'Benachrichtigen', '设置提醒', '알림 받기']) {
         assert.equal(feature._isNotifyCard(card({ buttons: [label] })), true,

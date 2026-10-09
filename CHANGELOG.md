@@ -18,9 +18,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Pausing Subscriptions didn't stop YouTube from fetching more pages behind the banner. It holds now.
 
-- **Hide Planned Livestreams**, Video Hider and Watch Feed now read the same "upcoming" wording, so a scheduled stream in Japanese, Korean, Chinese or Italian is upcoming to all three. A channel named something like "Premiere Gal" and a premiere that has already aired are no longer taken for upcoming ones, and Japanese and Arabic words with voicing or hamza marks match again.
+- **Hide Planned Livestreams**, Video Hider and Watch Feed now read the same "upcoming" wording, so a scheduled stream in Japanese, Korean, Chinese or Italian is upcoming to all three. A premiere that has already aired is no longer taken for an upcoming one, and Japanese and Arabic words with voicing or hamza marks match again. Channel names don't count either, so a video from "Premiere Gal" or "Le meilleur est à venir" stays in your feed.
 
-- Video Hider's live, playlist, movie and dubbed filters missed some Japanese and Russian cards. "ライブ", "плейлист", "бесплатно с рекламой" and "広告付きで無料" never matched, and the Russian live words ("сейчас смотрят", "в эфире") couldn't match at all. They all do now.
+- Video Hider's live, playlist, movie and dubbed filters missed some Japanese and Russian cards. "ライブ", "плейлист", "бесплатно с рекламой" and "広告付きで無料" never matched, and the Russian live words ("сейчас смотрят", "в эфире") couldn't match at all. They all do now, and a "ライフスタイル" (lifestyle) card isn't taken for "ライブ" (live).
 
 - **Auto-Dismiss "Still Watching?"** could click Play when you paused and opened Save or Share, any time after it had answered a prompt earlier. YouTube closes the prompt without removing it, and the old one kept the gate open. Only a prompt that's actually on screen counts now.
 

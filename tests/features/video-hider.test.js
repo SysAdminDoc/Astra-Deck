@@ -1411,6 +1411,11 @@ test('type words whose marks the row fold strips still match on their own', () =
     assert.equal(read('бесплатно с рекламой').isMovie, true);
     assert.equal(read('広告付きで無料').isMovie, true);
     assert.equal(read('автоматический дубляж').isAutoDubbed, true);
+    // The fold keeps kana voicing marks: dropping them turned ライブ (live)
+    // into ライフ (life), and every lifestyle card read as live.
+    for (const row of ['ライフスタイル', 'ライフハック']) {
+        assert.equal(read(row).isLive, false, `${row} is not live`);
+    }
 });
 
 test('Video Hider processes a nested lockup card once, not once per matching host', () => {

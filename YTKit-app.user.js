@@ -1052,21 +1052,29 @@ return response;
 			&& channelLandingTabSuffix(settings.channelLandingTab) !== '/videos'
 			&& CHANNEL_HOME_PATH_RE.test(location.pathname || '');
 		if (!wantsCurve && !wantsTabs) return;
+		let response = null;
 		try {
-			const response = event?.detail?.response?.response;
-			const frameworkUpdates = wantsCurve ? response?.frameworkUpdates : null;
-			if (frameworkUpdates && typeof frameworkUpdates === 'object') {
-				_rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
-			}
-			if (wantsTabs) {
+			response = event?.detail?.response?.response;
+		} catch (_) {
+		}
+		if (wantsTabs) {
+			try {
 				_rw.navigatedChannelTabs = {
 					path: location.pathname,
 					base: channelBaseFromTabs(response),
 					suffixes: listChannelTabSuffixes(response)
 				};
+			} catch (_) {
+				_rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
+			}
+		}
+		if (!wantsCurve) return;
+		try {
+			const frameworkUpdates = response?.frameworkUpdates;
+			if (frameworkUpdates && typeof frameworkUpdates === 'object') {
+				_rw.navigatedPageData = { frameworkUpdates: JSON.parse(JSON.stringify(frameworkUpdates)) };
 			}
 		} catch (_) {
-			if (wantsTabs) _rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
 		}
 	}
 	const CHANNEL_TAB_SUFFIXES = Object.freeze(['videos', 'shorts', 'streams', 'podcasts', 'playlists', 'posts']);
@@ -16413,7 +16421,8 @@ const STORAGE_KEYS = Object.freeze({
 				if (Array.from(badges).some((badge) => /\d+:\d{2}/.test(badge.textContent || ''))) return false;
 				if (card?.querySelector?.('.ytBadgeShapeThumbnailLive, .ytBadgeShapeLive, ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]')) return false;
 				const rows = card?.querySelectorAll?.('yt-thumbnail-badge-view-model, yt-content-metadata-view-model, #metadata-line') || [];
-				if (globalThis.YTKitCore?.isUpcomingCardText?.(Array.from(rows, (row) => row.textContent || '').join(' '))) return false;
+				const rowsText = Array.from(rows, (row) => globalThis.YTKitCore?.cardTextWithoutByline?.(row) ?? (row.textContent || '')).join(' ');
+				if (globalThis.YTKitCore?.isUpcomingCardText?.(rowsText)) return false;
 				try {
 					const url = new URL(href, 'https://www.youtube.com');
 					return url.searchParams.has('list') || url.searchParams.get('start_radio') === '1';
@@ -24603,9 +24612,10 @@ const STORAGE_KEYS = Object.freeze({
 					const metaNodes = card.querySelectorAll(
 						'.ytContentMetadataViewModelMetadataText, yt-content-metadata-view-model, #metadata-line, ytd-video-meta-block, ytd-thumbnail-overlay-time-status-renderer, .ytThumbnailBadgeViewModelHost, ytd-badge-supported-renderer'
 					);
+					const core = globalThis.YTKitCore;
 					for (const n of metaNodes) {
 						const label = (n.getAttribute && n.getAttribute('aria-label')) || '';
-						const text = `${n.textContent || ''} ${label}`;
+						const text = `${core?.cardTextWithoutByline?.(n) ?? (n.textContent || '')} ${label}`;
 						if (text && globalThis.YTKitCore?.isUpcomingCardText?.(text)) return true;
 					}
 				} catch (e) { void e; }

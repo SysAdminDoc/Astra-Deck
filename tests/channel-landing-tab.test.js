@@ -521,6 +521,21 @@ test('an in-app visit to a channel Home tab keeps that channel\'s tab list', () 
     assert.deepEqual(JSON.parse(JSON.stringify(broken._rw.navigatedChannelTabs)), { path: '/@NASA', base: '', suffixes: [] },
         'a detail that throws still answers for this path, so the rule settles instead of waiting');
 
+    // Heatmap features on too, and a curve that won't serialize: the tab list
+    // still lands, and `detail` (a copy per read in Chromium) is read once.
+    const both = tabCapture({ ...on, jumpToMostReplayed: true }, '/@NASA');
+    const finish = channelFinish('/@NASA');
+    const cyclic = {};
+    cyclic.self = cyclic;
+    finish.detail.response.response.frameworkUpdates = cyclic;
+    let reads = 0;
+    both.captureNavigatedPageData({ get detail() { reads++; return finish.detail; } });
+    assert.equal(reads, 1);
+    assert.equal(both._rw.navigatedPageData, null);
+    assert.deepEqual(JSON.parse(JSON.stringify(both._rw.navigatedChannelTabs)).suffixes,
+        ['/videos', '/shorts', '/streams', '/podcasts', '/playlists', '/posts'],
+        'a curve that fails to copy must not blank the tab list');
+
     for (const [settings, pathname, why] of [
         [{ redirectToVideosTab: true, channelLandingTab: 'videos' }, '/@NASA', 'Videos needs no list'],
         [{ redirectToVideosTab: false, channelLandingTab: 'streams' }, '/@NASA', 'the feature is off'],

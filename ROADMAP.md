@@ -35,11 +35,33 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   attempt passed unit tests and failed live, so this one needs the live run too.
   Where: `extension/ytkit.js` (`documentLoadPath`, `captureNavigatedPageData`, `channelHasTab`,
   `redirectToVideosTab`), `tests/channel-landing-tab.test.js`.
+  Also check the URL forms a 2026-10-09 review flagged: `channelHasTab` compares the channel base
+  as an exact string, so `/channel/UC…`, `/c/`, `/user/`, a differently capitalised handle or a
+  percent-encoded one never equals the payload's `/@Handle` and lands on Videos even when the tab
+  exists.
   Acceptance: WHEN Channel Landing Tab is Live and the user clicks `/@NASA` from search results
   in headless Chromium with the staged extension, THEN the page SHALL end on `/@NASA/streams`;
   and WHEN the click lands before ytkit.js boots, THEN it SHALL end on `/@NASA/videos` within
-  about 3 s.
+  about 3 s; and a `/channel/UC…` link to a channel with a Live tab SHALL end on its Live tab.
   Complexity: S
+
+- [ ] P3 — Follow-ups from the 2026-10-09 drain review
+  Why: a read-only review of that drain's commits raised these as plausible but unconfirmed.
+  Each needs a live page to settle.
+  - Upcoming wording: with bare "premiere" gone, a French or German premiere card with no
+    "À venir"/"Bevorstehend" badge no longer reads as upcoming in Video Hider, and pt_BR has
+    only "programado para" (`core/text-metrics.js` `UPCOMING_CARD_PATTERN`).
+  - Still Watching: if YouTube reopens the same closed prompt, the `yt-popup-opened` handler
+    may run before layout, the on-screen gate refuses it, and the observer (child-list only)
+    never retries. Separately, the player's Play button is still tried before the prompt's own
+    confirm button, and the confirm button isn't looked up inside the gated dialog
+    (`autoDismissStillWatching` in `extension/ytkit.js`).
+  - Audio track: a track list that fills in after `canplay` (paused or autoplay-off loads) gets
+    no retry until a later `playing` or player-state event (`core/audio-track.js` `apply`).
+  Where: the files named above.
+  Acceptance: each case reproduced live in headless Chromium and either fixed with a fixture
+  test or shown not to happen, with the result written here.
+  Complexity: M
 
 - [ ] P3 — Popup Settings Overview shows internal category slugs
   Why: 2026-09-28 polish pass. Each overview row is headed with the schema's raw category

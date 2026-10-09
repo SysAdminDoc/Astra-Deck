@@ -252,8 +252,13 @@ test('isUpcomingCardText reads upcoming wording in every shipped language', () =
         'Премьера состоится завтра',
         'Waiting for the creator',
         'Live in 45 minutes',
-        // Folding strips kana dakuten and Arabic hamza from the card text, so
-        // these only match because the pattern is folded the same way.
+        'Starts in 2 hours',
+        'Comienza en 5 minutos',
+        'قادم',
+        '예약됨',
+        '5분 후 시작',
+        // Folding strips Arabic hamza and keeps kana voicing marks, on the
+        // card text and the pattern alike.
         'リマインダー',
         '開始まで 2 時間',
         'يبدأ خلال ساعة'
@@ -275,6 +280,76 @@ test('isUpcomingCardText never reads a finished premiere or a channel name as up
         'Премьера состоялась',
         'プレミア公開: 2 時間前',
         '首播于 2 小时前',
-        'العرض الأول'
+        'العرض الأول',
+        // Channel names a 2026-10-09 review read as upcoming: a bare "starts
+        // in" phrase, a booking word, and the Arabic badge word inside a name.
+        'Life Starts In Kitchen',
+        'Todo comienza en casa',
+        'قناة الجيل القادم',
+        '예약왕'
     ]) assert.equal(isUpcomingCardText(text), false, text);
+});
+
+// The readers skip the channel byline, because some names can't be told
+// from a badge word ("Le meilleur est à venir").
+test('cardTextWithoutByline drops a lockup byline row and a meta block channel name', () => {
+    const { cardTextWithoutByline } = loadCore();
+    const el = (tag, attrs = {}, children = []) => {
+        const node = {
+            tagName: tag.toUpperCase(), attrs, children, parent: null,
+            get textContent() { return this.children.map((c) => (typeof c === 'string' ? c : c.textContent)).join(''); },
+            matches(selector) {
+                return selector.split(',').some((one) => {
+                    const s = one.trim();
+                    if (s.startsWith('.')) return String(attrs.class || '').split(' ').includes(s.slice(1));
+                    if (s.startsWith('#')) return attrs.id === s.slice(1);
+                    if (s === '[aria-label]') return 'aria-label' in attrs;
+                    return s.toUpperCase() === this.tagName;
+                });
+            },
+            closest(selector) {
+                for (let n = this; n; n = n.parent) if (n.matches(selector)) return n;
+                return null;
+            },
+            querySelectorAll(selector) {
+                const found = [];
+                const walk = (n) => n.children.forEach((c) => {
+                    if (typeof c === 'string') return;
+                    if (c.matches(selector)) found.push(c);
+                    walk(c);
+                });
+                walk(this);
+                return found;
+            },
+            querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
+        };
+        for (const child of children) if (typeof child !== 'string') child.parent = node;
+        return node;
+    };
+    const span = (text, label) => el('span', { class: 'ytContentMetadataViewModelMetadataText', ...(label ? { 'aria-label': label } : {}) }, [text]);
+    const row = (...spans) => el('div', { class: 'ytContentMetadataViewModelMetadataRow' }, spans);
+
+    // The 2026-10 lockup shape (tests/fixtures/feed-card-layouts-2026-10.html).
+    const channel = span('Le meilleur est à venir');
+    const views = span('412M', '412 million views');
+    const model = el('yt-content-metadata-view-model', {}, [row(channel), row(views, span('17y ago', '17 years ago'))]);
+    assert.equal(cardTextWithoutByline(channel), '');
+    assert.equal(cardTextWithoutByline(channel.parent), '');
+    assert.doesNotMatch(cardTextWithoutByline(model), /venir/);
+    assert.match(cardTextWithoutByline(model), /412M/);
+    assert.equal(cardTextWithoutByline(views), '412M');
+
+    // A channel page prints no byline: its only row is the schedule.
+    const scheduled = span('Scheduled for 10/7/26, 7:45 AM');
+    const channelPage = el('yt-content-metadata-view-model', {}, [row(span('9 waiting', '9 waiting'), scheduled)]);
+    assert.match(cardTextWithoutByline(channelPage), /Scheduled for/);
+    assert.match(cardTextWithoutByline(scheduled), /Scheduled for/);
+
+    // The legacy meta block names the channel in ytd-channel-name.
+    const name = el('ytd-channel-name', {}, ['Le meilleur est à venir']);
+    const block = el('ytd-video-meta-block', {}, [el('div', { id: 'byline-container' }, [name]), el('div', { id: 'metadata-line' }, ['3 days ago'])]);
+    assert.doesNotMatch(cardTextWithoutByline(block), /venir/);
+    assert.match(cardTextWithoutByline(block), /3 days ago/);
+    assert.equal(cardTextWithoutByline(name), '');
+    assert.equal(cardTextWithoutByline(null), '');
 });

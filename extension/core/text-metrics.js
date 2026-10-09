@@ -2,7 +2,7 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText) return;
+    if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText && core.cardTextWithoutByline) return;
 
     function hex(value, width = 2) {
         return value.toString(16).padStart(width, '0');
@@ -223,10 +223,13 @@
 
     // NFD splits accents off Latin and Cyrillic letters so \p{M} can drop
     // them. It also splits Hangul into Jamo, which are letters, so NFC puts
-    // the syllables back. Kana dakuten and Arabic hamza are marks too and do
-    // not come back, which is why the pattern below is folded the same way.
+    // the syllables back. Kana voicing marks (U+3099, U+309A) are kept and
+    // recompose: dropping them turned ライブ (live) into ライフ (life). Arabic
+    // hamza and Cyrillic й still fold, which is why the pattern below is
+    // folded the same way.
+    const FOLDED_MARK = /(?![゙゚])\p{M}/gu;
     function foldCardText(text) {
-        return String(text || '').normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+        return String(text || '').normalize('NFD').replace(FOLDED_MARK, '').normalize('NFC');
     }
 
     // The words a card uses for a premiere or a scheduled stream. A 2026-09
@@ -237,15 +240,45 @@
     // also reads "Premiered 7 hours ago" and a channel called "Premiere Gal",
     // and the bare premiere word in Spanish, Russian, Japanese, Chinese and
     // Arabic names a finished premiere as well, so those languages rely on
-    // their upcoming badge and scheduled row instead.
-    const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in|waiting for|live in \d+|próximamente|programad[ao] para|establecer recordatorio|comienza en|à venir|programmé pour|prévue? pour|définir un rappel|commence dans|in programma|programmat[oa] per|imposta promemoria|inizia tra|bevorstehend|geplant für|erinnerung festlegen|beginnt in)\b|запланир|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약|알림 설정|후 시작|即将|预定|设置提醒|开始于|قادم|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
+    // their upcoming badge and scheduled row instead. A Latin-script "starts
+    // in" phrase needs its number and the Arabic badge word must stand alone,
+    // because channel names like "Life Starts In Kitchen" and "الجيل القادم"
+    // carry them. The readers also leave the byline out (below).
+    const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in \d|waiting for|live in \d+|próximamente|programad[ao] para|establecer recordatorio|comienza en \d|à venir|programmé pour|prévue? pour|définir un rappel|commence dans \d|in programma|programmat[oa] per|imposta promemoria|inizia tra \d|bevorstehend|geplant für|erinnerung festlegen|beginnt in \d)\b|запланир|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약됨|알림 설정|\d+\s*(?:초|분|시간|일)\s*후 시작|即将|预定|设置提醒|开始于|(?<![؀-ۿ])قادم(?![؀-ۿ])|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
 
     function isUpcomingCardText(text) {
         return UPCOMING_CARD_PATTERN.test(foldCardText(text));
     }
 
+    // A channel name is not metadata, so the readers above skip the byline:
+    // "Le meilleur est à venir" names a channel, not a schedule. A meta block
+    // holds it in ytd-channel-name. A lockup prints it as an unlabelled first
+    // row (the views and date spans carry spelled-out aria-labels), and
+    // channel pages print none, the same rule Video Hider drops row 0 by.
+    // Returns the node's text with the byline cut, or '' for a node inside it.
+    const BYLINE_SELECTOR = 'ytd-channel-name, #byline-container';
+    const LOCKUP_MODEL_SELECTOR = 'yt-content-metadata-view-model';
+    const LOCKUP_ROW_SELECTOR = '.ytContentMetadataViewModelMetadataRow, .yt-content-metadata-view-model__metadata-row';
+    function lockupBylineRow(model) {
+        const rows = Array.from(model?.querySelectorAll?.(LOCKUP_ROW_SELECTOR) || []);
+        return rows.length > 1 && !rows[0].querySelector?.('[aria-label]') ? rows[0] : null;
+    }
+    function cardTextWithoutByline(node) {
+        if (!node || node.closest?.(BYLINE_SELECTOR)) return '';
+        let text = String(node.textContent || '');
+        const byline = lockupBylineRow(node.closest?.(LOCKUP_MODEL_SELECTOR));
+        if (byline) {
+            if (node.closest?.(LOCKUP_ROW_SELECTOR) === byline) return '';
+            if (Array.from(node.querySelectorAll?.(LOCKUP_ROW_SELECTOR) || []).includes(byline)) {
+                text = text.replace(byline.textContent || '', ' ');
+            }
+        }
+        for (const cut of node.querySelectorAll?.(BYLINE_SELECTOR) || []) text = text.replace(cut.textContent || '', ' ');
+        return text;
+    }
+
     // normalizeDigits is shared: the transcript scraper needs the same
     // Arabic-Indic / Devanagari / Thai / fullwidth table when it reads a
     // rendered timestamp out of YouTube's own DOM.
-    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText });
+    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText, cardTextWithoutByline });
 })();
