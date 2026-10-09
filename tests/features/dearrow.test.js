@@ -225,6 +225,93 @@ test('surface masks stop fetches before per-channel overrides compose', async ()
     });
 });
 
+test('a second pass started mid-fetch never takes a card the first one owns', async () => {
+    // The observer starts a pass while an earlier one awaits a fetch. Each
+    // holds a snapshot of the cards, so the earlier pass reached cards the
+    // later one had taken and rendered a second DeArrow title on them.
+    const card = (videoId) => ({
+        dataset: {},
+        closest: () => null,
+        querySelector: (selector) => (selector.includes('/watch')
+            ? { href: `https://www.youtube.com/watch?v=${videoId}` }
+            : null)
+    });
+    const cards = [card('abc123DEF45'), card('xyz789GHI01')];
+    const fetched = [];
+    const waiting = [];
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        isWatchPagePath: () => false
+    });
+    feature._fetchBranding = (videoId) => {
+        fetched.push(videoId);
+        return new Promise((resolve) => waiting.push(resolve));
+    };
+
+    await withGlobals({
+        document: pageDocument({ surface: 'home', renderers: cards }),
+        location: { origin: 'https://www.youtube.com', pathname: '/' }
+    }, async () => {
+        const first = feature._processPage();
+        const second = feature._processPage();
+        while (waiting.length) {
+            waiting.shift()(null);
+            await new Promise((resolve) => setImmediate(resolve));
+        }
+        await Promise.all([first, second]);
+        assert.deepEqual(fetched.sort(), ['abc123DEF45', 'xyz789GHI01'], 'each card is taken by one pass');
+    });
+});
+
+test('a title gets one DeArrow replacement, and the announcement is translated', () => {
+    const parent = {
+        children: [],
+        insertBefore(node, ref) {
+            node.parentNode = parent;
+            const at = parent.children.indexOf(ref);
+            parent.children.splice(at < 0 ? parent.children.length : at, 0, node);
+            return node;
+        }
+    };
+    const make = () => {
+        const attrs = new Map();
+        const el = {
+            textContent: '', className: '', title: '', style: { display: '' }, dataset: {},
+            classList: { add() {} },
+            setAttribute: (name, value) => attrs.set(name, String(value)),
+            getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
+            hasAttribute: (name) => attrs.has(name),
+            removeAttribute: (name) => attrs.delete(name),
+            remove() {
+                const at = parent.children.indexOf(el);
+                if (at >= 0) parent.children.splice(at, 1);
+            },
+            cloneNode: () => make(),
+            get previousElementSibling() {
+                const at = parent.children.indexOf(el);
+                return at > 0 ? parent.children[at - 1] : null;
+            }
+        };
+        return el;
+    };
+    const titleEl = make();
+    titleEl.textContent = 'ORIGINAL TITLE';
+    titleEl.parentNode = parent;
+    parent.children.push(titleEl);
+    const announced = [];
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        announceA11y: (message) => announced.push(message),
+        t: (key, fallback) => (key === 'deArrowTitleReplacedTpl' ? 'Titel von DeArrow ersetzt: {title}' : fallback)
+    });
+
+    feature._renderTitle(titleEl, 'First title', { fallback: true });
+    feature._renderTitle(titleEl, 'Second title', { fallback: true, announce: true });
+    const replacements = parent.children.filter((node) => node.getAttribute('data-ytkit-dearrow-title') === '1');
+    assert.deepEqual(replacements.map((node) => node.textContent), ['Second title']);
+    assert.deepEqual(announced, ['Titel von DeArrow ersetzt: Second title']);
+});
+
 test('the watch mask blocks primary-title requests without blocking related cards', async () => {
     const settings = surfaceSettings({ daSurfaceWatch: false, daSurfaceRelated: true });
     const watchTitle = { dataset: {} };

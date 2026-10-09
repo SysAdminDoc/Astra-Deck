@@ -417,10 +417,15 @@
                     titleEl.style.display = 'none';
                 }
                 titleEl.dataset.daProcessed = '1';
+                // One DeArrow title per original: a replacement drawn earlier
+                // is swapped, never stacked.
+                const prior = titleEl.previousElementSibling;
+                if (prior?.getAttribute?.('data-ytkit-dearrow-title') === '1') prior.remove();
                 titleEl.parentNode.insertBefore(clone, titleEl);
                 if (!fallback) this._ensureAttribution(clone);
                 if (announce) {
-                    try { announceA11y(`Title replaced by DeArrow: ${formatted}`); } catch (_) { /* reason: optional accessibility announcement must not interrupt title rendering. */ }
+                    const message = t('deArrowTitleReplacedTpl', 'Title replaced by DeArrow: {title}').replace('{title}', () => formatted);
+                    try { announceA11y(message); } catch (_) { /* reason: optional accessibility announcement must not interrupt title rendering. */ }
                 }
                 return true;
             },
@@ -522,6 +527,10 @@
                 const renderers = document.querySelectorAll('ytd-rich-item-renderer:not([data-da-processed]), ytd-video-renderer:not([data-da-processed]), ytd-compact-video-renderer:not([data-da-processed]), ytd-grid-video-renderer:not([data-da-processed])');
                 for (const el of renderers) {
                     if (gen !== this._generation || route !== this._routeToken) return;
+                    // The list is a snapshot. Another pass started while this
+                    // one awaited a fetch may already own this card, and taking
+                    // it again stacked a second DeArrow title on it.
+                    if (el.dataset.daProcessed) continue;
                     el.dataset.daProcessed = '1';
                     const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
                     if (!link) continue;

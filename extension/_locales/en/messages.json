@@ -9689,6 +9689,9 @@
   "deArrowChannelChipTpl": {
     "message": "DeArrow: {mode}"
   },
+  "deArrowTitleReplacedTpl": {
+    "message": "Title replaced by DeArrow: {title}"
+  },
   "deArrowChannelChipTitle": {
     "message": "Click to cycle DeArrow mode for this channel (DeArrow / Original / Off)"
   },

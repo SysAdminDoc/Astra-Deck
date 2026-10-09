@@ -9628,6 +9628,9 @@
   "deArrowChannelChipTpl": {
     "message": "DeArrow: {mode}"
   },
+  "deArrowTitleReplacedTpl": {
+    "message": "استبدل DeArrow العنوان: {title}"
+  },
   "deArrowChannelChipTitle": {
     "message": "انقر لتبديل وضع DeArrow لهذه القناة (DeArrow / الأصلي / متوقف)"
   },

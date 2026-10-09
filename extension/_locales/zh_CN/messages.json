@@ -9628,6 +9628,9 @@
   "deArrowChannelChipTpl": {
     "message": "DeArrow：{mode}"
   },
+  "deArrowTitleReplacedTpl": {
+    "message": "标题已由 DeArrow 替换：{title}"
+  },
   "deArrowChannelChipTitle": {
     "message": "点击可切换此频道的 DeArrow 模式（DeArrow / 原始 / 关闭）"
   },

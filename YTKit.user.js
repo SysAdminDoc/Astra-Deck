@@ -3766,6 +3766,7 @@ const ASTRA_DECK_BUILD = {
 		"deArrowModeOriginal": "Original",
 		"deArrowModeOff": "Off",
 		"deArrowChannelChipTpl": "DeArrow: {mode}",
+		"deArrowTitleReplacedTpl": "Title replaced by DeArrow: {title}",
 		"deArrowChannelChipTitle": "Click to cycle DeArrow mode for this channel (DeArrow / Original / Off)",
 		"deArrowChannelOverrideToastTpl": "DeArrow override set to \"{mode}\" for this channel.",
 		"transcriptBatchQueuedTpl": "{count}/{max} queued; one recovery pass per video",
