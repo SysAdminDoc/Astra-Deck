@@ -203,9 +203,18 @@ test('Return Dislike renders the estimated count on the Shorts action bar across
         assert.equal(hookCalls[0].surface, 'shortsShelf');
         assert.equal(hookCalls[0].hook, 'action.dislike');
 
-        currentVideoId = 'shorts00002';
-        activeHost = makeDomElement('dislike-button-view-model');
         navigationRule();
+        assert.ok(activeHost.children.some((child) => child.className === 'ytkit-ryd-pill'),
+            'a navigate event for the same video keeps its pill');
+
+        // YouTube can keep the button node across videos, so the old count
+        // must not sit on the next video until that video's render lands.
+        const previousHost = activeHost;
+        currentVideoId = 'shorts00002';
+        navigationRule();
+        assert.equal(previousHost.children.some((child) => child.className === 'ytkit-ryd-pill'), false,
+            'the previous video\'s pill goes as soon as the video changes');
+        activeHost = makeDomElement('dislike-button-view-model');
         await runTimer(1500);
         assert.equal(networkCalls, 2, 'each newly navigated Short should fetch its own estimate');
         assert.equal(activeHost.children.some((child) => child.textContent === '42'), true);
@@ -316,6 +325,36 @@ test('thumbnail ratios cap concurrent work and hold excess cards at the 24/min b
     assert.equal(feature._getQueueSnapshot().budget.used, 24);
     assert.equal(feature._getQueueSnapshot().queued, 1,
         'the 25th visible video must wait for the card budget window to reset');
+
+    for (const resolve of pending.splice(0)) resolve({ likes: 9, dislikes: 1 });
+    await flushPromises();
+    feature.destroy();
+});
+
+test('requests from before a re-init settle without freeing the new run\'s slots', async () => {
+    // Toggling the feature off and on while requests were in flight let the
+    // old ones decrement the new run's counter, so eight ran against a cap of four.
+    const cards = Array.from({ length: 8 }, (_, index) => makeCard(`reinit${String(index).padStart(5, '0')}`));
+    const pending = [];
+    const provider = {
+        _readCache: () => null,
+        _fetch: () => new Promise((resolve) => pending.push(resolve))
+    };
+    const { feature } = makeCardsHarness(cards, provider);
+    feature.init();
+    feature._handleIntersections(cards.map((card) => ({ target: card, isIntersecting: true })));
+    const stale = pending.splice(0);
+    assert.equal(stale.length, 4);
+
+    feature.destroy();
+    feature.init();
+    feature._handleIntersections(cards.map((card) => ({ target: card, isIntersecting: true })));
+    assert.equal(feature._getQueueSnapshot().active, 4);
+
+    for (const resolve of stale) resolve({ likes: 9, dislikes: 1 });
+    await flushPromises();
+    assert.equal(feature._getQueueSnapshot().active, 4, 'old requests must not free the new run\'s slots');
+    assert.equal(pending.length, 4, 'so no fifth request starts');
 
     for (const resolve of pending.splice(0)) resolve({ likes: 9, dislikes: 1 });
     await flushPromises();

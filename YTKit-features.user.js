@@ -21809,6 +21809,7 @@ __astraDeckRegistry["features/return-dislike/index.js"] = function (globalThis, 
 		let _styleElement = null;
 		let _pillEl = null;
 		let _estimateEl = null;
+		let _renderedVideoId = null;
 		let _navRule = null;
 		let _renderTimer = null;
 		const _pendingFetches = new Map();
@@ -22026,6 +22027,7 @@ __astraDeckRegistry["features/return-dislike/index.js"] = function (globalThis, 
 				dislikeButton.appendChild(offline);
 				_pillEl = offline;
 				_estimateEl = null;
+				_renderedVideoId = videoId;
 				return;
 			}
 			const pill = document.createElement('span');
@@ -22061,6 +22063,7 @@ __astraDeckRegistry["features/return-dislike/index.js"] = function (globalThis, 
 				.replace('{estimate}', estimateCopy));
 			dislikeButton.appendChild(pill);
 			_pillEl = pill;
+			_renderedVideoId = videoId;
 			const estimateEl = document.createElement('span');
 			estimateEl.className = 'ytkit-ryd-estimate';
 			estimateEl.dataset.confidence = confidence;
@@ -22101,6 +22104,14 @@ __astraDeckRegistry["features/return-dislike/index.js"] = function (globalThis, 
 				};
 				window.addEventListener('pagehide', this._pagehideFlush);
 				_navRule = () => {
+					if (_renderedVideoId && getVideoId?.() !== _renderedVideoId) {
+						_pillEl?.remove();
+						_estimateEl?.remove();
+						document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
+						_pillEl = null;
+						_estimateEl = null;
+						_renderedVideoId = null;
+					}
 					clearTimeout(_renderTimer);
 					_renderTimer = setTimeout(() => { _renderTimer = null; _render(0); }, 1500);
 				};
@@ -22121,6 +22132,7 @@ __astraDeckRegistry["features/return-dislike/index.js"] = function (globalThis, 
 				_pillEl = null;
 				_estimateEl?.remove();
 				_estimateEl = null;
+				_renderedVideoId = null;
 				document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
 				_styleElement?.remove();
 				_styleElement = null;
@@ -22409,9 +22421,10 @@ __astraDeckRegistry["features/return-dislike/index.js"] = function (globalThis, 
 						});
 					})
 					.finally(() => {
+						if (requestGeneration !== _generation) return;
 						_activeVideos.delete(videoId);
 						_activeCount = Math.max(0, _activeCount - 1);
-						if (!_destroyed && requestGeneration === _generation) _drainQueue();
+						if (!_destroyed) _drainQueue();
 					});
 			}
 		}

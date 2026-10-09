@@ -34,6 +34,7 @@
         let _styleElement = null;
         let _pillEl = null;
         let _estimateEl = null;
+        let _renderedVideoId = null;
         let _navRule = null;
         let _renderTimer = null;
         const _pendingFetches = new Map();
@@ -304,6 +305,7 @@
                 dislikeButton.appendChild(offline);
                 _pillEl = offline;
                 _estimateEl = null;
+                _renderedVideoId = videoId;
                 return;
             }
             const pill = document.createElement('span');
@@ -341,6 +343,7 @@
                 .replace('{estimate}', estimateCopy));
             dislikeButton.appendChild(pill);
             _pillEl = pill;
+            _renderedVideoId = videoId;
 
             const estimateEl = document.createElement('span');
             estimateEl.className = 'ytkit-ryd-estimate';
@@ -385,6 +388,18 @@
                 };
                 window.addEventListener('pagehide', this._pagehideFlush);
                 _navRule = () => {
+                    // YouTube can keep the dislike button across videos, so a
+                    // pill drawn for the last one goes now, not when the next
+                    // render lands seconds later. Navigate events for the same
+                    // video (page data updates) leave it alone.
+                    if (_renderedVideoId && getVideoId?.() !== _renderedVideoId) {
+                        _pillEl?.remove();
+                        _estimateEl?.remove();
+                        document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
+                        _pillEl = null;
+                        _estimateEl = null;
+                        _renderedVideoId = null;
+                    }
                     // Track the pending timer so destroy() can cancel it —
                     // otherwise a navigation right before disable fires a
                     // zombie _render() ~1.5s later that re-injects a pill.
@@ -409,6 +424,7 @@
                 _pillEl = null;
                 _estimateEl?.remove();
                 _estimateEl = null;
+                _renderedVideoId = null;
                 document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
                 _styleElement?.remove();
                 _styleElement = null;
@@ -732,9 +748,13 @@
                         });
                     })
                     .finally(() => {
+                        // destroy() already zeroed this generation's count; an
+                        // old request settling after a re-init would free a
+                        // slot the new generation is still using.
+                        if (requestGeneration !== _generation) return;
                         _activeVideos.delete(videoId);
                         _activeCount = Math.max(0, _activeCount - 1);
-                        if (!_destroyed && requestGeneration === _generation) _drainQueue();
+                        if (!_destroyed) _drainQueue();
                     });
             }
         }
