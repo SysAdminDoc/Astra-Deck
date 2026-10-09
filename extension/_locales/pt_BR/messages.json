@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "Player de vídeo"
   },
+  "spCategory_shell": {
+    "message": "Layout da página"
+  },
+  "spCategory_quality_codec": {
+    "message": "Qualidade e codecs"
+  },
+  "spCategory_content_filter": {
+    "message": "Filtros de conteúdo"
+  },
+  "spCategory_live_chat": {
+    "message": "Chat ao vivo"
+  },
+  "spCategory_subscriptions": {
+    "message": "Inscrições"
+  },
+  "spCategory_downloads": {
+    "message": "Downloads"
+  },
+  "spCategory_subtitles": {
+    "message": "Legendas"
+  },
+  "spCategory_a11y_perf": {
+    "message": "Acessibilidade e desempenho"
+  },
   "spContextChecking": {
     "message": "Verificando a guia"
   },

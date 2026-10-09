@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "مشغّل الفيديو"
   },
+  "spCategory_shell": {
+    "message": "تخطيط الصفحة"
+  },
+  "spCategory_quality_codec": {
+    "message": "الجودة والترميز"
+  },
+  "spCategory_content_filter": {
+    "message": "فلاتر المحتوى"
+  },
+  "spCategory_live_chat": {
+    "message": "الدردشة المباشرة"
+  },
+  "spCategory_subscriptions": {
+    "message": "الاشتراكات"
+  },
+  "spCategory_downloads": {
+    "message": "التنزيلات"
+  },
+  "spCategory_subtitles": {
+    "message": "الترجمة"
+  },
+  "spCategory_a11y_perf": {
+    "message": "إمكانية الوصول والأداء"
+  },
   "spContextChecking": {
     "message": "جارٍ فحص علامة التبويب"
   },

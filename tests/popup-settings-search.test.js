@@ -30,19 +30,70 @@ function loadMatcher() {
     const end = popupSource.indexOf('\n    };', start);
     assert.ok(end > start);
     const body = popupSource.slice(start, end + '\n    };'.length);
-    return new Function('hasFilters', 'entryPassesFilters', 'parsed', 'freeTerm', 'humanizerLocal',
+    return new Function('hasFilters', 'entryPassesFilters', 'parsed', 'freeTerm', 'humanizerLocal', 'localizeSchemaCategory',
         `${body}\nreturn matchEntry;`);
 }
 
-function matcherFor(term) {
-    const freeTerm = term.toLowerCase().trim();
-    return loadMatcher()(false, () => true, { filters: {} }, freeTerm, schema.humanizeSettingKey);
+const LOCALES = ['en', 'de', 'es', 'fr', 'it', 'pt_BR', 'ru', 'ja', 'ko', 'zh_CN', 'ar'];
+function messagesFor(locale) {
+    return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'extension', '_locales', locale, 'messages.json'), 'utf8'));
 }
 
-function matches(term) {
-    const matchEntry = matcherFor(term);
+// popup.js's category namer, run with a given locale's catalogue as `t`.
+function loadCategoryNamer(locale) {
+    const start = popupSource.indexOf('function localizeSchemaCategory(category) {');
+    assert.ok(start > -1, 'popup.js must name schema categories through one helper');
+    const body = popupSource.slice(start, popupSource.indexOf('\n}\n', start) + 2);
+    const messages = messagesFor(locale);
+    const t = (key, fallback) => messages[key]?.message || fallback;
+    return new Function('t', `${body}\nreturn localizeSchemaCategory;`)(t);
+}
+
+function matcherFor(term, locale = 'en') {
+    const freeTerm = term.toLowerCase().trim();
+    return loadMatcher()(false, () => true, { filters: {} }, freeTerm, schema.humanizeSettingKey, loadCategoryNamer(locale));
+}
+
+function matches(term, locale) {
+    const matchEntry = matcherFor(term, locale);
     return schema.SETTINGS_SCHEMA.filter((entry) => !entry.internal && matchEntry(entry));
 }
+
+test('every overview row is headed with a translated category name', () => {
+    // The rows used to print the schema id ("playback-audio", "a11y-perf") in
+    // every language. Each id needs its spCategory_* key in all 11 locales.
+    const ids = [...new Set(schema.SETTINGS_SCHEMA.filter((entry) => !entry.internal).map((entry) => entry.category))];
+    assert.ok(ids.length >= 18);
+    for (const locale of LOCALES) {
+        const messages = messagesFor(locale);
+        for (const id of ids) {
+            const key = `spCategory_${id.replace(/-/g, '_')}`;
+            assert.ok(messages[key]?.message, `${locale} names ${id} (${key})`);
+            assert.notEqual(messages[key].message, id, `${locale}: ${key} is a name, not the id`);
+        }
+    }
+    const name = loadCategoryNamer('de');
+    assert.equal(name('a11y-perf'), 'Barrierefreiheit und Leistung');
+    assert.equal(name('no-such-bucket'), 'No Such Bucket', 'an unknown id still reads as words');
+    assert.match(popupSource, /nameSpan\.textContent = localizeSchemaCategory\(cat\);/);
+    assert.match(popupSource, /category\.textContent = localizeSchemaCategory\(change\.category\);/);
+});
+
+test('a search for the translated category name finds that category\'s rows', () => {
+    for (const [locale, term, id] of [
+        ['de', 'Barrierefreiheit', 'a11y-perf'],
+        ['ja', '字幕', 'subtitles'],
+        ['fr', 'filtres de contenu', 'content-filter'],
+        ['en', 'page layout', 'shell']
+    ]) {
+        const found = matches(term, locale);
+        const inBucket = schema.SETTINGS_SCHEMA.filter((entry) => !entry.internal && entry.category === id);
+        assert.ok(inBucket.length > 0);
+        for (const entry of inBucket) {
+            assert.ok(found.includes(entry), `${locale} "${term}" finds ${entry.key} in ${id}`);
+        }
+    }
+});
 
 test('the popup matches the same things the in-page panel does', () => {
     // The panel's haystack is name, description, id, group, control type, and

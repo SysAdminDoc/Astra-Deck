@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "视频播放器"
   },
+  "spCategory_shell": {
+    "message": "页面布局"
+  },
+  "spCategory_quality_codec": {
+    "message": "画质与编码"
+  },
+  "spCategory_content_filter": {
+    "message": "内容过滤"
+  },
+  "spCategory_live_chat": {
+    "message": "实时聊天"
+  },
+  "spCategory_subscriptions": {
+    "message": "订阅"
+  },
+  "spCategory_downloads": {
+    "message": "下载"
+  },
+  "spCategory_subtitles": {
+    "message": "字幕"
+  },
+  "spCategory_a11y_perf": {
+    "message": "无障碍与性能"
+  },
   "spContextChecking": {
     "message": "正在检查标签页"
   },

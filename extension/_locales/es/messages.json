@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "Reproductor de vídeo"
   },
+  "spCategory_shell": {
+    "message": "Diseño de la página"
+  },
+  "spCategory_quality_codec": {
+    "message": "Calidad y códecs"
+  },
+  "spCategory_content_filter": {
+    "message": "Filtros de contenido"
+  },
+  "spCategory_live_chat": {
+    "message": "Chat en directo"
+  },
+  "spCategory_subscriptions": {
+    "message": "Suscripciones"
+  },
+  "spCategory_downloads": {
+    "message": "Descargas"
+  },
+  "spCategory_subtitles": {
+    "message": "Subtítulos"
+  },
+  "spCategory_a11y_perf": {
+    "message": "Accesibilidad y rendimiento"
+  },
   "spContextChecking": {
     "message": "Comprobando pestaña"
   },

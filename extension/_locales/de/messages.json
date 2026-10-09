@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "Video-Player"
   },
+  "spCategory_shell": {
+    "message": "Seitenlayout"
+  },
+  "spCategory_quality_codec": {
+    "message": "Qualität und Codecs"
+  },
+  "spCategory_content_filter": {
+    "message": "Inhaltsfilter"
+  },
+  "spCategory_live_chat": {
+    "message": "Livechat"
+  },
+  "spCategory_subscriptions": {
+    "message": "Abos"
+  },
+  "spCategory_downloads": {
+    "message": "Downloads"
+  },
+  "spCategory_subtitles": {
+    "message": "Untertitel"
+  },
+  "spCategory_a11y_perf": {
+    "message": "Barrierefreiheit und Leistung"
+  },
   "spContextChecking": {
     "message": "Tab wird geprüft"
   },

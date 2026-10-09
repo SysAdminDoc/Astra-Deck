@@ -1711,7 +1711,6 @@ body {
 }
 
 .schema-overview-list .so-category {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "동영상 플레이어"
   },
+  "spCategory_shell": {
+    "message": "페이지 레이아웃"
+  },
+  "spCategory_quality_codec": {
+    "message": "화질 및 코덱"
+  },
+  "spCategory_content_filter": {
+    "message": "콘텐츠 필터"
+  },
+  "spCategory_live_chat": {
+    "message": "실시간 채팅"
+  },
+  "spCategory_subscriptions": {
+    "message": "구독"
+  },
+  "spCategory_downloads": {
+    "message": "다운로드"
+  },
+  "spCategory_subtitles": {
+    "message": "자막"
+  },
+  "spCategory_a11y_perf": {
+    "message": "접근성 및 성능"
+  },
   "spContextChecking": {
     "message": "탭 확인 중"
   },

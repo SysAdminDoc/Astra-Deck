@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "Видеоплеер"
   },
+  "spCategory_shell": {
+    "message": "Макет страницы"
+  },
+  "spCategory_quality_codec": {
+    "message": "Качество и кодеки"
+  },
+  "spCategory_content_filter": {
+    "message": "Фильтры контента"
+  },
+  "spCategory_live_chat": {
+    "message": "Чат трансляции"
+  },
+  "spCategory_subscriptions": {
+    "message": "Подписки"
+  },
+  "spCategory_downloads": {
+    "message": "Загрузки"
+  },
+  "spCategory_subtitles": {
+    "message": "Субтитры"
+  },
+  "spCategory_a11y_perf": {
+    "message": "Доступность и производительность"
+  },
   "spContextChecking": {
     "message": "Проверка вкладки"
   },

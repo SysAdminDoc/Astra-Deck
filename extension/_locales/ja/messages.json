@@ -6037,6 +6037,30 @@
   "spCategory_watch_player": {
     "message": "動画プレーヤー"
   },
+  "spCategory_shell": {
+    "message": "ページレイアウト"
+  },
+  "spCategory_quality_codec": {
+    "message": "画質・コーデック"
+  },
+  "spCategory_content_filter": {
+    "message": "コンテンツフィルター"
+  },
+  "spCategory_live_chat": {
+    "message": "ライブチャット"
+  },
+  "spCategory_subscriptions": {
+    "message": "登録チャンネル"
+  },
+  "spCategory_downloads": {
+    "message": "ダウンロード"
+  },
+  "spCategory_subtitles": {
+    "message": "字幕"
+  },
+  "spCategory_a11y_perf": {
+    "message": "アクセシビリティ・パフォーマンス"
+  },
   "spContextChecking": {
     "message": "タブを確認中"
   },

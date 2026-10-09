@@ -4321,6 +4321,15 @@ function renderBisect(session) {
     if (!session) _bisectFinishedSession = null;
 }
 
+// Schema category ids ("watch-player") read through the spCategory_* keys
+// the side panel uses, so both surfaces name a bucket the same way. The
+// title-cased id is only the fallback for an id with no key.
+function localizeSchemaCategory(category) {
+    const id = String(category || 'general');
+    const fallback = id.split('-').map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part)).join(' ');
+    return t(`spCategory_${id.replace(/-/g, '_')}`, fallback);
+}
+
 function formatSchemaDiffReport(changes) {
     return JSON.stringify({
         astraDeckSettingsDiff: true,
@@ -4364,7 +4373,7 @@ function renderSchemaDiff(changes) {
             || (typeof scope?.humanizeSettingKey === 'function' ? scope.humanizeSettingKey(change.key) : change.key);
         label.title = change.key;
         const category = document.createElement('span');
-        category.textContent = change.category;
+        category.textContent = localizeSchemaCategory(change.category);
         head.appendChild(label);
         head.appendChild(category);
 
@@ -4455,6 +4464,8 @@ function renderSchemaOverview() {
         if (!freeTerm) return true;
         if (entry.key.toLowerCase().includes(freeTerm)) return true;
         if (entry.category.toLowerCase().includes(freeTerm)) return true;
+        // The row shows the localized category name, so that name finds it.
+        if (localizeSchemaCategory(entry.category).toLowerCase().includes(freeTerm)) return true;
         // v4.47.0: also search the humanised label and any description
         // field so a user looking for "auto download" can find
         // `autoDownloadOnVisit` without remembering the exact camelCase.
@@ -4543,7 +4554,7 @@ function renderSchemaOverview() {
         head.dataset.category = cat;
         const nameSpan = document.createElement('span');
         nameSpan.className = 'so-category';
-        nameSpan.textContent = cat;
+        nameSpan.textContent = localizeSchemaCategory(cat);
         const countsSpan = document.createElement('span');
         countsSpan.className = 'so-counts';
         countsSpan.textContent = bucket.enabled + '/' + bucket.total;

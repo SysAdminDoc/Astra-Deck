@@ -30,6 +30,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - An empty Watch Feed had no way to import a backup, because Import lived in the feed's panel and the panel only opens from the pill, which goes away when the feed is empty. The **Watch Feed** card in settings now has an Import button too. A file imported while Watch Feed is off is kept and shows up when you turn it on.
 
+- The popup's Settings Overview headed each group with an internal name like "playback-audio" or "a11y-perf", in every language. Each group now has a translated name, and searching for that name finds its settings. The side panel showed half-English names for eight of the same groups ("A11y Perf", "Quality Codec"), and those are translated now too.
+
 - Turning on **Video Loop Button** showed nothing while **Astra Player Dock** was on, because the dock hides the player's other buttons. Its settings card now says so and points to the dock's own Repeat button, which does the same thing. With the dock off, the loop button works as before.
 
 ## [4.97.0] (2026-10-07)

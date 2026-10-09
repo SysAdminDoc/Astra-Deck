@@ -6050,7 +6050,7 @@
     "message": "Comments"
   },
   "spCategory_dev_diagnostics": {
-    "message": "Dev Diagnostics"
+    "message": "Developer Diagnostics"
   },
   "spCategory_enrichment": {
     "message": "Enrichment"
@@ -6062,10 +6062,10 @@
     "message": "General"
   },
   "spCategory_nav": {
-    "message": "Nav"
+    "message": "Navigation"
   },
   "spCategory_playback_audio": {
-    "message": "Playback Audio"
+    "message": "Playback and Audio"
   },
   "spCategory_privacy_profiles": {
     "message": "Privacy Profiles"
@@ -6077,7 +6077,31 @@
     "message": "Shorts"
   },
   "spCategory_watch_player": {
-    "message": "Watch Player"
+    "message": "Video Player"
+  },
+  "spCategory_shell": {
+    "message": "Page Layout"
+  },
+  "spCategory_quality_codec": {
+    "message": "Quality and Codecs"
+  },
+  "spCategory_content_filter": {
+    "message": "Content Filters"
+  },
+  "spCategory_live_chat": {
+    "message": "Live Chat"
+  },
+  "spCategory_subscriptions": {
+    "message": "Subscriptions"
+  },
+  "spCategory_downloads": {
+    "message": "Downloads"
+  },
+  "spCategory_subtitles": {
+    "message": "Subtitles"
+  },
+  "spCategory_a11y_perf": {
+    "message": "Accessibility and Performance"
   },
   "spContextChecking": {
     "message": "Checking tab"
