@@ -6,7 +6,7 @@ Reference locale: **en** (3241 keys; 902 feature name/description keys).
 
 | Locale | Translated | Intentional identical | Placeholder identical | Missing | Coverage |
 | --- | ---:| ---:| ---:| ---:| ---:|
-| ar | 2331 (71.9%) | 13 (0.4%) | 897 (27.7%) | 0 (0%) | 71.9% |
+| ar | 3188 (98.4%) | 12 (0.4%) | 41 (1.3%) | 0 (0%) | 98.4% |
 | de | 3167 (97.7%) | 20 (0.6%) | 54 (1.7%) | 0 (0%) | 97.7% |
 | es | 3175 (98%) | 18 (0.6%) | 48 (1.5%) | 0 (0%) | 98.0% |
 | fr | 3168 (97.7%) | 26 (0.8%) | 47 (1.5%) | 0 (0%) | 97.7% |
@@ -23,7 +23,7 @@ The queue below lists `feature_*_(name|desc)` messages that still match EN after
 
 | Locale | Identical names | Identical descriptions | Total unresolved | Reviewed exact matches | Sample keys |
 | --- | ---:| ---:| ---:| ---:| --- |
-| ar | 67 | 75 | 142 | 2 | feature_antiTranslateChapters_name, feature_antiTranslateThumbnails_desc, feature_antiTranslateThumbnails_name, feature_audioAutoGain_desc, feature_audioAutoGain_name, feature_audioEqHighGainDb_desc, feature_audioEqHighGainDb_name, feature_audioEqLowGainDb_desc |
+| ar | 2 | 0 | 2 | 2 | feature_guideHide_premium_name, feature_guideHide_studio_name |
 | de | 4 | 0 | 4 | 4 | feature_guideHide_gaming_name, feature_guideHide_live_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | es | 3 | 0 | 3 | 5 | feature_guideHide_gaming_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
 | fr | 4 | 0 | 4 | 6 | feature_daSurfacePlaylist_name, feature_guideHide_playlists_name, feature_guideHide_premium_name, feature_guideHide_studio_name |
