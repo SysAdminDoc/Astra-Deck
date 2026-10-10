@@ -46,9 +46,12 @@
     const FLAG_NAME = /^[A-Za-z][A-Za-z0-9_]{0,95}$/;
     const MAX_EXTRA_FLAGS = 64;
 
-    // Reflected attributes the side-panel CSS keys off.
+    // Reflected attributes the side-panel CSS keys off. A forced-flag capture
+    // on 2026-10-10 (tests/fixtures/watch-side-panel-2026-10.json) carried
+    // all of these but show-fixed-side-menu.
     const LAYOUT_ATTRIBUTES = Object.freeze([
         'split-scroll',
+        'swatcheroo-split-scroll',
         'using-fixed-panel',
         'fixed-default-panels',
         'show-fixed-side-menu',

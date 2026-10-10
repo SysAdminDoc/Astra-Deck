@@ -23859,6 +23859,7 @@ void 0;
 	const MAX_EXTRA_FLAGS = 64;
 	const LAYOUT_ATTRIBUTES = Object.freeze([
 		'split-scroll',
+		'swatcheroo-split-scroll',
 		'using-fixed-panel',
 		'fixed-default-panels',
 		'show-fixed-side-menu',

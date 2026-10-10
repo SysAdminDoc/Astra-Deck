@@ -23,21 +23,23 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live there.
 
-- [ ] P1 — Keep watch-page features working for people on YouTube's side-panel page with Classic Watch Layout off
-  Why: Classic Watch Layout (Unreleased) undoes the 2026-10 side-panel page for people who turn it on.
-  Everyone else in the test still gets `#fixed-side-menu`, the grid under the player and possibly
-  `ytd-watch-grid` in place of `ytd-watch-flexy`, and 42 rules in `ytkit.js` plus 25 across modules key
-  on `ytd-watch-flexy`. Theater Split and Player Dock place themselves by the classic columns.
-  Nothing here can be written blind: no capture of the side-panel DOM exists yet.
-  Evidence: Control Panel page.js:3697 queries `ytd-watch-grid`; RESEARCH.md 2026-10-10.
-  Touches: a fixture captured from an enrolled or forced-flag session under `tests/fixtures/`,
-  `extension/core/selector-packs/watch.js` (a `ytd-watch-grid` alias where the capture shows one),
-  the Theater Split and Player Dock placement guards.
-  Acceptance: the capture is checked in; every watch-scoped selector that misses on it gets an alias
-  or a documented reason; Theater Split and Player Dock either work on it or stand down with a
-  notice; the same session confirms Classic Watch Layout puts comments back under the player
-  (`data-ytkit-classic-watch-layout-status` reads `applied`).
-  Complexity: M
+- [ ] P2 — Apply the comment features to the comments panel on YouTube's side-panel watch page
+  Why: on the 2026-10 side-panel page YouTube hides `ytd-comments#comments` under the video and
+  renders comments in `ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]`
+  inside `#secondary`, in a `ytd-comments` with no `#comments` id. About 760 selectors are scoped
+  to `#comments` (429 in `ytkit.js`, 334 in `features/chat-style-comments/index.js`), so comment
+  filters, search, chat-style comments and Theater Split's comment pane miss that panel for anyone
+  in the test who leaves Classic Watch Layout off.
+  Evidence: `tests/fixtures/watch-side-panel-2026-10.json` (forced-flag capture, 20 of 20 threads
+  in the panel, 0 under `#comments`); `tests/watch-side-panel-capture.test.js`.
+  Touches: `extension/ytkit.js`, `extension/features/chat-style-comments/index.js`,
+  `core/selector-packs/comments.js`, Theater Split's comment source. One shared scope such as
+  `:is(ytd-comments#comments, [target-id="engagement-panel-comments-section"] ytd-comments)` keeps
+  specificity at the id level, so a mechanical swap is possible but has to be checked rule by rule.
+  Acceptance: the capture test gains a thread chain from the panel that the comment filter, comment
+  search and chat-style rules match; an enrolled (not forced) session shows the panel on screen with
+  Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
+  Complexity: L
 
 - [ ] P1 — Hide the Shorts grid shelves YouTube introduced in search and feeds around 2026-10-09
   Why: YouTube now renders Shorts shelves as `grid-shelf-view-model`, which Remove All

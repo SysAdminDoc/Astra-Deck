@@ -11337,8 +11337,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // ─── Video Player ───
+        // #related is hidden wherever YouTube puts it: the right column, under
+        // the video in the one-column layout, and under the player on the
+        // 2026-10 side-panel page. The right column only collapses while it
+        // holds nothing worth keeping; an open YouTube panel (comments on the
+        // side-panel page, a transcript anywhere) counts.
         cssFeature('hideRelatedVideos', 'Hide Related Videos', 'Remove the related videos panel on watch pages', 'Watch Page', 'panel-right',
-            `ytd-watch-flexy #secondary #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]), .ytkit-bookmarks-container, #ytkit-transcript-panel)) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
+            `ytd-watch-flexy #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]), .ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
         {
             id: 'expandVideoWidth',
             name: 'Expand Video Width',
@@ -22934,8 +22939,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ytd-page-manager { margin-top: 0 !important; }
                     /* Hide end screen suggestions */
                     .ytp-endscreen-content { display: none !important; }
-                    /* Collapse sidebar if no YTKit panels are injected */
-                    ytd-watch-flexy #secondary:not(:has(.ytkit-bookmarks-container, #ytkit-transcript-panel)) { display: none !important; }
+                    /* Collapse sidebar if no YTKit panels are injected, unless it
+                       holds the comments (YouTube's 2026-10 side-panel page) */
+                    ytd-watch-flexy #secondary:not(:has(.ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"][visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])) { display: none !important; }
                     /* Keep comments visible */
                     #comments { display: block !important; }
                 `;

@@ -6750,7 +6750,7 @@ const STORAGE_KEYS = Object.freeze({
 			}
 		},
 		cssFeature('hideRelatedVideos', 'Hide Related Videos', 'Remove the related videos panel on watch pages', 'Watch Page', 'panel-right',
-			`ytd-watch-flexy #secondary #related{display:none!important}ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]),.ytkit-bookmarks-container,#ytkit-transcript-panel)){display:none!important}ytd-watch-flexy #primary{max-width:none!important}`, { isParent: true }),
+			`ytd-watch-flexy #related{display:none!important}ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]),.ytkit-bookmarks-container,#ytkit-transcript-panel,ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])){display:none!important}ytd-watch-flexy #primary{max-width:none!important}`, { isParent: true }),
 		{
 			id: 'expandVideoWidth',
 			name: 'Expand Video Width',
@@ -15704,7 +15704,7 @@ const STORAGE_KEYS = Object.freeze({
 			pages: [PageTypes.WATCH],
 			_styleEl: null,
 			init() {
-				const css = `ytd-watch-next-secondary-results-renderer{display:none!important}ytd-compact-autoplay-renderer{display:none!important}#masthead-container{display:none!important}ytd-mini-guide-renderer{display:none!important}tp-yt-app-drawer{display:none!important}ytd-watch-flexy #primary{max-width:none!important}ytd-watch-flexy #columns{max-width:1200px!important;margin:0 auto!important}ytd-app{margin-top:0!important}ytd-page-manager{margin-top:0!important}.ytp-endscreen-content{display:none!important}ytd-watch-flexy #secondary:not(:has(.ytkit-bookmarks-container,#ytkit-transcript-panel)){display:none!important}#comments{display:block!important}`;
+				const css = `ytd-watch-next-secondary-results-renderer{display:none!important}ytd-compact-autoplay-renderer{display:none!important}#masthead-container{display:none!important}ytd-mini-guide-renderer{display:none!important}tp-yt-app-drawer{display:none!important}ytd-watch-flexy #primary{max-width:none!important}ytd-watch-flexy #columns{max-width:1200px!important;margin:0 auto!important}ytd-app{margin-top:0!important}ytd-page-manager{margin-top:0!important}.ytp-endscreen-content{display:none!important}ytd-watch-flexy #secondary:not(:has(.ytkit-bookmarks-container,#ytkit-transcript-panel,ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"][visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])){display:none!important}#comments{display:block!important}`;
 				this._styleEl = injectStyle(css, this.id, true);
 			},
 			destroy() { this._styleEl?.remove(); this._styleEl = null; }

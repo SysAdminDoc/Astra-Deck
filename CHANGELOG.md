@@ -22,6 +22,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Hide Related Videos**, which is on by default, only hid recommendations in the right-hand column. On the side-panel watch page YouTube started testing in October 2026, and in the one-column layout of a narrow window, they sit under the video and stayed visible. They're hidden wherever they show up now. It also used to hide the whole right-hand column even while YouTube had a panel open in it, which took away comments on the new page and YouTube's own transcript panel everywhere. An open panel keeps the column now, and **Focused Mode** keeps the comments panel the same way.
+
 - The Subscriptions pause for a feed full of hidden videos never kicked in on YouTube's current card layout, so a cleared feed kept loading in the background. It now pauses after about three hidden pages, even when YouTube fetches them back to back.
 
 - Pausing Subscriptions didn't stop YouTube from fetching more pages behind the banner. It holds now.
