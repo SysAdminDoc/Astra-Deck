@@ -970,6 +970,21 @@ what's left is a live run.
   `📖 Readme` (#userscript-tampermonkey--violentmonkey) / `🐛 Report bug` (issues).
   Acceptance: a pull request following that CONTRIBUTING.md is open.
 
+- [ ] P3 — Submit Astra Deck to Lissy93/awesome-privacy's Browser Extensions section
+  Why: that list (9,942 stars, pushed 2026-10-10) carries SponsorBlock and DeArrow side by
+  side, accepts own-project submissions, and Astra meets its bar: open source, no telemetry,
+  repo since 2025-07-12 and first release 2026-02-20 (both past the four-month rule), a
+  stable release line.
+  Blocker: the list's CONTRIBUTING.md (read 2026-10-10, "AI" section) says AI must not
+  write the text people read or submit a pull request on its own, says low-effort
+  self-promotion PRs get closed without feedback, and asks submitters to declare their
+  affiliation. The entry and the pull request have to be the owner's own words.
+  Ready for the owner: fork, add an entry at the bottom of Browser Extensions in
+  `awesome-privacy.yml` (the only file to edit), run `make validate`, fill in every
+  section of their PR template, and say the project is yours. Points worth making: no
+  telemetry, settings stay in the browser, and release feeds are signed.
+  Acceptance: the owner's pull request is open.
+
 - [ ] P3 — Check the Shorts settings against Shorts Series on desktop web
   Why: YouTube began rolling Shorts Series out to the web on 2026-09-23. If series
   shelves or the series player use new renderers, `removeAllShorts`, `redirectShorts`

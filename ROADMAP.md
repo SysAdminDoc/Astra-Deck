@@ -71,19 +71,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   overflow (owed check).
   Complexity: M
 
-- [ ] P3 — Submit Astra Deck to Lissy93/awesome-privacy's Browser Extensions section
-  Why: that list (9,942 stars, pushed 2026-10-10) carries SponsorBlock and DeArrow side by
-  side, accepts own-project submissions, and Astra meets its bar: open source, no telemetry,
-  repo since 2025-07-12 and first release 2026-02-20 (both past the four-month rule), a
-  stable release line. The 2026-10-05 pass rejected pluja's list, which is a different list
-  with no extension section.
-  Evidence: https://github.com/Lissy93/awesome-privacy/blob/main/.github/CONTRIBUTING.md;
-  `gh api repos/SysAdminDoc/Astra-Deck` and `gh release list` on 2026-10-10.
-  Touches: a fork and a pull request editing `awesome-privacy.yml` only; nothing in this repo.
-  Acceptance: a pull request is open with an entry in the file's schema, written in the
-  maintainer's voice, naming the local-first design and the signed feeds.
-  Complexity: S
-
 - [ ] P3 — Bump `ws` to 8.22.0
   Why: the only outdated direct dependency on 2026-10-10 (`npm outdated`: 8.21.3 to 8.22.0);
   the dev audit is clean, so this is currency only.
