@@ -122,6 +122,11 @@ function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
     const secondaryInner = createElement('div', { id: 'secondary-inner' });
     const below = createElement('div', { id: 'below' });
     const related = createElement('div', { id: 'related' });
+    // The capture: on the side-panel page the description under the title is
+    // switched off with hide-description, because the panel carries it.
+    const metadata = createElement('ytd-watch-metadata', {
+        attributes: sidePanel ? { 'hide-description': '' } : {}
+    });
     const comments = createElement('ytd-comments', { id: 'comments' });
     const commentsPanel = createElement('ytd-engagement-panel-section-list-renderer', {
         attributes: { 'target-id': 'engagement-panel-comments-section', visibility: 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED' }
@@ -136,6 +141,7 @@ function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
     flexy.appendChild(primary);
     flexy.appendChild(secondary);
     secondary.appendChild(secondaryInner);
+    primary.appendChild(metadata);
     primary.appendChild(below);
     // The side-panel page renders the grid under the player.
     below.appendChild(related);
@@ -144,6 +150,7 @@ function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
     flexy.appendChild(descriptionPanel);
     flexy.appendChild(otherPanel);
 
+    metadata.hideDescription = sidePanel;
     comments.hidden = sidePanel;
     comments.data = { contents: [] };
     flexy.isTwoColumns_ = twoColumns;
@@ -170,7 +177,7 @@ function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
         dispatch: (type) => { for (const fn of [...(listeners.get(type) || [])]) fn({ type }); },
         listenerCount: () => [...listeners.values()].reduce((sum, set) => sum + set.size, 0)
     };
-    return { documentRef, flexy, related, secondaryInner, comments, commentsPanel, descriptionPanel, otherPanel };
+    return { documentRef, flexy, related, secondaryInner, metadata, comments, commentsPanel, descriptionPanel, otherPanel };
 }
 
 function loadCore(context) {
@@ -367,6 +374,8 @@ test('a navigation on the side-panel page puts the classic layout back', () => {
     assert.ok(flexy.calls.some(([name, arg]) => name === 'updateWatchFeedLocation' && arg === true));
     assert.ok(page.secondaryInner.contains(page.related), 'recommendations are back in the right-hand column');
     assert.equal(page.comments.hidden, false, 'comments are back under the video');
+    assert.equal(page.metadata.hasAttribute('hide-description'), false, 'the description is back under the title');
+    assert.equal(page.metadata.hideDescription, false);
     assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
     assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
     assert.equal(page.otherPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED',
@@ -375,6 +384,66 @@ test('a navigation on the side-panel page puts the classic layout back', () => {
 
     ctx.flushTimers();
     assert.ok(ctx.resizes.includes('resize'), 'a resize nudges the player out of the side-panel width');
+});
+
+test('on a hard load each side panel stays open until its section under the video is showing', () => {
+    const page = createWatchPage({ sidePanel: true });
+    // The switch arrives at document_idle: comments have not loaded yet.
+    page.comments.data = null;
+    const ctx = createLayout({ ytcfg: createYtcfg({}), page });
+    ctx.layout.setEnabled(true, '');
+
+    assert.equal(page.metadata.hasAttribute('hide-description'), false);
+    assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN',
+        'the description is under the title, so its panel goes');
+    assert.equal(page.comments.hidden, true);
+    assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED',
+        'no comments under the video yet, so the panel keeps them on screen');
+
+    page.comments.data = { contents: [] };
+    ctx.layout.run();
+    assert.equal(page.comments.hidden, false);
+    assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
+
+    // Closed once. A comments panel the user opens afterwards stays open.
+    page.commentsPanel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+    page.documentRef.dispatch('yt-navigate-finish');
+    ctx.flushTimers();
+    assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+
+    // YouTube putting hide-description back is undone on the next pass.
+    page.metadata.setAttribute('hide-description', '');
+    ctx.layout.run();
+    assert.equal(page.metadata.hasAttribute('hide-description'), false);
+});
+
+test('a flag line naming an inherited method never lands on the flag store', () => {
+    const flags = sidePanelFlags();
+    const ytcfg = createYtcfg(flags);
+    const { layout } = createLayout({ ytcfg });
+    layout.setEnabled(true, 'hasOwnProperty\ntoString\nvalueOf\nconstructor');
+    for (const name of ['hasOwnProperty', 'toString', 'valueOf', 'constructor']) {
+        assert.equal(Object.prototype.hasOwnProperty.call(flags, name), false, name);
+    }
+    assert.equal(flags.hasOwnProperty('web_watch_split_scroll'), true, 'the store still answers the page');
+    layout.setEnabled(false, '');
+    assert.deepEqual(Object.keys(flags).sort(), Object.keys(sidePanelFlags()).sort(), 'nothing left behind');
+});
+
+test('the same switch and list again does nothing, so an unrelated bridge change cannot close panels', () => {
+    const page = createWatchPage({ sidePanel: true });
+    const ctx = createLayout({ ytcfg: createYtcfg(sidePanelFlags()), page });
+    ctx.layout.setEnabled(true, '');
+    const callsAfterFirst = page.flexy.calls.length;
+
+    page.flexy.splitScroll = true;
+    page.commentsPanel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+    ctx.layout.setEnabled(true, '');
+    assert.equal(page.flexy.calls.length, callsAfterFirst);
+    assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+
+    ctx.layout.setEnabled(true, 'web_watch_new_thing');
+    assert.ok(page.flexy.calls.length > callsAfterFirst, 'a changed list applies at once');
 });
 
 test('the classic page is left alone, and a narrow window keeps the grid where YouTube put it', () => {

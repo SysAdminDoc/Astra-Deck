@@ -64,13 +64,16 @@
         'split-scroll',
         'show-fixed-side-menu',
         'using-fixed-panel',
-        'hidden'
+        'hidden',
+        'hide-description'
     ]);
 
-    const SIDE_PANEL_SELECTOR = [
-        'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]',
-        'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-structured-description"]'
-    ].join(',');
+    const COMMENTS_PANEL = 'engagement-panel-comments-section';
+    const DESCRIPTION_PANEL = 'engagement-panel-structured-description';
+    const SIDE_PANEL_SELECTOR = [COMMENTS_PANEL, DESCRIPTION_PANEL]
+        .map((id) => `ytd-engagement-panel-section-list-renderer[target-id="${id}"]`)
+        .join(',');
+    const OBSERVED_TAGS = new Set(['ytd-comments', 'ytd-watch-metadata']);
 
     const NAVIGATION_EVENTS = Object.freeze(['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated']);
     const LATE_RETRY_DELAYS = Object.freeze([500, 1500]);
@@ -135,7 +138,10 @@
         let observer = null;
         let observedFlexy = null;
         let lastStatus = null;
+        let lastFlagText = null;
         const wrappedConfigs = new WeakSet();
+        // Side panels this closes once their inline section shows.
+        const pendingPanels = new Set();
         // Flags this turned off, with what they held, so turning the setting
         // off hands YouTube back exactly what it set.
         const overridden = [];
@@ -168,6 +174,9 @@
             for (const store of flagStores()) {
                 let record = overridden.find((entry) => entry.store === store);
                 for (const flag of flags) {
+                    // Own flags only: a line like "hasOwnProperty" must never
+                    // shadow a method every page call on the store relies on.
+                    if (!Object.prototype.hasOwnProperty.call(store, flag)) continue;
                     let value;
                     try { value = store[flag]; } catch (error) { continue; }
                     if (!value) continue;
@@ -229,13 +238,44 @@
             }
         }
 
+        // It also hides the description under the title (hide-description on
+        // ytd-watch-metadata) because the panel on the right carries it.
+        function showDescription(flexy) {
+            const metadata = flexy.querySelector?.('ytd-watch-metadata');
+            if (!metadata) return;
+            try { if (metadata.hideDescription) metadata.hideDescription = false; } catch (error) { /* reason: the attribute strip below still applies */ }
+            try { metadata.removeAttribute?.('hide-description'); } catch (error) { /* reason: keep going */ }
+        }
+
+        // A side panel is closed only once the section that replaces it under
+        // the video is showing, so a hard load, where the comments arrive
+        // later, never leaves the page with neither.
+        function inlineReplacementShown(flexy, targetId) {
+            if (targetId === COMMENTS_PANEL) {
+                const comments = flexy.querySelector?.('ytd-comments#comments');
+                return Boolean(comments && !comments.hidden);
+            }
+            const metadata = flexy.querySelector?.('ytd-watch-metadata');
+            return Boolean(metadata && !metadata.hasAttribute?.('hide-description'));
+        }
+
+        function closeReplacedPanels(flexy) {
+            if (!pendingPanels.size) return;
+            for (const panel of documentRef.querySelectorAll?.(SIDE_PANEL_SELECTOR) || []) {
+                const targetId = panel.getAttribute?.('target-id');
+                if (!pendingPanels.has(targetId) || !inlineReplacementShown(flexy, targetId)) continue;
+                panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
+                pendingPanels.delete(targetId);
+            }
+        }
+
         function observe(flexy) {
             if (!MutationObserverCtor || !flexy || observedFlexy === flexy) return;
             observer?.disconnect();
             observer = new MutationObserverCtor((records) => {
                 for (const record of records) {
                     const target = record.target;
-                    if (target === flexy || String(target?.tagName || '').toLowerCase() === 'ytd-comments') {
+                    if (target === flexy || OBSERVED_TAGS.has(String(target?.tagName || '').toLowerCase())) {
                         queueRun();
                         return;
                     }
@@ -250,7 +290,11 @@
             const flexy = documentRef.querySelector?.('ytd-watch-flexy');
             if (!flexy) return false;
             observe(flexy);
-            if (switched) showComments(flexy);
+            if (switched) {
+                showDescription(flexy);
+                showComments(flexy);
+                closeReplacedPanels(flexy);
+            }
             if (!isSidePanelLayout(flexy)) return false;
             switched = true;
 
@@ -282,12 +326,13 @@
                 secondaryInner.appendChild(related);
             }
 
-            // Close the description and comments panels left open on the right.
-            for (const panel of documentRef.querySelectorAll?.(SIDE_PANEL_SELECTOR) || []) {
-                panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
-            }
-
+            // Bring the description and comments back under the video, then
+            // close their panels on the right once each one is showing there.
+            showDescription(flexy);
             showComments(flexy);
+            pendingPanels.add(COMMENTS_PANEL);
+            pendingPanels.add(DESCRIPTION_PANEL);
+            closeReplacedPanels(flexy);
             // The player keeps the side-panel width until something resizes it.
             schedule(dispatchResize, 100);
             report('applied');
@@ -338,9 +383,17 @@
                 detach();
                 restoreFlags();
                 switched = false;
+                pendingPanels.clear();
+                lastFlagText = null;
                 report('off');
                 return;
             }
+            const text = String(flagText ?? '');
+            // The bridge calls this on every sealed change from any feature.
+            // Same switch, same list: nothing to do, and re-running the fix
+            // here would close panels the user opened since.
+            if (enabled && text === lastFlagText) return;
+            lastFlagText = text;
             const firstEnable = !enabled;
             enabled = true;
             if (firstEnable) attach();
@@ -348,7 +401,7 @@
             // the current one. Both happen in this task, so no page code reads
             // the flags in between.
             restoreFlags();
-            flags = resolveFlags(flagText);
+            flags = resolveFlags(text);
             patchFlags();
             if (!fixWatchFlexy() && lastStatus !== 'applied') report('waiting');
         }
