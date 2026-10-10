@@ -23,41 +23,21 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live there.
 
-- [ ] P0 — Restore the classic watch layout when YouTube's 2026-10 side-rail test is on
-  Why: since about 2026-10-07 YouTube moves comments and the description into a right-hand
-  panel with a recommendation grid under the player and drops the theater button. Undoing
-  redesigns is Astra's first persona, Chrome users can't run the uBlock Origin scriptlets
-  that revert it, and nothing in `extension/` names the test's flags, `#fixed-side-menu` or
-  `ytd-watch-grid`, while 42 rules in `ytkit.js` and 25 across modules key on
-  `ytd-watch-flexy`.
-  Evidence: Ubergizmo 2026-10-07 and Techdows 2026-10-08 (flag list); Control Panel #343
-  (2026-10-07) and its page.js `hideWatchSideMenu`
-  (`ytd-watch-flexy { --ytd-watch-flexy-fixed-side-menu-width: 0 }` plus `#fixed-side-menu`)
-  and `ytd-watch-grid` query (page.js:3697); davidluttrull/youtube-classic-watch-layout (MIT,
-  2026-10-07) sets `ytcfg.get('EXPERIMENT_FLAGS')` and `yt.config_.EXPERIMENT_FLAGS` entries
-  false, flips `isTwoColumns_`, `splitScroll` and `sideRailDismissiblePanels` on the live
-  `ytd-watch-flexy`, and re-applies on navigation; r/youtube 1wzvguw, 1wxerdp, 1x1nloc.
-  Touches: `extension/ytkit-main.js` (a document_start override beside `installFeedPrefilter`,
-  gated by a bridge attribute, applied before `ytcfg.set` and again on `yt-navigate-finish`),
-  `extension/core/settings-schema.js` (`restoreClassicWatchLayout`, default off, plus
-  `watchLayoutFlagOverrides` as an editable string seeded with
-  `web_watch_eligible_to_switch_to_grid, web_watch_enable_single_column_grid_view,
-  web_fixed_panel_watch_next_grid_swap, web_live_chat_panel_watch_next_grid_swap,
-  web_watch_fixed_default_panels, web_engagement_panel_show_description,
-  web_watch_move_summary_to_sd, web_watch_hero_list, web_watch_split_scroll,
-  web_side_rail_dismissible_panels, kevlar_watch_hide_comments_while_panel_open,
-  kevlar_watch_cinematics, disable_theater_mode`), `extension/early.css` or
-  `core/selector-packs/watch.js` (`#fixed-side-menu` hide and a `ytd-watch-grid` alias for
-  every watch-scoped selector), the Theater Split and Player Dock placement guards, 11
-  locales, README settings table, `sync-userscript.js` picks the MAIN bundle up as is.
-  Acceptance: with the setting on, a vm fixture whose `ytcfg` carries the listed flags true
-  sees every flag false before a page script reads them, and a simulated
-  `yt-navigate-finish` leaves `ytd-watch-flexy` with `isTwoColumns_` true and `splitScroll`
-  and `sideRailDismissiblePanels` false; with it off nothing is touched; `#fixed-side-menu`
-  is hidden by CSS; a schema test pins the seeded flag list and accepts a user-added flag;
-  `tests/helpers/source.js` `userscriptBundles` shows the override in the page-world bundle;
-  the owed live check (a forced-flag or enrolled session) shows comments under the player.
-  Complexity: L
+- [ ] P1 — Keep watch-page features working for people on YouTube's side-panel page with Classic Watch Layout off
+  Why: Classic Watch Layout (Unreleased) undoes the 2026-10 side-panel page for people who turn it on.
+  Everyone else in the test still gets `#fixed-side-menu`, the grid under the player and possibly
+  `ytd-watch-grid` in place of `ytd-watch-flexy`, and 42 rules in `ytkit.js` plus 25 across modules key
+  on `ytd-watch-flexy`. Theater Split and Player Dock place themselves by the classic columns.
+  Nothing here can be written blind: no capture of the side-panel DOM exists yet.
+  Evidence: Control Panel page.js:3697 queries `ytd-watch-grid`; RESEARCH.md 2026-10-10.
+  Touches: a fixture captured from an enrolled or forced-flag session under `tests/fixtures/`,
+  `extension/core/selector-packs/watch.js` (a `ytd-watch-grid` alias where the capture shows one),
+  the Theater Split and Player Dock placement guards.
+  Acceptance: the capture is checked in; every watch-scoped selector that misses on it gets an alias
+  or a documented reason; Theater Split and Player Dock either work on it or stand down with a
+  notice; the same session confirms Classic Watch Layout puts comments back under the player
+  (`data-ytkit-classic-watch-layout-status` reads `applied`).
+  Complexity: M
 
 - [ ] P1 — Hide the Shorts grid shelves YouTube introduced in search and feeds around 2026-10-09
   Why: YouTube now renders Shorts shelves as `grid-shelf-view-model`, which Remove All

@@ -9820,5 +9820,21 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Repair the configured {runtime} runtime"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Classic Watch Layout",
+    "description": "Name of the setting that undoes YouTube's side-panel watch page."
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns.",
+    "description": "Description of the setting that undoes YouTube's side-panel watch page."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Extra Layout Flags",
+    "description": "Name of the editable list of extra YouTube experiment flags to turn off."
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on.",
+    "description": "Description of the editable list of extra YouTube experiment flags. Flag names stay in English."
   }
 }

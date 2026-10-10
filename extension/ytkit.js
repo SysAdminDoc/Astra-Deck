@@ -4325,6 +4325,8 @@ const STORAGE_KEYS = Object.freeze({
             searchFilterSort: 'upload_date',
             forceStandardFps: false,
             stickyChat: false,
+            restoreClassicWatchLayout: false,
+            watchLayoutFlagOverrides: '',
             autoExpandDescription: false,
             keyMoments: false,
             scrollToPlayer: false,
@@ -21045,6 +21047,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() { DebugManager.log('StickyChat', 'Feature module unavailable'); },
             destroy() {}
         }),
+        ...(globalThis.YTKitFeatures?.classicWatchLayout?.createClassicWatchLayoutFeatures?.({
+            injectStyle,
+            publishBridgeAttribute,
+            clearBridgeAttribute,
+            readSetting: (key) => appState.settings?.[key],
+            t
+        }) || [
+            {
+                id: 'restoreClassicWatchLayout',
+                name: t('feature_restoreClassicWatchLayout_name', 'Classic Watch Layout'),
+                description: t('feature_restoreClassicWatchLayout_desc', 'Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns.'),
+                group: 'Watch Page',
+                icon: 'layout',
+                init() { DebugManager.log('ClassicWatchLayout', 'Feature module unavailable'); },
+                destroy() {}
+            },
+            {
+                id: 'watchLayoutFlagOverrides',
+                name: t('feature_watchLayoutFlagOverrides_name', 'Extra Layout Flags'),
+                description: t('feature_watchLayoutFlagOverrides_desc', 'Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra\'s to leave it on.'),
+                group: 'Watch Page',
+                icon: 'layout',
+                isSubFeature: true,
+                parentId: 'restoreClassicWatchLayout',
+                type: 'textarea',
+                settingKey: 'watchLayoutFlagOverrides',
+                dependsOn: 'restoreClassicWatchLayout',
+                init() {},
+                destroy() {}
+            }
+        ]),
         {
             id: 'autoExpandDescription',
             name: 'Auto-Expand Description',

@@ -231,6 +231,8 @@
   "searchFilterSort": "upload_date",
   "forceStandardFps": false,
   "stickyChat": false,
+  "restoreClassicWatchLayout": false,
+  "watchLayoutFlagOverrides": "",
   "autoExpandDescription": false,
   "keyMoments": false,
   "scrollToPlayer": false,

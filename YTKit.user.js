@@ -378,6 +378,7 @@ const ASTRA_DECK_BUILD = {
 		"features/sticky-video-header/index.js",
 		"features/sticky-video/index.js",
 		"features/sticky-chat/index.js",
+		"features/classic-watch-layout/index.js",
 		"features/video-hider/index.js",
 		"features/video-notes/index.js",
 		"features/replay-chat-density/index.js",
@@ -512,6 +513,7 @@ const ASTRA_DECK_BUILD = {
 			"features/sticky-video-header/index.js",
 			"features/sticky-video/index.js",
 			"features/sticky-chat/index.js",
+			"features/classic-watch-layout/index.js",
 			"features/video-hider/index.js",
 			"features/video-notes/index.js",
 			"features/replay-chat-density/index.js",
@@ -556,6 +558,7 @@ const ASTRA_DECK_BUILD = {
 			"core/player.js",
 			"core/audio-track.js",
 			"core/feed-prefilter.js",
+			"core/classic-watch-layout.js",
 			"ytkit-main.js"
 		]
 	},
@@ -3809,7 +3812,11 @@ const ASTRA_DECK_BUILD = {
 		"dlHealthRuntimeReady": "ready",
 		"dlHealthRuntimeRepairTpl": "{version} · repair",
 		"dlHealthRuntimeBundledTpl": "{status} (bundled)",
-		"dlHealthRuntimeRepairTitleTpl": "Repair the configured {runtime} runtime"
+		"dlHealthRuntimeRepairTitleTpl": "Repair the configured {runtime} runtime",
+		"feature_restoreClassicWatchLayout_name": "Classic Watch Layout",
+		"feature_restoreClassicWatchLayout_desc": "Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns.",
+		"feature_watchLayoutFlagOverrides_name": "Extra Layout Flags",
+		"feature_watchLayoutFlagOverrides_desc": "Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on."
 	}
 };
 

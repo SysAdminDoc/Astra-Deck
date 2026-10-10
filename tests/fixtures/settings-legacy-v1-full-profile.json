@@ -568,7 +568,9 @@
     "watchLaterWorkbench",
     "zenMode",
     "commentAuthorBlock",
-    "commentBlockedAuthors"
+    "commentBlockedAuthors",
+    "restoreClassicWatchLayout",
+    "watchLayoutFlagOverrides"
   ],
   "expectedAbsent": [
     "preferredQuality",

@@ -8,6 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- **Classic Watch Layout** (Watch Page, off by default) undoes the watch page YouTube started testing in October 2026, the one with comments and the description in a panel on the right, recommendations in a grid under the player and no theater button. Turn it on and comments go back under the video, recommendations go back to the right and the theater button returns. It switches off the experiment flags behind that page and fixes up a page that's already loaded, so you don't need to reload. YouTube keeps renaming these flags, so **Extra Layout Flags** under it takes more flag names, one per line, and a line starting with a minus sign leaves one of Astra's alone. Turning it off gives YouTube its own values back.
+
 - The userscript now tells you when it's updated. The next time you open its settings panel after an update, a short note under the header says which version you're on and links the changelog. Dismiss it or open the changelog and it won't show again until the next update. Nothing is fetched to show it, and there's no pop-up on page load. The extension keeps its banner in the toolbar popup.
 
 ### Changed

@@ -443,6 +443,8 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── watch-player ───
     Object.freeze({ key: "stickyChat", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "restoreClassicWatchLayout", category: "watch-player", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.98.0" }),
+    Object.freeze({ key: "watchLayoutFlagOverrides", category: "watch-player", type: "string", maxLength: 4000, pattern: "^[A-Za-z0-9_,\\s-]*$", defaultValue: "", risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.98.0" }),
     Object.freeze({ key: "autoExpandDescription", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "keyMoments", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "scrollToPlayer", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

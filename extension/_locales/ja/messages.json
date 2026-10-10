@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "設定済みの {runtime} ランタイムを修復"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "クラシック再生レイアウト"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "YouTube が 2026 年 10 月にテストを始めたサイドパネル型の再生ページを元に戻します。コメントと概要欄は動画の下に、おすすめは右側に戻り、シアターモードのボタンも復活します。"
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "追加のレイアウトフラグ"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra はサイドパネル型ページの元になるフラグをすでにオフにしています。さらにオフにするフラグ名を 1 行に 1 つずつ追加するか、Astra のフラグの前にマイナス記号を付けるとそのフラグはオンのままになります。"
   }
 }

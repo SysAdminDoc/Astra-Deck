@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "설정된 {runtime} 런타임 복구"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "클래식 시청 레이아웃"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "YouTube가 2026년 10월부터 테스트 중인 사이드 패널 시청 페이지를 되돌립니다. 댓글과 설명은 동영상 아래로, 추천 동영상은 오른쪽으로 돌아가고 영화관 모드 버튼도 다시 나타납니다."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "추가 레이아웃 플래그"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra는 사이드 패널 페이지를 켜는 플래그를 이미 끕니다. 더 끌 플래그 이름을 한 줄에 하나씩 추가하거나, Astra의 플래그 앞에 빼기 기호를 붙여 켜 둔 채로 두세요."
   }
 }

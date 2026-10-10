@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Ripara il runtime {runtime} configurato"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Layout di riproduzione classico"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Annulla la pagina di riproduzione con pannello laterale che YouTube ha iniziato a testare a ottobre 2026. Commenti e descrizione tornano sotto il video, i consigli tornano a destra e il pulsante della modalità cinema ritorna."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Flag di layout aggiuntivi"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra disattiva già i flag dietro la pagina con pannello laterale. Aggiungi un nome di flag per riga per disattivarne altri, oppure metti un segno meno davanti a uno di quelli di Astra per lasciarlo attivo."
   }
 }

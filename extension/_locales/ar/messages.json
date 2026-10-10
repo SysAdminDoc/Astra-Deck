@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "إصلاح بيئة تشغيل {runtime} المضبوطة"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "تخطيط المشاهدة الكلاسيكي"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "يتراجع عن صفحة المشاهدة ذات اللوحة الجانبية التي بدأ YouTube اختبارها في أكتوبر 2026. تعود التعليقات والوصف أسفل الفيديو، وتعود الاقتراحات إلى العمود الجانبي، ويعود زر وضع المسرح."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "علامات تخطيط إضافية"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "يوقف Astra بالفعل العلامات التي تشغّل صفحة اللوحة الجانبية. أضف اسم علامة واحدًا في كل سطر لإيقاف المزيد منها، أو ضع علامة ناقص قبل إحدى علامات Astra لتركها مفعّلة."
   }
 }

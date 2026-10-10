@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Réparer l’environnement {runtime} configuré"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Mise en page classique de lecture"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Annule la page de lecture à panneau latéral que YouTube teste depuis octobre 2026. Les commentaires et la description reviennent sous la vidéo, les recommandations reviennent à droite et le bouton du mode cinéma réapparaît."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Indicateurs de mise en page supplémentaires"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra désactive déjà les indicateurs derrière la page à panneau latéral. Ajoutez un nom d'indicateur par ligne pour en désactiver d'autres, ou placez un signe moins devant l'un de ceux d'Astra pour le laisser actif."
   }
 }

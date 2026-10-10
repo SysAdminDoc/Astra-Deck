@@ -147,7 +147,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Action Notices adds 21 for its toggle, off by default.
     // Retiring Buffer / Preload trims 87: its toggle and target.
     // Hide Thumbnail Badges adds 28, and the Made With AI pair 71.
-    assert.equal(assessment.totalBytes, 186499);
+    // Classic Watch Layout adds 64: its toggle and the empty flag list.
+    assert.equal(assessment.totalBytes, 186563);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -19,17 +19,19 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
     // Buffer / Preload retired its toggle and slider (489 → 487, 305 → 303 ids).
-    // Hide Thumbnail Badges added one toggle (488), the Made With AI pair two (490).
-    assert.equal(facts.schemaEntries, 490);
+    // Hide Thumbnail Badges added one toggle (488), the Made With AI pair two (490),
+    // Classic Watch Layout and its flag list two (492).
+    assert.equal(facts.schemaEntries, 492);
     assert.equal(facts.schemaCategories, 18);
     // The runtime graph includes the semantic zero-ad fallback beside the
     // selector-backed document-start shell layer. core/feed-prefilter.js is
     // also counted because the normal-page runtime loads its isolated module.
-    // Block Comment Authors adds one module that declares two feature ids.
-    assert.equal(facts.runtimeModules, 123);
-    assert.equal(facts.featureModules.length, 31);
-    // The Made With AI pair adds two (305).
-    assert.equal(facts.featureIds.length, 305);
+    // Block Comment Authors adds one module that declares two feature ids, and
+    // so does Classic Watch Layout.
+    assert.equal(facts.runtimeModules, 124);
+    assert.equal(facts.featureModules.length, 32);
+    // The Made With AI pair adds two (305), Classic Watch Layout two more (307).
+    assert.equal(facts.featureIds.length, 307);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
@@ -48,7 +50,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`490` entries', '`489` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`492` entries', '`491` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

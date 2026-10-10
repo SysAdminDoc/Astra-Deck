@@ -638,6 +638,44 @@
     })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature: classic watch layout (data-ytkit-classic-watch-layout)
+    // ──────────────────────────────────────────────────────────────────
+    // YouTube's 2026-10 side-panel watch page is decided by ytcfg experiment
+    // flags the page reads in this world. The rules live in
+    // core/classic-watch-layout.js, loaded ahead of this file by the
+    // manifest; this wrapper only hands it the bridge. It hooks nothing until
+    // the isolated world publishes 'on'.
+    (function installClassicWatchLayout() {
+        var factory = globalThis.YTKitCore && globalThis.YTKitCore.createClassicWatchLayout;
+        if (typeof factory !== 'function' || typeof document === 'undefined'
+            || !document.documentElement) return;
+
+        var ENABLE_ATTR = 'data-ytkit-classic-watch-layout';
+        var FLAGS_ATTR = 'data-ytkit-classic-watch-layout-flags';
+        var STATUS_ATTR = 'data-ytkit-classic-watch-layout-status';
+
+        var layout = factory({
+            root: window,
+            document: document,
+            MutationObserver: _NATIVE.MutationObserver,
+            onStatus: function(state) {
+                try {
+                    _NATIVE.setAttribute(STATUS_ATTR, String(state));
+                } catch (error) {
+                    // reason: diagnostics must not affect the layout fix
+                }
+            }
+        });
+
+        function syncFromAttributes() {
+            layout.setEnabled(_bridgeGet(ENABLE_ATTR) === 'on', _bridgeGet(FLAGS_ATTR) || '');
+        }
+
+        _obsRegister([ENABLE_ATTR, FLAGS_ATTR], syncFromAttributes);
+        syncFromAttributes();
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 1: codec blocker (data-ytkit-codec)
     // ──────────────────────────────────────────────────────────────────
 (function() {

@@ -59,8 +59,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.97.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `490` entries across `18` categories |
-| Runtime graph | `123` modules, including `31` peeled feature modules and `305` declared feature IDs |
+| Settings schema | `492` entries across `18` categories |
+| Runtime graph | `124` modules, including `32` peeled feature modules and `307` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -474,7 +474,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **485 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **487 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -601,7 +601,7 @@ This generated knowledgebase documents all **485 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Watch page and player controls</strong>: 73 settings</summary>
+<summary><strong>Watch page and player controls</strong>: 75 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -642,6 +642,8 @@ This generated knowledgebase documents all **485 user-facing settings** in the c
 | <a id="setting-transcriptViewer"></a><strong>Transcript Sidebar</strong><br><code>transcriptViewer</code> | Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-transcriptPreferredLanguage"></a><strong>Transcript preferred language</strong><br><code>transcriptPreferredLanguage</code> | Chooses the preferred transcript caption language; auto follows the browser language before the English and first-track fallbacks. | Default: <code>auto</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.47.0</code> |
 | <a id="setting-stickyChat"></a><strong>Sticky Live Chat</strong><br><code>stickyChat</code> | Keeps the live chat panel pinned at the top of the sidebar when scrolling | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-restoreClassicWatchLayout"></a><strong>Classic Watch Layout</strong><br><code>restoreClassicWatchLayout</code> | Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v4.98.0</code> |
+| <a id="setting-watchLayoutFlagOverrides"></a><strong>Extra Layout Flags</strong><br><code>watchLayoutFlagOverrides</code> | Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on. | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Experimental<br>Since <code>v4.98.0</code> |
 | <a id="setting-autoExpandDescription"></a><strong>Auto-Expand Description</strong><br><code>autoExpandDescription</code> | Automatically expands the video description so you never need to click "Show more" | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-keyMoments"></a><strong>Key Moments Highlights</strong><br><code>keyMoments</code> | Highlights chapter markers on the progress bar with colored segments for quick visual navigation | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-scrollToPlayer"></a><strong>Scroll to Player on Navigate</strong><br><code>scrollToPlayer</code> | Automatically scrolls to the top of the page when navigating to a new video | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

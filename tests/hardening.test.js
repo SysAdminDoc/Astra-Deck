@@ -374,7 +374,7 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
     assert.deepEqual(
         mainEntry.js,
-        ['core/bridge-channel.js', 'core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'ytkit-main.js'],
+        ['core/bridge-channel.js', 'core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'core/classic-watch-layout.js', 'ytkit-main.js'],
         'the sealed channel, then resource unlock, player and audio helpers, all before ytkit-main.js'
     );
 
@@ -5826,10 +5826,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Buffer / Preload is retired with its target slider (489 → 487).
     // Hide Thumbnail Badges adds one toggle (488).
     // Made With AI Label and its lookup switch add two (490).
+    // Classic Watch Layout and its flag list add two (492).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 490,
-        'SETTINGS_SCHEMA must cover all 490 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 492,
+        'SETTINGS_SCHEMA must cover all 492 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -8015,6 +8016,7 @@ test('v4.20.0 userscript ships every file the extension runs in a page or its wo
         'features/sticky-video-header/index.js',
         'features/sticky-video/index.js',
         'features/sticky-chat/index.js',
+        'features/classic-watch-layout/index.js',
         'features/video-hider/index.js',
         'features/video-notes/index.js',
         'features/player-dock/index.js',

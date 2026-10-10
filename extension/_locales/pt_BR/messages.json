@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Reparar o runtime {runtime} configurado"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Layout clássico de exibição"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Desfaz a página de exibição com painel lateral que o YouTube começou a testar em outubro de 2026. Os comentários e a descrição voltam para baixo do vídeo, as recomendações voltam para a direita e o botão do modo teatro volta."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Flags de layout extras"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "O Astra já desativa as flags por trás da página com painel lateral. Adicione um nome de flag por linha para desativar outras, ou coloque um sinal de menos antes de uma das flags do Astra para deixá-la ativada."
   }
 }

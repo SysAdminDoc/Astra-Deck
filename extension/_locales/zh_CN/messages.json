@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "修复已配置的 {runtime} 运行时"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "经典观看布局"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "撤销 YouTube 自 2026 年 10 月开始测试的侧边面板观看页面。评论和说明回到视频下方，推荐视频回到右侧，影院模式按钮也会恢复。"
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "额外的布局标志"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra 已经关闭了侧边面板页面背后的标志。每行添加一个标志名称以关闭更多标志，或在 Astra 的某个标志前加上减号以保持其开启。"
   }
 }

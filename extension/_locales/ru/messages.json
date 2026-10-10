@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Исправить настроенную среду {runtime}"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Классический макет просмотра"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Отменяет страницу просмотра с боковой панелью, которую YouTube начал тестировать в октябре 2026 года. Комментарии и описание возвращаются под видео, рекомендации снова справа, а кнопка театрального режима возвращается."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Дополнительные флаги макета"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra уже отключает флаги, которые включают страницу с боковой панелью. Добавьте по одному имени флага в строке, чтобы отключить другие, или поставьте минус перед флагом Astra, чтобы оставить его включённым."
   }
 }

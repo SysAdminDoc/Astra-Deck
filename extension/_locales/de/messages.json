@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Die eingerichtete {runtime}-Laufzeit reparieren"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Klassisches Wiedergabe-Layout"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Macht die Wiedergabeseite mit Seitenleiste rückgängig, die YouTube seit Oktober 2026 testet. Kommentare und Beschreibung stehen wieder unter dem Video, Empfehlungen wieder rechts, und die Kinomodus-Schaltfläche ist zurück."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Zusätzliche Layout-Flags"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra schaltet die Flags hinter der Seitenleisten-Ansicht bereits aus. Füge pro Zeile einen Flag-Namen hinzu, um weitere auszuschalten, oder setze ein Minuszeichen vor einen von Astras Flags, um ihn eingeschaltet zu lassen."
   }
 }

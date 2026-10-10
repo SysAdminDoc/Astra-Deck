@@ -9759,5 +9759,17 @@
   },
   "dlHealthRuntimeRepairTitleTpl": {
     "message": "Reparar el entorno de {runtime} configurado"
+  },
+  "feature_restoreClassicWatchLayout_name": {
+    "message": "Diseño clásico de reproducción"
+  },
+  "feature_restoreClassicWatchLayout_desc": {
+    "message": "Deshace la página de reproducción con panel lateral que YouTube empezó a probar en octubre de 2026. Los comentarios y la descripción vuelven debajo del vídeo, las recomendaciones vuelven a la derecha y regresa el botón de modo cine."
+  },
+  "feature_watchLayoutFlagOverrides_name": {
+    "message": "Marcas de diseño adicionales"
+  },
+  "feature_watchLayoutFlagOverrides_desc": {
+    "message": "Astra ya desactiva las marcas que activan la página con panel lateral. Añade un nombre de marca por línea para desactivar más, o pon un signo menos delante de una de las de Astra para dejarla activada."
   }
 }
