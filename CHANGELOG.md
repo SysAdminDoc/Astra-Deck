@@ -52,6 +52,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Turning on **Video Loop Button** showed nothing while **Astra Player Dock** was on, because the dock hides the player's other buttons. Its settings card now says so and points to the dock's own Repeat button, which does the same thing. With the dock off, the loop button works as before.
 
+- **Astra Player Dock** could end up in the hover preview instead of the video. If you hovered a thumbnail on Home and then opened a video, the dock attached to the hidden preview player, and because the dock hides the player's own buttons, the real player had no fullscreen or settings button until you reloaded. It always goes in the video's player now, and a dock that landed anywhere else is moved back.
+
+- **DeArrow** could show two or three replacement titles on one card, and on every card below it, when a slow title lookup overlapped the next pass over the page. Each card gets one title now. The note screen readers hear when DeArrow replaces a watch page title was in English for every language. It's translated in all 11.
+
+- **DeArrow** redid the whole feed each time YouTube loaded more of it, so while you scrolled every title flipped back to the original for a moment. Cards it already finished stay finished now. A card YouTube reuses for a different video gets that video's title and thumbnail instead of keeping the old ones.
+
+- **Return YouTube Dislike** kept the previous video's dislike count on the button for a second or two after you moved to another video, because YouTube can keep the same button. The old count goes as soon as the video changes. Turning thumbnail ratios off and back on quickly could also run twice as many lookups as allowed and fetch a video twice, and it can't anymore.
+
+- **Settings Sync** in the Chrome extension pushed your lists but none of your settings, and a pull then reset every synced setting on the other device to its default. The extension's background worker couldn't see which settings to sync. It can now.
+
+- **Settings Sync** could drop your oldest hidden videos and blocked channels. Once a list grows past what sync can carry, only its newest entries travel, and a device pulling them swapped its own longer list for the short one. A device with 3,000 hidden videos lost the oldest 500, and Undo couldn't bring them back. A pull now keeps the local entries the sync data doesn't carry, and Undo keeps the full lists.
+
+- Toggles in the in-page settings panel could flip back right after you changed them. One saved value from an older version that the current one no longer accepts made every save fail, even saves that didn't touch it. A stored value a save leaves alone is kept as it is now, and a new invalid value is still refused.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added

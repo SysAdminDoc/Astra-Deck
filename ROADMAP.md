@@ -60,19 +60,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   `early.css` or the token; with the switches off nothing new is published.
   Complexity: M
 
-- [ ] P2 — Add the seven 2026-10-09 fixes to CHANGELOG Unreleased
-  Why: the last CHANGELOG edit was 17:52 on 2026-10-09 and seven fix commits landed between
-  17:54 and 18:08: player-dock `b0f4565f` (dock no longer attaches to the hover preview),
-  DeArrow `1ab5cdc0` and `7705066b`, Return YouTube Dislike `54094a4f`, sync `69e50bbc` and
-  `b7f6badb`, settings `f14c4a76`. The release-notes script publishes the section verbatim,
-  so the next release would hide them.
-  Evidence: `git log -8 --format='%ci %s'` against `git log -1 --format=%ci -- CHANGELOG.md`
-  on 2026-10-10.
-  Touches: `CHANGELOG.md` `## [Unreleased]` `### Fixed`.
-  Acceptance: each of the seven commits has a user-facing bullet in Unreleased in the house
-  voice, and `tests/release-currency.test.js` passes.
-  Complexity: S
-
 - [ ] P2 — Translate the 29 English toasts left in `ytkit.js` and stop the copy gate from grandfathering them
   Why: the 2026-10-09 CHANGELOG says every language is fully translated, but
   `showToast('Playlist reversed')` (16525), 'Sleep timer elapsed. Playback paused.' (17494),
