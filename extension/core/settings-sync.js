@@ -112,6 +112,14 @@
         try { return utf8Bytes(JSON.stringify(value)); } catch (_) { return Infinity; }
     }
 
+    // What the payload costs in sync storage. Chrome charges each chunk as
+    // JSON, so every quote in the payload text costs two bytes. Budgeting the
+    // raw text let a heavy user's payload in under 90 KiB and over the
+    // 100 KiB quota once escaped, and every push failed.
+    function storedBytes(payloadText) {
+        return jsonBytes(String(payloadText));
+    }
+
     function checksum(text) {
         // FNV-1a over UTF-16 code units is deterministic in every supported
         // runtime and avoids making Web Crypto an async dependency for this
@@ -325,7 +333,7 @@
         const trimCandidates = BLOCKLIST_DOMAINS
             .map((domain) => domain.id)
             .filter((id) => Array.isArray(payload.blocklists[id]) && payload.blocklists[id].length > 0);
-        while (jsonBytes(payload) > SYNC_MAX_PAYLOAD_BYTES && trimCandidates.length > 0) {
+        while (storedBytes(JSON.stringify(payload)) > SYNC_MAX_PAYLOAD_BYTES && trimCandidates.length > 0) {
             trimCandidates.sort((left, right) => jsonBytes(payload.blocklists[right]) - jsonBytes(payload.blocklists[left]));
             const id = trimCandidates[0];
             const list = payload.blocklists[id];
@@ -342,8 +350,10 @@
         }
 
         const payloadText = JSON.stringify(payload);
+        // payloadBytes stays the raw size: peers check the text they join
+        // against it.
         const payloadBytes = utf8Bytes(payloadText);
-        if (payloadBytes > SYNC_MAX_PAYLOAD_BYTES) {
+        if (storedBytes(payloadText) > SYNC_MAX_PAYLOAD_BYTES) {
             throw new Error('Settings and blocklists exceed the browser sync quota');
         }
         const chunks = splitUtf8(payloadText);

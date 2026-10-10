@@ -742,3 +742,25 @@ test('a truncated remote list keeps the older local entries, and Undo restores a
     assert.equal((await controller.undo()).ok, true);
     assert.deepEqual(local.snapshot()['ytkit-hidden-videos'], mine, 'Undo restores every entry the device had');
 });
+
+test('a heavy payload fits the sync quota the way Chrome counts it', () => {
+    // Chrome charges each item as its key plus JSON.stringify(value), so every
+    // quote in a chunk costs two bytes. Measured raw, a heavy user's payload
+    // fit 90 KiB and went past the 100 KiB quota once escaped, so every push
+    // failed.
+    const channels = (count, seed) => Array.from({ length: count }, (_, index) => ({
+        id: `UC${seed}${String(index).padStart(21, '0')}`,
+        name: `Channel ${index}`
+    }));
+    const info = sync.buildSyncPayload({ syncSettings: true }, {
+        'ytkit-hidden-videos': videoIds(2500, 'hhhhh'),
+        'ytkit-video-hider-allowed-videos': videoIds(1500, 'aaaaa'),
+        'ytkit-marked-watched-videos': videoIds(1500, 'wwwww'),
+        'ytkit-blocked-channels': channels(800, 'b'),
+        'ytkit-allowed-channels': channels(400, 'a')
+    }, settingsOptions);
+    const costs = info.chunks.map((chunk, index) => `${sync.SYNC_CHUNK_PREFIX}${index}`.length + JSON.stringify(chunk).length);
+    const total = costs.reduce((sum, cost) => sum + cost, 0);
+    assert.ok(total + 1024 <= sync.SYNC_QUOTA.totalBytes, `the chunks cost ${total} bytes, leaving no room for the metadata`);
+    assert.ok(Math.max(...costs) <= sync.SYNC_QUOTA.bytesPerItem, 'every chunk fits the per-item quota');
+});
