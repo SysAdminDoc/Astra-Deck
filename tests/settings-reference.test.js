@@ -24,7 +24,8 @@ test('settings reference covers every user-facing schema entry with audited purp
     // 483 since Hide Thumbnail Badges joined the Content group.
     // 485 since Made With AI Label and Look Up AI Labels joined it.
     // 487 since Classic Watch Layout and Extra Layout Flags joined Watch.
-    assert.equal(entries.length, 487);
+    // 488 since Hide AI Chapters joined it.
+    assert.equal(entries.length, 488);
     assert.deepEqual(entries.map((entry) => entry.key), expectedKeys);
     for (const entry of entries) {
         assert.ok(entry.title.length >= 2, `${entry.key} needs a readable title`);

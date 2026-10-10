@@ -12802,6 +12802,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "stickyChat", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "restoreClassicWatchLayout", category: "watch-player", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.98.0" }),
 	Object.freeze({ key: "watchLayoutFlagOverrides", category: "watch-player", type: "string", maxLength: 4000, pattern: "^[A-Za-z0-9_,\\s-]*$", defaultValue: "", risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.98.0" }),
+	Object.freeze({ key: "hideAutoChapters", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.98.0" }),
 	Object.freeze({ key: "autoExpandDescription", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "keyMoments", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "scrollToPlayer", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -24134,6 +24135,113 @@ void 0;
 	}
 })();
 ;
+(() => {
+	'use strict';
+	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+	if (core.removeAutoChapters) return;
+	const PANEL_ID = 'engagement-panel-macro-markers-auto-chapters';
+	const MARKER_KEY = 'AUTO_CHAPTERS';
+	const MAX_COMMAND_DEPTH = 8;
+	function isAutoChapterPanel(panel) {
+		const renderer = panel && panel.engagementPanelSectionListRenderer;
+		return Boolean(renderer && (renderer.panelIdentifier === PANEL_ID || renderer.targetId === PANEL_ID));
+	}
+	function targetsAutoChapterPanel(command, depth = 0) {
+		if (!command || typeof command !== 'object' || depth > MAX_COMMAND_DEPTH) return false;
+		if (command.updateEngagementPanelContentCommand?.contentSourcePanelIdentifier?.tag === PANEL_ID) return true;
+		if (command.changeEngagementPanelVisibilityAction?.targetId === PANEL_ID) return true;
+		if (command.showEngagementPanelEndpoint?.panelIdentifier === PANEL_ID) return true;
+		const commands = command.commandExecutorCommand?.commands;
+		return Array.isArray(commands) && commands.some((inner) => targetsAutoChapterPanel(inner, depth + 1));
+	}
+	function decodeEntityKey(key) {
+		if (typeof key !== 'string' || !key || typeof globalThis.atob !== 'function') return '';
+		try {
+			const base64 = decodeURIComponent(key).replace(/-/g, '+').replace(/_/g, '/');
+			const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+			return globalThis.atob(padded);
+		} catch (error) {
+			return '';
+		}
+	}
+	function isAutoChapterKey(key) {
+		return decodeEntityKey(key).includes(MARKER_KEY);
+	}
+	function dropEntries(object, key, shouldDrop) {
+		const list = object && object[key];
+		if (!Array.isArray(list)) return 0;
+		const kept = list.filter((entry) => !shouldDrop(entry));
+		const removed = list.length - kept.length;
+		if (removed) object[key] = kept;
+		return removed;
+	}
+	function findWatchResponse(value) {
+		if (!value || typeof value !== 'object') return null;
+		if (Array.isArray(value.engagementPanels)) return value;
+		if (Array.isArray(value)) {
+			for (const part of value.slice(0, 4)) {
+				if (part && typeof part === 'object' && Array.isArray(part.response?.engagementPanels)) return part.response;
+			}
+		}
+		return null;
+	}
+	function emptyReport() {
+		return { changed: false, markers: 0, panels: 0, entityKeys: 0, mutations: 0, chips: 0, cards: 0, actionButton: false, playerBar: false };
+	}
+	function removeAutoChapters(value) {
+		const report = emptyReport();
+		const data = findWatchResponse(value);
+		if (!data || !data.engagementPanels.some(isAutoChapterPanel)) return report;
+		const overlay = data.playerOverlays?.playerOverlayRenderer;
+		const decoratedBar = overlay?.decoratedPlayerBarRenderer?.decoratedPlayerBarRenderer;
+		const markers = decoratedBar?.playerBar?.multiMarkersPlayerBarRenderer;
+		report.markers = dropEntries(markers, 'markersMap', (marker) => marker?.key === MARKER_KEY);
+		if (markers?.visibleOnLoad?.key === MARKER_KEY) {
+			delete markers.visibleOnLoad;
+			report.markers += 1;
+		}
+		if (report.markers && Array.isArray(markers?.markersMap) && markers.markersMap.length === 0) {
+			delete overlay.decoratedPlayerBarRenderer;
+			report.playerBar = true;
+		} else if (targetsAutoChapterPanel(decoratedBar?.playerBarActionButton?.buttonRenderer?.command)) {
+			delete decoratedBar.playerBarActionButton;
+			delete decoratedBar.buttonType;
+			report.actionButton = true;
+		}
+		for (const endpoint of Array.isArray(data.onResponseReceivedEndpoints) ? data.onResponseReceivedEndpoints : []) {
+			const command = endpoint?.loadMarkersCommand;
+			report.entityKeys += dropEntries(command, 'entityKeys', isAutoChapterKey);
+			report.entityKeys += dropEntries(command, 'visibleOnLoadKeys', isAutoChapterKey);
+		}
+		report.mutations = dropEntries(data.frameworkUpdates?.entityBatchUpdate, 'mutations',
+			(mutation) => isAutoChapterKey(mutation?.entityKey));
+		report.panels = dropEntries(data, 'engagementPanels', isAutoChapterPanel);
+		for (const panel of data.engagementPanels) {
+			const renderer = panel?.engagementPanelSectionListRenderer;
+			const chipBar = renderer?.header?.engagementPanelTitleHeaderRenderer?.subheader?.chipBarViewModel;
+			report.chips += dropEntries(chipBar, 'chips',
+				(chip) => targetsAutoChapterPanel(chip?.chipViewModel?.tapCommand?.innertubeCommand));
+			const description = renderer?.content?.structuredDescriptionContentRenderer;
+			report.cards += dropEntries(description, 'items', (item) => targetsAutoChapterPanel(
+				item?.horizontalCardListRenderer?.header?.richListHeaderRenderer?.navigationButton?.buttonRenderer?.command
+			));
+		}
+		report.changed = Boolean(report.markers || report.panels || report.entityKeys || report.mutations
+			|| report.chips || report.cards || report.actionButton || report.playerBar);
+		return report;
+	}
+	Object.assign(core, {
+		removeAutoChapters,
+		autoChapters: Object.freeze({ PANEL_ID, MARKER_KEY, findWatchResponse, isAutoChapterKey, isAutoChapterPanel, targetsAutoChapterPanel })
+	});
+	const inNodeTests = typeof process !== 'undefined'
+		&& !!process.versions
+		&& typeof process.versions.node === 'string';
+	if (inNodeTests && typeof module !== 'undefined' && module.exports) {
+		module.exports = { removeAutoChapters, findWatchResponse, isAutoChapterKey, isAutoChapterPanel, targetsAutoChapterPanel, PANEL_ID, MARKER_KEY };
+	}
+})();
+;
 (function() {
 	'use strict';
 	var _NATIVE = (function() {
@@ -24607,6 +24715,67 @@ void 0;
 			layout.setEnabled(_bridgeGet(ENABLE_ATTR) === 'on', _bridgeGet(FLAGS_ATTR) || '');
 		}
 		_obsRegister([ENABLE_ATTR, FLAGS_ATTR], syncFromAttributes);
+		syncFromAttributes();
+	})();
+	(function installAutoChapterFilter() {
+		var removeAutoChapters = globalThis.YTKitCore && globalThis.YTKitCore.removeAutoChapters;
+		if (typeof removeAutoChapters !== 'function' || typeof document === 'undefined'
+			|| !document.documentElement || typeof JSON === 'undefined') return;
+		var ENABLE_ATTR = 'data-ytkit-hide-auto-chapters';
+		var STATUS_ATTR = 'data-ytkit-hide-auto-chapters-status';
+		var enabled = false;
+		var hookInstalled = false;
+		var originalParse = null;
+		var cleanedTotal = 0;
+		var degraded = false;
+		function writeStatus() {
+			var payload = degraded ? 'degraded'
+				: (enabled ? 'on;cleaned=' + cleanedTotal : 'off');
+			try {
+				if (_NATIVE.getAttribute(STATUS_ATTR) !== payload) _NATIVE.setAttribute(STATUS_ATTR, payload);
+			} catch (error) {
+			}
+		}
+		function applyResponse(value) {
+			if (!enabled || !value || typeof value !== 'object') return;
+			try {
+				if (removeAutoChapters(value).changed) {
+					cleanedTotal += 1;
+					writeStatus();
+				}
+			} catch (error) {
+				degraded = true;
+				writeStatus();
+			}
+		}
+		function installParseHook() {
+			if (hookInstalled) return;
+			var jsonObject = (typeof window !== 'undefined' && window.JSON) || JSON;
+			if (!jsonObject || typeof jsonObject.parse !== 'function') return;
+			originalParse = jsonObject.parse;
+			try {
+				jsonObject.parse = function() {
+					var parsed = originalParse.apply(this, arguments);
+					if (enabled) applyResponse(parsed);
+					return parsed;
+				};
+				hookInstalled = true;
+			} catch (error) {
+				originalParse = null;
+			}
+		}
+		function syncFromAttributes() {
+			var wasEnabled = enabled;
+			enabled = _bridgeGet(ENABLE_ATTR) === 'on';
+			if (enabled && !wasEnabled) {
+				installParseHook();
+				var initial = null;
+				try { initial = window.ytInitialData; } catch (error) { initial = null; }
+				applyResponse(initial);
+			}
+			writeStatus();
+		}
+		_obsRegister([ENABLE_ATTR], syncFromAttributes);
 		syncFromAttributes();
 	})();
 (function() {

@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra는 사이드 패널 페이지를 켜는 플래그를 이미 끕니다. 더 끌 플래그 이름을 한 줄에 하나씩 추가하거나, Astra의 플래그 앞에 빼기 기호를 붙여 켜 둔 채로 두세요."
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "AI 챕터 숨기기"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "YouTube가 자동으로 만든 챕터를 진행 표시줄과 챕터 패널에서 없앱니다. 크리에이터가 설명란에 작성한 챕터는 그대로 남습니다."
   }
 }

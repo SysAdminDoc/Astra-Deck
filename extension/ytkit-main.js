@@ -676,6 +676,91 @@
     })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature: hide AI chapters (data-ytkit-hide-auto-chapters)
+    // ──────────────────────────────────────────────────────────────────
+    // YouTube's auto-generated chapters ride in the watch response: a
+    // markersMap entry, an engagement panel, a chip and a description card.
+    // core/auto-chapters.js decides what goes; this wrapper owns the
+    // JSON.parse hook and the bridge, and installs nothing until the
+    // isolated world publishes 'on'.
+    //
+    // The bridge publishes at document_idle, after a hard load's inline
+    // ytInitialData has rendered, so the first video of a hard load keeps
+    // its AI markers on the bar (the isolated side hides the panel by CSS).
+    // Every navigation after that comes through the hook.
+    (function installAutoChapterFilter() {
+        var removeAutoChapters = globalThis.YTKitCore && globalThis.YTKitCore.removeAutoChapters;
+        if (typeof removeAutoChapters !== 'function' || typeof document === 'undefined'
+            || !document.documentElement || typeof JSON === 'undefined') return;
+
+        var ENABLE_ATTR = 'data-ytkit-hide-auto-chapters';
+        var STATUS_ATTR = 'data-ytkit-hide-auto-chapters-status';
+        var enabled = false;
+        var hookInstalled = false;
+        var originalParse = null;
+        var cleanedTotal = 0;
+        var degraded = false;
+
+        function writeStatus() {
+            var payload = degraded ? 'degraded'
+                : (enabled ? 'on;cleaned=' + cleanedTotal : 'off');
+            try {
+                if (_NATIVE.getAttribute(STATUS_ATTR) !== payload) _NATIVE.setAttribute(STATUS_ATTR, payload);
+            } catch (error) {
+                // reason: diagnostics must not affect the response filter
+            }
+        }
+
+        function applyResponse(value) {
+            if (!enabled || !value || typeof value !== 'object') return;
+            try {
+                if (removeAutoChapters(value).changed) {
+                    cleanedTotal += 1;
+                    writeStatus();
+                }
+            } catch (error) {
+                // A filter error must never break the page's own parse.
+                degraded = true;
+                writeStatus();
+            }
+        }
+
+        function installParseHook() {
+            if (hookInstalled) return;
+            var jsonObject = (typeof window !== 'undefined' && window.JSON) || JSON;
+            if (!jsonObject || typeof jsonObject.parse !== 'function') return;
+            originalParse = jsonObject.parse;
+            try {
+                jsonObject.parse = function() {
+                    var parsed = originalParse.apply(this, arguments);
+                    if (enabled) applyResponse(parsed);
+                    return parsed;
+                };
+                hookInstalled = true;
+            } catch (error) {
+                originalParse = null;
+            }
+        }
+
+        function syncFromAttributes() {
+            var wasEnabled = enabled;
+            enabled = _bridgeGet(ENABLE_ATTR) === 'on';
+            if (enabled && !wasEnabled) {
+                installParseHook();
+                // The page keeps its first response for back navigation, so
+                // clean that one too even though it has already rendered.
+                var initial = null;
+                try { initial = window.ytInitialData; } catch (error) { initial = null; }
+                applyResponse(initial);
+            }
+            writeStatus();
+        }
+
+        _obsRegister([ENABLE_ATTR], syncFromAttributes);
+        syncFromAttributes();
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 1: codec blocker (data-ytkit-codec)
     // ──────────────────────────────────────────────────────────────────
 (function() {

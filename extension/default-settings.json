@@ -233,6 +233,7 @@
   "stickyChat": false,
   "restoreClassicWatchLayout": false,
   "watchLayoutFlagOverrides": "",
+  "hideAutoChapters": false,
   "autoExpandDescription": false,
   "keyMoments": false,
   "scrollToPlayer": false,

@@ -48,12 +48,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 127 | `true` on every entry |
-| `store-safe` | firefox | A | 127 | omitted |
-| `chromium-store` | chromium | B | 126 | `true` on every entry |
-| `chromium-store` | firefox | B | 126 | omitted |
-| `github-full` | chromium | A | 127 | `true` on every entry |
-| `github-full` | firefox | A | 127 | omitted |
+| `store-safe` | chromium | A | 128 | `true` on every entry |
+| `store-safe` | firefox | A | 128 | omitted |
+| `chromium-store` | chromium | B | 127 | `true` on every entry |
+| `chromium-store` | firefox | B | 127 | omitted |
+| `github-full` | chromium | A | 128 | `true` on every entry |
+| `github-full` | firefox | A | 128 | omitted |
 
 #### Resource set A
 
@@ -189,6 +189,7 @@ Entry 2 resource paths:
 - `features/sticky-video/index.js`
 - `features/sticky-chat/index.js`
 - `features/classic-watch-layout/index.js`
+- `features/hide-auto-chapters/index.js`
 - `features/video-hider/index.js`
 - `features/video-notes/index.js`
 - `features/replay-chat-density/index.js`
@@ -340,6 +341,7 @@ Entry 2 resource paths:
 - `features/sticky-video/index.js`
 - `features/sticky-chat/index.js`
 - `features/classic-watch-layout/index.js`
+- `features/hide-auto-chapters/index.js`
 - `features/video-hider/index.js`
 - `features/video-notes/index.js`
 - `features/replay-chat-density/index.js`

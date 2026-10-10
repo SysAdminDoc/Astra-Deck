@@ -41,30 +41,23 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
   Complexity: L
 
-- [ ] P1 — Hide AI-generated chapters while keeping creator chapters
-  Why: YouTube is adding auto-generated chapters to videos after upload, two Control Panel
-  issues asked for a hide, it shipped there on 2026-10-08, and a Greasy Fork script that
-  does only this draws about 33 installs a day. Astra's chapter settings (`autoOpenChapters`,
-  `autoSkipChapters`, `chapterJumpButtons`, `antiTranslateChapters`) can't tell the two apart.
-  Evidence: Control Panel #342 (2026-09-30), #344 (2026-10-07), commit beb487b3 (2026-10-08)
-  `removeAutoChapters` in page.js: drops `multiMarkersPlayerBarRenderer.markersMap` entries
-  with `key == 'AUTO_CHAPTERS'` and a matching `visibleOnLoad`, `loadMarkersCommand`
-  `entityKeys`/`visibleOnLoadKeys` whose base64url decodes to contain `AUTO_CHAPTERS`,
-  `entityBatchUpdate.mutations` by the same test, and the engagement panel
-  `engagement-panel-macro-markers-auto-chapters` with its chip and description card, on
-  `next`, `get_watch` and `ytInitialData`; Greasy Fork script 598706 (updated 2026-10-08).
-  Touches: `extension/ytkit-main.js` (register on the existing `JSON.parse` hook in
-  `installFeedPrefilter` and the `ytInitialData` path next to the `ytInitialPlayerResponse`
-  definition at ~583), a new `extension/core/auto-chapters.js` decision module in the
-  `core/feed-prefilter.js` style (seven-edit core-module checklist in CLAUDE.md, plus
-  `V5_BUNDLE_MODULES` in `sync-userscript.js`), `extension/core/settings-schema.js`
-  (`hideAutoChapters`, default off), `extension/core/heatmap.js:85-88` (its `markersMap`
-  reader must still find the heatmap entry), 11 locales, README settings table.
-  Acceptance: a captured `next` response with `AUTO_CHAPTERS` markers and the auto-chapters
-  panel comes out with no auto marker, no panel, no chip and no player-bar action button,
-  while a response with only creator chapters is returned unchanged; heatmap tests pass with
-  the filter on; a positive control that drops the key test fails the fixture; the setting
-  is off by default and the userscript bundle carries the module.
+- [ ] P2 — Publish the page-world switches before YouTube's inline data on a hard load
+  Why: the isolated world publishes bridge switches from `ytkit.js` at document_idle, after a hard
+  load's inline `ytInitialData`, `ytInitialPlayerResponse` and `ytcfg` have been read. Three
+  features lose their first page to this: Hide AI Chapters (the first video keeps its AI markers
+  on the bar), Force DVR (the first live stream gets no DVR) and Classic Watch Layout (the flags
+  are already read, so only the DOM fix-up runs). Every later navigation is fine.
+  Evidence: `extension/manifest.json` (`core/bridge-token.js` is the only isolated script at
+  document_start); the hard-load note in `installAutoChapterFilter` and the Force DVR block in
+  `extension/ytkit-main.js`; CHANGELOG Unreleased, Hide AI Chapters.
+  Touches: `extension/core/bridge-token.js` or a new document_start isolated script that reads
+  those three settings from `chrome.storage.local` and publishes through the sealed channel,
+  `extension/core/bridge-channel.js`, the userscript host (GM storage is synchronous there),
+  `tests/hardening.test.js` content-script pins.
+  Acceptance: a test boots the bridge with the three switches stored as on and shows each one
+  readable by `ytkit-main.js` before a stubbed inline `ytInitialData` assignment; a headless hard
+  load of a capture with AI chapters shows no AI markers on the bar; the storage read never delays
+  `early.css` or the token; with the switches off nothing new is published.
   Complexity: M
 
 - [ ] P2 — Add the seven 2026-10-09 fixes to CHANGELOG Unreleased

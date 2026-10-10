@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra はサイドパネル型ページの元になるフラグをすでにオフにしています。さらにオフにするフラグ名を 1 行に 1 つずつ追加するか、Astra のフラグの前にマイナス記号を付けるとそのフラグはオンのままになります。"
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "AI チャプターを非表示"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "YouTube が自動で生成したチャプターを、シークバーとチャプターパネルから取り除きます。クリエイターが概要欄に書いたチャプターはそのまま残ります。"
   }
 }

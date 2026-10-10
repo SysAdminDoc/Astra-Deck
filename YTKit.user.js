@@ -379,6 +379,7 @@ const ASTRA_DECK_BUILD = {
 		"features/sticky-video/index.js",
 		"features/sticky-chat/index.js",
 		"features/classic-watch-layout/index.js",
+		"features/hide-auto-chapters/index.js",
 		"features/video-hider/index.js",
 		"features/video-notes/index.js",
 		"features/replay-chat-density/index.js",
@@ -514,6 +515,7 @@ const ASTRA_DECK_BUILD = {
 			"features/sticky-video/index.js",
 			"features/sticky-chat/index.js",
 			"features/classic-watch-layout/index.js",
+			"features/hide-auto-chapters/index.js",
 			"features/video-hider/index.js",
 			"features/video-notes/index.js",
 			"features/replay-chat-density/index.js",
@@ -559,6 +561,7 @@ const ASTRA_DECK_BUILD = {
 			"core/audio-track.js",
 			"core/feed-prefilter.js",
 			"core/classic-watch-layout.js",
+			"core/auto-chapters.js",
 			"ytkit-main.js"
 		]
 	},
@@ -3816,7 +3819,9 @@ const ASTRA_DECK_BUILD = {
 		"feature_restoreClassicWatchLayout_name": "Classic Watch Layout",
 		"feature_restoreClassicWatchLayout_desc": "Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns.",
 		"feature_watchLayoutFlagOverrides_name": "Extra Layout Flags",
-		"feature_watchLayoutFlagOverrides_desc": "Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on."
+		"feature_watchLayoutFlagOverrides_desc": "Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on.",
+		"feature_hideAutoChapters_name": "Hide AI Chapters",
+		"feature_hideAutoChapters_desc": "Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay."
 	}
 };
 

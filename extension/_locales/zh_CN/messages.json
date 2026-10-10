@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra 已经关闭了侧边面板页面背后的标志。每行添加一个标志名称以关闭更多标志，或在 Astra 的某个标志前加上减号以保持其开启。"
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "隐藏 AI 章节"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "从进度条和章节面板中移除 YouTube 自动生成的章节。创作者在说明中写的章节会保留。"
   }
 }

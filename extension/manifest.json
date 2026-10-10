@@ -115,6 +115,7 @@
         "core/audio-track.js",
         "core/feed-prefilter.js",
         "core/classic-watch-layout.js",
+        "core/auto-chapters.js",
         "ytkit-main.js"
       ],
       "run_at": "document_start",
@@ -244,6 +245,7 @@
         "features/sticky-video/index.js",
         "features/sticky-chat/index.js",
         "features/classic-watch-layout/index.js",
+        "features/hide-auto-chapters/index.js",
         "features/video-hider/index.js",
         "features/video-notes/index.js",
         "features/replay-chat-density/index.js",
@@ -415,6 +417,7 @@
         "features/sticky-video/index.js",
         "features/sticky-chat/index.js",
         "features/classic-watch-layout/index.js",
+        "features/hide-auto-chapters/index.js",
         "features/video-hider/index.js",
         "features/video-notes/index.js",
         "features/replay-chat-density/index.js",

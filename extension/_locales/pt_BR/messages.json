@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "O Astra já desativa as flags por trás da página com painel lateral. Adicione um nome de flag por linha para desativar outras, ou coloque um sinal de menos antes de uma das flags do Astra para deixá-la ativada."
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "Ocultar capítulos de IA"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "Remove os capítulos que o YouTube gera sozinho da barra de progresso e do painel de capítulos. Os capítulos que o criador escreveu na descrição continuam."
   }
 }

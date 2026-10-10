@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra désactive déjà les indicateurs derrière la page à panneau latéral. Ajoutez un nom d'indicateur par ligne pour en désactiver d'autres, ou placez un signe moins devant l'un de ceux d'Astra pour le laisser actif."
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "Masquer les chapitres IA"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "Retire les chapitres que YouTube génère lui-même de la barre de progression et du panneau des chapitres. Les chapitres que le créateur a écrits dans la description restent."
   }
 }

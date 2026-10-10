@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra disattiva già i flag dietro la pagina con pannello laterale. Aggiungi un nome di flag per riga per disattivarne altri, oppure metti un segno meno davanti a uno di quelli di Astra per lasciarlo attivo."
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "Nascondi capitoli IA"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "Rimuove i capitoli che YouTube genera da solo dalla barra di avanzamento e dal pannello dei capitoli. I capitoli scritti dal creator nella descrizione restano."
   }
 }

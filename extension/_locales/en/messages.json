@@ -9836,5 +9836,13 @@
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on.",
     "description": "Description of the editable list of extra YouTube experiment flags. Flag names stay in English."
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "Hide AI Chapters",
+    "description": "Name of the setting that removes YouTube's auto-generated (AI) video chapters."
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.",
+    "description": "Description of the setting that removes YouTube's auto-generated (AI) video chapters while keeping chapters the creator wrote."
   }
 }

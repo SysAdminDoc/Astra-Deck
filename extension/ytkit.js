@@ -4327,6 +4327,7 @@ const STORAGE_KEYS = Object.freeze({
             stickyChat: false,
             restoreClassicWatchLayout: false,
             watchLayoutFlagOverrides: '',
+            hideAutoChapters: false,
             autoExpandDescription: false,
             keyMoments: false,
             scrollToPlayer: false,
@@ -21123,6 +21124,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 destroy() {}
             }
         ]),
+        (globalThis.YTKitFeatures?.hideAutoChapters?.createHideAutoChaptersFeature?.({
+            injectStyle,
+            publishBridgeAttribute,
+            clearBridgeAttribute,
+            t
+        }) || {
+            id: 'hideAutoChapters',
+            name: t('feature_hideAutoChapters_name', 'Hide AI Chapters'),
+            description: t('feature_hideAutoChapters_desc', 'Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.'),
+            group: 'Watch Page',
+            icon: 'list',
+            init() { DebugManager.log('HideAutoChapters', 'Feature module unavailable'); },
+            destroy() {}
+        }),
         {
             id: 'autoExpandDescription',
             name: 'Auto-Expand Description',

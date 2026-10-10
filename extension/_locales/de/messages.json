@@ -9771,5 +9771,11 @@
   },
   "feature_watchLayoutFlagOverrides_desc": {
     "message": "Astra schaltet die Flags hinter der Seitenleisten-Ansicht bereits aus. Füge pro Zeile einen Flag-Namen hinzu, um weitere auszuschalten, oder setze ein Minuszeichen vor einen von Astras Flags, um ihn eingeschaltet zu lassen."
+  },
+  "feature_hideAutoChapters_name": {
+    "message": "KI-Kapitel ausblenden"
+  },
+  "feature_hideAutoChapters_desc": {
+    "message": "Entfernt die Kapitel, die YouTube selbst erzeugt, aus der Fortschrittsleiste und dem Kapitelbereich. Kapitel, die der Creator in die Beschreibung geschrieben hat, bleiben."
   }
 }
