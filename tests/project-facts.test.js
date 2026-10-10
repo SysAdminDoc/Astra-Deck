@@ -20,8 +20,9 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.locales.length, 11);
     // Buffer / Preload retired its toggle and slider (489 → 487, 305 → 303 ids).
     // Hide Thumbnail Badges added one toggle (488), the Made With AI pair two (490),
-    // Classic Watch Layout and its flag list two (492), Hide AI Chapters one (493).
-    assert.equal(facts.schemaEntries, 493);
+    // Classic Watch Layout and its flag list two (492), Hide AI Chapters one (493),
+    // Views on Their Own Line one (494).
+    assert.equal(facts.schemaEntries, 494);
     assert.equal(facts.schemaCategories, 18);
     // The runtime graph includes the semantic zero-ad fallback beside the
     // selector-backed document-start shell layer. core/feed-prefilter.js is
@@ -51,7 +52,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`493` entries', '`492` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`494` entries', '`493` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "Remove os capítulos que o YouTube gera sozinho da barra de progresso e do painel de capítulos. Os capítulos que o criador escreveu na descrição continuam."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "Visualizações em linha própria"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "Em Início e Inscrições, volta a mostrar as visualizações e o tempo desde o envio em uma linha própria abaixo do nome do canal, para que um nome de canal longo não as corte mais."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "Reprodução recuperada (tentativa {attempt} de {max})"
   },

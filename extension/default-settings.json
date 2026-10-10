@@ -39,6 +39,7 @@
   "cleanShareUrls": true,
   "videosPerRow": 0,
   "listFeedLayout": false,
+  "viewsOnSeparateLine": false,
   "quickLinkMenu": true,
   "quickLinkItems": "History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /",
   "autoMaxResolution": true,

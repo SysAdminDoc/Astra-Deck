@@ -571,7 +571,8 @@
     "commentBlockedAuthors",
     "restoreClassicWatchLayout",
     "watchLayoutFlagOverrides",
-    "hideAutoChapters"
+    "hideAutoChapters",
+    "viewsOnSeparateLine"
   ],
   "expectedAbsent": [
     "preferredQuality",

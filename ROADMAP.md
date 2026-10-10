@@ -62,22 +62,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   `normalizeBlockedChannelId`'s rules, and the three fixtures are unit-tested.
   Complexity: M
 
-- [ ] P2 — Show views on their own line on Home and Subscriptions cards
-  Why: since about 2026-09-25 YouTube puts the channel name, views and age on one row behind
-  an eye icon, so long channel names truncate the numbers. Two trackers asked and Control
-  Panel shipped an option on 2026-10-10. Astra reads the row for its filters but offers no
-  way to show the numbers.
-  Evidence: Control Panel #340 (2026-09-25) and commit 35c57575 (2026-10-10):
-  `ytd-browse:is([page-subtype="home"],[page-subtype="subscriptions"]) ytd-rich-item-renderer:not([is-slim-media]) .ytContentMetadataViewModelMetadataRow:has(> .ytContentMetadataViewModelLeadingIcon) { display: block !important; white-space: nowrap; overflow: hidden }`
-  plus hiding the verified icon in that row; ImprovedTube #4361 (2026-09-27).
-  Touches: `extension/features/home-subs-css/index.js`, `extension/core/settings-schema.js`
-  (`viewsOnSeparateLine`, feed category, default off), 11 locales, README settings table
-  via `npm run generate:settings-reference`.
-  Acceptance: with the setting on, the 2026-09 lockup fixture renders the views row as a
-  block below the channel row with the verified icon hidden; off leaves YouTube's layout;
-  the i18n gates pass for the new strings.
-  Complexity: S
-
 - [ ] P2 — Take the DeArrow Voting toggle off the panel until its write contract is verified
   Why: `deArrowVoting` (`settings-schema.js:736`, `ytkit.js` ~36454) posts to
   `https://sponsor.ajay.app/api/branding/vote/${type}` (~36499), a route that doesn't exist,

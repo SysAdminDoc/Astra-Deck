@@ -59,7 +59,7 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.97.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `493` entries across `18` categories |
+| Settings schema | `494` entries across `18` categories |
 | Runtime graph | `125` modules, including `33` peeled feature modules and `308` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
@@ -474,7 +474,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **488 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **489 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -579,7 +579,7 @@ This generated knowledgebase documents all **488 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Feeds and layout</strong>: 14 settings</summary>
+<summary><strong>Feeds and layout</strong>: 15 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -589,6 +589,7 @@ This generated knowledgebase documents all **488 user-facing settings** in the c
 | <a id="setting-hidePlaylistsHome"></a><strong>Hide Playlist Shelves</strong><br><code>hidePlaylistsHome</code> | Hide playlist sections from the homepage | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-videosPerRow"></a><strong>Videos Per Row</strong><br><code>videosPerRow</code> | Set how many video thumbnails per row (0 = dynamic based on window width) | Default: <code>0</code><br>Range: <code>0 to 8</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-listFeedLayout"></a><strong>List Feed Layout</strong><br><code>listFeedLayout</code> | Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
+| <a id="setting-viewsOnSeparateLine"></a><strong>Views on Their Own Line</strong><br><code>viewsOnSeparateLine</code> | On Home and Subscriptions, put the views and the upload age back on their own line under the channel name, so a long channel name no longer cuts them off. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.98.0</code> |
 | <a id="setting-hideMerchShelf"></a><strong>Hide Merch Shelf</strong><br><code>hideMerchShelf</code> | Remove merchandise promotions below videos | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideInfoPanels"></a><strong>Hide Info Panels</strong><br><code>hideInfoPanels</code> | Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.) | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-disableInfiniteScroll"></a><strong>Disable Infinite Scroll</strong><br><code>disableInfiniteScroll</code> | Replace infinite scroll with a "Load More" button on home, search, and subscriptions pages | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

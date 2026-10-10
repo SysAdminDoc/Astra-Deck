@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "YouTube가 자동으로 만든 챕터를 진행 표시줄과 챕터 패널에서 없앱니다. 크리에이터가 설명란에 작성한 챕터는 그대로 남습니다."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "조회수를 별도 줄에 표시"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "홈과 구독에서 조회수와 업로드 경과 시간을 채널 이름 아래 별도 줄로 다시 표시해, 긴 채널 이름 때문에 잘리지 않게 합니다."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "재생을 복구했습니다({max}회 중 {attempt}번째 시도)"
   },

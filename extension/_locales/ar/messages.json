@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "يزيل الفصول التي ينشئها YouTube تلقائيًا من شريط التقدم ولوحة الفصول. تبقى الفصول التي كتبها صاحب القناة في الوصف."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "المشاهدات في سطر مستقل"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "في الرئيسية والاشتراكات، يعيد عدد المشاهدات ووقت الرفع إلى سطر مستقل تحت اسم القناة، حتى لا يقطعها اسم قناة طويل."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "تمت استعادة التشغيل (المحاولة {attempt} من {max})"
   },

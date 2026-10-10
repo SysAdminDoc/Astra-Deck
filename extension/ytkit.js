@@ -4128,6 +4128,7 @@ const STORAGE_KEYS = Object.freeze({
             cleanShareUrls: true,
             videosPerRow: 0,                // 0 = dynamic, 3-8 = fixed columns
             listFeedLayout: false,          // thumbnail-left row layout for home, subscriptions, and search
+            viewsOnSeparateLine: false,     // Home/Subscriptions cards: views and age on their own line again
             quickLinkMenu: true,
             quickLinkItems: 'History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /',
             autoMaxResolution: true,
@@ -11002,6 +11003,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             'rows-3',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildListFeedLayoutCss && globalThis.YTKitFeatures.homeSubsCss.buildListFeedLayoutCss())
             || `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer,ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer{display:flex !important;flex-direction:column !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,ytd-browse[page-subtype="home"] yt-lockup-view-model,ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,ytd-browse[page-subtype="search"] yt-lockup-view-model{display:grid !important;grid-template-columns:minmax(180px, min(32vw, 360px)) minmax(0, 1fr) !important;gap:16px !important;}`),
+        cssFeature('viewsOnSeparateLine',
+            t('feature_viewsOnSeparateLine_name', 'Views on Their Own Line'),
+            t('feature_viewsOnSeparateLine_desc', 'On Home and Subscriptions, put the views and the upload age back on their own line under the channel name, so a long channel name no longer cuts them off.'),
+            'Home / Subscriptions',
+            'rows-3',
+            // The module is skipped when none of its gating settings is on, and
+            // the CSS is fixed when this array is built, so the fallback carries
+            // the same rules (tests/features/home-subs-css.test.js keeps them equal).
+            globalThis.YTKitFeatures?.homeSubsCss?.buildViewsOnSeparateLineCss?.()
+            || `ytd-browse:is([page-subtype="home"], [page-subtype="subscriptions"]) ytd-rich-item-renderer .ytContentMetadataViewModelMetadataRow:has(> .ytContentMetadataViewModelDelimiter + .ytContentMetadataViewModelLeadingIcon) { flex-wrap: wrap !important; } ytd-browse:is([page-subtype="home"], [page-subtype="subscriptions"]) ytd-rich-item-renderer .ytContentMetadataViewModelMetadataRow:has(> .ytContentMetadataViewModelDelimiter + .ytContentMetadataViewModelLeadingIcon) > .ytContentMetadataViewModelMetadataText:first-child { max-width: calc(100% - 20px) !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; } ytd-browse:is([page-subtype="home"], [page-subtype="subscriptions"]) ytd-rich-item-renderer .ytContentMetadataViewModelMetadataRow:has(> .ytContentMetadataViewModelDelimiter + .ytContentMetadataViewModelLeadingIcon) > .ytContentMetadataViewModelDelimiter:has(+ .ytContentMetadataViewModelLeadingIcon) { flex-basis: 100% !important; height: 0 !important; margin: 0 !important; padding: 0 !important; }`),
         {
             id: 'videosPerRow',
             name: 'Videos Per Row',

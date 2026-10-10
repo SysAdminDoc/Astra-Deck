@@ -3829,6 +3829,8 @@ const ASTRA_DECK_BUILD = {
 		"feature_watchLayoutFlagOverrides_desc": "Astra already turns off the flags behind the side-panel page. Add a flag name per line to turn off more of them, or put a minus sign in front of one of Astra's to leave it on.",
 		"feature_hideAutoChapters_name": "Hide AI Chapters",
 		"feature_hideAutoChapters_desc": "Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.",
+		"feature_viewsOnSeparateLine_name": "Views on Their Own Line",
+		"feature_viewsOnSeparateLine_desc": "On Home and Subscriptions, put the views and the upload age back on their own line under the channel name, so a long channel name no longer cuts them off.",
 		"toastPlaybackRecoveredTpl": "Playback recovered (attempt {attempt} of {max})",
 		"toastPlaylistReversed": "Playlist reversed",
 		"toastScreenshotSavedCopied": "Screenshot saved and copied to the clipboard.",

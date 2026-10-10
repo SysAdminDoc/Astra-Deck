@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "Entfernt die Kapitel, die YouTube selbst erzeugt, aus der Fortschrittsleiste und dem Kapitelbereich. Kapitel, die der Creator in die Beschreibung geschrieben hat, bleiben."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "Aufrufe in eigener Zeile"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "Zeigt Aufrufe und Alter des Videos auf Startseite und Abos wieder in einer eigenen Zeile unter dem Kanalnamen, damit ein langer Kanalname sie nicht mehr abschneidet."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "Wiedergabe wiederhergestellt (Versuch {attempt} von {max})"
   },

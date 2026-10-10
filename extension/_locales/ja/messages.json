@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "YouTube が自動で生成したチャプターを、シークバーとチャプターパネルから取り除きます。クリエイターが概要欄に書いたチャプターはそのまま残ります。"
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "視聴回数を別の行に表示"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "ホームと登録チャンネルで、視聴回数と投稿からの経過時間をチャンネル名の下の別の行に戻し、長いチャンネル名で切れないようにします。"
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "再生を復旧しました（{max} 回中 {attempt} 回目）"
   },

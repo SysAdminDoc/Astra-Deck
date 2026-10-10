@@ -9845,6 +9845,14 @@
     "message": "Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.",
     "description": "Description of the setting that removes YouTube's auto-generated (AI) video chapters while keeping chapters the creator wrote."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "Views on Their Own Line",
+    "description": "Name of the setting that puts the view count and upload age on their own line on Home and Subscriptions cards."
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "On Home and Subscriptions, put the views and the upload age back on their own line under the channel name, so a long channel name no longer cuts them off.",
+    "description": "Description of the setting that moves the view count and upload age to their own line under the channel name on Home and Subscriptions cards."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "Playback recovered (attempt {attempt} of {max})",
     "description": "Toast message; keep {attempt},{max} as written."

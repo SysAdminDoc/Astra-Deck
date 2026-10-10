@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "Retire les chapitres que YouTube génère lui-même de la barre de progression et du panneau des chapitres. Les chapitres que le créateur a écrits dans la description restent."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "Vues sur une ligne à part"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "Sur l’accueil et les abonnements, remet les vues et l’ancienneté de la vidéo sur leur propre ligne sous le nom de la chaîne, pour qu’un long nom de chaîne ne les coupe plus."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "Lecture rétablie (tentative {attempt} sur {max})"
   },

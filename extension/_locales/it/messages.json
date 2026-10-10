@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "Rimuove i capitoli che YouTube genera da solo dalla barra di avanzamento e dal pannello dei capitoli. I capitoli scritti dal creator nella descrizione restano."
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "Visualizzazioni su una riga a parte"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "In Home e Iscrizioni, riporta le visualizzazioni e la data di caricamento su una riga a parte sotto il nome del canale, così un nome di canale lungo non le taglia più."
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "Riproduzione ripristinata (tentativo {attempt} di {max})"
   },

@@ -179,6 +179,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── feed ───
     Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, min: 0, max: 8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "listFeedLayout", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
+    Object.freeze({ key: "viewsOnSeparateLine", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.98.0" }),
 
     // ─── nav ───
     Object.freeze({ key: "quickLinkMenu", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

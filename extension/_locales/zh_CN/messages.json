@@ -9778,6 +9778,12 @@
   "feature_hideAutoChapters_desc": {
     "message": "从进度条和章节面板中移除 YouTube 自动生成的章节。创作者在说明中写的章节会保留。"
   },
+  "feature_viewsOnSeparateLine_name": {
+    "message": "观看次数单独一行"
+  },
+  "feature_viewsOnSeparateLine_desc": {
+    "message": "在首页和订阅中，把观看次数和上传时间重新放到频道名称下方的单独一行，长频道名称不会再把它们截掉。"
+  },
   "toastPlaybackRecoveredTpl": {
     "message": "已恢复播放（第 {attempt} 次尝试，共 {max} 次）"
   },

@@ -1471,7 +1471,7 @@ __astraDeckRegistry["core/settings-visual-system.js"] = function (globalThis, se
 			{ labelKey: 'settingsSectionFeedToolsAutomation', fallback: 'Feed tools & automation', match: /.*/ }
 		],
 		'Home / Subscriptions': [
-			{ labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
+			{ labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|viewsOnSeparateLine|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
 			{ labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge|squareSearchBar)$/ },
 			{ labelKey: 'settingsSectionNavigation', fallback: 'Navigation', match: /^(hiddenGuideElementsManager|hideSidebar|quickLinkMenu|rssFeedLink|redirectHomeToSubs|redirectToVideosTab)$/ },
 			{ labelKey: 'settingsSectionDiscovery', fallback: 'Discovery', match: /.*/ }
@@ -12776,6 +12776,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "cleanShareUrls", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, min: 0, max: 8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "listFeedLayout", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
+	Object.freeze({ key: "viewsOnSeparateLine", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.98.0" }),
 	Object.freeze({ key: "quickLinkMenu", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "quickLinkItems", category: "nav", type: "string", maxLength: 4000, defaultValue: "History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "autoMaxResolution", category: "quality-codec", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

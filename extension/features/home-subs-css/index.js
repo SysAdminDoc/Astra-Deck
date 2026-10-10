@@ -13,7 +13,8 @@
     // Schema keys touched (all default off):
     //   hideCreateButton, hideVoiceSearch, widenSearchBar,
     //   disablePlayOnHover, fullWidthSubscriptions,
-    //   hideSubscriptionOptions, listFeedLayout, fullTitles
+    //   hideSubscriptionOptions, listFeedLayout, fullTitles,
+    //   viewsOnSeparateLine
 
     function buildHideCreateButtonCss() {
         const core = globalThis.YTKitCore;
@@ -264,6 +265,38 @@
         `;
     }
 
+    // viewsOnSeparateLine. Since 2026-09-25 Home and Subscriptions cards print
+    // the channel, the views and the age on one metadata row: channel name,
+    // badge, an empty delimiter, the eye icon, views, delimiter, age. A long
+    // channel name pushes the numbers out of the card. The row wraps at the
+    // delimiter in front of the eye icon, which becomes a full-width line of
+    // no height, and the channel name ends in an ellipsis short of the badge
+    // so the badge stays on the first line. Cards that already print views on
+    // a row of their own (channel shelves) have no delimiter before the eye
+    // icon and are left alone. Rendered and measured 2026-10-10 on a live
+    // channel shelf card rebuilt into the one-row form.
+    function buildViewsOnSeparateLineCss() {
+        const row = 'ytd-browse:is([page-subtype="home"], [page-subtype="subscriptions"]) ytd-rich-item-renderer'
+            + ' .ytContentMetadataViewModelMetadataRow:has(> .ytContentMetadataViewModelDelimiter + .ytContentMetadataViewModelLeadingIcon)';
+        return `
+            ${row} {
+                flex-wrap: wrap !important;
+            }
+            ${row} > .ytContentMetadataViewModelMetadataText:first-child {
+                max-width: calc(100% - 20px) !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
+            }
+            ${row} > .ytContentMetadataViewModelDelimiter:has(+ .ytContentMetadataViewModelLeadingIcon) {
+                flex-basis: 100% !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        `;
+    }
+
     function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
         const factory = globalThis.YTKitCore
             && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
@@ -292,6 +325,7 @@
         createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss, ['subscriptions']),
         createLifecycleSpec('listFeedLayout',           'feed',         buildListFeedLayoutCss,          ['home', 'subscriptions', 'search']),
         createLifecycleSpec('fullTitles',              'feed',         buildFullTitlesCss,              ['all']),
+        createLifecycleSpec('viewsOnSeparateLine',     'feed',         buildViewsOnSeparateLineCss,     ['home', 'subscriptions']),
     ]);
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -304,6 +338,7 @@
         buildHideSubscriptionOptionsCss,
         buildListFeedLayoutCss,
         buildFullTitlesCss,
+        buildViewsOnSeparateLineCss,
         LIFECYCLE_SPECS
     });
 
@@ -332,6 +367,7 @@
             buildHideSubscriptionOptionsCss,
             buildListFeedLayoutCss,
             buildFullTitlesCss,
+            buildViewsOnSeparateLineCss,
             LIFECYCLE_SPECS
         };
     }

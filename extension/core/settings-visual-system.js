@@ -128,7 +128,7 @@
             { labelKey: 'settingsSectionFeedToolsAutomation', fallback: 'Feed tools & automation', match: /.*/ }
         ],
         'Home / Subscriptions': [
-            { labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
+            { labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|viewsOnSeparateLine|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
             { labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge|squareSearchBar)$/ },
             { labelKey: 'settingsSectionNavigation', fallback: 'Navigation', match: /^(hiddenGuideElementsManager|hideSidebar|quickLinkMenu|rssFeedLink|redirectHomeToSubs|redirectToVideosTab)$/ },
             { labelKey: 'settingsSectionDiscovery', fallback: 'Discovery', match: /.*/ }

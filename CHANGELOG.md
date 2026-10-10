@@ -12,6 +12,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Hide AI Chapters** (Watch Page, off by default) takes out the chapters YouTube now generates on its own. They're gone from the progress bar, the chapters panel, the chip that switches to them and the chapters card in the description. Chapters the creator wrote in the description stay, and so does the most-replayed heatmap. It works on the data YouTube sends before the page is built, so even the first video on a fresh page load comes up clean.
 
+- **Views on Their Own Line** (Home / Subscriptions, off by default) puts the views and the upload age back under the channel name. Since late September YouTube has printed all three on one row, so a long channel name pushed the numbers out of the card. With this on, a long name ends in an ellipsis instead and the verified badge stays right next to it.
+
 - The userscript now tells you when it's updated. The next time you open its settings panel after an update, a short note under the header says which version you're on and links the changelog. Dismiss it or open the changelog and it won't show again until the next update. Nothing is fetched to show it, and there's no pop-up on page load. The extension keeps its banner in the toolbar popup.
 
 ### Changed

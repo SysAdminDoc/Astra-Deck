@@ -5827,11 +5827,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Hide Thumbnail Badges adds one toggle (488).
     // Made With AI Label and its lookup switch add two (490).
     // Classic Watch Layout and its flag list add two (492).
-    // Hide AI Chapters adds one (493).
+    // Hide AI Chapters adds one (493), Views on Their Own Line one (494).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 493,
-        'SETTINGS_SCHEMA must cover all 493 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 494,
+        'SETTINGS_SCHEMA must cover all 494 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -10527,7 +10527,7 @@ test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifec
         { path: 'extension/features/blue-light-filter/index.js',  ids: ['blueLightFilter'] },
         { path: 'extension/features/theme-css/index.js',          ids: ['customProgressBarColor', 'customSelectionColor', 'grayscaleThumbnails', 'forceDarkEverywhere', 'themeAccentColor', 'compactUnfixedHeader', 'hideVideoEndContent'] },
         { path: 'extension/features/wave-8-css/index.js',         ids: ['hideNotificationButton', 'noFrostedGlass', 'hideLatestPosts', 'disableMiniPlayer', 'nyanCatProgressBar'] },
-        { path: 'extension/features/home-subs-css/index.js',      ids: ['hideCreateButton', 'hideVoiceSearch', 'widenSearchBar', 'disablePlayOnHover', 'fullWidthSubscriptions', 'hideSubscriptionOptions'] },
+        { path: 'extension/features/home-subs-css/index.js',      ids: ['hideCreateButton', 'hideVoiceSearch', 'widenSearchBar', 'disablePlayOnHover', 'fullWidthSubscriptions', 'hideSubscriptionOptions', 'viewsOnSeparateLine'] },
     ];
     for (const { path: relPath, ids } of features) {
         const src = fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
