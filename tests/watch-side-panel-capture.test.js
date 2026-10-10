@@ -31,16 +31,20 @@ function parseChain(chain, extraAttributes = {}) {
     });
 }
 
-// Compound selectors joined by descendant combinators: tag, #id, .class and
-// [attr="value"]. Captured chains carry no classes, so a class never matches;
-// :not() is ignored, which only widens tag matches the tests don't rely on.
+// Compound selectors joined by descendant combinators: tag, #id, .class,
+// [attr="value"] and :not([attr="value"]) / :not([attr]). Captured chains
+// carry no classes, so a class never matches; any other :not() is ignored,
+// which only widens tag matches the tests don't rely on.
 function parseCompound(text) {
+    const notAttrs = [...text.matchAll(/:not\(\[([\w-]+)(?:="([^"]*)")?\]\)/g)]
+        .map(([, name, value]) => [name, value]);
     const bare = text.replace(/:not\([^)]*\)/g, '');
     return {
         tag: bare.match(/^[a-z][a-z0-9-]*/)?.[0] || null,
         id: bare.match(/#([\w-]+)/)?.[1] || null,
         hasClass: /\.[\w-]/.test(bare.replace(/\[[^\]]*\]/g, '')),
-        attrs: [...bare.matchAll(/\[([\w-]+)="([^"]*)"\]/g)].map(([, name, value]) => [name, value])
+        attrs: [...bare.matchAll(/\[([\w-]+)="([^"]*)"\]/g)].map(([, name, value]) => [name, value]),
+        notAttrs
     };
 }
 
@@ -49,7 +53,10 @@ function compoundMatches(compound, element) {
     if (!compound.tag && !compound.id && compound.attrs.length === 0) return false;
     if (compound.tag && compound.tag !== element.tag) return false;
     if (compound.id && compound.id !== element.id) return false;
-    return compound.attrs.every(([name, value]) => element.attrs[name] === value);
+    const excluded = compound.notAttrs.some(([name, value]) => (value === undefined
+        ? Object.prototype.hasOwnProperty.call(element.attrs, name)
+        : element.attrs[name] === value));
+    return !excluded && compound.attrs.every(([name, value]) => element.attrs[name] === value);
 }
 
 function selectorMatchesChain(selector, chain) {
@@ -114,6 +121,13 @@ test('Hide Related Videos keeps the right column while YouTube has a panel open 
     assert.equal(exemptions.some((selector) => selectorMatchesChain(selector, closedPanel)), false,
         'a closed panel does not');
     assert.ok(exemptions.includes('ytd-live-chat-frame:not([hidden])'), 'live chat still keeps it');
+    // YouTube's ad panel (engagement-panel-ads, present on the captured
+    // pages) opened in the column must not hold it open by itself.
+    const adChain = capture.chains.commentsPanel.replace('target-id=engagement-panel-comments-section', 'target-id=engagement-panel-ads');
+    assert.notEqual(adChain, capture.chains.commentsPanel);
+    const openAdPanel = parseChain(adChain, { visibility: 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED' });
+    assert.equal(exemptions.some((selector) => selectorMatchesChain(selector, openAdPanel)), false,
+        'an open ad panel does not');
 });
 
 test('Focused Mode keeps the comments panel on the side-panel page', () => {

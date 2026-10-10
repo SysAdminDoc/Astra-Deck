@@ -11382,9 +11382,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // the video in the one-column layout, and under the player on the
         // 2026-10 side-panel page. The right column only collapses while it
         // holds nothing worth keeping; an open YouTube panel (comments on the
-        // side-panel page, a transcript anywhere) counts.
+        // side-panel page, a transcript anywhere) counts, YouTube's ad panel
+        // doesn't.
         cssFeature('hideRelatedVideos', 'Hide Related Videos', 'Remove the related videos panel on watch pages', 'Watch Page', 'panel-right',
-            `ytd-watch-flexy #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]), .ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
+            `ytd-watch-flexy #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]), .ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"]:not([target-id="engagement-panel-ads"]))) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
         {
             id: 'expandVideoWidth',
             name: 'Expand Video Width',

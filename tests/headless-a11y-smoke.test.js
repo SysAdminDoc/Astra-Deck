@@ -107,7 +107,7 @@ test('rendered accessibility fixes remain pinned at their root causes', () => {
         'the side panel must loosen compact heading metrics before 320px reflow');
     assert.match(
         ytkit,
-        /#secondary:not\(:has\(ytd-live-chat-frame:not\(\[hidden\]\), \.ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer\[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"\]\)\)/,
+        /#secondary:not\(:has\(ytd-live-chat-frame:not\(\[hidden\]\), \.ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer\[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"\]:not\(\[target-id="engagement-panel-ads"\]\)\)\)/,
         'related-video hiding must preserve transcript and bookmark surfaces and an open YouTube panel'
     );
 });
