@@ -34,6 +34,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - A fresh install of the userscript from the main branch didn't run at all. Between releases that file can be newer than the release code it loads, and it stopped as soon as it asked for a feature the release didn't have yet. Now it loads everything the release has and skips the rest, the way the extension skips a feature that fails to load.
 
+- The **Subscription Groups** import summary counted every group you had, not the ones in the file. Merging a one-group file into twenty groups said it imported twenty. It now counts what the file brought in.
+
 - **Remove Shorts**, which is on by default, missed the Shorts shelf YouTube started showing in October 2026, a grid of Shorts under its own header. It's hidden now wherever the older shelves were, and search results still show Shorts as before. A grid of regular videos is left alone. Remove Shorts could also hide far more than a Short: when a Short sat directly in a list of results, it hid the whole list. Now only that Short, or its shelf, goes.
 
 - **Hide Related Videos**, which is on by default, only hid recommendations in the right-hand column. On the side-panel watch page YouTube started testing in October 2026, and in the one-column layout of a narrow window, they sit under the video and stayed visible. They're hidden wherever they show up now. It also used to hide the whole right-hand column even while YouTube had a panel open in it, which took away comments on the new page and YouTube's own transcript panel everywhere. An open panel keeps the column now (YouTube's ad panel doesn't count), and **Focused Mode** keeps the comments panel the same way.

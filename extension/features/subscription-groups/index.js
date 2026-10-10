@@ -3221,11 +3221,14 @@
             _commitImportedGroups(groups, label, meta = {}, options = {}) {
                 const previous = this._readGroups();
                 const replace = options.mode === 'replace';
+                const incomingIds = Object.keys(groups);
                 groups = replace ? groups : this._mergeImportedGroups(previous, groups);
                 this._writeGroups(groups);
                 const ids = Object.keys(groups);
                 const previousIds = Object.keys(previous);
-                const count = ids.length;
+                // The summary counts the groups the file brought in, not
+                // every group the merge left behind.
+                const count = incomingIds.filter(id => Object.prototype.hasOwnProperty.call(groups, id)).length;
                 const createdGroups = ids.filter(id => !Object.prototype.hasOwnProperty.call(previous, id)).length;
                 const updatedGroups = ids.filter(id => (
                     Object.prototype.hasOwnProperty.call(previous, id) &&

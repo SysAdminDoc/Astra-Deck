@@ -267,7 +267,7 @@ test('JSON import reports skipped groups, skipped channels, duplicates, and merg
 
     assert.deepEqual(result, {
         ok: true,
-        importedGroups: 2,
+        importedGroups: 1,
         createdGroups: 1,
         updatedGroups: 0,
         removedGroups: 0,
@@ -466,6 +466,8 @@ test('an export lands in the open group, with a localized header, duplicates and
     assert.equal(groups.science.name, 'Science', 'the open group keeps its name');
     assert.equal(groups.science.sortMode, 'popular');
     assert.deepEqual(groups.music.channelIds, []);
+    assert.equal(result.importedGroups, 1, 'the summary counts the group the file filled, not every group');
+    assert.match(toasts[0][0], /^Imported 1 subscription group from Google Takeout \(0 new, 1 updated, 2 channels\)\./);
     assert.match(toasts[0][0], /skipped 2 duplicate channels/);
 
     toasts[0][2].action.onClick();
