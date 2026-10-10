@@ -77,6 +77,11 @@
 
     const NAVIGATION_EVENTS = Object.freeze(['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated']);
     const LATE_RETRY_DELAYS = Object.freeze([500, 1500]);
+    // Comments arrive as a property (ytd-comments.data), which no observer
+    // sees, so after a fix the panels are re-checked on a short schedule
+    // until each one's section under the video is showing (about 8 s).
+    const SETTLE_DELAYS = Object.freeze([250, 500, 1000, 2000, 4000]);
+    const INLINE_DESCRIPTION_SELECTOR = 'ytd-text-inline-expander, #description-inline-expander';
 
     /**
      * Read the user's field. One flag per line (commas and spaces also
@@ -139,6 +144,7 @@
         let observedFlexy = null;
         let lastStatus = null;
         let lastFlagText = null;
+        let settleRun = 0;
         const wrappedConfigs = new WeakSet();
         // Side panels this closes once their inline section shows.
         const pendingPanels = new Set();
@@ -255,8 +261,11 @@
                 const comments = flexy.querySelector?.('ytd-comments#comments');
                 return Boolean(comments && !comments.hidden);
             }
+            // Un-hiding is not enough: the description has to have been built
+            // under the title, or closing its panel would leave none at all.
             const metadata = flexy.querySelector?.('ytd-watch-metadata');
-            return Boolean(metadata && !metadata.hasAttribute?.('hide-description'));
+            return Boolean(metadata && !metadata.hasAttribute?.('hide-description')
+                && metadata.querySelector?.(INLINE_DESCRIPTION_SELECTOR));
         }
 
         function closeReplacedPanels(flexy) {
@@ -267,6 +276,24 @@
                 panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
                 pendingPanels.delete(targetId);
             }
+        }
+
+        // Bounded: a section that never shows leaves its panel open, which
+        // is YouTube's own layout for it.
+        function settlePanels() {
+            const runId = ++settleRun;
+            let attempt = 0;
+            const step = () => {
+                if (runId !== settleRun || !enabled || !pendingPanels.size) return;
+                const flexy = documentRef?.querySelector?.('ytd-watch-flexy');
+                if (flexy) {
+                    showDescription(flexy);
+                    showComments(flexy);
+                    closeReplacedPanels(flexy);
+                }
+                if (pendingPanels.size && attempt < SETTLE_DELAYS.length) schedule(step, SETTLE_DELAYS[attempt++]);
+            };
+            if (pendingPanels.size) schedule(step, SETTLE_DELAYS[attempt++]);
         }
 
         function observe(flexy) {
@@ -333,6 +360,7 @@
             pendingPanels.add(COMMENTS_PANEL);
             pendingPanels.add(DESCRIPTION_PANEL);
             closeReplacedPanels(flexy);
+            settlePanels();
             // The player keeps the side-panel width until something resizes it.
             schedule(dispatchResize, 100);
             report('applied');

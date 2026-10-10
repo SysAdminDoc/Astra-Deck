@@ -110,7 +110,7 @@ function matches(element, selector) {
     });
 }
 
-function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
+function createWatchPage({ sidePanel = true, twoColumns = true, descriptionBuilt = true } = {}) {
     const html = createElement('html');
     const flexy = createElement('ytd-watch-flexy', {
         attributes: sidePanel
@@ -127,6 +127,9 @@ function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
     const metadata = createElement('ytd-watch-metadata', {
         attributes: sidePanel ? { 'hide-description': '' } : {}
     });
+    // The description under the title, as YouTube builds it.
+    const inlineDescription = createElement('ytd-text-inline-expander', { id: 'description-inline-expander' });
+    if (descriptionBuilt) metadata.appendChild(inlineDescription);
     const comments = createElement('ytd-comments', { id: 'comments' });
     const commentsPanel = createElement('ytd-engagement-panel-section-list-renderer', {
         attributes: { 'target-id': 'engagement-panel-comments-section', visibility: 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED' }
@@ -177,7 +180,7 @@ function createWatchPage({ sidePanel = true, twoColumns = true } = {}) {
         dispatch: (type) => { for (const fn of [...(listeners.get(type) || [])]) fn({ type }); },
         listenerCount: () => [...listeners.values()].reduce((sum, set) => sum + set.size, 0)
     };
-    return { documentRef, flexy, related, secondaryInner, metadata, comments, commentsPanel, descriptionPanel, otherPanel };
+    return { documentRef, flexy, related, secondaryInner, metadata, inlineDescription, comments, commentsPanel, descriptionPanel, otherPanel };
 }
 
 function loadCore(context) {
@@ -400,8 +403,10 @@ test('on a hard load each side panel stays open until its section under the vide
     assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED',
         'no comments under the video yet, so the panel keeps them on screen');
 
+    // ytd-comments.data is a property, so no observer sees it land. The
+    // re-check schedule does, with no navigation and no run() from outside.
     page.comments.data = { contents: [] };
-    ctx.layout.run();
+    ctx.flushTimers();
     assert.equal(page.comments.hidden, false);
     assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
 
@@ -415,6 +420,37 @@ test('on a hard load each side panel stays open until its section under the vide
     page.metadata.setAttribute('hide-description', '');
     ctx.layout.run();
     assert.equal(page.metadata.hasAttribute('hide-description'), false);
+});
+
+test('the description panel stays open until YouTube has built the description under the title', () => {
+    const page = createWatchPage({ sidePanel: true, descriptionBuilt: false });
+    const ctx = createLayout({ ytcfg: createYtcfg({}), page });
+    ctx.layout.setEnabled(true, '');
+    assert.equal(page.metadata.hasAttribute('hide-description'), false, 'un-hidden at once');
+    assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED',
+        'un-hiding is not enough: nothing is under the title yet, so the panel keeps the description');
+    assert.equal(page.commentsPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
+
+    page.metadata.appendChild(page.inlineDescription);
+    ctx.flushTimers();
+    assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN',
+        'once it is built, the re-check closes the panel');
+});
+
+test('a description that never arrives leaves its panel open and the re-checks stop', () => {
+    const page = createWatchPage({ sidePanel: true, descriptionBuilt: false });
+    const ctx = createLayout({ ytcfg: createYtcfg({}), page });
+    ctx.layout.setEnabled(true, '');
+    ctx.flushTimers();
+    assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+    // The schedule is bounded: flushTimers drained it, and a description
+    // built after it ran out is left for the next navigation to settle.
+    page.metadata.appendChild(page.inlineDescription);
+    ctx.flushTimers();
+    assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED');
+    ctx.layout.run();
+    assert.equal(page.descriptionPanel.getAttribute('visibility'), 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN',
+        'the next pass still closes it');
 });
 
 test('a flag line naming an inherited method never lands on the flag store', () => {

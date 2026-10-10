@@ -23883,6 +23883,8 @@ void 0;
 	const OBSERVED_TAGS = new Set(['ytd-comments', 'ytd-watch-metadata']);
 	const NAVIGATION_EVENTS = Object.freeze(['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated']);
 	const LATE_RETRY_DELAYS = Object.freeze([500, 1500]);
+	const SETTLE_DELAYS = Object.freeze([250, 500, 1000, 2000, 4000]);
+	const INLINE_DESCRIPTION_SELECTOR = 'ytd-text-inline-expander, #description-inline-expander';
 	function parseFlagOverrides(value) {
 		const add = [];
 		const remove = [];
@@ -23935,6 +23937,7 @@ void 0;
 		let observedFlexy = null;
 		let lastStatus = null;
 		let lastFlagText = null;
+		let settleRun = 0;
 		const wrappedConfigs = new WeakSet();
 		const pendingPanels = new Set();
 		const overridden = [];
@@ -24029,7 +24032,8 @@ void 0;
 				return Boolean(comments && !comments.hidden);
 			}
 			const metadata = flexy.querySelector?.('ytd-watch-metadata');
-			return Boolean(metadata && !metadata.hasAttribute?.('hide-description'));
+			return Boolean(metadata && !metadata.hasAttribute?.('hide-description')
+				&& metadata.querySelector?.(INLINE_DESCRIPTION_SELECTOR));
 		}
 		function closeReplacedPanels(flexy) {
 			if (!pendingPanels.size) return;
@@ -24039,6 +24043,21 @@ void 0;
 				panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
 				pendingPanels.delete(targetId);
 			}
+		}
+		function settlePanels() {
+			const runId = ++settleRun;
+			let attempt = 0;
+			const step = () => {
+				if (runId !== settleRun || !enabled || !pendingPanels.size) return;
+				const flexy = documentRef?.querySelector?.('ytd-watch-flexy');
+				if (flexy) {
+					showDescription(flexy);
+					showComments(flexy);
+					closeReplacedPanels(flexy);
+				}
+				if (pendingPanels.size && attempt < SETTLE_DELAYS.length) schedule(step, SETTLE_DELAYS[attempt++]);
+			};
+			if (pendingPanels.size) schedule(step, SETTLE_DELAYS[attempt++]);
 		}
 		function observe(flexy) {
 			if (!MutationObserverCtor || !flexy || observedFlexy === flexy) return;
@@ -24094,6 +24113,7 @@ void 0;
 			pendingPanels.add(COMMENTS_PANEL);
 			pendingPanels.add(DESCRIPTION_PANEL);
 			closeReplacedPanels(flexy);
+			settlePanels();
 			schedule(dispatchResize, 100);
 			report('applied');
 			return true;
