@@ -18564,7 +18564,7 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 		let current = '';
 		let currentBytes = 0;
 		for (const character of String(text)) {
-			const characterBytes = utf8Bytes(character);
+			const characterBytes = jsonBytes(character) - 2;
 			if (current && currentBytes + characterBytes > maxBytes) {
 				chunks.push(current);
 				current = '';
@@ -23872,12 +23872,15 @@ void 0;
 		'split-scroll',
 		'show-fixed-side-menu',
 		'using-fixed-panel',
-		'hidden'
+		'hidden',
+		'hide-description'
 	]);
-	const SIDE_PANEL_SELECTOR = [
-		'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]',
-		'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-structured-description"]'
-	].join(',');
+	const COMMENTS_PANEL = 'engagement-panel-comments-section';
+	const DESCRIPTION_PANEL = 'engagement-panel-structured-description';
+	const SIDE_PANEL_SELECTOR = [COMMENTS_PANEL, DESCRIPTION_PANEL]
+		.map((id) => `ytd-engagement-panel-section-list-renderer[target-id="${id}"]`)
+		.join(',');
+	const OBSERVED_TAGS = new Set(['ytd-comments', 'ytd-watch-metadata']);
 	const NAVIGATION_EVENTS = Object.freeze(['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated']);
 	const LATE_RETRY_DELAYS = Object.freeze([500, 1500]);
 	function parseFlagOverrides(value) {
@@ -23931,7 +23934,9 @@ void 0;
 		let observer = null;
 		let observedFlexy = null;
 		let lastStatus = null;
+		let lastFlagText = null;
 		const wrappedConfigs = new WeakSet();
+		const pendingPanels = new Set();
 		const overridden = [];
 		function report(state) {
 			if (state === lastStatus) return;
@@ -23959,6 +23964,7 @@ void 0;
 			for (const store of flagStores()) {
 				let record = overridden.find((entry) => entry.store === store);
 				for (const flag of flags) {
+					if (!Object.prototype.hasOwnProperty.call(store, flag)) continue;
 					let value;
 					try { value = store[flag]; } catch (error) { continue; }
 					if (!value) continue;
@@ -24011,13 +24017,36 @@ void 0;
 				schedule(dispatchResize, 100);
 			}
 		}
+		function showDescription(flexy) {
+			const metadata = flexy.querySelector?.('ytd-watch-metadata');
+			if (!metadata) return;
+			try { if (metadata.hideDescription) metadata.hideDescription = false; } catch (error) {   }
+			try { metadata.removeAttribute?.('hide-description'); } catch (error) {   }
+		}
+		function inlineReplacementShown(flexy, targetId) {
+			if (targetId === COMMENTS_PANEL) {
+				const comments = flexy.querySelector?.('ytd-comments#comments');
+				return Boolean(comments && !comments.hidden);
+			}
+			const metadata = flexy.querySelector?.('ytd-watch-metadata');
+			return Boolean(metadata && !metadata.hasAttribute?.('hide-description'));
+		}
+		function closeReplacedPanels(flexy) {
+			if (!pendingPanels.size) return;
+			for (const panel of documentRef.querySelectorAll?.(SIDE_PANEL_SELECTOR) || []) {
+				const targetId = panel.getAttribute?.('target-id');
+				if (!pendingPanels.has(targetId) || !inlineReplacementShown(flexy, targetId)) continue;
+				panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
+				pendingPanels.delete(targetId);
+			}
+		}
 		function observe(flexy) {
 			if (!MutationObserverCtor || !flexy || observedFlexy === flexy) return;
 			observer?.disconnect();
 			observer = new MutationObserverCtor((records) => {
 				for (const record of records) {
 					const target = record.target;
-					if (target === flexy || String(target?.tagName || '').toLowerCase() === 'ytd-comments') {
+					if (target === flexy || OBSERVED_TAGS.has(String(target?.tagName || '').toLowerCase())) {
 						queueRun();
 						return;
 					}
@@ -24031,7 +24060,11 @@ void 0;
 			const flexy = documentRef.querySelector?.('ytd-watch-flexy');
 			if (!flexy) return false;
 			observe(flexy);
-			if (switched) showComments(flexy);
+			if (switched) {
+				showDescription(flexy);
+				showComments(flexy);
+				closeReplacedPanels(flexy);
+			}
 			if (!isSidePanelLayout(flexy)) return false;
 			switched = true;
 			try {
@@ -24056,10 +24089,11 @@ void 0;
 			if (flexy.isTwoColumns_ && related && secondaryInner && !secondaryInner.contains(related)) {
 				secondaryInner.appendChild(related);
 			}
-			for (const panel of documentRef.querySelectorAll?.(SIDE_PANEL_SELECTOR) || []) {
-				panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
-			}
+			showDescription(flexy);
 			showComments(flexy);
+			pendingPanels.add(COMMENTS_PANEL);
+			pendingPanels.add(DESCRIPTION_PANEL);
+			closeReplacedPanels(flexy);
 			schedule(dispatchResize, 100);
 			report('applied');
 			return true;
@@ -24099,14 +24133,19 @@ void 0;
 				detach();
 				restoreFlags();
 				switched = false;
+				pendingPanels.clear();
+				lastFlagText = null;
 				report('off');
 				return;
 			}
+			const text = String(flagText ?? '');
+			if (enabled && text === lastFlagText) return;
+			lastFlagText = text;
 			const firstEnable = !enabled;
 			enabled = true;
 			if (firstEnable) attach();
 			restoreFlags();
-			flags = resolveFlags(flagText);
+			flags = resolveFlags(text);
 			patchFlags();
 			if (!fixWatchFlexy() && lastStatus !== 'applied') report('waiting');
 		}

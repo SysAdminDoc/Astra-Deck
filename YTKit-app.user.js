@@ -6774,7 +6774,7 @@ const STORAGE_KEYS = Object.freeze({
 			}
 		},
 		cssFeature('hideRelatedVideos', 'Hide Related Videos', 'Remove the related videos panel on watch pages', 'Watch Page', 'panel-right',
-			`ytd-watch-flexy #related{display:none!important}ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]),.ytkit-bookmarks-container,#ytkit-transcript-panel,ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])){display:none!important}ytd-watch-flexy #primary{max-width:none!important}`, { isParent: true }),
+			`ytd-watch-flexy #related{display:none!important}ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]),.ytkit-bookmarks-container,#ytkit-transcript-panel,ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"]:not([target-id="engagement-panel-ads"]))){display:none!important}ytd-watch-flexy #primary{max-width:none!important}`, { isParent: true }),
 		{
 			id: 'expandVideoWidth',
 			name: 'Expand Video Width',

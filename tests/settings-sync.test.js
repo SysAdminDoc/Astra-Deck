@@ -135,6 +135,21 @@ test('settings sync builds a schema-validated, secret-scrubbed diff within chunk
         assert.ok(Buffer.byteLength(chunk, 'utf8') <= sync.SYNC_CHUNK_BYTES);
     }
 
+    // Chunks are cut by their stored (escaped) size, so text that is mostly
+    // quotes, control characters or emoji still fits the per-item quota.
+    for (const text of ['"'.repeat(20000), '\\"\u0001'.repeat(5000), '\u{1F600}"'.repeat(4000)]) {
+        const chunks = sync.splitUtf8(text);
+        assert.equal(chunks.join(''), text, 'chunks rejoin to the exact text');
+        assert.ok(chunks.length > 1);
+        chunks.forEach((chunk, index) => {
+            const stored = Buffer.byteLength(JSON.stringify(chunk), 'utf8') - 2;
+            assert.ok(stored <= sync.SYNC_CHUNK_BYTES, `a chunk stores as ${stored} bytes`);
+            if (index < chunks.length - 1) {
+                assert.ok(stored > sync.SYNC_CHUNK_BYTES - 8, 'every full chunk is filled close to the limit');
+            }
+        });
+    }
+
     assert.throws(() => sync.validateSyncPayload({
         ...info.payload,
         settings: {

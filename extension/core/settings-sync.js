@@ -132,12 +132,16 @@
         return (hash >>> 0).toString(16).padStart(8, '0');
     }
 
+    // Cuts the payload into chunks of at most maxBytes as stored. Each chunk
+    // is stored as a JSON string, so a character costs what it costs escaped
+    // (a quote or backslash two bytes, a control character up to six), and a
+    // quote-heavy chunk can't grow past the 8 KiB per-item quota.
     function splitUtf8(text, maxBytes = SYNC_CHUNK_BYTES) {
         const chunks = [];
         let current = '';
         let currentBytes = 0;
         for (const character of String(text)) {
-            const characterBytes = utf8Bytes(character);
+            const characterBytes = jsonBytes(character) - 2;
             if (current && currentBytes + characterBytes > maxBytes) {
                 chunks.push(current);
                 current = '';
