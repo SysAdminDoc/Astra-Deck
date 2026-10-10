@@ -138,18 +138,18 @@ test('an empty key in the menu command removes the saved one', async () => {
 
 // Between releases the loader on main pins the last release's libraries. When
 // main had two feature modules v4.97.0's libraries didn't carry, every fresh
-// install stopped at the library check and ran nothing. Feature modules are
-// optional now; what the host boots on is not.
-test('a library without a newer feature module still boots, and lists what it skipped', async () => {
-    const newer = [build.optionalModules.find((modulePath) => modulePath.startsWith('features/'))];
-    assert.ok(newer[0], 'the build lists optional modules');
+// install stopped at the library check and ran nothing. Feature modules and
+// the early switches are optional now; what the host boots on is not.
+test('a library without a newer feature module or the early switches still boots, and lists what it skipped', async () => {
+    const newer = [build.optionalModules.find((modulePath) => modulePath.startsWith('features/')), ...build.modules.earlyStart];
+    assert.ok(newer[0] && build.modules.earlyStart.length, 'the build lists optional modules');
     const run = captureAdapters(mainSource, build, {}, { omit: newer });
     await settle(run.drain);
     assert.notEqual(run.state.phase, 'failed');
     assert.deepEqual([...run.state.missingOptionalModules].sort(), [...newer].sort());
     assert.ok(run.captured.content, 'the app still ran');
     assert.deepEqual(run.state.errors.map((entry) => entry.stage)
-        .filter((stage) => stage === 'library check'), [], 'skipping is not an error');
+        .filter((stage) => stage === 'library check' || stage === 'early switches'), [], 'skipping is not an error');
 });
 
 test('a library without a module the host boots on stops at the library check', () => {
@@ -157,4 +157,24 @@ test('a library without a module the host boots on stops at the library check', 
     assert.equal(run.state.phase, 'failed');
     assert.match(run.state.errors.map((entry) => entry.message).join('\n'), /did not load \(missing ytkit\.js\)/);
     assert.equal(run.captured.content, undefined);
+});
+
+// The manifest runs core/early-switches.js at document_start after the MAIN
+// group, and it imports the channel module. The host has no import(), so it
+// runs the channel from the registry first.
+test('the early switches run at document start after the page world, with the channel module first', async () => {
+    const order = [];
+    const record = (name) => () => { order.push(name); };
+    const run = captureAdapters(mainSource, build, {}, {
+        modules: {
+            [build.modules.bridgeToken]: record('token'),
+            [build.modules.bridgeChannel]: record('channel'),
+            ...Object.fromEntries(build.modules.earlyStart.map((modulePath) => [modulePath, record(modulePath)])),
+            [build.modules.app]: record('app'),
+        },
+    });
+    assert.deepEqual(order, ['token', 'channel', ...build.modules.earlyStart], 'all of it before the idle runtime');
+    await settle(run.drain);
+    assert.equal(order.at(-1), 'app');
+    assert.deepEqual(build.modules.earlyStart, ['core/early-switches.js']);
 });

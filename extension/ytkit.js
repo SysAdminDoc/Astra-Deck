@@ -49595,6 +49595,9 @@ html:not([dark]) .ytkit-sb-channel-chip {
         if (isSafeMode) {
             console.log('%c[YTKit] SAFE MODE — All features disabled. ytkit.unsafe() to exit.', 'color:#f97316;font-weight:bold;font-size:16px;');
             showToast(t('toastSafeMode', 'Safe mode: every feature is off. Run ytkit.unsafe() in the console to leave it.'), '#f97316', { duration: 10 });
+            // core/early-switches.js may have switched page-world features on
+            // at document_start; safe mode keeps none of them.
+            globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.(() => false);
         } else {
             // TIER 0: Critical — CSS-only, Theater Split.
             //         Must run synchronously before any page content paints.
@@ -49675,16 +49678,30 @@ html:not([dark]) .ytkit-sb-channel-chip {
                 else normal.push(f);
             });
 
+            // core/early-switches.js may have switched page-world features on
+            // at document_start. Once both tiers have run, every feature that
+            // was going to start has published its own switches; the early
+            // ones no feature confirmed are dropped. Both, because a
+            // background tab runs the idle tier while animation frames wait.
+            let pendingInitTiers = 2;
+            const settleEarlySwitches = () => {
+                pendingInitTiers -= 1;
+                if (pendingInitTiers > 0) return;
+                globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => getFeatureById(featureId)?._initialized === true);
+            };
+
             // Tier 1: after first paint
             requestAnimationFrame(() => {
                 normal.forEach(f => { initFeature(f); if (f._initialized) normalLog.push(f.id); });
                 DebugManager.log('Init', `v${YTKIT_VERSION} | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
+                settleEarlySwitches();
             });
 
             // Tier 2: after page is interactive
             const lazyInit = () => {
                 lazy.forEach(f => { initFeature(f); if (f._initialized) lazyLog.push(f.id); });
                 if (lazyLog.length) DebugManager.log('Init', `Lazy loaded: ${lazyLog.join(', ')}`);
+                settleEarlySwitches();
             };
             if (typeof requestIdleCallback === 'function') {
                 requestIdleCallback(lazyInit, { timeout: 2000 });

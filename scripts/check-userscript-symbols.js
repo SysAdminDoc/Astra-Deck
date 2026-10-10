@@ -160,7 +160,7 @@ async function main() {
     }
 
     const groups = {
-        content: [build.modules.bridgeToken, ...build.modules.foundation, ...build.modules.features, build.modules.app, ...build.modules.liveChat],
+        content: [build.modules.bridgeToken, ...(build.modules.earlyStart || []), ...build.modules.foundation, ...build.modules.features, build.modules.app, ...build.modules.liveChat],
         background: [build.modules.background, ...build.modules.backgroundCore],
     };
     // Positive control for the tests: `content:runtime.madeUp` adds a reference

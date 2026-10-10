@@ -371,6 +371,7 @@ const ASTRA_DECK_BUILD = {
 		"@main-world"
 	],
 	"optionalModules": [
+		"core/early-switches.js",
 		"features/element-zapper/index.js",
 		"features/subtitles/index.js",
 		"features/video-filters/index.js",
@@ -405,6 +406,10 @@ const ASTRA_DECK_BUILD = {
 	],
 	"modules": {
 		"bridgeToken": "core/bridge-token.js",
+		"bridgeChannel": "core/bridge-channel.js",
+		"earlyStart": [
+			"core/early-switches.js"
+		],
 		"foundation": [
 			"core/browser-api.js",
 			"core/injection-guard.js",
@@ -5486,6 +5491,19 @@ const ASTRA_DECK_BUILD = {
             injectMainWorld();
         } catch (error) {
             recordError('page-world scripts', error);
+        }
+        // The early page-world switches, after the page world as in the
+        // manifest. The extension imports the channel module there; here it
+        // runs from the registry first, and the runtime's later run of it
+        // keeps this writer.
+        const earlyModules = (BUILD.modules.earlyStart || []).filter((path) => typeof registry[path] === 'function');
+        if (earlyModules.length) {
+            try {
+                runModule(BUILD.modules.bridgeChannel, contentScope);
+                for (const modulePath of earlyModules) runModule(modulePath, contentScope);
+            } catch (error) {
+                recordError('early switches', error);
+            }
         }
     });
 

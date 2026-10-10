@@ -387,13 +387,55 @@
             for (const delay of LATE_RETRY_DELAYS) schedule(run, delay);
         }
 
+        // On a hard load core/early-switches.js can turn this on before
+        // YouTube's head scripts have created ytcfg. Every script the parser
+        // runs adds nodes, so the first mutation batch after ytcfg exists
+        // wraps its set() and patches the flags, long before the app reads
+        // them. Gone at DOMContentLoaded: a page with no ytcfg by then never
+        // gets one.
+        let configWatch = null;
+        function stopConfigWatch() {
+            configWatch?.disconnect();
+            configWatch = null;
+            documentRef?.removeEventListener?.('DOMContentLoaded', lastConfigLook);
+        }
+
+        function configReady() {
+            let cfg;
+            try { cfg = root.ytcfg; } catch (error) { return false; }
+            if (!cfg) return false;
+            stopConfigWatch();
+            if (!enabled) return true;
+            wrapConfigSet();
+            patchFlags();
+            return true;
+        }
+
+        function lastConfigLook() {
+            if (!configReady()) stopConfigWatch();
+        }
+
+        function watchForConfig() {
+            if (configWatch || !MutationObserverCtor) return;
+            const target = documentRef?.documentElement;
+            if (!target) return;
+            let cfg;
+            try { cfg = root.ytcfg; } catch (error) { return; }
+            if (cfg) return;
+            configWatch = new MutationObserverCtor(() => { configReady(); });
+            configWatch.observe(target, { childList: true, subtree: true });
+            documentRef.addEventListener?.('DOMContentLoaded', lastConfigLook);
+        }
+
         function attach() {
             wrapConfigSet();
+            watchForConfig();
             for (const type of NAVIGATION_EVENTS) documentRef?.addEventListener?.(type, handleNavigation);
         }
 
         function detach() {
             for (const type of NAVIGATION_EVENTS) documentRef?.removeEventListener?.(type, handleNavigation);
+            stopConfigWatch();
             observer?.disconnect();
             observer = null;
             observedFlexy = null;

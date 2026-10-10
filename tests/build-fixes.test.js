@@ -39,14 +39,16 @@ test('ISOLATED content_scripts blocks keep normal pages and live chat isolated',
         && Array.isArray(block.js)
         && block.js.length > 0
     );
-    assert.equal(isolatedJsBlocks.length, 3,
-        'expected three ISOLATED content_scripts blocks with js bundles');
+    assert.equal(isolatedJsBlocks.length, 4,
+        'expected four ISOLATED content_scripts blocks with js bundles');
     const normal = isolatedJsBlocks.find((block) => runtimeModules(block).includes('ytkit.js'));
     const chat = isolatedJsBlocks.find((block) => block.js.includes('live-chat.js'));
     const bootstrap = isolatedJsBlocks.find((block) => block.js.includes('core/bridge-token.js'));
+    const earlySwitches = isolatedJsBlocks.find((block) => block.js.includes('core/early-switches.js'));
     assert.ok(normal, 'normal pages must retain the runtime module catalogue');
     assert.ok(chat, 'live chat must use the dedicated entry');
     assert.ok(bootstrap, 'the bridge token has to be minted somewhere');
+    assert.ok(earlySwitches, 'the page-world switches a hard load needs have their own entry');
 
     // The token block is the reason the MAIN-world bridge can tell its own
     // side from the page, and the ordering is what makes it work: it has to
@@ -65,6 +67,16 @@ test('ISOLATED content_scripts blocks keep normal pages and live chat isolated',
     assert.deepEqual(bootstrap.matches, mainBlock.matches,
         'a page the bridge runs on with no token is a page its features are dead on');
     assert.deepEqual(bootstrap.exclude_matches, mainBlock.exclude_matches);
+    // The early switches publish through the bridge the MAIN entry builds, so
+    // they come after it, on the same pages, and stay one file: the channel
+    // module comes in by import(), since naming it here would take it away
+    // from the MAIN entry.
+    assert.equal(earlySwitches.run_at, 'document_start');
+    assert.deepEqual(earlySwitches.js, ['core/early-switches.js']);
+    assert.ok(blocks.indexOf(earlySwitches) > blocks.indexOf(mainBlock));
+    assert.ok(blocks.indexOf(earlySwitches) < blocks.indexOf(normal), 'before the runtime it hands its switches to');
+    assert.deepEqual(earlySwitches.matches, mainBlock.matches);
+    assert.deepEqual(earlySwitches.exclude_matches, mainBlock.exclude_matches);
     assert.ok(!chat.js.includes('ytkit.js'), 'live chat must not load the normal-page monolith');
     assert.deepEqual(normal.js, ['runtime-bootstrap.js'],
         'normal pages must inject only the thin runtime bootstrap statically');

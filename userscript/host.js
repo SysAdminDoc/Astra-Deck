@@ -1617,6 +1617,19 @@
         } catch (error) {
             recordError('page-world scripts', error);
         }
+        // The early page-world switches, after the page world as in the
+        // manifest. The extension imports the channel module there; here it
+        // runs from the registry first, and the runtime's later run of it
+        // keeps this writer.
+        const earlyModules = (BUILD.modules.earlyStart || []).filter((path) => typeof registry[path] === 'function');
+        if (earlyModules.length) {
+            try {
+                runModule(BUILD.modules.bridgeChannel, contentScope);
+                for (const modulePath of earlyModules) runModule(modulePath, contentScope);
+            } catch (error) {
+                recordError('early switches', error);
+            }
+        }
     });
 
     registerMenu();

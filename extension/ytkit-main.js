@@ -684,10 +684,12 @@
     // JSON.parse hook and the bridge, and installs nothing until the
     // isolated world publishes 'on'.
     //
-    // The bridge publishes at document_idle, after a hard load's inline
-    // ytInitialData has rendered, so the first video of a hard load keeps
-    // its AI markers on the bar (the isolated side hides the panel by CSS).
-    // Every navigation after that comes through the hook.
+    // On a hard load core/early-switches.js publishes the switch as soon as
+    // storage answers, usually before YouTube assigns its inline
+    // ytInitialData. That assignment is then caught by a one-shot setter and
+    // cleaned before the app reads it. A switch that lands after the
+    // assignment cleans the object in place instead. Every navigation after
+    // that comes through the JSON.parse hook.
     (function installAutoChapterFilter() {
         var removeAutoChapters = globalThis.YTKitCore && globalThis.YTKitCore.removeAutoChapters;
         if (typeof removeAutoChapters !== 'function' || typeof document === 'undefined'
@@ -743,6 +745,46 @@
             }
         }
 
+        // Only while the page hasn't assigned ytInitialData yet. A `var`
+        // assignment in an inline script goes through an own accessor on
+        // window, which hands the property back as plain data on first use,
+        // so the page owns it from then on. Anything already there, including
+        // another script's accessor, is left alone.
+        var initialSetterInstalled = false;
+        function installInitialDataSetter() {
+            if (initialSetterInstalled || typeof window === 'undefined') return;
+            var descriptor;
+            try {
+                descriptor = Object.getOwnPropertyDescriptor(window, 'ytInitialData');
+            } catch (error) {
+                return;
+            }
+            if (descriptor) return;
+            try {
+                Object.defineProperty(window, 'ytInitialData', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() { return undefined; },
+                    set: function(value) {
+                        try {
+                            Object.defineProperty(window, 'ytInitialData', {
+                                configurable: true,
+                                enumerable: true,
+                                writable: true,
+                                value: value
+                            });
+                        } catch (error) {
+                            // reason: the cleanup below still runs on the value itself
+                        }
+                        if (enabled) applyResponse(value);
+                    }
+                });
+                initialSetterInstalled = true;
+            } catch (error) {
+                // reason: the JSON.parse hook and the in-place cleanup still apply
+            }
+        }
+
         function syncFromAttributes() {
             var wasEnabled = enabled;
             enabled = _bridgeGet(ENABLE_ATTR) === 'on';
@@ -750,10 +792,11 @@
                 degraded = false;
                 installParseHook();
                 // The page keeps its first response for back navigation, so
-                // clean that one too even though it has already rendered.
+                // clean that one too, whether or not it has rendered yet.
                 var initial = null;
                 try { initial = window.ytInitialData; } catch (error) { initial = null; }
-                applyResponse(initial);
+                if (initial && typeof initial === 'object') applyResponse(initial);
+                else installInitialDataSetter();
             }
             writeStatus();
         }

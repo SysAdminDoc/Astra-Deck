@@ -8215,8 +8215,12 @@ test('v4.20.0 userscript host runs the extension files in the extension order', 
     const earlyIsolated = manifest.content_scripts.find((entry) =>
         entry.world !== 'MAIN' && entry.run_at === 'document_start' && entry !== liveChat);
     assert.equal(modules.bridgeToken, earlyIsolated.js[0], 'the bridge token runs at document start');
+    const earlySwitches = manifest.content_scripts.find((entry, index) => index > manifest.content_scripts.indexOf(mainWorld)
+        && entry.world !== 'MAIN' && entry.run_at === 'document_start' && entry !== liveChat);
+    assert.deepEqual(modules.earlyStart, earlySwitches.js, 'the early page-world switches run after the page world');
+    assert.equal(modules.bridgeChannel, 'core/bridge-channel.js');
 
-    const imported = /importScripts\(\s*\.\.\.\[([\s\S]*?)\]\s*\.map\(/.exec(read('background.js'));
+    const imported =/importScripts\(\s*\.\.\.\[([\s\S]*?)\]\s*\.map\(/.exec(read('background.js'));
     assert.ok(imported, 'background.js must load its core through importScripts');
     assert.deepEqual(modules.backgroundCore, [...imported[1].matchAll(/'([^']+)'/g)].map((match) => match[1]),
         'the worker core loads in the order background.js imports it');

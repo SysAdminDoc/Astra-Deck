@@ -46,6 +46,133 @@ __astraDeckRegistry["core/bridge-token.js"] = function (globalThis, self, window
 	}
 })();
 };
+__astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes) {
+'use strict';
+(function () {
+	'use strict';
+	var root = typeof globalThis !== 'undefined' ? globalThis : this;
+	var core = root.YTKitCore || (root.YTKitCore = {});
+	if (core.earlyBridgeSwitches) return;
+	var SETTINGS_KEY = 'ytSuiteSettings';
+	var SAFE_MODE_KEY = 'ytkit_safe_mode';
+	var CHANNEL_MODULE = 'core/bridge-channel.js';
+	var FLAG_PATTERN = /^[A-Za-z0-9_,\s-]*$/;
+	var MAX_FLAG_TEXT = 4000;
+	var SWITCHES = Object.freeze([
+		Object.freeze({ featureId: 'forceDvr', name: 'data-ytkit-force-dvr' }),
+		Object.freeze({ featureId: 'hideAutoChapters', name: 'data-ytkit-hide-auto-chapters' }),
+		Object.freeze({
+			featureId: 'restoreClassicWatchLayout',
+			name: 'data-ytkit-classic-watch-layout',
+			flagsKey: 'watchLayoutFlagOverrides',
+			flagsName: 'data-ytkit-classic-watch-layout-flags'
+		})
+	]);
+	function isWatchPath(pathname) {
+		var path = String(pathname || '');
+		return path === '/watch' || path.indexOf('/live/') === 0;
+	}
+	function isSafeModeUrl(search) {
+		return /[?&]ytkit=safe(?:&|$)/.test(String(search || ''));
+	}
+	function normalizeFlagText(value) {
+		if (typeof value !== 'string' || value.length > MAX_FLAG_TEXT || !FLAG_PATTERN.test(value)) return '';
+		return value.trim();
+	}
+	function planEarlySwitches(settings) {
+		var plan = [];
+		if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return plan;
+		for (var i = 0; i < SWITCHES.length; i += 1) {
+			var entry = SWITCHES[i];
+			if (settings[entry.featureId] !== true) continue;
+			if (entry.flagsName) {
+				var text = normalizeFlagText(settings[entry.flagsKey]);
+				if (text) plan.push({ name: entry.flagsName, value: text, featureId: entry.featureId });
+			}
+			plan.push({ name: entry.name, value: 'on', featureId: entry.featureId });
+		}
+		return plan;
+	}
+	var published = [];
+	var settled = false;
+	function publish(plan) {
+		if (settled || !plan.length || typeof core.publishBridgeAttribute !== 'function') return 0;
+		if (typeof core.getBridgeWriter !== 'function' || !core.getBridgeWriter()) return 0;
+		for (var i = 0; i < plan.length; i += 1) {
+			core.publishBridgeAttribute(plan[i].name, plan[i].value);
+			published.push({ name: plan[i].name, featureId: plan[i].featureId });
+		}
+		return plan.length;
+	}
+	function settle(isActive) {
+		if (settled) return 0;
+		settled = true;
+		var cleared = 0;
+		for (var i = 0; i < published.length; i += 1) {
+			var keep = false;
+			try {
+				keep = typeof isActive === 'function' && isActive(published[i].featureId) === true;
+			} catch (error) {
+				keep = false;
+			}
+			if (keep || typeof core.clearBridgeAttribute !== 'function') continue;
+			core.clearBridgeAttribute(published[i].name);
+			cleared += 1;
+		}
+		published = [];
+		return cleared;
+	}
+	function loadChannel(api) {
+		if (typeof core.publishBridgeAttribute === 'function') return Promise.resolve();
+		var getURL = api && api.runtime && api.runtime.getURL;
+		if (typeof getURL !== 'function') return Promise.reject(new Error('no runtime.getURL'));
+		return import(getURL.call(api.runtime, CHANNEL_MODULE));
+	}
+	function start(options) {
+		var opts = options || {};
+		var location = opts.location || root.location;
+		if (!location || !isWatchPath(location.pathname) || isSafeModeUrl(location.search)) {
+			return Promise.resolve(0);
+		}
+		var api = opts.api || root.chrome || root.browser;
+		var storage = api && api.storage && api.storage.local;
+		if (!storage || typeof storage.get !== 'function') return Promise.resolve(0);
+		var read;
+		try {
+			read = Promise.resolve(storage.get([SETTINGS_KEY, SAFE_MODE_KEY]));
+		} catch (error) {
+			return Promise.resolve(0);
+		}
+		return Promise.all([read, loadChannel(api)]).then(function (results) {
+			if (settled || root.__ytkitRuntimeBootstrap) return 0;
+			var stored = results[0] || {};
+			if (stored[SAFE_MODE_KEY] === true) return 0;
+			return publish(planEarlySwitches(stored[SETTINGS_KEY]));
+		}).catch(function () {
+			return 0;
+		});
+	}
+	var ready = start();
+	core.earlyBridgeSwitches = {
+		SWITCHES: SWITCHES,
+		planEarlySwitches: planEarlySwitches,
+		isWatchPath: isWatchPath,
+		settle: settle,
+		start: start,
+		ready: ready,
+		get published() {
+			return published.map(function (entry) { return { name: entry.name, featureId: entry.featureId }; });
+		},
+		get settled() { return settled; }
+	};
+	var inNodeTests = typeof process !== 'undefined'
+		&& !!process.versions
+		&& typeof process.versions.node === 'string';
+	if (inNodeTests && typeof module !== 'undefined' && module.exports) {
+		module.exports = core.earlyBridgeSwitches;
+	}
+})();
+};
 __astraDeckRegistry["core/browser-api.js"] = function (globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes) {
 'use strict';
 (() => {
@@ -24135,12 +24262,44 @@ void 0;
 			run();
 			for (const delay of LATE_RETRY_DELAYS) schedule(run, delay);
 		}
+		let configWatch = null;
+		function stopConfigWatch() {
+			configWatch?.disconnect();
+			configWatch = null;
+			documentRef?.removeEventListener?.('DOMContentLoaded', lastConfigLook);
+		}
+		function configReady() {
+			let cfg;
+			try { cfg = root.ytcfg; } catch (error) { return false; }
+			if (!cfg) return false;
+			stopConfigWatch();
+			if (!enabled) return true;
+			wrapConfigSet();
+			patchFlags();
+			return true;
+		}
+		function lastConfigLook() {
+			if (!configReady()) stopConfigWatch();
+		}
+		function watchForConfig() {
+			if (configWatch || !MutationObserverCtor) return;
+			const target = documentRef?.documentElement;
+			if (!target) return;
+			let cfg;
+			try { cfg = root.ytcfg; } catch (error) { return; }
+			if (cfg) return;
+			configWatch = new MutationObserverCtor(() => { configReady(); });
+			configWatch.observe(target, { childList: true, subtree: true });
+			documentRef.addEventListener?.('DOMContentLoaded', lastConfigLook);
+		}
 		function attach() {
 			wrapConfigSet();
+			watchForConfig();
 			for (const type of NAVIGATION_EVENTS) documentRef?.addEventListener?.(type, handleNavigation);
 		}
 		function detach() {
 			for (const type of NAVIGATION_EVENTS) documentRef?.removeEventListener?.(type, handleNavigation);
+			stopConfigWatch();
 			observer?.disconnect();
 			observer = null;
 			observedFlexy = null;
@@ -24823,6 +24982,38 @@ void 0;
 				originalParse = null;
 			}
 		}
+		var initialSetterInstalled = false;
+		function installInitialDataSetter() {
+			if (initialSetterInstalled || typeof window === 'undefined') return;
+			var descriptor;
+			try {
+				descriptor = Object.getOwnPropertyDescriptor(window, 'ytInitialData');
+			} catch (error) {
+				return;
+			}
+			if (descriptor) return;
+			try {
+				Object.defineProperty(window, 'ytInitialData', {
+					configurable: true,
+					enumerable: true,
+					get: function() { return undefined; },
+					set: function(value) {
+						try {
+							Object.defineProperty(window, 'ytInitialData', {
+								configurable: true,
+								enumerable: true,
+								writable: true,
+								value: value
+							});
+						} catch (error) {
+						}
+						if (enabled) applyResponse(value);
+					}
+				});
+				initialSetterInstalled = true;
+			} catch (error) {
+			}
+		}
 		function syncFromAttributes() {
 			var wasEnabled = enabled;
 			enabled = _bridgeGet(ENABLE_ATTR) === 'on';
@@ -24831,7 +25022,8 @@ void 0;
 				installParseHook();
 				var initial = null;
 				try { initial = window.ytInitialData; } catch (error) { initial = null; }
-				applyResponse(initial);
+				if (initial && typeof initial === 'object') applyResponse(initial);
+				else installInitialDataSetter();
 			}
 			writeStatus();
 		}

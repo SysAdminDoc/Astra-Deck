@@ -6,9 +6,10 @@
     // The work happens in the page world: core/auto-chapters.js takes the
     // auto-generated chapters out of each watch response before YouTube
     // renders it, reached through the sealed bridge. This half publishes the
-    // switch, and hides the AI chapters panel with CSS for the one case the
-    // response filter can't reach, the first video of a hard load (the bridge
-    // only publishes once the page has already rendered it).
+    // switch, and hides the AI chapters panel with CSS as a backstop for a
+    // response the filter didn't reach. On a hard load core/early-switches.js
+    // publishes the switch before the inline data; when storage answers too
+    // late for that, the panel CSS is what the first video gets.
     //
     // Creator chapters live in a different panel
     // (engagement-panel-macro-markers-description-chapters) and are never

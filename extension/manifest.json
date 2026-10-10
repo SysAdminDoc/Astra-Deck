@@ -134,6 +134,23 @@
         "https://*.youtube.com/live_chat*"
       ],
       "js": [
+        "core/early-switches.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.youtube-nocookie.com/*",
+        "https://youtu.be/*"
+      ],
+      "exclude_matches": [
+        "https://m.youtube.com/*",
+        "https://music.youtube.com/*",
+        "https://studio.youtube.com/*",
+        "https://*.youtube.com/live_chat*"
+      ],
+      "js": [
         "runtime-bootstrap.js"
       ],
       "x-ytkit-runtime-modules": [

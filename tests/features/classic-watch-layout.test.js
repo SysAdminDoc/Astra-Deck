@@ -316,6 +316,90 @@ test('a later ytcfg.set that brings the flags back is overridden before anything
     assert.equal(ytcfg.get('EXPERIMENT_FLAGS').web_watch_split_scroll, false, 'the two-argument form too');
 });
 
+// On a hard load core/early-switches.js turns this on before YouTube's head
+// scripts have made ytcfg.
+function createEarlyLayout() {
+    const watchers = [];
+    class FakeObserver {
+        constructor(callback) { this.callback = callback; this.active = false; this.options = null; watchers.push(this); }
+        observe(target, options) { this.active = true; this.target = target; this.options = options; }
+        disconnect() { this.active = false; }
+    }
+    const listeners = new Map();
+    const documentRef = {
+        documentElement: { nodeType: 1 },
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener: (type, fn) => {
+            if (!listeners.has(type)) listeners.set(type, new Set());
+            listeners.get(type).add(fn);
+        },
+        removeEventListener: (type, fn) => listeners.get(type)?.delete(fn),
+        dispatch: (type) => { for (const fn of [...(listeners.get(type) || [])]) fn({ type }); },
+        listening: (type) => (listeners.get(type)?.size || 0) > 0
+    };
+    const context = { YTKitCore: {} };
+    context.globalThis = context;
+    const layout = loadCore(context)({
+        root: context,
+        document: documentRef,
+        setTimeout: () => 0,
+        requestAnimationFrame: (fn) => fn(),
+        MutationObserver: FakeObserver,
+        Event: class { constructor(type) { this.type = type; } }
+    });
+    return { layout, context, documentRef, watchers };
+}
+
+test('turned on before ytcfg exists, it patches the flags the moment ytcfg turns up, then stops watching', () => {
+    const { layout, context, documentRef, watchers } = createEarlyLayout();
+    layout.setEnabled(true, 'my_extra_flag');
+    const watch = watchers[0];
+    assert.ok(watch?.active, 'no ytcfg yet, so it watches the parser');
+    assert.equal(watch.target, documentRef.documentElement);
+    assert.deepEqual(watch.options, { childList: true, subtree: true });
+    assert.equal(documentRef.listening('DOMContentLoaded'), true);
+
+    watch.callback([]);
+    assert.equal(watch.active, true, 'a node before ytcfg changes nothing');
+
+    // YouTube's head script makes ytcfg; the parser adds the next node.
+    context.ytcfg = createYtcfg({});
+    watch.callback([]);
+    assert.equal(watch.active, false);
+    assert.equal(documentRef.listening('DOMContentLoaded'), false);
+
+    // The flags arrive in a later inline script, through the wrapped set().
+    context.ytcfg.set({ EXPERIMENT_FLAGS: { ...sidePanelFlags(), my_extra_flag: true } });
+    const flags = context.ytcfg.get('EXPERIMENT_FLAGS');
+    for (const flag of [...DEFAULT_FLAGS, 'my_extra_flag']) assert.equal(flags[flag], false, flag);
+    assert.equal(flags.some_unrelated_flag, true);
+});
+
+test('a ytcfg that is already there needs no watch, and a page without one stops it at DOMContentLoaded', () => {
+    const ready = createEarlyLayout();
+    ready.context.ytcfg = createYtcfg(sidePanelFlags());
+    ready.layout.setEnabled(true, '');
+    assert.deepEqual(ready.watchers, [], 'no watch, and no flexy to observe on this bare page');
+    assert.equal(ready.documentRef.listening('DOMContentLoaded'), false);
+    for (const flag of DEFAULT_FLAGS) assert.equal(ready.context.ytcfg.get('EXPERIMENT_FLAGS')[flag], false, flag);
+
+    const never = createEarlyLayout();
+    never.layout.setEnabled(true, '');
+    never.documentRef.dispatch('DOMContentLoaded');
+    assert.equal(never.watchers[0].active, false);
+    assert.equal(never.documentRef.listening('DOMContentLoaded'), false);
+
+    const off = createEarlyLayout();
+    off.layout.setEnabled(true, '');
+    off.layout.setEnabled(false, '');
+    assert.equal(off.watchers[0].active, false, 'turning it off ends the watch');
+    assert.equal(off.documentRef.listening('DOMContentLoaded'), false);
+    off.context.ytcfg = createYtcfg(sidePanelFlags());
+    off.watchers[0].callback([]);
+    assert.equal(off.context.ytcfg.get('EXPERIMENT_FLAGS').web_watch_split_scroll, true, 'and a late ytcfg is left alone');
+});
+
 test('with the switch off nothing is touched: no wrapper, no flag change, no listener', () => {
     const ytcfg = createYtcfg(sidePanelFlags());
     const originalSet = ytcfg.set;

@@ -31189,6 +31189,7 @@ const STORAGE_KEYS = Object.freeze({
 		if (isSafeMode) {
 			console.log('%c[YTKit] SAFE MODE — All features disabled. ytkit.unsafe() to exit.', 'color:#f97316;font-weight:bold;font-size:16px;');
 			showToast(t('toastSafeMode', 'Safe mode: every feature is off. Run ytkit.unsafe() in the console to leave it.'), '#f97316', { duration: 10 });
+			globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.(() => false);
 		} else {
 			const CRITICAL_IDS = new Set([
 				'uiStyleManager',
@@ -31251,13 +31252,21 @@ const STORAGE_KEYS = Object.freeze({
 				else if (LAZY_IDS.has(f.id)) lazy.push(f);
 				else normal.push(f);
 			});
+			let pendingInitTiers = 2;
+			const settleEarlySwitches = () => {
+				pendingInitTiers -= 1;
+				if (pendingInitTiers > 0) return;
+				globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => getFeatureById(featureId)?._initialized === true);
+			};
 			requestAnimationFrame(() => {
 				normal.forEach(f => { initFeature(f); if (f._initialized) normalLog.push(f.id); });
 				DebugManager.log('Init', `v${YTKIT_VERSION} | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
+				settleEarlySwitches();
 			});
 			const lazyInit = () => {
 				lazy.forEach(f => { initFeature(f); if (f._initialized) lazyLog.push(f.id); });
 				if (lazyLog.length) DebugManager.log('Init', `Lazy loaded: ${lazyLog.join(', ')}`);
+				settleEarlySwitches();
 			};
 			if (typeof requestIdleCallback === 'function') {
 				requestIdleCallback(lazyInit, { timeout: 2000 });

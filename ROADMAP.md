@@ -41,25 +41,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
   Complexity: L
 
-- [ ] P2 — Publish the page-world switches before YouTube's inline data on a hard load
-  Why: the isolated world publishes bridge switches from `ytkit.js` at document_idle, after a hard
-  load's inline `ytInitialData`, `ytInitialPlayerResponse` and `ytcfg` have been read. Three
-  features lose their first page to this: Hide AI Chapters (the first video keeps its AI markers
-  on the bar), Force DVR (the first live stream gets no DVR) and Classic Watch Layout (the flags
-  are already read, so only the DOM fix-up runs). Every later navigation is fine.
-  Evidence: `extension/manifest.json` (`core/bridge-token.js` is the only isolated script at
-  document_start); the hard-load note in `installAutoChapterFilter` and the Force DVR block in
-  `extension/ytkit-main.js`; CHANGELOG Unreleased, Hide AI Chapters.
-  Touches: `extension/core/bridge-token.js` or a new document_start isolated script that reads
-  those three settings from `chrome.storage.local` and publishes through the sealed channel,
-  `extension/core/bridge-channel.js`, the userscript host (GM storage is synchronous there),
-  `tests/hardening.test.js` content-script pins.
-  Acceptance: a test boots the bridge with the three switches stored as on and shows each one
-  readable by `ytkit-main.js` before a stubbed inline `ytInitialData` assignment; a headless hard
-  load of a capture with AI chapters shows no AI markers on the bar; the storage read never delays
-  `early.css` or the token; with the switches off nothing new is published.
-  Complexity: M
-
 - [ ] P2 — Import subscriptions from Google Takeout and NewPipe into Subscription Groups
   Why: Subscription Groups imports only its own JSON and OPML
   (`extension/features/subscription-groups/index.js` ~622, picker `accept`

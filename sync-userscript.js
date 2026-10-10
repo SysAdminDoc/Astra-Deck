@@ -736,11 +736,19 @@ function readBuildPlan(repoRoot = REPO_ROOT) {
     const isLiveChatGroup = (group) => (group.matches || []).some((match) => match.includes('/live_chat'));
     const mainGroup = groups.find((group) => group.world === 'MAIN');
     const runtimeGroup = groups.find((group) => Array.isArray(group['x-ytkit-runtime-modules']));
-    const startGroup = groups.find((group) => group.world !== 'MAIN' && group.run_at === 'document_start' && !isLiveChatGroup(group));
+    const isEarlyIsolatedGroup = (group) => group.world !== 'MAIN' && group.run_at === 'document_start' && !isLiveChatGroup(group);
+    const startGroup = groups.find(isEarlyIsolatedGroup);
+    // The early page-world switches (core/early-switches.js): ISOLATED,
+    // document_start, after the MAIN group.
+    const earlyGroup = groups.find((group, index) => index > groups.indexOf(mainGroup) && isEarlyIsolatedGroup(group));
     const liveChatGroup = groups.find(isLiveChatGroup);
-    if (!mainGroup || !runtimeGroup || !startGroup || !liveChatGroup) {
-        throw new Error('manifest.json no longer has the four content-script groups the userscript host mirrors');
+    if (!mainGroup || !runtimeGroup || !startGroup || !earlyGroup || !liveChatGroup) {
+        throw new Error('manifest.json no longer has the five content-script groups the userscript host mirrors');
     }
+    if (groups.indexOf(startGroup) > groups.indexOf(mainGroup)) {
+        throw new Error('The bridge token group must come before the MAIN group');
+    }
+    const bridgeChannel = 'core/bridge-channel.js';
     const runtimeModules = runtimeGroup['x-ytkit-runtime-modules'];
     if (runtimeModules.at(-1) !== 'ytkit.js') throw new Error('ytkit.js must stay the last runtime module');
     const firstFeature = runtimeModules.findIndex((modulePath) => modulePath.startsWith('features/'));
@@ -749,6 +757,7 @@ function readBuildPlan(repoRoot = REPO_ROOT) {
     const features = runtimeModules.slice(firstFeature, -1).filter((modulePath) => modulePath !== criticalFeature);
     if (!runtimeModules.includes(criticalFeature)) throw new Error(`Runtime modules must include ${criticalFeature}`);
     if (startGroup.js?.length !== 1) throw new Error('The document_start ISOLATED group must hold exactly core/bridge-token.js');
+    if (!foundation.includes(bridgeChannel)) throw new Error(`Runtime modules must include ${bridgeChannel}`);
 
     const background = manifest.background?.service_worker;
     const backgroundSource = readText(repoRoot, `extension/${background}`);
@@ -765,6 +774,7 @@ function readBuildPlan(repoRoot = REPO_ROOT) {
 
     const coreFiles = unique([
         ...startGroup.js,
+        ...earlyGroup.js,
         ...foundation.filter((modulePath) => modulePath !== criticalFeature),
         ...backgroundCore,
         ...liveChat,
@@ -776,6 +786,10 @@ function readBuildPlan(repoRoot = REPO_ROOT) {
         mainWorld: mainGroup.js,
         bridgeToken: startGroup.js[0],
         earlyCss: startGroup.css || [],
+        // In the extension early-switches.js imports the channel module; the
+        // host runs it from the registry first instead.
+        bridgeChannel,
+        earlyStart: earlyGroup.js,
         liveChat,
         liveChatCss: liveChatGroup.css || [],
         foundation,
@@ -896,9 +910,9 @@ function buildHostData(plan, version, repoRoot = REPO_ROOT) {
     const messages = flattenMessages(JSON.parse(readText(repoRoot, `extension/_locales/${defaultLocale}/messages.json`)));
     // Between releases the loader on main pins the last release's
     // libraries, so it can name a module they don't carry yet. Only what the
-    // host can't boot without is required. A feature module that isn't there
-    // is skipped, the way the extension's runtime skips a feature module that
-    // fails to load. check-userscript-drift fails
+    // host can't boot without is required. A feature module or the early
+    // switches that aren't there are skipped, the way the extension's runtime
+    // skips a feature module that fails to load. check-userscript-drift fails
     // when the pinned libraries lack anything required.
     const requiredModules = unique([
         plan.bridgeToken,
@@ -909,7 +923,7 @@ function buildHostData(plan, version, repoRoot = REPO_ROOT) {
         ...plan.liveChat,
         MAIN_WORLD_MODULE,
     ]);
-    const optionalModules = unique([...plan.features])
+    const optionalModules = unique([...plan.earlyStart, ...plan.features])
         .filter((modulePath) => !requiredModules.includes(modulePath));
     return {
         version,
@@ -930,6 +944,8 @@ function buildHostData(plan, version, repoRoot = REPO_ROOT) {
         optionalModules,
         modules: {
             bridgeToken: plan.bridgeToken,
+            bridgeChannel: plan.bridgeChannel,
+            earlyStart: plan.earlyStart,
             foundation: plan.foundation,
             features: plan.features,
             app: plan.app,
