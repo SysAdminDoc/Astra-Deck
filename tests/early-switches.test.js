@@ -103,13 +103,15 @@ test('a flag list the settings field would refuse is left out, and the switch st
         assert.deepEqual(plain(plan).map((entry) => entry.name), ['data-ytkit-classic-watch-layout'], String(JSON.stringify(junk)).slice(0, 40));
     }
     const plan = early.planEarlySwitches({ restoreClassicWatchLayout: true, watchLayoutFlagOverrides: '  one_flag\n-two_flag  ' });
-    assert.equal(plan[0].value, 'one_flag\n-two_flag', 'the same trim the feature applies');
+    assert.equal(plan[0].value, 'one_flag\n-two_flag', 'trimmed the way the feature trims a stored value');
 });
 
 test('only a watch page qualifies', () => {
     const { early } = loadEarly({ pathname: '/' });
-    for (const yes of ['/watch', '/live/abc123']) assert.equal(early.isWatchPath(yes), true, yes);
-    for (const no of ['/', '/watchlater', '/watch/x', '/shorts/abc', '/results', '/@channel/live', '', undefined]) {
+    assert.equal(early.isWatchPath('/watch'), true);
+    // core/page.js doesn't count /live/ID as a watch page, so the features
+    // never start there and an early switch would only be withdrawn.
+    for (const no of ['/', '/live/abc123', '/watchlater', '/watch/x', '/shorts/abc', '/results', '/@channel/live', '', undefined]) {
         assert.equal(early.isWatchPath(no), false, String(no));
     }
 });

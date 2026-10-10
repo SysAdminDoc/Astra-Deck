@@ -30,8 +30,10 @@
     var SETTINGS_KEY = 'ytSuiteSettings';
     var SAFE_MODE_KEY = 'ytkit_safe_mode';
     var CHANNEL_MODULE = 'core/bridge-channel.js';
-    // settings-schema.js watchLayoutFlagOverrides: same pattern and cap, and
-    // features/classic-watch-layout normalizes it the same way.
+    // settings-schema.js watchLayoutFlagOverrides: same pattern and cap, so a
+    // stored value always passes. Text that doesn't is dropped here, where
+    // features/classic-watch-layout would cut it to the cap; its publish at
+    // init replaces whatever this wrote either way.
     var FLAG_PATTERN = /^[A-Za-z0-9_,\s-]*$/;
     var MAX_FLAG_TEXT = 4000;
 
@@ -47,10 +49,12 @@
         })
     ]);
 
-    // Only a watch page carries the inline data these features act on.
+    // Only a watch page carries the inline data these features act on. This
+    // matches core/page.js, which decides whether the features start at all:
+    // a /live/ID link isn't a watch page there, so a switch published for one
+    // would only be settled away.
     function isWatchPath(pathname) {
-        var path = String(pathname || '');
-        return path === '/watch' || path.indexOf('/live/') === 0;
+        return String(pathname || '') === '/watch';
     }
 
     function isSafeModeUrl(search) {

@@ -19,6 +19,21 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   `features/return-dislike` (54094a4f) and `features/player-dock` (b0f4565f) on 2026-10-09;
   confirm those three count as read before starting on the rest.
 
+- [ ] P2 — Treat `youtube.com/live/<id>` links as watch pages
+  Why: `core/url.js` reads a video id from `/live/<id>` (VIDEO_ID_PATH_PREFIXES), but
+  `core/page.js` `isWatchPagePath` only accepts `/watch` and youtu.be ids, so `getCurrentPage`
+  never returns WATCH on a `/live/` link and every watch-page feature (Force DVR included) stays
+  off there. The 2026-10-10 review of the early switches found the mismatch; the early pass now
+  follows `page.js` and skips `/live/` until this lands.
+  Evidence: `extension/core/page.js` ~53-59, `extension/core/url.js` ~8-12,
+  `tests/core-page-url.test.js:53`, `extension/core/early-switches.js` `isWatchPath`.
+  Touches: `core/page.js`, `core/early-switches.js` (accept `/live/<11-char id>` again),
+  `tests/core-page-url.test.js`, `tests/early-switches.test.js`.
+  Acceptance: `getCurrentPage('/live/<id>')` is WATCH while `/@channel/live` and `/live_chat` are
+  not; the early pass publishes on a `/live/<id>` hard load; a headless load of a live `/live/`
+  link shows a watch-page feature running (owed check).
+  Complexity: S
+
 ## Research-Driven Additions
 
 Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live there.
