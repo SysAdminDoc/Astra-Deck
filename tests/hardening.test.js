@@ -2476,6 +2476,15 @@ test('branch CodeQL file-race guardrails stay fixed', () => {
     // SysAdminDoc/AstraDownloader with the companion source it pins.
 });
 
+test('FUNDING.yml names the same Ko-fi page the README links', () => {
+    // GitHub shows the repo's Sponsor button only from this file.
+    const funding = fs.readFileSync(path.join(__dirname, '..', '.github', 'FUNDING.yml'), 'utf8');
+    const readmeText = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
+    const slug = /^ko_fi:\s*([A-Za-z0-9_]+)\s*$/m.exec(funding)?.[1];
+    assert.ok(slug, 'FUNDING.yml must carry a ko_fi entry');
+    assert.ok(readmeText.includes(`https://ko-fi.com/${slug}`), 'the README must link the same Ko-fi page');
+});
+
 test('CODEOWNERS protects security-sensitive repository paths', () => {
     const codeowners = fs.readFileSync(
         path.join(__dirname, '..', '.github', 'CODEOWNERS'), 'utf8'

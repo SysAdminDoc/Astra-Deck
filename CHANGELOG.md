@@ -32,6 +32,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Videos you hide from your feeds, with the X or **Hide All**, now still show on the channel's own page, so you can always see everything a channel has posted. Your keyword and channel rules still apply there. The X doesn't appear on channel pages anymore, since a hide made there wouldn't stick.
 
+- The GitHub page now has a Sponsor button. It opens the same Ko-fi page as the button in the README.
+
 ### Fixed
 
 - **Force DVR** missed the first live stream on a fresh page load and only worked on streams you opened after it. Astra now hands its page-level switches over as soon as your settings load, before YouTube reads the page's built-in data, so the first stream gets DVR too. Safe mode, or a feature that doesn't start for any other reason, takes the switch back once Astra has finished starting on that page. In a tab opened in the background, that's when you first switch to it.

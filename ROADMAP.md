@@ -89,17 +89,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   fails `npm run check:versions`.
   Complexity: S
 
-- [ ] P3 — Add `.github/FUNDING.yml` so the repo shows its Sponsor button
-  Why: the README carries a Ko-fi button (afa5f498, 2026-09-13), but GitHub renders the
-  Sponsor button only from a FUNDING.yml, and the repo has never had one.
-  Evidence: `.github/` listing on 2026-10-10; GitHub docs "Displaying a sponsor button in
-  your repository".
-  Touches: `.github/FUNDING.yml` (`ko_fi: X8K126YVER`, the slug at README line 21),
-  `tests/hardening.test.js` if it pins `.github` contents.
-  Acceptance: the file exists with the README's slug and the repo page shows the Sponsor
-  button.
-  Complexity: S
-
 - [ ] P3 — Submit Astra Deck to Lissy93/awesome-privacy's Browser Extensions section
   Why: that list (9,942 stars, pushed 2026-10-10) carries SponsorBlock and DeArrow side by
   side, accepts own-project submissions, and Astra meets its bar: open source, no telemetry,
