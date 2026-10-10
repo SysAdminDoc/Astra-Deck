@@ -85,8 +85,9 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: `npm run check` fails while any channel trails the newest tag; the GitHub-full and userscript channels are promoted to the current version with digests verified by `npm run release:channels`. Store channels stay governed by the submission items in `Roadmap_Blocked.md`.
   Complexity: M
   Done: v4.88.3 is tagged and pushed. That half mattered on its own because the
-  userscript's `@require` is now pinned to `refs/tags/v<version>`, so the tag
-  has to exist for the core library to resolve at all.
+  userscript's `@require` is pinned to the commit tag `v<version>` points at
+  (jsDelivr since 2026-10-10), so the tag has to exist before the records can
+  name it.
 
   Preparation on 2026-09-14: the v4.89.0 changelog now rolls up every v4.85.0
   through v4.89.0 change since public v4.84.3. The automated release run passed
@@ -244,20 +245,21 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Greasy Fork publication (2026-08-11)
 
-- [ ] P2 — Publish the YTKit userscript and its core library on Greasy Fork
-  Why: the repository-side work is complete. `YTKit.user.js` and
-  `YTKit-core.user.js` remain below Greasy Fork's 2 MiB per-script
-  record limit; the main artifact currently uses a working raw-GitHub `@require`, accurate
-  homepage/support/license/icon metadata, `@connect 127.0.0.1`, and the optional
-  Astra Downloader companion disclosure. The userscript artifact smoke and
-  `npm run build:userscript:no-crx` pass.
-  Blocker: creating the two live Greasy Fork script records requires the
-  maintainer's Greasy Fork account, authentication/2FA, and the script IDs
+- [ ] P2 — Publish the YTKit userscript on Greasy Fork
+  Why: the repository-side work is complete. `YTKit.user.js` and its three
+  libraries stay below Greasy Fork's 2 MiB per-record limit. Since 2026-10-10
+  every `@require` and `@resource` comes from jsDelivr's GitHub mirror at a
+  40-hex commit with a `#sha256=` pin, which is on Greasy Fork's CDN list
+  (https://greasyfork.org/en/help/cdns), so the libraries don't need records of
+  their own. The header carries accurate homepage/support/license/icon
+  metadata, `@connect 127.0.0.1`, and the optional Astra Downloader companion
+  disclosure.
+  Blocker: creating the live Greasy Fork script record requires the
+  maintainer's Greasy Fork account, authentication/2FA, and the script ID
   assigned by that service. This workspace has no such credentials or external
-  account authority; GitHub installation remains usable without those IDs.
-  Needs: publish `YTKit-core.user.js` first, replace the raw-GitHub fallback by running
-  `ASTRA_GREASY_FORK_CORE_URL=<update.greasyfork.org URL> node sync-userscript.js`,
-  publish `YTKit.user.js`, and verify the live listing/auto-update path.
+  account authority; GitHub installation remains usable without it.
+  Needs: publish `YTKit.user.js` after a release whose records name its commit,
+  then verify the live listing and the auto-update path.
 
 ## P2 — Chromium store publication (2026-08-11)
 

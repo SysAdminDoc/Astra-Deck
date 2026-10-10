@@ -14,17 +14,24 @@ const ROOT = path.join(__dirname, '..');
 const MAIN_FILE = 'YTKit.user.js';
 const LIBRARY_FILES = LIBRARIES.map((library) => library.file);
 const escapeRe = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-// A tag ref, never a branch ref. `main` is mutable, so an install pinned to
-// it re-fetches whatever that pointer says today; see the note in
-// sync-userscript.js.
-const TAGGED_LIBRARY_URL_PATTERN = new RegExp(
-    `^https://raw\\.githubusercontent\\.com/SysAdminDoc/Astra-Deck/refs/tags/v\\d+\\.\\d+\\.\\d+/(?:${LIBRARY_FILES.map(escapeRe).join('|')})#sha256=[a-f0-9]{64}$`);
+// jsDelivr's GitHub mirror at a 40-hex commit, the form Greasy Fork accepts.
+// A release bump carries the release-tag form for one commit, until the tag
+// exists to name; see the note in sync-userscript.js. Never a branch: `main`
+// is mutable, so an install pinned to it re-fetches whatever that pointer
+// says today. raw.githubusercontent.com isn't on Greasy Fork's CDN list.
+const libraryFileAlternation = LIBRARY_FILES.map(escapeRe).join('|');
+const COMMIT_LIBRARY_URL_PATTERN = new RegExp(
+    `^https://cdn\\.jsdelivr\\.net/gh/SysAdminDoc/Astra-Deck@[a-f0-9]{40}/(?:${libraryFileAlternation})#sha256=[a-f0-9]{64}$`);
+const RELEASE_TAG_LIBRARY_URL_PATTERN = new RegExp(
+    `^https://cdn\\.jsdelivr\\.net/gh/SysAdminDoc/Astra-Deck@v\\d+\\.\\d+\\.\\d+/(?:${libraryFileAlternation})#sha256=[a-f0-9]{64}$`);
 const GREASY_FORK_LIBRARY_URL_PATTERN = /^https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^/]+$/;
 const MUTABLE_REF_PATTERN = /githubusercontent\.com\/[^/]+\/[^/]+\/(?:main|master|refs\/heads\/)/;
 
 function isResolvableRequireUrl(value) {
     if (MUTABLE_REF_PATTERN.test(String(value || ''))) return false;
-    return TAGGED_LIBRARY_URL_PATTERN.test(value) || GREASY_FORK_LIBRARY_URL_PATTERN.test(value);
+    return COMMIT_LIBRARY_URL_PATTERN.test(value)
+        || RELEASE_TAG_LIBRARY_URL_PATTERN.test(value)
+        || GREASY_FORK_LIBRARY_URL_PATTERN.test(value);
 }
 
 function fail(message) {
@@ -114,18 +121,23 @@ function main() {
     }
 
     if (!process.exitCode) {
-        const tagged = requireUrls.every((url) => TAGGED_LIBRARY_URL_PATTERN.test(url));
+        const source = requireUrls.every((url) => COMMIT_LIBRARY_URL_PATTERN.test(url))
+            ? 'commit-pinned jsDelivr libraries'
+            : requireUrls.every((url) => RELEASE_TAG_LIBRARY_URL_PATTERN.test(url))
+                ? 'tag-pinned jsDelivr libraries (tag, then rerun node sync-userscript.js to pin the commit)'
+                : 'Greasy Fork libraries';
         const report = sizes.map(([file, bytes]) =>
             `${file} ${bytes.toLocaleString()} B (headroom ${(MAX_RECORD_BYTES - bytes).toLocaleString()} B)`).join('; ');
-        console.log(`[check-userscript-size] OK: ${report}; ${tagged ? 'tag-pinned GitHub raw libraries' : 'Greasy Fork libraries'}`);
+        console.log(`[check-userscript-size] OK: ${report}; ${source}`);
     }
 }
 
 if (require.main === module) main();
 
 module.exports = {
+    COMMIT_LIBRARY_URL_PATTERN,
     GREASY_FORK_LIBRARY_URL_PATTERN,
-    TAGGED_LIBRARY_URL_PATTERN,
+    RELEASE_TAG_LIBRARY_URL_PATTERN,
     MUTABLE_REF_PATTERN,
     isResolvableRequireUrl,
 };

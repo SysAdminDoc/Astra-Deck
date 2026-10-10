@@ -45,27 +45,71 @@ const LOCALE_RESOURCE_PREFIX = 'astra-locale-';
 const RUNTIME_ID = 'astra-deck-userscript';
 const MODULE_PARAMS = 'globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes';
 
-// The @require targets. Pinned to the release TAG, not to `main`.
+// The @require and @resource targets: jsDelivr's GitHub mirror, pinned to the
+// commit the release tag points at. Never `main`.
 //
 // Until v4.88.3 this pointed at `main`, so every userscript install pulled
 // executable code from a mutable branch pointer, in a script that also grants
 // GM_xmlhttpRequest to OpenAI, Anthropic, Gemini and loopback. Anything able
 // to move `main` moved every install at once, with no version to notice it
-// by. A tag is immutable once pushed, so a given @version always requires the
-// same bytes and the release advances both together. The main file itself
-// still updates from `main`, which is what moves an install to a new tag.
+// by. v4.88.3 pinned raw.githubusercontent.com to the release tag. Greasy Fork
+// takes @require only from its CDN list, which has jsDelivr's /gh/ form with
+// a 40-hex commit and not raw GitHub, so the records now name the commit
+// itself, which unlike a tag can't be re-pushed. The main file still updates
+// from `main`, which is what moves an install to a new release.
+//
+// A commit can't name its own hash, so a release takes two commits. The bump
+// writes jsDelivr's tag form (@v<version>, which resolves once the tag is
+// pushed). After `git tag v<version>`, `node sync-userscript.js` swaps in the
+// tag's commit. The libraries don't change between the two, so neither do
+// the hashes.
 //
 // ASTRA_USERSCRIPT_LIBRARY_BASE overrides the base for a mirrored host.
-const LIBRARY_URL_BASE = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck';
+const LIBRARY_CDN_BASE = 'https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck';
 
-function tagUrl(version, relativePath) {
-    const base = process.env.ASTRA_USERSCRIPT_LIBRARY_BASE;
-    if (base) return `${base.replace(/\/+$/, '')}/${relativePath}`;
-    return `${LIBRARY_URL_BASE}/refs/tags/v${version}/${relativePath}`;
+// The 40-hex commit tag v<version> points at, or null before the tag exists
+// or without git.
+function resolveLibraryPin(repoRoot, version) {
+    try {
+        const commit = execFileSync('git', ['rev-parse', '--verify', '--quiet', `refs/tags/v${version}^{commit}`], {
+            cwd: repoRoot,
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore'],
+            windowsHide: true,
+        }).trim();
+        return /^[0-9a-f]{40}$/.test(commit) ? commit : null;
+    } catch (_) {
+        // reason: rev-parse exits 1 for a tag that doesn't exist yet, and
+        // there's no tag to read without git
+        return null;
+    }
 }
 
-function coreRequireUrl(version) {
-    return tagUrl(version, 'YTKit-core.user.js');
+function libraryUrl(version, relativePath, commit = null) {
+    const base = process.env.ASTRA_USERSCRIPT_LIBRARY_BASE;
+    if (base) return `${base.replace(/\/+$/, '')}/${relativePath}`;
+    return `${LIBRARY_CDN_BASE}@${commit || `v${version}`}/${relativePath}`;
+}
+
+function coreRequireUrl(version, commit = null) {
+    return libraryUrl(version, 'YTKit-core.user.js', commit);
+}
+
+function headerLibraryUrls(mainText) {
+    const header = String(mainText).split('// ==/UserScript==')[0];
+    return [
+        ...[...header.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]),
+        ...[...header.matchAll(/^\/\/ @resource\s+\S+\s+(\S+)$/gm)].map((match) => match[1]),
+    ];
+}
+
+// Library URLs in a shipped header that don't come from jsDelivr's mirror of
+// this repository. raw.githubusercontent.com is what v4.88.3 to v4.97.0
+// shipped, and Greasy Fork rejects it.
+const LIBRARY_URL_RE = /^https:\/\/cdn\.jsdelivr\.net\/gh\/SysAdminDoc\/Astra-Deck@(?:[0-9a-f]{40}|v\d+\.\d+\.\d+)\//;
+
+function findOffCdnLibraryUrls(mainText) {
+    return headerLibraryUrls(mainText).filter((url) => !LIBRARY_URL_RE.test(url));
 }
 
 // A tag can still be deleted and re-pushed, so each @require and @resource
@@ -958,7 +1002,8 @@ function buildUserscriptHeader(plan, version, libraryTexts, repoRoot = REPO_ROOT
         ...LIBRARIES.map((library) => [library.file, Buffer.from(libraryTexts.get(library.file), 'utf8')]),
         ...resourceLocales.map((locale) => [localeFile(locale), fs.readFileSync(path.join(repoRoot, localeFile(locale)))]),
     ]));
-    const pinned = (relativePath) => `${tagUrl(version, relativePath)}${integrityFragment(servedBytes.get(relativePath))}`;
+    const commit = resolveLibraryPin(repoRoot, version);
+    const pinned = (relativePath) => `${libraryUrl(version, relativePath, commit)}${integrityFragment(servedBytes.get(relativePath))}`;
     const lines = [
         '// ==UserScript==',
         metaLine('name', `YTKit v${version}`),
@@ -1026,11 +1071,7 @@ function parseUserscriptBuild(text) {
 // (readPinnedBytes), or null when the file is missing.
 function findIntegrityMismatches(mainText, readFile) {
     const errors = [];
-    const header = String(mainText).split('// ==/UserScript==')[0];
-    const urls = [
-        ...[...header.matchAll(/^\/\/ @require\s+(\S+)$/gm)].map((match) => match[1]),
-        ...[...header.matchAll(/^\/\/ @resource\s+\S+\s+(\S+)$/gm)].map((match) => match[1]),
-    ];
+    const urls = headerLibraryUrls(mainText);
     const libraryFiles = LIBRARIES.map((library) => library.file);
     for (const url of urls) {
         const bare = stripIntegrity(url);
@@ -1135,15 +1176,17 @@ module.exports = {
     connectHosts,
     coreRequireUrl,
     findIntegrityMismatches,
+    findOffCdnLibraryUrls,
     integrityFragment,
+    libraryUrl,
     parseUserscriptBuild,
     readPinnedBytes,
     readBuildPlan,
     reindentOutsideLiterals,
+    resolveLibraryPin,
     shrinkModuleBody,
     stripCommentsByParser,
     stripIntegrity,
     stripSafeLineComments,
-    tagUrl,
     writeUserscriptOutputs,
 };

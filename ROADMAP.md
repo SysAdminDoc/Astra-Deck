@@ -60,29 +60,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   `early.css` or the token; with the switches off nothing new is published.
   Complexity: M
 
-- [ ] P2 — Serve the userscript libraries from jsDelivr's commit-pinned GitHub mirror
-  Why: Greasy Fork accepts `@require` and `@resource` only from its recognized CDN list.
-  `raw.githubusercontent.com` isn't on it; jsDelivr's
-  `cdn.jsdelivr.net/gh/<owner>/<repo>@<40-hex-sha>/<path>` form is, and SRI in Tampermonkey
-  format is allowed. Astra's three libraries and the locale resources point at
-  `raw.githubusercontent.com/.../refs/tags/v<version>/...` (`sync-userscript.js:59-64`),
-  which is the code-side half of the blocked Greasy Fork listing (Roadmap_Blocked P2,
-  2026-08-11). A commit pin is immutable on its own; the `#sha256=` suffix stays as the
-  second check.
-  Evidence: https://greasyfork.org/en/help/cdns (pattern
-  `^(https?:)?//(cdn|test1|testingcf|fastly|gcore).jsdelivr.net/gh/[^/]+/[^/@]+@[a-f0-9]{40}`);
-  https://greasyfork.org/en/help/external-scripts.
-  Touches: `sync-userscript.js` (`LIBRARY_URL_BASE`, the URL builder at :64 and the
-  `git show refs/tags/...` input at :99), `build-extension.js` `--bump`,
-  `scripts/check-userscript-drift.js`, the release order in CLAUDE.md (the loader names the
-  SHA of the commit that holds the libraries, so the records are rewritten in the commit
-  after the tag), tests that assert the URL shape, README userscript section.
-  Acceptance: `YTKit.user.js` `@require` and `@resource` lines use the jsDelivr `/gh/` form
-  with a 40-hex commit and the `#sha256=` suffix kept; a drift test fails on any
-  `raw.githubusercontent.com` library URL; the release recipe's `curl` check lists the
-  jsDelivr URLs and each serves the pinned bytes after the next tag.
-  Complexity: M
-
 - [ ] P2 — Import subscriptions from Google Takeout and NewPipe into Subscription Groups
   Why: Subscription Groups imports only its own JSON and OPML
   (`extension/features/subscription-groups/index.js` ~622, picker `accept`

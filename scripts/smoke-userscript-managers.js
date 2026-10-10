@@ -160,9 +160,10 @@ async function downloadManager(manager, downloadDir, timeoutMs) {
     return filePath;
 }
 
-// The libraries and locale resources are tag-pinned, and the tag for an
-// unreleased version doesn't exist yet, so every one of them is served from
-// the fixture server instead. The bytes are still the repository artifacts.
+// The libraries and locale resources are pinned to a release commit on
+// jsDelivr, and an unreleased version has none yet, so every one of them is
+// served from the fixture server instead. The bytes are still the repository
+// artifacts.
 function buildIsolatedUserscript(port) {
     const source = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
     const origin = `http://127.0.0.1:${port}`;

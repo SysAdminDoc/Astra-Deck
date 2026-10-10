@@ -90,14 +90,17 @@ function readUserscriptNameVersion(source = fs.readFileSync(path.join(REPO_ROOT,
 }
 
 // YTKit.user.js carries none of the extension code itself; it loads the three
-// libraries through @require, pinned to the release tag. The v4.90.0 bump
-// moved @version and left @require on the v4.89.0 tag, and every source above
-// still agreed, so userscript installs ran the previous release's code with
-// nothing anywhere saying so. The expected URLs come from the same function
-// sync-userscript.js writes them with, in the order the host needs.
-function findUserscriptRequireDrift(productVersion, source) {
-    const { LIBRARIES, stripIntegrity, tagUrl } = require('../sync-userscript.js');
-    const expected = LIBRARIES.map((library) => tagUrl(productVersion, library.file));
+// libraries through @require, pinned to the commit of the release tag. The
+// v4.90.0 bump moved @version and left @require on the v4.89.0 tag, and every
+// source above still agreed, so userscript installs ran the previous release's
+// code with nothing anywhere saying so. The expected URLs come from the same
+// functions sync-userscript.js writes them with, in the order the host needs.
+// `commit` defaults to what tag v<productVersion> points at, so a tag created
+// without re-running sync-userscript.js reads as drift.
+function findUserscriptRequireDrift(productVersion, source, commit) {
+    const { LIBRARIES, libraryUrl, resolveLibraryPin, stripIntegrity } = require('../sync-userscript.js');
+    const pin = commit === undefined ? resolveLibraryPin(REPO_ROOT, productVersion) : commit;
+    const expected = LIBRARIES.map((library) => libraryUrl(productVersion, library.file, pin));
     // Read the lines a userscript manager reads: only those between the
     // ==UserScript== markers, and with its relaxed parsing, where anything may
     // precede the `//` (Violentmonkey matches `(.*?)//[ \t]*@key`, to agree
@@ -126,7 +129,7 @@ function checkUserscriptRequires(productVersion) {
     console.error('[check-versions] YTKit.user.js @require does not load this version\'s libraries:');
     console.error(`  expected ${drift.expected.join(', ')}`);
     console.error(`  found    ${drift.found.length ? drift.found.join(', ') : '<no @require in the header>'}`);
-    console.error('Run `node sync-userscript.js`, and push the matching tag before main serves it.');
+    console.error('Run `node sync-userscript.js` (after `git tag`, it pins the tag\'s commit), and push the matching tag before main serves it.');
     return false;
 }
 
@@ -350,6 +353,7 @@ function checkReleaseCurrency(productVersion, strict) {
     write('');
     write('  Tag and publish, then promote:');
     write(`    git tag v${productVersion} && git push origin v${productVersion}`);
+    write('    node sync-userscript.js   (pins the userscript libraries to the tag\'s commit; commit it, then push main)');
     write('    npm run release:prepare && npm run release:promote');
     if (!strict) {
         write('  Reported, not failed: publication is maintainer-local (Roadmap_Blocked.md).');

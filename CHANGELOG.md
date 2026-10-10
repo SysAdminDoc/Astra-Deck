@@ -18,6 +18,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Every language besides English is now fully translated. About a quarter of the interface, roughly 900 strings per language, still showed in English: Watch Feed, the blocked-channel page, bulk actions, AI summaries and many feature descriptions. Spanish even called Watch Feed by its old name, Persistent Queue. German, Spanish, French, Italian, Brazilian Portuguese, Russian, Japanese, Korean, Chinese and Arabic now read in their own language apart from brand names, and theater mode uses YouTube's own word for it in each one. The userscript picks up the same translations.
 
+- The userscript now loads its three libraries and its translations from jsDelivr, pinned to the exact commit of the release, instead of from raw GitHub at the release tag. A commit can't be moved after the fact the way a tag can, every file still carries its `#sha256=` check, and it's the form Greasy Fork accepts, so the userscript can be listed there later. Nothing changes for you: the files are byte for byte the same.
+
 - **Hide All** on Subscriptions keeps going as YouTube loads more. One press hides what's on screen, then each page as it arrives, until it reaches videos you'd already hidden last time (or 20 pages). Then loading pauses, with a Resume button on the banner. Home still hides just what's on screen and keeps loading forever.
 
 - Videos you hide from your feeds, with the X or **Hide All**, now still show on the channel's own page, so you can always see everything a channel has posted. Your keyword and channel rules still apply there. The X doesn't appear on channel pages anymore, since a hide made there wouldn't stick.

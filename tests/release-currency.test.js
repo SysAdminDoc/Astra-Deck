@@ -123,52 +123,69 @@ test('a missing git is a failure, not a silent pass', () => {
 // userscript installs ran the previous release's core while every version
 // string in the repo agreed. The userscript loads three libraries now (core,
 // features, app), and every one has to come from the tag of its own version,
-// in the order the host expects to find them registered.
+// in the order the host expects to find them registered. They're named by
+// the commit the tag points at, on jsDelivr's mirror, since Greasy Fork
+// rejects raw.githubusercontent.com.
 test('the main userscript @require loads the libraries of its own version', () => {
     const { findUserscriptRequireDrift } = require('../scripts/check-versions.js');
-    const { LIBRARIES, tagUrl } = require('../sync-userscript.js');
-    const libraries = (version) => LIBRARIES.map(({ file }) => tagUrl(version, file));
+    const { LIBRARIES, libraryUrl } = require('../sync-userscript.js');
+    const RELEASE_COMMIT = 'a'.repeat(40);
+    const PREVIOUS_COMMIT = 'b'.repeat(40);
+    const libraries = (version, commit) => LIBRARIES.map(({ file }) => libraryUrl(version, file, commit));
+    const drift = (source, commit = RELEASE_COMMIT) => findUserscriptRequireDrift('4.90.0', source, commit);
     const header = (...requires) => [
         '// ==UserScript==',
         '// @version      4.90.0',
         ...requires.map((url) => `// @require      ${url}`),
         '// ==/UserScript==',
-        `    // @require      ${tagUrl('1.0.0', LIBRARIES[0].file)} is only a body comment`
+        `    // @require      ${libraryUrl('1.0.0', LIBRARIES[0].file, PREVIOUS_COMMIT)} is only a body comment`
     ].join('\n');
-    const current = libraries('4.90.0');
-    const stale = libraries('4.89.0');
+    const current = libraries('4.90.0', RELEASE_COMMIT);
+    const stale = libraries('4.89.0', PREVIOUS_COMMIT);
 
-    assert.equal(findUserscriptRequireDrift('4.90.0', header(...current)), null);
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header(...stale)), {
+    assert.equal(drift(header(...current)), null);
+    assert.deepEqual(drift(header(...stale)), {
         expected: current,
         found: stale
     });
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header(current[0], stale[1], current[2])).found,
+    assert.deepEqual(drift(header(current[0], stale[1], current[2])).found,
         [current[0], stale[1], current[2]],
         'one library left on the previous tag is drift, even when the core moved');
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header()).found, []);
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', header(current[0])).found, [current[0]],
+    assert.deepEqual(drift(header()).found, []);
+    assert.deepEqual(drift(header(current[0])).found, [current[0]],
         'the core alone is not the userscript: features and app would never load');
-    assert.notEqual(findUserscriptRequireDrift('4.90.0', header(current[2], current[1], current[0])), null,
+    assert.notEqual(drift(header(current[2], current[1], current[0])), null,
         'the libraries must be required in order');
     assert.deepEqual(
-        findUserscriptRequireDrift('4.90.0', header(...current, stale[0])).found,
+        drift(header(...current, stale[0])).found,
         [...current, stale[0]],
         'a second core @require would load two cores'
     );
     const tabbed = header(...current).replace('// ==/UserScript==',
         `//\t@require\t${stale[0]}\n// ==/UserScript==`);
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', tabbed).found,
+    assert.deepEqual(drift(tabbed).found,
         [...current, stale[0]],
         'a tab after // still declares a @require');
     const indented = header(...current).replace('// ==/UserScript==',
         `  \t// @require      ${stale[0]}\n// ==/UserScript==`);
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', indented).found,
+    assert.deepEqual(drift(indented).found,
         [...current, stale[0]],
         'managers accept anything before the //, so an indented @require loads a second core');
     const aboveBlock = current.map((url) => `// @require      ${url}\n`).join('') + header();
-    assert.deepEqual(findUserscriptRequireDrift('4.90.0', aboveBlock).found, [],
+    assert.deepEqual(drift(aboveBlock).found, [],
         'a @require above the metadata block is not metadata, so nothing loads');
+
+    // The release bump comes before its tag, so it writes jsDelivr's tag
+    // form. Once the tag exists, a header still on that form is drift: the
+    // records have to be rewritten to name the tag's commit.
+    const bump = libraries('4.90.0', null);
+    assert.equal(bump[0], 'https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.90.0/YTKit-core.user.js');
+    assert.equal(drift(header(...bump), null), null, 'an untagged bump expects the tag form');
+    assert.deepEqual(drift(header(...bump)).expected, current, 'a tagged version expects its commit');
+    assert.equal(current[0], `https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@${RELEASE_COMMIT}/YTKit-core.user.js`);
+    const raw = LIBRARIES.map(({ file }) =>
+        `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.90.0/${file}`);
+    assert.deepEqual(drift(header(...raw)).found, raw, 'the raw GitHub URLs v4.97.0 shipped are drift');
 
     const committed = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
     assert.equal(findUserscriptRequireDrift(pkg.version, committed), null,

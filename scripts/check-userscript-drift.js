@@ -29,6 +29,7 @@ const {
     LIBRARIES,
     buildUserscriptOutputs,
     findIntegrityMismatches,
+    findOffCdnLibraryUrls,
     parseUserscriptBuild,
     readBuildPlan,
     readPinnedBytes,
@@ -137,6 +138,11 @@ if (missingIds.length) errors.push(`feature id(s) the userscript does not ship: 
 const shippedMain = fs.existsSync(path.join(REPO_ROOT, 'YTKit.user.js'))
     ? fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8')
     : '';
+// Every library comes from jsDelivr's mirror. Greasy Fork rejects a
+// raw.githubusercontent.com @require, which v4.88.3 to v4.97.0 shipped.
+for (const url of findOffCdnLibraryUrls(shippedMain)) {
+    errors.push(`${url} is not on cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@<commit>. Run \`node sync-userscript.js\`.`);
+}
 const pinnable = [...LIBRARIES.map((library) => library.file), ...locales.map((locale) => `extension/_locales/${locale}/messages.json`)]
     .filter((file) => fs.existsSync(path.join(REPO_ROOT, file)));
 const served = readPinnedBytes(REPO_ROOT, build.version,

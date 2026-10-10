@@ -220,7 +220,8 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
     }
     // The raw-GitHub half of this used to accept the `main` branch. A branch
     // pointer is mutable, so the same @version could require different bytes
-    // on different days; v4.88.3 pinned it to an immutable tag ref.
+    // on different days; v4.88.3 pinned it to an immutable tag ref, and the
+    // jsDelivr move pinned it to the tag's commit.
     const block = extractMetadataBlock(main);
     const requires = metadataValues(block, 'require');
     // Each URL ends in its #sha256= pin since the SRI change; the name is before it.
@@ -229,8 +230,18 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
         'YTKit.user.js must @require each library once, in the order the host expects to find them registered');
     for (const url of requires) {
         assert.ok(isResolvableRequireUrl(url),
-            `${url} must be a tag-pinned raw GitHub URL or a numbered Greasy Fork record`);
+            `${url} must be a commit-pinned jsDelivr URL or a numbered Greasy Fork record`);
     }
+    // Greasy Fork takes libraries only from its CDN list, and raw GitHub
+    // isn't on it. check-userscript-drift fails on the same list.
+    const { findOffCdnLibraryUrls } = require('../sync-userscript');
+    assert.deepEqual(findOffCdnLibraryUrls(main), [],
+        'every @require and @resource comes from cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck');
+    const rawLocale = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.97.0/extension/_locales/de/messages.json';
+    const withRaw = main.replace(/^(\/\/ @resource\s+astra-locale-de\s+)\S+$/m, `$1${rawLocale}`);
+    assert.notEqual(withRaw, main, 'the positive control needs a German @resource to swap');
+    assert.deepEqual(findOffCdnLibraryUrls(withRaw), [rawLocale],
+        'a raw GitHub @resource is caught, not only a @require');
     assert.doesNotMatch(main, /^\/\/ @require\s+\S*Astra-Deck\/(?:main|master|refs\/heads\/)/m,
         'and never through a mutable branch pointer');
     assert.doesNotMatch(main, /REPLACE_WITH_GREASY_FORK_CORE_ID/,
@@ -258,20 +269,43 @@ test('userscript-health: core dependency gate rejects placeholders and unknown h
     // This used to assert that the raw `main` branch URL was acceptable. It
     // is not: a branch pointer is mutable, so a given @version could require
     // different bytes on different days, in a script that grants
-    // GM_xmlhttpRequest to three AI providers and loopback. Only an immutable
-    // tag ref or a numbered Greasy Fork record may resolve.
-    // A tag can be re-pushed too, so since the SRI change the URL must also
-    // carry the #sha256= of its bytes.
+    // GM_xmlhttpRequest to three AI providers and loopback. Only jsDelivr's
+    // mirror at a commit (or, for the one bump commit before its tag exists,
+    // at the release tag) or a numbered Greasy Fork record may resolve.
+    // The URL must also carry the #sha256= of its bytes.
+    const sha = `#sha256=${'a'.repeat(64)}`;
+    const commit = 'c'.repeat(40);
     assert.equal(
-        isResolvableRequireUrl(
-            `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js#sha256=${'a'.repeat(64)}`),
+        isResolvableRequireUrl(`https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@${commit}/YTKit-core.user.js${sha}`),
         true,
-        'a tag-pinned, hash-pinned raw GitHub core must be accepted');
+        'a commit-pinned, hash-pinned jsDelivr core must be accepted');
+    assert.equal(
+        isResolvableRequireUrl(`https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.98.0/YTKit-core.user.js${sha}`),
+        true,
+        'so must the release-tag form a bump writes before its tag exists');
+    assert.equal(
+        isResolvableRequireUrl(`https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@${commit}/YTKit-core.user.js`),
+        false,
+        'a commit-pinned core with no hash must fail closed');
+    for (const ref of ['main', 'latest', commit.slice(0, 7), `${commit}0`]) {
+        assert.equal(
+            isResolvableRequireUrl(`https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@${ref}/YTKit-core.user.js${sha}`),
+            false,
+            `jsDelivr @${ref} is a moving or partial ref and must fail closed`);
+    }
+    assert.equal(
+        isResolvableRequireUrl(`https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck/YTKit-core.user.js${sha}`),
+        false,
+        'jsDelivr with no ref serves the default branch and must fail closed');
+    assert.equal(
+        isResolvableRequireUrl(`https://cdn.jsdelivr.net/gh/someone-else/Astra-Deck@${commit}/YTKit-core.user.js${sha}`),
+        false,
+        'another owner\'s mirror must fail closed');
     assert.equal(
         isResolvableRequireUrl(
-            'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js'),
+            `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js${sha}`),
         false,
-        'a tag-pinned core with no hash must fail closed');
+        'the raw GitHub tag URL v4.88.3 to v4.97.0 shipped is not on Greasy Fork\'s CDN list');
     assert.equal(
         isResolvableRequireUrl(
             'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js'),
@@ -331,7 +365,7 @@ test('userscript-health: every @require and @resource pins the SHA-256 of the fi
 test('userscript-health: SRI pins name the tag the URL serves, not newer bytes on main', () => {
     const { execFileSync } = require('node:child_process');
     const os = require('node:os');
-    const { readPinnedBytes } = require('../sync-userscript');
+    const { readPinnedBytes, resolveLibraryPin } = require('../sync-userscript');
     const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-sri-'));
     const git = (...args) => execFileSync('git', args, { cwd: repo, stdio: 'pipe', windowsHide: true });
     try {
@@ -354,6 +388,14 @@ test('userscript-health: SRI pins name the tag the URL serves, not newer bytes o
         assert.equal(bump.get('lib.js').toString(), 'changed on main\n', 'an untagged version pins the tree it will tag');
         const notARepo = readPinnedBytes(path.join(repo, 'missing'), '1.0.0', working);
         assert.equal(notARepo.get('lib.js').toString(), 'changed on main\n', 'no git checkout pins the tree');
+
+        // The URLs name the commit the (annotated) tag points at, which is
+        // where jsDelivr reads the bytes hashed above.
+        const released = git('rev-list', '-n', '1', 'v1.0.0').toString().trim();
+        git('commit', '-q', '-am', 'moved on');
+        assert.equal(resolveLibraryPin(repo, '1.0.0'), released, 'a tagged version pins the tag\'s commit, not HEAD');
+        assert.equal(resolveLibraryPin(repo, '1.1.0'), null, 'an untagged version has no commit to pin yet');
+        assert.equal(resolveLibraryPin(path.join(repo, 'missing'), '1.0.0'), null, 'no git checkout has no commit');
     } finally {
         fs.rmSync(repo, { recursive: true, force: true });
     }
