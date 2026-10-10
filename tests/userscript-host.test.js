@@ -148,7 +148,9 @@ test('a library without a newer feature module or the early switches still boots
     assert.notEqual(run.state.phase, 'failed');
     assert.deepEqual([...run.state.missingOptionalModules].sort(), [...newer].sort());
     assert.ok(run.captured.content, 'the app still ran');
-    assert.deepEqual(run.state.errors.map((entry) => entry.stage)
+    // The spread copies the vm-made array into this realm, so deepEqual
+    // compares contents rather than Array prototypes.
+    assert.deepEqual([...run.state.errors].map((entry) => entry.stage)
         .filter((stage) => stage === 'library check' || stage === 'early switches'), [], 'skipping is not an error');
 });
 
@@ -173,8 +175,13 @@ test('the early switches run at document start after the page world, with the ch
             [build.modules.app]: record('app'),
         },
     });
-    assert.deepEqual(order, ['token', 'channel', ...build.modules.earlyStart], 'all of it before the idle runtime');
+    const documentStart = ['token', 'channel', ...build.modules.earlyStart];
+    assert.deepEqual(order.slice(0, documentStart.length), documentStart, 'all of it before the idle runtime');
     await settle(run.drain);
     assert.equal(order.at(-1), 'app');
+    // The idle runtime runs the channel module again in its foundation pass;
+    // the module's own guard keeps the writer the early pass made.
+    assert.ok(order.indexOf('app') > order.lastIndexOf(build.modules.earlyStart.at(-1)),
+        'the app runs after the early switches');
     assert.deepEqual(build.modules.earlyStart, ['core/early-switches.js']);
 });

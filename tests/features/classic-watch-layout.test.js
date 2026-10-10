@@ -357,7 +357,8 @@ test('turned on before ytcfg exists, it patches the flags the moment ytcfg turns
     const watch = watchers[0];
     assert.ok(watch?.active, 'no ytcfg yet, so it watches the parser');
     assert.equal(watch.target, documentRef.documentElement);
-    assert.deepEqual(watch.options, { childList: true, subtree: true });
+    // Spread into this realm: the options object was made inside the vm.
+    assert.deepEqual({ ...watch.options }, { childList: true, subtree: true });
     assert.equal(documentRef.listening('DOMContentLoaded'), true);
 
     watch.callback([]);

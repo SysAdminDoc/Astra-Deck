@@ -415,7 +415,13 @@ test('userscript-health: the pinned libraries register every module the loader r
     assert.ok(build.requiredModules.includes('ytkit.js'));
     assert.ok(build.optionalModules.some((file) => file.startsWith('features/')),
         'feature modules are optional, so a newer one on main never blocks an install');
-    assert.equal(build.requiredModules.some((file) => file.startsWith('features/') && file !== 'features/download-ui/index.js'), false);
+    // The download UI is the foundation's critical feature, and the live-chat
+    // frame's app is its feature module; the host boots on both.
+    const liveChatApp = new Set(build.modules.liveChat);
+    assert.deepEqual(build.requiredModules.filter((file) => (
+        file.startsWith('features/') && file !== 'features/download-ui/index.js' && !liveChatApp.has(file)
+    )), [], 'no other feature module is required');
+    assert.ok(liveChatApp.has('features/live-chat/index.js'), 'the exemption covers a real live-chat module');
     const app = libraries.get('YTKit-app.user.js').toString('utf8');
     const withoutApp = app.replace(/^__astraDeckRegistry\["ytkit\.js"\] = function /m, '__astraDeckRegistry["ytkit-renamed.js"] = function ');
     assert.notEqual(withoutApp, app, 'the positive control needs the app registration to rename');
