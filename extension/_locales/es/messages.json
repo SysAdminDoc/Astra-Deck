@@ -4064,7 +4064,7 @@
     "message": "Sombra del texto de los subtítulos"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "Grupos locales de nivel PocketTube para tu feed de suscripciones. Crea grupos con nombre, arrastra canales, ordena por fecha/duración/no vistos/nuevos desde la última visita. Los datos de grupos viven en subscriptionGroupData (solo local); usa Exportar para respaldarlo."
+    "message": "Grupos locales de nivel PocketTube para tu feed de suscripciones. Crea grupos con nombre, arrastra canales, ordena por fecha/duración/no vistos/nuevos desde la última visita. Los datos de grupos viven en subscriptionGroupData (solo local); usa Exportar para respaldarlo. La importación también lee las suscripciones que exportas desde Google Takeout o NewPipe."
   },
   "feature_subscriptionGroups_name": {
     "message": "Grupos de suscripciones"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "Se importaron {count} grupos de suscripciones desde {source} ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "Suscripciones de {source}"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "Archivo de instalación listo. {hint} También se copió el comando alternativo."

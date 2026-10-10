@@ -4064,7 +4064,7 @@
     "message": "Ombre du texte des sous-titres"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "Groupes locaux de niveau PocketTube pour votre flux d'abonnements. Créez des groupes nommés, glissez-y des chaînes, triez par date/durée/non vus/nouveautés depuis la dernière visite. Les données de groupes sont locales uniquement ; utilisez Exporter pour les sauvegarder."
+    "message": "Groupes locaux de niveau PocketTube pour votre flux d'abonnements. Créez des groupes nommés, glissez-y des chaînes, triez par date/durée/non vus/nouveautés depuis la dernière visite. Les données de groupes sont locales uniquement ; utilisez Exporter pour les sauvegarder. L’import lit aussi les abonnements exportés depuis Google Takeout ou NewPipe."
   },
   "feature_subscriptionGroups_name": {
     "message": "Groupes d'abonnements"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "{count} groupes d’abonnements importés depuis {source} ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "Abonnements {source}"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "Fichier d’installation prêt. {hint} La commande de secours a aussi été copiée."

@@ -4078,7 +4078,7 @@
     "message": "Caption Text Shadow"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML."
+    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML. Import also reads the subscriptions you export from Google Takeout or NewPipe."
   },
   "feature_subscriptionGroups_name": {
     "message": "Subscription Groups"
@@ -9427,6 +9427,10 @@
   },
   "subImportSummaryTplOther": {
     "message": "Imported {count} subscription groups from {source} ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "{source} subscriptions",
+    "description": "Name of a new subscription group made by importing a subscription export. {source} is Google Takeout or NewPipe; keep it as written."
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "Setup file ready. {hint} The fallback command was copied too."

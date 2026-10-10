@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const vm = require('vm');
 const { createSubscriptionGroupsFeature } = require('../../extension/features/subscription-groups');
 
 class FakeNode {
@@ -136,6 +137,7 @@ function makeFeature(settings = {}, options = {}) {
         storageReadJSON: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
         storageWriteJSON: (key, value) => storage.set(key, value),
         handleFileExport: (...args) => exports.push(args),
+        ...(options.deps || {}),
     });
     // Import and membership tests should exercise state transitions without
     // requiring YouTube's live DOM to be mounted.
@@ -310,6 +312,249 @@ test('OPML import preserves nested groups and counts duplicate channels with und
 
     toasts[0][2].action.onClick();
     assert.deepEqual(appState.settings.subscriptionGroupData, {});
+});
+
+// ── Subscription exports from other apps ──
+
+const FIXTURES = path.join(__dirname, '..', 'fixtures');
+const readFixture = (name) => fs.readFileSync(path.join(FIXTURES, name), 'utf8');
+
+// Loads a core module in its own realm and returns what it publishes, so
+// the test process's YTKitCore stays untouched.
+function loadCore(file) {
+    const sandbox = {};
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'core', file), 'utf8'), sandbox);
+    return sandbox.YTKitCore;
+}
+
+const csvCore = loadCore('csv.js');
+const exportDeps = { parseCsv: csvCore.parseCsv };
+
+function withFailureCopy(run) {
+    const previous = globalThis.YTKitCore;
+    globalThis.YTKitCore = { describeFailure: loadCore('failure-copy.js').describeFailure };
+    try {
+        return run();
+    } finally {
+        if (previous === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = previous;
+    }
+}
+
+const onlyGroup = (groups) => {
+    const ids = Object.keys(groups);
+    assert.equal(ids.length, 1, 'the import must land in exactly one group');
+    return groups[ids[0]];
+};
+
+test('parseCsv reads quoted fields, doubled quotes, CRLF and a byte-order mark', () => {
+    const rows = csvCore.parseCsv('﻿a,"b, with comma","say ""hi"""\r\n"line\nbreak",,end\n\n');
+    assert.deepEqual(JSON.parse(JSON.stringify(rows)), [
+        ['a', 'b, with comma', 'say "hi"'],
+        ['line\nbreak', '', 'end'],
+        [''],
+    ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(csvCore.parseCsv('x,y'))), [['x', 'y']]);
+    assert.deepEqual(JSON.parse(JSON.stringify(csvCore.parseCsv(''))), []);
+});
+
+test('a Google Takeout subscriptions.csv lands every channel in a new group, with undo', () => {
+    const { appState, feature, toasts } = makeFeature({ subscriptionGroupData: {} }, { deps: exportDeps });
+
+    const result = feature._importFile(readFixture('subscriptions-takeout-2026.csv'), 'subscriptions.csv');
+
+    assert.equal(result.ok, true);
+    assert.equal(result.createdGroups, 1);
+    assert.equal(result.importedChannels, 5);
+    assert.equal(result.skippedChannels, 0, 'the header row is not a skipped channel');
+    const group = onlyGroup(appState.settings.subscriptionGroupData);
+    assert.equal(group.name, 'Google Takeout subscriptions');
+    assert.equal(group.color, '#7c3aed');
+    assert.equal(group.parentId, '');
+    assert.equal(group.sortMode, 'default');
+    assert.deepEqual(group.channelIds, [
+        'UCBR8-60-B28hp2BmDPdntcQ',
+        'UCsXVk37bltHxD1rDPwtNM8Q',
+        'UCYO_jab_esuFRV4b17AJtAw',
+        'UCHnyfMqiRRG1u-2MsSQLbXA',
+        'UCY1kMZp36IQSyNx_9h4mpCg',
+    ], 'channel ids keep their case and file order');
+    assert.match(toasts[0][0], /from Google Takeout/);
+    assert.equal(toasts[0][2].action.text, 'Undo');
+
+    toasts[0][2].action.onClick();
+    assert.deepEqual(appState.settings.subscriptionGroupData, {});
+});
+
+test('the older Takeout subscriptions.json lands every channel in a new group', () => {
+    const { appState, feature, toasts } = makeFeature({ subscriptionGroupData: {} }, { deps: exportDeps });
+
+    const result = feature._importFile(readFixture('subscriptions-takeout-legacy.json'), 'subscriptions.json');
+
+    assert.equal(result.ok, true);
+    assert.equal(result.importedChannels, 3);
+    const group = onlyGroup(appState.settings.subscriptionGroupData);
+    assert.equal(group.name, 'Google Takeout subscriptions');
+    assert.deepEqual(group.channelIds, [
+        'UCAuUUnT6oDeKwE6v1NGQxug',
+        'UCBa659QWEk1AI4Tg--mrJ2A',
+        'UC_x5XG1OV2P6uZZ5FSM9Ttw',
+    ], 'the subscribed channel comes from resourceId, never the subscriber\'s own channelId');
+    assert.equal(toasts[0][2].action.text, 'Undo');
+    toasts[0][2].action.onClick();
+    assert.deepEqual(appState.settings.subscriptionGroupData, {});
+});
+
+test('a NewPipe export lands its YouTube channels and skips the other services', () => {
+    const { appState, feature, toasts } = makeFeature({ subscriptionGroupData: {} }, { deps: exportDeps });
+
+    const result = feature._importFile(readFixture('subscriptions-newpipe.json'), 'newpipe_subscriptions_202610101200.json');
+
+    assert.equal(result.ok, true);
+    assert.equal(result.importedChannels, 3);
+    assert.equal(result.skippedChannels, 2, 'SoundCloud and PeerTube entries are skipped and counted');
+    const group = onlyGroup(appState.settings.subscriptionGroupData);
+    assert.equal(group.name, 'NewPipe subscriptions');
+    assert.deepEqual(group.channelIds, [
+        'UCHnyfMqiRRG1u-2MsSQLbXA',
+        'UCYO_jab_esuFRV4b17AJtAw',
+        'UCAuUUnT6oDeKwE6v1NGQxug',
+    ]);
+    assert.match(toasts[0][0], /from NewPipe/);
+    assert.match(toasts[0][0], /2 skipped channels/);
+    toasts[0][2].action.onClick();
+    assert.deepEqual(appState.settings.subscriptionGroupData, {});
+});
+
+test('an export lands in the open group, with a localized header, duplicates and junk rows', () => {
+    const existing = {
+        name: 'Science',
+        color: '#22c55e',
+        channelIds: ['UCHnyfMqiRRG1u-2MsSQLbXA'],
+        parentId: '',
+        sortMode: 'popular',
+    };
+    const other = { name: 'Music', color: '#7c3aed', channelIds: [], parentId: '', sortMode: 'default' };
+    const { appState, feature, toasts } = makeFeature({
+        subscriptionGroupData: { science: existing, music: other },
+    }, { deps: exportDeps });
+    feature._activeGroupId = 'science';
+    const csv = [
+        '﻿ID de la chaîne,URL de la chaîne,Titre de la chaîne',
+        'UCHnyfMqiRRG1u-2MsSQLbXA,http://www.youtube.com/channel/UCHnyfMqiRRG1u-2MsSQLbXA,Veritasium',
+        'UCYO_jab_esuFRV4b17AJtAw,http://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw,"3Blue1Brown, ""maths"""',
+        'not a channel,,',
+        'UCYO_jab_esuFRV4b17AJtAw,http://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw,3Blue1Brown again',
+        ',http://www.youtube.com/channel/UCY1kMZp36IQSyNx_9h4mpCg,Id only in the link',
+        '',
+    ].join('\r\n');
+
+    const result = feature._importFile(csv, 'abonnements.csv');
+
+    assert.equal(result.ok, true);
+    assert.equal(result.createdGroups, 0, 'no new group when one is open');
+    assert.equal(result.importedChannels, 2);
+    assert.equal(result.duplicateChannels, 2);
+    assert.equal(result.skippedChannels, 1, 'the junk row is counted');
+    const groups = appState.settings.subscriptionGroupData;
+    assert.deepEqual(Object.keys(groups).sort(), ['music', 'science']);
+    assert.deepEqual(groups.science.channelIds, [
+        'UCHnyfMqiRRG1u-2MsSQLbXA',
+        'UCYO_jab_esuFRV4b17AJtAw',
+        'UCY1kMZp36IQSyNx_9h4mpCg',
+    ]);
+    assert.equal(groups.science.name, 'Science', 'the open group keeps its name');
+    assert.equal(groups.science.sortMode, 'popular');
+    assert.deepEqual(groups.music.channelIds, []);
+    assert.match(toasts[0][0], /skipped 2 duplicate channels/);
+
+    toasts[0][2].action.onClick();
+    assert.deepEqual(appState.settings.subscriptionGroupData.science.channelIds, ['UCHnyfMqiRRG1u-2MsSQLbXA']);
+});
+
+test('a named target group wins over the open group, and replace mode keeps only the import', () => {
+    const groups = {
+        a: { name: 'A', color: '#7c3aed', channelIds: [], parentId: '', sortMode: 'default' },
+        b: { name: 'B', color: '#7c3aed', channelIds: [], parentId: '', sortMode: 'default' },
+    };
+    const targeted = makeFeature({ subscriptionGroupData: structuredClone(groups) }, { deps: exportDeps });
+    targeted.feature._activeGroupId = 'a';
+    targeted.feature._importFile(readFixture('subscriptions-newpipe.json'), 'subs.json', { groupId: 'b' });
+    assert.equal(targeted.appState.settings.subscriptionGroupData.a.channelIds.length, 0);
+    assert.equal(targeted.appState.settings.subscriptionGroupData.b.channelIds.length, 3);
+
+    const replaced = makeFeature({ subscriptionGroupData: structuredClone(groups) }, { deps: exportDeps });
+    const result = replaced.feature._importFile(readFixture('subscriptions-takeout-2026.csv'), 'subscriptions.csv', { mode: 'replace' });
+    assert.equal(result.ok, true);
+    assert.equal(result.removedGroups, 2);
+    assert.equal(onlyGroup(replaced.appState.settings.subscriptionGroupData).channelIds.length, 5);
+    assert.match(replaced.toasts[0][0], /Replaced all groups\./);
+    replaced.toasts[0][2].action.onClick();
+    assert.deepEqual(Object.keys(replaced.appState.settings.subscriptionGroupData), ['a', 'b']);
+});
+
+test('an export stops at 1,000 channels per group and counts the rest as skipped', () => {
+    const full = Array.from({ length: 999 }, (_, index) => `UC${String(index).padStart(22, '0')}`);
+    const { appState, feature } = makeFeature({
+        subscriptionGroupData: { big: { name: 'Big', color: '#7c3aed', channelIds: full, parentId: '', sortMode: 'default' } },
+    }, { deps: exportDeps });
+    feature._activeGroupId = 'big';
+
+    const result = feature._importFile(readFixture('subscriptions-takeout-2026.csv'), 'subscriptions.csv');
+
+    assert.equal(result.ok, true);
+    assert.equal(result.importedChannels, 1);
+    assert.equal(result.skippedChannels, 4);
+    assert.equal(appState.settings.subscriptionGroupData.big.channelIds.length, 1000);
+    assert.equal(appState.settings.subscriptionGroupData.big.channelIds[999], 'UCBR8-60-B28hp2BmDPdntcQ');
+});
+
+test('a malformed export changes nothing and shows the bad-data failure copy', () => {
+    const cases = [
+        ['Channel Id,Channel Url,Channel Title\nnot,a,channel\n', 'subscriptions.csv'],
+        [JSON.stringify({ app_version: '0.28.0', subscriptions: [] }), 'newpipe.json'],
+        [JSON.stringify([{ snippet: { title: 'No resource id' } }]), 'subscriptions.json'],
+    ];
+    for (const [text, name] of cases) {
+        const seed = { keep: { name: 'Keep', color: '#7c3aed', channelIds: ['UCkeep'], parentId: '', sortMode: 'default' } };
+        const { appState, feature, toasts } = makeFeature({ subscriptionGroupData: structuredClone(seed) }, { deps: exportDeps });
+        const result = withFailureCopy(() => feature._importFile(text, name));
+        assert.equal(result.ok, false, name);
+        assert.deepEqual(appState.settings.subscriptionGroupData, seed, `${name} must leave the groups alone`);
+        assert.equal(toasts.length, 1);
+        assert.equal(toasts[0][0], 'Import failed: The data could not be read. Check the file, then try again.');
+    }
+});
+
+test('the import button still sends Astra JSON and OPML down their own paths', () => {
+    const { feature, toasts } = makeFeature({ subscriptionGroupData: {} }, { deps: exportDeps });
+    const json = feature._importFile(JSON.stringify({
+        schemaVersion: 2,
+        groups: { mine: { name: 'Mine', channelIds: ['UCBR8-60-B28hp2BmDPdntcQ'] } },
+    }), 'astra-deck-subscription-groups-2026-10-10.json');
+    assert.equal(json.ok, true);
+    assert.match(toasts[0][0], /from JSON/);
+
+    const opml = feature._importFile(`<?xml version="1.0"?>
+<opml version="2.0"><body>
+  <outline text="News" astra:type="group" astra:id="news">
+    <outline type="rss" text="One" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCBR8-60-B28hp2BmDPdntcQ" />
+  </outline>
+</body></opml>`, 'groups.opml');
+    assert.equal(opml.ok, true);
+    assert.match(toasts[1][0], /from OPML/);
+});
+
+test('export channel ids follow the blocked-channel rules with the case kept', () => {
+    const { feature } = makeFeature({}, { deps: exportDeps });
+    assert.equal(feature._channelIdFromExport('https://www.youtube.com/channel/UCBR8-60-B28hp2BmDPdntcQ'), 'UCBR8-60-B28hp2BmDPdntcQ');
+    assert.equal(feature._channelIdFromExport('  UC_x5XG1OV2P6uZZ5FSM9Ttw  '), 'UC_x5XG1OV2P6uZZ5FSM9Ttw');
+    assert.equal(feature._channelIdFromExport('https://www.youtube.com/@MarkRober'), '@MarkRober');
+    assert.equal(feature._channelIdFromExport('@Veritasium'), '@Veritasium');
+    assert.equal(feature._channelIdFromExport('UCBR8-60-B28hp2BmDPdntcQextra'), '', 'a longer token is not a channel id');
+    assert.equal(feature._channelIdFromExport('xUCBR8-60-B28hp2BmDPdntcQ'), '', 'an id glued to other text is not a channel id');
+    assert.equal(feature._channelIdFromExport('mail@example.com'), '', 'an address is not a handle');
+    assert.equal(feature._channelIdFromExport('', 42, 'Title', 'UCY1kMZp36IQSyNx_9h4mpCg'), 'UCY1kMZp36IQSyNx_9h4mpCg');
 });
 
 test('staged unsubscribe session is bounded, paced, review-list-only, and recoverable in a local log', async () => {

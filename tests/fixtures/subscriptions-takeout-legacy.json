@@ -1,0 +1,44 @@
+[
+  {
+    "contentDetails": { "activityType": "all", "newItemCount": 0, "totalItemCount": 812 },
+    "etag": "fixture-etag-1",
+    "id": "fixture-subscription-1",
+    "kind": "youtube#subscription",
+    "snippet": {
+      "channelId": "UCfixtureSubscriberChannel0",
+      "description": "Ideas worth spreading.",
+      "publishedAt": "2019-03-02T18:21:44.512Z",
+      "resourceId": { "channelId": "UCAuUUnT6oDeKwE6v1NGQxug", "kind": "youtube#channel" },
+      "thumbnails": {},
+      "title": "TED"
+    }
+  },
+  {
+    "contentDetails": { "activityType": "all", "newItemCount": 0, "totalItemCount": 140 },
+    "etag": "fixture-etag-2",
+    "id": "fixture-subscription-2",
+    "kind": "youtube#subscription",
+    "snippet": {
+      "channelId": "UCfixtureSubscriberChannel0",
+      "description": "",
+      "publishedAt": "2018-11-20T02:05:10.003Z",
+      "resourceId": { "channelId": "UCBa659QWEk1AI4Tg--mrJ2A", "kind": "youtube#channel" },
+      "thumbnails": {},
+      "title": "Tom Scott"
+    }
+  },
+  {
+    "contentDetails": { "activityType": "all", "newItemCount": 2, "totalItemCount": 3120 },
+    "etag": "fixture-etag-3",
+    "id": "fixture-subscription-3",
+    "kind": "youtube#subscription",
+    "snippet": {
+      "channelId": "UCfixtureSubscriberChannel0",
+      "description": "",
+      "publishedAt": "2020-06-14T09:41:00.000Z",
+      "resourceId": { "channelId": "UC_x5XG1OV2P6uZZ5FSM9Ttw", "kind": "youtube#channel" },
+      "thumbnails": {},
+      "title": "Google for Developers"
+    }
+  }
+]

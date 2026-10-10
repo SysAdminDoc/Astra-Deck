@@ -27114,7 +27114,7 @@ const STORAGE_KEYS = Object.freeze({
 		}) || {
 			id: 'subscriptionGroups',
 			name: t('feature_subscriptionGroups_name', 'Subscription Groups'),
-			description: t('feature_subscriptionGroups_desc', 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.'),
+			description: t('feature_subscriptionGroups_desc', 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML. Import also reads the subscriptions you export from Google Takeout or NewPipe.'),
 			group: 'Subscriptions',
 			icon: 'folder-tree',
 			pages: [PageTypes.SUBSCRIPTIONS],

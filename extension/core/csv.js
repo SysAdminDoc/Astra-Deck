@@ -46,7 +46,53 @@
         return (Array.isArray(values) ? values : []).map(csvCell).join(',');
     }
 
+    // The reading side, for files other apps export (Google Takeout's
+    // subscriptions.csv). RFC 4180 rows: quoted fields, doubled quotes inside
+    // them, CRLF or LF line ends, and a leading byte-order mark dropped.
+    // Values come back as written. The formula prefix csvCell adds is a
+    // spreadsheet safeguard and is not undone here.
+    function parseCsv(text) {
+        const source = String(text ?? '').replace(/^﻿/, '');
+        const rows = [];
+        let row = [];
+        let cell = '';
+        let quoted = false;
+        for (let i = 0; i < source.length; i += 1) {
+            const ch = source[i];
+            if (quoted) {
+                if (ch !== '"') cell += ch;
+                else if (source[i + 1] === '"') {
+                    cell += '"';
+                    i += 1;
+                } else {
+                    quoted = false;
+                }
+                continue;
+            }
+            if (ch === '"' && cell === '') {
+                quoted = true;
+            } else if (ch === ',') {
+                row.push(cell);
+                cell = '';
+            } else if (ch === '\r' || ch === '\n') {
+                if (ch === '\r' && source[i + 1] === '\n') i += 1;
+                row.push(cell);
+                rows.push(row);
+                row = [];
+                cell = '';
+            } else {
+                cell += ch;
+            }
+        }
+        if (cell !== '' || row.length) {
+            row.push(cell);
+            rows.push(row);
+        }
+        return rows;
+    }
+
     core.csvSafeValue = csvSafeValue;
     core.csvCell = csvCell;
     core.csvRow = csvRow;
+    core.parseCsv = parseCsv;
 })();

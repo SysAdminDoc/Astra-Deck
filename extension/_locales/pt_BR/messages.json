@@ -4064,7 +4064,7 @@
     "message": "Sombra do texto das legendas"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "Grupos locais de nível PocketTube para seu feed de inscrições. Crie grupos nomeados, arraste canais, ordene por data/duração/não assistidos/novos desde a última visita. Os dados dos grupos ficam em subscriptionGroupData (apenas local); use Exportar para fazer backup."
+    "message": "Grupos locais de nível PocketTube para seu feed de inscrições. Crie grupos nomeados, arraste canais, ordene por data/duração/não assistidos/novos desde a última visita. Os dados dos grupos ficam em subscriptionGroupData (apenas local); use Exportar para fazer backup. A importação também lê as inscrições que você exporta do Google Takeout ou do NewPipe."
   },
   "feature_subscriptionGroups_name": {
     "message": "Grupos de Inscrições"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "{count} grupos de inscrições importados de {source} ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "Inscrições do {source}"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "Arquivo de instalação pronto. {hint} O comando alternativo também foi copiado."

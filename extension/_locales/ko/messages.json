@@ -4064,7 +4064,7 @@
     "message": "자막 텍스트 그림자"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "구독 피드를 위한 PocketTube급 로컬 그룹. 이름이 있는 그룹을 만들고, 채널을 드래그하여 추가하고, 날짜/길이/미시청/마지막 방문 이후 새 항목으로 정렬합니다. 그룹 데이터는 subscriptionGroupData에 로컬 저장됩니다. 내보내기로 백업하세요."
+    "message": "구독 피드를 위한 PocketTube급 로컬 그룹. 이름이 있는 그룹을 만들고, 채널을 드래그하여 추가하고, 날짜/길이/미시청/마지막 방문 이후 새 항목으로 정렬합니다. 그룹 데이터는 subscriptionGroupData에 로컬 저장됩니다. 내보내기로 백업하세요. Google Takeout이나 NewPipe에서 내보낸 구독 목록도 가져올 수 있습니다."
   },
   "feature_subscriptionGroups_name": {
     "message": "구독 그룹"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "{source}에서 구독 그룹 {count}개를 가져왔습니다 ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "{source} 구독"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "설치 파일이 준비되었습니다. {hint} 대체 명령도 복사했습니다."

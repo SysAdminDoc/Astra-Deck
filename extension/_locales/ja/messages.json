@@ -4064,7 +4064,7 @@
     "message": "字幕テキストの影"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube クラスのローカルグループで登録チャンネルフィードを整理。名前付きグループを作成し、チャンネルをドラッグ、日付/長さ/未視聴/前回訪問からの新着でソート。グループデータは subscriptionGroupData にローカル保存。エクスポートでバックアップ。"
+    "message": "PocketTube クラスのローカルグループで登録チャンネルフィードを整理。名前付きグループを作成し、チャンネルをドラッグ、日付/長さ/未視聴/前回訪問からの新着でソート。グループデータは subscriptionGroupData にローカル保存。エクスポートでバックアップ。Google Takeout や NewPipe からエクスポートした登録チャンネルも読み込めます。"
   },
   "feature_subscriptionGroups_name": {
     "message": "登録チャンネルグループ"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "{source} から登録チャンネルグループ {count} 件をインポートしました ({details})。"
+  },
+  "subImportGroupNameTpl": {
+    "message": "{source} の登録チャンネル"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "セットアップファイルの準備ができました。{hint} 代替コマンドもコピーしました。"

@@ -14,6 +14,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Views on Their Own Line** (Home / Subscriptions, off by default) puts the views and the upload age back under the channel name. Since late September YouTube has printed all three on one row, so a long channel name pushed the numbers out of the card. With this on, a long name ends in an ellipsis instead and the verified badge stays right next to it.
 
+- **Subscription Groups** import reads the subscriptions other apps export. Pick Google Takeout's `subscriptions.csv` (the header can be in any language), Takeout's older `subscriptions.json` or a NewPipe export, and every channel lands in the group you have open, or in a new group named after the app if none is. Duplicates and NewPipe's SoundCloud or PeerTube entries are skipped and counted in the summary, the usual Undo is there, and a file that can't be read leaves your groups alone and says so. Shift+click still replaces all groups.
+
 - The userscript now tells you when it's updated. The next time you open its settings panel after an update, a short note under the header says which version you're on and links the changelog. Dismiss it or open the changelog and it won't show again until the next update. Nothing is fetched to show it, and there's no pop-up on page load. The extension keeps its banner in the toolbar popup.
 
 ### Changed

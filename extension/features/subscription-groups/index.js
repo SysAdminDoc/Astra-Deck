@@ -56,6 +56,7 @@
                 };
             },
             csvCell = globalThis.YTKitCore?.csvCell,
+            parseCsv = globalThis.YTKitCore?.parseCsv,
             handleFileExport = () => {},
             isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || '')),
             MediaDLManager = null,
@@ -88,7 +89,7 @@
             name: t('feature_subscriptionGroups_name', 'Subscription Groups'),
             description: t(
                 'feature_subscriptionGroups_desc',
-                'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.'
+                'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML. Import also reads the subscriptions you export from Google Takeout or NewPipe.'
             ),
             group: 'Subscriptions',
             icon: 'folder-tree',
@@ -633,6 +634,153 @@
                         'OPML import failed: {error}'
                     ).replace('{error}', () => describeFailureCause(e));
                     if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
+                    return { ok: false, error: e.message };
+                }
+            },
+
+            // The import button reads Astra's own JSON and OPML, and the
+            // channel lists other apps export: Google Takeout's
+            // subscriptions.csv (Channel Id, Channel Url, Channel Title, with
+            // the header in the account's language) and its older
+            // subscriptions.json, and NewPipe's subscriptions JSON.
+            _importFile(text, fileName = '', options = {}) {
+                const name = String(fileName || '').toLowerCase();
+                if (name.endsWith('.opml') || name.endsWith('.xml') || /^\s*<\?xml|^\s*<opml/i.test(text)) {
+                    return this._importGroupsOpml(text, options);
+                }
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    data = undefined; // reason: not JSON; a CSV export is checked next
+                }
+                const newPipe = !!data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.subscriptions);
+                const takeoutJson = Array.isArray(data);
+                const takeoutCsv = data === undefined && (name.endsWith('.csv') || /UC[A-Za-z0-9_-]{22}/.test(String(text)));
+                if (newPipe || takeoutJson || takeoutCsv) return this._importSubscriptionExport(text, data, options);
+                return this._importGroups(text, options);
+            },
+
+            // A channel id from an exported value. The UC id and @handle rules
+            // are normalizeBlockedChannelId's, with the case kept: groups
+            // compare against ids read off card links as YouTube writes them.
+            _channelIdFromExport(...values) {
+                for (const value of values) {
+                    const text = typeof value === 'string' ? value.trim() : '';
+                    if (!text || text.length > 512) continue;
+                    const channel = /(?:^|[^A-Za-z0-9_-])(UC[A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/.exec(text);
+                    if (channel) return channel[1];
+                    const handle = /(?:^|\/)@([A-Za-z0-9._-]{1,60})(?![A-Za-z0-9._-])/.exec(text);
+                    if (handle) return '@' + handle[1];
+                }
+                return '';
+            },
+
+            /**
+             * The channels in a subscription export, in file order:
+             * { source, channelIds, skippedChannels }. `data` is the parsed
+             * JSON, or undefined for CSV. Throws bad-format when no channel
+             * can be read.
+             */
+            _parseSubscriptionExport(text, data) {
+                const found = [];
+                let source = 'Google Takeout';
+                let skippedChannels = 0;
+                const take = (channelId) => {
+                    if (channelId) found.push(channelId);
+                    else skippedChannels++;
+                };
+                if (data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.subscriptions)) {
+                    source = 'NewPipe';
+                    for (const item of data.subscriptions) {
+                        // service_id 0 is YouTube; the others are SoundCloud,
+                        // PeerTube and the rest, which a group can't show.
+                        const serviceId = item && typeof item === 'object' ? item.service_id : undefined;
+                        if (serviceId !== undefined && Number(serviceId) !== 0) {
+                            skippedChannels++;
+                            continue;
+                        }
+                        take(this._channelIdFromExport(item?.url));
+                    }
+                } else if (Array.isArray(data)) {
+                    for (const item of data) {
+                        take(this._channelIdFromExport(item?.snippet?.resourceId?.channelId));
+                    }
+                } else {
+                    if (typeof parseCsv !== 'function') throw Object.assign(new Error('CSV reader unavailable'), { code: 'bad-format' });
+                    const rows = parseCsv(text).filter((row) => row.some((cell) => String(cell).trim()));
+                    rows.forEach((row, index) => {
+                        const channelId = this._channelIdFromExport(...row);
+                        // The first row is the header, in whatever language
+                        // the account uses; it holds no channel id.
+                        if (!channelId && index === 0) return;
+                        take(channelId);
+                    });
+                }
+                if (!found.length) throw Object.assign(new Error('No channels found in the subscription export'), { code: 'bad-format' });
+                return { source, channelIds: found, skippedChannels };
+            },
+
+            // Every channel lands in one group: the one named in options,
+            // else the group open in the toolbar, else a new group named
+            // after the source. Shift+click replace starts from no groups.
+            _importSubscriptionExport(text, data, options = {}) {
+                try {
+                    const parsed = this._parseSubscriptionExport(text, data);
+                    const replace = options.mode === 'replace';
+                    const groups = replace ? {} : this._readGroups();
+                    const GROUP_LIMIT = 500;
+                    const CHANNEL_LIMIT = 1000;
+                    const wanted = String(options.groupId || this._activeGroupId || '');
+                    let targetId = wanted && groups[wanted] ? wanted : '';
+                    if (!targetId) {
+                        if (Object.keys(groups).length >= GROUP_LIMIT) {
+                            throw Object.assign(new Error('Group limit reached'), { code: 'too-large' });
+                        }
+                        do {
+                            targetId = 'g_' + Math.random().toString(36).slice(2, 9);
+                        } while (groups[targetId]);
+                    }
+                    const existing = groups[targetId];
+                    const target = existing
+                        ? { ...existing, channelIds: [...(existing.channelIds || [])] }
+                        : {
+                            name: t('subImportGroupNameTpl', '{source} subscriptions').replace('{source}', () => parsed.source).slice(0, 80),
+                            color: '#7c3aed',
+                            channelIds: [],
+                            parentId: '',
+                            sortMode: this._normalizeSubscriptionSortMode(),
+                            updatedAt: Date.now()
+                        };
+                    const seen = new Set(target.channelIds);
+                    let importedChannels = 0;
+                    let duplicateChannels = 0;
+                    let skippedChannels = parsed.skippedChannels;
+                    for (const channelId of parsed.channelIds) {
+                        if (seen.has(channelId)) {
+                            duplicateChannels++;
+                            continue;
+                        }
+                        if (target.channelIds.length >= CHANNEL_LIMIT) {
+                            skippedChannels++;
+                            continue;
+                        }
+                        seen.add(channelId);
+                        target.channelIds.push(channelId);
+                        importedChannels++;
+                    }
+                    target.updatedAt = Date.now();
+                    return this._commitImportedGroups({ [targetId]: target }, parsed.source, {
+                        importedChannels,
+                        duplicateChannels,
+                        skippedChannels
+                    }, options);
+                } catch (e) {
+                    logFailure('import-subscriptions', e);
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionGroupsImportFailedTpl',
+                        'Import failed: {error}'
+                    ).replace('{error}', () => describeFailureCause(e)), '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
@@ -2334,18 +2482,11 @@
                     const mode = event.shiftKey ? 'replace' : 'merge';
                     const inp = document.createElement('input');
                     inp.type = 'file';
-                    inp.accept = 'application/json,.json,.opml,.xml,application/xml,text/xml,text/x-opml';
+                    inp.accept = 'application/json,.json,.opml,.xml,application/xml,text/xml,text/x-opml,.csv,text/csv';
                     inp.addEventListener('change', () => {
                         const file = inp.files?.[0];
                         if (!file) return;
-                        file.text().then(text => {
-                            const name = String(file.name || '').toLowerCase();
-                            if (name.endsWith('.opml') || name.endsWith('.xml') || /^\s*<\?xml|^\s*<opml/i.test(text)) {
-                                this._importGroupsOpml(text, { mode });
-                            } else {
-                                this._importGroups(text, { mode });
-                            }
-                        });
+                        file.text().then(text => this._importFile(text, file.name, { mode }));
                     });
                     inp.click();
                 });

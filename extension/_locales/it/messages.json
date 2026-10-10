@@ -4064,7 +4064,7 @@
     "message": "Ombra del testo dei sottotitoli"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "Gruppi locali tipo PocketTube per il feed iscrizioni. Crea gruppi con nome, trascina i canali, ordina per data/durata/non visti/nuovi dall'ultima visita. I dati dei gruppi risiedono in subscriptionGroupData (solo locale); usa Esporta per fare il backup."
+    "message": "Gruppi locali tipo PocketTube per il feed iscrizioni. Crea gruppi con nome, trascina i canali, ordina per data/durata/non visti/nuovi dall'ultima visita. I dati dei gruppi risiedono in subscriptionGroupData (solo locale); usa Esporta per fare il backup. L’importazione legge anche le iscrizioni esportate da Google Takeout o NewPipe."
   },
   "feature_subscriptionGroups_name": {
     "message": "Gruppi iscrizioni"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "Importati {count} gruppi di iscrizioni da {source} ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "Iscrizioni da {source}"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "File di installazione pronto. {hint} Anche il comando alternativo è stato copiato."

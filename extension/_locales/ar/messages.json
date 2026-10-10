@@ -4064,7 +4064,7 @@
     "message": "ظل نص التسميات التوضيحية"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "مجموعات محلية بمستوى PocketTube لخلاصة الاشتراكات. أنشئ مجموعات مسمّاة، اسحب القنوات إليها، رتّب حسب التاريخ/المدة/غير المشاهد/الجديد منذ آخر زيارة. بيانات المجموعات في subscriptionGroupData (محلي فقط)؛ استخدم التصدير لنسخها احتياطياً."
+    "message": "مجموعات محلية بمستوى PocketTube لخلاصة الاشتراكات. أنشئ مجموعات مسمّاة، اسحب القنوات إليها، رتّب حسب التاريخ/المدة/غير المشاهد/الجديد منذ آخر زيارة. بيانات المجموعات في subscriptionGroupData (محلي فقط)؛ استخدم التصدير لنسخها احتياطياً. ويقرأ الاستيراد أيضًا الاشتراكات التي تصدّرها من Google Takeout أو NewPipe."
   },
   "feature_subscriptionGroups_name": {
     "message": "مجموعات الاشتراكات"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "تم استيراد {count} مجموعات اشتراكات من {source} ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "اشتراكات {source}"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "ملف الإعداد جاهز. {hint} تم نسخ الأمر البديل أيضًا."

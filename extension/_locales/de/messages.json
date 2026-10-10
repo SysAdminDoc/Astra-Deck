@@ -4064,7 +4064,7 @@
     "message": "Untertiteltextschatten"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-ähnliche lokale Gruppen für den Abonnement-Feed. Benannte Gruppen erstellen, Kanäle hineinziehen, nach Datum/Dauer/ungesehen/neu-seit-letztem-Besuch sortieren. Gruppendaten liegen in subscriptionGroupData (nur lokal); Export zur Sicherung verwenden."
+    "message": "PocketTube-ähnliche lokale Gruppen für den Abonnement-Feed. Benannte Gruppen erstellen, Kanäle hineinziehen, nach Datum/Dauer/ungesehen/neu-seit-letztem-Besuch sortieren. Gruppendaten liegen in subscriptionGroupData (nur lokal); Export zur Sicherung verwenden. Der Import liest auch die Abos, die du aus Google Takeout oder NewPipe exportierst."
   },
   "feature_subscriptionGroups_name": {
     "message": "Abonnement-Gruppen"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "{count} Abo-Gruppen aus {source} importiert ({details})."
+  },
+  "subImportGroupNameTpl": {
+    "message": "Abos aus {source}"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "Setup-Datei bereit. {hint} Der Ersatzbefehl wurde ebenfalls kopiert."

@@ -41,27 +41,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
   Complexity: L
 
-- [ ] P2 — Import subscriptions from Google Takeout and NewPipe into Subscription Groups
-  Why: Subscription Groups imports only its own JSON and OPML
-  (`extension/features/subscription-groups/index.js` ~622, picker `accept`
-  `.json,.opml,.xml`), while FreeTube, NewPipe, Invidious and Piped users carry Takeout
-  `subscriptions.csv` or JSON, or NewPipe JSON. FilterTube's two newest bug reports (#79,
-  #80) are both import-path failures, which is where migrating users land. Astra already
-  imports Takeout watch history (`settingsManager.importYouTubeTakeoutWatchHistory`,
-  settings-panel ~4315).
-  Evidence: FreeTube `DataSettings.vue` import matrix (Takeout CSV columns `Channel Id`,
-  `Channel Url`, `Channel Title`; Takeout JSON `snippet.resourceId.channelId` and
-  `snippet.title`; NewPipe JSON top-level `subscriptions[]` with `url`, `name`,
-  `service_id`); FilterTube #79 and #80 (2026-10).
-  Touches: `extension/features/subscription-groups/index.js` (`_importGroups*` family and
-  the picker), the `csvCell` helper's parsing counterpart in `extension/core/`, settings-panel
-  import copy, 11 locales, `tests/features/subscription-groups*.test.js` with three fixtures.
-  Acceptance: importing a Takeout `subscriptions.csv`, a Takeout JSON and a NewPipe JSON
-  each lands every channel in a chosen or new group with the undo toast, a malformed file
-  gives the `describeFailure` copy, channel ids are normalized through
-  `normalizeBlockedChannelId`'s rules, and the three fixtures are unit-tested.
-  Complexity: M
-
 - [ ] P2 — Take the DeArrow Voting toggle off the panel until its write contract is verified
   Why: `deArrowVoting` (`settings-schema.js:736`, `ytkit.js` ~36454) posts to
   `https://sponsor.ajay.app/api/branding/vote/${type}` (~36499), a route that doesn't exist,

@@ -4064,7 +4064,7 @@
     "message": "字幕文字阴影"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube 级别的本地订阅分组。创建命名分组、拖入频道、按日期/时长/未观看/上次访问以来的新内容排序。分组数据存储在 subscriptionGroupData 中（仅本地）；使用导出进行备份。"
+    "message": "PocketTube 级别的本地订阅分组。创建命名分组、拖入频道、按日期/时长/未观看/上次访问以来的新内容排序。分组数据存储在 subscriptionGroupData 中（仅本地）；使用导出进行备份。导入也能读取从 Google Takeout 或 NewPipe 导出的订阅。"
   },
   "feature_subscriptionGroups_name": {
     "message": "订阅分组"
@@ -9366,6 +9366,9 @@
   },
   "subImportSummaryTplOther": {
     "message": "已从 {source} 导入 {count} 个订阅分组（{details}）。"
+  },
+  "subImportGroupNameTpl": {
+    "message": "{source} 订阅"
   },
   "dlInstallerReadyCopiedTpl": {
     "message": "安装文件已就绪。{hint} 备用命令也已复制。"

@@ -1,0 +1,11 @@
+{
+  "app_version": "0.28.0",
+  "app_version_int": 1005,
+  "subscriptions": [
+    { "service_id": 0, "url": "https://www.youtube.com/channel/UCHnyfMqiRRG1u-2MsSQLbXA", "name": "Veritasium" },
+    { "service_id": 0, "url": "https://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw", "name": "3Blue1Brown" },
+    { "service_id": 1, "url": "https://soundcloud.com/fixture-artist", "name": "A SoundCloud artist" },
+    { "service_id": 3, "url": "https://framatube.org/video-channels/fixture_channel", "name": "A PeerTube channel" },
+    { "service_id": 0, "url": "https://www.youtube.com/channel/UCAuUUnT6oDeKwE6v1NGQxug", "name": "TED" }
+  ]
+}
