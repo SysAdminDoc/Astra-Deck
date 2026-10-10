@@ -318,7 +318,7 @@ test('a later ytcfg.set that brings the flags back is overridden before anything
 
 // On a hard load core/early-switches.js turns this on before YouTube's head
 // scripts have made ytcfg.
-function createEarlyLayout() {
+function createEarlyLayout({ readyState } = {}) {
     const watchers = [];
     class FakeObserver {
         constructor(callback) { this.callback = callback; this.active = false; this.options = null; watchers.push(this); }
@@ -327,6 +327,7 @@ function createEarlyLayout() {
     }
     const listeners = new Map();
     const documentRef = {
+        readyState,
         documentElement: { nodeType: 1 },
         querySelector: () => null,
         querySelectorAll: () => [],
@@ -399,6 +400,18 @@ test('a ytcfg that is already there needs no watch, and a page without one stops
     off.context.ytcfg = createYtcfg(sidePanelFlags());
     off.watchers[0].callback([]);
     assert.equal(off.context.ytcfg.get('EXPERIMENT_FLAGS').web_watch_split_scroll, true, 'and a late ytcfg is left alone');
+});
+
+test('turned on after parsing on a page with no ytcfg, it starts no watch that could never end', () => {
+    for (const readyState of ['interactive', 'complete']) {
+        const late = createEarlyLayout({ readyState });
+        late.layout.setEnabled(true, '');
+        assert.deepEqual(late.watchers, [], `${readyState}: no parser watch`);
+        assert.equal(late.documentRef.listening('DOMContentLoaded'), false, `${readyState}: no listener left behind`);
+    }
+    const parsing = createEarlyLayout({ readyState: 'loading' });
+    parsing.layout.setEnabled(true, '');
+    assert.equal(parsing.watchers[0]?.active, true, 'while the parser runs it still watches');
 });
 
 test('with the switch off nothing is touched: no wrapper, no flag change, no listener', () => {

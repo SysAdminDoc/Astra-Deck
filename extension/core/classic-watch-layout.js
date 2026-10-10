@@ -422,6 +422,10 @@
             let cfg;
             try { cfg = root.ytcfg; } catch (error) { return; }
             if (cfg) return;
+            // Past parsing there are no head scripts left to make ytcfg, and
+            // DOMContentLoaded has already fired, so a watch would never end.
+            const readyState = documentRef.readyState;
+            if (readyState && readyState !== 'loading') return;
             configWatch = new MutationObserverCtor(() => { configReady(); });
             configWatch.observe(target, { childList: true, subtree: true });
             documentRef.addEventListener?.('DOMContentLoaded', lastConfigLook);
