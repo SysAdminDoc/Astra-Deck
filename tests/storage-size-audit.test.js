@@ -149,7 +149,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Hide Thumbnail Badges adds 28, and the Made With AI pair 71.
     // Classic Watch Layout adds 64: its toggle and the empty flag list.
     // Hide AI Chapters adds 25 for its toggle, off by default.
-    assert.equal(assessment.totalBytes, 186588);
+    // Views on Their Own Line adds 28 for its toggle, off by default.
+    assert.equal(assessment.totalBytes, 186616);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
