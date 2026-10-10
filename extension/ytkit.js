@@ -21120,6 +21120,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 description: t('feature_restoreClassicWatchLayout_desc', 'Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns.'),
                 group: 'Watch Page',
                 icon: 'layout',
+                // Tells the early-switch settle this stub publishes nothing.
+                _moduleUnavailable: true,
                 init() { DebugManager.log('ClassicWatchLayout', 'Feature module unavailable'); },
                 destroy() {}
             },
@@ -21149,6 +21151,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: t('feature_hideAutoChapters_desc', 'Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.'),
             group: 'Watch Page',
             icon: 'list',
+            // Tells the early-switch settle this stub publishes nothing.
+            _moduleUnavailable: true,
             init() { DebugManager.log('HideAutoChapters', 'Feature module unavailable'); },
             destroy() {}
         }),
@@ -49568,11 +49572,17 @@ html:not([dark]) .ytkit-sb-channel-chip {
             // was going to start has published its own switches; the early
             // ones no feature confirmed are dropped. Both, because a
             // background tab runs the idle tier while animation frames wait.
+            // A stub standing in for a module that didn't load "starts" but
+            // publishes nothing, and its destroy() can't clear the switch, so
+            // it never confirms one.
             let pendingInitTiers = 2;
             const settleEarlySwitches = () => {
                 pendingInitTiers -= 1;
                 if (pendingInitTiers > 0) return;
-                globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => getFeatureById(featureId)?._initialized === true);
+                globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => {
+                    const feature = getFeatureById(featureId);
+                    return feature?._initialized === true && feature._moduleUnavailable !== true;
+                });
             };
 
             // Tier 1: after first paint

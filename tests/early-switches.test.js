@@ -378,7 +378,27 @@ test('ytkit.js settles the early switches in safe mode and after both init tiers
     assert.match(ytkit.slice(safe, safe + 600), /earlyBridgeSwitches\?\.settle\?\.\(\(\) => false\)/);
     assert.match(ytkit, /let pendingInitTiers = 2;/);
     assert.equal(ytkit.split('settleEarlySwitches();').length - 1, 2, 'once at the end of each tier');
-    assert.match(ytkit, /settle\?\.\(\(featureId\) => getFeatureById\(featureId\)\?\._initialized === true\)/);
+    assert.ok(ytkit.includes('return feature?._initialized === true && feature._moduleUnavailable !== true;'),
+        'a feature confirms its switch only when it started for real');
+    // The stubs ytkit.js uses when a feature module fails to import start
+    // without publishing anything, so they must not confirm a switch.
+    for (const id of ['restoreClassicWatchLayout', 'hideAutoChapters']) {
+        const at = ytkit.indexOf(`id: '${id}',`);
+        assert.ok(at > -1, id);
+        const stub = ytkit.slice(at, ytkit.indexOf('destroy() {}', at));
+        assert.ok(stub.includes('Feature module unavailable'), `${id}: the slice is the stub`);
+        assert.ok(stub.includes('_moduleUnavailable: true'), `${id}: the stub is marked`);
+    }
+});
+
+test('a runtime that fails to load takes the early switches back', () => {
+    for (const file of ['extension/runtime-bootstrap.js', 'userscript/host.js']) {
+        const source = read(file);
+        const failed = source.lastIndexOf("phase = 'failed';");
+        assert.ok(failed > -1, file);
+        assert.ok(source.slice(failed, failed + 900).includes('earlyBridgeSwitches?.settle?.(() => false)'),
+            `${file}: the load-failure path settles with nothing confirmed`);
+    }
 });
 
 test('every switch the early pass knows is one its feature publishes', () => {

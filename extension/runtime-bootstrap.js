@@ -440,6 +440,14 @@
             bootstrapState.phase = 'failed';
             bootstrapState.active = false;
             bootstrapState.completedAt = Date.now();
+            // core/early-switches.js may have switched page-world features on
+            // at document_start. No feature will start to confirm them now,
+            // so they come off instead of outliving the runtime.
+            try {
+                globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.(() => false);
+            } catch (_) {
+                // reason: a failed settle must not hide the load failure logged below
+            }
             // A dynamic import can reject with undefined (seen on Firefox's first
             // page after a temporary install), and logging that bare value printed
             // "Runtime module load failed undefined". Always name the module and
