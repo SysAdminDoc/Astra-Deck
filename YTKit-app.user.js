@@ -14091,6 +14091,7 @@ const STORAGE_KEYS = Object.freeze({
 				description: t('feature_restoreClassicWatchLayout_desc', 'Undoes the side-panel watch page YouTube started testing in October 2026. Comments and the description go back under the video, recommendations go back to the right and the theater button returns.'),
 				group: 'Watch Page',
 				icon: 'layout',
+				_moduleUnavailable: true,
 				init() { DebugManager.log('ClassicWatchLayout', 'Feature module unavailable'); },
 				destroy() {}
 			},
@@ -14120,6 +14121,7 @@ const STORAGE_KEYS = Object.freeze({
 			description: t('feature_hideAutoChapters_desc', 'Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.'),
 			group: 'Watch Page',
 			icon: 'list',
+			_moduleUnavailable: true,
 			init() { DebugManager.log('HideAutoChapters', 'Feature module unavailable'); },
 			destroy() {}
 		}),
@@ -31159,7 +31161,10 @@ const STORAGE_KEYS = Object.freeze({
 			const settleEarlySwitches = () => {
 				pendingInitTiers -= 1;
 				if (pendingInitTiers > 0) return;
-				globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => getFeatureById(featureId)?._initialized === true);
+				globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => {
+					const feature = getFeatureById(featureId);
+					return feature?._initialized === true && feature._moduleUnavailable !== true;
+				});
 			};
 			requestAnimationFrame(() => {
 				normal.forEach(f => { initFeature(f); if (f._initialized) normalLog.push(f.id); });

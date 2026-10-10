@@ -5521,6 +5521,13 @@ const ASTRA_DECK_BUILD = {
                     state.completedAt = Date.now();
                     state.failure = String(error?.message || error || 'runtime-load-failed').slice(0, 240);
                 }
+                // The early switches published at document start have no
+                // feature left to confirm them, so they come off.
+                try {
+                    HOST_GLOBAL.YTKitCore?.earlyBridgeSwitches?.settle?.(() => false);
+                } catch (settleError) {
+                    recordError('early switches', settleError);
+                }
                 recordError('runtime', error);
             }
         );

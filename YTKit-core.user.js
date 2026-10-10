@@ -69,8 +69,7 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 		})
 	]);
 	function isWatchPath(pathname) {
-		var path = String(pathname || '');
-		return path === '/watch' || path.indexOf('/live/') === 0;
+		return String(pathname || '') === '/watch';
 	}
 	function isSafeModeUrl(search) {
 		return /[?&]ytkit=safe(?:&|$)/.test(String(search || ''));
@@ -24328,6 +24327,8 @@ void 0;
 			let cfg;
 			try { cfg = root.ytcfg; } catch (error) { return; }
 			if (cfg) return;
+			const readyState = documentRef.readyState;
+			if (readyState && readyState !== 'loading') return;
 			configWatch = new MutationObserverCtor(() => { configReady(); });
 			configWatch.observe(target, { childList: true, subtree: true });
 			documentRef.addEventListener?.('DOMContentLoaded', lastConfigLook);
@@ -25023,15 +25024,35 @@ void 0;
 			}
 		}
 		var initialSetterInstalled = false;
+		var lateLookArmed = false;
+		function cleanInitialDataAtDomReady() {
+			if (lateLookArmed || typeof document === 'undefined' || document.readyState !== 'loading') return;
+			lateLookArmed = true;
+			try {
+				document.addEventListener('DOMContentLoaded', function() {
+					lateLookArmed = false;
+					if (!enabled) return;
+					var data = null;
+					try { data = window.ytInitialData; } catch (error) { data = null; }
+					if (data && typeof data === 'object') applyResponse(data);
+				}, { once: true });
+			} catch (error) {
+				lateLookArmed = false;
+			}
+		}
 		function installInitialDataSetter() {
 			if (initialSetterInstalled || typeof window === 'undefined') return;
 			var descriptor;
 			try {
 				descriptor = Object.getOwnPropertyDescriptor(window, 'ytInitialData');
 			} catch (error) {
+				cleanInitialDataAtDomReady();
 				return;
 			}
-			if (descriptor) return;
+			if (descriptor) {
+				cleanInitialDataAtDomReady();
+				return;
+			}
 			try {
 				Object.defineProperty(window, 'ytInitialData', {
 					configurable: true,
@@ -25052,6 +25073,7 @@ void 0;
 				});
 				initialSetterInstalled = true;
 			} catch (error) {
+				cleanInitialDataAtDomReady();
 			}
 		}
 		function syncFromAttributes() {
