@@ -75,7 +75,8 @@ html:not([dark]) body.ytkit-keyMoments ytd-macro-markers-list-item-renderer.ytd-
 /* removeAllShorts — prevent Shorts shelf flash on home/subscriptions */
 body.ytkit-removeAllShorts ytd-rich-shelf-renderer[is-shorts],
 body.ytkit-removeAllShorts ytd-reel-shelf-renderer,
-body.ytkit-removeAllShorts [is-shorts].ytd-rich-grid-row {
+body.ytkit-removeAllShorts [is-shorts].ytd-rich-grid-row,
+body.ytkit-removeAllShorts ytd-browse grid-shelf-view-model:has(ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2):not(:has(yt-lockup-view-model)) {
     display: none !important;
 }
 

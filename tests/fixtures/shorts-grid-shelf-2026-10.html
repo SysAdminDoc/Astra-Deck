@@ -1,0 +1,69 @@
+<!-- Shorts grid shelves, 2026-10.
+     The search block is trimmed from a live capture (headless Chrome, signed
+     out, /results?search_query=minecraft+speedrun, 2026-10-10): the Shorts
+     shelf is a grid-shelf-view-model sitting straight inside the
+     ytd-item-section-renderer that also holds the regular results, so the
+     first ytd-* ancestor of a Shorts link is the whole results section.
+     The other blocks are modeled on it: the same shelf in a Home rich
+     section, a bare Short lockup in a watch-sidebar list, a grid shelf of
+     regular videos, and the older card and reel-shelf shapes.
+     Images, text, inline styles and svg stripped; structure intact. -->
+
+<!-- search: Shorts grid shelf inside the results section -->
+<ytd-item-section-renderer class="style-scope ytd-section-list-renderer">
+  <div id="contents" class="style-scope ytd-item-section-renderer">
+    <ytd-video-renderer class="style-scope ytd-item-section-renderer"><div id="dismissible"><a id="thumbnail" href="/watch?v=regular-one"></a></div></ytd-video-renderer>
+    <grid-shelf-view-model class="ytGridShelfViewModelHost ytd-item-section-renderer grid-shelf-with-top-margin ytGridShelfViewModelHostHasBottomButton">
+      <yt-section-header-view-model class="ytSectionHeaderViewModelHost"><yt-shelf-header-layout class="ytShelfHeaderLayoutHost"><h2 class="ytShelfHeaderLayoutTitle"></h2></yt-shelf-header-layout></yt-section-header-view-model>
+      <div>
+        <div class="ytGridShelfViewModelGridShelfRow ytd-item-section-renderer grid-shelf-with-top-margin">
+          <div class="ytGridShelfViewModelGridShelfItem"><ytm-shorts-lockup-view-model-v2><ytm-shorts-lockup-view-model><a href="/shorts/short-one"><div><yt-thumbnail-view-model class="ytThumbnailViewModelHost"></yt-thumbnail-view-model></div></a><div><div><h3><a href="/shorts/short-one"></a></h3></div></div></ytm-shorts-lockup-view-model></ytm-shorts-lockup-view-model-v2></div>
+          <div class="ytGridShelfViewModelGridShelfItem"><ytm-shorts-lockup-view-model-v2><ytm-shorts-lockup-view-model><a href="/shorts/short-two"><div><yt-thumbnail-view-model class="ytThumbnailViewModelHost"></yt-thumbnail-view-model></div></a><div><div><h3><a href="/shorts/short-two"></a></h3></div></div></ytm-shorts-lockup-view-model></ytm-shorts-lockup-view-model-v2></div>
+        </div>
+      </div>
+      <div class="ytGridShelfViewModelGridShelfBottomButtonContainer"><div><button-view-model class="ytSpecButtonViewModelHost"><button></button></button-view-model></div></div>
+    </grid-shelf-view-model>
+    <ytd-video-renderer class="style-scope ytd-item-section-renderer"><div id="dismissible"><a id="thumbnail" href="/watch?v=regular-two"></a></div></ytd-video-renderer>
+  </div>
+</ytd-item-section-renderer>
+
+<!-- home: Shorts grid shelf in a rich section (modeled) -->
+<ytd-rich-section-renderer class="style-scope ytd-rich-grid-renderer">
+  <div id="content" class="style-scope ytd-rich-section-renderer">
+    <grid-shelf-view-model class="ytGridShelfViewModelHost">
+      <div><div class="ytGridShelfViewModelGridShelfRow"><div class="ytGridShelfViewModelGridShelfItem"><ytm-shorts-lockup-view-model-v2><ytm-shorts-lockup-view-model><a href="/shorts/home-short"></a></ytm-shorts-lockup-view-model></ytm-shorts-lockup-view-model-v2></div></div></div>
+    </grid-shelf-view-model>
+  </div>
+</ytd-rich-section-renderer>
+
+<!-- watch sidebar: bare Short lockup in the related list (modeled) -->
+<ytd-item-section-renderer class="style-scope ytd-watch-next-secondary-results-renderer">
+  <div id="contents" class="style-scope ytd-item-section-renderer">
+    <yt-lockup-view-model class="ytd-item-section-renderer lockup"><div class="ytLockupViewModelHost"><a class="ytLockupViewModelContentImage" href="/watch?v=sidebar-regular"></a></div></yt-lockup-view-model>
+    <yt-lockup-view-model class="ytd-item-section-renderer lockup"><div class="ytLockupViewModelHost"><a class="ytLockupViewModelContentImage" href="/shorts/sidebar-short"></a></div></yt-lockup-view-model>
+  </div>
+</ytd-item-section-renderer>
+
+<!-- grid shelf of regular videos (modeled) -->
+<ytd-item-section-renderer class="style-scope ytd-section-list-renderer">
+  <div id="contents" class="style-scope ytd-item-section-renderer">
+    <grid-shelf-view-model class="ytGridShelfViewModelHost">
+      <div><div class="ytGridShelfViewModelGridShelfRow">
+        <div class="ytGridShelfViewModelGridShelfItem"><yt-lockup-view-model><a href="/watch?v=grid-regular"></a></yt-lockup-view-model></div>
+        <div class="ytGridShelfViewModelGridShelfItem"><ytm-shorts-lockup-view-model><a href="/shorts/grid-mixed-short"></a></ytm-shorts-lockup-view-model></div>
+      </div></div>
+    </grid-shelf-view-model>
+  </div>
+</ytd-item-section-renderer>
+
+<!-- home: Short as a rich grid card -->
+<ytd-rich-grid-renderer>
+  <div id="contents">
+    <ytd-rich-item-renderer class="style-scope ytd-rich-grid-renderer"><div id="content"><ytm-shorts-lockup-view-model><a href="/shorts/card-short"></a></ytm-shorts-lockup-view-model></div></ytd-rich-item-renderer>
+  </div>
+</ytd-rich-grid-renderer>
+
+<!-- older reel shelf -->
+<ytd-reel-shelf-renderer class="style-scope ytd-item-section-renderer">
+  <div id="contents"><ytd-reel-item-renderer><a id="thumbnail" href="/shorts/reel-short"></a></ytd-reel-item-renderer></div>
+</ytd-reel-shelf-renderer>

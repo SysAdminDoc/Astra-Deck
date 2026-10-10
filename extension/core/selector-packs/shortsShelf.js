@@ -29,7 +29,9 @@
     registry.set('shortsShelf', Object.freeze({
         surface: 'shortsShelf',
         stable: Object.freeze(['a[href^="/shorts"]', 'ytd-rich-shelf-renderer']),
-        fallback: Object.freeze(['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer']),
+        // grid-shelf-view-model is the 2026-10 Shorts shelf (seen live in
+        // search results on 2026-10-10); the mhtml corpus predates it.
+        fallback: Object.freeze(['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer', 'grid-shelf-view-model.ytGridShelfViewModelHost']),
         captureEvidence: Object.freeze([
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',

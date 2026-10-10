@@ -6366,6 +6366,44 @@ const STORAGE_KEYS = Object.freeze({
         });
     }
 
+    // Containers that hold whole lists of results. A Shorts link whose first
+    // ytd-* ancestor is one of these sits straight in the list, so hiding that
+    // ancestor would take every other result with it.
+    const SHORTS_SECTION_CONTAINERS = new Set([
+        'YTD-ITEM-SECTION-RENDERER',
+        'YTD-SECTION-LIST-RENDERER',
+        'YTD-RICH-GRID-RENDERER',
+        'YTD-WATCH-NEXT-SECONDARY-RESULTS-RENDERER',
+        'YTD-TWO-COLUMN-SEARCH-RESULTS-RENDERER',
+        'YTD-TWO-COLUMN-BROWSE-RESULTS-RENDERER',
+        'YTD-SEARCH',
+        'YTD-BROWSE',
+        'YTD-WATCH-FLEXY',
+        'YTD-PAGE-MANAGER',
+        'YTD-APP'
+    ]);
+
+    // What Remove Shorts hides for one Shorts link. A Shorts shelf goes as a
+    // whole: the 2026-10 grid-shelf-view-model one sits straight inside the
+    // ytd-item-section-renderer that also holds the regular results (live
+    // search capture, 2026-10-10), so the old walk to the first ytd-* ancestor
+    // landed on the whole section. Bare lockups (the watch sidebar's
+    // yt-lockup-view-model cards) hit the same trap, so a link sitting straight
+    // in a list hides its own card.
+    function findShortsHideTarget(link) {
+        if (!link || typeof link.closest !== 'function') return null;
+        const shelf = link.closest('grid-shelf-view-model, ytd-reel-shelf-renderer');
+        if (shelf && !shelf.querySelector('yt-lockup-view-model, ytd-video-renderer, ytd-compact-video-renderer')) {
+            return shelf;
+        }
+        let parent = link.parentElement;
+        while (parent && (!parent.tagName.startsWith('YTD-') || parent.tagName === 'YTD-THUMBNAIL')) {
+            parent = parent.parentElement;
+        }
+        if (parent && !SHORTS_SECTION_CONTAINERS.has(parent.tagName)) return parent;
+        return link.closest('ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2, yt-lockup-view-model');
+    }
+
     // v4.69.0 — schedule-driven activation ("focus hours").
     //
     // Any boolean feature can carry an active window in `featureSchedules`.
@@ -10842,10 +10880,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const isExemptPage = () => /^\/@[^/]+/.test(window.location.pathname) || window.location.pathname.startsWith('/results');
 
                 const hideShort = (a) => {
-                    let parent = a.parentElement;
-                    while (parent && (!parent.tagName.startsWith('YTD-') || parent.tagName === 'YTD-THUMBNAIL')) {
-                        parent = parent.parentElement;
-                    }
+                    const parent = findShortsHideTarget(a);
                     if (parent instanceof HTMLElement && !parent.dataset.ytkitShortsHidden) {
                         parent.style.display = 'none';
                         parent.dataset.ytkitShortsHidden = '1';
@@ -10895,9 +10930,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Re-scan on navigation
                 addNavigateRule(this.id, scanPage);
 
+                // The 2026-10 Shorts shelf is a grid-shelf-view-model holding
+                // ytm-shorts-lockup-view-model cards; a grid shelf of regular
+                // videos (yt-lockup-view-model) is left alone.
                 const css = `
                     body:not([data-ytkit-search-page]) ytd-reel-shelf-renderer,
-                    body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]) {
+                    body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+                    body:not([data-ytkit-search-page]) grid-shelf-view-model:has(ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2):not(:has(yt-lockup-view-model)),
+                    body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(grid-shelf-view-model ytm-shorts-lockup-view-model):not(:has(yt-lockup-view-model)) {
                         display: none !important;
                     }
                 `;

@@ -512,6 +512,11 @@
           "selector": "ytd-reel-shelf-renderer",
           "matched": false,
           "matchCount": 0
+        },
+        {
+          "selector": "grid-shelf-view-model.ytGridShelfViewModelHost",
+          "matched": false,
+          "matchCount": 0
         }
       ],
       "matchedSelectors": [
@@ -812,6 +817,11 @@
         },
         {
           "selector": "ytd-reel-shelf-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "grid-shelf-view-model.ytGridShelfViewModelHost",
           "matched": false,
           "matchCount": 0
         }

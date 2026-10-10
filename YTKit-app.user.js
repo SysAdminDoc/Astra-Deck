@@ -4606,6 +4606,32 @@ const STORAGE_KEYS = Object.freeze({
 				.replace('{rule}', hideRuleLabel(rule))
 		});
 	}
+	const SHORTS_SECTION_CONTAINERS = new Set([
+		'YTD-ITEM-SECTION-RENDERER',
+		'YTD-SECTION-LIST-RENDERER',
+		'YTD-RICH-GRID-RENDERER',
+		'YTD-WATCH-NEXT-SECONDARY-RESULTS-RENDERER',
+		'YTD-TWO-COLUMN-SEARCH-RESULTS-RENDERER',
+		'YTD-TWO-COLUMN-BROWSE-RESULTS-RENDERER',
+		'YTD-SEARCH',
+		'YTD-BROWSE',
+		'YTD-WATCH-FLEXY',
+		'YTD-PAGE-MANAGER',
+		'YTD-APP'
+	]);
+	function findShortsHideTarget(link) {
+		if (!link || typeof link.closest !== 'function') return null;
+		const shelf = link.closest('grid-shelf-view-model, ytd-reel-shelf-renderer');
+		if (shelf && !shelf.querySelector('yt-lockup-view-model, ytd-video-renderer, ytd-compact-video-renderer')) {
+			return shelf;
+		}
+		let parent = link.parentElement;
+		while (parent && (!parent.tagName.startsWith('YTD-') || parent.tagName === 'YTD-THUMBNAIL')) {
+			parent = parent.parentElement;
+		}
+		if (parent && !SHORTS_SECTION_CONTAINERS.has(parent.tagName)) return parent;
+		return link.closest('ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2, yt-lockup-view-model');
+	}
 	let _scheduleTimer = null;
 	const SCHEDULE_MAX_SLEEP_MS = 5 * 60 * 1000;
 	function applyFeatureSchedules(source = 'schedule') {
@@ -6354,10 +6380,7 @@ const STORAGE_KEYS = Object.freeze({
 			init() {
 				const isExemptPage = () => /^\/@[^/]+/.test(window.location.pathname) || window.location.pathname.startsWith('/results');
 				const hideShort = (a) => {
-					let parent = a.parentElement;
-					while (parent && (!parent.tagName.startsWith('YTD-') || parent.tagName === 'YTD-THUMBNAIL')) {
-						parent = parent.parentElement;
-					}
+					const parent = findShortsHideTarget(a);
 					if (parent instanceof HTMLElement && !parent.dataset.ytkitShortsHidden) {
 						parent.style.display = 'none';
 						parent.dataset.ytkitShortsHidden = '1';
@@ -6394,7 +6417,7 @@ const STORAGE_KEYS = Object.freeze({
 					}
 				});
 				addNavigateRule(this.id, scanPage);
-				const css = `body:not([data-ytkit-search-page]) ytd-reel-shelf-renderer,body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]){display:none!important}`;
+				const css = `body:not([data-ytkit-search-page]) ytd-reel-shelf-renderer,body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),body:not([data-ytkit-search-page]) grid-shelf-view-model:has(ytm-shorts-lockup-view-model,ytm-shorts-lockup-view-model-v2):not(:has(yt-lockup-view-model)),body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(grid-shelf-view-model ytm-shorts-lockup-view-model):not(:has(yt-lockup-view-model)){display:none!important}`;
 				this._styleElement = injectStyle(css, this.id + '-style', true);
 				this._searchPageRule = () => {
 					document.body.toggleAttribute('data-ytkit-search-page', window.location.pathname.startsWith('/results'));

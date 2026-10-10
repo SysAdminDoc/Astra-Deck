@@ -22,6 +22,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Remove Shorts**, which is on by default, missed the Shorts shelf YouTube started showing in October 2026, a grid of Shorts under its own header. It's hidden now wherever the older shelves were, and search results still show Shorts as before. A grid of regular videos is left alone. Remove Shorts could also hide far more than a Short: when a Short sat directly in a list of results, it hid the whole list. Now only that Short, or its shelf, goes.
+
 - **Hide Related Videos**, which is on by default, only hid recommendations in the right-hand column. On the side-panel watch page YouTube started testing in October 2026, and in the one-column layout of a narrow window, they sit under the video and stayed visible. They're hidden wherever they show up now. It also used to hide the whole right-hand column even while YouTube had a panel open in it, which took away comments on the new page and YouTube's own transcript panel everywhere. An open panel keeps the column now, and **Focused Mode** keeps the comments panel the same way.
 
 - The Subscriptions pause for a feed full of hidden videos never kicked in on YouTube's current card layout, so a cleared feed kept loading in the background. It now pauses after about three hidden pages, even when YouTube fetches them back to back.

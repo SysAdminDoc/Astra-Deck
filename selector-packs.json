@@ -844,7 +844,8 @@
       ],
       "fallback": [
         "yt-thumbnail-overlay-badge-view-model",
-        "ytd-reel-shelf-renderer"
+        "ytd-reel-shelf-renderer",
+        "grid-shelf-view-model.ytGridShelfViewModelHost"
       ],
       "hooks": {
         "action.dislike": {
@@ -1147,5 +1148,5 @@
       "notes": "Route state is best read from ytd-watch-flexy[video-id]."
     }
   },
-  "digest": "sha256:b94e3b4cd69875a5fd745f914f9a3fc2ac1e21c7e614f3259b5302bac5940ace"
+  "digest": "sha256:ef5aba8721cd1a27c8f016f7899a1208c99cd47801c714d6e985c68480d001d5"
 }

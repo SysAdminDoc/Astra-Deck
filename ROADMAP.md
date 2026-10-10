@@ -41,26 +41,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
   Complexity: L
 
-- [ ] P1 — Hide the Shorts grid shelves YouTube introduced in search and feeds around 2026-10-09
-  Why: YouTube now renders Shorts shelves as `grid-shelf-view-model`, which Remove All
-  Shorts (`ytd-reel-shelf-renderer`, `ytd-rich-shelf-renderer[is-shorts]`) and the
-  `shortsShelf` selector pack don't name, so Shorts come back for everyone who hid them.
-  Evidence: Remove YouTube Suggestions commits 2dca2940 ("Fix hiding shorts from search
-  results", `#container.ytd-search grid-shelf-view-model.ytGridShelfViewModelHost.ytd-item-section-renderer`)
-  and 436b0fd8 ("also hide grid shelves without a bottom button", the same host without the
-  search scope), both 2026-10-09, released as v4.4.0; `grep grid-shelf-view-model extension/`
-  returns nothing on 2026-10-10.
-  Touches: `extension/early.css:76-77`, `extension/ytkit.js:10897-10898`,
-  `extension/core/selector-packs/shortsShelf.js`, `selector-packs.json` (regenerate with
-  `npm run generate:selector-asset` and re-sign with `npm run sign:feeds`), a fixture under
-  `tests/fixtures/`.
-  Acceptance: a fixture with `grid-shelf-view-model.ytGridShelfViewModelHost` shelves inside
-  `ytd-item-section-renderer` on a search page and on Home hides the ones that contain
-  `ytm-shorts-lockup-view-model` with Remove All Shorts on, leaves a grid shelf without
-  Shorts lockups alone, and shows all of them with the setting off; the `shortsShelf` pack
-  lists the new host; `tests/selector-asset.test.js` passes with the re-signed asset.
-  Complexity: S
-
 - [ ] P1 — Hide AI-generated chapters while keeping creator chapters
   Why: YouTube is adding auto-generated chapters to videos after upload, two Control Panel
   issues asked for a hide, it shipped there on 2026-10-08, and a Greasy Fork script that
