@@ -2410,12 +2410,6 @@
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "DeArrow チャンネル別オーバーライド"
   },
-  "feature_deArrowVoting_desc": {
-    "message": "DeArrow のタイトル置換に投票。置換されたタイトルの横にサムズアップ/ダウンボタンを追加。ローカルのプライベート userID を使用。デフォルトオフ。"
-  },
-  "feature_deArrowVoting_name": {
-    "message": "DeArrow 投票"
-  },
   "feature_deArrow_desc": {
     "message": "クリックベイトのタイトルとサムネイルを、CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データに置き換えます"
   },
@@ -9873,15 +9867,6 @@
   },
   "toastFeedTriageOff": {
     "message": "フィードの整理をオフにしました。以前のフィルター設定に戻りました。"
-  },
-  "toastDeArrowVoteFailed": {
-    "message": "DeArrow の投票に失敗しました。後でもう一度お試しください。"
-  },
-  "toastDeArrowVotedUp": {
-    "message": "DeArrow: 高評価しました"
-  },
-  "toastDeArrowVotedDown": {
-    "message": "DeArrow: 低評価しました"
   },
   "toastStudyExportOne": {
     "message": "{format} を書き出しました（ブックマーク {count} 件）"

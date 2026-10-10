@@ -181,13 +181,14 @@
       "settings": {
         "_settingsVersion": 10,
         "fullTitles": false,
+        "deArrowVoting": true,
         "safeUnknownKey": "custom-v10"
       },
       "expected": {
         "fullTitles": true,
         "safeUnknownKey": "custom-v10"
       },
-      "absent": []
+      "absent": ["deArrowVoting"]
     }
   ]
 }

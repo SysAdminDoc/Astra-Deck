@@ -2410,12 +2410,6 @@
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "Переопределения DeArrow по каналам"
   },
-  "feature_deArrowVoting_desc": {
-    "message": "Голосуйте за замены заголовков DeArrow. Добавляет кнопки «За/Против» рядом с заменёнными заголовками. Использует локальный приватный userID. По умолчанию выключено."
-  },
-  "feature_deArrowVoting_name": {
-    "message": "Голосование DeArrow"
-  },
   "feature_deArrow_desc": {
     "message": "Заменяет кликбейтные заголовки и миниатюры данными SponsorBlock под лицензией CC BY-NC-SA 4.0"
   },
@@ -9873,15 +9867,6 @@
   },
   "toastFeedTriageOff": {
     "message": "Сортировка ленты выключена. Прежние фильтры восстановлены."
-  },
-  "toastDeArrowVoteFailed": {
-    "message": "Не удалось проголосовать в DeArrow. Повторите позже."
-  },
-  "toastDeArrowVotedUp": {
-    "message": "DeArrow: голос «за»"
-  },
-  "toastDeArrowVotedDown": {
-    "message": "DeArrow: голос «против»"
   },
   "toastStudyExportOne": {
     "message": "Экспортирован файл {format} с {count} закладкой"

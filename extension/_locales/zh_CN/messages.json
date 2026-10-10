@@ -2410,12 +2410,6 @@
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "DeArrow 按频道覆盖"
   },
-  "feature_deArrowVoting_desc": {
-    "message": "为 DeArrow 标题替换投票。在替换标题旁添加赞/踩按钮。使用本地私有用户 ID。默认关闭。"
-  },
-  "feature_deArrowVoting_name": {
-    "message": "DeArrow 投票"
-  },
   "feature_deArrow_desc": {
     "message": "使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据替换标题党标题和缩略图"
   },
@@ -9873,15 +9867,6 @@
   },
   "toastFeedTriageOff": {
     "message": "信息流分拣已关闭，之前的筛选设置已恢复。"
-  },
-  "toastDeArrowVoteFailed": {
-    "message": "DeArrow 投票失败，请稍后再试。"
-  },
-  "toastDeArrowVotedUp": {
-    "message": "DeArrow：已投赞成票"
-  },
-  "toastDeArrowVotedDown": {
-    "message": "DeArrow：已投反对票"
   },
   "toastStudyExportOne": {
     "message": "已导出 {format}（{count} 个书签）"

@@ -41,21 +41,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
   Complexity: L
 
-- [ ] P2 — Take the DeArrow Voting toggle off the panel until its write contract is verified
-  Why: `deArrowVoting` (`settings-schema.js:736`, `ytkit.js` ~36454) posts to
-  `https://sponsor.ajay.app/api/branding/vote/${type}` (~36499), a route that doesn't exist,
-  so every vote fails silently. The fix is blocked because testing a write touches DeArrow's
-  live data (Roadmap_Blocked L359). A visible toggle that can't work costs trust for nothing.
-  Evidence: the lines above and Roadmap_Blocked.md:359, read 2026-10-10.
-  Touches: `extension/core/settings-schema.js` (move the key to `RETIRED_SHIPPED_IDS` with
-  the migration note, or mark it `internal`), the settings-panel card list, README settings
-  table, `scripts/monolith-peel-baseline.json`, CHANGELOG, the Roadmap_Blocked item (note
-  the toggle is hidden).
-  Acceptance: the Voting card no longer renders in the panel or the popup overview, a stored
-  `true` is dropped on load without an error, the retired-id tests pass, and the blocked item
-  records the change.
-  Complexity: S
-
 - [ ] P3 — List view for Home, search and channel grids
   Why: a list layout is ImprovedTube's most-reacted open request (19) and Control Panel
   ships "grid as list" (`gridAsListPageSelector` in page.js); `subscriptionViewMode` offers

@@ -2424,12 +2424,6 @@
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "DeArrow Per-Channel Overrides"
   },
-  "feature_deArrowVoting_desc": {
-    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles on the watch page. Uses a locally generated private userID that never leaves DeArrow requests. Off by default."
-  },
-  "feature_deArrowVoting_name": {
-    "message": "DeArrow Voting"
-  },
   "feature_deArrow_desc": {
     "message": "Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0"
   },
@@ -9971,18 +9965,6 @@
   },
   "toastFeedTriageOff": {
     "message": "Feed Triage is off. Your previous filter settings are back.",
-    "description": "Toast message."
-  },
-  "toastDeArrowVoteFailed": {
-    "message": "DeArrow vote failed. Try again later.",
-    "description": "Toast message."
-  },
-  "toastDeArrowVotedUp": {
-    "message": "DeArrow: voted up",
-    "description": "Toast message."
-  },
-  "toastDeArrowVotedDown": {
-    "message": "DeArrow: voted down",
     "description": "Toast message."
   },
   "toastStudyExportOne": {

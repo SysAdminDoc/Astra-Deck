@@ -18,6 +18,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The userscript now tells you when it's updated. The next time you open its settings panel after an update, a short note under the header says which version you're on and links the changelog. Dismiss it or open the changelog and it won't show again until the next update. Nothing is fetched to show it, and there's no pop-up on page load. The extension keeps its banner in the toolbar popup.
 
+### Removed
+
+- DeArrow Voting is gone from the settings for now. Its thumbs up and down buttons sent votes to an address DeArrow's server doesn't have, so every vote failed and nothing you voted on was ever counted. A version built on DeArrow's real submission route needs testing against the live service before it ships. If you had it on, the old value is dropped and nothing else changes. DeArrow's title and thumbnail replacement isn't affected.
+
 ### Changed
 
 - Every language besides English is now fully translated. About a quarter of the interface, roughly 900 strings per language, still showed in English: Watch Feed, the blocked-channel page, bulk actions, AI summaries and many feature descriptions. Spanish even called Watch Feed by its old name, Persistent Queue. German, Spanish, French, Italian, Brazilian Portuguese, Russian, Japanese, Korean, Chinese and Arabic now read in their own language apart from brand names, and theater mode uses YouTube's own word for it in each one. The userscript picks up the same translations.

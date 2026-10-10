@@ -2410,12 +2410,6 @@
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "تخصيصات DeArrow لكل قناة"
   },
-  "feature_deArrowVoting_desc": {
-    "message": "التصويت على بدائل عناوين DeArrow. يضيف أزرار إعجاب/عدم إعجاب بجانب العناوين المستبدلة. يستخدم معرّف مستخدم محلي خاص. معطَّل افتراضياً."
-  },
-  "feature_deArrowVoting_name": {
-    "message": "تصويت DeArrow"
-  },
   "feature_deArrow_desc": {
     "message": "يستبدل العناوين والصور المصغرة المضللة ببيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0"
   },
@@ -9873,15 +9867,6 @@
   },
   "toastFeedTriageOff": {
     "message": "تم إيقاف فرز الخلاصة. عادت إعدادات الفلترة السابقة."
-  },
-  "toastDeArrowVoteFailed": {
-    "message": "فشل التصويت في DeArrow. حاول لاحقًا."
-  },
-  "toastDeArrowVotedUp": {
-    "message": "DeArrow: تم التصويت بالإيجاب"
-  },
-  "toastDeArrowVotedDown": {
-    "message": "DeArrow: تم التصويت بالسلب"
   },
   "toastStudyExportOne": {
     "message": "تم تصدير {format} مع {count} إشارة مرجعية"

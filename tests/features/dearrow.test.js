@@ -555,16 +555,18 @@ test('DeArrow Casual Mode gates fallback formatting on the deArrowCasualMode set
         'fallback formatting path must be gated on !casualMode');
 });
 
-test('DeArrow writes the attributes its voting and peek consumers query', () => {
-    // deArrowVoting selects `[data-ytkit-dearrow-uuid]` and dearrowPeekButton
-    // renders `attr(data-ytkit-orig-title)`. Neither attribute was written by
-    // the module that actually ships, so both features were inert.
+test('DeArrow writes the attributes its peek consumer and a vote surface need', () => {
+    // dearrowPeekButton renders `attr(data-ytkit-orig-title)`. That attribute
+    // and the submission UUID were once missing from the module that ships,
+    // which left peek and the old voting toggle inert. Voting was retired in
+    // v4.98.0 (it posted to a route DeArrow doesn't have); the UUID stays on
+    // the title for the rebuild Roadmap_Blocked tracks.
     assert.match(dearrowModuleSource, /data-ytkit-dearrow-uuid/,
-        'the submission UUID must reach the DOM or DeArrow voting finds nothing to vote on');
+        'the submission UUID must reach the DOM so a vote surface can name the title');
     assert.match(dearrowModuleSource, /data-ytkit-orig-title/,
         'the original title must reach the DOM or the peek overlay renders empty');
-    const voteSelector = sources.ytkit.indexOf('.daCustomTitle[data-ytkit-dearrow-uuid]');
-    assert.ok(voteSelector > -1, 'deArrowVoting must still select on the UUID attribute');
+    assert.doesNotMatch(sources.ytkit, /id: 'deArrowVoting'/,
+        'the retired voting feature must not come back without its rebuild');
     assert.match(sources.ytkit, /html\.ytkit-peek \[data-ytkit-dearrow-title\]/,
         'peek CSS must still key on the marker attribute the replacement writes');
 });

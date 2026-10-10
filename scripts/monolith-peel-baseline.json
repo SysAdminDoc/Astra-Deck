@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-10-07",
+  "recordedAt": "2026-10-10",
   "reason": "Accepted actionToasts inline: it is a setting showToast reads at call time, with no behavior a module could hold.",
-  "inlineOnlyFeatureIdCount": 280,
-  "featureModuleCount": 31,
+  "inlineOnlyFeatureIdCount": 279,
+  "featureModuleCount": 33,
   "inlineOnlyFeatureIds": [
     "abLoop",
     "actionToasts",
@@ -79,7 +79,6 @@
     "customSelectionColor",
     "customSpeedButtons",
     "deArrowChannelOverridesPanel",
-    "deArrowVoting",
     "dearrowPeekButton",
     "debugMode",
     "denseMode",

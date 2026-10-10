@@ -4057,6 +4057,9 @@ const STORAGE_KEYS = Object.freeze({
         // experiment flag moved the buffer-ahead either.
         'bufferPreload',
         'bufferPreloadSeconds',
+        // v4.98.0: DeArrow Voting retired. Its vote route doesn't exist on
+        // DeArrow's API, so every vote failed.
+        'deArrowVoting',
         // Root-userscript settings removed before the current schema. These
         // names have no value-compatible replacement and must not survive an
         // import or a save from a long-lived tab.
@@ -4551,7 +4554,6 @@ const STORAGE_KEYS = Object.freeze({
             returnDislikeShowRatio: true,
             deArrowChannelOverrides: {},               // { channelId: { mode: 'off' | 'original' | 'dearrow' } }
             deArrowChannelOverridesPanel: false,       // Watch-page button to set the override for the current channel
-            deArrowVoting: false,                      // Vote on DeArrow title replacements (off by default; requires local userID)
             // v3.26.0 deferred → v4.1.0: per-context quality matrix scaffold
             // Data model only. The MAIN-world bridge listens to data-ytkit-quality-context
             // and switches active quality. Default 'inherit' means "no override".
@@ -36549,134 +36551,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove();
                 this._btn = null;
                 document.querySelectorAll('.ytkit-da-channel-chip').forEach(el => el.remove());
-                this._styleElement?.remove();
-                this._styleElement = null;
-            }
-        },
-        // ═══════════════════════════════════════════════════════════════════
-        //  DEARROW VOTING — thumbs up/down on replaced titles
-        // ═══════════════════════════════════════════════════════════════════
-        {
-            id: 'deArrowVoting',
-            name: 'DeArrow Voting',
-            description: 'Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles on the watch page. Uses a locally generated private userID that never leaves DeArrow requests. Off by default.',
-            group: 'Content',
-            icon: 'thumbs-up',
-            pages: [PageTypes.WATCH],
-            _styleElement: null,
-            _navRule: null,
-            _userId: null,
-
-            _ensureStyles() {
-                if (this._styleElement) return;
-                this._styleElement = injectStyle(`
-                    .ytkit-da-vote{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle;}
-                    .ytkit-da-vote-btn{appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,0.1);border-radius:6px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font:12px/1 system-ui;padding:3px 7px;cursor:pointer;transition:background 120ms,color 120ms;}
-                    .ytkit-da-vote-btn:hover{background:rgba(255,255,255,0.1);color:#fff;}
-                    .ytkit-da-vote-btn[data-voted="1"]{background:rgba(34,197,94,0.14);color:#86efac;border-color:rgba(34,197,94,0.32);}
-                    .ytkit-da-vote-btn[data-voted="0"]{background:rgba(239,68,68,0.14);color:#fca5a5;border-color:rgba(239,68,68,0.32);}
-                    html:not([dark]) .ytkit-da-vote-btn{background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);border-color:rgba(0,0,0,0.1);}
-                    html:not([dark]) .ytkit-da-vote-btn:hover{background:rgba(0,0,0,0.08);color:#000;}
-                `, 'da-vote');
-            },
-
-            async _getUserId() {
-                if (this._userId) return this._userId;
-                try {
-                    const stored = storageReadJSON('ytkit-da-user-id', null);
-                    if (stored && typeof stored === 'string' && stored.length >= 32) {
-                        this._userId = stored;
-                        return stored;
-                    }
-                } catch { /* reason: storage read may fail */ }
-                const array = new Uint8Array(32);
-                crypto.getRandomValues(array);
-                const newId = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
-                this._userId = newId;
-                try { storageWriteJSON('ytkit-da-user-id', newId); } catch { /* reason: storage write may fail */ }
-                return newId;
-            },
-
-            async _vote(uuid, type) {
-                const userId = await this._getUserId();
-                try {
-                    await extensionFetchJson({
-                        method: 'POST',
-                        url: `https://sponsor.ajay.app/api/branding/vote/${type}`,
-                        headers: { 'Content-Type': 'application/json' },
-                        data: JSON.stringify({ UUID: uuid, userID: userId }),
-                        timeout: 8000,
-                    });
-                    return true;
-                } catch (e) {
-                    DebugManager.log('DeArrowVote', `Vote failed: ${e.message}`);
-                    if (typeof showToast === 'function') showToast(t('toastDeArrowVoteFailed', 'DeArrow vote failed. Try again later.'), '#ef4444');
-                    return false;
-                }
-            },
-
-            _attachVoteButtons() {
-                if (!isWatchPagePath()) return;
-                const title = document.querySelector(
-                    'ytd-watch-metadata [data-ytkit-dearrow-uuid], ' +
-                    '#title.ytd-watch-metadata [data-ytkit-dearrow-uuid], ' +
-                    '.daCustomTitle[data-ytkit-dearrow-uuid]'
-                );
-                if (!title || title.querySelector('.ytkit-da-vote')) return;
-                const uuid = title.dataset.ytkitDearrowUuid;
-                if (!uuid) return;
-
-                const container = document.createElement('span');
-                container.className = 'ytkit-da-vote';
-
-                const upBtn = document.createElement('button');
-                upBtn.type = 'button';
-                upBtn.className = 'ytkit-da-vote-btn';
-                upBtn.textContent = '\u{1F44D}';
-                upBtn.title = 'Vote: this DeArrow title is good';
-                upBtn.setAttribute('aria-label', 'Vote up on this DeArrow title replacement');
-
-                const downBtn = document.createElement('button');
-                downBtn.type = 'button';
-                downBtn.className = 'ytkit-da-vote-btn';
-                downBtn.textContent = '\u{1F44E}';
-                downBtn.title = 'Vote: this DeArrow title is bad';
-                downBtn.setAttribute('aria-label', 'Vote down on this DeArrow title replacement');
-
-                upBtn.addEventListener('click', async () => {
-                    if (await this._vote(uuid, 1)) {
-                        upBtn.dataset.voted = '1';
-                        downBtn.removeAttribute('data-voted');
-                        if (typeof showToast === 'function') showToast(t('toastDeArrowVotedUp', 'DeArrow: voted up'), '#22c55e');
-                    }
-                });
-
-                downBtn.addEventListener('click', async () => {
-                    if (await this._vote(uuid, 0)) {
-                        downBtn.dataset.voted = '0';
-                        upBtn.removeAttribute('data-voted');
-                        if (typeof showToast === 'function') showToast(t('toastDeArrowVotedDown', 'DeArrow: voted down'), '#f59e0b');
-                    }
-                });
-
-                container.appendChild(upBtn);
-                container.appendChild(downBtn);
-                title.appendChild(container);
-            },
-
-            init() {
-                this._ensureStyles();
-                this._navRule = () => { setTimeout(() => this._attachVoteButtons(), 2000); };
-                addNavigateRule(this.id, this._navRule);
-                addMutationRule(this.id + '_mut', () => this._attachVoteButtons());
-                this._navRule();
-            },
-
-            destroy() {
-                removeNavigateRule(this.id);
-                removeMutationRule(this.id + '_mut');
-                this._navRule = null;
-                document.querySelectorAll('.ytkit-da-vote').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
             }

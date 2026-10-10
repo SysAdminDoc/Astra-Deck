@@ -2410,12 +2410,6 @@
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "Override DeArrow per canale"
   },
-  "feature_deArrowVoting_desc": {
-    "message": "Vota le sostituzioni dei titoli DeArrow. Aggiunge pulsanti su/giu accanto ai titoli sostituiti. Usa un userID privato locale. Disattivato per impostazione predefinita."
-  },
-  "feature_deArrowVoting_name": {
-    "message": "Votazione DeArrow"
-  },
   "feature_deArrow_desc": {
     "message": "Sostituisce titoli e miniature clickbait con dati SponsorBlock con licenza CC BY-NC-SA 4.0"
   },
@@ -9873,15 +9867,6 @@
   },
   "toastFeedTriageOff": {
     "message": "Lo smistamento del feed è disattivato. I filtri precedenti sono tornati."
-  },
-  "toastDeArrowVoteFailed": {
-    "message": "Voto DeArrow non riuscito. Riprova più tardi."
-  },
-  "toastDeArrowVotedUp": {
-    "message": "DeArrow: voto positivo"
-  },
-  "toastDeArrowVotedDown": {
-    "message": "DeArrow: voto negativo"
   },
   "toastStudyExportOne": {
     "message": "{format} esportato con {count} segnalibro"

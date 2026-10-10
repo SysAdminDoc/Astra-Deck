@@ -21,8 +21,8 @@ test('project facts are collected from the shipped source surfaces', () => {
     // Buffer / Preload retired its toggle and slider (489 → 487, 305 → 303 ids).
     // Hide Thumbnail Badges added one toggle (488), the Made With AI pair two (490),
     // Classic Watch Layout and its flag list two (492), Hide AI Chapters one (493),
-    // Views on Their Own Line one (494).
-    assert.equal(facts.schemaEntries, 494);
+    // Views on Their Own Line one (494). Retiring DeArrow Voting leaves 493.
+    assert.equal(facts.schemaEntries, 493);
     assert.equal(facts.schemaCategories, 18);
     // The runtime graph includes the semantic zero-ad fallback beside the
     // selector-backed document-start shell layer. core/feed-prefilter.js is
@@ -32,8 +32,8 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.runtimeModules, 125);
     assert.equal(facts.featureModules.length, 33);
     // The Made With AI pair adds two (305), Classic Watch Layout two more (307),
-    // Hide AI Chapters one (308).
-    assert.equal(facts.featureIds.length, 308);
+    // Hide AI Chapters one (308). Retiring DeArrow Voting leaves 307.
+    assert.equal(facts.featureIds.length, 307);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
@@ -52,7 +52,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`494` entries', '`493` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`493` entries', '`492` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

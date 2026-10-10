@@ -351,8 +351,8 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: Protocol decision — confirm the native host never sends a pre-token frame. If it can, the client must ignore non-terminal frames until a token/terminal-error arrives or the timeout fires.
 
 - [ ] P3 — SponsorBlock segment submission and voting
-  Why: Astra reads the SponsorBlock commons (`skipSegments` GET only) with no path to contribute, and reviewers of competing tools repeatedly ask for a local correction path when a segment is wrong. DeArrow voting and casual mode are already shipped, so the UI precedent exists.
-  Evidence: `extension/features/sponsorblock/index.js:242-306` (read-only); `extension/ytkit.js` `deArrowVoting` / `casualMode` precedent; https://github.com/ajayyy/SponsorBlock/issues.
+  Why: Astra reads the SponsorBlock commons (`skipSegments` GET only) with no path to contribute, and reviewers of competing tools repeatedly ask for a local correction path when a segment is wrong. DeArrow casual mode is shipped as a UI precedent; DeArrow Voting was retired in v4.98.0 because its write path never worked (see the item below).
+  Evidence: `extension/features/sponsorblock/index.js:242-306` (read-only); `casualMode` precedent in `extension/features/dearrow/index.js`; https://github.com/ajayyy/SponsorBlock/issues.
   Touches: `extension/features/sponsorblock/index.js`, `extension/core/credential-vault.js` or a new durable domain for the private user ID, `extension/core/data-flow.js`, settings schema and locales.
   Acceptance: off by default and GitHub-full only; a locally generated private user ID is stored in a backup-excluded, scrub-covered domain; voting works before submission is enabled; every write is rate-budgeted and surfaces failures through `external-api-health`.
   Complexity: L
@@ -360,7 +360,8 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 - [ ] P2 — DeArrow Voting posts to a nonexistent API route with the wrong payload shape — every vote fails
   Category: correctness
-  Where: extension/ytkit.js:37861-37877 (deArrowVoting._vote)
+  Status (2026-10-10): the toggle is retired for v4.98.0. `deArrowVoting` is in `RETIRED_SHIPPED_IDS` and both runtime strip lists, so a stored value drops on load, and the feature code, strings and tests are gone. `features/dearrow` still writes `data-ytkit-dearrow-uuid` on replaced titles. A rebuild ships under a new feature id on the contract below, once a live vote can be verified.
+  Where: was extension/ytkit.js:37861-37877 (deArrowVoting._vote), removed in the retirement commit
   Problem: Votes go to `POST https://sponsor.ajay.app/api/branding/vote/${type}` with body {UUID, userID}. SponsorBlockServer exposes no /api/branding/vote/<n> route; branding votes are `POST /api/branding` with {videoID, userID, title|thumbnail, downvote}; the {UUID, userID, type} shape belongs to the segment endpoint /api/voteOnSponsorTime. Every vote 404s, so both vote buttons always show "DeArrow vote failed." The v4.51.0 audit fixed the attribute wiring that makes these buttons appear — nothing verifies the vote round-trip.
   Evidence: The only other DeArrow API use is GET /api/branding?videoID= (features/dearrow/index.js:167, ytkit.js:31172); no test covers the vote endpoint (grep branding/vote tests/ → nothing).
   Fix: POST /api/branding with videoID + the existing title/thumbnail evidence + `downvote: type === 0` per the DeArrow API docs (or remove the vote buttons if submission is out of scope — align with the Roadmap_Blocked SponsorBlock-submission product decision). Add a fetch-fake test pinning URL + payload shape.

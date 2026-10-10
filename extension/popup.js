@@ -439,6 +439,7 @@ const RETIRED_SETTING_KEYS = new Set([
     'lowPowerProfileBackup',
     'bufferPreload',
     'bufferPreloadSeconds',
+    'deArrowVoting',
     'adblockFilterAutoUpdate',
     'adblockFilterUrl',
     'audioEqPreset',

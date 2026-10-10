@@ -737,7 +737,6 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "returnDislikeShowRatio", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "deArrowChannelOverrides", category: "enrichment", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "deArrowChannelOverridesPanel", category: "enrichment", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "deArrowVoting", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── quality-codec ───
     Object.freeze({ key: "qualityProfileMatrix", category: "quality-codec", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -1083,6 +1082,10 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     // setBufferingGoal and paces buffering from the server.
     "bufferPreload",
     "bufferPreloadSeconds",
+    // v4.98.0: DeArrow Voting retired. It posted to a branding vote route
+    // DeArrow doesn't have, so every vote failed. Roadmap_Blocked tracks a
+    // rebuild on the real submission contract.
+    "deArrowVoting",
     // v4.62.0: low-power restore state has always lived in the dedicated
     // top-level ytkit-low-power-backup store; the schema key was never read.
     "lowPowerProfileBackup",

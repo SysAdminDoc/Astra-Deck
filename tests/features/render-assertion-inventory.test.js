@@ -35,7 +35,6 @@ const RENDER_ASSERTION_INVENTORY = Object.freeze([
     ['wheelSeek', 'feature-render-surfaces.test.js', 'wheelSeek renders one announced position chip that names the direction', "loadFeature('wheelSeek'"],
     ['astraContextMenu', 'feature-render-surfaces.test.js', 'astraContextMenu offers the player actions on the player and nothing elsewhere', "loadFeature('astraContextMenu'"],
     ['transcriptAiHandoff', 'feature-render-surfaces.test.js', 'transcriptAiHandoff builds one labelled player button carrying its glyph', "loadFeature('transcriptAiHandoff'"],
-    ['deArrowVoting', 'feature-render-surfaces.test.js', 'deArrowVoting attaches one vote pair to a replaced title', "loadFeature('deArrowVoting'"],
     ['videoScreenshot', 'feature-render-surfaces.test.js', 'videoScreenshot builds one announced player button in its idle state', "loadFeature('videoScreenshot'"],
     ['subscriptionGroups', 'subscription-groups.test.js', 'an empty group renders a notice explaining the blank feed', 'createSubscriptionGroupsFeature('],
     ['transcriptViewer', 'transcript-export.test.js', 'a transcript state renders a titled shell into the body', "loadFeature('transcriptViewer'"],
