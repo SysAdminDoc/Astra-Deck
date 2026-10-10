@@ -59,13 +59,13 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 	var FLAG_PATTERN = /^[A-Za-z0-9_,\s-]*$/;
 	var MAX_FLAG_TEXT = 4000;
 	var SWITCHES = Object.freeze([
-		Object.freeze({ featureId: 'forceDvr', name: 'data-ytkit-force-dvr' }),
-		Object.freeze({ featureId: 'hideAutoChapters', name: 'data-ytkit-hide-auto-chapters' }),
+		Object.freeze({ featureId: 'forceDvr', attribute: 'data-ytkit-force-dvr' }),
+		Object.freeze({ featureId: 'hideAutoChapters', attribute: 'data-ytkit-hide-auto-chapters' }),
 		Object.freeze({
 			featureId: 'restoreClassicWatchLayout',
-			name: 'data-ytkit-classic-watch-layout',
+			attribute: 'data-ytkit-classic-watch-layout',
 			flagsKey: 'watchLayoutFlagOverrides',
-			flagsName: 'data-ytkit-classic-watch-layout-flags'
+			flagsAttribute: 'data-ytkit-classic-watch-layout-flags'
 		})
 	]);
 	function isWatchPath(pathname) {
@@ -85,11 +85,11 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 		for (var i = 0; i < SWITCHES.length; i += 1) {
 			var entry = SWITCHES[i];
 			if (settings[entry.featureId] !== true) continue;
-			if (entry.flagsName) {
+			if (entry.flagsAttribute) {
 				var text = normalizeFlagText(settings[entry.flagsKey]);
-				if (text) plan.push({ name: entry.flagsName, value: text, featureId: entry.featureId });
+				if (text) plan.push({ name: entry.flagsAttribute, value: text, featureId: entry.featureId });
 			}
-			plan.push({ name: entry.name, value: 'on', featureId: entry.featureId });
+			plan.push({ name: entry.attribute, value: 'on', featureId: entry.featureId });
 		}
 		return plan;
 	}

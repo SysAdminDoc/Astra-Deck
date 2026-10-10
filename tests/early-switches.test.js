@@ -389,11 +389,11 @@ test('every switch the early pass knows is one its feature publishes', () => {
         restoreClassicWatchLayout: read('extension/features/classic-watch-layout/index.js'),
     };
     for (const entry of early.SWITCHES) {
-        assert.ok(sources[entry.featureId].includes(`'${entry.name}'`), `${entry.featureId} publishes ${entry.name}`);
-        if (entry.flagsName) assert.ok(sources[entry.featureId].includes(`'${entry.flagsName}'`));
+        assert.ok(sources[entry.featureId].includes(`'${entry.attribute}'`), `${entry.featureId} publishes ${entry.attribute}`);
+        if (entry.flagsAttribute) assert.ok(sources[entry.featureId].includes(`'${entry.flagsAttribute}'`));
     }
     const mainSource = read('extension/ytkit-main.js');
-    for (const entry of early.SWITCHES) assert.ok(mainSource.includes(`'${entry.name}'`), `ytkit-main.js reads ${entry.name}`);
+    for (const entry of early.SWITCHES) assert.ok(mainSource.includes(`'${entry.attribute}'`), `ytkit-main.js reads ${entry.attribute}`);
 });
 
 test('the early pass imports the channel module from the list the runtime loader imports from', () => {

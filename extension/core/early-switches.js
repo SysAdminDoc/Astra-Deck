@@ -37,13 +37,13 @@
 
     // Exactly what each feature publishes from its init(), in that order.
     var SWITCHES = Object.freeze([
-        Object.freeze({ featureId: 'forceDvr', name: 'data-ytkit-force-dvr' }),
-        Object.freeze({ featureId: 'hideAutoChapters', name: 'data-ytkit-hide-auto-chapters' }),
+        Object.freeze({ featureId: 'forceDvr', attribute: 'data-ytkit-force-dvr' }),
+        Object.freeze({ featureId: 'hideAutoChapters', attribute: 'data-ytkit-hide-auto-chapters' }),
         Object.freeze({
             featureId: 'restoreClassicWatchLayout',
-            name: 'data-ytkit-classic-watch-layout',
+            attribute: 'data-ytkit-classic-watch-layout',
             flagsKey: 'watchLayoutFlagOverrides',
-            flagsName: 'data-ytkit-classic-watch-layout-flags'
+            flagsAttribute: 'data-ytkit-classic-watch-layout-flags'
         })
     ]);
 
@@ -73,13 +73,13 @@
         for (var i = 0; i < SWITCHES.length; i += 1) {
             var entry = SWITCHES[i];
             if (settings[entry.featureId] !== true) continue;
-            if (entry.flagsName) {
+            if (entry.flagsAttribute) {
                 // The list goes first so the page world's first look at the
                 // switch already has it (same order as the feature's init).
                 var text = normalizeFlagText(settings[entry.flagsKey]);
-                if (text) plan.push({ name: entry.flagsName, value: text, featureId: entry.featureId });
+                if (text) plan.push({ name: entry.flagsAttribute, value: text, featureId: entry.featureId });
             }
-            plan.push({ name: entry.name, value: 'on', featureId: entry.featureId });
+            plan.push({ name: entry.attribute, value: 'on', featureId: entry.featureId });
         }
         return plan;
     }
