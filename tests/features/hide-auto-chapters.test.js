@@ -165,9 +165,10 @@ test('positive control: a filter without the entity-key test fails the capture',
 
 // ── end to end through ytkit-main.js and the sealed bridge ──────────
 
-function bootMainWorld() {
+function bootMainWorld({ readyState = 'complete' } = {}) {
     const attributes = new Map();
     const observers = [];
+    const documentListeners = [];
     const fire = (name) => {
         const records = [{ type: 'attributes', attributeName: name }];
         observers.filter((observer) => observer.active).forEach((observer) => observer.callback(records));
@@ -198,7 +199,7 @@ function bootMainWorld() {
         MutationObserver: FakeMutationObserver,
         document: {
             documentElement,
-            addEventListener() {},
+            addEventListener: (type, listener) => { documentListeners.push({ type, listener }); },
             removeEventListener() {},
             querySelector: () => null,
             querySelectorAll: () => [],
@@ -206,7 +207,7 @@ function bootMainWorld() {
             createElement: () => ({ style: {}, setAttribute() {}, removeAttribute() {}, appendChild() {} }),
             head: { appendChild() {} },
             body: { appendChild() {} },
-            readyState: 'complete'
+            readyState
         },
         location: { href: 'https://www.youtube.com/watch?v=auto-chapters', pathname: '/watch' },
         performance: { now: () => 0 },
@@ -229,7 +230,10 @@ function bootMainWorld() {
         context.__payload = JSON.stringify(value);
         return vm.runInContext('JSON.parse(__payload)', context);
     };
-    return { attributes, channel, context, documentElement, pageParse };
+    const dispatchDocument = (type) => {
+        for (const entry of documentListeners.filter((item) => item.type === type)) entry.listener({ type });
+    };
+    return { attributes, channel, context, documentElement, pageParse, dispatchDocument };
 }
 
 test('ytkit-main.js filters parsed responses only for a switch the isolated world sealed', () => {
@@ -270,6 +274,37 @@ test('a filter error reads degraded while the switch is on, and off reads off', 
     world.context.ytInitialData = capture('autoOnly');
     world.channel.publish(ENABLE_ATTR, 'on');
     assert.equal(world.attributes.get(STATUS_ATTR), 'on;cleaned=1', 'turning it back on starts clean');
+});
+
+// The early switch can land before the inline assignment. If another
+// script (an ad blocker's scriptlet, say) already owns ytInitialData with an
+// accessor, Astra's own setter can't go in, so it looks again at
+// DOMContentLoaded instead of leaving the first response dirty.
+test('an early switch still cleans a first response that another script\'s accessor holds', () => {
+    const world = bootMainWorld({ readyState: 'loading' });
+    let held;
+    Object.defineProperty(world.context, 'ytInitialData', {
+        configurable: true,
+        get() { return held; },
+        set(value) { held = value; }
+    });
+    world.channel.publish(ENABLE_ATTR, 'on');
+    world.context.ytInitialData = capture('autoBesideOtherMarkers');
+    assert.ok(autoChapterLeftovers(held).length > 0, 'the other accessor took the value as it came');
+    assert.equal(typeof Object.getOwnPropertyDescriptor(world.context, 'ytInitialData').get, 'function',
+        'the other script\'s accessor is left in place');
+
+    world.dispatchDocument('DOMContentLoaded');
+    assert.deepEqual(autoChapterLeftovers(held), [], 'cleaned in place at DOMContentLoaded');
+});
+
+test('with no other accessor, an early switch cleans through its own setter', () => {
+    const world = bootMainWorld({ readyState: 'loading' });
+    world.channel.publish(ENABLE_ATTR, 'on');
+    world.context.ytInitialData = capture('autoBesideOtherMarkers');
+    assert.deepEqual(autoChapterLeftovers(world.context.ytInitialData), []);
+    world.dispatchDocument('DOMContentLoaded');
+    assert.deepEqual(autoChapterLeftovers(world.context.ytInitialData), []);
 });
 
 // ── the isolated-world half ──────────────────────────────────────────

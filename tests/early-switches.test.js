@@ -263,6 +263,9 @@ function pageWorld(page) {
         setInterval: () => 0,
         clearInterval: () => {},
         queueMicrotask,
+        // The AI chapter entity keys are decoded with atob; without it the
+        // cleanup leaves them and the run below would never see that.
+        atob: globalThis.atob,
         MutationObserver: page.FakeMutationObserver,
         document: {
             documentElement: page.documentElement,
@@ -325,11 +328,29 @@ async function hardLoad(stored) {
 
 const panelMentions = (data) => JSON.stringify(data).split(PANEL_ID).length - 1;
 
+// Entity keys are base64 protobuf naming the marker set they point at.
+function autoChapterEntityKeys(value, keyName = '') {
+    if (typeof value === 'string') {
+        if (!/^(entityKey|entityKeys|visibleOnLoadKeys)$/.test(keyName)) return 0;
+        try {
+            const base64 = decodeURIComponent(value).replace(/-/g, '+').replace(/_/g, '/');
+            return Buffer.from(base64, 'base64').toString('latin1').includes('AUTO_CHAPTERS') ? 1 : 0;
+        } catch (error) {
+            return 0;
+        }
+    }
+    if (!value || typeof value !== 'object') return 0;
+    if (Array.isArray(value)) return value.reduce((total, entry) => total + autoChapterEntityKeys(entry, keyName), 0);
+    return Object.entries(value).reduce((total, [key, entry]) => total + autoChapterEntityKeys(entry, key), 0);
+}
+
 test('on a hard load all three switches reach the page world before its inline data runs', async () => {
     const { main, page, published } = await hardLoad({ ytSuiteSettings: ALL_ON });
     assert.equal(published, 4);
 
     assert.equal(panelMentions(main.ytInitialData), 0, 'the first video loses its AI chapters too');
+    assert.ok(autoChapterEntityKeys(chapterFixture.captures.autoOnly) > 0, 'the capture carries AI chapter entity keys');
+    assert.equal(autoChapterEntityKeys(main.ytInitialData), 0, 'and the entity keys that point at them');
     assert.equal(page.attributes.get('data-ytkit-hide-auto-chapters-status'), 'on;cleaned=1');
 
     assert.equal(main.ytInitialPlayerResponse.videoDetails.isLiveDvrEnabled, true, 'the first live stream gets DVR');

@@ -749,17 +749,42 @@
         // assignment in an inline script goes through an own accessor on
         // window, which hands the property back as plain data on first use,
         // so the page owns it from then on. Anything already there, including
-        // another script's accessor, is left alone.
+        // another script's accessor, is left alone and read again at
+        // DOMContentLoaded instead.
         var initialSetterInstalled = false;
+        // When the setter can't go in (another script's accessor got there
+        // first), the inline assignment still lands before DOMContentLoaded,
+        // so look once more then and clean the value in place.
+        var lateLookArmed = false;
+        function cleanInitialDataAtDomReady() {
+            if (lateLookArmed || typeof document === 'undefined' || document.readyState !== 'loading') return;
+            lateLookArmed = true;
+            try {
+                document.addEventListener('DOMContentLoaded', function() {
+                    lateLookArmed = false;
+                    if (!enabled) return;
+                    var data = null;
+                    try { data = window.ytInitialData; } catch (error) { data = null; }
+                    if (data && typeof data === 'object') applyResponse(data);
+                }, { once: true });
+            } catch (error) {
+                lateLookArmed = false;
+            }
+        }
+
         function installInitialDataSetter() {
             if (initialSetterInstalled || typeof window === 'undefined') return;
             var descriptor;
             try {
                 descriptor = Object.getOwnPropertyDescriptor(window, 'ytInitialData');
             } catch (error) {
+                cleanInitialDataAtDomReady();
                 return;
             }
-            if (descriptor) return;
+            if (descriptor) {
+                cleanInitialDataAtDomReady();
+                return;
+            }
             try {
                 Object.defineProperty(window, 'ytInitialData', {
                     configurable: true,
@@ -781,7 +806,9 @@
                 });
                 initialSetterInstalled = true;
             } catch (error) {
-                // reason: the JSON.parse hook and the in-place cleanup still apply
+                // reason: the JSON.parse hook still applies, and the look at
+                // DOMContentLoaded cleans the first response in place
+                cleanInitialDataAtDomReady();
             }
         }
 
