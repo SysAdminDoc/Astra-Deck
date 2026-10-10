@@ -205,6 +205,24 @@ test('a foundation module that rejects with no value is retried once, then repor
     assert.equal(globalThis.__loaderBadRuns, 2, 'one retry, no more');
 });
 
+// The bad module throws the browser's fetch-failure TypeError itself, which
+// is the only way to make Node report one; in a browser it means the fetch
+// failed and nothing ran, so the one retry is what makes the second fetch.
+test('a foundation module whose fetch failed is retried once, then reported by name', async () => {
+    const error = await runLoaderAgainst(
+        "throw new TypeError('Failed to fetch dynamically imported module: chrome-extension://x/core/storage.js');");
+    assert.ok(error instanceof Error);
+    assert.equal(error.module, 'core/storage.js');
+    assert.match(error.message, /core\/storage\.js - Failed to fetch dynamically imported module/);
+    assert.equal(globalThis.__loaderBadRuns, 2, 'one retry, no more');
+});
+
+test('a TypeError from module code is not mistaken for a fetch failure', async () => {
+    const error = await runLoaderAgainst("throw new TypeError('x is not a function');");
+    assert.match(error.message, /core\/storage\.js - x is not a function/);
+    assert.equal(globalThis.__loaderBadRuns, 1, 'module code that already ran must not run twice');
+});
+
 test('a foundation module that throws a real Error is reported with its message and never re-run', async () => {
     const error = await runLoaderAgainst("throw new Error('boom from storage');");
     assert.ok(error instanceof Error);

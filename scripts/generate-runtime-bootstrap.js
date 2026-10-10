@@ -405,6 +405,13 @@ ${moduleLiteral}
 // module. A value-less rejection is retried once with a cache-busting query,
 // because it means the fetch failed before anything evaluated; a real Error
 // from module code is never retried, so nothing executes twice.
+//
+// A fetch failure gets the same one retry. The browser keeps a failed fetch
+// in its module map, and core/early-switches.js imports
+// core/bridge-channel.js at document_start, so one bad fetch there would
+// otherwise fail this import too. Chrome, Firefox and Safari word it as
+// below, and nothing has evaluated when they do.
+const FETCH_FAILURE = /dynamically imported module|importing a module script failed/i;
 const importFoundationModule = async (modulePath) => {
     const url = getURL(modulePath);
     let reason;
@@ -413,7 +420,9 @@ const importFoundationModule = async (modulePath) => {
     } catch (error) {
         reason = error;
     }
-    if (!(reason instanceof Error) && !reason?.message) {
+    const valueless = !(reason instanceof Error) && !reason?.message;
+    const fetchFailed = reason instanceof TypeError && FETCH_FAILURE.test(String(reason.message || ''));
+    if (valueless || fetchFailed) {
         try {
             return await import(url + '?retry=1');
         } catch (error) {
