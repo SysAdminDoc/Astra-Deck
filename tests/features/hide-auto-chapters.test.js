@@ -256,6 +256,22 @@ test('ytkit-main.js filters parsed responses only for a switch the isolated worl
     assert.ok(autoChapterLeftovers(world.pageParse(capture('autoOnly'))).length > 0, 'off leaves responses alone');
 });
 
+test('a filter error reads degraded while the switch is on, and off reads off', () => {
+    const world = bootMainWorld();
+    const hostile = {};
+    Object.defineProperty(hostile, 'engagementPanels', { get() { throw new Error('page getter'); } });
+    world.context.ytInitialData = hostile;
+    world.channel.publish(ENABLE_ATTR, 'on');
+    assert.equal(world.attributes.get(STATUS_ATTR), 'degraded', 'the error is reported, and the page is not broken');
+
+    world.channel.clear(ENABLE_ATTR);
+    assert.equal(world.attributes.get(STATUS_ATTR), 'off', 'a switched-off filter is not degraded');
+
+    world.context.ytInitialData = capture('autoOnly');
+    world.channel.publish(ENABLE_ATTR, 'on');
+    assert.equal(world.attributes.get(STATUS_ATTR), 'on;cleaned=1', 'turning it back on starts clean');
+});
+
 // ── the isolated-world half ──────────────────────────────────────────
 
 test('the feature publishes the switch, hides the AI chapters panel, and clears both on destroy', () => {

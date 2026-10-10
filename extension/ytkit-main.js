@@ -701,9 +701,10 @@
         var cleanedTotal = 0;
         var degraded = false;
 
+        // 'degraded' describes a filter that's running; off reads off.
         function writeStatus() {
-            var payload = degraded ? 'degraded'
-                : (enabled ? 'on;cleaned=' + cleanedTotal : 'off');
+            var payload = !enabled ? 'off'
+                : (degraded ? 'degraded' : 'on;cleaned=' + cleanedTotal);
             try {
                 if (_NATIVE.getAttribute(STATUS_ATTR) !== payload) _NATIVE.setAttribute(STATUS_ATTR, payload);
             } catch (error) {
@@ -746,6 +747,7 @@
             var wasEnabled = enabled;
             enabled = _bridgeGet(ENABLE_ATTR) === 'on';
             if (enabled && !wasEnabled) {
+                degraded = false;
                 installParseHook();
                 // The page keeps its first response for back navigation, so
                 // clean that one too even though it has already rendered.

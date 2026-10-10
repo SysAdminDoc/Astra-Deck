@@ -24788,8 +24788,8 @@ void 0;
 		var cleanedTotal = 0;
 		var degraded = false;
 		function writeStatus() {
-			var payload = degraded ? 'degraded'
-				: (enabled ? 'on;cleaned=' + cleanedTotal : 'off');
+			var payload = !enabled ? 'off'
+				: (degraded ? 'degraded' : 'on;cleaned=' + cleanedTotal);
 			try {
 				if (_NATIVE.getAttribute(STATUS_ATTR) !== payload) _NATIVE.setAttribute(STATUS_ATTR, payload);
 			} catch (error) {
@@ -24827,6 +24827,7 @@ void 0;
 			var wasEnabled = enabled;
 			enabled = _bridgeGet(ENABLE_ATTR) === 'on';
 			if (enabled && !wasEnabled) {
+				degraded = false;
 				installParseHook();
 				var initial = null;
 				try { initial = window.ytInitialData; } catch (error) { initial = null; }
