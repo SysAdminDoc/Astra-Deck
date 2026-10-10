@@ -975,3 +975,25 @@ what's left is a live run.
   Blocker: not seen on desktop web as of 2026-10-05, and a capture needs a live session.
   Acceptance: once a series surface shows on desktop web, capture it. Each of the three
   settings either covers it, with a fixture test, or gets the selector it needs.
+
+- [ ] P3 — Confirm Tampermonkey 5.5.1 refuses a library whose `#sha256=` doesn't match
+  Why: Tampermonkey 5.5.1 (2026-10-01) lists "Corrected SRI enforce mode for `@require`".
+  Astra's pins shipped in 4.97.0 under 5.5.0, and the CHANGELOG promises Tampermonkey
+  refuses a changed file. Violentmonkey ignores the hashes (CHANGELOG 4.97.0).
+  Evidence: https://www.tampermonkey.net/changelog.php
+  Blocker: a manager run (`npm run smoke:userscript-managers` runs in Firefox, which hangs
+  at session creation on 156, above).
+  Acceptance: WHEN a loader with one wrong hash is installed in Tampermonkey 5.5.1, THEN
+  that library SHALL not run and the manager SHALL report the mismatch; WHEN the hashes are
+  right, THEN the manager smoke SHALL pass unchanged.
+
+- [ ] P3 — Check Astra's scripted clicks after YouTube began rejecting synthetic Skip clicks
+  Why: Remove YouTube Suggestions 4.3.84 (2026-10-08) says YouTube no longer honors scripted
+  clicks on the ad Skip button. Astra's quality forcing drives `.ytp-settings-button` and the
+  quality submenu by click (`extension/ytkit.js` ~13782), and Auto-Dismiss "Still Watching?"
+  presses the prompt's button. If the rejection reaches those controls, both fail quietly.
+  Evidence: https://github.com/lawrencehook/remove-youtube-suggestions/releases/tag/v4.3.84
+  Blocker: live YouTube in headless Chromium.
+  Acceptance: on a live watch page, Force Quality lands the chosen resolution and a Still
+  Watching prompt is dismissed; if either fails, the fix moves to ROADMAP.md with the
+  finding.
