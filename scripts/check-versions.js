@@ -35,6 +35,13 @@ const ACTIVE_DOC_TRUTH_FILES = Object.freeze([
     path.join('docs', 'repo-settings.md'),
     path.join('docs', 'signing-keys.md'),
     path.join('docs', 'native-messaging-token-bootstrap.md'),
+    // These four went stale unchecked: a "latest public release" claim two
+    // dozen releases old, a Node pin that had moved on, and contributor and
+    // install steps for files the schema replaced.
+    path.join('docs', 'hosted-policy-closure.md'),
+    'SOURCE-README.md',
+    'INSTALL.md',
+    'CONTRIBUTING.md',
 ]);
 // Files whose present-tense version claims must match the product version.
 // The two patterns below ("today, at vX" / "currently agree at vX") only fire
@@ -379,7 +386,15 @@ function lineNumberForIndex(text, index) {
     return text.slice(0, index).split(/\r?\n/).length;
 }
 
-function checkActiveDocumentationTruth(productVersion) {
+// options.readDoc(relPath) returns a document's text or null, and
+// options.console takes the output; tests use both to plant a stale line
+// without touching the real file.
+function checkActiveDocumentationTruth(productVersion, options = {}) {
+    const readDoc = options.readDoc || ((relPath) => {
+        const absPath = path.join(REPO_ROOT, relPath);
+        return fs.existsSync(absPath) ? fs.readFileSync(absPath, 'utf8') : null;
+    });
+    const out = options.console || console;
     const failures = [];
     const retiredRefs = [
         { re: /RESEARCH_REPORT\.md/g, label: 'retired RESEARCH_REPORT.md reference' },
@@ -397,9 +412,8 @@ function checkActiveDocumentationTruth(productVersion) {
     ];
 
     for (const relPath of ACTIVE_DOC_TRUTH_FILES) {
-        const absPath = path.join(REPO_ROOT, relPath);
-        if (!fs.existsSync(absPath)) continue;
-        const text = fs.readFileSync(absPath, 'utf8');
+        const text = readDoc(relPath);
+        if (typeof text !== 'string') continue;
         for (const { re, label } of retiredRefs) {
             let match;
             while ((match = re.exec(text)) !== null) {
@@ -430,14 +444,14 @@ function checkActiveDocumentationTruth(productVersion) {
     }
 
     if (!failures.length) {
-        console.log(`[check-versions] Active documentation truth matches v${productVersion} and the local-build policy`);
+        out.log(`[check-versions] Active documentation truth matches v${productVersion} and the local-build policy`);
         return true;
     }
 
-    console.error('[check-versions] Active documentation truth drift detected:');
-    for (const failure of failures) console.error(`  ${failure}`);
-    console.error('');
-    console.error('Fix active docs or move historical/dead-policy references into archived research/history docs.');
+    out.error('[check-versions] Active documentation truth drift detected:');
+    for (const failure of failures) out.error(`  ${failure}`);
+    out.error('');
+    out.error('Fix active docs or move historical/dead-policy references into archived research/history docs.');
     return false;
 }
 
@@ -524,6 +538,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+    ACTIVE_DOC_TRUTH_FILES,
+    checkActiveDocumentationTruth,
     checkReleaseCurrency,
     compareVersionSegments,
     findStrayProductTags,

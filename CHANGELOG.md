@@ -34,6 +34,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The GitHub page now has a Sponsor button. It opens the same Ko-fi page as the button in the README.
 
+- The install guide now explains all three builds, including the download-free `chromium-store` one, and the contributor guide walks through adding a setting the way the code works today. A few other developer docs had drifted too (an old Node version, a release from June called the latest), and the version check now reads those files so they can't drift quietly again.
+
 ### Fixed
 
 - **Force DVR** missed the first live stream on a fresh page load and only worked on streams you opened after it. Astra now hands its page-level switches over as soon as your settings load, before YouTube reads the page's built-in data, so the first stream gets DVR too. Safe mode, or a feature that doesn't start for any other reason, takes the switch back once Astra has finished starting on that page. In a tab opened in the background, that's when you first switch to it.

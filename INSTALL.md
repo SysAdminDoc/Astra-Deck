@@ -35,9 +35,13 @@ Gives you the toolbar popup and every feature.
 5. Click **Load unpacked** and select the **unzipped folder**.
 6. Pin Astra Deck from the puzzle-piece menu and open YouTube.
 
-> **`github-full`** has everything (downloads, optional AI summary, Cobalt
-> fallback). **`store-safe`** is the slimmer build with those extra-permission
-> features removed. Use it if you'd rather grant the fewest permissions.
+> There are three builds of the same extension. **`github-full`** has everything:
+> downloads through Astra Downloader, the optional AI summary and the optional
+> self-hosted Cobalt fallback. **`store-safe`** keeps Astra Downloader but drops the
+> features that need extra site permissions. **`chromium-store`** is the
+> download-free build, shaped like the Chrome Web Store and Edge package. Pick it
+> if you don't want any download features at all. Each one comes as a Chrome
+> `.zip` and a Firefox `.xpi` on the release page.
 
 ---
 

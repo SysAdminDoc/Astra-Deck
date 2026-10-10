@@ -2,6 +2,12 @@
 
 Last updated: 2026-06-06
 
+Status, 2026-10-10: the repository removed its GitHub Actions workflows on
+2026-06-26 (`e4ed3a7c`) and builds, tests and releases locally. Step 2 and
+Step 4 set up those workflows, so they have nothing left to act on and stay
+below only as a record. Dependency updates are made by hand, so Dependabot
+stays off. Step 3 and Step 5 still apply.
+
 This runbook sequences the hosted repository settings that cannot be finished
 by source edits alone. Use it only after the current feature branch has landed
 on `main` and a maintainer explicitly chooses to change repository settings.
@@ -33,7 +39,7 @@ Captured on 2026-06-06 with `GH_PROMPT_DISABLED=1`:
   - `.github/CODEOWNERS` exists on the feature branch.
   - `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors` returns `404` on
     the default branch until the file lands on `main`.
-- Latest public release `v4.46.0`:
+- The newest public release when this was captured, `v4.46.0`:
   - 12 assets are attached.
   - `AstraDownloader.exe` and `AstraDownloader.exe.sha256` are not attached.
 
@@ -74,7 +80,7 @@ gh api repos/SysAdminDoc/Astra-Deck/actions/permissions/workflow --jq .
 gh api repos/SysAdminDoc/Astra-Deck --jq '{private,security_and_analysis:.security_and_analysis}'
 gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_pull_request_reviews --jq '{required_approving_review_count,require_code_owner_reviews}'
 gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq .
-gh release view v4.46.0 --repo SysAdminDoc/Astra-Deck --json tagName,publishedAt,assets,url
+gh release view --repo SysAdminDoc/Astra-Deck --json tagName,publishedAt,assets,url
 ```
 
 Record the exact outputs in `docs/repo-settings.md` before and after any
@@ -102,7 +108,7 @@ Maintainer action:
    text. It should either pass or fail only on concrete vulnerable dependency
    findings.
 5. Set repository variable `DEPENDENCY_REVIEW_REQUIRED=true` only after that
-   proof so `.github/workflows/validate.yml` changes the advisory
+   proof so the `Validate` workflow (removed 2026-06-26) changes the advisory
    `Dependency review` job into an enforcing check.
 
 Read-only verification:
@@ -139,8 +145,7 @@ Maintainer action:
 
 1. Keep `required_approving_review_count: 1`.
 2. Enable `require_code_owner_reviews` on `main`.
-3. Open a test PR touching `.github/workflows/validate.yml` or
-   `build-extension.js`.
+3. Open a test PR touching `build-extension.js`.
 4. Confirm the PR requests `@SysAdminDoc` and cannot merge until a code-owner
    approval is present.
 
@@ -251,5 +256,4 @@ After each hosted change, update `docs/repo-settings.md` with:
 - whether `Dependency review`, CODEOWNERS, selected Actions, SHA pinning, and
   companion release assets remain open or closed.
 
-Update `ROADMAP.md`, `RESEARCH_REPORT.md`, and `AUTONOMOUS-LOOP-STATE.md` in
-the same docs-only pass.
+Update `ROADMAP.md` and `Roadmap_Blocked.md` in the same docs-only pass.

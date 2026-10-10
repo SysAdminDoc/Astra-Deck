@@ -28,9 +28,9 @@ If applicable, add screenshots or browser console output (F12 > Console).
 Either way, Astra Deck's settings panel has a bug button at the bottom of the sidebar that copies the same bundle. It holds your Astra Deck version, browser, what your browser supports, your settings and recent errors. API keys, custom CSS and endpoint URLs are replaced with `[redacted]` before anything is copied or saved.
 
 **Environment** (skip if you attached the bundle above)
-- Browser: [e.g. Chrome 120, Firefox 122]
+- Browser and version: [from the browser's About page]
 - Userscript manager (if using userscript): [e.g. Tampermonkey 5.x, Violentmonkey]
-- Astra Deck version: [e.g. 4.47.0]
+- Astra Deck version: [at the bottom of the settings panel sidebar, or next to the name in the toolbar popup]
 - OS: [e.g. Windows 11, macOS 14]
 
 **Additional context**

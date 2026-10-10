@@ -191,3 +191,38 @@ test('the main userscript @require loads the libraries of its own version', () =
     assert.equal(findUserscriptRequireDrift(pkg.version, committed), null,
         'YTKit.user.js must @require the libraries tagged with its own version');
 });
+
+// The developer docs below went stale without the gate noticing: a "latest
+// public release" claim two dozen releases old, a Node pin that had moved on,
+// and contributor steps for files the schema replaced. They are scanned now.
+test('the doc-truth scan covers the developer docs that went stale unchecked', () => {
+    const { ACTIVE_DOC_TRUTH_FILES } = require('../scripts/check-versions.js');
+    const listed = ACTIVE_DOC_TRUTH_FILES.map((file) => file.split(path.sep).join('/'));
+    for (const file of ['docs/hosted-policy-closure.md', 'SOURCE-README.md', 'INSTALL.md', 'CONTRIBUTING.md']) {
+        assert.ok(listed.includes(file), `${file} is scanned`);
+        assert.ok(fs.existsSync(path.join(repoRoot, file)), `${file} exists`);
+    }
+});
+
+test('a planted latest-release claim in the hosted-policy runbook fails the doc-truth check', () => {
+    const { checkActiveDocumentationTruth } = require('../scripts/check-versions.js');
+    const runbook = path.join('docs', 'hosted-policy-closure.md');
+    const errors = [];
+    const quiet = { log() {}, error: (line) => errors.push(String(line)) };
+    const realDoc = (relPath) => {
+        const absPath = path.join(repoRoot, relPath);
+        return fs.existsSync(absPath) ? fs.readFileSync(absPath, 'utf8') : null;
+    };
+
+    assert.equal(checkActiveDocumentationTruth(pkg.version, { readDoc: realDoc, console: quiet }), true,
+        'the docs as committed pass');
+    assert.deepEqual(errors, []);
+
+    const planted = (relPath) => {
+        const text = realDoc(relPath);
+        return relPath === runbook ? `${text}\n- Latest public release \`v4.46.0\`:\n` : text;
+    };
+    assert.equal(checkActiveDocumentationTruth(pkg.version, { readDoc: planted, console: quiet }), false);
+    assert.ok(errors.some((line) => line.includes('hosted-policy-closure.md')
+        && line.includes('hardcoded latest-release version claim')), errors.join('\n'));
+});

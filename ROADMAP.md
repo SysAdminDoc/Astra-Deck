@@ -71,24 +71,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   overflow (owed check).
   Complexity: M
 
-- [ ] P3 — Fix the stale developer docs and extend the doc-truth gate to catch them
-  Why: `SOURCE-README.md:67` says `.nvmrc` pins Node 22 (it holds 24),
-  `docs/hosted-policy-closure.md:36` and `:77` call v4.46.0 the latest public release,
-  `CONTRIBUTING.md:100-101` tells contributors to edit a `features` array and
-  `settingsManager.defaults` that the schema replaced, `.github/ISSUE_TEMPLATE/bug_report.md`
-  examples name Firefox 122 (below the 142 floor) and 4.47.0, and `INSTALL.md` omits the
-  chromium-store profile the README ships. `scripts/check-versions.js`
-  `ACTIVE_DOC_TRUTH_FILES` (:32-38) doesn't cover those files, so the "Latest public release"
-  claim passed the gate.
-  Evidence: the lines above, read 2026-10-10.
-  Touches: those five files, `scripts/check-versions.js` (add `docs/hosted-policy-closure.md`,
-  `SOURCE-README.md`, `INSTALL.md` and `CONTRIBUTING.md` to the retired-reference scan),
-  `tests/release-currency.test.js`.
-  Acceptance: each stale line is corrected, the gate list includes the four docs, and a test
-  proves a planted "Latest public release `v4.46.0`" line in `docs/hosted-policy-closure.md`
-  fails `npm run check:versions`.
-  Complexity: S
-
 - [ ] P3 — Submit Astra Deck to Lissy93/awesome-privacy's Browser Extensions section
   Why: that list (9,942 stars, pushed 2026-10-10) carries SponsorBlock and DeArrow side by
   side, accepts own-project submissions, and Astra meets its bar: open source, no telemetry,

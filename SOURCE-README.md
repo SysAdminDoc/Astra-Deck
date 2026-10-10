@@ -64,8 +64,8 @@ One deviation to declare: releases are built and this file is written on Windows
 x64. The determinism work above exists specifically so that should not matter,
 but a cross-architecture comparison has not been run by the maintainer, so if
 your rebuild differs from the upload, that is the first thing to suspect and the
-maintainer wants to hear about it. `.nvmrc` pins Node 22; the build runs on 24
-as well and nothing in it depends on the version.
+maintainer wants to hear about it. `.nvmrc` pins Node 24, the same major as the
+reviewer environment above.
 
 ## What is deliberately not in the package
 

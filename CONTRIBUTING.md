@@ -93,15 +93,16 @@ The icon name has to exist in `extension/core/icons.js`. If it doesn't, copy the
 - **SPA navigation**: Use `addNavigateRule()` / `removeNavigateRule()`
 - **Settings storage**: Use `StorageManager.get()` / `StorageManager.set()`
 - **Extension packaging**: Use `build-extension.js` rather than ad-hoc zipping
-- **Generated catalogs**: `default-settings.json` and `settings-meta.json` are generated from `ytkit.js`
+- **Generated catalogs**: the build writes `default-settings.json` from `extension/core/settings-schema.js` and `settings-meta.json` from `ytkit.js`. Don't edit either by hand.
 
 ## Adding a Feature
 
-1. Define your feature object in the `features` array in `extension/ytkit.js`
-2. Add a default value in `settingsManager.defaults`
-3. Implement `init()` to activate and `destroy()` to fully clean up
-4. Always remove event listeners, observers, and DOM elements in `destroy()`
-5. Test with the feature toggled on/off multiple times
+1. Add the setting to `SETTINGS_SCHEMA` in `extension/core/settings-schema.js` with its category, risk, profile, scope and `since` version. The schema is where a setting is defined. `npm run check:settings` lists anything it disagrees with.
+2. Give it the same default in `settingsManager.defaults` in `extension/ytkit.js`. The build stops if the two drift apart.
+3. Write the feature object with `init()` and `destroy()`. Small features still sit in the feature list in `ytkit.js`. A bigger one gets its own module in `extension/features/<name>/index.js`, listed with the other runtime modules in `extension/manifest.json` (then run `npm run generate:runtime-bootstrap`), and `ytkit.js` keeps a small stand-in for when that module can't load.
+4. Add `feature_<id>_name` and `feature_<id>_desc` to every locale in `extension/_locales/`.
+5. `destroy()` has to remove every listener, observer and element `init()` added. Turn the feature on and off a few times to check.
+6. Regenerate what the checks compare against: `npm run generate:settings-reference`, `npm run project-facts`, `npm run i18n:coverage` and `node sync-userscript.js`. The setting counts pinned in `tests/hardening.test.js`, `tests/project-facts.test.js`, `tests/settings-reference.test.js` and `tests/storage-size-audit.test.js` move with the schema.
 
 ## Verification
 
