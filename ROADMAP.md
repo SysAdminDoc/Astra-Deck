@@ -70,11 +70,3 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   filters and the quick-hide X still attach, and the 320 px `smoke:a11y` lane shows no
   overflow (owed check).
   Complexity: M
-
-- [ ] P3 — Bump `ws` to 8.22.0
-  Why: the only outdated direct dependency on 2026-10-10 (`npm outdated`: 8.21.3 to 8.22.0);
-  the dev audit is clean, so this is currency only.
-  Evidence: `npm outdated --json` in the repo on 2026-10-10.
-  Touches: `package.json`, `package-lock.json`.
-  Acceptance: `npm ls ws` shows 8.22.0 and the `deps` gate stays green.
-  Complexity: S

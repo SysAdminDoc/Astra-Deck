@@ -24,7 +24,7 @@ test('optional-host Chromium smoke is exposed and exact-pins its CDP WebSocket d
     // Exact, not a range: the CDP client is the one dependency whose bugs
     // show up as a smoke that hangs rather than one that fails. The version
     // moves deliberately, which is what this pin is for.
-    assert.equal(pkg.devDependencies.ws, '8.21.3');
+    assert.equal(pkg.devDependencies.ws, '8.22.0');
 });
 
 test('optional-host Chromium smoke stages the store-safe manifest and falls back from Chrome policy blocks', () => {

@@ -117,7 +117,7 @@
     "acorn": "8.19.0",
     "eslint": "^10.12.0",
     "web-ext": "10.7.0",
-    "ws": "8.21.3"
+    "ws": "8.22.0"
   },
   "overrides": {
     "@devicefarmer/adbkit": "file:./scripts/npm-stubs/devicefarmer-adbkit",
