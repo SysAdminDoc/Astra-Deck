@@ -9830,7 +9830,7 @@
     "message": "视频标题仍在加载，请稍后再试。"
   },
   "toastAlreadyPoppedOut": {
-    "message": "视频已在单独窗口中打开"
+    "message": "视频已在单独窗口中，无需再次弹出"
   },
   "toastCaughtUpToLive": {
     "message": "已追上直播，速度已恢复为 1x。"

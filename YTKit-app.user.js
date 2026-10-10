@@ -13824,7 +13824,7 @@ const STORAGE_KEYS = Object.freeze({
 						this._renderBodyState(
 							body,
 							noCaptions ? 'empty' : 'error',
-							noCaptions ? t('transcriptUnavailable', 'No transcript available') : t('transcriptLoadFailed', 'Failed to load transcript'),
+							noCaptions ? t('transcriptUnavailable', 'No transcript available for this video') : t('transcriptLoadFailed', 'Failed to load transcript'),
 							noCaptions
 								? t('transcriptNoCaptionsHelp', 'Try another video with captions enabled, or reopen this panel after captions finish loading.')
 								: t('transcriptRetryHelp', 'Reload the page or try again in a moment if captions are still processing.')
