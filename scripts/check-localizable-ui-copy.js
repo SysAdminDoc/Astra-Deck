@@ -230,6 +230,21 @@ function checkUiCopyBaseline(current, baseline) {
     return failures;
 }
 
+// Toasts have no legacy debt left, so none is grandfathered: a literal at
+// showToast fails even when the baseline was refreshed to include it. The
+// whole-file fingerprint alone let 46 English toasts ride along for months.
+function checkToastLiterals(extensionDir = EXTENSION_DIR) {
+    const failures = [];
+    for (const filePath of collectFiles(extensionDir, new Set(['.js'])).sort()) {
+        const rel = toPosix(path.relative(REPO_ROOT, filePath));
+        for (const finding of collectStrictJsLiterals(fs.readFileSync(filePath, 'utf8'))) {
+            if (finding.sink !== 'feedback:showToast') continue;
+            failures.push(`${rel}: showToast copy must go through t(), found "${finding.value.slice(0, 80)}"`);
+        }
+    }
+    return failures;
+}
+
 function parseArgs(argv = process.argv.slice(2)) {
     const options = { extensionDir: EXTENSION_DIR, baselinePath: BASELINE_PATH, update: false };
     for (let i = 0; i < argv.length; i += 1) {
@@ -261,7 +276,7 @@ function main() {
     }
     if (!fs.existsSync(options.baselinePath)) throw new Error('UI-copy baseline is missing');
     const baseline = JSON.parse(fs.readFileSync(options.baselinePath, 'utf8'));
-    const failures = checkUiCopyBaseline(current, baseline);
+    const failures = [...checkUiCopyBaseline(current, baseline), ...checkToastLiterals(options.extensionDir)];
     if (failures.length) {
         for (const failure of failures) console.error(`[check-localizable-ui-copy] FAIL ${failure}`);
         process.exitCode = 1;
@@ -280,6 +295,7 @@ if (require.main === module) {
 
 module.exports = {
     buildUiCopyBaseline,
+    checkToastLiterals,
     checkUiCopyBaseline,
     collectHtmlLiterals,
     collectJsLiterals,

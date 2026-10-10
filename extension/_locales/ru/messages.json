@@ -9777,5 +9777,128 @@
   },
   "feature_hideAutoChapters_desc": {
     "message": "Убирает главы, которые YouTube создаёт сам, с полосы прокрутки и из панели глав. Главы, которые автор указал в описании, остаются."
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "Воспроизведение восстановлено (попытка {attempt} из {max})"
+  },
+  "toastPlaylistReversed": {
+    "message": "Плейлист перевёрнут"
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "Снимок экрана сохранён и скопирован в буфер обмена."
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "Снимок экрана сохранён. Копирование в буфер обмена заблокировано, но PNG всё равно скачан."
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "Снимок экрана сохранён. Копировать изображения в буфер обмена здесь нельзя."
+  },
+  "toastSleepTimerElapsed": {
+    "message": "Таймер сна истёк. Воспроизведение приостановлено."
+  },
+  "toastLoopPointATpl": {
+    "message": "Точка A повтора установлена на {time}"
+  },
+  "toastLoopPointBTpl": {
+    "message": "Точка B повтора установлена на {time}"
+  },
+  "toastLoopingTpl": {
+    "message": "Повтор с {start} до {end}"
+  },
+  "toastLoopCleared": {
+    "message": "Повтор A-B сброшен"
+  },
+  "toastDismissed": {
+    "message": "Скрыто"
+  },
+  "toastVideoPoppedOut": {
+    "message": "Видео открыто в отдельном окне"
+  },
+  "toastPipActive": {
+    "message": "Картинка в картинке включена"
+  },
+  "toastPipUnsupported": {
+    "message": "Режим «картинка в картинке» здесь не поддерживается"
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "Обход возрастного ограничения не справился с этим видео. Подробности в журнале диагностики."
+  },
+  "toastAgeBypassed": {
+    "message": "Возрастное ограничение обойдено"
+  },
+  "toastTitleStillLoading": {
+    "message": "Название видео ещё загружается. Повторите попытку через мгновение."
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "Видео уже открыто в отдельном окне"
+  },
+  "toastCaughtUpToLive": {
+    "message": "Вы догнали эфир. Скорость снова 1x."
+  },
+  "toastSpeedTpl": {
+    "message": "Скорость: {speed}x"
+  },
+  "toastAutoDownloadStarted": {
+    "message": "Автоматическая загрузка началась"
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "Исключения SponsorBlock для этого канала сброшены к вашим общим настройкам."
+  },
+  "toastFetchingCaptions": {
+    "message": "Загрузка субтитров…"
+  },
+  "toastSrtDownloaded": {
+    "message": "Файл SRT скачан"
+  },
+  "toastDiagnosticLogActive": {
+    "message": "Журнал диагностики включён. Чтобы сохранить его, выполните window.__ytkitDiagnostics.download() в консоли."
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "Запрос скопирован, выбранный сайт открыт"
+  },
+  "toastHandoffFailed": {
+    "message": "Не удалось передать. Проверьте журнал диагностики."
+  },
+  "toastFeedTriageApplied": {
+    "message": "Сортировка ленты применена. Выключите её, чтобы вернуть прежние фильтры."
+  },
+  "toastFeedTriageOff": {
+    "message": "Сортировка ленты выключена. Прежние фильтры восстановлены."
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "Не удалось проголосовать в DeArrow. Повторите позже."
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow: голос «за»"
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow: голос «против»"
+  },
+  "toastStudyExportOne": {
+    "message": "Экспортирован файл {format} с {count} закладкой"
+  },
+  "toastStudyExportOther": {
+    "message": "Экспортирован файл {format}, закладок: {count}"
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "Индекс расшифровок очищен."
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "Не удалось очистить индекс расшифровок. Повторите попытку."
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "Индексация расшифровок приостановлена. Она повторится, когда вы вернётесь к этому видео."
+  },
+  "toastTranscriptIndexOff": {
+    "message": "Поисковый индекс расшифровок выключен. Сначала включите его."
+  },
+  "toastImportTooLargeTpl": {
+    "message": "Файл импорта превышает ограничение в {size} МБ."
+  },
+  "toastSafeMode": {
+    "message": "Безопасный режим: все функции выключены. Чтобы выйти, выполните ytkit.unsafe() в консоли."
+  },
+  "toastCrashSafeMode": {
+    "message": "Astra Deck несколько раз подряд завершился с ошибкой и перешёл в безопасный режим. Проверьте настройки или сбросьте их."
   }
 }

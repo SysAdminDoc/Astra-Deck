@@ -9777,5 +9777,128 @@
   },
   "feature_hideAutoChapters_desc": {
     "message": "YouTube가 자동으로 만든 챕터를 진행 표시줄과 챕터 패널에서 없앱니다. 크리에이터가 설명란에 작성한 챕터는 그대로 남습니다."
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "재생을 복구했습니다({max}회 중 {attempt}번째 시도)"
+  },
+  "toastPlaylistReversed": {
+    "message": "재생목록 순서를 뒤집었습니다"
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "스크린샷을 저장하고 클립보드에 복사했습니다."
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "스크린샷을 저장했습니다. 클립보드 복사는 차단되었지만 PNG는 다운로드되었습니다."
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "스크린샷을 저장했습니다. 여기서는 이미지를 클립보드에 복사할 수 없습니다."
+  },
+  "toastSleepTimerElapsed": {
+    "message": "취침 타이머가 끝났습니다. 재생을 일시정지했습니다."
+  },
+  "toastLoopPointATpl": {
+    "message": "반복 지점 A를 {time}에 설정했습니다"
+  },
+  "toastLoopPointBTpl": {
+    "message": "반복 지점 B를 {time}에 설정했습니다"
+  },
+  "toastLoopingTpl": {
+    "message": "{start}부터 {end}까지 반복 재생 중"
+  },
+  "toastLoopCleared": {
+    "message": "A-B 반복을 해제했습니다"
+  },
+  "toastDismissed": {
+    "message": "닫았습니다"
+  },
+  "toastVideoPoppedOut": {
+    "message": "동영상을 별도 창으로 열었습니다"
+  },
+  "toastPipActive": {
+    "message": "PIP 모드가 켜졌습니다"
+  },
+  "toastPipUnsupported": {
+    "message": "여기서는 PIP 모드를 지원하지 않습니다"
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "연령 제한 우회가 이 동영상을 처리하지 못했습니다. 자세한 내용은 진단 로그에 있습니다."
+  },
+  "toastAgeBypassed": {
+    "message": "연령 제한을 우회했습니다"
+  },
+  "toastTitleStillLoading": {
+    "message": "동영상 제목을 아직 불러오는 중입니다. 잠시 후 다시 시도하세요."
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "동영상이 이미 별도 창으로 열려 있습니다"
+  },
+  "toastCaughtUpToLive": {
+    "message": "실시간에 도달했습니다. 속도를 1x로 되돌렸습니다."
+  },
+  "toastSpeedTpl": {
+    "message": "속도: {speed}x"
+  },
+  "toastAutoDownloadStarted": {
+    "message": "자동 다운로드를 시작했습니다"
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "이 채널의 SponsorBlock 개별 설정을 전체 기본값으로 되돌렸습니다."
+  },
+  "toastFetchingCaptions": {
+    "message": "자막을 가져오는 중…"
+  },
+  "toastSrtDownloaded": {
+    "message": "SRT를 다운로드했습니다"
+  },
+  "toastDiagnosticLogActive": {
+    "message": "진단 로그가 켜져 있습니다. 저장하려면 콘솔에서 window.__ytkitDiagnostics.download()를 실행하세요."
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "프롬프트를 복사하고 선택한 사이트를 열었습니다"
+  },
+  "toastHandoffFailed": {
+    "message": "전달하지 못했습니다. 진단 로그를 확인하세요."
+  },
+  "toastFeedTriageApplied": {
+    "message": "피드 정리를 적용했습니다. 끄면 이전 필터 설정으로 돌아갑니다."
+  },
+  "toastFeedTriageOff": {
+    "message": "피드 정리를 껐습니다. 이전 필터 설정으로 돌아왔습니다."
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "DeArrow 투표에 실패했습니다. 나중에 다시 시도하세요."
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow: 추천했습니다"
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow: 비추천했습니다"
+  },
+  "toastStudyExportOne": {
+    "message": "{format} 파일을 내보냈습니다(북마크 {count}개)"
+  },
+  "toastStudyExportOther": {
+    "message": "{format} 파일을 내보냈습니다(북마크 {count}개)"
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "스크립트 색인을 지웠습니다."
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "스크립트 색인을 지우지 못했습니다. 다시 시도하세요."
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "스크립트 색인 작업을 일시중지했습니다. 이 동영상으로 돌아오면 다시 시도합니다."
+  },
+  "toastTranscriptIndexOff": {
+    "message": "스크립트 검색 색인이 꺼져 있습니다. 먼저 켜세요."
+  },
+  "toastImportTooLargeTpl": {
+    "message": "가져올 파일이 {size}MB 제한을 넘습니다."
+  },
+  "toastSafeMode": {
+    "message": "안전 모드: 모든 기능이 꺼져 있습니다. 해제하려면 콘솔에서 ytkit.unsafe()를 실행하세요."
+  },
+  "toastCrashSafeMode": {
+    "message": "Astra Deck가 여러 번 연속으로 충돌해 안전 모드로 전환했습니다. 설정을 확인하거나 초기화하세요."
   }
 }

@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {
     buildUiCopyBaseline,
+    checkToastLiterals,
     checkUiCopyBaseline,
     collectHtmlLiterals,
     collectJsLiterals,
@@ -81,6 +82,26 @@ test('strict UI-copy sink changes identify a new direct literal separately from 
     const changed = buildUiCopyBaseline(extensionDir);
     const failures = checkUiCopyBaseline(changed, baseline);
     assert.ok(failures.some((failure) => /strict UI-copy sink changed/.test(failure)));
+});
+
+test('a toast literal fails even when the baseline was refreshed to include it', () => {
+    const root = makeTempDir('astra-i18n-toast-');
+    const extensionDir = path.join(root, 'extension');
+    fs.mkdirSync(extensionDir, { recursive: true });
+    const filePath = path.join(extensionDir, 'panel.js');
+    fs.writeFileSync(filePath, "showToast(t('toastSaved', 'Saved'), '#22c55e');\n", 'utf8');
+    assert.deepEqual(checkToastLiterals(extensionDir), []);
+
+    fs.appendFileSync(filePath, "showToast('Saved again', '#22c55e');\nshowToast(`Speed: ${speed}x`);\n", 'utf8');
+    const grandfathered = buildUiCopyBaseline(extensionDir);
+    assert.deepEqual(checkUiCopyBaseline(grandfathered, grandfathered), [], 'the fingerprint alone would let them through');
+    const failures = checkToastLiterals(extensionDir);
+    assert.equal(failures.length, 2);
+    assert.match(failures[0], /panel\.js: showToast copy must go through t\(\), found "Saved again"/);
+});
+
+test('the shipped extension has no English toast literal left', () => {
+    assert.deepEqual(checkToastLiterals(), []);
 });
 
 test('core, sidepanel, download, video-notes, settings-panel, video-hider, and popup surfaces keep rendered copy behind locale keys', () => {

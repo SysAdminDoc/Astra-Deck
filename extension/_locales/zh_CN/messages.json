@@ -9777,5 +9777,128 @@
   },
   "feature_hideAutoChapters_desc": {
     "message": "从进度条和章节面板中移除 YouTube 自动生成的章节。创作者在说明中写的章节会保留。"
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "已恢复播放（第 {attempt} 次尝试，共 {max} 次）"
+  },
+  "toastPlaylistReversed": {
+    "message": "已反转播放列表"
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "截图已保存并复制到剪贴板。"
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "截图已保存。复制到剪贴板被阻止，但 PNG 仍已下载。"
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "截图已保存。此处无法将图片复制到剪贴板。"
+  },
+  "toastSleepTimerElapsed": {
+    "message": "睡眠定时器已到时，播放已暂停。"
+  },
+  "toastLoopPointATpl": {
+    "message": "循环起点 A 已设为 {time}"
+  },
+  "toastLoopPointBTpl": {
+    "message": "循环终点 B 已设为 {time}"
+  },
+  "toastLoopingTpl": {
+    "message": "正在循环 {start} 至 {end}"
+  },
+  "toastLoopCleared": {
+    "message": "已清除 A-B 循环"
+  },
+  "toastDismissed": {
+    "message": "已忽略"
+  },
+  "toastVideoPoppedOut": {
+    "message": "视频已在单独窗口中打开"
+  },
+  "toastPipActive": {
+    "message": "画中画已开启"
+  },
+  "toastPipUnsupported": {
+    "message": "此处不支持画中画"
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "年龄限制绕过无法处理此视频。详情请查看诊断日志。"
+  },
+  "toastAgeBypassed": {
+    "message": "已绕过年龄限制"
+  },
+  "toastTitleStillLoading": {
+    "message": "视频标题仍在加载，请稍后再试。"
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "视频已在单独窗口中打开"
+  },
+  "toastCaughtUpToLive": {
+    "message": "已追上直播，速度已恢复为 1x。"
+  },
+  "toastSpeedTpl": {
+    "message": "速度：{speed}x"
+  },
+  "toastAutoDownloadStarted": {
+    "message": "已开始自动下载"
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "此频道的 SponsorBlock 单独设置已恢复为全局默认值。"
+  },
+  "toastFetchingCaptions": {
+    "message": "正在获取字幕…"
+  },
+  "toastSrtDownloaded": {
+    "message": "SRT 已下载"
+  },
+  "toastDiagnosticLogActive": {
+    "message": "诊断日志已开启。在控制台运行 window.__ytkitDiagnostics.download() 即可保存。"
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "已复制提示词并打开所选网站"
+  },
+  "toastHandoffFailed": {
+    "message": "转交失败，请查看诊断日志。"
+  },
+  "toastFeedTriageApplied": {
+    "message": "已应用信息流分拣。关闭后即可恢复之前的筛选设置。"
+  },
+  "toastFeedTriageOff": {
+    "message": "信息流分拣已关闭，之前的筛选设置已恢复。"
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "DeArrow 投票失败，请稍后再试。"
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow：已投赞成票"
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow：已投反对票"
+  },
+  "toastStudyExportOne": {
+    "message": "已导出 {format}（{count} 个书签）"
+  },
+  "toastStudyExportOther": {
+    "message": "已导出 {format}（{count} 个书签）"
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "已清除字幕索引。"
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "无法清除字幕索引，请重试。"
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "字幕索引已暂停。再次打开此视频时会重试。"
+  },
+  "toastTranscriptIndexOff": {
+    "message": "字幕搜索索引已关闭，请先开启。"
+  },
+  "toastImportTooLargeTpl": {
+    "message": "导入文件超过了 {size} MB 的上限。"
+  },
+  "toastSafeMode": {
+    "message": "安全模式：所有功能均已关闭。在控制台运行 ytkit.unsafe() 即可退出。"
+  },
+  "toastCrashSafeMode": {
+    "message": "Astra Deck 连续多次崩溃，已切换到安全模式。请检查设置或将其重置。"
   }
 }

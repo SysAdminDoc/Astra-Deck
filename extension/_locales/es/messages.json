@@ -9777,5 +9777,128 @@
   },
   "feature_hideAutoChapters_desc": {
     "message": "Quita los capítulos que YouTube genera por su cuenta de la barra de progreso y del panel de capítulos. Los capítulos que el creador escribió en la descripción se mantienen."
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "Reproducción recuperada (intento {attempt} de {max})"
+  },
+  "toastPlaylistReversed": {
+    "message": "Lista de reproducción invertida"
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "Captura guardada y copiada al portapapeles."
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "Captura guardada. Se bloqueó la copia al portapapeles, pero el PNG se descargó igualmente."
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "Captura guardada. Aquí no se pueden copiar imágenes al portapapeles."
+  },
+  "toastSleepTimerElapsed": {
+    "message": "El temporizador terminó. Reproducción en pausa."
+  },
+  "toastLoopPointATpl": {
+    "message": "Punto A del bucle fijado en {time}"
+  },
+  "toastLoopPointBTpl": {
+    "message": "Punto B del bucle fijado en {time}"
+  },
+  "toastLoopingTpl": {
+    "message": "Repitiendo de {start} a {end}"
+  },
+  "toastLoopCleared": {
+    "message": "Bucle A-B eliminado"
+  },
+  "toastDismissed": {
+    "message": "Descartado"
+  },
+  "toastVideoPoppedOut": {
+    "message": "Video abierto en ventana aparte"
+  },
+  "toastPipActive": {
+    "message": "Imagen en imagen activada"
+  },
+  "toastPipUnsupported": {
+    "message": "Imagen en imagen no es compatible aquí"
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "La omisión de la restricción de edad no pudo con este vídeo. Los detalles están en el registro de diagnóstico."
+  },
+  "toastAgeBypassed": {
+    "message": "Restricción de edad omitida"
+  },
+  "toastTitleStillLoading": {
+    "message": "El título del vídeo aún se está cargando. Inténtalo de nuevo en un momento."
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "El vídeo ya está abierto en una ventana aparte"
+  },
+  "toastCaughtUpToLive": {
+    "message": "Al día con el directo. La velocidad vuelve a 1x."
+  },
+  "toastSpeedTpl": {
+    "message": "Velocidad: {speed}x"
+  },
+  "toastAutoDownloadStarted": {
+    "message": "Descarga automática iniciada"
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "Las excepciones de SponsorBlock de este canal vuelven a tus valores globales."
+  },
+  "toastFetchingCaptions": {
+    "message": "Obteniendo subtítulos…"
+  },
+  "toastSrtDownloaded": {
+    "message": "SRT descargado"
+  },
+  "toastDiagnosticLogActive": {
+    "message": "El registro de diagnóstico está activo. Ejecuta window.__ytkitDiagnostics.download() en la consola para guardarlo."
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "Instrucción copiada y sitio elegido abierto"
+  },
+  "toastHandoffFailed": {
+    "message": "La transferencia falló. Revisa el registro de diagnóstico."
+  },
+  "toastFeedTriageApplied": {
+    "message": "Triaje del feed aplicado. Desactívalo para recuperar tus filtros anteriores."
+  },
+  "toastFeedTriageOff": {
+    "message": "El triaje del feed está desactivado. Tus filtros anteriores han vuelto."
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "El voto de DeArrow falló. Inténtalo más tarde."
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow: voto positivo"
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow: voto negativo"
+  },
+  "toastStudyExportOne": {
+    "message": "{format} exportado con {count} marcador"
+  },
+  "toastStudyExportOther": {
+    "message": "{format} exportado con {count} marcadores"
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "Índice de transcripciones borrado."
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "No se pudo borrar el índice de transcripciones. Inténtalo de nuevo."
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "Indexación de transcripciones en pausa. Se reintentará cuando vuelvas a este vídeo."
+  },
+  "toastTranscriptIndexOff": {
+    "message": "El índice de búsqueda de transcripciones está desactivado. Actívalo primero."
+  },
+  "toastImportTooLargeTpl": {
+    "message": "El archivo de importación supera el límite de {size} MB."
+  },
+  "toastSafeMode": {
+    "message": "Modo seguro: todas las funciones están desactivadas. Ejecuta ytkit.unsafe() en la consola para salir."
+  },
+  "toastCrashSafeMode": {
+    "message": "Astra Deck falló varias veces seguidas y pasó al modo seguro. Revisa tus ajustes o restablécelos."
   }
 }

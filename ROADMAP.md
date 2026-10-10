@@ -60,24 +60,6 @@ Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live the
   `early.css` or the token; with the switches off nothing new is published.
   Complexity: M
 
-- [ ] P2 — Translate the 29 English toasts left in `ytkit.js` and stop the copy gate from grandfathering them
-  Why: the 2026-10-09 CHANGELOG says every language is fully translated, but
-  `showToast('Playlist reversed')` (16525), 'Sleep timer elapsed. Playback paused.' (17494),
-  'A-B Loop cleared' (17795), 'No video found' (18822), 'Video popped out' (18890),
-  'PiP not supported' (18919) and 23 more reach users in English in all 11 locales.
-  `scripts/check-localizable-ui-copy.js` counts `showToast` as a sink (line 43) but a
-  whole-file baseline keeps legacy hits out of the count; `extension/features/` has none.
-  Evidence: `grep -c "showToast('[A-Z]" extension/ytkit.js` = 29 on 2026-10-10;
-  `docs/i18n-coverage.md` counts catalogue keys, not sinks.
-  Touches: `extension/ytkit.js` (wrap each in `t()`), `extension/_locales/*/messages.json`
-  (11), the copy-gate baseline (`node scripts/check-localizable-ui-copy.js --update-baseline`
-  after the count drops), `scripts/i18n-placeholder-baseline.json`,
-  `tests/i18n-plural-keys.test.js` for any count form.
-  Acceptance: zero capitalised English `showToast('…')` literals in `extension/ytkit.js`,
-  every new key present in all 11 catalogues, and `npm run i18n:copy:gate` fails when one
-  is reintroduced because the baseline now sits at the new count.
-  Complexity: M
-
 - [ ] P2 — Serve the userscript libraries from jsDelivr's commit-pinned GitHub mirror
   Why: Greasy Fork accepts `@require` and `@resource` only from its recognized CDN list.
   `raw.githubusercontent.com` isn't on it; jsDelivr's

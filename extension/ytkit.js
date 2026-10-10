@@ -16310,7 +16310,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 if (state.t > 1 && Math.abs(v.currentTime - state.t) > 2) v.currentTime = state.t;
                 if (state.rate && state.rate !== 1) v.playbackRate = state.rate;
-                showToast(`Playback recovered (attempt ${state.attempts}/${this._MAX_ATTEMPTS})`, '#22c55e', { duration: 4 });
+                showToast(t('toastPlaybackRecoveredTpl', 'Playback recovered (attempt {attempt} of {max})').replace('{attempt}', () => String(state.attempts)).replace('{max}', () => String(this._MAX_ATTEMPTS)), '#22c55e', { duration: 4 });
                 // Keep the attempt counter until 10s of stable playback, then reset
                 // so a later error on the same video gets a fresh retry budget.
                 const clearAt = (state.t || 0) + 10;
@@ -16571,7 +16571,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!container) return;
                     const items = [...container.children];
                     items.reverse().forEach(item => container.appendChild(item));
-                    showToast('Playlist reversed', '#3ea6ff');
+                    showToast(t('toastPlaylistReversed', 'Playlist reversed'), '#3ea6ff');
                 };
                 menu.appendChild(btn);
             },
@@ -17073,14 +17073,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._setState('saved');
 
                         if (result.clipboardState === 'copied') {
-                            showToast('Screenshot saved & copied to the clipboard.', '#22c55e', { duration: 3 });
+                            showToast(t('toastScreenshotSavedCopied', 'Screenshot saved and copied to the clipboard.'), '#22c55e', { duration: 3 });
                         } else if (result.clipboardState === 'failed') {
-                            showToast('Screenshot saved. Copy to clipboard was blocked, but the PNG still downloaded.', '#f59e0b', {
+                            showToast(t('toastScreenshotCopyBlocked', 'Screenshot saved. Copying it to the clipboard was blocked, but the PNG still downloaded.'), '#f59e0b', {
                                 duration: 5,
                                 tone: 'warning'
                             });
                         } else {
-                            showToast('Screenshot saved. Clipboard image copy is not available here.', '#3b82f6', {
+                            showToast(t('toastScreenshotCopyUnavailable', "Screenshot saved. Copying images to the clipboard isn't available here."), '#3b82f6', {
                                 duration: 4,
                                 tone: 'info'
                             });
@@ -17540,7 +17540,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         try { video.pause(); } catch (_) { /* reason: best-effort pause */ }
                     }
                     announceA11y('Sleep timer elapsed. Playback paused.');
-                    showToast('Sleep timer elapsed. Playback paused.', '#22c55e', { duration: 4 });
+                    showToast(t('toastSleepTimerElapsed', 'Sleep timer is up. Playback paused.'), '#22c55e', { duration: 4 });
                     return;
                 }
                 this._chip.querySelector('.sleep-time').textContent = this._formatRemaining(remaining);
@@ -17798,10 +17798,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!video) return;
                 if (which === 'A') {
                     this._pointA = video.currentTime;
-                    showToast(`Loop point A set at ${this._formatTime(this._pointA)}`, '#3ea6ff');
+                    showToast(t('toastLoopPointATpl', 'Loop point A set at {time}').replace('{time}', () => this._formatTime(this._pointA)), '#3ea6ff');
                 } else {
                     this._pointB = video.currentTime;
-                    showToast(`Loop point B set at ${this._formatTime(this._pointB)}`, '#3ea6ff');
+                    showToast(t('toastLoopPointBTpl', 'Loop point B set at {time}').replace('{time}', () => this._formatTime(this._pointB)), '#3ea6ff');
                 }
                 if (this._pointA !== null && this._pointB !== null) {
                     if (this._pointA > this._pointB) [this._pointA, this._pointB] = [this._pointB, this._pointA];
@@ -17822,7 +17822,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
                 video.addEventListener('timeupdate', this._loopHandler);
                 this._updateBtn();
-                showToast(`Looping ${this._formatTime(this._pointA)} - ${this._formatTime(this._pointB)}`, '#22c55e');
+                showToast(t('toastLoopingTpl', 'Looping {start} to {end}').replace('{start}', () => this._formatTime(this._pointA)).replace('{end}', () => this._formatTime(this._pointB)), '#22c55e');
             },
 
             _stopLoop() {
@@ -17841,7 +17841,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pointB = null;
                 this._removeMarkers();
                 this._updateBtn();
-                showToast('A-B Loop cleared', '#6b7280');
+                showToast(t('toastLoopCleared', 'A-B loop cleared'), '#6b7280');
             },
 
             _updateBtn() {
@@ -18205,7 +18205,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         item.style.opacity = '0';
                         item.style.transform = 'scale(0.9)';
                         setTimeout(() => { item.style.display = 'none'; }, 300);
-                        showToast('Dismissed', '#3ea6ff');
+                        showToast(t('toastDismissed', 'Dismissed'), '#3ea6ff');
                     };
                 });
             },
@@ -18868,7 +18868,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _activate() {
                 const video = document.querySelector('video.html5-main-video');
-                if (!video) { showToast('No video found', '#ef4444'); return; }
+                if (!video) { showToast(t('timestampHighlightNoVideo', 'No video is currently open.'), '#ef4444'); return; }
                 // Document PiP: Chrome 116+, Firefox 151+ (stable, no flag).
                 // Safari still lacks support — falls through to legacy
                 // video.requestPictureInPicture().
@@ -18936,7 +18936,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             PipOwnership.release();
                             this._pipWindow = null;
                         });
-                        showToast('Video popped out', '#22c55e');
+                        showToast(t('toastVideoPoppedOut', 'Video popped out'), '#22c55e');
                         return;
                     } catch(e) { DebugManager.log('PopOut', 'Document PiP failed: ' + e.message); }
                 }
@@ -18952,7 +18952,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         RuntimeFlags.setVideoPopped(false);
                         PipOwnership.release();
                     }, { once: true });
-                    showToast('Picture-in-Picture active', '#22c55e');
+                    showToast(t('toastPipActive', 'Picture-in-Picture is on'), '#22c55e');
                 } catch(e) {
                     if (isFirefox) {
                         const ffMatch = (navigator.userAgent || '').match(/\bFirefox\/(\d+)/);
@@ -18965,7 +18965,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             { duration: 8 },
                         );
                     } else {
-                        showToast('PiP not supported', '#ef4444');
+                        showToast(t('toastPipUnsupported', "Picture-in-Picture isn't supported here"), '#ef4444');
                     }
                 }
             },
@@ -19935,7 +19935,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 DiagnosticLog.record('age-restriction-bypass', `${videoId}: ${detail}`);
                 if (this._lastDegradationKey !== key) {
                     this._lastDegradationKey = key;
-                    showToast(`Age bypass needs attention: ${detail}`, '#f59e0b', { duration: 8 });
+                    showToast(t('toastAgeBypassNeedsAttention', "Age-restriction bypass couldn't handle this video. The diagnostic log has the details."), '#f59e0b', { duration: 8 });
                 }
             },
 
@@ -20016,7 +20016,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     player.appendChild(iframe);
                     if (ageGate) ageGate.style.display = 'none';
                     this._clearDegraded();
-                    showToast('Age restriction bypassed', '#22c55e');
+                    showToast(t('toastAgeBypassed', 'Age restriction bypassed'), '#22c55e');
                 } catch(e) {
                     DebugManager.log('AgeBypass', 'Failed: ' + e.message);
                     this._reportDegraded(describeFailureCause(e), videoId);
@@ -21985,7 +21985,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const title = this._getTitleText();
                     if (!title) {
                         this._setState('error');
-                        showToast('The video title is still loading. Try again in a moment.', '#f59e0b', {
+                        showToast(t('toastTitleStillLoading', 'The video title is still loading. Try again in a moment.'), '#f59e0b', {
                             duration: 4,
                             tone: 'warning'
                         });
@@ -21998,7 +21998,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._setState('copied');
                     } else {
                         this._setState('error');
-                        showToast('Clipboard access was blocked. Try again or use the browser copy shortcut.', '#ef4444', {
+                        showToast(t('playlistCopyBlocked', 'Clipboard access was blocked. Try again or use the browser copy shortcut.'), '#ef4444', {
                             duration: 5
                         });
                     }
@@ -22463,7 +22463,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.addEventListener('click', async () => {
                     // Skip if video is in a Document PiP pop-out
                     if (RuntimeFlags.getVideoPopped()) {
-                        showToast('Video is already in pop-out mode', '#f59e0b');
+                        showToast(t('toastAlreadyPoppedOut', 'The video is already popped out'), '#f59e0b');
                         return;
                     }
                     const video = document.querySelector('video');
@@ -22731,7 +22731,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
                     this._priorRate = v.playbackRate;
                     setProgrammaticPlaybackRate(v, 1);
-                    showToast('Caught up to live. Speed reset to 1x.', '#22c55e', { duration: 3 });
+                    showToast(t('toastCaughtUpToLive', 'Caught up to live. Speed is back to 1x.'), '#22c55e', { duration: 3 });
                 } else if (this._priorRate != null && latency > 15) {
                     setProgrammaticPlaybackRate(v, this._priorRate);
                     this._priorRate = null;
@@ -27984,7 +27984,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const dir = e.deltaY < 0 ? 1 : -1;
                     const newSpeed = Math.round(Math.max(0.1, Math.min(16, video.playbackRate + dir * step)) * 100) / 100;
                     video.playbackRate = newSpeed;
-                    showToast(`Speed: ${newSpeed}x`, '#3b82f6', { duration: 1 });
+                    showToast(t('toastSpeedTpl', 'Speed: {speed}x').replace('{speed}', () => String(newSpeed)), '#3b82f6', { duration: 1 });
                 };
                 document.addEventListener('wheel', this._wheelHandler, { passive: false, capture: true });
             },
@@ -28368,7 +28368,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     self._downloadTimer = setTimeout(() => {
                         self._downloadTimer = null;
                         ytKitDownload(window.location.href, false);
-                        showToast('Auto-download started', '#22c55e');
+                        showToast(t('toastAutoDownloadStarted', 'Auto-download started'), '#22c55e');
                     }, 2000);
                 });
             },
@@ -28705,7 +28705,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._resetChannel(channelId);
                         this._closePanel();
                         this._updateChipState(channelId);
-                        if (typeof showToast === 'function') showToast('SponsorBlock overrides reset to global defaults for this channel.', '#00d400');
+                        if (typeof showToast === 'function') showToast(t('toastSponsorBlockOverridesReset', "This channel's SponsorBlock overrides are back to your global defaults."), '#00d400');
                     });
                     panel.appendChild(resetBtn);
                 }
@@ -30129,7 +30129,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._downloadController = controller;
                 try {
                     if (!videoId) throw new Error('No video detected');
-                    showToast('Fetching captions…', '#3b82f6');
+                    showToast(t('toastFetchingCaptions', 'Fetching captions…'), '#3b82f6');
                     const result = await fetchTranscriptWithFallback([], null, {
                         videoId,
                         signal: controller.signal
@@ -30154,7 +30154,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     a.href = url; a.download = `${videoId}_${lang}.srt`;
                     a.click();
                     setTimeout(() => URL.revokeObjectURL(url), 5000);
-                    showToast('SRT downloaded', '#22c55e');
+                    showToast(t('toastSrtDownloaded', 'SRT downloaded'), '#22c55e');
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
                     showToast(failureText('subtitleDownload', e, 'subtitleDownloadFailed', 'Subtitle download failed'), '#ef4444');
@@ -31052,7 +31052,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clear: () => DiagnosticLog.clear(),
                     download: () => DiagnosticLog.download(),
                 };
-                showToast('Diagnostic log active. window.__ytkitDiagnostics.download()', '#3b82f6', { duration: 5 });
+                showToast(t('toastDiagnosticLogActive', 'Diagnostic log is on. Run window.__ytkitDiagnostics.download() in the console to save it.'), '#3b82f6', { duration: 5 });
             },
             destroy() {
                 if (this._origConsoleError) console.error = this._origConsoleError;
@@ -32299,7 +32299,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const v = document.querySelector('video.html5-main-video');
                 if (!v) return;
                 const times = this._getChapterTimes();
-                if (!times.length) { showToast('No chapters', '#ef4444'); return; }
+                if (!times.length) { showToast(t('chaptersNoneFound', 'No chapters found'), '#ef4444'); return; }
                 const cur = v.currentTime;
                 if (dir > 0) {
                     const next = times.find(t => t > cur + 1);
@@ -33666,19 +33666,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _handoff() {
                 const target = appState.settings.transcriptAiTarget || 'notebooklm';
-                showToast('Fetching transcript…', '#3b82f6', { duration: 3 });
+                showToast(t('transcriptFetching', 'Fetching transcript…'), '#3b82f6', { duration: 3 });
                 this._handoffController?.abort();
                 const controller = new AbortController();
                 this._handoffController = controller;
                 try {
                     const videoId = getVideoId();
-                    if (!videoId) { showToast('No video detected', '#ef4444'); return; }
+                    if (!videoId) { showToast(t('timestampHighlightNoVideo', 'No video is currently open.'), '#ef4444'); return; }
                     const pageTitle = document.title.replace(/\s*-\s*YouTube$/, '');
                     const channel = document.querySelector('ytd-channel-name a')?.textContent?.trim() || 'Unknown';
                     const fetched = await TranscriptService.fetchTranscript(videoId, { signal: controller.signal });
                     if (getVideoId() !== videoId) throw Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
                     if (fetched?.status !== 'ready' || !fetched.segments?.length) {
-                        showToast('No transcript available for this video', '#ef4444', { duration: 5 });
+                        showToast(t('transcriptUnavailable', 'No transcript available for this video'), '#ef4444', { duration: 5 });
                         return;
                     }
                     const text = TranscriptService.formatTranscript(fetched.segments);
@@ -33700,11 +33700,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         url = `${url}${q}`;
                     }
                     await openExternalUrl(url);
-                    showToast('Prompt copied + target opened', '#22c55e', { duration: 3 });
+                    showToast(t('toastPromptCopiedTargetOpened', 'Prompt copied and the chosen site opened'), '#22c55e', { duration: 3 });
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
                     DebugManager.log('TranscriptAI', `Handoff failed: ${e.message}`);
-                    showToast('Handoff failed. Check the diagnostics log.', '#ef4444', { duration: 5 });
+                    showToast(t('toastHandoffFailed', 'Handoff failed. Check the diagnostic log.'), '#ef4444', { duration: 5 });
                 } finally {
                     if (this._handoffController === controller) this._handoffController = null;
                 }
@@ -35106,7 +35106,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._writeBackup(backup);
                 commitPresetSettings(next);
                 if (typeof showToast === 'function') {
-                    showToast('Feed Triage applied. Toggle off to restore your previous filter settings.', '#22c55e', { duration: 6 });
+                    showToast(t('toastFeedTriageApplied', 'Feed Triage applied. Turn it off to restore your previous filter settings.'), '#22c55e', { duration: 6 });
                 }
             },
 
@@ -35118,7 +35118,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._clearBackup();
                 commitPresetSettings(next);
                 if (typeof showToast === 'function') {
-                    showToast('Feed Triage off. Previous filter values restored.', '#6b7280', { duration: 4 });
+                    showToast(t('toastFeedTriageOff', 'Feed Triage is off. Your previous filter settings are back.'), '#6b7280', { duration: 4 });
                 }
             },
 
@@ -36599,7 +36599,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return true;
                 } catch (e) {
                     DebugManager.log('DeArrowVote', `Vote failed: ${e.message}`);
-                    if (typeof showToast === 'function') showToast('DeArrow vote failed. Try again later.', '#ef4444');
+                    if (typeof showToast === 'function') showToast(t('toastDeArrowVoteFailed', 'DeArrow vote failed. Try again later.'), '#ef4444');
                     return false;
                 }
             },
@@ -36636,7 +36636,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (await this._vote(uuid, 1)) {
                         upBtn.dataset.voted = '1';
                         downBtn.removeAttribute('data-voted');
-                        if (typeof showToast === 'function') showToast('DeArrow: voted up', '#22c55e');
+                        if (typeof showToast === 'function') showToast(t('toastDeArrowVotedUp', 'DeArrow: voted up'), '#22c55e');
                     }
                 });
 
@@ -36644,7 +36644,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (await this._vote(uuid, 0)) {
                         downBtn.dataset.voted = '0';
                         upBtn.removeAttribute('data-voted');
-                        if (typeof showToast === 'function') showToast('DeArrow: voted down', '#f59e0b');
+                        if (typeof showToast === 'function') showToast(t('toastDeArrowVotedDown', 'DeArrow: voted down'), '#f59e0b');
                     }
                 });
 
@@ -38070,7 +38070,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     isCsv ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8'
                 );
                 if (typeof showToast === 'function') {
-                    showToast(`Exported study/work ${isCsv ? 'CSV' : 'Markdown'} (${data.bookmarkCount} bookmarks)`, '#22c55e');
+                    showToast(tCount(data.bookmarkCount, 'toastStudyExport', 'Exported {format} with {count} bookmark', 'Exported {format} with {count} bookmarks').replace('{format}', () => (isCsv ? 'CSV' : 'Markdown')).replace('{count}', () => String(data.bookmarkCount)), '#22c55e');
                 }
             },
 
@@ -38454,12 +38454,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     });
                     this._completedVideoId = getVideoId?.() || null;
                     this._status = { state: 'empty', message: 'The local transcript index is empty.' };
-                    if (typeof showToast === 'function') showToast('Transcript index cleared.', '#22c55e');
+                    if (typeof showToast === 'function') showToast(t('toastTranscriptIndexCleared', 'Transcript index cleared.'), '#22c55e');
                     return true;
                 } catch (e) {
                     DebugManager.log('TranscriptIndex', `Clear failed: ${e.message}`);
                     this._status = { state: 'error', message: 'Could not clear the local transcript index. Try again.', retryable: true };
-                    if (typeof showToast === 'function') showToast('Could not clear transcript index. Try again.', '#ef4444');
+                    if (typeof showToast === 'function') showToast(t('toastTranscriptIndexClearFailed', "Couldn't clear the transcript index. Try again."), '#ef4444');
                     throw e;
                 }
             },
@@ -38517,7 +38517,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (helpers.isAbortError(e)) return false;
                     DebugManager.log('TranscriptIndex', `Ingest failed: ${e.message}`);
                     this._status = { state: 'error', videoId, message: 'Transcript indexing paused. Revisit this video or retry.', retryable: true };
-                    if (typeof showToast === 'function') showToast('Transcript indexing paused. It will retry when you revisit this video.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('toastTranscriptIndexPaused', "Transcript indexing paused. It'll try again when you come back to this video."), '#f59e0b');
                     return false;
                 }
             },
@@ -38921,7 +38921,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearBtn.setAttribute('aria-busy', 'true');
                     clearBtn.textContent = 'Clearing…';
                     if (typeof window.__ytkitClearTranscriptIndex !== 'function') {
-                        if (typeof showToast === 'function') showToast('Transcript Search Index is off. Enable it first.', '#f59e0b');
+                        if (typeof showToast === 'function') showToast(t('toastTranscriptIndexOff', 'Transcript Search Index is off. Turn it on first.'), '#f59e0b');
                         clearBtn.disabled = false;
                         clearBtn.removeAttribute('aria-busy');
                         clearBtn.textContent = 'Clear local index';
@@ -41022,7 +41022,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const IMPORT_MAX_BYTES = options.maxBytes || (10 * 1024 * 1024);
             if (file.size > IMPORT_MAX_BYTES) {
                 const sizeMB = Math.round(IMPORT_MAX_BYTES / (1024 * 1024));
-                showToast(`Import file exceeds ${sizeMB} MB limit`, '#ef4444', { duration: 4 });
+                showToast(t('toastImportTooLargeTpl', 'The import file is over the {size} MB limit.').replace('{size}', () => String(sizeMB)), '#ef4444', { duration: 4 });
                 return;
             }
             const reader = new FileReader();
@@ -49594,7 +49594,7 @@ html:not([dark]) .ytkit-sb-channel-chip {
 
         if (isSafeMode) {
             console.log('%c[YTKit] SAFE MODE — All features disabled. ytkit.unsafe() to exit.', 'color:#f97316;font-weight:bold;font-size:16px;');
-            showToast('SAFE MODE. All features disabled. Run ytkit.unsafe() in the console to exit.', '#f97316', { duration: 10 });
+            showToast(t('toastSafeMode', 'Safe mode: every feature is off. Run ytkit.unsafe() in the console to leave it.'), '#f97316', { duration: 10 });
         } else {
             // TIER 0: Critical — CSS-only, Theater Split.
             //         Must run synchronously before any page content paints.
@@ -49759,7 +49759,7 @@ html:not([dark]) .ytkit-sb-channel-chip {
         if (!_crashGuardTriggered) _clearCrashGuardTimestamps();
 
         if (_crashGuardTriggered) {
-            showToast('Astra Deck detected repeated crashes and entered safe mode. Check your settings or reset.', '#f97316', { duration: 15 });
+            showToast(t('toastCrashSafeMode', 'Astra Deck crashed several times in a row and switched to safe mode. Check your settings or reset them.'), '#f97316', { duration: 15 });
         }
 
         if (DebugManager._enabled) {

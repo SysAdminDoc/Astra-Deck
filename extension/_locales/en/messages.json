@@ -9844,5 +9844,169 @@
   "feature_hideAutoChapters_desc": {
     "message": "Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.",
     "description": "Description of the setting that removes YouTube's auto-generated (AI) video chapters while keeping chapters the creator wrote."
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "Playback recovered (attempt {attempt} of {max})",
+    "description": "Toast message; keep {attempt},{max} as written."
+  },
+  "toastPlaylistReversed": {
+    "message": "Playlist reversed",
+    "description": "Toast message."
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "Screenshot saved and copied to the clipboard.",
+    "description": "Toast message."
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "Screenshot saved. Copying it to the clipboard was blocked, but the PNG still downloaded.",
+    "description": "Toast message."
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "Screenshot saved. Copying images to the clipboard isn't available here.",
+    "description": "Toast message."
+  },
+  "toastSleepTimerElapsed": {
+    "message": "Sleep timer is up. Playback paused.",
+    "description": "Toast message."
+  },
+  "toastLoopPointATpl": {
+    "message": "Loop point A set at {time}",
+    "description": "Toast message; keep {time} as written."
+  },
+  "toastLoopPointBTpl": {
+    "message": "Loop point B set at {time}",
+    "description": "Toast message; keep {time} as written."
+  },
+  "toastLoopingTpl": {
+    "message": "Looping {start} to {end}",
+    "description": "Toast message; keep {end},{start} as written."
+  },
+  "toastLoopCleared": {
+    "message": "A-B loop cleared",
+    "description": "Toast message."
+  },
+  "toastDismissed": {
+    "message": "Dismissed",
+    "description": "Toast message."
+  },
+  "toastVideoPoppedOut": {
+    "message": "Video popped out",
+    "description": "Toast message."
+  },
+  "toastPipActive": {
+    "message": "Picture-in-Picture is on",
+    "description": "Toast message."
+  },
+  "toastPipUnsupported": {
+    "message": "Picture-in-Picture isn't supported here",
+    "description": "Toast message."
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "Age-restriction bypass couldn't handle this video. The diagnostic log has the details.",
+    "description": "Toast message."
+  },
+  "toastAgeBypassed": {
+    "message": "Age restriction bypassed",
+    "description": "Toast message."
+  },
+  "toastTitleStillLoading": {
+    "message": "The video title is still loading. Try again in a moment.",
+    "description": "Toast message."
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "The video is already popped out",
+    "description": "Toast message."
+  },
+  "toastCaughtUpToLive": {
+    "message": "Caught up to live. Speed is back to 1x.",
+    "description": "Toast message."
+  },
+  "toastSpeedTpl": {
+    "message": "Speed: {speed}x",
+    "description": "Toast message; keep {speed} as written."
+  },
+  "toastAutoDownloadStarted": {
+    "message": "Auto-download started",
+    "description": "Toast message."
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "This channel's SponsorBlock overrides are back to your global defaults.",
+    "description": "Toast message."
+  },
+  "toastFetchingCaptions": {
+    "message": "Fetching captions…",
+    "description": "Toast message."
+  },
+  "toastSrtDownloaded": {
+    "message": "SRT downloaded",
+    "description": "Toast message."
+  },
+  "toastDiagnosticLogActive": {
+    "message": "Diagnostic log is on. Run window.__ytkitDiagnostics.download() in the console to save it.",
+    "description": "Toast message."
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "Prompt copied and the chosen site opened",
+    "description": "Toast message."
+  },
+  "toastHandoffFailed": {
+    "message": "Handoff failed. Check the diagnostic log.",
+    "description": "Toast message."
+  },
+  "toastFeedTriageApplied": {
+    "message": "Feed Triage applied. Turn it off to restore your previous filter settings.",
+    "description": "Toast message."
+  },
+  "toastFeedTriageOff": {
+    "message": "Feed Triage is off. Your previous filter settings are back.",
+    "description": "Toast message."
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "DeArrow vote failed. Try again later.",
+    "description": "Toast message."
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow: voted up",
+    "description": "Toast message."
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow: voted down",
+    "description": "Toast message."
+  },
+  "toastStudyExportOne": {
+    "message": "Exported {format} with {count} bookmark",
+    "description": "Toast message; keep {count},{format} as written."
+  },
+  "toastStudyExportOther": {
+    "message": "Exported {format} with {count} bookmarks",
+    "description": "Toast message; keep {count},{format} as written."
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "Transcript index cleared.",
+    "description": "Toast message."
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "Couldn't clear the transcript index. Try again.",
+    "description": "Toast message."
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "Transcript indexing paused. It'll try again when you come back to this video.",
+    "description": "Toast message."
+  },
+  "toastTranscriptIndexOff": {
+    "message": "Transcript Search Index is off. Turn it on first.",
+    "description": "Toast message."
+  },
+  "toastImportTooLargeTpl": {
+    "message": "The import file is over the {size} MB limit.",
+    "description": "Toast message; keep {size} as written."
+  },
+  "toastSafeMode": {
+    "message": "Safe mode: every feature is off. Run ytkit.unsafe() in the console to leave it.",
+    "description": "Toast message."
+  },
+  "toastCrashSafeMode": {
+    "message": "Astra Deck crashed several times in a row and switched to safe mode. Check your settings or reset them.",
+    "description": "Toast message."
   }
 }

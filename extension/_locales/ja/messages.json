@@ -9777,5 +9777,128 @@
   },
   "feature_hideAutoChapters_desc": {
     "message": "YouTube が自動で生成したチャプターを、シークバーとチャプターパネルから取り除きます。クリエイターが概要欄に書いたチャプターはそのまま残ります。"
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "再生を復旧しました（{max} 回中 {attempt} 回目）"
+  },
+  "toastPlaylistReversed": {
+    "message": "再生リストを逆順にしました"
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "スクリーンショットを保存し、クリップボードにコピーしました。"
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "スクリーンショットを保存しました。クリップボードへのコピーはブロックされましたが、PNG はダウンロードされています。"
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "スクリーンショットを保存しました。この環境では画像をクリップボードにコピーできません。"
+  },
+  "toastSleepTimerElapsed": {
+    "message": "スリープタイマーが終了しました。再生を一時停止しました。"
+  },
+  "toastLoopPointATpl": {
+    "message": "ループ地点 A を {time} に設定しました"
+  },
+  "toastLoopPointBTpl": {
+    "message": "ループ地点 B を {time} に設定しました"
+  },
+  "toastLoopingTpl": {
+    "message": "{start} から {end} までをループ再生中"
+  },
+  "toastLoopCleared": {
+    "message": "A-B ループを解除しました"
+  },
+  "toastDismissed": {
+    "message": "非表示にしました"
+  },
+  "toastVideoPoppedOut": {
+    "message": "動画を別ウィンドウで開きました"
+  },
+  "toastPipActive": {
+    "message": "ピクチャー イン ピクチャーがオンです"
+  },
+  "toastPipUnsupported": {
+    "message": "ここではピクチャー イン ピクチャーを使用できません"
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "年齢制限の回避でこの動画を処理できませんでした。詳細は診断ログにあります。"
+  },
+  "toastAgeBypassed": {
+    "message": "年齢制限を回避しました"
+  },
+  "toastTitleStillLoading": {
+    "message": "動画のタイトルを読み込み中です。少し待ってからもう一度お試しください。"
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "動画はすでに別ウィンドウで開いています"
+  },
+  "toastCaughtUpToLive": {
+    "message": "ライブに追いつきました。速度を 1x に戻しました。"
+  },
+  "toastSpeedTpl": {
+    "message": "速度: {speed}x"
+  },
+  "toastAutoDownloadStarted": {
+    "message": "自動ダウンロードを開始しました"
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "このチャンネルの SponsorBlock の個別設定を全体の既定値に戻しました。"
+  },
+  "toastFetchingCaptions": {
+    "message": "字幕を取得しています…"
+  },
+  "toastSrtDownloaded": {
+    "message": "SRT をダウンロードしました"
+  },
+  "toastDiagnosticLogActive": {
+    "message": "診断ログが有効です。保存するにはコンソールで window.__ytkitDiagnostics.download() を実行してください。"
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "プロンプトをコピーし、選んだサイトを開きました"
+  },
+  "toastHandoffFailed": {
+    "message": "受け渡しに失敗しました。診断ログを確認してください。"
+  },
+  "toastFeedTriageApplied": {
+    "message": "フィードの整理を適用しました。オフにすると以前のフィルター設定に戻ります。"
+  },
+  "toastFeedTriageOff": {
+    "message": "フィードの整理をオフにしました。以前のフィルター設定に戻りました。"
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "DeArrow の投票に失敗しました。後でもう一度お試しください。"
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow: 高評価しました"
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow: 低評価しました"
+  },
+  "toastStudyExportOne": {
+    "message": "{format} を書き出しました（ブックマーク {count} 件）"
+  },
+  "toastStudyExportOther": {
+    "message": "{format} を書き出しました（ブックマーク {count} 件）"
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "文字起こしのインデックスを消去しました。"
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "文字起こしのインデックスを消去できませんでした。もう一度お試しください。"
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "文字起こしのインデックス作成を一時停止しました。この動画に戻ったときに再試行します。"
+  },
+  "toastTranscriptIndexOff": {
+    "message": "文字起こし検索インデックスがオフです。先にオンにしてください。"
+  },
+  "toastImportTooLargeTpl": {
+    "message": "インポートするファイルが上限の {size} MB を超えています。"
+  },
+  "toastSafeMode": {
+    "message": "セーフモード: すべての機能がオフです。解除するにはコンソールで ytkit.unsafe() を実行してください。"
+  },
+  "toastCrashSafeMode": {
+    "message": "Astra Deck が続けてクラッシュしたため、セーフモードに切り替えました。設定を確認するか、リセットしてください。"
   }
 }

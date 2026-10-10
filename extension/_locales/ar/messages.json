@@ -9777,5 +9777,128 @@
   },
   "feature_hideAutoChapters_desc": {
     "message": "يزيل الفصول التي ينشئها YouTube تلقائيًا من شريط التقدم ولوحة الفصول. تبقى الفصول التي كتبها صاحب القناة في الوصف."
+  },
+  "toastPlaybackRecoveredTpl": {
+    "message": "تمت استعادة التشغيل (المحاولة {attempt} من {max})"
+  },
+  "toastPlaylistReversed": {
+    "message": "تم عكس قائمة التشغيل"
+  },
+  "toastScreenshotSavedCopied": {
+    "message": "تم حفظ لقطة الشاشة ونسخها إلى الحافظة."
+  },
+  "toastScreenshotCopyBlocked": {
+    "message": "تم حفظ لقطة الشاشة. تم حظر النسخ إلى الحافظة، لكن ملف PNG تم تنزيله."
+  },
+  "toastScreenshotCopyUnavailable": {
+    "message": "تم حفظ لقطة الشاشة. نسخ الصور إلى الحافظة غير متاح هنا."
+  },
+  "toastSleepTimerElapsed": {
+    "message": "انتهى مؤقت النوم. تم إيقاف التشغيل مؤقتًا."
+  },
+  "toastLoopPointATpl": {
+    "message": "تم تعيين نقطة التكرار A عند {time}"
+  },
+  "toastLoopPointBTpl": {
+    "message": "تم تعيين نقطة التكرار B عند {time}"
+  },
+  "toastLoopingTpl": {
+    "message": "تكرار من {start} إلى {end}"
+  },
+  "toastLoopCleared": {
+    "message": "تم مسح تكرار A-B"
+  },
+  "toastDismissed": {
+    "message": "تم التجاهل"
+  },
+  "toastVideoPoppedOut": {
+    "message": "تم فتح الفيديو في نافذة منفصلة"
+  },
+  "toastPipActive": {
+    "message": "تم تشغيل صورة داخل صورة"
+  },
+  "toastPipUnsupported": {
+    "message": "وضع صورة داخل صورة غير مدعوم هنا"
+  },
+  "toastAgeBypassNeedsAttention": {
+    "message": "تعذر على تجاوز قيود العمر التعامل مع هذا الفيديو. التفاصيل في سجل التشخيص."
+  },
+  "toastAgeBypassed": {
+    "message": "تم تجاوز قيود العمر"
+  },
+  "toastTitleStillLoading": {
+    "message": "لا يزال عنوان الفيديو قيد التحميل. حاول مرة أخرى بعد لحظة."
+  },
+  "toastAlreadyPoppedOut": {
+    "message": "الفيديو مفتوح بالفعل في نافذة منفصلة"
+  },
+  "toastCaughtUpToLive": {
+    "message": "تم اللحاق بالبث المباشر. عادت السرعة إلى 1x."
+  },
+  "toastSpeedTpl": {
+    "message": "السرعة: {speed}x"
+  },
+  "toastAutoDownloadStarted": {
+    "message": "بدأ التنزيل التلقائي"
+  },
+  "toastSponsorBlockOverridesReset": {
+    "message": "عادت استثناءات SponsorBlock لهذه القناة إلى إعداداتك العامة."
+  },
+  "toastFetchingCaptions": {
+    "message": "جارٍ جلب الترجمات…"
+  },
+  "toastSrtDownloaded": {
+    "message": "تم تنزيل ملف SRT"
+  },
+  "toastDiagnosticLogActive": {
+    "message": "سجل التشخيص قيد التشغيل. شغّل window.__ytkitDiagnostics.download() في وحدة التحكم لحفظه."
+  },
+  "toastPromptCopiedTargetOpened": {
+    "message": "تم نسخ الموجّه وفتح الموقع المختار"
+  },
+  "toastHandoffFailed": {
+    "message": "فشل التسليم. راجع سجل التشخيص."
+  },
+  "toastFeedTriageApplied": {
+    "message": "تم تطبيق فرز الخلاصة. أوقفه لاستعادة إعدادات الفلترة السابقة."
+  },
+  "toastFeedTriageOff": {
+    "message": "تم إيقاف فرز الخلاصة. عادت إعدادات الفلترة السابقة."
+  },
+  "toastDeArrowVoteFailed": {
+    "message": "فشل التصويت في DeArrow. حاول لاحقًا."
+  },
+  "toastDeArrowVotedUp": {
+    "message": "DeArrow: تم التصويت بالإيجاب"
+  },
+  "toastDeArrowVotedDown": {
+    "message": "DeArrow: تم التصويت بالسلب"
+  },
+  "toastStudyExportOne": {
+    "message": "تم تصدير {format} مع {count} إشارة مرجعية"
+  },
+  "toastStudyExportOther": {
+    "message": "تم تصدير {format} مع {count} من الإشارات المرجعية"
+  },
+  "toastTranscriptIndexCleared": {
+    "message": "تم مسح فهرس النصوص."
+  },
+  "toastTranscriptIndexClearFailed": {
+    "message": "تعذر مسح فهرس النصوص. حاول مرة أخرى."
+  },
+  "toastTranscriptIndexPaused": {
+    "message": "تم إيقاف فهرسة النصوص مؤقتًا. ستُعاد المحاولة عند عودتك إلى هذا الفيديو."
+  },
+  "toastTranscriptIndexOff": {
+    "message": "فهرس البحث في النصوص متوقف. شغّله أولًا."
+  },
+  "toastImportTooLargeTpl": {
+    "message": "ملف الاستيراد يتجاوز الحد البالغ {size} ميغابايت."
+  },
+  "toastSafeMode": {
+    "message": "الوضع الآمن: جميع الميزات متوقفة. شغّل ytkit.unsafe() في وحدة التحكم للخروج منه."
+  },
+  "toastCrashSafeMode": {
+    "message": "تعطل Astra Deck عدة مرات متتالية وانتقل إلى الوضع الآمن. راجع إعداداتك أو أعد تعيينها."
   }
 }

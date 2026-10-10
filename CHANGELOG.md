@@ -64,6 +64,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Settings Sync** could drop your oldest hidden videos and blocked channels. Once a list grows past what sync can carry, only its newest entries travel, and a device pulling them swapped its own longer list for the short one. A device with 3,000 hidden videos lost the oldest 500, and Undo couldn't bring them back. A pull now keeps the local entries the sync data doesn't carry, and Undo keeps the full lists.
 
+- 46 pop-up messages were still English in every language, among them "Playlist reversed", the sleep timer and A-B loop notices, Picture-in-Picture and pop-out, the screenshot and SRT download notes, DeArrow votes, Feed Triage, the transcript index and safe mode. They're translated in all 11 languages now, and the translation check fails on any new English one. The age-restriction bypass warning also stopped pasting internal English error text. It says the bypass couldn't handle the video and points to the diagnostic log.
+
 - Toggles in the in-page settings panel could flip back right after you changed them. One saved value from an older version that the current one no longer accepts made every save fail, even saves that didn't touch it. A stored value a save leaves alone is kept as it is now, and a new invalid value is still refused.
 
 ## [4.97.0] (2026-10-07)
