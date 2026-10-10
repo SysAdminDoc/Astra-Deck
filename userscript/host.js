@@ -95,7 +95,13 @@
         return;
     }
 
+    // Only the modules the host can't boot without. Between releases this
+    // file on main can be newer than the release libraries it pins, and a
+    // feature module they don't carry yet is skipped and recorded by the
+    // runtime instead (failedFeatureModules), not fatal for the whole script.
     const registry = HOST_GLOBAL[REGISTRY_KEY];
+    hostState.missingOptionalModules = (BUILD.optionalModules || [])
+        .filter((path) => typeof registry?.[path] !== 'function');
     const missingModules = BUILD.requiredModules.filter((path) => typeof registry?.[path] !== 'function');
     if (missingModules.length) {
         hostState.phase = 'failed';
@@ -1409,7 +1415,11 @@
         const settingsStartedAt = performance.now();
         const settings = await settingsPromise;
         stageTimings.settingsReadMs = Math.round((performance.now() - settingsStartedAt) * 100) / 100;
-        const featureModules = BUILD.modules.features.filter((path) => shouldLoadFeature(path, settings));
+        // A module the pinned libraries don't carry yet is a newer feature
+        // than this release has; it's listed, not loaded and not an error.
+        bootstrapState.unbundledFeatureModules = hostState.missingOptionalModules.slice();
+        const featureModules = BUILD.modules.features.filter((path) => shouldLoadFeature(path, settings)
+            && typeof registry[path] === 'function');
         stageTimings.featureModuleCount = featureModules.length;
         const failedFeatureModules = [];
         timeStage('featureModulesMs', () => {

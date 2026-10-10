@@ -894,16 +894,23 @@ function runtimeManifest(manifest, version) {
 function buildHostData(plan, version, repoRoot = REPO_ROOT) {
     const defaultLocale = plan.manifest.default_locale || 'en';
     const messages = flattenMessages(JSON.parse(readText(repoRoot, `extension/_locales/${defaultLocale}/messages.json`)));
+    // Between releases the loader on main pins the last release's
+    // libraries, so it can name a module they don't carry yet. Only what the
+    // host can't boot without is required. A feature module that isn't there
+    // is skipped, the way the extension's runtime skips a feature module that
+    // fails to load. check-userscript-drift fails
+    // when the pinned libraries lack anything required.
     const requiredModules = unique([
         plan.bridgeToken,
         ...plan.foundation,
-        ...plan.features,
         plan.app,
         plan.background,
         ...plan.backgroundCore,
         ...plan.liveChat,
         MAIN_WORLD_MODULE,
     ]);
+    const optionalModules = unique([...plan.features])
+        .filter((modulePath) => !requiredModules.includes(modulePath));
     return {
         version,
         runtimeId: RUNTIME_ID,
@@ -920,6 +927,7 @@ function buildHostData(plan, version, repoRoot = REPO_ROOT) {
         featureSettings: plan.featureSettings,
         mainWorldModule: MAIN_WORLD_MODULE,
         requiredModules,
+        optionalModules,
         modules: {
             bridgeToken: plan.bridgeToken,
             foundation: plan.foundation,
@@ -1065,6 +1073,20 @@ function parseUserscriptBuild(text) {
     return JSON.parse(text.slice(start + BUILD_MARKER.length, end));
 }
 
+// The modules a shipped YTKit.user.js requires that the libraries it pins
+// don't register. libraryBytes maps each library file to the bytes its URL
+// serves (readPinnedBytes). The host stops a fresh install on any of these.
+function findUnregisteredRequiredModules(mainText, libraryBytes) {
+    const registered = new Set();
+    const pattern = new RegExp(`^${REGISTRY_LOCAL}\\[("(?:[^"\\\\]|\\\\.)+")\\] = function `, 'gm');
+    for (const library of LIBRARIES) {
+        const bytes = libraryBytes.get(library.file);
+        if (!bytes) continue;
+        for (const match of String(bytes).matchAll(pattern)) registered.add(JSON.parse(match[1]));
+    }
+    return (parseUserscriptBuild(mainText).requiredModules || []).filter((modulePath) => !registered.has(modulePath));
+}
+
 // Checks a shipped YTKit.user.js header against the files it names: every
 // @require and @resource must carry #sha256= and the hash must be the bytes
 // its URL serves. readFile(relativePath) returns those bytes as a Buffer
@@ -1177,6 +1199,7 @@ module.exports = {
     coreRequireUrl,
     findIntegrityMismatches,
     findOffCdnLibraryUrls,
+    findUnregisteredRequiredModules,
     integrityFragment,
     libraryUrl,
     parseUserscriptBuild,

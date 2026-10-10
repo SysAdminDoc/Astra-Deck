@@ -363,6 +363,14 @@ const ASTRA_DECK_BUILD = {
 		"core/toast-dom.js",
 		"core/lifecycle-route-bridge.js",
 		"features/download-ui/index.js",
+		"ytkit.js",
+		"background.js",
+		"core/settings-sync.js",
+		"features/live-chat/index.js",
+		"live-chat.js",
+		"@main-world"
+	],
+	"optionalModules": [
 		"features/element-zapper/index.js",
 		"features/subtitles/index.js",
 		"features/video-filters/index.js",
@@ -393,13 +401,7 @@ const ASTRA_DECK_BUILD = {
 		"features/video-insights/index.js",
 		"features/return-dislike/index.js",
 		"features/sponsorblock/index.js",
-		"features/dearrow/index.js",
-		"ytkit.js",
-		"background.js",
-		"core/settings-sync.js",
-		"features/live-chat/index.js",
-		"live-chat.js",
-		"@main-world"
+		"features/dearrow/index.js"
 	],
 	"modules": {
 		"bridgeToken": "core/bridge-token.js",
@@ -3963,7 +3965,13 @@ const ASTRA_DECK_BUILD = {
         return;
     }
 
+    // Only the modules the host can't boot without. Between releases this
+    // file on main can be newer than the release libraries it pins, and a
+    // feature module they don't carry yet is skipped and recorded by the
+    // runtime instead (failedFeatureModules), not fatal for the whole script.
     const registry = HOST_GLOBAL[REGISTRY_KEY];
+    hostState.missingOptionalModules = (BUILD.optionalModules || [])
+        .filter((path) => typeof registry?.[path] !== 'function');
     const missingModules = BUILD.requiredModules.filter((path) => typeof registry?.[path] !== 'function');
     if (missingModules.length) {
         hostState.phase = 'failed';
@@ -5277,7 +5285,11 @@ const ASTRA_DECK_BUILD = {
         const settingsStartedAt = performance.now();
         const settings = await settingsPromise;
         stageTimings.settingsReadMs = Math.round((performance.now() - settingsStartedAt) * 100) / 100;
-        const featureModules = BUILD.modules.features.filter((path) => shouldLoadFeature(path, settings));
+        // A module the pinned libraries don't carry yet is a newer feature
+        // than this release has; it's listed, not loaded and not an error.
+        bootstrapState.unbundledFeatureModules = hostState.missingOptionalModules.slice();
+        const featureModules = BUILD.modules.features.filter((path) => shouldLoadFeature(path, settings)
+            && typeof registry[path] === 'function');
         stageTimings.featureModuleCount = featureModules.length;
         const failedFeatureModules = [];
         timeStage('featureModulesMs', () => {

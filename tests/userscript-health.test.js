@@ -400,3 +400,25 @@ test('userscript-health: SRI pins name the tag the URL serves, not newer bytes o
         fs.rmSync(repo, { recursive: true, force: true });
     }
 });
+
+// Between releases YTKit.user.js on main pins the last release's libraries.
+// Main once required two feature modules v4.97.0's libraries didn't carry,
+// and every fresh install stopped at the host's library check. The drift
+// gate now fails on any required module the pinned libraries don't register.
+test('userscript-health: the pinned libraries register every module the loader requires', () => {
+    const { LIBRARIES, findUnregisteredRequiredModules, parseUserscriptBuild } = require('../sync-userscript');
+    const main = readUserscript('YTKit.user.js');
+    const libraries = new Map(LIBRARIES.map(({ file }) => [file, Buffer.from(readUserscript(file))]));
+    assert.deepEqual(findUnregisteredRequiredModules(main, libraries), []);
+
+    const build = parseUserscriptBuild(main);
+    assert.ok(build.requiredModules.includes('ytkit.js'));
+    assert.ok(build.optionalModules.some((file) => file.startsWith('features/')),
+        'feature modules are optional, so a newer one on main never blocks an install');
+    assert.equal(build.requiredModules.some((file) => file.startsWith('features/') && file !== 'features/download-ui/index.js'), false);
+    const app = libraries.get('YTKit-app.user.js').toString('utf8');
+    const withoutApp = app.replace(/^__astraDeckRegistry\["ytkit\.js"\] = function /m, '__astraDeckRegistry["ytkit-renamed.js"] = function ');
+    assert.notEqual(withoutApp, app, 'the positive control needs the app registration to rename');
+    libraries.set('YTKit-app.user.js', Buffer.from(withoutApp));
+    assert.deepEqual(findUnregisteredRequiredModules(main, libraries), ['ytkit.js']);
+});

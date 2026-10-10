@@ -135,3 +135,26 @@ test('an empty key in the menu command removes the saved one', async () => {
     await settle(run.drain);
     assert.deepEqual(JSON.parse(JSON.stringify(received)), [{ type: 'YTKIT_AI_CREDENTIAL_DELETE', provider: 'openai' }]);
 });
+
+// Between releases the loader on main pins the last release's libraries. When
+// main had two feature modules v4.97.0's libraries didn't carry, every fresh
+// install stopped at the library check and ran nothing. Feature modules are
+// optional now; what the host boots on is not.
+test('a library without a newer feature module still boots, and lists what it skipped', async () => {
+    const newer = [build.optionalModules.find((modulePath) => modulePath.startsWith('features/'))];
+    assert.ok(newer[0], 'the build lists optional modules');
+    const run = captureAdapters(mainSource, build, {}, { omit: newer });
+    await settle(run.drain);
+    assert.notEqual(run.state.phase, 'failed');
+    assert.deepEqual([...run.state.missingOptionalModules].sort(), [...newer].sort());
+    assert.ok(run.captured.content, 'the app still ran');
+    assert.deepEqual(run.state.errors.map((entry) => entry.stage)
+        .filter((stage) => stage === 'library check'), [], 'skipping is not an error');
+});
+
+test('a library without a module the host boots on stops at the library check', () => {
+    const run = captureAdapters(mainSource, build, {}, { omit: [build.modules.app] });
+    assert.equal(run.state.phase, 'failed');
+    assert.match(run.state.errors.map((entry) => entry.message).join('\n'), /did not load \(missing ytkit\.js\)/);
+    assert.equal(run.captured.content, undefined);
+});

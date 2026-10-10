@@ -63,11 +63,14 @@ function fail(message, code = 1) {
 
 // Only what the host touches before it hands the adapter to the first module.
 // The tests reuse this runner: `options.modules` replaces a stub module with a
-// real function, and `options.prompts` answers window.prompt in order.
+// real function, `options.prompts` answers window.prompt in order, and
+// `options.omit` leaves modules out, as an older library would.
 function captureAdapters(mainSource, build, initialValues = {}, options = {}) {
     const captured = {};
     const registry = {};
-    for (const modulePath of build.requiredModules) {
+    const omitted = new Set(options.omit || []);
+    for (const modulePath of [...build.requiredModules, ...(build.optionalModules || [])]) {
+        if (omitted.has(modulePath)) continue;
         registry[modulePath] = function (globalThisArg, selfArg, windowArg, chromeArg) {
             if (modulePath === build.modules.background) captured.background = chromeArg;
             if (modulePath === build.modules.app) captured.content = chromeArg;

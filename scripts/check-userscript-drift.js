@@ -30,6 +30,7 @@ const {
     buildUserscriptOutputs,
     findIntegrityMismatches,
     findOffCdnLibraryUrls,
+    findUnregisteredRequiredModules,
     parseUserscriptBuild,
     readBuildPlan,
     readPinnedBytes,
@@ -148,6 +149,16 @@ const pinnable = [...LIBRARIES.map((library) => library.file), ...locales.map((l
 const served = readPinnedBytes(REPO_ROOT, build.version,
     new Map(pinnable.map((file) => [file, fs.readFileSync(path.join(REPO_ROOT, file))])));
 for (const error of findIntegrityMismatches(shippedMain, (file) => served.get(file) || null)) errors.push(error);
+
+// ── 6. The pinned libraries register everything the loader requires ──
+// Between releases the loader on main pins the last release's libraries.
+// A required module they lack stops a fresh install at the host's library
+// check (v4.97.0's libraries against a main that needed two newer feature
+// modules did exactly that). Feature modules are optional for this reason.
+const unregistered = shippedMain ? findUnregisteredRequiredModules(shippedMain, served) : [];
+if (unregistered.length) {
+    errors.push(`the libraries YTKit.user.js pins don't register ${unregistered.join(', ')}, so a fresh install stops at the host's library check`);
+}
 
 if (errors.length) {
     console.error(`[check-userscript-drift] ${errors.length} drift issue(s):`);
