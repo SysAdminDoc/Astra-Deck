@@ -96,6 +96,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Toggles in the in-page settings panel could flip back right after you changed them. One saved value from an older version that the current one no longer accepts made every save fail, even saves that didn't touch it. A stored value a save leaves alone is kept as it is now, and a new invalid value is still refused.
 
+- Turning on **Diagnostic Error Log** told you to run a command in the browser console to save the log. Now it points you to the bug button under the settings panel's sidebar, which copies the log for a bug report (or saves it as a file if copying isn't allowed). Every language gets the new wording.
+
 ## [4.97.0] (2026-10-07)
 
 ### Added
