@@ -3857,7 +3857,7 @@ const ASTRA_DECK_BUILD = {
 		"toastSponsorBlockOverridesReset": "This channel's SponsorBlock overrides are back to your global defaults.",
 		"toastFetchingCaptions": "Fetching captions…",
 		"toastSrtDownloaded": "SRT downloaded",
-		"toastDiagnosticLogActive": "Diagnostic log is on. Run window.__ytkitDiagnostics.download() in the console to save it.",
+		"toastDiagnosticLogActive": "Diagnostic log is on. To share it, open the settings panel and use the bug button under the sidebar.",
 		"toastPromptCopiedTargetOpened": "Prompt copied and the chosen site opened",
 		"toastHandoffFailed": "Handoff failed. Check the diagnostic log.",
 		"toastFeedTriageApplied": "Feed Triage applied. Turn it off to restore your previous filter settings.",
