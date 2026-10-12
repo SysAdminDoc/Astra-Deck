@@ -285,6 +285,64 @@ ${ROOT} #ytkit-split-collapse-strip::after {
 }
 ${ROOT} #ytkit-split-collapse-strip:hover::after { width: 48px !important; background: var(--ytkit-split-accent) !important; }
 
+/* A past live stream has a chat replay and comments. The pane shows one at a
+   time, and this bar switches between them. The controller sizes its width;
+   the 48px height is the offset the two surfaces sit below. */
+${ROOT} #ytkit-split-replay-tabs {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    z-index: 10003 !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 48px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid var(--ytkit-split-hairline) !important;
+    border-inline-start: 1px solid var(--ytkit-split-hairline) !important;
+    background: var(--ytkit-split-panel) !important;
+    color: var(--ytkit-split-text) !important;
+    pointer-events: auto !important;
+}
+${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-track {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    gap: 2px !important;
+    min-width: 0 !important;
+    padding: 3px !important;
+    border: 1px solid var(--ytkit-split-border) !important;
+    border-radius: var(--ytkit-split-radius) !important;
+    background: var(--ytkit-split-raised) !important;
+}
+${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 28px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border: 0 !important;
+    border-radius: var(--ytkit-split-radius-sm) !important;
+    background: transparent !important;
+    color: var(--ytkit-split-muted) !important;
+    font: 500 13px/28px var(--yt-spec-font-family, "Roboto", Arial, sans-serif) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    cursor: pointer !important;
+    transition: background-color 160ms var(--ytkit-split-ease), color 160ms var(--ytkit-split-ease) !important;
+}
+${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab:hover { background: var(--ytkit-split-hover) !important; color: var(--ytkit-split-text) !important; }
+${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab[aria-pressed="true"] {
+    background: var(--ytkit-split-accent-soft) !important;
+    color: var(--ytkit-split-accent-ink) !important;
+    font-weight: 600 !important;
+}
+${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab:focus-visible {
+    outline: 2px solid var(--ytkit-split-accent) !important;
+    outline-offset: 1px !important;
+}
+
 ${PANE} {
     /* YouTube paints fades and expanders with its own surface tokens, and an
        ancestor can scope them to another value than <html> holds (the watch
@@ -1349,7 +1407,7 @@ ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-re
 }
 
 @media (prefers-reduced-motion: reduce) {
-    ${ROOT} :is(#ytkit-split-divider, #ytkit-split-divider::before, #ytkit-split-divider .ytkit-divider-pip, #ytkit-split-close, #ytkit-split-collapse-strip::after),
+    ${ROOT} :is(#ytkit-split-divider, #ytkit-split-divider::before, #ytkit-split-divider .ytkit-divider-pip, #ytkit-split-close, #ytkit-split-collapse-strip::after, .ytkit-split-replay-tab),
     ${PANE} :is(button, tp-yt-paper-button, a, #description, #placeholder-area, #action-menu, ${BUTTON_CLASSES}) {
         transition: none !important;
         transform: none !important;
@@ -1362,6 +1420,10 @@ ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-re
     ${ROOT} #ytkit-split-divider .ytkit-divider-pip { border-color: ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
     ${ROOT} #ytkit-split-divider:is(:hover, :focus-visible) .ytkit-divider-pip { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
     ${ROOT} #ytkit-split-close { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+    ${ROOT} #ytkit-split-replay-tabs { border-color: CanvasText !important; background: Canvas !important; }
+    ${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+    ${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
+    ${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab:focus-visible { outline: 2px solid Highlight !important; }
     ${PANE} :is(${BUTTON_CLASSES}, #placeholder-area, #description, .ytkit-local-dl-btn, .ytkit-trigger-btn) {
         border: 1px solid ButtonText !important;
         background: ButtonFace !important;

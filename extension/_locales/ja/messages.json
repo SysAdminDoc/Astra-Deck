@@ -9520,6 +9520,15 @@
   "stickyVideoShowCommentsLabel": {
     "message": "コメントを表示"
   },
+  "stickyVideoReplayPaneAria": {
+    "message": "サイドパネルの内容"
+  },
+  "stickyVideoReplayCommentsTab": {
+    "message": "コメント"
+  },
+  "stickyVideoReplayChatTab": {
+    "message": "チャットのリプレイ"
+  },
   "settingsPanelUnavailable": {
     "message": "設定パネルを読み込めませんでした。ページを再読み込みしてもう一度お試しください。"
   },

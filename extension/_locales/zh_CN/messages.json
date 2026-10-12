@@ -9520,6 +9520,15 @@
   "stickyVideoShowCommentsLabel": {
     "message": "显示评论"
   },
+  "stickyVideoReplayPaneAria": {
+    "message": "侧边栏内容"
+  },
+  "stickyVideoReplayCommentsTab": {
+    "message": "评论"
+  },
+  "stickyVideoReplayChatTab": {
+    "message": "聊天重放"
+  },
   "settingsPanelUnavailable": {
     "message": "设置面板未能加载。请重新加载页面后重试。"
   },

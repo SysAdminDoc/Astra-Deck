@@ -9520,6 +9520,15 @@
   "stickyVideoShowCommentsLabel": {
     "message": "إظهار التعليقات"
   },
+  "stickyVideoReplayPaneAria": {
+    "message": "محتوى اللوحة الجانبية"
+  },
+  "stickyVideoReplayCommentsTab": {
+    "message": "التعليقات"
+  },
+  "stickyVideoReplayChatTab": {
+    "message": "إعادة تشغيل الدردشة المباشرة"
+  },
   "settingsPanelUnavailable": {
     "message": "لم يتم تحميل لوحة الإعدادات. أعد تحميل الصفحة للمحاولة مرة أخرى."
   },

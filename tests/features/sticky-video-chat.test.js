@@ -18,7 +18,14 @@ const METHODS = [
     '_stopChatObserver',
     '_handleChatFound',
     '_watchForChat',
-    '_waitForChat'
+    '_waitForChat',
+    '_layoutSplitReplay',
+    '_ensureSplitReplayTabs',
+    '_createSplitReplayTab',
+    '_removeSplitReplayTabs',
+    '_setSplitReplayPane',
+    '_showSplitReplayPane',
+    '_retargetSplitScroll'
 ];
 
 function loadPart() {

@@ -9520,6 +9520,15 @@
   "stickyVideoShowCommentsLabel": {
     "message": "Показать комментарии"
   },
+  "stickyVideoReplayPaneAria": {
+    "message": "Содержимое боковой панели"
+  },
+  "stickyVideoReplayCommentsTab": {
+    "message": "Комментарии"
+  },
+  "stickyVideoReplayChatTab": {
+    "message": "Повтор чата"
+  },
   "settingsPanelUnavailable": {
     "message": "Панель настроек не загрузилась. Перезагрузите страницу и попробуйте снова."
   },

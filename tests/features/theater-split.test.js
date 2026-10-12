@@ -884,7 +884,9 @@ test('the comments pane collapses only after being pushed past its top', () => {
         const handler = source.slice(start, start + 900);
 
         // Reaching the top is not enough — that is what "past the title" means.
-        assert.match(handler, /scrollEl\.scrollTop <= 0 && e\.deltaY < 0/,
+        // The surface is the one the handler sits on: a past live stream moves
+        // it between the chat replay and the comments.
+        assert.match(handler, /\(e\.currentTarget \|\| scrollEl\)\.scrollTop <= 0 && e\.deltaY < 0/,
             `${label}: collapse must require being at the top AND still scrolling up`);
         assert.match(handler, /_collapseScrollCount >= 3/,
             `${label}: landing on the top edge must not collapse on its own`);

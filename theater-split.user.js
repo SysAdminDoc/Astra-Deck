@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.20
+// @name         Theater Split v1.0.21
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.20
+// @version      1.0.21
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -46,6 +46,9 @@
 //                     view count read from its accessible label.
 //   @version 1.0.20 - The comments count lines up with the header text, and
 //                     the collapsed edge says "Show comments" on hover/focus.
+//   @version 1.0.21 - A past live stream shows its comments or its chat
+//                     replay at full height, with a toggle bar to switch.
+//                     Comments come first on every new video.
 
 (function() {
     'use strict';
@@ -312,6 +315,63 @@
             transition: background-color 160ms var(--ts-ease), width 160ms var(--ts-ease) !important;
         }
         body.ts-active #ts-collapse-strip:hover::after { width: 48px !important; background: var(--ts-accent) !important; }
+        /* A past live stream has a chat replay and comments. The pane shows one at a
+           time, and this bar switches between them. The controller sizes its width;
+           the 48px height is the offset the two surfaces sit below. */
+        body.ts-active #ts-replay-tabs {
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            z-index: 10003 !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 48px !important;
+            margin: 0 !important;
+            padding: 0 12px !important;
+            box-sizing: border-box !important;
+            border-bottom: 1px solid var(--ts-hairline) !important;
+            border-inline-start: 1px solid var(--ts-hairline) !important;
+            background: var(--ts-panel) !important;
+            color: var(--ts-text) !important;
+            pointer-events: auto !important;
+        }
+        body.ts-active #ts-replay-tabs .ts-replay-track {
+            display: flex !important;
+            flex: 1 1 auto !important;
+            gap: 2px !important;
+            min-width: 0 !important;
+            padding: 3px !important;
+            border: 1px solid var(--ts-border) !important;
+            border-radius: var(--ts-radius) !important;
+            background: var(--ts-raised) !important;
+        }
+        body.ts-active #ts-replay-tabs .ts-replay-tab {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            height: 28px !important;
+            margin: 0 !important;
+            padding: 0 12px !important;
+            border: 0 !important;
+            border-radius: var(--ts-radius-sm) !important;
+            background: transparent !important;
+            color: var(--ts-muted) !important;
+            font: 500 13px/28px var(--yt-spec-font-family, "Roboto", Arial, sans-serif) !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            cursor: pointer !important;
+            transition: background-color 160ms var(--ts-ease), color 160ms var(--ts-ease) !important;
+        }
+        body.ts-active #ts-replay-tabs .ts-replay-tab:hover { background: var(--ts-hover) !important; color: var(--ts-text) !important; }
+        body.ts-active #ts-replay-tabs .ts-replay-tab[aria-pressed="true"] {
+            background: var(--ts-accent-soft) !important;
+            color: var(--ts-accent-ink) !important;
+            font-weight: 600 !important;
+        }
+        body.ts-active #ts-replay-tabs .ts-replay-tab:focus-visible {
+            outline: 2px solid var(--ts-accent) !important;
+            outline-offset: 1px !important;
+        }
         body.ts-active #below.ytkit-split-scroll-surface {
             /* YouTube paints fades and expanders with its own surface tokens, and an
                ancestor can scope them to another value than <html> holds (the watch
@@ -1344,7 +1404,7 @@
             }
         }
         @media (prefers-reduced-motion: reduce) {
-            body.ts-active :is(#ts-divider, #ts-divider::before, #ts-divider .ts-divider-pip, #ts-close, #ts-collapse-strip::after),
+            body.ts-active :is(#ts-divider, #ts-divider::before, #ts-divider .ts-divider-pip, #ts-close, #ts-collapse-strip::after, .ts-replay-tab),
             body.ts-active #below.ytkit-split-scroll-surface :is(button, tp-yt-paper-button, a, #description, #placeholder-area, #action-menu, .yt-spec-button-shape-next, .ytSpecButtonShapeNextHost) {
                 transition: none !important;
                 transform: none !important;
@@ -1356,6 +1416,10 @@
             body.ts-active #ts-divider .ts-divider-pip { border-color: ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
             body.ts-active #ts-divider:is(:hover, :focus-visible) .ts-divider-pip { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
             body.ts-active #ts-close { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+            body.ts-active #ts-replay-tabs { border-color: CanvasText !important; background: Canvas !important; }
+            body.ts-active #ts-replay-tabs .ts-replay-tab { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+            body.ts-active #ts-replay-tabs .ts-replay-tab[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
+            body.ts-active #ts-replay-tabs .ts-replay-tab:focus-visible { outline: 2px solid Highlight !important; }
             body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost, #placeholder-area, #description, .ytkit-local-dl-btn, .ytkit-trigger-btn) {
                 border: 1px solid ButtonText !important;
                 background: ButtonFace !important;
@@ -1375,6 +1439,8 @@
     const DIVIDER_WIDTH_PX = 8;
     const DIVIDER_DRAG_THRESHOLD_PX = 4;
     const LIVE_HEADER_HEIGHT = 154;
+    // Matches the #ts-replay-tabs height in the generated stylesheet.
+    const REPLAY_TABS_HEIGHT_PX = 48;
 
     // ── State ──────────────────────────────────────────────────────────────
     let isActive = false;
@@ -1409,6 +1475,10 @@
     let splitHeaderMovedLogo = null;
     let splitLiveHeader = null;
     let splitLiveActionPinned = null;
+    // A past live stream shows its comments or its chat replay, one at a
+    // time, under a toggle bar. Comments first on every new video.
+    let splitReplayTabs = null;
+    let splitReplayPane = 'comments';
     // Fullscreen stash: during native fullscreen we move the player out of
     // #ts-wrapper so we can safely hide the wrapper, and we record visibility
     // on positioned overlays (chat frame, #below) so they don't paint over
@@ -1564,7 +1634,9 @@
             'pointer-events': 'auto',
             'scrollbar-width': 'thin', 'scrollbar-color': 'var(--ts-scrollbar) transparent'
         });
-        positionedEls.push(el);
+        // A late chat replay positions the comments a second time. Listed
+        // twice, the fullscreen stash restored the second entry's hidden state.
+        if (!positionedEls.includes(el)) positionedEls.push(el);
     }
 
     function unpositionEl(el) {
@@ -1579,6 +1651,7 @@
         positionedEls.forEach(el => unpositionEl(el));
         positionedEls = [];
         scrollTarget = null;
+        removeSplitReplayTabs();
     }
 
     function isSplitScrollable(el) {
@@ -2737,13 +2810,8 @@
             });
             forceChatFill(chatEl);
             if (!scrollTarget) scrollTarget = chatEl;
-            if (videoType === 'vod') {
-                setStyles(chatEl, { 'border-bottom': '1px solid var(--ts-hairline)' });
-                const below = getBelow();
-                if (below && below.style.getPropertyValue('top') === '0') {
-                    setStyles(below, { top: '45vh', height: '55vh' });
-                }
-            }
+            // A late chat replay joins the toggle, behind the comments.
+            if (videoType === 'vod') layoutSplitReplay(chatEl, getBelow(), rightPct);
         };
         const existing = getChatEl();
         if (existing) { onFound(existing); return; }
@@ -2753,6 +2821,104 @@
         });
         chatObserver.observe(document.body, { childList: true, subtree: true });
         setTimeout(() => { if (chatObserver) { chatObserver.disconnect(); chatObserver = null; } }, 15000);
+    }
+
+    // ── Past live stream: comments or chat replay, one at a time ──────────
+    // Stacked, each got half the pane. Both stay mounted in the same spot and
+    // the one not shown is only hidden: the replay keeps time with the video,
+    // and going back to the comments never reloads them.
+    function layoutSplitReplay(chatEl, below, rightPct) {
+        let top = '0';
+        let height = '100vh';
+        if (chatEl && below) {
+            const barHeight = ensureSplitReplayTabs(rightPct);
+            top = `${barHeight}px`;
+            height = `calc(100vh - ${barHeight}px)`;
+        } else {
+            removeSplitReplayTabs();
+        }
+        setupChat(chatEl, rightPct, top, height);
+        if (below) {
+            positionOverRight(below, rightPct, top, height);
+            setStyles(below, { width: `calc(${rightPct}% - 2px)`, padding: '16px 14px 72px', display: 'block' });
+        }
+        showSplitReplayPane();
+    }
+
+    function ensureSplitReplayTabs(rightPct) {
+        if (!splitReplayTabs || !splitReplayTabs.isConnected) {
+            const bar = document.createElement('div');
+            bar.id = 'ts-replay-tabs';
+            const track = document.createElement('div');
+            track.className = 'ts-replay-track';
+            track.setAttribute('role', 'group');
+            track.setAttribute('aria-label', 'Side panel content');
+            track.appendChild(createSplitReplayTab('comments', 'Comments'));
+            track.appendChild(createSplitReplayTab('chat', 'Live chat replay'));
+            bar.appendChild(track);
+            // The replay frame swallows the wheel, so pulling up on the bar
+            // closes the pane once the surface under it is at its top.
+            const atTop = () => !(scrollTarget?.scrollTop > 0);
+            let touchY = 0;
+            bar.addEventListener('wheel', (e) => {
+                if (isSplit && e.deltaY < 0 && atTop()) collapseSplit(false);
+            }, { passive: true });
+            bar.addEventListener('touchstart', (e) => {
+                const t = e.touches[0];
+                if (t) touchY = t.clientY;
+            }, { passive: true });
+            bar.addEventListener('touchmove', (e) => {
+                const t = e.touches[0];
+                if (isSplit && t && t.clientY - touchY > 30 && atTop()) collapseSplit(false);
+            }, { passive: true });
+            document.body.appendChild(bar);
+            splitReplayTabs = bar;
+        }
+        // Listed with the positioned panes: the divider drag sizes it and
+        // native fullscreen hides it.
+        splitReplayTabs.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+        if (!positionedEls.includes(splitReplayTabs)) positionedEls.push(splitReplayTabs);
+        return REPLAY_TABS_HEIGHT_PX;
+    }
+
+    function createSplitReplayTab(pane, label) {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'ts-replay-tab';
+        tab.dataset.tsPane = pane;
+        tab.textContent = label;
+        tab.title = label;
+        tab.setAttribute('aria-pressed', 'false');
+        tab.addEventListener('click', () => setSplitReplayPane(pane));
+        return tab;
+    }
+
+    function removeSplitReplayTabs() {
+        if (!splitReplayTabs) return;
+        splitReplayTabs.remove();
+        positionedEls = positionedEls.filter(el => el !== splitReplayTabs);
+        splitReplayTabs = null;
+    }
+
+    function setSplitReplayPane(pane) {
+        splitReplayPane = pane === 'chat' ? 'chat' : 'comments';
+        if (isSplit && videoType === 'vod') showSplitReplayPane();
+    }
+
+    function showSplitReplayPane() {
+        const chatEl = getChatEl();
+        const below = getBelow();
+        const pane = (splitReplayPane === 'chat' && chatEl) || !below ? 'chat' : 'comments';
+        const shown = pane === 'chat' ? chatEl : below;
+        const hidden = pane === 'chat' ? below : chatEl;
+        // unpositionEl clears both properties on collapse and teardown.
+        if (hidden && positionedEls.includes(hidden)) setStyles(hidden, { visibility: 'hidden', 'pointer-events': 'none' });
+        if (shown && positionedEls.includes(shown)) setStyles(shown, { visibility: 'visible', 'pointer-events': 'auto' });
+        splitReplayTabs?.querySelectorAll('.ts-replay-tab').forEach(tab => {
+            tab.setAttribute('aria-pressed', String(tab.dataset.tsPane === pane));
+        });
+        // The pull-to-close and wheel handlers read this when they fire.
+        scrollTarget = shown || null;
     }
 
     // ── Build Overlay ───────────────────────────────────────────────────────
@@ -3187,14 +3353,8 @@
             setupChat(chatEl, rightPct, `${liveHeaderTop}px`, `calc(100vh - ${liveHeaderTop}px)`);
             scrollTarget = chatEl;
         } else if (type === 'vod') {
-            setupChat(chatEl, rightPct, '0', '45vh');
-            if (chatEl) setStyles(chatEl, { 'border-bottom': '1px solid var(--ts-hairline)' });
-            if (below) {
-                const hasChat = !!chatEl;
-                positionOverRight(below, rightPct, hasChat ? '45vh' : '0', hasChat ? '55vh' : '100vh');
-                setStyles(below, { width: `calc(${rightPct}% - 2px)`, padding: '16px 14px 72px', display: 'block' });
-            }
-            scrollTarget = chatEl || below;
+            // Sets the scroll target to whichever surface it shows.
+            layoutSplitReplay(chatEl, below, rightPct);
         } else {
             if (chatEl) {
                 videoType = 'live';
@@ -3237,6 +3397,8 @@
         // Re-enable pointer events on positioned content
         if (below) removeStyles(below, ['pointer-events']);
         if (chatEl) removeStyles(chatEl, ['pointer-events']);
+        // ...apart from the past live stream surface the toggle keeps hidden.
+        if (type === 'vod') showSplitReplayPane();
     }
 
     // ── Collapse Split ──────────────────────────────────────────────────────
@@ -3437,6 +3599,7 @@
         if (vid !== lastVideoId) {
             if (isActive) teardown();
             lastVideoId = vid;
+            splitReplayPane = 'comments';
             // Wait for DOM + player data to settle
             setTimeout(() => {
                 if (isWatchPage() && getVideoId() === vid) {

@@ -124,6 +124,8 @@
             _splitLiveHeader: null,
             _splitLiveActionPinned: null,
             _liveHeaderHeight: 154,
+            _splitReplayTabs: null,        // past live stream: comments / chat replay toggle bar
+            _splitReplayPane: 'comments',  // which one it shows; back to comments on every new video
             _videoType: 'standard',        // 'live' | 'vod' | 'standard'
             _positionedEls: [],            // elements we CSS-positioned over right panel
             _playerGeometryStash: [],      // original inline geometry restored after unmount
@@ -218,6 +220,7 @@
                 (this._positionedEls || []).forEach(el => this._unpositionEl(el));
                 this._positionedEls = [];
                 this._scrollTarget = null;
+                this._removeSplitReplayTabs();
             },
 
             // Bulk set/remove style properties with !important
@@ -969,17 +972,8 @@
                     this._scrollTarget = chatEl;
                 } else if (type === 'vod') {
                     if (chatEl) this._prepareSecondaryForChat();
-                    this._setupChat(chatEl, rightPct, '0', '45vh');
-                    if (chatEl) {
-                        this._stashSplitInlineStyles(chatEl, ['border-bottom']);
-                        chatEl.style.setProperty('border-bottom', '1px solid var(--ytkit-split-hairline)', 'important');
-                    }
-                    if (below) {
-                        const hasChat = !!chatEl;
-                        this._positionOverRight(below, rightPct, hasChat ? '45vh' : '0', hasChat ? '55vh' : '100vh');
-                        this._setStyles(below, {width:`calc(${rightPct}% - 2px)`,padding:'16px 14px 72px'});
-                    }
-                    this._scrollTarget = chatEl || below;
+                    // Sets the scroll target to whichever surface it shows.
+                    this._layoutSplitReplay(chatEl, below, rightPct);
                 } else {
                     if (below) {
                         this._positionOverRight(below, rightPct, '0', '100vh');
@@ -1029,12 +1023,14 @@
                 // — and keeps pulling up. The tick count is what makes "past
                 // the title" mean something: landing on the top edge does not
                 // collapse, continuing to scroll against it does.
+                // The handlers read the element they sit on, because a past
+                // live stream moves them between chat replay and comments.
                 const scrollEl = this._scrollTarget;
                 let _collapseScrollCount = 0;
                 let _collapseScrollTimer = null;
                 if (scrollEl) {
                     this._rightWheelHandler = (e) => {
-                        if (scrollEl.scrollTop <= 0 && e.deltaY < 0) {
+                        if ((e.currentTarget || scrollEl).scrollTop <= 0 && e.deltaY < 0) {
                             _collapseScrollCount++;
                             clearTimeout(_collapseScrollTimer);
                             _collapseScrollTimer = setTimeout(() => { _collapseScrollCount = 0; }, 600);
@@ -1051,7 +1047,7 @@
                         const t = e.touches[0]; if (t) this._rightTouchStartY = t.clientY;
                     };
                     this._rightTouchMoveHandler = (e) => {
-                        if (scrollEl.scrollTop !== 0) return;
+                        if ((e.currentTarget || scrollEl).scrollTop !== 0) return;
                         const t = e.touches[0];
                         if (t && t.clientY - this._rightTouchStartY > 40) this._collapseSplit(false);
                     };
@@ -1062,7 +1058,8 @@
 
                 // For live/VOD: chat iframe swallows wheel events (cross-origin).
                 // Add a collapse trigger strip at top of right panel above the iframe z-index.
-                if (type === 'live' || type === 'vod') {
+                // A past live stream's toggle bar sits there and does the same.
+                if (type === 'live' || (type === 'vod' && !this._splitReplayTabs)) {
                     const strip = document.createElement('div');
                     strip.id = 'ytkit-split-collapse-strip';
                     strip.style.width = `calc(${rightPct}% - 6px)`;
@@ -1264,6 +1261,7 @@
                 this._isActive = false;
                 this._dismissed = false;
                 this._videoType = 'standard';
+                this._splitReplayPane = 'comments';
                 document.documentElement.classList.remove('ytkit-split-open', 'ytkit-split-live');
                 document.documentElement.style.removeProperty('--ytkit-split-right-width');
                 if (!keepClass) document.documentElement.classList.remove('ytkit-split-active');
@@ -1280,6 +1278,7 @@
                 if (vid !== this._lastVideoId) {
                     this._lastVideoId = vid;
                     this._dismissed = false;  // reset dismiss on video change
+                    this._splitReplayPane = 'comments';
                     if (this._isActive) {
                         // Same overlay, new video — collapse + refresh type (no unmount/remount)
                         if (this._isSplit) this._collapseSplit(false);
@@ -1366,7 +1365,7 @@
         // instance by assignment.
         return Object.assign(feature,
             parts.autoscroll.createStickyVideoAutoscrollMethods(),
-            parts.chat.createStickyVideoChatMethods({ VideoTypeDetector, DebugManager }),
+            parts.chat.createStickyVideoChatMethods({ VideoTypeDetector, DebugManager, t }),
             parts.header.createStickyVideoHeaderMethods({ t, _rw, getVideoId, getFeatureById }));
     }
 

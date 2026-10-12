@@ -9582,6 +9582,15 @@
   "stickyVideoShowCommentsLabel": {
     "message": "Show comments"
   },
+  "stickyVideoReplayPaneAria": {
+    "message": "Side panel content"
+  },
+  "stickyVideoReplayCommentsTab": {
+    "message": "Comments"
+  },
+  "stickyVideoReplayChatTab": {
+    "message": "Live chat replay"
+  },
   "settingsPanelUnavailable": {
     "message": "The settings panel didn't load. Reload the page to try again."
   },

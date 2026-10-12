@@ -9520,6 +9520,15 @@
   "stickyVideoShowCommentsLabel": {
     "message": "Mostrar comentários"
   },
+  "stickyVideoReplayPaneAria": {
+    "message": "Conteúdo do painel lateral"
+  },
+  "stickyVideoReplayCommentsTab": {
+    "message": "Comentários"
+  },
+  "stickyVideoReplayChatTab": {
+    "message": "Replay do chat ao vivo"
+  },
   "settingsPanelUnavailable": {
     "message": "O painel de configurações não carregou. Recarregue a página para tentar de novo."
   },
