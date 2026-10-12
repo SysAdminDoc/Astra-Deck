@@ -46,6 +46,18 @@ test('chatStyleComments module exports the style builder surface', () => {
     assert.equal(typeof exported.buildCommentRestyleCss, 'function');
 });
 
+test('chatStyleComments lets YouTube hide the placeholder when the composer opens', () => {
+    const { mod } = loadModule();
+    const css = [
+        mod.buildCommentRestyleCss(),
+        mod.buildPremiumCommentsCss(),
+        mod.buildPremiumInteractionCss({ tooltipZ: 70002 })
+    ].join('\n');
+    assert.match(css, /#comments ytd-comment-simplebox-renderer #placeholder-area \{\s*display: flex !important;/);
+    assert.match(css, /#comments ytd-comment-simplebox-renderer #placeholder-area\[hidden\] \{\s*display: none !important;/,
+        'the forced display:flex must not keep the placeholder up over the open editor');
+});
+
 test('chatStyleComments style builders preserve the monolith fallback CSS', () => {
     const { mod } = loadModule();
     const [block] = extractFeatureBlock(sources.ytkit, 'chatStyleComments');

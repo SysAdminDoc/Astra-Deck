@@ -1005,6 +1005,11 @@
                         color: rgba(255, 255, 255, 0.58) !important;
                     }
 
+                    /* YouTube hides the placeholder with [hidden] when the composer opens. */
+                    #comments ytd-comment-simplebox-renderer #placeholder-area[hidden] {
+                        display: none !important;
+                    }
+
                     /* Final normal-watch theme layer. Shared tokens keep dark and light in lockstep. */
                     html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments ytd-comments#comments {
                         border: 1px solid var(--ytkit-premium-border) !important;

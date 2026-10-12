@@ -138,7 +138,7 @@ ${ROOT} #ytkit-split-divider {
     color: var(--ytkit-split-muted) !important;
     outline: none !important;
     touch-action: none !important;
-    transition: background-color 160ms var(--ytkit-split-ease), flex-basis 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: background-color 160ms var(--ytkit-split-ease), flex-basis 200ms var(--ytkit-split-ease) !important;
 }
 ${ROOT} #ytkit-split-divider::before {
     content: '' !important;
@@ -1079,9 +1079,12 @@ ${PANE} ytd-comment-simplebox-renderer #placeholder-area {
 }
 ${PANE} ytd-comment-simplebox-renderer #placeholder-area:hover { background: var(--ytkit-split-hover) !important; }
 ${PANE} ytd-comment-simplebox-renderer #placeholder-area:focus-within { border-color: var(--ytkit-split-accent) !important; }
-/* Once the composer opens, the placeholder row is stale and the editor needs
-   the full width. */
-${PANE} ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row { display: none !important; }
+/* YouTube opens the composer by setting [hidden] on the simplebox's own
+   avatar, placeholder and attachment row. The display rule above outranks
+   that, so without these the placeholder stayed up as a dead box over the
+   open editor. The editor needs the full width. */
+${PANE} ytd-comment-simplebox-renderer > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row)[hidden],
+${PANE} ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row) { display: none !important; }
 ${PANE} ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
@@ -1091,6 +1094,27 @@ ${PANE} ytd-comment-simplebox-renderer #comment-dialog :is(ytd-commentbox, #main
     min-width: 0 !important;
     box-sizing: border-box !important;
 }
+/* The open editor is one field that matches the placeholder it replaced.
+   The input container, its underline and the watch restyle's textarea frame
+   would each draw another box inside it. */
+${PANE} ytd-commentbox #creation-box {
+    padding: 9px 14px !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--ytkit-split-radius) !important;
+    background: var(--ytkit-split-raised) !important;
+    transition: border-color 160ms var(--ytkit-split-ease) !important;
+}
+${PANE} ytd-commentbox #creation-box:focus-within { border-color: var(--ytkit-split-accent) !important; }
+${PANE} ytd-commentbox :is(#input-container, #contenteditable-textarea) {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+${PANE} ytd-commentbox #input-container :is(.unfocused-line, .focused-line) { display: none !important; }
 ${PANE} ytd-commentbox #contenteditable-root {
     color: var(--ytkit-split-text) !important;
     font-size: 14px !important;
@@ -1146,7 +1170,10 @@ ${COMMENT} :is(#author-thumbnail img, #author-thumbnail yt-img-shadow) {
     height: 32px !important;
     border-radius: var(--ytkit-split-radius-sm) !important;
 }
-${COMMENT} #author-thumbnail .threadline { border-color: var(--ytkit-split-hairline) !important; }
+/* Replies sit under the comment text, not under the avatar, so YouTube's
+   thread connectors no longer meet: the avatar's line drew 0px tall and each
+   reply row kept a floating elbow. Indentation carries the nesting here. */
+${COMMENT} #author-thumbnail .threadline { display: none !important; }
 ${COMMENT} > #body > #main { min-width: 0 !important; margin: 0 !important; padding: 0 !important; }
 ${COMMENT} #header { margin: 0 0 4px !important; padding: 0 !important; }
 ${COMMENT} #header-author {
@@ -1350,7 +1377,7 @@ ${COMMENT} > #body > #action-menu button#button:hover { background: var(--ytkit-
 ${COMMENT} > #body > #action-menu button#button:focus-visible { outline: 2px solid var(--ytkit-split-accent) !important; outline-offset: 1px !important; }
 ${COMMENT} > #body > #action-menu yt-interaction { display: none !important; }
 
-${PANE} ytd-comment-thread-renderer #replies { margin: 4px 0 0 !important; padding: 0 !important; }
+${PANE} ytd-comment-thread-renderer #replies { margin: 2px 0 0 !important; padding: 0 !important; }
 ${PANE} ytd-comment-replies-renderer {
     display: block !important;
     margin: 0 0 0 44px !important;
@@ -1361,8 +1388,8 @@ ${PANE} ytd-comment-replies-renderer :is(ytd-comment-view-model, ytd-comment-ren
 ${PANE} ytd-comment-replies-renderer :is(ytd-comment-view-model, ytd-comment-renderer) :is(#author-thumbnail, #author-thumbnail img, #author-thumbnail yt-img-shadow) { width: 24px !important; height: 24px !important; border-radius: 4px !important; }
 ${PANE} ytd-comment-replies-renderer :is(#expander-contents, #contents) { margin: 0 !important; padding: 0 !important; }
 ${PANE} ytd-comment-replies-renderer :is(#expander-contents, #contents) > :is(ytd-comment-view-model, ytd-comment-renderer, yt-sub-thread) { margin-top: 12px !important; }
-${PANE} ytd-comment-replies-renderer :is(.ytSubThreadConnection, .ytSubThreadContinuation) { border-color: var(--ytkit-split-hairline) !important; }
-${PANE} ytd-comment-replies-renderer .ytSubThreadShadow { display: none !important; }
+${PANE} ytd-comment-replies-renderer :is(.ytSubThreadThreadline, .ytSubThreadShadow) { display: none !important; }
+${PANE} ytd-comment-replies-renderer .ytSubThreadSubThreadContent { margin: 0 !important; }
 ${PANE} ytd-comment-replies-renderer :is(#more-replies, #more-replies-sub-thread, #less-replies, #less-replies-sub-thread, .show-replies-button, .show-more-replies-button) {
     margin: 0 !important;
     padding: 0 !important;

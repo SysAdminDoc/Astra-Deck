@@ -558,6 +558,38 @@ test('the extension split keeps comment controls quiet, compact and stateful', (
         'no id-weighted badge rule may repaint the chip');
 });
 
+test('the extension split opens the comment composer as one field', () => {
+    const { comments } = extensionSheets();
+    // YouTube opens the composer by setting [hidden] on the simplebox's own
+    // avatar, placeholder and attachment row (live markup, 2026-10). The pane
+    // forces the placeholder to display:flex, which outranked that, so the
+    // placeholder stayed up as a dead box above the open editor.
+    assert.match(comments, /ytd-comment-simplebox-renderer #placeholder-area \{\n    display: flex !important;/,
+        'the closed placeholder is still drawn as a field');
+    assert.ok(comments.includes('ytd-comment-simplebox-renderer > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row)[hidden],'),
+        'a [hidden] placeholder, avatar or attachment row is hidden');
+    assert.ok(comments.includes(':has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row) { display: none !important; }'),
+        'and so is everything the open dialog replaces');
+    // Inside the editor, the input container, its underline and the watch
+    // restyle's textarea frame each drew another box.
+    assert.match(comments, /ytd-commentbox #creation-box \{[\s\S]{0,200}background: var\(--ytkit-split-raised\) !important;/,
+        'the editor field matches the placeholder it replaced');
+    assert.match(comments, /ytd-commentbox :is\(#input-container, #contenteditable-textarea\) \{[\s\S]{0,160}border: 0 !important;[\s\S]{0,80}background: transparent !important;/,
+        'nothing inside the field draws a second frame');
+    assert.ok(comments.includes('ytd-commentbox #input-container :is(.unfocused-line, .focused-line) { display: none !important; }'),
+        'the input underline is gone');
+});
+
+test('the extension split drops the thread connectors its reply indent breaks', () => {
+    const { comments } = extensionSheets();
+    // Replies sit under the comment text, so the avatar's threadline drew
+    // 0px tall and every "N replies" row kept a floating elbow.
+    assert.ok(comments.includes('#author-thumbnail .threadline { display: none !important; }'));
+    assert.ok(comments.includes('ytd-comment-replies-renderer :is(.ytSubThreadThreadline, .ytSubThreadShadow) { display: none !important; }'));
+    assert.ok(comments.includes('ytd-comment-replies-renderer .ytSubThreadSubThreadContent { margin: 0 !important; }'),
+        'the reply row starts right under the comment, with no gap left for the elbow');
+});
+
 test('stickyVideo factory returns the full Theater Split runtime surface', () => {
     const { mod } = loadModule();
     const feature = mod.createStickyVideoFeature();
@@ -893,6 +925,40 @@ test('the comments pane collapses only after being pushed past its top', () => {
         assert.match(handler, /_collapseScrollCount = 0;\s*\n\s*\}\s*\n\s*\};/,
             `${label}: any downward scroll must reset the counter`);
     }
+});
+
+test('a burst of player resize nudges fires one resize within a few frames', (t) => {
+    const { mod } = loadModule();
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const originalWindow = globalThis.window;
+    const fired = [];
+    globalThis.window = { dispatchEvent: (event) => fired.push(event.type) };
+    try {
+        const feature = mod.createStickyVideoFeature({});
+        feature._triggerPlayerResize();
+        t.mock.timers.tick(10);
+        feature._triggerPlayerResize();
+        feature._triggerPlayerResize();
+        t.mock.timers.tick(40);
+        assert.deepEqual(fired, ['resize'],
+            'the controls follow the new player width within 50ms, once per burst');
+    } finally {
+        globalThis.window = originalWindow;
+    }
+});
+
+test('opening the split resizes the player before its panel transition ends', () => {
+    const start = STICKY_MODULE_SOURCE.indexOf('_expandSplit() {');
+    const expand = STICKY_MODULE_SOURCE.slice(start, STICKY_MODULE_SOURCE.indexOf('_collapseSplit(dismissed', start));
+    const widthSet = expand.indexOf("player.style.setProperty('width', leftPct + '%', 'important');");
+    const nudge = expand.indexOf('this._triggerPlayerResize();', widthSet);
+    assert.ok(widthSet > -1 && nudge > widthSet && nudge < expand.indexOf("addEventListener('transitionend'"),
+        'the player narrows and YouTube relays its controls right away, not after the slide');
+    const scrollReset = expand.indexOf('below.scrollTop = 0');
+    assert.ok(scrollReset > -1 && scrollReset < expand.indexOf('const onExpanded = () => {'),
+        'the pane opens on the title up front, so an early scroll is never yanked back');
+    assert.match(expand, /if \(this\._entering\) onExpanded\(\);\n\s*\}, 300\);/,
+        'the fallback matches the shorter transition');
 });
 
 // ── Quick Links dropdown footer ────────────────────────────────────────

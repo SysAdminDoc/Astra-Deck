@@ -183,13 +183,16 @@
                 return 'standard';
             },
 
-            // Nudge YouTube's player to recalculate control bar layout.
+            // Nudge YouTube's player to recalculate control bar layout. A
+            // burst of calls (drag end, expand, collapse) fires one resize a
+            // couple of frames later; any longer and the control bar visibly
+            // runs under the comments pane after the player narrows.
             _triggerPlayerResize() {
                 clearTimeout(this._resizeTimer);
                 this._resizeTimer = setTimeout(() => {
                     this._resizeTimer = null;
                     window.dispatchEvent(new Event('resize'));
-                }, 200);
+                }, 32);
             },
 
             _positionOverRight(el, rightPct, topOffset, heightStr) {
@@ -319,7 +322,7 @@
                 divider.title = t('stickyVideoResizePanelsLabel', 'Resize Theater Split panels');
                 // Layout only. The look, including hover, focus and the closed
                 // state, lives in the shell stylesheet so it follows the theme.
-                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;`;
+                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;transition:flex-basis 0.2s cubic-bezier(0.2,0,0,1);overflow:hidden;z-index:10;pointer-events:auto;`;
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
                 pip.style.pointerEvents = 'none';
@@ -332,7 +335,7 @@
                 right.id = 'ytkit-split-right';
                 // flex:0 0 0 — right starts at zero width, grows to a fixed size.
                 // Left (flex:1) automatically shrinks as right expands.
-                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ytkit-split-panel);border-left:1px solid var(--ytkit-split-border);scrollbar-width:thin;scrollbar-color:var(--ytkit-split-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;pointer-events:auto;`;
+                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ytkit-split-panel);border-left:1px solid var(--ytkit-split-border);scrollbar-width:thin;scrollbar-color:var(--ytkit-split-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.2s cubic-bezier(0.2,0,0,1),opacity 0.15s;pointer-events:auto;`;
                 // wire divider to right panel now that it exists
                 this._initDividerDrag(divider, left, right);
 
@@ -579,7 +582,7 @@
                 document.body.appendChild(wrapper);
                 // Smooth fade-in on first mount
                 requestAnimationFrame(() => {
-                    wrapper.style.transition = 'opacity 0.3s ease';
+                    wrapper.style.transition = 'opacity 0.15s ease-out';
                     wrapper.style.opacity = '1';
                 });
 
@@ -955,6 +958,9 @@
                 // Sync player width — player is fixed-positioned separately
                 const player = this._getPlayer();
                 if (player) player.style.setProperty('width', leftPct + '%', 'important');
+                // The player is already at its final width, so its controls
+                // follow now instead of after the panel transition.
+                this._triggerPlayerResize();
                 if (type === 'live' || type === 'vod') {
                     // Right panel is just a spacer — chat overlays it via CSS fixed
                     right.style.opacity = '0';
@@ -981,6 +987,9 @@
                         this._scrollTarget = below;
                     }
                 }
+                // Open on the video title. Doing it here rather than when the
+                // transition ends keeps an early scroll from being yanked back.
+                if (type !== 'live' && below) below.scrollTop = 0;
                 this._startSplitActionDock();
 
                 const onExpanded = () => {
@@ -989,10 +998,6 @@
                     this._expandFallbackTimer = null;
                     this._entering = false;
                     this._triggerPlayerResize();
-                    // For standard/VOD: scroll to top to show video title
-                    if (type !== 'live' && below) {
-                        below.scrollTop = 0;
-                    }
                     // Re-inject download/action buttons — Polymer may have re-rendered
                     // #top-level-buttons-computed when the player was reparented
                     if (typeof checkAllButtons === 'function') {
@@ -1015,7 +1020,7 @@
                 this._expandFallbackTimer = setTimeout(() => {
                     this._expandFallbackTimer = null;
                     if (this._entering) onExpanded();
-                }, 500);
+                }, 300);
 
                 // Collapse is owned entirely by this pane. The split stays up
                 // until the reader scrolls the comments column all the way back
@@ -1087,7 +1092,7 @@
                 if (dismissed) this._dismissed = true;
                 const keepDivider = !dismissed && options.keepDivider === true;
                 // Clear `_entering` in case we collapse before the expand
-                // transition completed. Otherwise the 500 ms fallback timer in
+                // transition completed. Otherwise the fallback timer in
                 // `_expandSplit` would still see `_entering === true` and call
                 // `onExpanded()` on an already-collapsed panel, re-triggering
                 // `_triggerPlayerResize()` and `checkAllButtons()`.

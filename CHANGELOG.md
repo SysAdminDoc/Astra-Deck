@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **Theater Split** opens faster. The panel slides in about twice as quickly, and YouTube's player controls fit the narrower video right away instead of running under the comments for a moment. The pane also opens on the video title up front, so scrolling straight away no longer gets pulled back to the top.
+- **Theater Split** reply rows are tidier. "N replies" now lines up under the comment text, and the broken thread connector that floated beside it is gone.
+
+### Fixed
+
+- Clicking "Add a comment" in **Theater Split** or with **Chat Style Comments** on left the "Add a comment..." box sitting above the editor that opened, a second box that did nothing. Now the box itself turns into the editor, and in Theater Split the editor is a single field without an extra frame and underline inside it.
+
 ## [4.98.0] (2026-10-12)
 
 ### Added

@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.21
+// @name         Theater Split v1.0.22
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.21
+// @version      1.0.22
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -49,6 +49,10 @@
 //   @version 1.0.21 - A past live stream shows its comments or its chat
 //                     replay at full height, with a toggle bar to switch.
 //                     Comments come first on every new video.
+//   @version 1.0.22 - Clicking "Add a comment" opens one editor box, with no
+//                     leftover placeholder above it. Replies line up under
+//                     the comment text without stray thread connectors, and
+//                     the pane opens faster.
 
 (function() {
     'use strict';
@@ -171,7 +175,7 @@
             color: var(--ts-muted) !important;
             outline: none !important;
             touch-action: none !important;
-            transition: background-color 160ms var(--ts-ease), flex-basis 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: background-color 160ms var(--ts-ease), flex-basis 200ms var(--ts-ease) !important;
         }
         body.ts-active #ts-divider::before {
             content: '' !important;
@@ -1082,9 +1086,12 @@
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer #placeholder-area:hover { background: var(--ts-hover) !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer #placeholder-area:focus-within { border-color: var(--ts-accent) !important; }
-        /* Once the composer opens, the placeholder row is stale and the editor needs
-           the full width. */
-        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row { display: none !important; }
+        /* YouTube opens the composer by setting [hidden] on the simplebox's own
+           avatar, placeholder and attachment row. The display rule above outranks
+           that, so without these the placeholder stayed up as a dead box over the
+           open editor. The editor needs the full width. */
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row)[hidden],
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row) { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
@@ -1094,6 +1101,27 @@
             min-width: 0 !important;
             box-sizing: border-box !important;
         }
+        /* The open editor is one field that matches the placeholder it replaced.
+           The input container, its underline and the watch restyle's textarea frame
+           would each draw another box inside it. */
+        body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox #creation-box {
+            padding: 9px 14px !important;
+            border: 1px solid transparent !important;
+            border-radius: var(--ts-radius) !important;
+            background: var(--ts-raised) !important;
+            transition: border-color 160ms var(--ts-ease) !important;
+        }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox #creation-box:focus-within { border-color: var(--ts-accent) !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox :is(#input-container, #contenteditable-textarea) {
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox #input-container :is(.unfocused-line, .focused-line) { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox #contenteditable-root {
             color: var(--ts-text) !important;
             font-size: 14px !important;
@@ -1148,7 +1176,10 @@
             height: 32px !important;
             border-radius: var(--ts-radius-sm) !important;
         }
-        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #author-thumbnail .threadline { border-color: var(--ts-hairline) !important; }
+        /* Replies sit under the comment text, not under the avatar, so YouTube's
+           thread connectors no longer meet: the avatar's line drew 0px tall and each
+           reply row kept a floating elbow. Indentation carries the nesting here. */
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #author-thumbnail .threadline { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) > #body > #main { min-width: 0 !important; margin: 0 !important; padding: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #header { margin: 0 0 4px !important; padding: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #header-author {
@@ -1349,7 +1380,7 @@
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) > #body > #action-menu button#button:hover { background: var(--ts-control-hover) !important; color: var(--ts-text) !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) > #body > #action-menu button#button:focus-visible { outline: 2px solid var(--ts-accent) !important; outline-offset: 1px !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) > #body > #action-menu yt-interaction { display: none !important; }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer #replies { margin: 4px 0 0 !important; padding: 0 !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer #replies { margin: 2px 0 0 !important; padding: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer {
             display: block !important;
             margin: 0 0 0 44px !important;
@@ -1360,8 +1391,8 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(ytd-comment-view-model, ytd-comment-renderer) :is(#author-thumbnail, #author-thumbnail img, #author-thumbnail yt-img-shadow) { width: 24px !important; height: 24px !important; border-radius: 4px !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(#expander-contents, #contents) { margin: 0 !important; padding: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(#expander-contents, #contents) > :is(ytd-comment-view-model, ytd-comment-renderer, yt-sub-thread) { margin-top: 12px !important; }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(.ytSubThreadConnection, .ytSubThreadContinuation) { border-color: var(--ts-hairline) !important; }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer .ytSubThreadShadow { display: none !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(.ytSubThreadThreadline, .ytSubThreadShadow) { display: none !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer .ytSubThreadSubThreadContent { margin: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(#more-replies, #more-replies-sub-thread, #less-replies, #less-replies-sub-thread, .show-replies-button, .show-more-replies-button) {
             margin: 0 !important;
             padding: 0 !important;
@@ -1435,7 +1466,7 @@
 
     // ── Constants ──────────────────────────────────────────────────────────
     const SPLIT_RATIO_KEY = 'ts_split_ratio';
-    const TRANSITION = '0.35s cubic-bezier(0.4,0,0.2,1)';
+    const TRANSITION = '0.2s cubic-bezier(0.2,0,0,1)';
     const DIVIDER_WIDTH_PX = 8;
     const DIVIDER_DRAG_THRESHOLD_PX = 4;
     const LIVE_HEADER_HEIGHT = 154;
@@ -2957,7 +2988,7 @@
 
         const right = document.createElement('div');
         right.id = 'ts-right';
-        right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ts-panel);border-left:1px solid var(--ts-border);scrollbar-width:thin;scrollbar-color:var(--ts-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis ${TRANSITION},opacity 0.3s;`;
+        right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ts-panel);border-left:1px solid var(--ts-border);scrollbar-width:thin;scrollbar-color:var(--ts-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis ${TRANSITION},opacity 0.15s;`;
 
         initDividerDrag(divider, left, right);
 
@@ -3371,20 +3402,21 @@
                 waitForChat(rightPct, '0', '100vh');
             }
         }
+        // Open on the video title now, so an early scroll is not yanked back.
+        if (type !== 'live' && below) below.scrollTop = 0;
         startActionDock();
 
         const onExpanded = () => {
             if (right) right.removeEventListener('transitionend', onTransEnd);
             entering = false;
             triggerPlayerResize();
-            if (type !== 'live' && below) below.scrollTop = 0;
             scheduleActionDock(0);
         };
         const onTransEnd = (e) => {
             if (e.propertyName === 'flex-basis' || e.propertyName === 'opacity') onExpanded();
         };
         right.addEventListener('transitionend', onTransEnd);
-        setTimeout(() => { if (entering) onExpanded(); }, 500);
+        setTimeout(() => { if (entering) onExpanded(); }, 300);
 
         const rightWheelHandler = (e) => {
             if (!isSplit) return;
