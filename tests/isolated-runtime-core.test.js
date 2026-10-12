@@ -22,6 +22,17 @@ const runtimeEntry = manifest.content_scripts.find((entry) => Array.isArray(entr
 const runtimeModules = runtimeEntry['x-ytkit-runtime-modules'];
 const read = (file) => fs.readFileSync(path.join(extensionRoot, file), 'utf8');
 
+// One extension's content scripts share the isolated world, so an ISOLATED
+// entry injected into the same pages before the runtime fills the same
+// YTKitCore. core/early-switches.js is one: its own document_start entry.
+const RUN_AT = ['document_start', 'document_end', 'document_idle'];
+const scopeOf = (entry) => JSON.stringify([entry.matches, entry.exclude_matches || [], entry.all_frames === true]);
+const earlierIsolatedScripts = manifest.content_scripts
+    .filter((entry) => entry !== runtimeEntry && (entry.world || 'ISOLATED') === 'ISOLATED')
+    .filter((entry) => scopeOf(entry) === scopeOf(runtimeEntry))
+    .filter((entry) => RUN_AT.indexOf(entry.run_at || 'document_idle') < RUN_AT.indexOf(runtimeEntry.run_at || 'document_idle'))
+    .flatMap((entry) => entry.js || []);
+
 // Read on purpose only where no isolated module defines it.
 const NOT_IN_ISOLATED = Object.freeze({
     // The extension's MAIN-world bridge patches the page; ytkit.js builds the
@@ -45,9 +56,10 @@ function loadCore(...files) {
 }
 
 /**
- * What the isolated runtime really puts on YTKitCore: every module before
- * ytkit.js, run in manifest order over a stand-in page that answers anything.
- * A text search for the name was fooled by a module that merely mentions it.
+ * What the isolated runtime really puts on YTKitCore: the earlier isolated
+ * content scripts, then every module before ytkit.js, run in manifest order
+ * over a stand-in page that answers anything. A text search for the name was
+ * fooled by a module that merely mentions it.
  */
 function isolatedCoreKeys() {
     const anything = () => new Proxy(function () {}, {
@@ -67,7 +79,7 @@ function isolatedCoreKeys() {
     context.self = context;
     vm.createContext(context);
     const failed = [];
-    for (const file of runtimeModules.filter((entry) => entry !== 'ytkit.js')) {
+    for (const file of [...earlierIsolatedScripts, ...runtimeModules.filter((entry) => entry !== 'ytkit.js')]) {
         try {
             vm.runInContext(read(file), context, { filename: file });
         } catch (error) {
@@ -92,6 +104,8 @@ test('every YTKitCore helper the isolated runtime reads is loaded into the isola
     }
     assert.ok(wanted.has('normalizeBlockedChannelId') && wanted.has('validateAiProviderEndpoint'),
         'the scan must see the reads this test was written for');
+    assert.ok(earlierIsolatedScripts.includes('core/early-switches.js'),
+        'the earlier isolated entries must be in the scan, or earlyBridgeSwitches reads as missing');
 
     const defined = isolatedCoreKeys();
     const missing = [...wanted.keys()]
