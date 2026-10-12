@@ -38,7 +38,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - The `ws` package the browser smoke tests use to drive Chromium moves to 8.22.0.
 
+- **Theater Split** on a past live stream used to stack the chat replay over the comments, each squeezed into half the pane. Now the pane shows one of them at full height, with a bar at the top to switch between **Comments** and **Live chat replay**. Comments come first on every video. The chat replay keeps running while it's hidden, so it's still in step with the video when you switch over, and pulling up on the bar closes the pane. The standalone Theater Split userscript gets the same change as 1.0.21.
+
 ### Fixed
+
+- **Persistent Speed** and **Per-Channel Speed** no longer carry your saved speed onto a live stream. A live stream plays at its live edge, so a remembered 2x ran straight into it and the stream kept stalling and reloading. Live streams now start at 1x, and you can still speed one up yourself. Your speed comes back on the next regular video, past live streams included. Per-Channel Speed also deleted a channel's saved speed when you left one of its live streams, because it saved the stream's 1x on the way out. It keeps it now.
+
+- **Live Catch-Up Speed Reset** never noticed a sped-up live stream reaching the live edge, so it didn't set the speed back to 1x. YouTube changed how the player reports where the edge is, and the reset now reads the player's own live-edge marker.
 
 - **Force DVR** missed the first live stream on a fresh page load and only worked on streams you opened after it. Astra now hands its page-level switches over as soon as your settings load, before YouTube reads the page's built-in data, so the first stream gets DVR too. Safe mode, or a feature that doesn't start for any other reason, takes the switch back once Astra has finished starting on that page. In a tab opened in the background, that's when you first switch to it.
 

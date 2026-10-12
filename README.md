@@ -449,7 +449,7 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 
 ### Theater Split
 
-Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. The comments pane takes its colors from the page, so it follows dark and light mode, the OLED theme, the color themes and your accent color.
+Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. On a past live stream the pane opens on the comments, and a bar at the top switches to the live chat replay. The comments pane takes its colors from the page, so it follows dark and light mode, the OLED theme, the color themes and your accent color.
 
 <p align="center">
   <img src="outputs/astra-deck-theater-split-dark-v8.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">

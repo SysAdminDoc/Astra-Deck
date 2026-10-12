@@ -34,6 +34,30 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   link shows a watch-page feature running (owed check).
   Complexity: S
 
+- [ ] P2 — Live Latency Catch-up never runs on today's watch player
+  Why: its `_isLive` looks for `#movie_player.ytp-live`, a class the watch player no longer
+  carries (checked on a live stream 2026-10-12), and its fallback needs a latency from
+  `getLivePlaybackMetrics`, which reads `video.seekable`. That range now ends at the media
+  source's duration, about a day past the edge, so the latency it reports is never real.
+  Switching `_isLive` to `isLiveStreamPlaying()` alone would boost the rate at the edge from that
+  bogus latency, so it was left as is when the speed features moved to the badge.
+  Where: `extension/ytkit.js` `liveLatencyCatchup` (`_isLive`, `_metrics`),
+  `extension/core/player.js` `getLivePlaybackMetrics`.
+  Acceptance: latency comes from the MAIN-world player (its live-edge state or
+  `getProgressState`), the readout shows a few seconds on a live stream at the edge, the boost
+  only runs while behind the target, and `tests/features/live-latency.test.js` drives a badge-only
+  live page.
+  Complexity: M
+
+- [ ] P3 — Theater Split metadata row overlaps at the narrowest pane
+  Why: dragged to the 15% minimum (about 227px at 1440 wide), the upload date and view count sit
+  on top of the channel avatar and name, which truncates to its first letter. Seen in a light
+  theme capture of a past live stream on 2026-10-12; the comments below it lay out fine.
+  Where: `extension/features/sticky-video-styles` (meta sheet), `sticky-video-header`.
+  Acceptance: at the minimum width the channel row and the upload meta stack instead of
+  overlapping, in both themes, and the standalone stylesheet is regenerated.
+  Complexity: S
+
 ## Research-Driven Additions
 
 Added 2026-10-10 from `RESEARCH.md`. Evidence and rejected alternatives live there.
