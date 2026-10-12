@@ -77,7 +77,10 @@ test('ageRestrictionBypass renders no replacement from an unrecognized embed res
     assert.equal(player.children.some((child) => child.tagName === 'IFRAME'), false);
     assert.equal(health.at(-1).status, 'degraded');
     assert.equal(diagnostics.at(-1)[0], 'age-restriction-bypass');
-    assert.match(toasts.at(-1)[0], /needs attention/i);
+    assert.match(toasts.at(-1)[0], /couldn't handle this video/i);
+    // The internal detail goes to the diagnostic log and feature health only.
+    assert.ok(!toasts.at(-1)[0].includes(health.at(-1).lastError),
+        'the toast must not paste the internal English detail');
 });
 
 test('playability classifier loads before the ytkit runtime only on normal pages', () => {

@@ -306,7 +306,8 @@ test('sleepTimer elapsing pauses the video and takes its chip off the player', (
     assert.equal(player.children.length, 0, 'an elapsed timer leaves no chip behind');
     assert.equal(feature._chip, null);
     assert.ok(announced.some((message) => /elapsed/i.test(message)));
-    assert.ok(toasts.some((message) => /elapsed/i.test(message)));
+    assert.ok(toasts.some((message) => /timer is up\. Playback paused/i.test(message)),
+        'the toast says why the video stopped');
 });
 
 test('sleepTimer rejects an out-of-range value in the popover instead of starting', () => {
@@ -1841,7 +1842,7 @@ test('abLoop clearing takes the region off the bar and resets the button state',
     assert.equal(feature._pointB, null);
     assert.equal(feature._btn.classList.contains('ytkit-player-btn--active'), false);
     assert.equal(feature._btn.classList.contains('ytkit-player-btn--warn'), false);
-    assert.ok(toasts.some((message) => /A-B Loop cleared/.test(message)));
+    assert.ok(toasts.some((message) => /A-B loop cleared/.test(message)));
 });
 
 test('abLoop marks a half-set loop differently from a running one', () => {
@@ -2150,7 +2151,7 @@ test('sbPerChannelProfiles offers a reset only once the channel actually overrid
     assert.equal(overridden.appState.settings.sbPerChannelProfilesData.UCchannel, undefined);
     assert.equal(overridden.feature._panel, null, 'resetting closes the panel it was in');
     assert.equal(overridden.feature._btn.textContent, 'SB: global');
-    assert.ok(overridden.toasts.some((message) => /reset to global defaults/i.test(message)));
+    assert.ok(overridden.toasts.some((message) => /back to your global defaults/i.test(message)));
 });
 
 test('sbPerChannelProfiles toggling a category writes the channel override', () => {

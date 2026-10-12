@@ -243,7 +243,7 @@ test('the recovery toast names the budget it is spending', () => {
     });
     loadFeature('playbackErrorRecovery', page.globals)._maybeResume();
     assert.equal(page.toasts.length, 1);
-    assert.match(page.toasts[0], /attempt 2\/3/,
+    assert.match(page.toasts[0], /attempt 2 of 3/,
         'a user watching a video reload twice needs to know how many tries are left');
 });
 
