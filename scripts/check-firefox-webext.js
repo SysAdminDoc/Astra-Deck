@@ -81,6 +81,15 @@ const ACCEPTED_LINT_WARNINGS = Object.freeze([
         file: 'runtime-core-loader.mjs',
         acceptedOn: '2026-08-27',
         reason: 'dynamic import of a generated, frozen module path through runtime.getURL'
+    }),
+    // A classic script tag can't stand in: Chrome injects a file once per
+    // frame, and core/bridge-channel.js must stay in the MAIN entry.
+    Object.freeze({
+        code: 'UNSAFE_VAR_ASSIGNMENT',
+        file: 'core/early-switches.js',
+        acceptedOn: '2026-10-12',
+        reason: 'dynamic import of the constant core/bridge-channel.js through runtime.getURL, so the early '
+            + 'switches and the runtime loader share one module record and one bridge writer'
     })
 ]);
 
