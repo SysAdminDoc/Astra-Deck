@@ -160,6 +160,9 @@ test('build-extension shouldStageEntry refuses key, token, and log files', () =>
     }
     assert.equal(shouldStageEntry('manifest.json'), true, 'real extension files must still stage');
     assert.equal(shouldStageEntry('ytkit.js'), true, 'real extension files must still stage');
+    // Chrome writes this into an unpacked extension it has loaded.
+    assert.equal(shouldStageEntry('_metadata'), false, 'Chrome-generated rulesets must not ship');
+    assert.equal(shouldStageEntry('_locales'), true, 'the locale catalogues still stage');
 });
 
 test('build tooling carries no dead shell bindings', () => {

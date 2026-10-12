@@ -333,7 +333,11 @@ const STAGE_SKIP_NAMES = new Set([
     '.DS_Store',
     'Thumbs.db',
     'node_modules',
-    '.claude-octopus'
+    '.claude-octopus',
+    // Chrome writes _metadata/generated_indexed_rulesets into an unpacked
+    // extension it loads. Loading extension/ left one there and v4.98.0's
+    // first build packed it into every artifact.
+    '_metadata'
 ]);
 
 const STAGE_SKIP_SUFFIXES = [
