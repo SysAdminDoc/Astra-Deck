@@ -254,7 +254,8 @@ test('userscript Quick Settings turns off the other side of a conflict pair', as
         const saved = [];
         const toasts = [];
         const api = loadUserscriptDeclarations([
-            'CONFLICT_MAP', 'clearPendingPageModalRemoval', 'updatePageModalEnabledCount', 'closePageModal', 'openPageModal'
+            // tCount picks the One/Other half of the modal's count chips.
+            'tCount', 'CONFLICT_MAP', 'clearPendingPageModalRemoval', 'updatePageModalEnabledCount', 'closePageModal', 'openPageModal'
         ], {
             document: documentRef,
             features,
