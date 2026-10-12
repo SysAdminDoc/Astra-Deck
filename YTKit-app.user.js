@@ -2531,6 +2531,17 @@ const STORAGE_KEYS = Object.freeze({
 	function isProgrammaticPlaybackRateChange() {
 		return Date.now() < programmaticRateUntil;
 	}
+	function isLiveStreamPlaying() {
+		if (document.querySelector('#movie_player.ytp-live')) return true;
+		const badge = document.querySelector('#movie_player .ytp-live-badge');
+		if (badge) {
+			try {
+				if (getComputedStyle(badge).display !== 'none') return true;
+			} catch (_) {
+			}
+		}
+		return _rw.ytInitialPlayerResponse?.videoDetails?.isLive === true;
+	}
 	function isAdShowingIn(video) {
 		const player = video?.closest?.('.html5-video-player');
 		return !!player && (
@@ -10640,6 +10651,9 @@ const STORAGE_KEYS = Object.freeze({
 			_observer: null,
 			_applied: false,
 			_activeChannelId: null,
+			_activeIsLive: false,
+			_appliedVideo: null,
+			_appliedRate: null,
 			_USER_INTENT_WINDOW_MS: 1500,
 			_lastInputAt: 0,
 			_inputHandler: null,
@@ -10648,6 +10662,15 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_getSpeeds() { return StorageManager.get(this._storageKey, {}); },
 			_applySpeed() {
+				const video = getMainVideoElement();
+				this._activeIsLive = !!video && isLiveStreamPlaying();
+				if (this._activeIsLive) {
+					if (this._appliedVideo === video && Math.abs(video.playbackRate - this._appliedRate) < 0.01) {
+						setProgrammaticPlaybackRate(video, 1);
+					}
+					this._appliedVideo = null;
+					return;
+				}
 				if (this._applied) return;
 				const channelId = this._getChannelId();
 				if (!channelId) return;
@@ -10655,9 +10678,10 @@ const STORAGE_KEYS = Object.freeze({
 				const speeds = this._getSpeeds();
 				const savedSpeed = speeds[channelId];
 				if (!savedSpeed) return;
-				const video = getMainVideoElement();
 				if (!video) return;
 				setProgrammaticPlaybackRate(video, savedSpeed);
+				this._appliedVideo = video;
+				this._appliedRate = savedSpeed;
 				this._applied = true;
 				DebugManager.log('ChannelSpeed', `Applied ${savedSpeed}x for ${channelId}`);
 			},
@@ -10678,6 +10702,7 @@ const STORAGE_KEYS = Object.freeze({
 				this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
 			},
 			_saveCurrentSpeed(channelId = this._activeChannelId || this._getChannelId()) {
+				if (this._activeIsLive || isLiveStreamPlaying()) return;
 				if (!channelId) return;
 				const video = getMainVideoElement();
 				if (!video) return;
@@ -10700,6 +10725,8 @@ const STORAGE_KEYS = Object.freeze({
 				addNavigateRule('channelSpeed', () => {
 					this._saveCurrentSpeed(this._activeChannelId);
 					this._activeChannelId = null;
+					this._activeIsLive = false;
+					this._appliedVideo = null;
 					this._applied = false;
 					this._scheduleApply(250, 'navigate');
 				});
@@ -10710,6 +10737,10 @@ const STORAGE_KEYS = Object.freeze({
 				}
 				this._rateHandler = () => {
 					if (isProgrammaticPlaybackRateChange()) return;
+					if (isLiveStreamPlaying()) {
+						this._activeIsLive = true;
+						return;
+					}
 					const video = getMainVideoElement();
 					if (video && video.playbackRate === 1 && (Date.now() - this._lastInputAt) > this._USER_INTENT_WINDOW_MS) {
 						const channelId = this._activeChannelId || this._getChannelId();
@@ -10727,6 +10758,8 @@ const STORAGE_KEYS = Object.freeze({
 			destroy() {
 				this._saveCurrentSpeed();
 				this._activeChannelId = null;
+				this._activeIsLive = false;
+				this._appliedVideo = null;
 				clearTimeout(this._applyTimer);
 				this._applyTimer = null;
 				if (typeof cancelPlayerTask === 'function') cancelPlayerTask('feature:perChannelSpeed');
@@ -12954,6 +12987,8 @@ const STORAGE_KEYS = Object.freeze({
 			settingKey: 'persistentSpeedValue',
 			_applied: false,
 			_applyTimer: null,
+			_carriedVideo: null,
+			_carriedRate: null,
 			_taskId: 'feature:persistentSpeed',
 			_scheduleApply(delay = 250, reason = 'manual') {
 				if (typeof schedulePlayerTask === 'function') {
@@ -12978,16 +13013,30 @@ const STORAGE_KEYS = Object.freeze({
 				if (ctx.reason === 'loadedmetadata' || ctx.reason === 'navigate' || ctx.reason === 'page-data') {
 					this._applied = false;
 				}
-				if (this._applied) return true;
+				if (ctx.reason === 'player-dock') this._carriedVideo = null;
 				const video = getMainVideoElement();
+				if (video && isLiveStreamPlaying()) {
+					this._releaseCarriedRate(video);
+					return true;
+				}
+				if (this._applied) return true;
 				if (!video) return false;
 				const speed = parseFloat(appState.settings.persistentSpeedValue) || 1;
 				if (speed !== 1 && speed !== video.playbackRate) {
 					video.playbackRate = speed;
 					DebugManager.log('PersistentSpeed', `Applied ${speed}x`);
 				}
+				this._carriedVideo = speed !== 1 ? video : null;
+				this._carriedRate = speed;
 				this._applied = true;
 				return true;
+			},
+			_releaseCarriedRate(video) {
+				if (this._carriedVideo === video && Math.abs(video.playbackRate - this._carriedRate) < 0.01) {
+					setProgrammaticPlaybackRate(video, 1);
+					DebugManager.log('PersistentSpeed', 'Live stream, speed back to 1x');
+				}
+				this._carriedVideo = null;
 			},
 			init() {
 				this._scheduleApply(250, 'init');
@@ -13000,6 +13049,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (typeof cancelPlayerTask === 'function') cancelPlayerTask(this._taskId);
 				if (this._applyTimer) clearTimeout(this._applyTimer);
 				this._applyTimer = null;
+				this._carriedVideo = null;
 				removeNavigateRule('persistSpeed');
 			}
 		},
@@ -15494,23 +15544,28 @@ const STORAGE_KEYS = Object.freeze({
 			_videoRef: null,
 			_handler: null,
 			_priorRate: null,
-			_isLive() { return !!document.querySelector('#movie_player.ytp-live'); },
+			_isLive() { return isLiveStreamPlaying(); },
 			_latency(v) {
 				try {
 					if (!v.seekable || !v.seekable.length) return Infinity;
 					return v.seekable.end(v.seekable.length - 1) - v.currentTime;
 				} catch {   return Infinity; }
 			},
+			_atLiveHead() {
+				return document.querySelector('#movie_player .ytp-live-badge')
+					?.classList?.contains('ytp-live-badge-is-livehead') === true;
+			},
 			_tick() {
 				const v = this._videoRef;
 				if (!v || !this._isLive()) return;
 				if (getFeatureById('liveLatencyCatchup')?._ownsRate?.(v)) return;
 				const latency = this._latency(v);
-				if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
+				const atHead = this._atLiveHead();
+				if (this._priorRate == null && v.playbackRate > 1 && (atHead || latency < 4)) {
 					this._priorRate = v.playbackRate;
 					setProgrammaticPlaybackRate(v, 1);
 					showToast(t('toastCaughtUpToLive', 'Caught up to live. Speed is back to 1x.'), '#22c55e', { duration: 3 });
-				} else if (this._priorRate != null && latency > 15) {
+				} else if (this._priorRate != null && !atHead && latency > 15) {
 					setProgrammaticPlaybackRate(v, this._priorRate);
 					this._priorRate = null;
 				}
