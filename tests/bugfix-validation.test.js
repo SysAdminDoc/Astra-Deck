@@ -658,8 +658,8 @@ test('split title header and comment composer stay visually compact', () => {
         'extension split title should wrap long titles without orphans');
     assert.match(comments, /#placeholder-area \{[\s\S]{0,200}min-height: 40px !important;/,
         'extension split composer placeholder should match the 40px input height');
-    assert.ok(comments.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row { display: none !important; }'),
-        'extension expanded split composer should hide the stale placeholder row');
+    assert.ok(comments.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row) { display: none !important; }'),
+        'extension expanded split composer should hide the stale placeholder');
     assert.match(comments, /ytd-comment-simplebox-renderer:has\(> #comment-dialog:not\(\[hidden\]\)\) \{\n    display: grid !important;\n    grid-template-columns: minmax\(0, 1fr\) !important;/,
         'extension expanded split composer should let the editor take the full width');
 
@@ -667,8 +667,8 @@ test('split title header and comment composer stay visually compact', () => {
         'standalone split title should wrap the same way');
     assert.match(theaterSplit, /#placeholder-area \{[\s\S]{0,200}min-height: 40px !important;/,
         'standalone split composer placeholder should match the input height');
-    assert.ok(theaterSplit.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row'),
-        'standalone expanded split composer should hide the stale placeholder row');
+    assert.ok(theaterSplit.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row)'),
+        'standalone expanded split composer should hide the stale placeholder');
     assert.ok(theaterSplit.includes('grid-template-columns: minmax(0, 1fr) !important;'),
         'standalone expanded split composer should let the editor take the full width');
 });

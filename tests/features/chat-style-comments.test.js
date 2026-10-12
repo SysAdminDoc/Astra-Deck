@@ -85,8 +85,17 @@ test('chatStyleComments preserves the YouTube split-thread line', () => {
     );
     assert.doesNotMatch(block, /\.ytSubThreadThreadline/,
         'the monolith fallback must preserve the thread line too');
-    assert.doesNotMatch(sources.userscript, /\.ytSubThreadThreadline/,
+    const marker = '__astraDeckRegistry["features/chat-style-comments/index.js"]';
+    const start = sources.userscript.indexOf(marker);
+    assert.ok(start > -1, 'the userscript registers the chat-style comments module');
+    const end = sources.userscript.indexOf('__astraDeckRegistry["', start + marker.length);
+    assert.doesNotMatch(sources.userscript.slice(start, end > -1 ? end : undefined), /\.ytSubThreadThreadline/,
         'the userscript comments payload must preserve the thread line too');
+    // Theater Split hides it, but only inside its own pane, where replies
+    // move under the comment text and the connectors can no longer meet.
+    const all = sources.userscript.match(/\.ytSubThreadThreadline/g) || [];
+    const paneScoped = sources.userscript.match(/\$\{PANE\} ytd-comment-replies-renderer :is\(\.ytSubThreadThreadline/g) || [];
+    assert.equal(all.length, paneScoped.length, 'only the Theater Split pane may hide the thread line');
 });
 
 test('chatStyleComments hides the current YouTube paper-input underline', () => {
