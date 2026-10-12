@@ -31158,7 +31158,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clear: () => DiagnosticLog.clear(),
                     download: () => DiagnosticLog.download(),
                 };
-                showToast(t('toastDiagnosticLogActive', 'Diagnostic log is on. Run window.__ytkitDiagnostics.download() in the console to save it.'), '#3b82f6', { duration: 5 });
+                showToast(t('toastDiagnosticLogActive', 'Diagnostic log is on. To share it, open the settings panel and use the bug button under the sidebar.'), '#3b82f6', { duration: 5 });
             },
             destroy() {
                 if (this._origConsoleError) console.error = this._origConsoleError;

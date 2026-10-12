@@ -9863,7 +9863,7 @@
     "message": "SRT をダウンロードしました"
   },
   "toastDiagnosticLogActive": {
-    "message": "診断ログが有効です。保存するにはコンソールで window.__ytkitDiagnostics.download() を実行してください。"
+    "message": "診断ログが有効です。共有するには、設定パネルを開き、サイドバー下部のバグボタンを使ってください。"
   },
   "toastPromptCopiedTargetOpened": {
     "message": "プロンプトをコピーし、選んだサイトを開きました"

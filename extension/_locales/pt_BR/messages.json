@@ -9863,7 +9863,7 @@
     "message": "SRT baixado"
   },
   "toastDiagnosticLogActive": {
-    "message": "O log de diagnóstico está ativo. Execute window.__ytkitDiagnostics.download() no console para salvá-lo."
+    "message": "O log de diagnóstico está ativo. Para compartilhá-lo, abra as configurações e use o botão de bug no rodapé da barra lateral."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "Prompt copiado e site escolhido aberto"

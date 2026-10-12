@@ -9957,7 +9957,7 @@
     "description": "Toast message."
   },
   "toastDiagnosticLogActive": {
-    "message": "Diagnostic log is on. Run window.__ytkitDiagnostics.download() in the console to save it.",
+    "message": "Diagnostic log is on. To share it, open the settings panel and use the bug button under the sidebar.",
     "description": "Toast message."
   },
   "toastPromptCopiedTargetOpened": {

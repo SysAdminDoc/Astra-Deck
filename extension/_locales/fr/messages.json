@@ -9863,7 +9863,7 @@
     "message": "Fichier SRT téléchargé"
   },
   "toastDiagnosticLogActive": {
-    "message": "Le journal de diagnostic est actif. Exécutez window.__ytkitDiagnostics.download() dans la console pour l'enregistrer."
+    "message": "Le journal de diagnostic est actif. Pour le partager, ouvrez les paramètres et utilisez le bouton de bug en bas de la barre latérale."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "Invite copiée et site choisi ouvert"

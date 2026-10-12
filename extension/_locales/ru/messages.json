@@ -9863,7 +9863,7 @@
     "message": "Файл SRT скачан"
   },
   "toastDiagnosticLogActive": {
-    "message": "Журнал диагностики включён. Чтобы сохранить его, выполните window.__ytkitDiagnostics.download() в консоли."
+    "message": "Журнал диагностики включён. Чтобы поделиться им, откройте настройки и нажмите кнопку с жуком внизу боковой панели."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "Запрос скопирован, выбранный сайт открыт"

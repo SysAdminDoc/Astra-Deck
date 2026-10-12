@@ -9863,7 +9863,7 @@
     "message": "تم تنزيل ملف SRT"
   },
   "toastDiagnosticLogActive": {
-    "message": "سجل التشخيص قيد التشغيل. شغّل window.__ytkitDiagnostics.download() في وحدة التحكم لحفظه."
+    "message": "سجل التشخيص قيد التشغيل. لمشاركته، افتح لوحة الإعدادات واستخدم زر الخطأ أسفل الشريط الجانبي."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "تم نسخ الموجّه وفتح الموقع المختار"

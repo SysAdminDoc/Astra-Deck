@@ -9863,7 +9863,7 @@
     "message": "SRT-Datei heruntergeladen"
   },
   "toastDiagnosticLogActive": {
-    "message": "Das Diagnoseprotokoll ist aktiv. Führe window.__ytkitDiagnostics.download() in der Konsole aus, um es zu speichern."
+    "message": "Das Diagnoseprotokoll ist aktiv. Um es zu teilen, öffne die Einstellungen und nutze die Fehler-Schaltfläche unten in der Seitenleiste."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "Prompt kopiert und die gewählte Seite geöffnet"

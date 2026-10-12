@@ -9863,7 +9863,7 @@
     "message": "SRT 已下载"
   },
   "toastDiagnosticLogActive": {
-    "message": "诊断日志已开启。在控制台运行 window.__ytkitDiagnostics.download() 即可保存。"
+    "message": "诊断日志已开启。如需分享，请打开设置面板，使用侧边栏底部的错误按钮。"
   },
   "toastPromptCopiedTargetOpened": {
     "message": "已复制提示词并打开所选网站"

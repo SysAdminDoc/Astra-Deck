@@ -9863,7 +9863,7 @@
     "message": "SRT를 다운로드했습니다"
   },
   "toastDiagnosticLogActive": {
-    "message": "진단 로그가 켜져 있습니다. 저장하려면 콘솔에서 window.__ytkitDiagnostics.download()를 실행하세요."
+    "message": "진단 로그가 켜져 있습니다. 공유하려면 설정 패널을 열고 사이드바 아래쪽의 버그 버튼을 사용하세요."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "프롬프트를 복사하고 선택한 사이트를 열었습니다"

@@ -9863,7 +9863,7 @@
     "message": "SRT descargado"
   },
   "toastDiagnosticLogActive": {
-    "message": "El registro de diagnóstico está activo. Ejecuta window.__ytkitDiagnostics.download() en la consola para guardarlo."
+    "message": "El registro de diagnóstico está activo. Para compartirlo, abre los ajustes y usa el botón de error al pie de la barra lateral."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "Instrucción copiada y sitio elegido abierto"

@@ -9863,7 +9863,7 @@
     "message": "File SRT scaricato"
   },
   "toastDiagnosticLogActive": {
-    "message": "Il log di diagnostica è attivo. Esegui window.__ytkitDiagnostics.download() nella console per salvarlo."
+    "message": "Il log di diagnostica è attivo. Per condividerlo, apri le impostazioni e usa il pulsante bug in fondo alla barra laterale."
   },
   "toastPromptCopiedTargetOpened": {
     "message": "Prompt copiato e sito scelto aperto"
