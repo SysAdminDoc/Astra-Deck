@@ -462,16 +462,29 @@ test('the two rewritten messages reach every locale', () => {
             `${locale}: still carries the superseded English`);
     }
 
-    // The transcript-index description falls through to the current English in
-    // every locale: its translations described a feature that no longer exists
-    // and named a retired API, and an accurate English sentence beats an
-    // inaccurate translated one.
+    // The transcript-index description first fell through to the current
+    // English in every locale: its translations described a feature that no
+    // longer exists ("adds a global Search transcripts panel") and named a
+    // retired API. The 2026-10 translation pass then translated the CURRENT
+    // English, which is what this guards. Every stale translation carried
+    // window.__ytkitSearchTranscripts(query) and none named YouTube, while the
+    // current sentence names YouTube's transcript panel and IndexedDB; those
+    // tokens stay untranslated, so they tell the two apart in any language.
     const desc = en.feature_researchTranscriptIndex_desc.message;
+    assert.match(desc, /YouTube/, 'anchor: the current English names the panel it no longer opens');
+    assert.match(desc, /IndexedDB/);
     for (const locale of locales) {
         const messages = JSON.parse(fs.readFileSync(
             path.join(localesDir, locale, 'messages.json'), 'utf8'));
-        assert.equal(messages.feature_researchTranscriptIndex_desc?.message, desc,
+        const message = messages.feature_researchTranscriptIndex_desc?.message || '';
+        assert.ok(message, `${locale}: feature_researchTranscriptIndex_desc must exist`);
+        if (message === desc) continue;
+        assert.ok(!message.includes('__ytkitSearchTranscripts'),
             `${locale}: must carry the current description, not a translation of the old one`);
+        assert.match(message, /YouTube/,
+            `${locale}: a translation of the current description names YouTube's transcript panel`);
+        assert.match(message, /IndexedDB/,
+            `${locale}: and says where the search stays`);
     }
 });
 
