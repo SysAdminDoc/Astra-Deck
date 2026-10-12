@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.98.1] (2026-10-12)
+
 ### Changed
 
 - **Theater Split** opens faster. The panel slides in about twice as quickly, and YouTube's player controls fit the narrower video right away instead of running under the comments for a moment. The pane also opens on the video title up front, so scrolling straight away no longer gets pulled back to the top.
