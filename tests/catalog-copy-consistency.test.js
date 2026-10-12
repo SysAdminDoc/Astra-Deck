@@ -32,6 +32,12 @@ test('no shipped string uses the (s) plural hack', () => {
         'a count string has to be a One/Other pair chosen at the call site');
 });
 
+// English doesn't inflect a participle ("1 Enabled", "3 Enabled"), but French,
+// Spanish, Italian and Portuguese do ("1 activée", "3 activées"). A pair named
+// here may read the same in English, and it has to earn that: at least one
+// shipped locale must tell its halves apart.
+const ENGLISH_INVARIANT_PAIRS = new Set(['pageModalEnabledCountTpl']);
+
 test('every count string ships both halves of its pair', () => {
     const stems = new Set(entries
         .map(([key]) => key)
@@ -41,10 +47,26 @@ test('every count string ships both halves of its pair', () => {
     assert.ok(pluralStems.length >= 8,
         `only ${pluralStems.length} plural pairs found; the eight converted ones must all be here`);
 
+    const localesDir = path.join(repoRoot, 'extension', '_locales');
+    const catalogs = fs.readdirSync(localesDir)
+        .filter((name) => name !== 'en' && fs.existsSync(path.join(localesDir, name, 'messages.json')))
+        .map((name) => JSON.parse(fs.readFileSync(path.join(localesDir, name, 'messages.json'), 'utf8')));
+
+    for (const stem of ENGLISH_INVARIANT_PAIRS) {
+        assert.ok(pluralStems.includes(stem), `${stem} is no longer a pair; drop its exemption`);
+    }
+
     for (const stem of pluralStems) {
         const one = en[stem + 'One'].message;
         const other = en[stem + 'Other'].message;
-        assert.notEqual(one, other, `${stem}: the two halves must differ, or the pair is decoration`);
+        if (ENGLISH_INVARIANT_PAIRS.has(stem)) {
+            assert.equal(one, other, `${stem} differs in English now; drop its exemption`);
+            assert.ok(catalogs.some((messages) =>
+                messages[stem + 'One']?.message !== messages[stem + 'Other']?.message),
+            `${stem}: no locale tells the halves apart, so the pair is decoration`);
+        } else {
+            assert.notEqual(one, other, `${stem}: the two halves must differ, or the pair is decoration`);
+        }
         // Same placeholders on both sides, or one of them renders a raw token.
         const tokensOf = (text) => [...String(text).matchAll(/\{([a-zA-Z]+)\}/g)].map((m) => m[1]).sort();
         assert.deepEqual(tokensOf(one), tokensOf(other),
