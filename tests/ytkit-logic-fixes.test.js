@@ -405,6 +405,7 @@ test('perChannelSpeed removes 1x overrides and saves navigation against the outg
         'cancelPlayerTask',
         'isProgrammaticPlaybackRateChange',
         'setProgrammaticPlaybackRate',
+        'isLiveStreamPlaying',
         '"use strict"; return (' + objectLiteral + ');'
     )(
         { WATCH: 'watch' },
@@ -420,7 +421,8 @@ test('perChannelSpeed removes 1x overrides and saves navigation against the outg
         () => {},
         () => {},
         () => false,
-        (videoEl, rate) => { videoEl.playbackRate = rate; }
+        (videoEl, rate) => { videoEl.playbackRate = rate; },
+        () => false
     );
 
     feature.init();

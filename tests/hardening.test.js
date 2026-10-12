@@ -408,7 +408,11 @@ test('player-facing features schedule through the shared player task manager', (
     ]) {
         const start = ytkitSource.indexOf(`id: '${featureId}'`);
         assert.ok(start > -1, `${featureId} must exist`);
-        const block = ytkitSource.slice(start, start + 3500);
+        // Bounded by the next feature, so a feature that grows cannot push
+        // its destroy() out of a fixed-length slice.
+        const end = ytkitSource.indexOf("\n            id: '", start + 1);
+        assert.ok(end > start, `${featureId} must be followed by another feature`);
+        const block = ytkitSource.slice(start, end);
         assert.match(block, new RegExp(`schedulePlayerTask\\(this\\._taskId|schedulePlayerTask\\('${taskId}'`),
             `${featureId} must schedule through schedulePlayerTask`);
         assert.match(block, new RegExp(`cancelPlayerTask\\(this\\._taskId\\)|cancelPlayerTask\\('${taskId}'`),

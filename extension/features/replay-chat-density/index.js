@@ -327,9 +327,24 @@
             return value === true || value === 'true' || value === 1 || value === '1';
         }
 
+        // The watch player dropped its `ytp-live` class; a live stream now
+        // shows only through its visible LIVE badge (hidden on past streams).
+        function isLiveBadgeShowing() {
+            if (documentRef?.querySelector?.('#movie_player.ytp-live')) return true;
+            const badge = documentRef?.querySelector?.('#movie_player .ytp-live-badge');
+            if (!badge) return false;
+            try {
+                const display = windowRef?.getComputedStyle?.(badge)?.display;
+                return !!display && display !== 'none';
+            } catch (_) {
+                // reason: a badge mid-teardown has no computed style
+                return false;
+            }
+        }
+
         function isReplayVideo(duration) {
             if (!Number.isFinite(Number(duration)) || Number(duration) <= 0) return false;
-            if (documentRef?.querySelector?.('#movie_player.ytp-live')) return false;
+            if (isLiveBadgeShowing()) return false;
             const response = getPlayerResponse?.();
             const details = response?.videoDetails;
             const currentId = cleanText(getVideoId?.(), 24);

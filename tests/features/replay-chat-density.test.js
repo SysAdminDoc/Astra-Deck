@@ -79,7 +79,7 @@ function makeElement(tagName = 'div', context = null) {
     return element;
 }
 
-function makeFactoryHarness() {
+function makeFactoryHarness({ liveBadgeDisplay = null } = {}) {
     const drawContext = {
         globalAlpha: 1,
         fillRectCalls: [],
@@ -99,11 +99,13 @@ function makeFactoryHarness() {
         addEventListener() {},
         removeEventListener() {}
     };
+    const liveBadge = makeElement('div');
     const documentRef = {
         body: makeElement('body'),
         documentElement: makeElement('html'),
         querySelector(selector) {
             if (selector === '#movie_player.ytp-live') return null;
+            if (selector === '#movie_player .ytp-live-badge') return liveBadgeDisplay == null ? null : liveBadge;
             if (selector === '#movie_player') return player;
             return null;
         },
@@ -124,7 +126,8 @@ function makeFactoryHarness() {
         },
         clearTimeout(id) { timers.delete(id); },
         requestAnimationFrame(callback) { callback(); return 1; },
-        cancelAnimationFrame() {}
+        cancelAnimationFrame() {},
+        getComputedStyle: (node) => ({ display: node === liveBadge ? liveBadgeDisplay : 'block' })
     };
     const feature = createReplayChatDensityFeature({
         PageTypes: { WATCH: 'watch' },
@@ -191,4 +194,19 @@ test('replay density renders above the progress bar and click-seeks', () => {
     assert.equal(feature._getSnapshot().chartVisible, false);
     feature.destroy();
     assert.equal(navigationRules.has('replayChatDensity'), false);
+});
+
+test('replay density stays off a live stream, told apart by its visible LIVE badge', () => {
+    // The watch player no longer carries a `ytp-live` class. The badge is in
+    // the player on every stream, and hidden once the stream has ended.
+    const live = makeFactoryHarness({ liveBadgeDisplay: 'inline-flex' });
+    live.feature.init();
+    assert.equal(live.feature._recordMessage(makeMessage({ timestampUsec: 60000000 }), 120), false);
+    live.feature.destroy();
+
+    const past = makeFactoryHarness({ liveBadgeDisplay: 'none' });
+    past.feature.init();
+    assert.equal(past.feature._recordMessage(makeMessage({ timestampUsec: 60000000 }), 120), true,
+        'a past live stream with its badge hidden is a replay');
+    past.feature.destroy();
 });

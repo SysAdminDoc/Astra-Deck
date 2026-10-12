@@ -3830,6 +3830,26 @@ const STORAGE_KEYS = Object.freeze({
         return Date.now() < programmaticRateUntil;
     }
 
+    // A live stream plays at its live edge, so a remembered speed above 1x
+    // keeps running into the edge and the stream stalls. The watch player no
+    // longer carries `ytp-live` (checked on a live stream 2026-10-12), so the
+    // class only counts where it still turns up. What the player always shows
+    // is the LIVE badge: visible while the playing video is live, hidden on a
+    // past stream and during an ad. The hard-load payload covers the moments
+    // before the badge renders.
+    function isLiveStreamPlaying() {
+        if (document.querySelector('#movie_player.ytp-live')) return true;
+        const badge = document.querySelector('#movie_player .ytp-live-badge');
+        if (badge) {
+            try {
+                if (getComputedStyle(badge).display !== 'none') return true;
+            } catch (_) {
+                // reason: a badge mid-teardown has no computed style; the payload still answers
+            }
+        }
+        return _rw.ytInitialPlayerResponse?.videoDetails?.isLive === true;
+    }
+
     // Ads play in the same <video> as the watch content, so a seek or a rate
     // meant for the video lands on the ad while one is showing.
     function isAdShowingIn(video) {
@@ -17142,6 +17162,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
             _applied: false,
             _activeChannelId: null,
+            _activeIsLive: false,
+            _appliedVideo: null,
+            _appliedRate: null,
             // How recently a pointer/key/wheel event must have happened for a
             // rate change to count as the user's doing.
             _USER_INTENT_WINDOW_MS: 1500,
@@ -17161,6 +17184,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _getSpeeds() { return StorageManager.get(this._storageKey, {}); },
 
             _applySpeed() {
+                const video = getMainVideoElement();
+                // A live stream keeps 1x: a saved speed above that runs the
+                // player into the live edge and the stream stalls. Read on
+                // every player event and never latched, because the badge
+                // still shows at `navigate` when the user moves off a stream.
+                this._activeIsLive = !!video && isLiveStreamPlaying();
+                if (this._activeIsLive) {
+                    // Applied on `navigate`, before the stream showed itself.
+                    if (this._appliedVideo === video && Math.abs(video.playbackRate - this._appliedRate) < 0.01) {
+                        setProgrammaticPlaybackRate(video, 1);
+                    }
+                    this._appliedVideo = null;
+                    return;
+                }
                 if (this._applied) return;
                 const channelId = this._getChannelId();
                 if (!channelId) return;
@@ -17168,9 +17205,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const speeds = this._getSpeeds();
                 const savedSpeed = speeds[channelId];
                 if (!savedSpeed) return;
-                const video = getMainVideoElement();
                 if (!video) return;
                 setProgrammaticPlaybackRate(video, savedSpeed);
+                this._appliedVideo = video;
+                this._appliedRate = savedSpeed;
                 this._applied = true;
                 DebugManager.log('ChannelSpeed', `Applied ${savedSpeed}x for ${channelId}`);
             },
@@ -17197,6 +17235,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _saveCurrentSpeed(channelId = this._activeChannelId || this._getChannelId()) {
+                // A live stream's 1x is not the channel's speed. Saving it on
+                // the way out deleted the speed kept for the channel's videos.
+                // The badge is read too: a move made before the first apply
+                // ran has no flag yet, and the rules run while it still shows.
+                if (this._activeIsLive || isLiveStreamPlaying()) return;
                 if (!channelId) return;
                 const video = getMainVideoElement();
                 if (!video) return;
@@ -17221,6 +17264,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addNavigateRule('channelSpeed', () => {
                     this._saveCurrentSpeed(this._activeChannelId);
                     this._activeChannelId = null;
+                    this._activeIsLive = false;
+                    this._appliedVideo = null;
                     this._applied = false;
                     this._scheduleApply(250, 'navigate');
                 });
@@ -17240,6 +17285,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._rateHandler = () => {
                     if (isProgrammaticPlaybackRateChange()) return;
+                    // Nothing on a live stream is saved or re-applied: an
+                    // untagged reset to 1x there was answered with the saved
+                    // speed again, which put the stream back at the edge.
+                    if (isLiveStreamPlaying()) {
+                        this._activeIsLive = true;
+                        return;
+                    }
                     const video = getMainVideoElement();
                     if (video && video.playbackRate === 1 && (Date.now() - this._lastInputAt) > this._USER_INTENT_WINDOW_MS) {
                         const channelId = this._activeChannelId || this._getChannelId();
@@ -17257,6 +17309,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._saveCurrentSpeed();
                 this._activeChannelId = null;
+                this._activeIsLive = false;
+                this._appliedVideo = null;
                 clearTimeout(this._applyTimer);
                 this._applyTimer = null;
                 if (typeof cancelPlayerTask === 'function') cancelPlayerTask('feature:perChannelSpeed');
@@ -19836,6 +19890,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingKey: 'persistentSpeedValue',
             _applied: false,
             _applyTimer: null,
+            _carriedVideo: null,
+            _carriedRate: null,
             _taskId: 'feature:persistentSpeed',
             _scheduleApply(delay = 250, reason = 'manual') {
                 if (typeof schedulePlayerTask === 'function') {
@@ -19861,16 +19917,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (ctx.reason === 'loadedmetadata' || ctx.reason === 'navigate' || ctx.reason === 'page-data') {
                     this._applied = false;
                 }
-                if (this._applied) return true;
+                // A speed picked in the Player Dock is the user's choice for
+                // this video, a live stream included.
+                if (ctx.reason === 'player-dock') this._carriedVideo = null;
                 const video = getMainVideoElement();
+                // Checked ahead of the latch and never latched itself: on an
+                // in-app move away from a live stream the badge still shows at
+                // `navigate`, and the next video's loadedmetadata must apply.
+                if (video && isLiveStreamPlaying()) {
+                    this._releaseCarriedRate(video);
+                    return true;
+                }
+                if (this._applied) return true;
                 if (!video) return false;
                 const speed = parseFloat(appState.settings.persistentSpeedValue) || 1;
                 if (speed !== 1 && speed !== video.playbackRate) {
                     video.playbackRate = speed;
                     DebugManager.log('PersistentSpeed', `Applied ${speed}x`);
                 }
+                this._carriedVideo = speed !== 1 ? video : null;
+                this._carriedRate = speed;
                 this._applied = true;
                 return true;
+            },
+
+            // An in-app move applies on `navigate`, before the next video
+            // shows itself as live. A speed still on the element once it does
+            // is ours, so it goes back to 1x; one the user set is left alone.
+            _releaseCarriedRate(video) {
+                if (this._carriedVideo === video && Math.abs(video.playbackRate - this._carriedRate) < 0.01) {
+                    setProgrammaticPlaybackRate(video, 1);
+                    DebugManager.log('PersistentSpeed', 'Live stream, speed back to 1x');
+                }
+                this._carriedVideo = null;
             },
 
             init() {
@@ -19884,6 +19963,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (typeof cancelPlayerTask === 'function') cancelPlayerTask(this._taskId);
                 if (this._applyTimer) clearTimeout(this._applyTimer);
                 this._applyTimer = null;
+                this._carriedVideo = null;
                 removeNavigateRule('persistSpeed');
             }
         },
@@ -22733,23 +22813,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _handler: null,
             _priorRate: null,
 
-            _isLive() { return !!document.querySelector('#movie_player.ytp-live'); },
+            _isLive() { return isLiveStreamPlaying(); },
             _latency(v) {
                 try {
                     if (!v.seekable || !v.seekable.length) return Infinity;
                     return v.seekable.end(v.seekable.length - 1) - v.currentTime;
                 } catch { /* reason: seekable ranges can throw during teardown; treat as not-at-edge */ return Infinity; }
             },
+            // YouTube marks the badge `is-livehead` while playback sits at the
+            // edge. `seekable` no longer finds it: its end is the media
+            // source's duration, days past the edge (checked 2026-10-12), so
+            // the latency read only counts for a player that reports one.
+            _atLiveHead() {
+                return document.querySelector('#movie_player .ytp-live-badge')
+                    ?.classList?.contains('ytp-live-badge-is-livehead') === true;
+            },
             _tick() {
                 const v = this._videoRef;
                 if (!v || !this._isLive()) return;
                 if (getFeatureById('liveLatencyCatchup')?._ownsRate?.(v)) return;
                 const latency = this._latency(v);
-                if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
+                const atHead = this._atLiveHead();
+                if (this._priorRate == null && v.playbackRate > 1 && (atHead || latency < 4)) {
                     this._priorRate = v.playbackRate;
                     setProgrammaticPlaybackRate(v, 1);
                     showToast(t('toastCaughtUpToLive', 'Caught up to live. Speed is back to 1x.'), '#22c55e', { duration: 3 });
-                } else if (this._priorRate != null && latency > 15) {
+                } else if (this._priorRate != null && !atHead && latency > 15) {
                     setProgrammaticPlaybackRate(v, this._priorRate);
                     this._priorRate = null;
                 }
