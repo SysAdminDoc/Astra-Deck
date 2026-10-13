@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **DeArrow** no longer swaps a creator's thumbnail for the video's first frame (usually black) when voters picked "keep the original thumbnail". It also skips a top thumbnail with a negative score that nobody locked, as DeArrow's API docs ask.
+- **DeArrow** titles now honor the ">" marker DeArrow puts before a word whose casing must stay as is ("How >NASA builds rockets"). Only a marker at the very start was handled before, so a marked word later in the title showed the ">" and got lowercased anyway.
+
 ## [4.98.1] (2026-10-12)
 
 ### Changed

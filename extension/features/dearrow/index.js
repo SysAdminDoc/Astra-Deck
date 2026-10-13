@@ -349,16 +349,33 @@
             },
             _formatTitle(title, format) {
                 if (!title) return title;
-                title = title.replace(/^>\s*/, '');
+                // DeArrow marks a word ">Word" to keep its casing, anywhere in
+                // the title. Marked words skip the case pass, then every marker
+                // is dropped the way upstream's cleanResultingTitle does.
+                const keep = (w) => w.startsWith('>');
+                const capitalize = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+                let words = title.split(' ');
                 if (format === 'sentence') {
-                    // Lowercase everything, then capitalize only the first character
-                    return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
-                }
-                if (format === 'title_case') {
+                    words = words.map((w, i) => keep(w) ? w : i === 0 ? capitalize(w) : w.toLowerCase());
+                } else if (format === 'title_case') {
                     const lower = new Set(['a','an','the','and','but','or','for','nor','on','at','to','by','in','of','up','as','is','it']);
-                    return title.split(' ').map((w, i) => i === 0 || !lower.has(w.toLowerCase()) ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()).join(' ');
+                    words = words.map((w, i) => keep(w) ? w : i === 0 || !lower.has(w.toLowerCase()) ? capitalize(w) : w.toLowerCase());
                 }
-                return title;
+                return words.join(' ').replace(/(^|\s)>(\S)/g, '$1$2');
+            },
+            // The top thumbnail's frame time, or null to keep the creator's.
+            // A vote for the original carries timestamp null, and Number(null)
+            // is 0, which put the video's first frame on the card. The API
+            // docs also say to skip a first entry that is unlocked with a
+            // negative score.
+            _submittedThumbnailTime(branding) {
+                const thumb = branding?.thumbnails?.[0];
+                if (!thumb || thumb.original || thumb.timestamp === null || thumb.timestamp === undefined) return null;
+                if (!thumb.locked && Number(thumb.votes) < 0) return null;
+                // Remote data going straight into a URL: a non-numeric value
+                // injected extra query parameters or became "[object Object]".
+                const stamp = Number(thumb.timestamp);
+                return Number.isFinite(stamp) && stamp >= 0 ? stamp : null;
             },
             _createAttribution() {
                 const link = document.createElement('a');
@@ -574,12 +591,8 @@
                         }
                     }
                     if (replaceThumbs) {
-                        const thumb = branding.thumbnails?.[0];
-                        // The timestamp is remote data going straight into a URL:
-                        // a non-numeric value injected extra query parameters or
-                        // stringified to "[object Object]".
-                        const stamp = Number(thumb?.timestamp);
-                        if (Number.isFinite(stamp) && stamp >= 0) {
+                        const stamp = this._submittedThumbnailTime(branding);
+                        if (stamp !== null) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
                             if (img && !img.src) {
                                 // Lazy img not hydrated yet — let the next

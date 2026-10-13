@@ -587,6 +587,36 @@ test('DeArrow attributes remote titles and thumbnails but not local fallback for
         'the external attribution link must isolate its opener');
 });
 
+test('a ">" keep-case marker on any word is honored and never reaches the page', () => {
+    // DeArrow puts ">" before a word its auto-formatter must leave alone
+    // (">NASA", ">iPhone"). Only a leading marker was stripped, so a marked
+    // word mid-title printed its ">" and lost its casing anyway.
+    const feature = createDeArrowFeature();
+    assert.equal(feature._formatTitle('How >NASA builds >SLS rockets', 'sentence'), 'How NASA builds SLS rockets');
+    assert.equal(feature._formatTitle('>iPhone 17 REVIEW', 'sentence'), 'iPhone 17 review');
+    assert.equal(feature._formatTitle('the >macOS guide FOR beginners', 'title_case'), 'The macOS Guide for Beginners');
+    assert.equal(feature._formatTitle('Why >NASA waited', 'original'), 'Why NASA waited');
+    assert.equal(feature._formatTitle('Is 5 > 3? MATH', 'sentence'), 'Is 5 > 3? math',
+        'a spaced ">" is ordinary text, not a marker');
+});
+
+test('a thumbnail vote for the original keeps the creator thumbnail', () => {
+    // DeArrow sends { original: true, timestamp: null } when voters chose the
+    // creator's thumbnail. Number(null) is 0, so the card showed the video's
+    // first frame (usually black) instead of keeping what it had.
+    const feature = createDeArrowFeature();
+    const time = (thumbnail) => feature._submittedThumbnailTime({ thumbnails: thumbnail ? [thumbnail] : [] });
+    assert.equal(time({ original: true, timestamp: null, votes: 3, locked: false }), null);
+    assert.equal(time({ original: false, timestamp: null, votes: 0, locked: false }), null);
+    assert.equal(time({ original: false, timestamp: 'x&time=1', votes: 0, locked: false }), null);
+    assert.equal(time({ original: false, timestamp: 42.5, votes: -1, locked: false }), null,
+        'an untrusted submission (negative and unlocked) is not shown');
+    assert.equal(time(null), null);
+    assert.equal(time({ original: false, timestamp: 42.5, votes: 0, locked: false }), 42.5);
+    assert.equal(time({ original: false, timestamp: 0, votes: -2, locked: true }), 0,
+        'a locked submission is trusted whatever its score');
+});
+
 test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision)', () => {
     // The .daCustomTitle / .da-replaced-thumb / [data-da-processed]
     // markers are how we know we've already touched a node. They MUST
