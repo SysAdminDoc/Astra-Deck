@@ -205,23 +205,20 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: needs live post-2026-08-24 watch-page data, which does not exist yet (the metric changes four days after this item was written) and requires a browser session this repository's local-only passes deliberately exclude. Re-calibrating by guess is explicitly worse than grading conservatively, so the numbers must not move until the data exists.
 
 
-- [ ] P2 — Resolve DeArrow API licensing before any store submission
-  Why: dearrow.ajay.app/payment and /free state the DeArrow API is free only for non-browser-extension use — extensions are expected to carry the $1 license-key flow. Astra's dearrow feature calls `GET /api/branding` with no license handling, which is fine for an unpublished GitHub build but a licensing posture problem the moment a store listing exists (and the store-safe profile ships the feature).
-  Evidence: https://dearrow.ajay.app/payment ; https://dearrow.ajay.app/free ; `extension/features/dearrow/index.js:167`. Confidence: Likely — the exact wire contract (param/header, enforcement for read-only GETs) needs confirmation against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow before implementing.
-  Touches: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js` (optional licenseKey entry, backup-excluded like other credentials), `extension/_locales/**`, docs/privacy-policy.md (disclosure)
-  Acceptance: the DeArrow settings surface carries an optional license-key field passed per the documented contract plus honest copy about upstream's licensing; with no key the feature either uses the documented free tier or states its unlicensed status; RESEARCH.md Open Question resolved with the confirmed contract.
+- [ ] P2 — Get upstream's permission for DeArrow before any store submission
+  Why: the API docs open with "The DeArrow API is free to use for all non browser-extensions", and Astra is a browser extension. The data is CC BY-NC-SA 4.0 "unless you have explicit permission" (Astra already attributes it). The store-safe profile ships the feature, so a store listing would put that on the record.
+  Confirmed 2026-10-12: there is no license key to send. Read calls (`GET /api/branding`, `GET dearrow-thumb.ajay.app/api/v1/getThumbnail`) take no key and answer anonymously. The official extension sends its key once, to `GET /api/verifyToken?licenseKey=`, and gates itself client side; /payment says "Other than intially checking your license key, no requests to DeArrow servers contain your license key." So a license-key setting would do nothing on the wire, and the old "wire contract" blocker is gone.
+  Evidence: https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow (behind Anubis, read with headless Camoufox); https://dearrow.ajay.app/payment; DeArrow `src/license/license.ts` (`shouldAllowLicenseKey`, `generateLicenseKey("free")` hits `/api/generateToken/free`).
+  Acceptance: either written permission from upstream (dev@ajay.app, or an issue on ajayyy/DeArrow, which the wiki invites: "I'd love to know about how you're using it"), noted here and in docs/privacy-policy.md, or the feature leaves the store-safe profile.
   Complexity: S
-  Blocker: two things this pass cannot supply. (1) The exact wire contract for a
-  DeArrow license key (parameter vs header, and whether read-only `GET /api/branding` is enforced at all) is not documented in-repo and could not be
-  confirmed without submitting to the live service; shipping a settings field
-  that silently does nothing would be worse than the current honest absence.
-  (2) Whether Astra Deck should pay for / carry a license at all is a maintainer
-  product and licensing decision, in the same family as the existing
-  SponsorBlock-submission item.
-  Unblock by: confirming the contract against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow
-  (or by asking upstream directly), then deciding whether the key is
-  user-supplied, maintainer-supplied, or the feature stays free-tier with
-  disclosure. The implementation itself is small once those two are settled.
+  Blocker: asking upstream and deciding what to do with the answer is the maintainer's call, the same family as the SponsorBlock-submission item.
+
+- [ ] P2 — DeArrow random-frame covers for videos nobody has submitted a thumbnail for
+  Why: Astra replaces a cover only when a thumbnail was submitted, which is a small share of videos. The official extension's default shows a frame from a server-chosen random time instead, so most cards change. Astra can do the same without rendering video: `GET /api/branding` already returns `randomTime` (0 to 1) and, when known, `videoDuration`; the frame is `randomTime * videoDuration` seconds, and the thumbnail cache already holds that frame for most videos DeArrow users have seen (checked 2026-10-12 on `_0G4OG39XjI`: X-Timestamp 35.1678 = 0.041263 * 852.281).
+  How: when `_submittedThumbnailTime` is null and `videoDuration` is null, read the duration off the card's time badge. Request `getThumbnail?videoID=&time=&redirectUrl=<the card's i.ytimg.com src>`: an uncached frame then answers 307 to the original cover instead of 204, so there's no broken image. Live streams and upcoming videos keep their cover. This becomes a fourth choice on the ROADMAP "Frame Covers" setting. Skip the extension's local render (an ANDROID innertube `/player` call plus a hidden `<video>` drawn to canvas), which runs into PO tokens.
+  Touches: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js`, `extension/_locales/**`, `tests/features/dearrow.test.js`
+  Complexity: S
+  Blocker: it adds load to upstream's thumbnail server, so it waits on the permission item above.
 
 - [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
   Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.
