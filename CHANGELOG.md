@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.99.3] (2026-10-13)
+
 ### Changed
 
 - Home and Subscriptions share a charcoal workspace with clearer video titles, consistent grid spacing and readable filters in both themes. Saved list layouts and column counts still apply.
