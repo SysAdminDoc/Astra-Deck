@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.99.1] (2026-10-12)
+
 ### Changed
 
 - **Settings** has a new charcoal workspace across all eleven pages. Simpler headings, larger text and unboxed icons make the controls easier to scan. Video Hider uses a quieter summary row and a clearer empty state.
