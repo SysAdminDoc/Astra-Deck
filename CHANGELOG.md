@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.98.2] (2026-10-12)
+
 ### Fixed
 
 - **DeArrow** no longer swaps a creator's thumbnail for the video's first frame (usually black) when voters picked "keep the original thumbnail". It also skips a top thumbnail with a negative score that nobody locked, as DeArrow's API docs ask.

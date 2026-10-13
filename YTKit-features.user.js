@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.98.1
+// @version      4.98.2
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -24178,15 +24178,23 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 			},
 			_formatTitle(title, format) {
 				if (!title) return title;
-				title = title.replace(/^>\s*/, '');
+				const keep = (w) => w.startsWith('>');
+				const capitalize = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+				let words = title.split(' ');
 				if (format === 'sentence') {
-					return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
-				}
-				if (format === 'title_case') {
+					words = words.map((w, i) => keep(w) ? w : i === 0 ? capitalize(w) : w.toLowerCase());
+				} else if (format === 'title_case') {
 					const lower = new Set(['a','an','the','and','but','or','for','nor','on','at','to','by','in','of','up','as','is','it']);
-					return title.split(' ').map((w, i) => i === 0 || !lower.has(w.toLowerCase()) ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()).join(' ');
+					words = words.map((w, i) => keep(w) ? w : i === 0 || !lower.has(w.toLowerCase()) ? capitalize(w) : w.toLowerCase());
 				}
-				return title;
+				return words.join(' ').replace(/(^|\s)>(\S)/g, '$1$2');
+			},
+			_submittedThumbnailTime(branding) {
+				const thumb = branding?.thumbnails?.[0];
+				if (!thumb || thumb.original || thumb.timestamp === null || thumb.timestamp === undefined) return null;
+				if (!thumb.locked && Number(thumb.votes) < 0) return null;
+				const stamp = Number(thumb.timestamp);
+				return Number.isFinite(stamp) && stamp >= 0 ? stamp : null;
 			},
 			_createAttribution() {
 				const link = document.createElement('a');
@@ -24362,9 +24370,8 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 						}
 					}
 					if (replaceThumbs) {
-						const thumb = branding.thumbnails?.[0];
-						const stamp = Number(thumb?.timestamp);
-						if (Number.isFinite(stamp) && stamp >= 0) {
+						const stamp = this._submittedThumbnailTime(branding);
+						if (stamp !== null) {
 							const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
 							if (img && !img.src) {
 								delete el.dataset.daProcessed;
