@@ -49,19 +49,19 @@
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
 // @connect      *
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/YTKit-core.user.js#sha256=71a26263c9bfd1f9b381b266f4472358d76e77cc7b38944492f87f794b00d010
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/YTKit-features.user.js#sha256=a02c3f197c362cfdac5fdd1d0393bdd7e2301fe037554d30f63a4437099077b9
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/YTKit-app.user.js#sha256=b71792d505c4f197a70e9592eb27e053383d3a34af46419f269f930792eb4542
-// @resource     astra-locale-ar https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ar/messages.json#sha256=8a0986af1fc70288951ed11780277c65d0e704589be947a9631f39dd41f9098f
-// @resource     astra-locale-de https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/de/messages.json#sha256=c6b3d66f834a5d63730a07159eef4aa78f738bb7b8089f6d8442aea646e23547
-// @resource     astra-locale-es https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/es/messages.json#sha256=53de1318dd166c6e72da455f04413ce7b1dd58d814389d7b95a98e63f7c46a5e
-// @resource     astra-locale-fr https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/fr/messages.json#sha256=5902e2c0b9f697f798406746a273b1bd32091702dd3cd74f2b1d6c1f7643a3c6
-// @resource     astra-locale-it https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/it/messages.json#sha256=1eff08897c84d5867d39319499fb97c9c82b9b7fa3cc47fef624dcd51ff4dc41
-// @resource     astra-locale-ja https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ja/messages.json#sha256=d8aa3475b0abc0c60266ea4f12a7e8d31e51e03903ebda216566264a2016073d
-// @resource     astra-locale-ko https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ko/messages.json#sha256=7176e0b418f1d56d1c60456a706e4fccda636af3383e807eb8f386d9bd382e28
-// @resource     astra-locale-pt_BR https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/pt_BR/messages.json#sha256=6af74a6b83c9f125358ead6f676fdfbc1769584711cc7b4810b4a4b70dcb57d3
-// @resource     astra-locale-ru https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ru/messages.json#sha256=9d48c441d09905d3fb5a207dfedcfdc443700b7c0ee5f606ccc1eb1a7175002d
-// @resource     astra-locale-zh_CN https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/zh_CN/messages.json#sha256=41dc0bd9ca2eb5815a301a47e57eaad913135525157ad13f42db949bcb209aac
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/YTKit-core.user.js#sha256=71a26263c9bfd1f9b381b266f4472358d76e77cc7b38944492f87f794b00d010
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/YTKit-features.user.js#sha256=a02c3f197c362cfdac5fdd1d0393bdd7e2301fe037554d30f63a4437099077b9
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/YTKit-app.user.js#sha256=b71792d505c4f197a70e9592eb27e053383d3a34af46419f269f930792eb4542
+// @resource     astra-locale-ar https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/ar/messages.json#sha256=8a0986af1fc70288951ed11780277c65d0e704589be947a9631f39dd41f9098f
+// @resource     astra-locale-de https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/de/messages.json#sha256=c6b3d66f834a5d63730a07159eef4aa78f738bb7b8089f6d8442aea646e23547
+// @resource     astra-locale-es https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/es/messages.json#sha256=53de1318dd166c6e72da455f04413ce7b1dd58d814389d7b95a98e63f7c46a5e
+// @resource     astra-locale-fr https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/fr/messages.json#sha256=5902e2c0b9f697f798406746a273b1bd32091702dd3cd74f2b1d6c1f7643a3c6
+// @resource     astra-locale-it https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/it/messages.json#sha256=1eff08897c84d5867d39319499fb97c9c82b9b7fa3cc47fef624dcd51ff4dc41
+// @resource     astra-locale-ja https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/ja/messages.json#sha256=d8aa3475b0abc0c60266ea4f12a7e8d31e51e03903ebda216566264a2016073d
+// @resource     astra-locale-ko https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/ko/messages.json#sha256=7176e0b418f1d56d1c60456a706e4fccda636af3383e807eb8f386d9bd382e28
+// @resource     astra-locale-pt_BR https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/pt_BR/messages.json#sha256=6af74a6b83c9f125358ead6f676fdfbc1769584711cc7b4810b4a4b70dcb57d3
+// @resource     astra-locale-ru https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/ru/messages.json#sha256=9d48c441d09905d3fb5a207dfedcfdc443700b7c0ee5f606ccc1eb1a7175002d
+// @resource     astra-locale-zh_CN https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@f3bbd403246ba2231e67a888a41b3870bd2c6a49/extension/_locales/zh_CN/messages.json#sha256=41dc0bd9ca2eb5815a301a47e57eaad913135525157ad13f42db949bcb209aac
 // ==/UserScript==
 
 // Generated by sync-userscript.js. Do not edit: the code that runs is the
