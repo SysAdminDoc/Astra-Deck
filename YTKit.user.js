@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.99.1
+// @name         YTKit v4.99.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.99.1
+// @version      4.99.2
 // @description  The Astra Deck YouTube extension as a userscript, with the same features, settings panel and themes. Loads its three YTKit libraries through @require, and downloads use the optional Astra Downloader companion app.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -49,19 +49,19 @@
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
 // @connect      *
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/YTKit-core.user.js#sha256=87a500080cc99a6d63c8aa9553b48fbdaff57425157514babe87213d2033793d
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/YTKit-features.user.js#sha256=24e7679f6643a7c3a1a06ee88e71062de799ed64e3c578cf8362fb269a162a66
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/YTKit-app.user.js#sha256=e76f5532e86e6d0d7c3b5efca69a13d327e688f9fce745c7aef22bdeb9fac3d4
-// @resource     astra-locale-ar https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/ar/messages.json#sha256=634883eb273b2f22f472923a67525f3f39b5076179a0c8aaf75a5448db67afca
-// @resource     astra-locale-de https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/de/messages.json#sha256=da5a07f2db277cd9439af6f2c0c4ee7dacbf29593b2391a80b0b5866764413b1
-// @resource     astra-locale-es https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/es/messages.json#sha256=de872854defce63da4a5eda721358a36b0e328eb513be67bb3f9effc5680d57d
-// @resource     astra-locale-fr https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/fr/messages.json#sha256=7cdd8f4efe741a2a3516adc2642d6794ff2b76ea6e7f41939813699abd71d5e5
-// @resource     astra-locale-it https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/it/messages.json#sha256=8909688e8895fa93f0886dcd71fc5c48ae1330ff39e758de7bbba564a5ac1515
-// @resource     astra-locale-ja https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/ja/messages.json#sha256=9aa95837181480f6dab7cebeb3ae687cfff5e79bcc8127d37497ebeab8dfcac4
-// @resource     astra-locale-ko https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/ko/messages.json#sha256=c72b1db6e70fe8916e5aab8dab1ca011009d900fa14c1552518fd91f8cccceb4
-// @resource     astra-locale-pt_BR https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/pt_BR/messages.json#sha256=c3c5df5db0c5966a26ecf8e517516ce4ac5701c7a04c90da54bb0fa3a7104bac
-// @resource     astra-locale-ru https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/ru/messages.json#sha256=c50a316c099c7ca4f1f52c6cac8901b2644c43eaf3ec12f557d48531d5a479ea
-// @resource     astra-locale-zh_CN https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@ecedf48d33146b948dc124f6f6a47bcc8e2a8a17/extension/_locales/zh_CN/messages.json#sha256=c629fc3a31d92b1a88beadee656fbda8cd430d1877c7bbbea04f6b78488e4625
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/YTKit-core.user.js#sha256=71a26263c9bfd1f9b381b266f4472358d76e77cc7b38944492f87f794b00d010
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/YTKit-features.user.js#sha256=a02c3f197c362cfdac5fdd1d0393bdd7e2301fe037554d30f63a4437099077b9
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/YTKit-app.user.js#sha256=b71792d505c4f197a70e9592eb27e053383d3a34af46419f269f930792eb4542
+// @resource     astra-locale-ar https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ar/messages.json#sha256=8a0986af1fc70288951ed11780277c65d0e704589be947a9631f39dd41f9098f
+// @resource     astra-locale-de https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/de/messages.json#sha256=c6b3d66f834a5d63730a07159eef4aa78f738bb7b8089f6d8442aea646e23547
+// @resource     astra-locale-es https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/es/messages.json#sha256=53de1318dd166c6e72da455f04413ce7b1dd58d814389d7b95a98e63f7c46a5e
+// @resource     astra-locale-fr https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/fr/messages.json#sha256=5902e2c0b9f697f798406746a273b1bd32091702dd3cd74f2b1d6c1f7643a3c6
+// @resource     astra-locale-it https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/it/messages.json#sha256=1eff08897c84d5867d39319499fb97c9c82b9b7fa3cc47fef624dcd51ff4dc41
+// @resource     astra-locale-ja https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ja/messages.json#sha256=d8aa3475b0abc0c60266ea4f12a7e8d31e51e03903ebda216566264a2016073d
+// @resource     astra-locale-ko https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ko/messages.json#sha256=7176e0b418f1d56d1c60456a706e4fccda636af3383e807eb8f386d9bd382e28
+// @resource     astra-locale-pt_BR https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/pt_BR/messages.json#sha256=6af74a6b83c9f125358ead6f676fdfbc1769584711cc7b4810b4a4b70dcb57d3
+// @resource     astra-locale-ru https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/ru/messages.json#sha256=9d48c441d09905d3fb5a207dfedcfdc443700b7c0ee5f606ccc1eb1a7175002d
+// @resource     astra-locale-zh_CN https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.99.2/extension/_locales/zh_CN/messages.json#sha256=41dc0bd9ca2eb5815a301a47e57eaad913135525157ad13f42db949bcb209aac
 // ==/UserScript==
 
 // Generated by sync-userscript.js. Do not edit: the code that runs is the
@@ -74,7 +74,7 @@
 // to probe the LAN. The extension refuses it for the same reason.
 
 const ASTRA_DECK_BUILD = {
-	"version": "4.99.1",
+	"version": "4.99.2",
 	"runtimeId": "astra-deck-userscript",
 	"menuLabel": "Open Astra Deck settings",
 	"credentialMenuLabel": "AI provider key",
@@ -136,7 +136,7 @@ const ASTRA_DECK_BUILD = {
 			"https://*/*"
 		],
 		"minimum_chrome_version": "120",
-		"version": "4.99.1",
+		"version": "4.99.2",
 		"x-ytkit-build-profile": "github-full",
 		"x-ytkit-host": "userscript"
 	},
@@ -2738,8 +2738,6 @@ const ASTRA_DECK_BUILD = {
 		"speedPopupAria": "Default playback speed",
 		"speedPopupHeader": "Default speed",
 		"speedPopupSub": "Applies to every video until changed.",
-		"sponsorBlockDataAttribution": "SponsorBlock data",
-		"sponsorBlockDataAttributionTitle": "SponsorBlock API and database data, licensed CC BY-NC-SA 4.0",
 		"sponsorCachedSegmentTitleTpl": "{label} (cached at {time})",
 		"sponsoredFilterAffiliateReason": "affiliate promotion",
 		"sponsoredFilterCommentLabel": "Sponsored comment",

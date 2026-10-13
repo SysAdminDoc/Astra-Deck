@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.99.2] (2026-10-13)
+
 ### Fixed
 
 - **Theater Split**: one click on the video pauses it again. The split kept resizing the player about 20 times a second, and YouTube took every click during a resize for a seek drag, so it never paused. The page is idle again too. The standalone Theater Split userscript (1.0.24) had the same loop and gets the same fix.

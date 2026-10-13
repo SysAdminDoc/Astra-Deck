@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.99.1
+// @version      4.99.2
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -7167,7 +7167,12 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 				clearTimeout(this._resizeTimer);
 				this._resizeTimer = setTimeout(() => {
 					this._resizeTimer = null;
-					window.dispatchEvent(new Event('resize'));
+					this._dispatchingResize = true;
+					try {
+						window.dispatchEvent(new Event('resize'));
+					} finally {
+						this._dispatchingResize = false;
+					}
 				}, 32);
 			},
 			_positionOverRight(el, rightPct, topOffset, heightStr) {
@@ -7667,7 +7672,7 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 				};
 				window.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
 				this._windowResizeHandler = () => {
-					if (!this._isActive) return;
+					if (!this._isActive || this._dispatchingResize) return;
 					this._triggerPlayerResize();
 					this._layoutSplitLiveHeaderActions();
 				};
@@ -24025,7 +24030,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					DebugManager.log('DeArrow',
 						'Cache disabled (daCacheTTL=0); every card hit fires an API request. Expect rate limits.');
 				}
-				const css = `.daCustomTitle{display:block!important}.daCustomTitle:not([data-da-together="1"]) + [id="video-title"],.daCustomTitle:not([data-da-together="1"]) + a#video-title-link,.daCustomTitle:not([data-da-together="1"]) + a.ytLockupMetadataViewModelTitle{display:none!important}.daCustomTitle[data-da-together="1"]{margin-bottom:2px!important}.daOriginalTitle[data-da-original-title="1"]{display:block!important;margin-top:2px!important;padding-inline-start:6px!important;border-inline-start:2px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.2))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font-size:0.86em!important;font-weight:400!important;opacity:0.74!important}.daCustomTitle[data-da-fallback="1"]{opacity:0.78!important}.ytkit-dearrow-attribution{display:inline-flex!important;align-items:center!important;width:fit-content!important;margin-top:3px!important;padding:2px 6px!important;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.16))!important;border-radius:8px!important;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.08))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font:600 10px/1.2 Roboto,Arial,sans-serif!important;letter-spacing:0.01em!important;text-decoration:none!important}.ytkit-dearrow-attribution:hover,.ytkit-dearrow-attribution:focus-visible{border-color:var(--yt-spec-text-secondary,#aaa)!important;color:var(--yt-spec-text-primary,#fff)!important;outline:2px solid rgba(255,107,74,0.62)!important;outline-offset:1px!important}html:not([dark]) .ytkit-dearrow-attribution{border-color:rgba(15,23,42,0.18)!important;background:rgba(15,23,42,0.06)!important;color:#475569!important}html:not([dark]) .ytkit-dearrow-attribution:hover,html:not([dark]) .ytkit-dearrow-attribution:focus-visible{border-color:rgba(15,23,42,0.4)!important;background:rgba(255,255,255,0.96)!important;color:#0f172a!important}`;
+				const css = `.daCustomTitle{display:block!important}.daCustomTitle:not([data-da-together="1"]) + [id="video-title"],.daCustomTitle:not([data-da-together="1"]) + a#video-title-link,.daCustomTitle:not([data-da-together="1"]) + a.ytLockupMetadataViewModelTitle{display:none!important}.daCustomTitle[data-da-together="1"]{margin-bottom:2px!important}.daOriginalTitle[data-da-original-title="1"]{display:block!important;margin-top:2px!important;padding-inline-start:6px!important;border-inline-start:2px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.2))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font-size:0.86em!important;font-weight:400!important;opacity:0.74!important}.daCustomTitle[data-da-fallback="1"]{opacity:0.78!important}`;
 				this._styleEl = injectStyle(css, this.id, true);
 				const resetAndProcess = () => {
 					const href = typeof location !== 'undefined' ? location.href : '';
@@ -24214,36 +24219,6 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				const stamp = Number(thumb.timestamp);
 				return Number.isFinite(stamp) && stamp >= 0 ? stamp : null;
 			},
-			_createAttribution() {
-				const link = document.createElement('a');
-				const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
-				const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API and database data, licensed CC BY-NC-SA 4.0');
-				link.className = 'ytkit-dearrow-attribution';
-				link.href = 'https://sponsor.ajay.app/';
-				link.target = '_blank';
-				link.rel = 'noopener noreferrer';
-				link.textContent = label;
-				link.title = title;
-				link.setAttribute('aria-label', title);
-				link.dataset.ytkitLicense = 'CC BY-NC-SA 4.0';
-				link.addEventListener('click', event => event.stopPropagation());
-				return link;
-			},
-			_ensureAttribution(outputEl) {
-				if (!outputEl) return null;
-				const owner = outputEl.closest?.(`${this._CARD_SELECTORS}, ytd-watch-metadata`) || outputEl.parentElement;
-				if (!owner) return null;
-				const existing = owner.querySelector?.('.ytkit-dearrow-attribution');
-				if (existing) return existing;
-				const titleEl = outputEl.matches?.('[data-ytkit-dearrow-title]')
-					? outputEl
-					: owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link, a.ytLockupMetadataViewModelTitle');
-				const placement = titleEl?.closest?.('h1, h3') || titleEl || outputEl;
-				if (!placement.parentNode) return null;
-				const link = this._createAttribution();
-				placement.parentNode.insertBefore(link, placement.nextSibling || null);
-				return link;
-			},
 			_renderTitle(titleEl, formatted, { fallback = false, uuid = '', announce = false } = {}) {
 				if (!titleEl || !formatted) return false;
 				const originalTitle = titleEl.textContent.trim();
@@ -24284,7 +24259,6 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				const prior = titleEl.previousElementSibling;
 				if (prior?.getAttribute?.('data-ytkit-dearrow-title') === '1') prior.remove();
 				titleEl.parentNode.insertBefore(clone, titleEl);
-				if (!fallback) this._ensureAttribution(clone);
 				if (announce) {
 					const message = t('deArrowTitleReplacedTpl', 'Title replaced by DeArrow: {title}').replace('{title}', () => formatted);
 					try { announceA11y(message); } catch (_) {   }
@@ -24462,10 +24436,8 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				img.dataset.daOrigSrc = img.src;
 				img.src = url;
 				img.classList.add('da-replaced-thumb');
-				const attribution = url.startsWith(DEARROW_THUMB_API) ? this._ensureAttribution(img) : null;
 				img.onerror = () => {
 					if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
-					if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
 				};
 			},
 			_waitForCover(el, img, videoId, branding) {
