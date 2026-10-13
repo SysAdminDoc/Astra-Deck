@@ -1,0 +1,353 @@
+'use strict';
+
+// Real pointer input against an unpacked extension in an isolated browser.
+// --port attaches to an already isolated test browser for visual iteration.
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const { spawn } = require('node:child_process');
+const {
+    chromiumArgs, connectCdp, createChromiumStage, evaluate, killProcessTree,
+    removeDirWithRetries, reserveLoopbackPort, sleep, waitForBackgroundTarget, waitForDevTools
+} = require('./smoke-chromium-optional-hosts');
+
+const ROOT = path.join(__dirname, '..');
+const WATCH = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
+const OPEN = "document.documentElement.classList.contains('ytkit-split-open')";
+const args = process.argv.slice(2);
+const option = (key, fallback) => args.includes(key) ? args[args.indexOf(key) + 1] : fallback;
+const OUT = path.resolve(option('--out', path.join(os.tmpdir(), 'astra-experience-evidence')));
+const report = { version: require('../package.json').version, checks: [], limitations: [], screenshots: [] };
+
+async function run(client, background) {
+    const read = expression => evaluate(client, expression);
+    const from = option('--from', '');
+    let started = !from;
+    async function until(expression, label, ms = 30000) {
+        const end = Date.now() + ms;
+        while (Date.now() < end) {
+            if (await read(expression).catch(() => false)) return;
+            await sleep(200);
+        }
+        throw new Error(`Timed out: ${label}`);
+    }
+    async function settings(patch) {
+        await evaluate(background, `new Promise(resolve => chrome.storage.local.get('ytSuiteSettings', result => chrome.storage.local.set({ytSuiteSettings:{...result.ytSuiteSettings,...${JSON.stringify(patch)}}},resolve)))`);
+        await sleep(700);
+    }
+    async function point(selector) {
+        return read(`(() => { const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&b.top>=0&&b.top<innerHeight&&getComputedStyle(e).visibility!=='hidden';}); if(!e)throw Error('Missing visible target: '+${JSON.stringify(selector)}); const b=e.getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2};})()`);
+    }
+    async function click(selector, delay = 250) {
+        const p = await point(selector);
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...p });
+        await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...p, button: 'left', buttons: 1, clickCount: 1 });
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...p, button: 'left', buttons: 0, clickCount: 1 });
+        if (delay) await sleep(delay);
+    }
+    async function wheel(x, y, deltaY) {
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY });
+        await sleep(350);
+    }
+    async function escape() {
+        for (const type of ['keyDown', 'keyUp']) await client.send('Input.dispatchKeyEvent', { type, key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+        await sleep(200);
+    }
+    async function capture(name) {
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4 });
+        const { data } = await client.send('Page.captureScreenshot', { format: 'png' });
+        const file = path.join(OUT, name + '.png');
+        fs.writeFileSync(file, Buffer.from(data, 'base64'));
+        report.screenshots.push(file);
+    }
+    async function navigate(url) {
+        await client.send('Page.navigate', { url });
+        await until('document.readyState==="complete"&&document.querySelectorAll("style[id^=yt-suite-style-]").length>20', 'extension styles');
+        await sleep(2000);
+        if (url.includes('/watch?')) await until('document.querySelector("video")?.readyState>=2', 'watch video loaded');
+        await read('document.querySelector("video")?.pause()');
+    }
+    async function theme(dark) {
+        await read(`document.documentElement.toggleAttribute('dark',${dark});document.documentElement.style.colorScheme=${JSON.stringify(dark ? 'dark' : 'light')}`);
+        await sleep(300);
+    }
+    async function check(name, action) {
+        if (!started && name !== from) return;
+        started = true;
+        const checkStarted = Date.now();
+        const details = await action();
+        report.checks.push({ name, passed: true, ms: Date.now() - checkStarted, details });
+        console.log(`[experience] PASS ${name}`);
+    }
+    const split = () => read(`({open:${OPEN},ratio:Number(document.querySelector('#ytkit-split-divider')?.getAttribute('aria-valuenow')),state:document.querySelector('#ytkit-split-divider')?.dataset.ytkitPanelState,wrappers:document.querySelectorAll('#ytkit-split-wrapper').length,width:document.querySelector('#below')?.getBoundingClientRect().width,overflow:document.querySelector('#below')?.scrollWidth>document.querySelector('#below')?.clientWidth+2})`);
+    async function openSplit() {
+        if (!await read(OPEN)) await wheel(400, 350, 140);
+        await until(OPEN, 'Theater Split open');
+        await sleep(450);
+        await read('document.querySelector("video")?.pause()');
+    }
+    async function drag(delta) {
+        const p = await point('#ytkit-split-divider');
+        await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...p, button: 'left', buttons: 1, clickCount: 1 });
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: p.x + delta, y: p.y, button: 'left', buttons: 1 });
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x + delta, y: p.y, button: 'left', buttons: 0, clickCount: 1 });
+        await sleep(400);
+    }
+    await client.send('Page.enable');
+    await client.send('Runtime.enable');
+    await evaluate(background, "chrome.storage.local.set({'ytkit_split_ratio':68})");
+    await client.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await settings({ hideSidebar: false, hideVideosFromHome: false, hideVideosKeywordFilter: false, hideVideosHideLive: false, daShowOriginalTitle: false, colorTheme: 'none', disableAutoplayNext: true });
+    await navigate(WATCH);
+    await navigate('https://www.youtube.com/');
+    await until('document.querySelectorAll("ytd-rich-item-renderer").length>2', 'public home recommendations');
+    await check('home grid and hidden ad shells', async () => {
+        const result = await read(`(()=>{const grid=document.querySelector('#contents.ytd-rich-grid-renderer');return {columns:getComputedStyle(grid).gridTemplateColumns,cards:[...grid.querySelectorAll('ytd-rich-item-renderer')].filter(e=>getComputedStyle(e).display!=='none').length,empty:[...grid.children].filter(e=>e.tagName==='YTD-RICH-ITEM-RENDERER'&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().height===0).length,chip:getComputedStyle(document.querySelector('.ytChipShapeInactive')).color};})()`);
+        assert.equal(result.empty, 0); assert.ok(result.cards > 2); assert.notEqual(result.chip, 'rgb(0, 0, 0)');
+        await capture('home-dark');
+        return result;
+    });
+    await check('native Guide collapse and reopen six times', async () => {
+        const margins = [];
+        for (let i = 0; i < 12; i++) {
+            await click('#guide-button', 250);
+            margins.push(await read("getComputedStyle(document.querySelector('ytd-page-manager')).marginLeft"));
+            assert.equal(await read('document.documentElement.scrollWidth>innerWidth'), false);
+        }
+        assert.notEqual(margins[0], margins[1]);
+        await click('#guide-button'); await capture('home-guide-collapsed-dark'); await click('#guide-button');
+        return margins.slice(0, 2);
+    });
+    await check('home chip selection, scrolling and card menu', async () => {
+        await click('yt-chip-cloud-chip-renderer:nth-child(2) button', 650);
+        assert.ok(await read("document.querySelector('yt-chip-cloud-chip-renderer:nth-child(2)').hasAttribute('selected')"));
+        await click('yt-chip-cloud-chip-renderer:first-child button', 500);
+        for (let i = 0; i < 3; i++) await wheel(900, 600, 600);
+        assert.ok(await read('scrollY>500'));
+        await read('scrollTo(0,0)'); await sleep(300);
+        await click('.ytLockupMetadataViewModelMenuButton button', 350);
+        assert.ok(await read("[...document.querySelectorAll('ytd-menu-popup-renderer,yt-sheet-view-model')].some(e=>e.getBoundingClientRect().height>0)"));
+        await escape();
+    });
+    await check('home light theme', async () => { await theme(false); await capture('home-light'); await theme(true); });
+    await check('saved color theme remains readable in light mode', async () => {
+        await settings({ colorTheme: 'catppuccin-mocha' }); await theme(false);
+        const colors = await read("({text:getComputedStyle(document.querySelector('.ytChipShapeInactive')).color,canvas:getComputedStyle(document.body).backgroundColor})");
+        const luminance = color => color.match(/[\d.]+/g).slice(0,3).map(value=>{
+            const c = Number(value)/255; return c<=0.04045 ? c/12.92 : ((c+0.055)/1.055)**2.4;
+        }).reduce((sum,value,index)=>sum+value*[0.2126,0.7152,0.0722][index],0);
+        const l = [luminance(colors.text),luminance(colors.canvas)].sort((a,b)=>a-b);
+        assert.ok((l[1]+0.05)/(l[0]+0.05)>=4.5, 'saved palette must retain readable light text');
+        await settings({ colorTheme: 'none' }); await theme(true);
+        return colors;
+    });
+    await check('live subscriptions shell', async () => {
+        await click('ytd-guide-entry-renderer a[href="/feed/subscriptions"]', 800);
+        await until("location.pathname==='/feed/subscriptions'", 'native subscriptions navigation');
+        await capture('subscriptions-signed-out-dark');
+        const count = await read("document.querySelectorAll('ytd-browse[page-subtype=\"subscriptions\"] ytd-rich-item-renderer').length");
+        if (!count) report.limitations.push('Personal subscriptions require sign-in. The live signed-out shell was exercised; populated layouts use captured native public cards.');
+    });
+    await navigate('https://www.youtube.com/@NASA/videos');
+    await until('document.querySelectorAll("ytd-rich-item-renderer").length>3', 'public channel cards');
+    await check('subscriptions grid, list and compact native-card fixture', async () => {
+        // Public cards provide real current DOM without an account or modifying
+        // subscriptions. This is layout evidence, not a signed-in feed claim.
+        await read(`void(window.__astraExperienceGrid=document.querySelector('ytd-rich-grid-renderer'))`);
+        await click('ytd-guide-entry-renderer a[href="/feed/subscriptions"]', 600);
+        await until("location.pathname==='/feed/subscriptions'", 'subscriptions fixture route');
+        await read(`(()=>{const browse=[...document.querySelectorAll('ytd-browse')].find(e=>!e.hidden);browse.setAttribute('page-subtype','subscriptions');browse.querySelector('ytd-background-promo-renderer')?.remove();browse.appendChild(window.__astraExperienceGrid);delete window.__astraExperienceGrid;})()`);
+        await settings({ subscriptionsGrid: false });
+        await settings({ subscriptionsGrid: true });
+        await capture('subscriptions-public-card-fixture-dark');
+        const grid = await read("getComputedStyle(document.querySelector('#contents.ytd-rich-grid-renderer')).display");
+        assert.equal(grid, 'grid');
+        await settings({ subscriptionViewControls: true, subscriptionViewMode: 'list' });
+        await until("document.querySelector('ytd-browse[page-subtype=\"subscriptions\"]:not([hidden])')?.getAttribute('data-ytkit-subscription-view')==='list'", 'subscriptions list');
+        assert.notEqual(await read("getComputedStyle(document.querySelector('#contents.ytd-rich-grid-renderer')).display"), 'grid');
+        await settings({ subscriptionViewMode: 'compact' });
+        await until("document.querySelector('ytd-browse[page-subtype=\"subscriptions\"]:not([hidden])')?.getAttribute('data-ytkit-subscription-view')==='compact'", 'compact subscriptions');
+        await capture('subscriptions-public-card-fixture-compact');
+        await settings({ subscriptionViewMode: 'grid', subscriptionViewControls: false });
+        await theme(false); await capture('subscriptions-public-card-fixture-light'); await theme(true);
+    });
+    await navigate('https://www.youtube.com/');
+    await until('document.querySelectorAll("ytd-rich-item-renderer").length>2', 'home cards return');
+    await check('saved column count and list feed preferences', async () => {
+        await settings({ videosPerRow: 4 });
+        const count = await read("getComputedStyle(document.querySelector('#contents.ytd-rich-grid-renderer')).gridTemplateColumns.split(' ').length");
+        assert.equal(count, 4);
+        await settings({ listFeedLayout: true });
+        assert.equal(await read("getComputedStyle(document.querySelector('#contents.ytd-rich-grid-renderer')).display"), 'flex');
+        await settings({ listFeedLayout: false, videosPerRow: 0 });
+    });
+    await check('real feed link SPA navigation', async () => {
+        await read('window.__astraExperienceSpaProbe=true');
+        await click('ytd-rich-item-renderer .ytLockupMetadataViewModelTitle', 700);
+        await until("location.pathname==='/watch'&&!!document.querySelector('#ytkit-split-wrapper')", 'SPA watch');
+        assert.equal(await read('window.__astraExperienceSpaProbe'), true, 'feed navigation must preserve the current document');
+        await read('document.querySelector("video")?.pause()');
+        assert.equal(await read("document.querySelectorAll('#ytkit-split-wrapper').length"), 1);
+    });
+    await navigate(WATCH); await openSplit();
+    await check('single DeArrow watch title and quiet idle resize', async () => {
+        await sleep(600);
+        const visible = await read("[...document.querySelector('ytd-watch-metadata h1').children].filter(e=>getComputedStyle(e).display!=='none'&&e.textContent.trim()).length");
+        assert.equal(visible, 1);
+        const resizes = await read("new Promise(resolve=>{let count=0;const listener=()=>count++;window.addEventListener('resize',listener);setTimeout(()=>{window.removeEventListener('resize',listener);resolve(count)},2000)})");
+        assert.ok(resizes < 4, `idle resize count ${resizes}`);
+        await capture('theater-split-dark');
+        return { visible, resizes };
+    });
+    await check('real video clicks alternate play and pause', async () => {
+        await read('document.querySelector("video").currentTime=0;document.querySelector("video").pause()');
+        const states = [];
+        for (let i = 0; i < 4; i++) {
+            await click('#movie_player video', 350);
+            states.push(await read('document.querySelector("video").paused'));
+        }
+        assert.deepEqual(states, [false, true, false, true]);
+        return states;
+    });
+    await check('comments rail collapse and restore six times', async () => {
+        const before = await split();
+        for (let i = 0; i < 6; i++) {
+            await click('#ytkit-split-divider', 250);
+            assert.equal((await split()).state, 'closed');
+            assert.equal(await read("getComputedStyle(document.querySelector('#below')).pointerEvents"), 'none');
+            if (!i) await capture('theater-comments-collapsed-dark');
+            await click('#ytkit-split-divider', 250);
+            assert.equal((await split()).open, true);
+        }
+        assert.ok(Math.abs((await split()).ratio - before.ratio) <= 1);
+    });
+    await check('divider fast release, drag reversal and cancellation', async () => {
+        const before = await split();
+        const initialX = (await point('#ytkit-split-divider')).x;
+        await drag(10);
+        assert.ok(Math.abs((await point('#ytkit-split-divider')).x - initialX - 10) < 2, 'a small right drag must move right by its actual distance');
+        await drag(-10);
+        assert.ok(Math.abs((await point('#ytkit-split-divider')).x - initialX) < 2, 'opposite drags must return to the starting position');
+        await drag(-72); const wider = await split();
+        assert.ok(wider.ratio < before.ratio && wider.width > before.width);
+        await drag(32); assert.ok((await split()).ratio > wider.ratio);
+        const p = await point('#ytkit-split-divider');
+        await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...p, button: 'left', buttons: 1, clickCount: 1 });
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: p.x - 40, y: p.y, buttons: 1 });
+        await read("window.dispatchEvent(new Event('blur'))");
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x - 40, y: p.y, button: 'left', buttons: 0, clickCount: 1 });
+        assert.equal(await read('document.body.style.userSelect'), '');
+        await sleep(350);
+        assert.equal((await split()).open, true);
+    });
+    await check('ten rapid collapse and reopen cycles', async () => {
+        await read("window.__astraRapidHits=0;window.__astraRapidListener=e=>{if(e.target.closest('#ytkit-split-divider'))window.__astraRapidHits++};document.addEventListener('mousedown',window.__astraRapidListener,true)");
+        for (let i = 0; i < 20; i++) await click('#ytkit-split-divider', 25);
+        const hits = await read("(()=>{document.removeEventListener('mousedown',window.__astraRapidListener,true);const hits=window.__astraRapidHits;delete window.__astraRapidHits;delete window.__astraRapidListener;return hits})()");
+        assert.equal(hits, 20, 'the rail must not move away between pointer targeting and press');
+        await sleep(500);
+        const state = await split(); assert.equal(state.open, true); assert.equal(state.wrappers, 1);
+        return state;
+    });
+    await check('comments scroll, replies and sort menu Escape', async () => {
+        await until("document.querySelectorAll('ytd-comment-thread-renderer').length>0", 'native comments');
+        const p = await point('#below');
+        await wheel(p.x, 600, 500);
+        assert.ok(await read("document.querySelector('#below').scrollTop>0"));
+        await read("document.querySelector('#below').scrollTop=0"); await sleep(200);
+        await click('ytd-comment-replies-renderer :is(#more-replies,#more-replies-sub-thread) button', 750);
+        assert.ok(await read("document.querySelectorAll('ytd-comment-replies-renderer ytd-comment-view-model').length>0"));
+        await read("document.querySelector('#below').scrollTop=0");
+        await click('yt-sort-filter-sub-menu-renderer #label', 300);
+        await escape(); assert.equal(await read(OPEN), true);
+        await click('ytd-watch-metadata .ytkit-ql-toggle', 250);
+        const menu = await read("(()=>{const b=document.querySelector('ytd-watch-metadata .ytkit-ql-drop').getBoundingClientRect();return {left:b.left,right:b.right,viewport:innerWidth}})()");
+        assert.ok(menu.left>=0&&menu.right<=menu.viewport, 'Quick Links must stay inside the viewport');
+        await click('ytd-watch-metadata .ytkit-ql-toggle', 200);
+        await capture('theater-comments-replies-dark');
+    });
+    await check('responsive split in both themes', async () => {
+        for (const [width, height] of [[1920,1080],[1440,900],[1280,720],[1024,768],[900,700]]) {
+            await client.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+            await sleep(650);
+            for (const dark of [true, false]) {
+                await theme(dark);
+                const state = await split(); assert.equal(state.open, true); assert.equal(state.overflow, false);
+                await capture(`theater-split-${dark ? 'dark' : 'light'}-${width}`);
+            }
+        }
+        await theme(true);
+        await client.send('Emulation.setDeviceMetricsOverride', { width:1440, height:900, deviceScaleFactor:1, mobile:false });
+    });
+    await check('minimum and maximum divider ratios keep metadata inside the pane', async () => {
+        for (const target of [85, 25, 68]) {
+            const p = await point('#ytkit-split-divider');
+            await drag(target === 85 ? 1430 - p.x : target === 25 ? 10 - p.x : 1440 * 0.68 - 10 - p.x);
+            for (const dark of [true, false]) {
+                await theme(dark);
+                const outside = await read(`(()=>{const pane=document.querySelector('#below').getBoundingClientRect();return [...document.querySelectorAll('ytd-watch-metadata #title h1,ytd-watch-metadata .ytkit-split-upload-meta,ytd-watch-metadata #owner button,ytd-watch-metadata .ytkit-split-owner-actions>button')].filter(e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return b.width>0&&b.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&(b.left<pane.left-1||b.right>pane.right+1);}).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent.slice(0,40)}));})()`);
+                assert.deepEqual(outside, [], `ratio ${target}, ${dark ? 'dark' : 'light'} metadata overflow`);
+                await capture(`theater-ratio-${target}-${dark ? 'dark' : 'light'}`);
+            }
+        }
+        await theme(true);
+    });
+    await check('close action, watch navigation and teardown', async () => {
+        await click('#ytkit-split-close'); assert.equal(await read(OPEN), false);
+        await wheel(400,350,160); assert.equal(await read(OPEN), false);
+        await navigate(WATCH); await openSplit();
+        await read("document.querySelector('ytd-app').dispatchEvent(new CustomEvent('yt-navigate',{bubbles:true,composed:true,detail:{endpoint:{commandMetadata:{webCommandMetadata:{url:'/',webPageType:'WEB_PAGE_TYPE_BROWSE',rootVe:3854}},browseEndpoint:{browseId:'FEwhat_to_watch'}}}}))");
+        await until("location.pathname==='/'&&!document.querySelector('#ytkit-split-wrapper')", 'home SPA teardown');
+        assert.equal(await read("document.documentElement.classList.contains('ytkit-split-active')"), false);
+        await client.send('Input.dispatchMouseEvent', { type:'mouseWheel',x:800,y:600,deltaX:0,deltaY:500 });
+        await sleep(400); assert.ok(await read('scrollY>0'));
+    });
+    await check('hide-sidebar preference can turn off and back on', async () => {
+        await settings({ hideSidebar: true });
+        assert.equal(await read("getComputedStyle(document.querySelector('#guide-button')).display"), 'none');
+        assert.equal(await read("getComputedStyle(document.querySelector('ytd-page-manager')).marginLeft"), '0px');
+        await settings({ hideSidebar: false });
+        assert.notEqual(await read("getComputedStyle(document.querySelector('#guide-button')).display"), 'none');
+    });
+}
+
+async function main() {
+    fs.mkdirSync(OUT, { recursive:true });
+    let port = Number(option('--port', 0)), proc, temp, client, background;
+    try {
+        if (!port) {
+            const binary = option('--browser', path.join(process.env.LOCALAPPDATA || '', 'ms-playwright/chromium-1243/chrome-win64/chrome.exe'));
+            assert.ok(fs.existsSync(binary), 'Pass --browser with a Chromium binary that allows unpacked extensions');
+            temp = fs.mkdtempSync(path.join(os.tmpdir(),'astra-experience-'));
+            const { stageDir } = createChromiumStage(temp);
+            fs.copyFileSync(path.join(ROOT,'extension/manifest.json'),path.join(stageDir,'manifest.json'));
+            port = await reserveLoopbackPort();
+            proc = spawn(binary,[...chromiumArgs(path.join(temp,'profile'),stageDir,{headed:false},port),'--window-size=1440,900','--renderer-process-limit=2','--js-flags=--max-old-space-size=384'],{windowsHide:true,stdio:'ignore'});
+            os.setPriority(proc.pid,os.constants.priority.PRIORITY_BELOW_NORMAL);
+            await waitForDevTools(port,45000);
+        }
+        const target = await waitForBackgroundTarget(port,45000);
+        background = await connectCdp(target.webSocketDebuggerUrl);
+        const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then(r=>r.json());
+        client = await connectCdp(targets.find(t=>t.type==='page').webSocketDebuggerUrl);
+        await client.send('Network.enable');
+        await client.send('Network.setCookie',{name:'PREF',value:'f6=400',domain:'.youtube.com',path:'/',secure:true});
+        await run(client,background);
+        report.passed = true;
+    } catch (error) {
+        report.passed = false; report.error = error.stack;
+        if (client) {
+            const shot = await client.send('Page.captureScreenshot',{format:'png'}).catch(()=>null);
+            if (shot) fs.writeFileSync(path.join(OUT,'failure.png'),Buffer.from(shot.data,'base64'));
+        }
+        throw error;
+    } finally {
+        fs.writeFileSync(path.join(OUT,'experience-report.json'),JSON.stringify(report,null,2)+'\n');
+        client?.close(); background?.close();
+        if (proc) killProcessTree(proc);
+        if (temp) await removeDirWithRetries(temp);
+    }
+    console.log(`[experience] ${report.checks.length} checks passed. Evidence: ${OUT}`);
+}
+if (require.main === module) main().catch(error=>{console.error(error.stack);process.exitCode=1;});

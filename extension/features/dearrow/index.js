@@ -415,6 +415,16 @@
                 const prior = titleEl.previousElementSibling;
                 if (prior?.getAttribute?.('data-ytkit-dearrow-title') === '1') prior.remove();
                 titleEl.parentNode.insertBefore(clone, titleEl);
+                // Cloning an anchor loses YouTube's endpoint listener. Forward
+                // ordinary clicks to the retained original so navigation stays
+                // in the current document. Modified clicks keep native link behavior.
+                if (titleEl.tagName === 'A') {
+                    clone.addEventListener('click', (event) => {
+                        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                        event.preventDefault();
+                        titleEl.click();
+                    });
+                }
                 if (announce) {
                     const message = t('deArrowTitleReplacedTpl', 'Title replaced by DeArrow: {title}').replace('{title}', () => formatted);
                     try { announceA11y(message); } catch (_) { /* reason: optional accessibility announcement must not interrupt title rendering. */ }

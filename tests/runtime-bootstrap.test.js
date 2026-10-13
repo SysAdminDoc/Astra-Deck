@@ -164,6 +164,13 @@ test('deferred feature modules are never gated by the landing route', () => {
         'the generator must not reintroduce a route table');
 });
 
+test('feed and subscription view factories are available for off-to-on settings changes', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'scripts', 'generate-runtime-bootstrap.js'), 'utf8');
+    const settings = source.slice(source.indexOf('const FEATURE_SETTINGS'), source.indexOf('// There is deliberately no route gate'));
+    assert.doesNotMatch(settings, /'features\/(?:home-subs-css|subscription-view)\/index\.js'\s*:/,
+        'a descriptor-only consumer cannot replace a missing factory after startup');
+});
+
 // A dynamic import can reject with no value (seen on Firefox's first page after a
 // temporary install), and the old log line read "Runtime module load failed
 // undefined". These run the real generated loader against modules that throw.

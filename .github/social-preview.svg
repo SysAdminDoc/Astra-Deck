@@ -44,7 +44,7 @@
 
   <g filter="url(#shadow)">
     <rect x="796" y="242" width="436" height="280" rx="18" fill="#091522" stroke="#39d98a" stroke-opacity="0.48"/>
-    <image href="../outputs/astra-deck-theater-split-dark-v9.png" xlink:href="../outputs/astra-deck-theater-split-dark-v9.png" x="806" y="252" width="416" height="260" preserveAspectRatio="xMidYMid slice" clip-path="url(#splitClip)"/>
+    <image href="../outputs/astra-deck-theater-split-dark-v10.png" xlink:href="../outputs/astra-deck-theater-split-dark-v10.png" x="806" y="252" width="416" height="260" preserveAspectRatio="xMidYMid slice" clip-path="url(#splitClip)"/>
   </g>
 
   <g font-family="Segoe UI, Arial, sans-serif">

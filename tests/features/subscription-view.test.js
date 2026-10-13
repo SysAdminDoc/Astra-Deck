@@ -123,15 +123,16 @@ test('view and order settings fail closed to their persisted defaults', () => {
     assert.equal(normalizeOrderMode('unexpected'), 'native');
 });
 
-function controlsHarness({ groupToolbar = null } = {}) {
+function controlsHarness({ groupToolbar = null, cachedFeed = false } = {}) {
     const browse = fakeNode({ tag: 'ytd-browse' });
     const feed = fakeNode({ tag: 'ytd-rich-grid-renderer' });
     const host = fakeNode({ tag: 'div', children: groupToolbar ? [groupToolbar, feed] : [feed] });
-    for (const node of [host, groupToolbar].filter(Boolean)) {
+    for (const node of [browse, host, groupToolbar].filter(Boolean)) {
         node.querySelectorAll = (selector) => collectFakeTree(node, selector);
         node.querySelector = (selector) => node.querySelectorAll(selector)[0] || null;
     }
     const documentRef = fakeTreeDocument((selector) => {
+        if (cachedFeed && selector.includes('ytd-browse') && !selector.includes(':not([hidden])')) return hiddenBrowse;
         if (selector.includes('ytd-browse')) return browse;
         if (selector === 'ytd-rich-grid-renderer, ytd-section-list-renderer') return feed;
         if (selector === '.ytkit-sub-toolbar') return groupToolbar;
@@ -139,23 +140,59 @@ function controlsHarness({ groupToolbar = null } = {}) {
         if (selector.includes('data-ytkit-sub-view-original-index')) return [];
         return null;
     });
+    const hiddenBrowse = fakeNode({ tag: 'ytd-browse' });
+    const listeners = new Map();
+    documentRef.addEventListener = (type, listener) => {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type).add(listener);
+    };
+    documentRef.removeEventListener = (type, listener) => listeners.get(type)?.delete(listener);
+    documentRef.dispatchEvent = event => {
+        for (const listener of [...(listeners.get(event.type) || [])]) listener(event);
+    };
+    hiddenBrowse.setAttribute('hidden', '');
+    if (cachedFeed) documentRef.body.appendChild(hiddenBrowse);
     documentRef.body.appendChild(browse);
     browse.appendChild(host);
     const saves = [];
+    const refreshes = [];
+    const appState = { settings: { subscriptionViewMode: 'list', subscriptionOrderMode: 'newest-loaded' } };
     const feature = require('../../extension/features/subscription-view/index.js').createSubscriptionViewFeature({
-        appState: { settings: { subscriptionViewMode: 'list', subscriptionOrderMode: 'newest-loaded' } },
+        appState,
         settingsManager: { save: (settings) => saves.push({ ...settings }) },
         documentRef,
         windowRef: { location: { pathname: '/feed/subscriptions' } },
         getSurfaceSelectorChain: () => ['ytd-browse'],
         injectStyle: () => ({ remove() {} }),
-        schedule: () => 1,
+        schedule: callback => { refreshes.push(callback); return refreshes.length; },
         cancelSchedule() {}
     });
     feature.init();
     feature._mountControls();
-    return { browse, documentRef, feature, feed, groupToolbar, host, saves };
+    return { appState, browse, documentRef, feature, feed, groupToolbar, hiddenBrowse, host, refreshes, saves };
 }
+
+test('external subscription layout updates refresh the current toolbar', () => {
+    const { appState, browse, documentRef, feature, host, refreshes } = controlsHarness();
+    while (refreshes.length) refreshes.shift()();
+    appState.settings.subscriptionViewMode = 'compact';
+    documentRef.dispatchEvent({ type: 'ytkit-settings-changed' });
+    while (refreshes.length) refreshes.shift()();
+    assert.equal(browse.getAttribute('data-ytkit-subscription-view'), 'compact');
+    const buttons = host.querySelectorAll('button[data-view-mode]');
+    assert.equal(buttons[2].getAttribute('aria-pressed'), 'true');
+    assert.equal(buttons[1].getAttribute('aria-pressed'), 'false');
+    feature.destroy();
+});
+
+test('subscription controls belong to the visible browse after SPA navigation', () => {
+    const { browse, hiddenBrowse, feature, host } = controlsHarness({ cachedFeed: true });
+    feature._applyView();
+    assert.equal(browse.getAttribute('data-ytkit-subscription-view'), 'list');
+    assert.equal(hiddenBrowse.hasAttribute('data-ytkit-subscription-view'), false);
+    assert.equal(host.querySelector('.ytkit-sub-view-toolbar')?.getAttribute('role'), 'toolbar');
+    feature.destroy();
+});
 
 test('subscription layouts render one labelled toolbar with persistent view state', () => {
     const { browse, feature, feed, host, saves } = controlsHarness();

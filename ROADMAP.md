@@ -65,15 +65,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   live page.
   Complexity: M
 
-- [ ] P3 — Theater Split metadata row overlaps at the narrowest pane
-  Why: dragged to the 15% minimum (about 227px at 1440 wide), the upload date and view count sit
-  on top of the channel avatar and name, which truncates to its first letter. Seen in a light
-  theme capture of a past live stream on 2026-10-12; the comments below it lay out fine.
-  Where: `extension/features/sticky-video-styles` (meta sheet), `sticky-video-header`.
-  Acceptance: at the minimum width the channel row and the upload meta stack instead of
-  overlapping, in both themes, and the standalone stylesheet is regenerated.
-  Complexity: S
-
 - [ ] P3 — Translate the Sleep Timer chip's leftover English
   Why: the 2026-10 translation pass missed literal strings in the chip: the two screen-reader
   announcements ("Sleep timer elapsed. Playback paused.", "Sleep timer cancelled.") and the "+5"

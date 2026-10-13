@@ -179,7 +179,7 @@ test('Theater Split renders its divider and close action into the overlay it own
         assert.equal(divider.getAttribute('aria-expanded'), 'false');
         assert.equal(divider.getAttribute('aria-hidden'), null);
         assert.equal(divider.dataset.ytkitPanelState, 'closed');
-        assert.equal(divider.style.width, '8px', 'a click-collapse must keep the divider available');
+        assert.equal(divider.style.width, '20px', 'a click-collapse must keep the divider available');
 
         let reopened = 0;
         feature._expandSplit = () => {
@@ -245,11 +245,14 @@ test('Theater Split divider separates a click toggle from a drag resize', () => 
         observe() {}
         disconnect() {}
     };
+    const pendingFrames = new Map();
+    let nextFrame = 0;
     globalThis.requestAnimationFrame = (callback) => {
-        callback();
-        return 1;
+        const id = ++nextFrame;
+        pendingFrames.set(id, callback);
+        return id;
     };
-    globalThis.cancelAnimationFrame = () => {};
+    globalThis.cancelAnimationFrame = (id) => pendingFrames.delete(id);
 
     try {
         const writes = [];
@@ -267,10 +270,12 @@ test('Theater Split divider separates a click toggle from a drag resize', () => 
         const divider = wrapper.querySelector('#ytkit-split-divider');
         const left = wrapper.querySelector('#ytkit-split-left');
         wrapper.getBoundingClientRect = () => ({ width: 1000 });
-        left.getBoundingClientRect = () => ({ width: 680 });
+        left.getBoundingClientRect = () => ({ width: 660 });
+        divider.getBoundingClientRect = () => ({ width: 20 });
 
         feature._isSplit = true;
         feature._setDividerPanelState(divider, true, 68, true);
+        pendingFrames.clear();
         let toggles = 0;
         feature._toggleSplitFromDivider = () => { toggles += 1; };
 
@@ -286,10 +291,12 @@ test('Theater Split divider separates a click toggle from a drag resize', () => 
             preventDefault() {}
         });
         windowRef.dispatch('mousemove', { clientX: 730 });
+        assert.equal(writes.length, 0, 'the move is still waiting for its animation frame');
         windowRef.dispatch('mouseup');
         assert.equal(toggles, 1, 'a drag must not also toggle the pane on release');
         assert.equal(Math.round(writes.at(-1)[1]), 73,
-            'dragging an open divider must persist the resized split ratio');
+            'releasing before the next frame must flush the final ratio');
+        assert.equal(pendingFrames.size, 0, 'release must leave no queued drag frame');
 
         feature._isSplit = false;
         let expansions = 0;
@@ -388,7 +395,7 @@ test('the standalone keeps quiet, compact and stateful comment controls', () => 
     assert.match(css, /@media \(forced-colors: active\)[\s\S]*ButtonFace/);
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
-    assert.match(visualSystem, /--ytkit-premium-control: #101f33/,
+    assert.match(visualSystem, /--ytkit-premium-control: #222429/,
         'the shared visual system must own the dark control surface');
     assert.match(visualSystem, /html:not\(\[dark\]\)[\s\S]*--ytkit-premium-control: #f7f9fb/,
         'the shared visual system must own the light control surface');
@@ -430,8 +437,8 @@ test('the extension split derives every color from the page theme and the Astra 
         'native fades inside the pane must paint the pane color, not an ancestor scope');
     assert.match(shell, /color-scheme: inherit !important/,
         'the positioned comments surface must inherit the active theme');
-    assert.doesNotMatch(all, /--ytkit-premium-/,
-        'the split no longer carries its own fixed palette');
+    assert.match(shell, /html:not\(\[dark\]\)\.ytkit-split-active \{[\s\S]{0,200}--ytkit-split-text: var\(--ytkit-premium-text,/,
+        'light surfaces use light text even when a dark palette is saved');
 
     const withoutFallbacks = all.replace(/var\(--[\w-]+,\s*[^()]*(?:\([^()]*\))?[^()]*\)/g, 'var()');
     const literals = withoutFallbacks.match(/rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b/g) || [];
@@ -482,8 +489,8 @@ test('the extension split lays metadata out title first in one flat section', ()
     const { meta, comments } = extensionSheets();
     assert.match(meta, /#title h1,\n[^{]*h1\.ytd-watch-metadata \{\n    order: 1 !important/,
         'the video title leads the reading order');
-    assert.match(meta, /\.ytkit-split-title-bar \{\n    order: 2 !important[\s\S]{0,400}grid-template-areas: "date date date" "home actions space" !important/,
-        'upload details precede the utility row');
+    assert.match(meta, /\.ytkit-split-title-bar \{\n    order: 2 !important[\s\S]{0,400}grid-template-areas: "date home actions" !important/,
+        'upload details and utilities share one compact row below the title');
     assert.match(meta, /ytd-watch-metadata \{\n    display: block !important;[\s\S]{0,400}border: 0 !important;\n    border-bottom: 1px solid var\(--ytkit-split-hairline\) !important;\n    border-radius: 0 !important;\n    background: none !important;/,
         'the watch restyle card is flattened to one section with a hairline under it');
     assert.match(meta, /grid-template-areas: "owner sub" "actions actions" !important/,

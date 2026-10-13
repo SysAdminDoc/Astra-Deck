@@ -6828,6 +6828,9 @@
   "stickyVideoLiveVideoFallback": {
     "message": "Vídeo ao vivo"
   },
+  "stickyVideoNowWatching": {
+    "message": "Assistindo agora"
+  },
   "stickyVideoQuickLinksAria": {
     "message": "Links rápidos"
   },

@@ -14,7 +14,6 @@ const FEATURE_SETTINGS = Object.freeze({
     'features/video-filters/index.js': ['videoVisualFilters', 'photosensitiveFlashProtection'],
     'features/blue-light-filter/index.js': ['blueLightFilter'],
     'features/theme-css/index.js': ['colorTheme', 'oledTheme', 'themeAccentColor'],
-    'features/home-subs-css/index.js': ['fullWidthSubscriptions', 'hideSubscriptionOptions', 'hideVoiceSearch', 'widenSearchBar'],
     'features/chat-style-comments/index.js': ['chatStyleComments'],
     'features/sticky-video-styles/index.js': ['stickyVideo'],
     'features/sticky-video-autoscroll/index.js': ['stickyVideo'],
@@ -25,11 +24,10 @@ const FEATURE_SETTINGS = Object.freeze({
     'features/video-hider/index.js': ['hideVideosFromHome', 'hideVideosHideAutoDubbed', 'hideVideosHideLive', 'hideVideosHideMixes', 'hideVideosHideMovies', 'hideVideosHidePlaylists', 'hideVideosHideUpcoming'],
     'features/element-zapper/index.js': ['elementZapper'],
     'features/video-notes/index.js': ['videoNotes'],
-    'features/subscription-view/index.js': ['subscriptionViewControls'],
     // Descriptor-only features must register their factory even while off so
     // an immediate settings change can initialize the real runtime. Keeping
-    // Subscription Groups behind its false default would leave only the inert
-    // descriptor for the lifetime of that tab.
+    // Subscription Groups, Subscription View and the shared feed CSS must
+    // load even with their settings off; their consumers have no runtime fallback.
     'features/digital-wellbeing/index.js': ['digitalWellbeing'],
     'features/search-hygiene/index.js': ['searchHideRelatedSearches', 'searchHideUnrelatedShelves', 'searchHideWatchedRecommended'],
     'features/search-while-watching/index.js': ['searchWhileWatching'],
@@ -48,9 +46,9 @@ const FEATURE_SETTINGS = Object.freeze({
 // features also stay out of FEATURE_SETTINGS so an off-to-on change can use the
 // registered factory without reloading the tab.
 //
-// Modules are still skipped when every feature they provide is switched off
-// (FEATURE_SETTINGS above) — that gate keys on user settings, which do not
-// change under the session's feet.
+// Modules with a working in-place fallback can still be skipped when every
+// feature they provide is switched off (FEATURE_SETTINGS above). A factory-only
+// consumer must preload because its descriptor cannot be replaced after startup.
 
 function readManifest() {
     return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));

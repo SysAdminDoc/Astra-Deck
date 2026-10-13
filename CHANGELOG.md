@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- Home and Subscriptions share a charcoal workspace with clearer video titles, consistent grid spacing and readable filters in both themes. Saved list layouts and column counts still apply.
+- Theater Split has a wider collapse rail with a directional handle, a clearer video heading and more room around comments. Metadata stacks in narrow panes, and the close button stays at the top left of the video.
+
+### Fixed
+
+- Quick divider drags keep their final position. Small drags move by the distance you drag, and rapid collapse cycles cancel the previous expansion callback.
+- DeArrow no longer shows the original watch title underneath its replacement in Theater Split. Clicking a replaced feed title now uses YouTube's navigation without reloading the page.
+- Subscription View Controls can switch on without a reload. Their layout and toolbar attach to the visible subscriptions feed after navigation.
+- Hidden ad shells no longer leave empty cells in the feed grid. A saved dark palette also keeps readable text when YouTube switches to light mode.
+
 ## [4.99.2] (2026-10-13)
 
 ### Fixed

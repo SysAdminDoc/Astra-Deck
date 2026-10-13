@@ -695,8 +695,8 @@ test('split title header shows upload date and docks quick links beside YouTube 
         && source.includes('new Intl.NumberFormat().format(Math.floor(count))'),
         'extension split should format the current video view count from playerResponse');
     const { meta } = splitSheets();
-    assert.ok(meta.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;')
-        && meta.includes('grid-template-areas: "date date date" "home actions space" !important;'),
+    assert.ok(meta.includes('grid-template-columns: minmax(0, 1fr) auto auto !important;')
+        && meta.includes('grid-template-areas: "date home actions" !important;'),
         'extension split title header should keep utilities on one compact row beneath the title');
     // The title sits in normal flow above the owner row now, so nothing can
     // overlap it and it shows in full instead of clamping at three lines.
@@ -954,7 +954,7 @@ test('standalone split title and owner rows keep a title-first hierarchy and wor
         'standalone split should raise YouTube popups above the split player');
     assert.ok(theaterSplit.includes('#title #ytkit-po-logo-wrap.ytkit-ql-open { z-index: 2147483647 !important; }'));
     assert.ok(theaterSplit.includes('#title:has(#ytkit-po-logo-wrap.ytkit-ql-open) { z-index: 2147483646 !important; }'));
-    assert.match(theaterSplit, /#title #ytkit-po-logo-wrap \.ytkit-ql-drop \{[\s\S]{0,120}right: auto !important;[\s\S]{0,60}left: 0 !important;[\s\S]{0,60}z-index: 2147483647 !important;/,
+    assert.match(theaterSplit, /#title #ytkit-po-logo-wrap \.ytkit-ql-drop \{[\s\S]{0,120}right: 0 !important;[\s\S]{0,60}left: auto !important;[\s\S]{0,60}z-index: 2147483647 !important;/,
         'the launcher dropdown opens into the pane above the player');
 });
 
@@ -1017,7 +1017,7 @@ test('extension split title and owner rows keep a title-first hierarchy and work
     assert.ok(meta.includes('#title:has(#ytkit-po-logo-wrap.ytkit-ql-open) { z-index: 2147483646 !important; }'),
         'the title stack rises above sibling controls while the launcher is open');
     const drop = rule(meta, '#title #ytkit-po-logo-wrap .ytkit-ql-drop');
-    for (const declaration of ['right: auto !important;', 'left: 0 !important;', 'z-index: 2147483647 !important;', 'max-height: min(440px, calc(100vh - 92px)) !important;']) {
+    for (const declaration of ['right: 0 !important;', 'left: auto !important;', 'z-index: 2147483647 !important;', 'max-height: min(440px, calc(100vh - 92px)) !important;']) {
         assert.ok(drop.includes(declaration), `the quick links dropdown should hold ${declaration}`);
     }
 });

@@ -449,14 +449,18 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 
 ### Theater Split
 
-Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. On a past live stream the pane opens on the comments, and a bar at the top switches to the live chat replay. The comments pane uses charcoal surfaces in dark mode and follows light mode, the OLED theme, the color themes and your accent color.
+Keep the video visible while you read or write comments. Click the divider to collapse comments, then click the visible rail to bring them back. Drag it to change the width. Narrow panes stack the metadata so the title and channel controls stay readable. On a past live stream, the pane opens on comments and the tabs switch to live chat replay.
+
+Home and Subscriptions use the same charcoal surfaces and restrained accents. Their grid settings keep titles aligned, while List and Compact views remain available in Subscription View Controls. Existing layout preferences stay saved. Each surface also follows YouTube's light mode.
 
 <p align="center">
-  <img src="outputs/astra-deck-theater-split-dark-v9.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
-  <img src="outputs/astra-deck-theater-split-light-v9.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
+  <img src="outputs/astra-deck-theater-split-dark-v10.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
+  <img src="outputs/astra-deck-theater-split-light-v10.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
 </p>
 
 <p align="center"><sub>Captured on YouTube in an offscreen browser session running this version's Theater Split.</sub></p>
+
+Run `node scripts/smoke-experience-live.js --browser <chromium-path>` for an isolated live interaction check. It covers sidebar toggles, feed navigation, comments menus, divider drags and responsive layouts in both themes. Personal subscriptions require sign-in; the signed-out check uses public video cards to verify populated subscription layouts.
 
 - Charcoal settings workspace with clear section headings and grouped controls across eleven pages
 - Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow

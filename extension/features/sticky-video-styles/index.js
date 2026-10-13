@@ -46,7 +46,7 @@ ${ROOT} {
     --ytkit-split-text: var(--yt-spec-text-primary, #f1f1f1);
     --ytkit-split-muted: var(--yt-spec-text-secondary, #aaaaaa);
     --ytkit-split-canvas: var(--ytkit-split-theme-canvas, var(--yt-spec-static-black, #0f0f0f));
-    --ytkit-split-panel: var(--ytkit-split-theme-panel, color-mix(in srgb, var(--yt-spec-static-brand-black, #212121) 72%, var(--yt-spec-static-black, #0f0f0f)));
+    --ytkit-split-panel: var(--ytkit-split-theme-panel, color-mix(in srgb, var(--yt-spec-static-brand-black, #212121) 45%, var(--yt-spec-static-black, #0f0f0f)));
     --ytkit-split-raised: color-mix(in srgb, var(--ytkit-split-text) 7%, var(--ytkit-split-panel));
     --ytkit-split-hover: color-mix(in srgb, var(--ytkit-split-text) 12%, var(--ytkit-split-panel));
     --ytkit-split-pressed: color-mix(in srgb, var(--ytkit-split-text) 17%, var(--ytkit-split-panel));
@@ -64,13 +64,13 @@ ${ROOT} {
     --ytkit-split-radius: 8px;
     --ytkit-split-radius-sm: 6px;
     --ytkit-split-control-h: 36px;
-    --ytkit-split-pane-padding: 20px 24px 72px;
+    --ytkit-split-pane-padding: 28px 28px 72px;
     --ytkit-split-ease: cubic-bezier(0.2, 0, 0, 1);
     color-scheme: dark;
 }
 html:not([dark]).ytkit-split-active {
-    --ytkit-split-text: var(--yt-spec-text-primary, #0f0f0f);
-    --ytkit-split-muted: var(--yt-spec-text-secondary, #606060);
+    --ytkit-split-text: var(--ytkit-premium-text, #0f0f0f);
+    --ytkit-split-muted: var(--ytkit-premium-muted, #606060);
     --ytkit-split-canvas: var(--yt-spec-base-background, #ffffff);
     --ytkit-split-panel: var(--yt-spec-base-background, #ffffff);
     --ytkit-split-raised: color-mix(in srgb, var(--ytkit-split-text) 5%, var(--ytkit-split-panel));
@@ -129,6 +129,7 @@ ${ROOT} #ytkit-split-right {
     background: var(--ytkit-split-panel) !important;
     scrollbar-width: thin !important;
     scrollbar-color: var(--ytkit-split-scrollbar) transparent !important;
+    transition: opacity 150ms var(--ytkit-split-ease) !important;
 }
 
 ${ROOT} #ytkit-split-divider {
@@ -139,7 +140,7 @@ ${ROOT} #ytkit-split-divider {
     color: var(--ytkit-split-muted) !important;
     outline: none !important;
     touch-action: none !important;
-    transition: background-color 160ms var(--ytkit-split-ease), flex-basis 200ms var(--ytkit-split-ease) !important;
+    transition: background-color 160ms var(--ytkit-split-ease) !important;
 }
 ${ROOT} #ytkit-split-divider::before {
     content: '' !important;
@@ -162,17 +163,25 @@ ${ROOT} #ytkit-split-divider .ytkit-divider-pip {
     display: grid !important;
     place-content: center !important;
     gap: 4px !important;
-    width: 10px !important;
-    height: 40px !important;
+    width: 24px !important;
+    height: 52px !important;
     padding: 0 !important;
     border: 1px solid var(--ytkit-split-border) !important;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     background: var(--ytkit-split-raised) !important;
     color: var(--ytkit-split-muted) !important;
     opacity: 1 !important;
     transform: translate(-50%, -50%) !important;
     transition: background-color 160ms var(--ytkit-split-ease), border-color 160ms var(--ytkit-split-ease), color 160ms var(--ytkit-split-ease), height 160ms var(--ytkit-split-ease) !important;
 }
+${ROOT} #ytkit-split-divider .ytkit-divider-pip svg {
+    width: 18px !important;
+    height: 18px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    transition: transform 160ms var(--ytkit-split-ease) !important;
+}
+${ROOT} #ytkit-split-divider[data-ytkit-panel-state="closed"] .ytkit-divider-pip svg { transform: rotate(180deg) !important; }
 ${ROOT} #ytkit-split-divider .ytkit-divider-pip > div {
     width: 2px !important;
     height: 2px !important;
@@ -235,7 +244,8 @@ ${ROOT} #ytkit-split-divider[data-ytkit-panel-state="hidden"]::after { content: 
 ${ROOT} #ytkit-split-close {
     position: absolute !important;
     top: 16px !important;
-    right: 16px !important;
+    left: 16px !important;
+    right: auto !important;
     bottom: auto !important;
     z-index: 35 !important;
     align-items: center !important;
@@ -345,6 +355,8 @@ ${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab:focus-visible {
 }
 
 ${PANE} {
+    container-type: inline-size;
+    container-name: ytkit-split-pane;
     /* YouTube paints fades and expanders with its own surface tokens, and an
        ancestor can scope them to another value than <html> holds (the watch
        restyle does; OLED sets them on <html>). Inside the pane they follow the
@@ -473,6 +485,16 @@ ${META} #title {
     overflow: visible !important;
 }
 ${META} #title:has(#ytkit-po-logo-wrap.ytkit-ql-open) { z-index: 2147483646 !important; }
+${META} #title[data-ytkit-split-label]::before {
+    content: attr(data-ytkit-split-label) !important;
+    order: 0 !important;
+    color: var(--ytkit-split-accent-ink) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+}
 ${META} #title h1,
 ${META} h1.ytd-watch-metadata {
     order: 1 !important;
@@ -485,7 +507,7 @@ ${META} h1.ytd-watch-metadata {
     padding: 0 !important;
     color: var(--ytkit-split-text) !important;
     font-family: "YouTube Sans", Roboto, Arial, sans-serif !important;
-    font-size: 24px !important;
+    font-size: clamp(20px, 1.7vw, 26px) !important;
     font-weight: 700 !important;
     font-style: normal !important;
     line-height: 1.3 !important;
@@ -499,7 +521,7 @@ ${META} h1.ytd-watch-metadata {
     overflow-wrap: anywhere !important;
     -webkit-line-clamp: unset !important;
 }
-${META} #title :is(yt-formatted-string, yt-attributed-string, .yt-core-attributed-string, .yt-core-attributed-string--white-space-pre-wrap) {
+${META} #title :is(yt-formatted-string, yt-attributed-string, .yt-core-attributed-string, .yt-core-attributed-string--white-space-pre-wrap):not([data-da-processed="1"]) {
     display: inline !important;
     max-width: 100% !important;
     max-inline-size: 100% !important;
@@ -517,8 +539,8 @@ ${META} #title .ytkit-split-title-bar {
     position: relative !important;
     z-index: 5 !important;
     display: grid !important;
-    grid-template-columns: auto auto minmax(0, 1fr) !important;
-    grid-template-areas: "date date date" "home actions space" !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-areas: "date home actions" !important;
     align-items: center !important;
     gap: 6px !important;
     min-width: 0 !important;
@@ -585,15 +607,15 @@ ${META} #title #ytkit-po-logo-wrap :is(.ytkit-ql-launcher--player, .ytkit-ql-tog
 ${META} #title #ytkit-po-logo-wrap :is(.ytkit-ql-launcher-glyph, .ytkit-ql-launcher-glyph svg) { width: 16px !important; height: 16px !important; }
 ${META} #title #ytkit-po-logo-wrap .ytkit-ql-drop {
     top: calc(100% + 8px) !important;
-    right: auto !important;
+    right: 0 !important;
     bottom: auto !important;
-    left: 0 !important;
+    left: auto !important;
     z-index: 2147483647 !important;
-    min-width: 232px !important;
-    max-width: min(260px, calc(100vw - 34px)) !important;
+    min-width: min(232px, calc(var(--ytkit-split-right-width, 32vw) - 56px)) !important;
+    max-width: min(260px, calc(var(--ytkit-split-right-width, 32vw) - 56px)) !important;
     max-height: min(440px, calc(100vh - 92px)) !important;
     overflow: auto !important;
-    transform-origin: top left !important;
+    transform-origin: top right !important;
 }
 ${META} #title .ytkit-split-upload-meta {
     grid-area: date !important;
@@ -995,10 +1017,10 @@ ${PANE} ytd-comments-header-renderer :is(#count, yt-formatted-string.count-text)
     gap: 0.3em !important;
     margin: 0 !important;
     color: var(--ytkit-split-text) !important;
-    font-size: 16px !important;
+    font-size: 18px !important;
     font-weight: 700 !important;
     line-height: 1.2 !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
     opacity: 1 !important;
     font-variant-numeric: tabular-nums !important;
 }
@@ -1435,6 +1457,34 @@ ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-re
         clip-path: inset(50%) !important;
         white-space: nowrap !important;
     }
+}
+
+@media (max-width: 1100px) {
+    ${ROOT} { --ytkit-split-pane-padding: 22px 18px 64px; }
+    ${META} #title .ytkit-split-title-bar {
+        grid-template-columns: auto auto minmax(0, 1fr) !important;
+        grid-template-areas: "date date date" "home actions space" !important;
+    }
+    ${PANE} ytd-comments-header-renderer #title { flex-wrap: wrap !important; gap: 6px !important; }
+}
+
+@container ytkit-split-pane (max-width: 400px) {
+    ${META} #title #ytkit-po-logo-wrap .ytkit-ql-drop {
+        left: 0 !important;
+        right: auto !important;
+        transform-origin: top left !important;
+    }
+    ${META} #title .ytkit-split-title-bar {
+        grid-template-columns: auto auto minmax(0, 1fr) !important;
+        grid-template-areas: "date date date" "home actions space" !important;
+    }
+    ${PANE} ytd-comments-header-renderer #title { flex-wrap: wrap !important; gap: 6px !important; }
+}
+@container ytkit-split-pane (max-width: 260px) {
+    ${META} #owner { grid-template-areas: "owner owner" "sub sub" "actions actions" !important; }
+    ${META} #owner #subscribe-button { justify-self: start !important; }
+    ${META} #owner .ytkit-split-owner-actions { flex-wrap: wrap !important; }
+    ${PANE} ytd-comments-header-renderer :is(#count, yt-formatted-string.count-text) { font-size: 16px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

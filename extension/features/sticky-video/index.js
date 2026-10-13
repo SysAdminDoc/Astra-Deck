@@ -9,7 +9,7 @@
     // bar, live header and action dock), -chat (live chat placement) and
     // -autoscroll (middle-button autoscroll).
 
-    const DIVIDER_WIDTH_PX = 8;
+    const DIVIDER_WIDTH_PX = 20;
     const DIVIDER_DRAG_THRESHOLD_PX = 4;
 
     const SPLIT_POSITIONED_STYLE_PROPERTIES = Object.freeze([
@@ -114,6 +114,7 @@
             _scrollToCommentsTimer: null,
             _scrollToCommentsIdle: null,
             _expandFallbackTimer: null,
+            _expandTransitionCleanup: null,
             _postExpandButtonsTimer: null,
             _splitActionDock: null,
             _splitActionDockMoved: null,
@@ -336,8 +337,9 @@
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
                 pip.style.pointerEvents = 'none';
-                // Three-dot grip pattern — universal drag indicator
-                for (let i = 0; i < 3; i++) pip.appendChild(document.createElement('div'));
+                const chevron = globalThis.YTKitCore?.ICONS?.chevronRight?.();
+                if (chevron) pip.appendChild(chevron);
+                else for (let i = 0; i < 3; i++) pip.appendChild(document.createElement('div'));
                 divider.appendChild(pip);
 
                 // RIGHT — collapsed initially
@@ -464,7 +466,7 @@
                     const wrapper = this._splitWrapper;
                     const totalW = wrapper.getBoundingClientRect().width;
                     if (!Number.isFinite(totalW) || totalW <= 0) return null;
-                    const measuredLeftPct = left.getBoundingClientRect().width / totalW * 100;
+                    const measuredLeftPct = (left.getBoundingClientRect().width + divider.getBoundingClientRect().width) / totalW * 100;
                     const startLeftPct = this._isSplit && Number.isFinite(measuredLeftPct)
                         ? measuredLeftPct
                         : 100;
@@ -476,8 +478,17 @@
                     document.body.appendChild(dragShield);
 
                     let _dragRaf = null;
+                    let pendingRatio = null;
                     let dragged = false;
                     const previousTransition = right.style.transition;
+                    const applyPendingRatio = () => {
+                        _dragRaf = null;
+                        if (pendingRatio === null || !this._isActive || !this._isSplit) return;
+                        this._applyDividerRatio(left, right, pendingRatio);
+                        pendingRatio = null;
+                        divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+                        divider.style.width = `${DIVIDER_WIDTH_PX}px`;
+                    };
                     const onDrag = (clientX) => {
                         const dx = clientX - startX;
                         if (!dragged && Math.abs(dx) < DIVIDER_DRAG_THRESHOLD_PX) return;
@@ -487,16 +498,13 @@
                             if (!this._isSplit) return;
                             right.style.transition = 'none';
                         }
+                        pendingRatio = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
                         if (_dragRaf) cancelAnimationFrame(_dragRaf);
-                        _dragRaf = requestAnimationFrame(() => {
-                            const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
-                            this._applyDividerRatio(left, right, newLeftPct);
-                            divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
-                            divider.style.width = `${DIVIDER_WIDTH_PX}px`;
-                        });
+                        _dragRaf = requestAnimationFrame(applyPendingRatio);
                     };
                     const cleanup = () => {
                         if (_dragRaf) cancelAnimationFrame(_dragRaf);
+                        applyPendingRatio();
                         if (dragged) right.style.transition = previousTransition;
                         dragShield.remove();
                         document.body.style.cursor = '';
@@ -930,6 +938,7 @@
             // ── Expand right panel (show comments/chat) ──
             _expandSplit() {
                 if (this._isSplit || !this._isActive || this._dismissed) return;
+                this._expandTransitionCleanup?.();
                 this._isSplit = true;
                 this._entering = true;
                 this._positionedEls = [];
@@ -1003,9 +1012,8 @@
                 this._startSplitActionDock();
 
                 const onExpanded = () => {
-                    if (right) right.removeEventListener('transitionend', onTransEnd);
-                    clearTimeout(this._expandFallbackTimer);
-                    this._expandFallbackTimer = null;
+                    this._expandTransitionCleanup?.();
+                    if (!this._isActive || !this._isSplit) return;
                     this._entering = false;
                     this._triggerPlayerResize();
                     // Re-inject download/action buttons — Polymer may have re-rendered
@@ -1023,7 +1031,13 @@
                     }
                 };
                 const onTransEnd = (e) => {
-                    if (e.propertyName === 'flex-basis' || e.propertyName === 'opacity') onExpanded();
+                    if (e.target === right && (e.propertyName === 'flex-basis' || e.propertyName === 'opacity')) onExpanded();
+                };
+                this._expandTransitionCleanup = () => {
+                    right.removeEventListener('transitionend', onTransEnd);
+                    clearTimeout(this._expandFallbackTimer);
+                    this._expandFallbackTimer = null;
+                    this._expandTransitionCleanup = null;
                 };
                 right.addEventListener('transitionend', onTransEnd);
                 clearTimeout(this._expandFallbackTimer);
@@ -1107,6 +1121,7 @@
                 // `onExpanded()` on an already-collapsed panel, re-triggering
                 // `_triggerPlayerResize()` and `checkAllButtons()`.
                 this._entering = false;
+                this._expandTransitionCleanup?.();
                 clearTimeout(this._expandFallbackTimer);
                 this._expandFallbackTimer = null;
                 clearTimeout(this._postExpandButtonsTimer);
@@ -1179,6 +1194,7 @@
                 this._dividerDragCleanup?.();
                 this._dividerDragCleanup = null;
                 this._entering = false;
+                this._expandTransitionCleanup?.();
                 clearTimeout(this._resizeTimer);
                 this._resizeTimer = null;
                 clearTimeout(this._initResizeTimer);

@@ -264,6 +264,7 @@ test('a second pass started mid-fetch never takes a card the first one owns', as
 });
 
 test('a title gets one DeArrow replacement, and the announcement is translated', () => {
+    let navigations = 0;
     const parent = {
         children: [],
         insertBefore(node, ref) {
@@ -276,7 +277,10 @@ test('a title gets one DeArrow replacement, and the announcement is translated',
     const make = () => {
         const attrs = new Map();
         const el = {
+            tagName: 'A', listeners: new Map(),
             textContent: '', className: '', title: '', style: { display: '' }, dataset: {},
+            addEventListener(type, listener) { el.listeners.set(type, listener); },
+            click() { navigations++; },
             classList: { add() {} },
             setAttribute: (name, value) => attrs.set(name, String(value)),
             getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
@@ -310,6 +314,13 @@ test('a title gets one DeArrow replacement, and the announcement is translated',
     const replacements = parent.children.filter((node) => node.getAttribute('data-ytkit-dearrow-title') === '1');
     assert.deepEqual(replacements.map((node) => node.textContent), ['Second title']);
     assert.deepEqual(announced, ['Titel von DeArrow ersetzt: Second title']);
+    let prevented = false;
+    const click = replacements[0].listeners.get('click');
+    click({ button: 0, preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(navigations, 1, 'a replacement forwards to the original native endpoint');
+    click({ button: 0, ctrlKey: true, preventDefault() { throw new Error('modified links must keep native behavior'); } });
+    assert.equal(navigations, 1, 'modified clicks open the replacement href normally');
 });
 
 test('a feed append keeps finished cards, and a reused card starts over', async () => {

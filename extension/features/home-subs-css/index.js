@@ -51,6 +51,173 @@
         return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
     }
 
+    // The existing grid toggles own the feed workspace. The active-page guard
+    // matters because YouTube retains hidden browse pages during SPA navigation.
+    function buildFeedGridCss(page = 'home') {
+        const feed = `ytd-browse[page-subtype="${page === 'subscriptions' ? 'subscriptions' : 'home'}"]`;
+        const active = `html:has(ytd-page-manager > ${feed}:not([hidden]))`;
+        const grid = `body:not(.ytkit-listFeedLayout) ${feed}:not([data-ytkit-subscription-view="list"]):not([data-ytkit-subscription-view="compact"])`;
+        return `
+${active} {
+    --ytkit-feed-canvas: var(--ytkit-split-theme-canvas, #111214);
+    --ytkit-feed-panel: var(--ytkit-split-theme-panel, #18191c);
+    --ytkit-feed-text: var(--ytkit-split-theme-text, var(--ytkit-premium-text, #f1f1f1));
+    --ytkit-feed-muted: var(--ytkit-split-theme-muted, var(--ytkit-premium-muted, #aaaaaa));
+    --ytkit-feed-raised: color-mix(in srgb, var(--ytkit-feed-text) 6%, var(--ytkit-feed-panel));
+    --ytkit-feed-hover: color-mix(in srgb, var(--ytkit-feed-text) 10%, var(--ytkit-feed-panel));
+    --ytkit-feed-border: color-mix(in srgb, var(--ytkit-feed-text) 12%, transparent);
+    --ytkit-feed-accent: var(--ytkit-split-theme-accent, #ff6259);
+    --yt-spec-base-background: var(--ytkit-feed-canvas) !important;
+    --yt-spec-brand-background-solid: var(--ytkit-feed-canvas) !important;
+    --yt-spec-raised-background: var(--ytkit-feed-panel) !important;
+    --yt-spec-menu-background: var(--ytkit-feed-panel) !important;
+    --yt-spec-text-primary: var(--ytkit-feed-text) !important;
+    --yt-spec-text-secondary: var(--ytkit-feed-muted) !important;
+    --yt-spec-badge-chip-background: var(--ytkit-feed-raised) !important;
+    --ytd-searchbox-background: var(--ytkit-feed-panel) !important;
+    --ytd-searchbox-border-color: var(--ytkit-feed-border) !important;
+    background: var(--ytkit-feed-canvas) !important;
+    scrollbar-color: var(--ytkit-feed-border) transparent;
+}
+${active}:not([dark]) {
+    --ytkit-feed-canvas: #f7f8fa;
+    --ytkit-feed-panel: #ffffff;
+    --ytkit-feed-text: var(--ytkit-premium-text, #172335);
+    --ytkit-feed-muted: var(--ytkit-premium-muted, #536278);
+}
+${active} :is(body, ytd-app, ytd-page-manager, ytd-masthead #background, ytd-masthead #frosted-glass) {
+    background: var(--ytkit-feed-canvas) !important;
+}
+${active} :is(#guide-content, #guide-inner-content, ytd-mini-guide-renderer) {
+    background: var(--ytkit-feed-canvas) !important;
+    border-inline-end: 1px solid var(--ytkit-feed-border) !important;
+}
+${active} ytd-guide-entry-renderer #endpoint {
+    min-height: 42px !important;
+    border-radius: 6px !important;
+    transition: background-color 140ms ease !important;
+}
+${active} ytd-guide-entry-renderer[active] #endpoint {
+    background: color-mix(in srgb, var(--ytkit-feed-accent) 10%, var(--ytkit-feed-panel)) !important;
+    box-shadow: inset 3px 0 var(--ytkit-feed-accent) !important;
+}
+${active} ytd-guide-entry-renderer[active] yt-icon { color: var(--ytkit-feed-accent) !important; }
+${active} ytd-guide-entry-renderer #endpoint:hover { background: var(--ytkit-feed-hover) !important; }
+${active} ytd-masthead :is(.ytSearchboxComponentInputBox, #container.ytd-searchbox) {
+    border: 1px solid var(--ytkit-feed-border) !important;
+    border-radius: 8px 0 0 8px !important;
+    background: var(--ytkit-feed-panel) !important;
+    box-shadow: none !important;
+}
+${active} ytd-masthead :is(.ytSearchboxComponentInputBoxHasFocus, .ytSearchboxComponentInputBoxHasFocusDark, ytd-searchbox[has-focus] #container) {
+    border-color: var(--ytkit-feed-accent) !important;
+}
+${active} ytd-masthead :is(.ytSearchboxComponentSearchButton, #search-icon-legacy) {
+    border-color: var(--ytkit-feed-border) !important;
+    border-radius: 0 8px 8px 0 !important;
+    background: var(--ytkit-feed-raised) !important;
+    color: var(--ytkit-feed-text) !important;
+}
+${active} ytd-masthead :is(.ytSearchboxComponentSuggestionsContainer, .ytSearchboxComponentSuggestionsContainerDark) {
+    border: 1px solid var(--ytkit-feed-border) !important;
+    border-radius: 8px !important;
+    background: var(--ytkit-feed-panel) !important;
+    color: var(--ytkit-feed-text) !important;
+}
+${feed} { background: var(--ytkit-feed-canvas) !important; }
+${grid} #contents.ytd-rich-grid-renderer {
+    display: grid !important;
+    grid-template-columns: var(--ytkit-feed-columns, repeat(auto-fill, minmax(min(100%, 300px), 1fr))) !important;
+    gap: 30px 20px !important;
+    align-items: start !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px 24px 40px !important;
+    box-sizing: border-box !important;
+}
+${grid} #contents.ytd-rich-grid-renderer > ytd-rich-grid-row,
+${grid} #contents.ytd-rich-grid-renderer > ytd-rich-grid-row > #contents { display: contents !important; }
+${grid} ytd-rich-item-renderer {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+}
+${grid} ytd-rich-item-renderer.ytkit-video-hidden { display: none !important; }
+${grid} #contents.ytd-rich-grid-renderer > :is(ytd-rich-section-renderer, ytd-rich-shelf-renderer, ytd-continuation-item-renderer) {
+    grid-column: 1 / -1 !important;
+}
+${feed} ytd-rich-item-renderer :is(yt-lockup-view-model, yt-lockup-metadata-view-model) { min-width: 0 !important; }
+${feed} ytd-rich-item-renderer :is(yt-thumbnail-view-model, ytd-thumbnail, .ytThumbnailViewModelImage, .ytThumbnailViewModelImageAspectRatio16By9, .ytCoreImageHost, .ytLockupViewModelContentImage, .yt-lockup-view-model__content-image) {
+    border-radius: 8px !important;
+}
+${feed} ytd-rich-item-renderer :is(yt-thumbnail-view-model, ytd-thumbnail) { overflow: hidden !important; }
+${feed} ytd-rich-item-renderer :is(.ytLockupMetadataViewModelTitle, #video-title) {
+    color: var(--ytkit-feed-text) !important;
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    text-wrap: pretty !important;
+}
+${feed} ytd-rich-item-renderer :is(.ytLockupMetadataViewModelTitle, #video-title) .ytAttributedStringHost { font: inherit !important; }
+${feed} ytd-rich-item-renderer :is(yt-lockup-metadata-view-model, #details.ytd-rich-grid-media) {
+    padding-top: 12px !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+${feed} ytd-rich-item-renderer :is(.ytContentMetadataViewModelMetadataText, #metadata-line) {
+    color: var(--ytkit-feed-muted) !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+${feed} ytd-rich-item-renderer :is(.ytLockupMetadataViewModelMenuButton, #menu) { border-radius: 6px !important; }
+${feed} ytd-rich-item-renderer :is(.ytLockupMetadataViewModelMenuButton, #menu):hover { background: var(--ytkit-feed-hover) !important; }
+${active} :is(ytd-guide-entry-renderer #endpoint, yt-chip-cloud-chip-renderer, ytd-masthead button, .ytLockupMetadataViewModelTitle):focus-visible {
+    outline: 2px solid var(--ytkit-feed-accent) !important;
+    outline-offset: 3px !important;
+}
+@media (max-width: 900px) {
+    ${grid} #contents.ytd-rich-grid-renderer { padding-inline: 16px !important; gap: 24px 16px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    ${active} ytd-guide-entry-renderer #endpoint { transition: none !important; }
+}
+`;
+    }
+
+    function buildStyledFilterChipsCss() {
+        return `
+ytd-feed-filter-chip-bar-renderer #chips-wrapper { background: var(--yt-spec-base-background, #111214) !important; }
+ytd-feed-filter-chip-bar-renderer #scroll-container { padding-block: 8px !important; }
+ytd-feed-filter-chip-bar-renderer :is(#left-arrow, #right-arrow) { background: var(--yt-spec-base-background, #111214) !important; }
+yt-chip-cloud-chip-renderer :is(.ytChipShapeChip, #chip-container) {
+    height: 34px !important;
+    padding-inline: 14px !important;
+    border: 1px solid color-mix(in srgb, var(--yt-spec-text-primary) 10%, transparent) !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    transition: background-color 140ms ease, color 140ms ease !important;
+}
+yt-chip-cloud-chip-renderer :is(.ytChipShapeInactive, #chip-container) {
+    background: color-mix(in srgb, var(--yt-spec-text-primary) 6%, var(--yt-spec-base-background)) !important;
+    color: var(--yt-spec-text-primary) !important;
+}
+yt-chip-cloud-chip-renderer :is(.ytChipShapeInactive, #chip-container):hover {
+    background: color-mix(in srgb, var(--yt-spec-text-primary) 12%, var(--yt-spec-base-background)) !important;
+}
+yt-chip-cloud-chip-renderer .ytChipShapeActive,
+yt-chip-cloud-chip-renderer[selected] #chip-container {
+    background: var(--yt-spec-text-primary) !important;
+    color: var(--yt-spec-base-background) !important;
+    font-weight: 600 !important;
+}
+yt-chip-cloud-chip-renderer .ytChipShapeTextContent { font-size: 13px !important; line-height: 1.2 !important; }
+@media (prefers-reduced-motion: reduce) {
+    yt-chip-cloud-chip-renderer :is(.ytChipShapeChip, #chip-container) { transition: none !important; }
+}
+`;
+    }
+
     // NOTE: no apostrophes or backticks in comments in this function.
     // stripSafeLineComments refuses to drop a comment line carrying a quote,
     // so one costs bytes in a core bundle that sits against a 2 MiB host cap.
@@ -330,6 +497,8 @@
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.homeSubsCss = Object.freeze({
+        buildFeedGridCss,
+        buildStyledFilterChipsCss,
         buildHideCreateButtonCss,
         buildHideVoiceSearchCss,
         buildWidenSearchBarCss,
@@ -359,6 +528,8 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
+            buildFeedGridCss,
+            buildStyledFilterChipsCss,
             buildHideCreateButtonCss,
             buildHideVoiceSearchCss,
             buildWidenSearchBarCss,

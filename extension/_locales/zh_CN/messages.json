@@ -6828,6 +6828,9 @@
   "stickyVideoLiveVideoFallback": {
     "message": "直播视频"
   },
+  "stickyVideoNowWatching": {
+    "message": "正在观看"
+  },
   "stickyVideoQuickLinksAria": {
     "message": "快速链接"
   },

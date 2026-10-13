@@ -91,6 +91,7 @@
             _ensureSplitHeaderBar() {
                 const title = this._getSplitTitleEl();
                 if (!title) return null;
+                title.setAttribute('data-ytkit-split-label', t('stickyVideoNowWatching', 'Now watching'));
 
                 let bar = title.querySelector(':scope > .ytkit-split-title-bar');
                 if (!bar) {
@@ -620,6 +621,7 @@
                 }
                 this._splitHeaderMovedLogo = null;
 
+                document.querySelectorAll('[data-ytkit-split-label]').forEach(title => title.removeAttribute('data-ytkit-split-label'));
                 document.querySelectorAll('.ytkit-split-title-bar').forEach(bar => bar.remove());
                 this._splitHeaderBar = null;
             },

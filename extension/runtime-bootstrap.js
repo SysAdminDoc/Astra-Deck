@@ -195,12 +195,6 @@
             "oledTheme",
             "themeAccentColor"
         ],
-        "features/home-subs-css/index.js": [
-            "fullWidthSubscriptions",
-            "hideSubscriptionOptions",
-            "hideVoiceSearch",
-            "widenSearchBar"
-        ],
         "features/chat-style-comments/index.js": [
             "chatStyleComments"
         ],
@@ -236,9 +230,6 @@
         ],
         "features/video-notes/index.js": [
             "videoNotes"
-        ],
-        "features/subscription-view/index.js": [
-            "subscriptionViewControls"
         ],
         "features/digital-wellbeing/index.js": [
             "digitalWellbeing"

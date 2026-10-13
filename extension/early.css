@@ -12,6 +12,7 @@
 #player-ads,
 ytd-in-feed-ad-layout-renderer,
 ytd-ad-slot-renderer,
+ytd-rich-item-renderer:has(> #content > ytd-ad-slot-renderer),
 ytd-page-top-ad-layout-renderer,
 ytd-promoted-video-renderer,
 ytd-display-ad-renderer,

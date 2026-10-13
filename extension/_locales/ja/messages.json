@@ -6828,6 +6828,9 @@
   "stickyVideoLiveVideoFallback": {
     "message": "ライブ動画"
   },
+  "stickyVideoNowWatching": {
+    "message": "視聴中"
+  },
   "stickyVideoQuickLinksAria": {
     "message": "クイックリンク"
   },

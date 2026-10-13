@@ -25,8 +25,8 @@ const WATCH_URL = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
 const WIDTH = 1440;
 const HEIGHT = 900;
 const DEFAULT_OUTPUTS = Object.freeze({
-    dark: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-dark-v9.png'),
-    light: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-light-v9.png')
+    dark: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-dark-v10.png'),
+    light: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-light-v10.png')
 });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

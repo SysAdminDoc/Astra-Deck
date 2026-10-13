@@ -1751,7 +1751,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         };
     })()`);
     if (split.leftWidth < 400 || split.rightWidth < 240) failures.push('watch themes: Theater Split columns are not both usable');
-    if (split.dividerWidth < 6 || split.dividerWidth > 14) failures.push(`watch themes: divider width is ${split.dividerWidth}px`);
+    if (split.dividerWidth < 18 || split.dividerWidth > 22) failures.push(`watch themes: divider width is ${split.dividerWidth}px`);
     if (split.dividerRole !== 'separator' || split.dividerOrientation !== 'vertical') {
         failures.push('watch themes: Theater Split divider lacks separator semantics');
     }

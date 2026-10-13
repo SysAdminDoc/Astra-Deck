@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.24
+// @name         Theater Split v1.0.25
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.24
+// @version      1.0.25
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -128,7 +128,7 @@
             --ts-text: var(--yt-spec-text-primary, #f1f1f1);
             --ts-muted: var(--yt-spec-text-secondary, #aaaaaa);
             --ts-canvas: var(--ts-theme-canvas, var(--yt-spec-static-black, #0f0f0f));
-            --ts-panel: var(--ts-theme-panel, color-mix(in srgb, var(--yt-spec-static-brand-black, #212121) 72%, var(--yt-spec-static-black, #0f0f0f)));
+            --ts-panel: var(--ts-theme-panel, color-mix(in srgb, var(--yt-spec-static-brand-black, #212121) 45%, var(--yt-spec-static-black, #0f0f0f)));
             --ts-raised: color-mix(in srgb, var(--ts-text) 7%, var(--ts-panel));
             --ts-hover: color-mix(in srgb, var(--ts-text) 12%, var(--ts-panel));
             --ts-pressed: color-mix(in srgb, var(--ts-text) 17%, var(--ts-panel));
@@ -147,13 +147,13 @@
             --ts-radius: 8px;
             --ts-radius-sm: 6px;
             --ts-control-h: 36px;
-            --ts-pane-padding: 20px 24px 72px;
+            --ts-pane-padding: 28px 28px 72px;
             --ts-ease: cubic-bezier(0.2, 0, 0, 1);
             color-scheme: dark;
         }
         html:not([dark]) body.ts-active {
-            --ts-text: var(--yt-spec-text-primary, #0f0f0f);
-            --ts-muted: var(--yt-spec-text-secondary, #606060);
+            --ts-text: var(--ytkit-premium-text, #0f0f0f);
+            --ts-muted: var(--ytkit-premium-muted, #606060);
             --ts-canvas: var(--yt-spec-base-background, #ffffff);
             --ts-panel: var(--yt-spec-base-background, #ffffff);
             --ts-raised: color-mix(in srgb, var(--ts-text) 5%, var(--ts-panel));
@@ -169,6 +169,7 @@
             background: var(--ts-panel) !important;
             scrollbar-width: thin !important;
             scrollbar-color: var(--ts-scrollbar) transparent !important;
+            transition: opacity 150ms var(--ts-ease) !important;
         }
         body.ts-active #ts-divider {
             position: relative !important;
@@ -178,7 +179,7 @@
             color: var(--ts-muted) !important;
             outline: none !important;
             touch-action: none !important;
-            transition: background-color 160ms var(--ts-ease), flex-basis 200ms var(--ts-ease) !important;
+            transition: background-color 160ms var(--ts-ease) !important;
         }
         body.ts-active #ts-divider::before {
             content: '' !important;
@@ -201,17 +202,25 @@
             display: grid !important;
             place-content: center !important;
             gap: 4px !important;
-            width: 10px !important;
-            height: 40px !important;
+            width: 24px !important;
+            height: 52px !important;
             padding: 0 !important;
             border: 1px solid var(--ts-border) !important;
-            border-radius: 4px !important;
+            border-radius: 6px !important;
             background: var(--ts-raised) !important;
             color: var(--ts-muted) !important;
             opacity: 1 !important;
             transform: translate(-50%, -50%) !important;
             transition: background-color 160ms var(--ts-ease), border-color 160ms var(--ts-ease), color 160ms var(--ts-ease), height 160ms var(--ts-ease) !important;
         }
+        body.ts-active #ts-divider .ts-divider-pip svg {
+            width: 18px !important;
+            height: 18px !important;
+            fill: none !important;
+            stroke: currentColor !important;
+            transition: transform 160ms var(--ts-ease) !important;
+        }
+        body.ts-active #ts-divider[data-panel-state="closed"] .ts-divider-pip svg { transform: rotate(180deg) !important; }
         body.ts-active #ts-divider .ts-divider-pip > div {
             width: 2px !important;
             height: 2px !important;
@@ -273,7 +282,8 @@
         body.ts-active #ts-close {
             position: absolute !important;
             top: 16px !important;
-            right: 16px !important;
+            left: 16px !important;
+            right: auto !important;
             bottom: auto !important;
             z-index: 35 !important;
             align-items: center !important;
@@ -380,6 +390,8 @@
             outline-offset: 1px !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface {
+            container-type: inline-size;
+            container-name: ytkit-split-pane;
             /* YouTube paints fades and expanders with its own surface tokens, and an
                ancestor can scope them to another value than <html> holds (the watch
                restyle does; OLED sets them on <html>). Inside the pane they follow the
@@ -499,6 +511,16 @@
             overflow: visible !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title:has(#ytkit-po-logo-wrap.ytkit-ql-open) { z-index: 2147483646 !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title[data-ytkit-split-label]::before {
+            content: attr(data-ytkit-split-label) !important;
+            order: 0 !important;
+            color: var(--ts-accent-ink) !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
+            letter-spacing: 0.1em !important;
+            text-transform: uppercase !important;
+        }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title h1,
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata h1.ytd-watch-metadata {
             order: 1 !important;
@@ -511,7 +533,7 @@
             padding: 0 !important;
             color: var(--ts-text) !important;
             font-family: "YouTube Sans", Roboto, Arial, sans-serif !important;
-            font-size: 24px !important;
+            font-size: clamp(20px, 1.7vw, 26px) !important;
             font-weight: 700 !important;
             font-style: normal !important;
             line-height: 1.3 !important;
@@ -525,7 +547,7 @@
             overflow-wrap: anywhere !important;
             -webkit-line-clamp: unset !important;
         }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title :is(yt-formatted-string, yt-attributed-string, .yt-core-attributed-string, .yt-core-attributed-string--white-space-pre-wrap) {
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title :is(yt-formatted-string, yt-attributed-string, .yt-core-attributed-string, .yt-core-attributed-string--white-space-pre-wrap):not([data-da-processed="1"]) {
             display: inline !important;
             max-width: 100% !important;
             max-inline-size: 100% !important;
@@ -542,8 +564,8 @@
             position: relative !important;
             z-index: 5 !important;
             display: grid !important;
-            grid-template-columns: auto auto minmax(0, 1fr) !important;
-            grid-template-areas: "date date date" "home actions space" !important;
+            grid-template-columns: minmax(0, 1fr) auto auto !important;
+            grid-template-areas: "date home actions" !important;
             align-items: center !important;
             gap: 6px !important;
             min-width: 0 !important;
@@ -610,15 +632,15 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap :is(.ytkit-ql-launcher-glyph, .ytkit-ql-launcher-glyph svg) { width: 16px !important; height: 16px !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-drop {
             top: calc(100% + 8px) !important;
-            right: auto !important;
+            right: 0 !important;
             bottom: auto !important;
-            left: 0 !important;
+            left: auto !important;
             z-index: 2147483647 !important;
-            min-width: 232px !important;
-            max-width: min(260px, calc(100vw - 34px)) !important;
+            min-width: min(232px, calc(var(--ts-right-width, 32vw) - 56px)) !important;
+            max-width: min(260px, calc(var(--ts-right-width, 32vw) - 56px)) !important;
             max-height: min(440px, calc(100vh - 92px)) !important;
             overflow: auto !important;
-            transform-origin: top left !important;
+            transform-origin: top right !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-meta {
             grid-area: date !important;
@@ -1005,10 +1027,10 @@
             gap: 0.3em !important;
             margin: 0 !important;
             color: var(--ts-text) !important;
-            font-size: 16px !important;
+            font-size: 18px !important;
             font-weight: 700 !important;
             line-height: 1.2 !important;
-            white-space: nowrap !important;
+            white-space: normal !important;
             opacity: 1 !important;
             font-variant-numeric: tabular-nums !important;
         }
@@ -1439,6 +1461,32 @@
                 clip-path: inset(50%) !important;
                 white-space: nowrap !important;
             }
+        }
+        @media (max-width: 1100px) {
+            body.ts-active { --ts-pane-padding: 22px 18px 64px; }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-title-bar {
+                grid-template-columns: auto auto minmax(0, 1fr) !important;
+                grid-template-areas: "date date date" "home actions space" !important;
+            }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer #title { flex-wrap: wrap !important; gap: 6px !important; }
+        }
+        @container ytkit-split-pane (max-width: 400px) {
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-drop {
+                left: 0 !important;
+                right: auto !important;
+                transform-origin: top left !important;
+            }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-title-bar {
+                grid-template-columns: auto auto minmax(0, 1fr) !important;
+                grid-template-areas: "date date date" "home actions space" !important;
+            }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer #title { flex-wrap: wrap !important; gap: 6px !important; }
+        }
+        @container ytkit-split-pane (max-width: 260px) {
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner { grid-template-areas: "owner owner" "sub sub" "actions actions" !important; }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner #subscribe-button { justify-self: start !important; }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions { flex-wrap: wrap !important; }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer :is(#count, yt-formatted-string.count-text) { font-size: 16px !important; }
         }
         @media (prefers-reduced-motion: reduce) {
             body.ts-active :is(#ts-divider, #ts-divider::before, #ts-divider .ts-divider-pip, #ts-close, #ts-collapse-strip::after, .ts-replay-tab),

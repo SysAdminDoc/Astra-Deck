@@ -150,19 +150,24 @@
         }
 
         function pageRoot() {
+            const active = documentRef?.querySelector?.('ytd-browse[page-subtype="subscriptions"]:not([hidden])');
+            if (active) return active;
             const selectors = getSurfaceSelectorChain('subscriptions');
             const chain = Array.isArray(selectors) && selectors.length
                 ? selectors
                 : ['ytd-browse[page-subtype="subscriptions"]', 'ytd-browse'];
             for (const selector of chain) {
                 const node = documentRef?.querySelector?.(selector);
-                if (node) return node.matches?.('ytd-browse') ? node : node.closest?.('ytd-browse') || node;
+                if (node) {
+                    const root = node.matches?.('ytd-browse') ? node : node.closest?.('ytd-browse') || node;
+                    if (!root.hasAttribute?.('hidden')) return root;
+                }
             }
             return null;
         }
 
         function feedTarget() {
-            return documentRef?.querySelector?.('ytd-rich-grid-renderer, ytd-section-list-renderer') || null;
+            return pageRoot()?.querySelector?.('ytd-rich-grid-renderer, ytd-section-list-renderer') || null;
         }
 
         function saveSetting(key, value) {
@@ -197,7 +202,8 @@
 
         function applyOrder() {
             if (sorting || destroyed || !isSubscriptionsPage()) return;
-            if (documentRef?.querySelector?.('.ytkit-sub-toolbar')) {
+            const root = pageRoot();
+            if (root?.querySelector?.('.ytkit-sub-toolbar')) {
                 // Subscription Groups owns card ordering while its toolbar is
                 // mounted. The saved order preference was simply ignored here,
                 // with nothing on screen explaining why it stopped applying.
@@ -214,7 +220,7 @@
             let count = 0;
             const mode = normalizeOrderMode(appState?.settings?.subscriptionOrderMode);
             try {
-                for (const container of queryAll(documentRef, CONTAINER_SELECTOR)) {
+                for (const container of queryAll(root, CONTAINER_SELECTOR)) {
                     count += sortLoadedCards(container, mode, documentRef);
                 }
             } finally {
@@ -322,7 +328,7 @@
             ownToolbar = null;
             status = null;
 
-            const groupToolbar = documentRef?.querySelector?.('.ytkit-sub-toolbar');
+            const groupToolbar = pageRoot()?.querySelector?.('.ytkit-sub-toolbar');
             controls = buildControls(groupToolbar);
             if (groupToolbar) {
                 groupToolbar.prepend?.(controls);
@@ -352,6 +358,13 @@
                 if (!controls?.isConnected) mountControls();
                 else {
                     applyView();
+                    const mode = normalizeViewMode(appState?.settings?.subscriptionViewMode);
+                    for (const button of queryAll(controls, 'button[data-view-mode]')) {
+                        const pressed = String(button.dataset.viewMode === mode);
+                        if (button.getAttribute('aria-pressed') !== pressed) button.setAttribute('aria-pressed', pressed);
+                    }
+                    const order = controls.querySelector?.('#ytkit-sub-view-order');
+                    if (order) order.value = normalizeOrderMode(appState?.settings?.subscriptionOrderMode);
                     applyOrder();
                 }
             });
@@ -416,6 +429,7 @@
                 ensureStyles();
                 addNavigateRule('subscriptionViewControls', scheduleRefresh);
                 addMutationRule('subscriptionViewControls', scheduleRefresh);
+                documentRef?.addEventListener?.('ytkit-settings-changed', scheduleRefresh);
                 scheduleRefresh();
             },
 
@@ -424,6 +438,7 @@
                 destroyed = true;
                 removeNavigateRule('subscriptionViewControls');
                 removeMutationRule('subscriptionViewControls');
+                documentRef?.removeEventListener?.('ytkit-settings-changed', scheduleRefresh);
                 teardownPage();
                 styleElement?.remove?.();
                 styleElement = null;
