@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.99.0] (2026-10-12)
+
 ### Changed
 
 - **DeArrow** is on from the start, with both its title and its cover replacement. It used to ship switched off. If you had turned it off yourself, it stays off.

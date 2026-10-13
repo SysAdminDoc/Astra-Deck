@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.98.2
+// @version      4.99.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -13004,7 +13004,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "downloadQuality", category: "downloads", type: "string", defaultValue: "best", enum: Object.freeze(["best","2160","1440","1080","720","480"]), risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "downloadVideoFormat", category: "downloads", type: "string", defaultValue: "mp4", enum: Object.freeze(["mp4","mkv","webm"]), risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "downloadAudioFormat", category: "downloads", type: "string", defaultValue: "mp3", enum: Object.freeze(["mp3","m4a","opus","flac","wav"]), risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "deArrow", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "deArrow", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "daSurfaceWatch", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),
 	Object.freeze({ key: "daSurfaceRelated", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),
 	Object.freeze({ key: "daSurfaceHome", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),
@@ -13013,6 +13013,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "daSurfacePlaylist", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),
 	Object.freeze({ key: "daReplaceTitles", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "daReplaceThumbs", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "daThumbFallback", category: "enrichment", type: "string", defaultValue: "random", enum: Object.freeze(["random","start","middle","end","original"]), risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.99.0" }),
 	Object.freeze({ key: "daTitleFormat", category: "enrichment", type: "string", defaultValue: "sentence", enum: Object.freeze(["sentence","title_case","original"]), risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "deArrowCasualMode", category: "enrichment", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
 	Object.freeze({ key: "daFallbackFormat", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -18106,6 +18107,7 @@ __astraDeckRegistry["core/data-flow.js"] = function (globalThis, self, window, c
 		daSurfacePlaylist: 'deArrow',
 		daReplaceTitles: 'deArrow',
 		daReplaceThumbs: 'deArrow',
+		daThumbFallback: 'deArrow',
 		downloadQuality: 'showLocalDownloadButton',
 		downloadVideoFormat: 'showLocalDownloadButton',
 		downloadAudioFormat: 'showLocalDownloadButton',

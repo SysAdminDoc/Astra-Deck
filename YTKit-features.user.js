@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.98.2
+// @version      4.99.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -23931,6 +23931,8 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 		'https://sponsor.ajay.app',
 		'https://sponsorblock.kavin.rocks'
 	]);
+	const DEARROW_THUMB_API = 'https://dearrow-thumb.ajay.app/api/v1/getThumbnail';
+	const YOUTUBE_STILLS = Object.freeze({ start: 'hq1', middle: 'hq2', end: 'hq3' });
 	function resolveSponsorBlockApiOrigins(settings = {}) {
 		const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
 		if (typeof sharedResolver === 'function') return sharedResolver(settings);
@@ -23987,8 +23989,15 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 			_lastRouteHref: null,
 			_processTimer: null,
 			_resetTimer: null,
-			_TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
+			_CARD_SELECTORS: 'ytd-rich-item-renderer, yt-lockup-view-model, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer',
+			_TITLE_SELECTORS: '#video-title:not(.daCustomTitle), #video-title-link:not(.daCustomTitle), a.ytLockupMetadataViewModelTitle:not(.daCustomTitle)',
 			_WATCH_TITLE_SELECTORS: 'ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string:not(.daCustomTitle), ytd-watch-metadata h1 yt-formatted-string:not(.daCustomTitle)',
+			_CARD_THUMB_SELECTORS: 'yt-thumbnail-view-model img, ytd-thumbnail img, #thumbnail img',
+			_DURATION_BADGE_SELECTORS: 'yt-thumbnail-view-model .ytBadgeShapeText, ytd-thumbnail .ytBadgeShapeText, ytd-thumbnail .badge-shape-wiz__text',
+			_FETCH_LANES: 6,
+			_watchTimer: null,
+			_docTitle: null,
+			_coverWatchers: new Set(),
 			_persistTimer: null,
 			init() {
 				const self = this;
@@ -24009,7 +24018,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					DebugManager.log('DeArrow',
 						'Cache disabled (daCacheTTL=0); every card hit fires an API request. Expect rate limits.');
 				}
-				const css = `.daCustomTitle{display:block!important}.daCustomTitle:not([data-da-together="1"]) + [id="video-title"],.daCustomTitle:not([data-da-together="1"]) + a#video-title-link{display:none!important}.daCustomTitle[data-da-together="1"]{margin-bottom:2px!important}.daOriginalTitle[data-da-original-title="1"]{display:block!important;margin-top:2px!important;padding-inline-start:6px!important;border-inline-start:2px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.2))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font-size:0.86em!important;font-weight:400!important;opacity:0.74!important}.daCustomTitle[data-da-fallback="1"]{opacity:0.78!important}.ytkit-dearrow-attribution{display:inline-flex!important;align-items:center!important;width:fit-content!important;margin-top:3px!important;padding:2px 6px!important;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.16))!important;border-radius:8px!important;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.08))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font:600 10px/1.2 Roboto,Arial,sans-serif!important;letter-spacing:0.01em!important;text-decoration:none!important}.ytkit-dearrow-attribution:hover,.ytkit-dearrow-attribution:focus-visible{border-color:var(--yt-spec-text-secondary,#aaa)!important;color:var(--yt-spec-text-primary,#fff)!important;outline:2px solid rgba(255,107,74,0.62)!important;outline-offset:1px!important}html:not([dark]) .ytkit-dearrow-attribution{border-color:rgba(15,23,42,0.18)!important;background:rgba(15,23,42,0.06)!important;color:#475569!important}html:not([dark]) .ytkit-dearrow-attribution:hover,html:not([dark]) .ytkit-dearrow-attribution:focus-visible{border-color:rgba(15,23,42,0.4)!important;background:rgba(255,255,255,0.96)!important;color:#0f172a!important}`;
+				const css = `.daCustomTitle{display:block!important}.daCustomTitle:not([data-da-together="1"]) + [id="video-title"],.daCustomTitle:not([data-da-together="1"]) + a#video-title-link,.daCustomTitle:not([data-da-together="1"]) + a.ytLockupMetadataViewModelTitle{display:none!important}.daCustomTitle[data-da-together="1"]{margin-bottom:2px!important}.daOriginalTitle[data-da-original-title="1"]{display:block!important;margin-top:2px!important;padding-inline-start:6px!important;border-inline-start:2px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.2))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font-size:0.86em!important;font-weight:400!important;opacity:0.74!important}.daCustomTitle[data-da-fallback="1"]{opacity:0.78!important}.ytkit-dearrow-attribution{display:inline-flex!important;align-items:center!important;width:fit-content!important;margin-top:3px!important;padding:2px 6px!important;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.16))!important;border-radius:8px!important;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.08))!important;color:var(--yt-spec-text-secondary,#aaa)!important;font:600 10px/1.2 Roboto,Arial,sans-serif!important;letter-spacing:0.01em!important;text-decoration:none!important}.ytkit-dearrow-attribution:hover,.ytkit-dearrow-attribution:focus-visible{border-color:var(--yt-spec-text-secondary,#aaa)!important;color:var(--yt-spec-text-primary,#fff)!important;outline:2px solid rgba(255,107,74,0.62)!important;outline-offset:1px!important}html:not([dark]) .ytkit-dearrow-attribution{border-color:rgba(15,23,42,0.18)!important;background:rgba(15,23,42,0.06)!important;color:#475569!important}html:not([dark]) .ytkit-dearrow-attribution:hover,html:not([dark]) .ytkit-dearrow-attribution:focus-visible{border-color:rgba(15,23,42,0.4)!important;background:rgba(255,255,255,0.96)!important;color:#0f172a!important}`;
 				this._styleEl = injectStyle(css, this.id, true);
 				const resetAndProcess = () => {
 					const href = typeof location !== 'undefined' ? location.href : '';
@@ -24030,6 +24039,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					}, 1000);
 					if (isWatchPagePath()) self._disconnectObserver();
 					else self._connectObserver();
+					self._syncWatchTimer();
 				};
 				this._observer = new MutationObserver(() => {
 					if (isWatchPagePath()) return;
@@ -24042,6 +24052,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				});
 				addNavigateRule(this._navRuleId, resetAndProcess);
 				if (!isWatchPagePath()) this._connectObserver();
+				this._syncWatchTimer();
 			},
 			_connectObserver() {
 				if (!this._observer) return;
@@ -24213,16 +24224,13 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 			},
 			_ensureAttribution(outputEl) {
 				if (!outputEl) return null;
-				const owner = outputEl.closest?.(
-					'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, '
-					+ 'ytd-grid-video-renderer, ytd-watch-metadata'
-				) || outputEl.parentElement;
+				const owner = outputEl.closest?.(`${this._CARD_SELECTORS}, ytd-watch-metadata`) || outputEl.parentElement;
 				if (!owner) return null;
 				const existing = owner.querySelector?.('.ytkit-dearrow-attribution');
 				if (existing) return existing;
 				const titleEl = outputEl.matches?.('[data-ytkit-dearrow-title]')
 					? outputEl
-					: owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link');
+					: owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link, a.ytLockupMetadataViewModelTitle');
 				const placement = titleEl?.closest?.('h1, h3') || titleEl || outputEl;
 				if (!placement.parentNode) return null;
 				const link = this._createAttribution();
@@ -24232,10 +24240,23 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 			_renderTitle(titleEl, formatted, { fallback = false, uuid = '', announce = false } = {}) {
 				if (!titleEl || !formatted) return false;
 				const originalTitle = titleEl.textContent.trim();
-				const clone = titleEl.cloneNode(false);
+				const clone = String(titleEl.tagName || '').includes('-')
+					? document.createElement('span')
+					: titleEl.cloneNode(false);
 				clone.className = `daCustomTitle${fallback ? ' da-formatted-title' : ''} ${titleEl.className}`;
 				clone.removeAttribute('id');
-				clone.textContent = formatted;
+				const only = titleEl.children?.length === 1 ? titleEl.children[0] : null;
+				if (only?.tagName === 'SPAN') {
+					const inner = only.cloneNode(false);
+					inner.textContent = formatted;
+					clone.append(inner);
+				} else {
+					clone.textContent = formatted;
+				}
+				const label = clone.getAttribute('aria-label');
+				if (label && originalTitle && label.includes(originalTitle)) {
+					clone.setAttribute('aria-label', label.replace(originalTitle, () => formatted));
+				}
 				clone.title = appState.settings.daShowOriginalHover ? originalTitle : formatted;
 				clone.setAttribute('data-ytkit-dearrow-title', '1');
 				clone.setAttribute('data-ytkit-orig-title', originalTitle);
@@ -24325,17 +24346,20 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				if (!this._anySurfaceEnabledHere()) return;
 				const gen = this._generation;
 				const route = this._routeToken;
-				const replaceTitles = appState.settings.daReplaceTitles;
-				const replaceThumbs = appState.settings.daReplaceThumbs;
-				const format = appState.settings.daTitleFormat || 'sentence';
-				const fallback = appState.settings.daFallbackFormat;
-				const renderers = document.querySelectorAll('ytd-rich-item-renderer:not([data-da-processed]), ytd-video-renderer:not([data-da-processed]), ytd-compact-video-renderer:not([data-da-processed]), ytd-grid-video-renderer:not([data-da-processed])');
-				for (const el of renderers) {
-					if (gen !== this._generation || route !== this._routeToken) return;
+				const unprocessed = this._CARD_SELECTORS.split(',')
+					.map((selector) => `${selector.trim()}:not([data-da-processed])`)
+					.join(', ');
+				const queued = [];
+				for (const el of document.querySelectorAll(unprocessed)) {
 					if (el.dataset.daProcessed) continue;
+					if (this._isNestedCard(el)) {
+						el.dataset.daProcessed = 'nested';
+						continue;
+					}
 					el.dataset.daProcessed = '1';
 					const videoId = this._cardVideoId(el);
 					if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
+					if (this._isCollectionCard(el)) continue;
 					el.dataset.daVideoId = videoId;
 					const surface = this._surfaceOf(el);
 					if (!this._surfaceEnabled(surface)) {
@@ -24347,68 +24371,132 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 						el.dataset.daOverride = overrideMode;
 						continue;
 					}
-					const branding = await this._fetchBranding(videoId);
-					if (!branding || gen !== this._generation || route !== this._routeToken) continue;
-					if (replaceTitles) {
-						const titleEl = el.querySelector('#video-title, #video-title-link');
-						if (titleEl) {
-							const submission = branding.titles?.[0];
-							const casualMode = appState.settings.deArrowCasualMode;
-							if (submission?.title) {
-								const formatted = this._formatTitle(submission.title, format);
-								this._renderTitle(titleEl, formatted, {
-									uuid: submission.UUID || '',
-									announce: isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')
-								});
-							} else if (fallback && !casualMode) {
-								const original = titleEl.textContent.trim();
-								const formatted = this._formatTitle(original, format);
-								if (formatted !== original) {
-									this._renderTitle(titleEl, formatted, { fallback: true });
-								}
-							}
-						}
-					}
-					if (replaceThumbs) {
-						const stamp = this._submittedThumbnailTime(branding);
-						if (stamp !== null) {
-							const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
-							if (img && !img.src) {
-								delete el.dataset.daProcessed;
-							} else if (img && !img.classList.contains('da-replaced-thumb')) {
-								img.dataset.daOrigSrc = img.src;
-								img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${encodeURIComponent(videoId)}&time=${stamp}`;
-								img.classList.add('da-replaced-thumb');
-								const attribution = this._ensureAttribution(img);
-								img.onerror = () => {
-									if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
-									if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
-								};
-							}
-						}
-					}
+					queued.push({ el, videoId });
 				}
-				if (isWatchPagePath() && this._surfaceEnabled('watch') && replaceTitles) {
-					const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
-					const videoId = getVideoId();
-					if (titleEl && videoId && VIDEO_ID_PATTERN.test(videoId) && !titleEl.dataset.daProcessed) {
-						const branding = await this._fetchBranding(videoId);
-						if (branding && gen === this._generation && route === this._routeToken) {
-							const submission = branding.titles?.[0];
-							const casualMode = appState.settings.deArrowCasualMode;
-							if (submission?.title) {
-								this._renderTitle(titleEl, this._formatTitle(submission.title, format), {
-									uuid: submission.UUID || '',
-									announce: true
-								});
-							} else if (fallback && !casualMode) {
-								const original = titleEl.textContent.trim();
-								const formatted = this._formatTitle(original, format);
-								if (formatted !== original) this._renderTitle(titleEl, formatted, { fallback: true });
-							}
-						}
+				let next = 0;
+				const lane = async () => {
+					while (next < queued.length) {
+						const { el, videoId } = queued[next++];
+						await this._applyCard(el, videoId, gen, route);
 					}
+				};
+				await Promise.all(Array.from({ length: Math.min(this._FETCH_LANES, queued.length) }, lane));
+				if (gen !== this._generation || route !== this._routeToken) return;
+				await this._processWatchTitle(gen, route);
+			},
+			async _applyCard(el, videoId, gen, route) {
+				const branding = await this._fetchBranding(videoId);
+				if (!branding || gen !== this._generation || route !== this._routeToken) return;
+				if (appState.settings.daReplaceTitles) {
+					const titleEl = el.querySelector(this._TITLE_SELECTORS);
+					if (titleEl) this._applyTitle(titleEl, branding);
 				}
+				if (appState.settings.daReplaceThumbs) this._applyThumbnail(el, videoId, branding);
+			},
+			_applyTitle(titleEl, branding, { announce = false } = {}) {
+				const format = appState.settings.daTitleFormat || 'sentence';
+				const submission = branding.titles?.[0];
+				if (submission?.title && (submission.locked || !(Number(submission.votes) < 0))) {
+					return this._renderTitle(titleEl, this._formatTitle(submission.title, format), {
+						uuid: submission.UUID || '',
+						announce
+					});
+				}
+				if (!appState.settings.daFallbackFormat || appState.settings.deArrowCasualMode) return false;
+				const original = titleEl.textContent.trim();
+				const formatted = this._formatTitle(original, format);
+				return formatted !== original && this._renderTitle(titleEl, formatted, { fallback: true });
+			},
+			async _processWatchTitle(gen, route) {
+				if (!isWatchPagePath() || !this._surfaceEnabled('watch') || !appState.settings.daReplaceTitles) return;
+				const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
+				const videoId = getVideoId();
+				if (!titleEl || !videoId || !VIDEO_ID_PATTERN.test(videoId)) return;
+				if (titleEl.dataset.daProcessed) {
+					this._syncDocumentTitle();
+					return;
+				}
+				titleEl.dataset.daProcessed = '1';
+				const branding = await this._fetchBranding(videoId);
+				if (!branding || gen !== this._generation || route !== this._routeToken) return;
+				if (this._applyTitle(titleEl, branding, { announce: true })) this._syncDocumentTitle();
+			},
+			_syncDocumentTitle() {
+				const shown = document.querySelector?.('ytd-watch-metadata [data-ytkit-dearrow-title]');
+				const original = shown?.getAttribute?.('data-ytkit-orig-title');
+				const replacement = shown?.textContent;
+				const current = typeof document.title === 'string' ? document.title : '';
+				if (!original || !replacement || original === replacement || !current.includes(original)) return;
+				const next = current.replace(original, () => replacement);
+				this._docTitle = { original: current, replaced: next };
+				document.title = next;
+			},
+			_syncWatchTimer() {
+				const wanted = isWatchPagePath() && this._anySurfaceEnabledHere();
+				if (wanted && !this._watchTimer) {
+					this._watchTimer = setInterval(() => this._processPage(), 2500);
+				} else if (!wanted && this._watchTimer) {
+					clearInterval(this._watchTimer);
+					this._watchTimer = null;
+				}
+			},
+			_applyThumbnail(el, videoId, branding) {
+				const img = el.querySelector(this._CARD_THUMB_SELECTORS);
+				if (!img || img.classList.contains('da-replaced-thumb')) return;
+				const stamp = this._submittedThumbnailTime(branding);
+				const url = stamp !== null
+					? `${DEARROW_THUMB_API}?videoID=${encodeURIComponent(videoId)}&time=${stamp}`
+					: this._keepsOriginalThumbnail(branding) ? null : this._fallbackThumbnailUrl(el, videoId);
+				if (!url) return;
+				if (!img.src) {
+					this._waitForCover(el, img, videoId, branding);
+					return;
+				}
+				img.dataset.daOrigSrc = img.src;
+				img.src = url;
+				img.classList.add('da-replaced-thumb');
+				const attribution = url.startsWith(DEARROW_THUMB_API) ? this._ensureAttribution(img) : null;
+				img.onerror = () => {
+					if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
+					if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
+				};
+			},
+			_waitForCover(el, img, videoId, branding) {
+				if (typeof MutationObserver !== 'function' || img.dataset.daWaiting) return;
+				img.dataset.daWaiting = '1';
+				const gen = this._generation;
+				const route = this._routeToken;
+				const watcher = new MutationObserver(() => {
+					if (!img.src) return;
+					watcher.disconnect();
+					this._coverWatchers.delete(watcher);
+					delete img.dataset.daWaiting;
+					if (gen !== this._generation || route !== this._routeToken || el.dataset.daVideoId !== videoId) return;
+					this._applyThumbnail(el, videoId, branding);
+				});
+				watcher.observe(img, { attributes: true, attributeFilter: ['src'] });
+				this._coverWatchers.add(watcher);
+			},
+			_keepsOriginalThumbnail(branding) {
+				const thumb = branding?.thumbnails?.[0];
+				return !!thumb?.original && (!!thumb.locked || !(Number(thumb.votes) < 0));
+			},
+			_fallbackThumbnailUrl(el, videoId) {
+				const mode = appState.settings.daThumbFallback || 'random';
+				if (mode === 'original' || !this._cardHasDuration(el)) return null;
+				const still = `https://i.ytimg.com/vi_webp/${encodeURIComponent(videoId)}/${YOUTUBE_STILLS[mode] || YOUTUBE_STILLS.start}.webp`;
+				if (mode !== 'random') return still;
+				return `${DEARROW_THUMB_API}?videoID=${encodeURIComponent(videoId)}&redirectUrl=${encodeURIComponent(still)}`;
+			},
+			_cardHasDuration(el) {
+				const badges = el.querySelectorAll?.(this._DURATION_BADGE_SELECTORS) || [];
+				return Array.from(badges).some((badge) => /^\d{1,4}(?::\d{2}){1,2}$/.test((badge.textContent || '').trim()));
+			},
+			_isNestedCard(el) {
+				return !!el.parentElement?.closest?.(this._CARD_SELECTORS);
+			},
+			_isCollectionCard(el) {
+				return !!el.querySelector?.('yt-collection-thumbnail-view-model, [class*="CollectionThumbnailViewModel"], a[href*="/playlist?list="], a[href*="start_radio=1"]');
 			},
 			destroy() {
 				this._generation++;
@@ -24418,6 +24506,8 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				this._resetTimer = null;
 				clearTimeout(this._persistTimer);
 				this._persistTimer = null;
+				clearInterval(this._watchTimer);
+				this._watchTimer = null;
 				this._cache = {};
 				this._cacheMeta = {};
 				this._pending = {};
@@ -24446,6 +24536,14 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
 					el.classList.remove('da-replaced-thumb');
 				});
+				root.querySelectorAll('img[data-da-waiting]').forEach(el => { delete el.dataset.daWaiting; });
+				if (root !== document) return;
+				for (const watcher of this._coverWatchers) watcher.disconnect();
+				this._coverWatchers.clear();
+				if (this._docTitle) {
+					if (document.title === this._docTitle.replaced) document.title = this._docTitle.original;
+					this._docTitle = null;
+				}
 			},
 			_cardVideoId(el) {
 				const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
