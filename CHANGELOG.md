@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **Theater Split**: one click on the video pauses it again. The split kept resizing the player about 20 times a second, and YouTube took every click during a resize for a seek drag, so it never paused. The page is idle again too. The standalone Theater Split userscript (1.0.24) had the same loop and gets the same fix.
+
 ### Removed
 
 - **DeArrow** no longer puts a "SponsorBlock data" badge under every card it changes. The credit for DeArrow's data (CC BY-NC-SA 4.0) is still in the DeArrow setting's description and in the README.

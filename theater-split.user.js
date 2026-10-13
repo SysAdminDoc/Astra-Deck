@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.23
+// @name         Theater Split v1.0.24
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.23
+// @version      1.0.24
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -53,6 +53,8 @@
 //                     leftover placeholder above it. Replies line up under
 //                     the comment text without stray thread connectors, and
 //                     the pane opens faster.
+//   @version 1.0.24 - The split no longer resizes the player over and over
+//                     while it sits open, so the page stays idle.
 
 (function() {
     'use strict';
@@ -1500,6 +1502,7 @@
     let clickToPauseHandler = null;
     let clickToPauseMp = null;
     let resizeTimer = null;
+    let dispatchingResize = false;
     let lastVideoId = null;
     let chatObserver = null;
     let actionDock = null;
@@ -1635,7 +1638,14 @@
                 parent.insertBefore(vid, next);
                 if (!wasPaused) vid.play().catch(() => {});
             }
-            window.dispatchEvent(new Event('resize'));
+            // The split's own window-resize listener must not answer
+            // this nudge, or it re-triggers every 50 ms forever.
+            dispatchingResize = true;
+            try {
+                window.dispatchEvent(new Event('resize'));
+            } finally {
+                dispatchingResize = false;
+            }
         }, 50);
     }
 
@@ -3316,7 +3326,7 @@
         window.addEventListener('selectstart', commentSelectionSelectStartHandler, true);
 
         windowResizeHandler = () => {
-            if (!isActive) return;
+            if (!isActive || dispatchingResize) return;
             triggerPlayerResize();
             layoutLiveHeaderActions();
         };

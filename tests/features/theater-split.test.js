@@ -947,6 +947,71 @@ test('a burst of player resize nudges fires one resize within a few frames', (t)
     }
 });
 
+test('a window resize gets one player nudge, and the nudge never answers itself', (t) => {
+    // Live probe 2026-10-13: the split's window-resize listener answered
+    // its own synthetic resize 32 ms later, forever (about 20 a second).
+    // Each one resized YouTube's player, and a player resize between
+    // mousedown and click tells YouTube's click handler the click was a
+    // scrub, so a single click on the video never paused it.
+    const { mod } = loadModule();
+    const documentRef = fakeTreeDocument();
+    const player = documentRef.createElement('div');
+    player.id = 'player-container';
+    const below = documentRef.createElement('div');
+    below.id = 'below';
+    documentRef.body.append(player, below);
+    const listeners = new Map();
+    let nudges = 0;
+    const saved = {
+        document: globalThis.document,
+        window: globalThis.window,
+        ResizeObserver: globalThis.ResizeObserver,
+        MutationObserver: globalThis.MutationObserver,
+        requestAnimationFrame: globalThis.requestAnimationFrame
+    };
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    globalThis.document = documentRef;
+    globalThis.window = {
+        innerWidth: 1440,
+        addEventListener(type, fn) {
+            if (!listeners.has(type)) listeners.set(type, new Set());
+            listeners.get(type).add(fn);
+        },
+        removeEventListener(type, fn) { listeners.get(type)?.delete(fn); },
+        dispatchEvent(event) {
+            if (event.type === 'resize') nudges++;
+            for (const fn of [...(listeners.get(event.type) || [])]) fn(event);
+            return true;
+        },
+        scrollTo() {}
+    };
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+    globalThis.MutationObserver = class { observe() {} disconnect() {} takeRecords() { return []; } };
+    globalThis.requestAnimationFrame = (callback) => { callback(); return 1; };
+    try {
+        const feature = mod.createStickyVideoFeature({});
+        feature._getPlayer = () => player;
+        feature._getBelow = () => below;
+        feature._getChatEl = () => null;
+        feature._layoutSplitLiveHeaderActions = () => {};
+        feature._videoType = 'standard';
+        // A timer scheduled inside a tick waits for the next one, so time
+        // moves in frame-sized steps, the way the loop actually ran.
+        const runFor = (ms) => { for (let at = 0; at < ms; at += 16) t.mock.timers.tick(16); };
+        feature._mountOverlay();
+        runFor(2000);
+        const settled = nudges;
+        assert.ok(settled <= 1, `mounting nudges the player once at most (saw ${settled})`);
+
+        // The user resizes the browser window.
+        for (const fn of [...(listeners.get('resize') || [])]) fn({ type: 'resize', isTrusted: true });
+        runFor(2000);
+        assert.equal(nudges - settled, 1, 'one real resize, one nudge, then quiet');
+    } finally {
+        Object.assign(globalThis, saved);
+    }
+});
+
 test('opening the split resizes the player before its panel transition ends', () => {
     const start = STICKY_MODULE_SOURCE.indexOf('_expandSplit() {');
     const expand = STICKY_MODULE_SOURCE.slice(start, STICKY_MODULE_SOURCE.indexOf('_collapseSplit(dismissed', start));

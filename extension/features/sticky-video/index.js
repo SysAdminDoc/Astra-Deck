@@ -191,7 +191,17 @@
                 clearTimeout(this._resizeTimer);
                 this._resizeTimer = setTimeout(() => {
                     this._resizeTimer = null;
-                    window.dispatchEvent(new Event('resize'));
+                    // The split's own window-resize listener must not answer
+                    // this nudge. It did, 32 ms later, forever: YouTube resized
+                    // the player about 20 times a second, and a player resize
+                    // between mousedown and click tells YouTube's click handler
+                    // the click was a scrub, so clicking the video never paused.
+                    this._dispatchingResize = true;
+                    try {
+                        window.dispatchEvent(new Event('resize'));
+                    } finally {
+                        this._dispatchingResize = false;
+                    }
                 }, 32);
             },
 
@@ -828,7 +838,7 @@
 
                 // Re-layout on window resize
                 this._windowResizeHandler = () => {
-                    if (!this._isActive) return;
+                    if (!this._isActive || this._dispatchingResize) return;
                     this._triggerPlayerResize();
                     this._layoutSplitLiveHeaderActions();
                 };
