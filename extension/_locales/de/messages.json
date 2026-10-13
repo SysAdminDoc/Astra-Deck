@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "Wiedergabeseite"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "Was ein Thumbnail ersetzt, das noch niemand bei DeArrow eingereicht hat. Ein zufälliges Bild entspricht DeArrow selbst, die Standbilder erstellt YouTube aus jedem Upload."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "Cover ohne Einreichung"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Wie Ersatztitel formatiert werden"
   },

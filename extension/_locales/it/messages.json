@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "Pagina di visualizzazione"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "Cosa sostituisce una miniatura che nessuno ha ancora inviato a DeArrow. Il fotogramma casuale è quello di DeArrow, i fotogrammi fissi li ricava YouTube da ogni video."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "Copertine senza proposta"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Come formattare i titoli sostitutivi"
   },

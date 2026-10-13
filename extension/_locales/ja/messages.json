@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "視聴ページ"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "DeArrow にまだ誰も投稿していないサムネイルの代わりに表示するもの。ランダムなフレームは DeArrow 本体と同じで、静止画は YouTube がすべての動画から作成したフレームです。"
+  },
+  "feature_daThumbFallback_name": {
+    "message": "投稿のないサムネイル"
+  },
   "feature_daTitleFormat_desc": {
     "message": "置換タイトルのフォーマット方法"
   },

@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- **DeArrow** now changes the cover of a video nobody has submitted a thumbnail for, the way DeArrow itself does. A new setting, **Covers Without a Submission**, picks what goes there: a random frame from DeArrow's thumbnail cache (the default, and DeArrow's own default), one of the stills YouTube takes near the start, middle or end of every upload, or the original cover. Astra only reads DeArrow's cache for the random frame. When the cache has nothing for a video, YouTube's still from near the start shows instead, so DeArrow's server is never asked to render a frame. Live streams, premieres and upcoming videos keep their covers.
+- **DeArrow** puts the new title in the browser tab on a watch page, and puts it back if YouTube rewrites the tab title.
+
+### Fixed
+
+- **DeArrow** now works on the cards YouTube uses today. Home, Subscriptions, channel pages, search and the recommendations beside a video moved to a newer card that DeArrow didn't recognize, so on most pages it changed no titles and no covers. Playlists and mixes are left alone, because their link points at just one of their videos.
+- **DeArrow** looks up six cards at a time instead of one by one, so a page fills in within seconds rather than a few cards at a time.
+- The DeArrow title on a watch page is no longer skipped when YouTube draws the heading late, and recommendations that load after the page opens get picked up too.
+- A DeArrow title now reads the new title to screen readers instead of the clickbait one.
+
 ## [4.98.2] (2026-10-12)
 
 ### Fixed

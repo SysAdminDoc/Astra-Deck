@@ -2406,6 +2406,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "Watch Page"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "What replaces a thumbnail nobody has submitted to DeArrow yet. Random frame matches DeArrow itself, and the stills are frames YouTube takes from every upload."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "Covers Without a Submission"
+  },
   "feature_daTitleFormat_desc": {
     "message": "How to format replacement titles"
   },

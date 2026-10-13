@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "Page de lecture"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "Ce qui remplace une miniature que personne n'a encore proposée à DeArrow. L'image aléatoire correspond à DeArrow, et les images fixes sont extraites par YouTube de chaque vidéo."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "Miniatures sans proposition"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Comment formater les titres de remplacement"
   },

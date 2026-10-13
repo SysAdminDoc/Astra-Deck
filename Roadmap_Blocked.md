@@ -211,14 +211,9 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Evidence: https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow (behind Anubis, read with headless Camoufox); https://dearrow.ajay.app/payment; DeArrow `src/license/license.ts` (`shouldAllowLicenseKey`, `generateLicenseKey("free")` hits `/api/generateToken/free`).
   Acceptance: either written permission from upstream (dev@ajay.app, or an issue on ajayyy/DeArrow, which the wiki invites: "I'd love to know about how you're using it"), noted here and in docs/privacy-policy.md, or the feature leaves the store-safe profile.
   Complexity: S
+  Load note for the ask: since v4.99.0 the default cover for an unsubmitted video is `getThumbnail?videoID=&redirectUrl=` with no `time`, which only reads the cache (no render is queued; a miss answers 307 to YouTube's own still). Submitted frames still send `time`, as before.
   Blocker: asking upstream and deciding what to do with the answer is the maintainer's call, the same family as the SponsorBlock-submission item.
 
-- [ ] P2 — DeArrow random-frame covers for videos nobody has submitted a thumbnail for
-  Why: Astra replaces a cover only when a thumbnail was submitted, which is a small share of videos. The official extension's default shows a frame from a server-chosen random time instead, so most cards change. Astra can do the same without rendering video: `GET /api/branding` already returns `randomTime` (0 to 1) and, when known, `videoDuration`; the frame is `randomTime * videoDuration` seconds, and the thumbnail cache already holds that frame for most videos DeArrow users have seen (checked 2026-10-12 on `_0G4OG39XjI`: X-Timestamp 35.1678 = 0.041263 * 852.281).
-  How: when `_submittedThumbnailTime` is null and `videoDuration` is null, read the duration off the card's time badge. Request `getThumbnail?videoID=&time=&redirectUrl=<the card's i.ytimg.com src>`: an uncached frame then answers 307 to the original cover instead of 204, so there's no broken image. Live streams and upcoming videos keep their cover. This becomes a fourth choice on the ROADMAP "Frame Covers" setting. Skip the extension's local render (an ANDROID innertube `/player` call plus a hidden `<video>` drawn to canvas), which runs into PO tokens.
-  Touches: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js`, `extension/_locales/**`, `tests/features/dearrow.test.js`
-  Complexity: S
-  Blocker: it adds load to upstream's thumbnail server, so it waits on the permission item above.
 
 - [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
   Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.

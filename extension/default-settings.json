@@ -318,6 +318,7 @@
   "daSurfacePlaylist": true,
   "daReplaceTitles": true,
   "daReplaceThumbs": true,
+  "daThumbFallback": "random",
   "daTitleFormat": "sentence",
   "deArrowCasualMode": false,
   "daFallbackFormat": true,

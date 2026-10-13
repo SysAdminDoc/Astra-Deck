@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "观看页面"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "替换尚无人向 DeArrow 提交的缩略图。随机帧与 DeArrow 本身一致，静帧是 YouTube 从每个视频中截取的画面。"
+  },
+  "feature_daThumbFallback_name": {
+    "message": "无人提交的封面"
+  },
   "feature_daTitleFormat_desc": {
     "message": "如何格式化替换标题"
   },

@@ -471,8 +471,11 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
         const region = source.slice(start, start + 4200);
         assert.match(region, /announceA11y\(/,
             `DeArrow primary-title replacement must call announceA11y (${label})`);
-        assert.match(source, /announce:\s*isWatchPagePath\(\)/,
-            `DeArrow card announcement must be gated on isWatchPagePath() — grid spam would be unacceptable (${label})`);
+        // Only the watch heading announces; a card never does (grid spam).
+        assert.match(source, /async _processWatchTitle\(gen, route\) \{\s*if \(!isWatchPagePath\(\)[\s\S]*?this\._applyTitle\(titleEl, branding, \{ announce: true \}\)/,
+            `DeArrow announcement must come from the watch-gated heading pass (${label})`);
+        assert.match(source, /if \(titleEl\) this\._applyTitle\(titleEl, branding\);/,
+            `DeArrow card titles must not announce (${label})`);
         assert.match(region, /daTogether/,
             `DeArrow title renderer must mark the opt-in paired-title mode (${label})`);
     }
@@ -484,7 +487,7 @@ test('DeArrow paired-title mode covers cards, the watch title, and teardown', ()
             `paired-title mode must read daShowOriginalTitle (${label})`);
         assert.match(source, /_WATCH_TITLE_SELECTORS:[\s\S]*?not\(\.daCustomTitle\)/,
             `watch title lookup must ignore an already-rendered DeArrow clone (${label})`);
-        assert.match(source, /if \(isWatchPagePath\(\) && this\._surfaceEnabled\('watch'\) && replaceTitles\)/,
+        assert.match(source, /if \(!isWatchPagePath\(\) \|\| !this\._surfaceEnabled\('watch'\) \|\| !appState\.settings\.daReplaceTitles\) return;/,
             `paired-title mode must process the primary watch title (${label})`);
         assert.match(source, /data-da-original-display/,
             `paired-title mode must remember original display state for teardown (${label})`);
@@ -524,6 +527,15 @@ test('DeArrow selectors are resilient to YouTube class-name churn', () => {
         'DeArrow must walk ytd-compact-video-renderer (watch page sidebar)');
     assert.match(block, /ytd-grid-video-renderer/,
         'DeArrow must walk ytd-grid-video-renderer (channel grid)');
+    // Since 2026 Home, Subscriptions, channel grids, search and the watch
+    // sidebar render yt-lockup-view-model cards with no #video-title, and
+    // DeArrow replaced nothing on them until v4.99.0.
+    const feature = createDeArrowFeature();
+    assert.match(feature._CARD_SELECTORS, /yt-lockup-view-model/, 'DeArrow must walk lockup cards');
+    assert.match(feature._TITLE_SELECTORS, /a\.ytLockupMetadataViewModelTitle:not\(\.daCustomTitle\)/,
+        'a lockup title must be found, and never the replacement drawn beside it');
+    assert.match(feature._CARD_THUMB_SELECTORS, /yt-thumbnail-view-model img/,
+        'a lockup cover must be found inside its thumbnail, away from the channel avatar');
 
     // ID-based selection for the title element (no hashed-class dependency).
     assert.match(block, /#video-title-link/,
@@ -547,12 +559,21 @@ test('DeArrow selectors are resilient to YouTube class-name churn', () => {
 
 test('DeArrow Casual Mode gates fallback formatting on the deArrowCasualMode setting', () => {
     const src = dearrowModuleSource;
-    assert.match(src, /casualMode/,
-        'peeled DeArrow module must reference casualMode');
     assert.match(src, /deArrowCasualMode/,
         'casual mode must read from appState.settings.deArrowCasualMode');
-    assert.match(src, /fallback && !casualMode/,
-        'fallback formatting path must be gated on !casualMode');
+    const rendered = [];
+    const make = (casual) => {
+        const feature = createDeArrowFeature({
+            appState: { settings: surfaceSettings({ daFallbackFormat: true, deArrowCasualMode: casual }) }
+        });
+        feature._renderTitle = (_el, text, options) => { rendered.push([casual, text, options.fallback]); return true; };
+        return feature;
+    };
+    const titleEl = { textContent: 'WHY THIS CHANGES EVERYTHING' };
+    assert.equal(make(true)._applyTitle(titleEl, { titles: [] }), false,
+        'casual mode leaves an original title without a submission alone');
+    assert.equal(make(false)._applyTitle(titleEl, { titles: [] }), true);
+    assert.deepEqual(rendered, [[false, 'Why this changes everything', true]]);
 });
 
 test('DeArrow writes the attributes its peek consumer and a vote surface need', () => {
@@ -575,8 +596,8 @@ test('DeArrow attributes remote titles and thumbnails but not local fallback for
     const source = dearrowModuleSource;
     assert.match(source, /if \(!fallback\) this\._ensureAttribution\(clone\)/,
         'remote title replacements must receive attribution while local formatting stays unattributed');
-    assert.match(source, /const attribution = this\._ensureAttribution\(img\)/,
-        'remote thumbnail replacements must receive attribution');
+    assert.match(source, /const attribution = url\.startsWith\(DEARROW_THUMB_API\) \? this\._ensureAttribution\(img\) : null/,
+        'DeArrow thumbnails must receive attribution, and YouTube stills must not');
     assert.match(source, /\.ytkit-dearrow-attribution[\s\S]*?CC BY-NC-SA 4\.0/,
         'the visible attribution surface must identify the licensed SponsorBlock data');
     assert.match(source, /root\.querySelectorAll\('\.daCustomTitle, \.ytkit-dearrow-attribution'\)\.forEach\(c => c\.remove\(\)\)/,
@@ -632,4 +653,212 @@ test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision
     const markerLine = (block.match(/'\.daCustomTitle[^']*'[^;]*?(?:;|\n)/) || [''])[0];
     assert.ok(markerLine.includes('daCustomTitle'),
         'marker class must keep the "da" prefix to avoid colliding with YouTube namespace');
+});
+
+// A card with just enough DOM for the card pass: a watch link, a cover, a
+// duration badge, and the host it may be nested in.
+function lockupCard({ videoId, parentHost = null, collection = false, cover = 'https://i.ytimg.com/vi/x/hq720.jpg', badge = '12:34' } = {}) {
+    const classes = new Set();
+    const img = {
+        src: cover,
+        dataset: {},
+        classList: { contains: (name) => classes.has(name), add: (name) => classes.add(name) }
+    };
+    const selectors = createDeArrowFeature();
+    const card = {
+        dataset: {},
+        parentElement: parentHost ? { closest: () => parentHost } : null,
+        closest: () => null,
+        querySelector(selector) {
+            if (selector === selectors._CARD_THUMB_SELECTORS) return img;
+            if (selector.includes('/playlist?list=')) return collection ? {} : null;
+            if (selector.includes('/watch')) return { href: `https://www.youtube.com/watch?v=${videoId}` };
+            return null;
+        },
+        querySelectorAll(selector) {
+            return selector === selectors._DURATION_BADGE_SELECTORS && badge ? [{ textContent: ` ${badge} ` }] : [];
+        }
+    };
+    return { card, img };
+}
+
+test('lockup cards are walked once, from the outer host, and playlists and mixes are left alone', async () => {
+    const outer = lockupCard({ videoId: 'abc123DEF45' });
+    const inner = lockupCard({ videoId: 'abc123DEF45', parentHost: outer.card });
+    const mix = lockupCard({ videoId: 'mix123DEF45', collection: true });
+    const fetched = [];
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        isWatchPagePath: () => false
+    });
+    feature._fetchBranding = async (videoId) => { fetched.push(videoId); return null; };
+    await withGlobals({
+        document: pageDocument({ surface: 'home', renderers: [outer.card, inner.card, mix.card] }),
+        location: { origin: 'https://www.youtube.com', pathname: '/' }
+    }, async () => {
+        await feature._processPage();
+    });
+    assert.deepEqual(fetched, ['abc123DEF45'], 'one lookup per card, none for a collection');
+    assert.equal(inner.card.dataset.daProcessed, 'nested');
+    assert.equal(mix.card.dataset.daVideoId, undefined);
+});
+
+test('cards are looked up in parallel lanes, not one at a time', async () => {
+    const cards = Array.from({ length: 9 }, (_, i) => lockupCard({ videoId: `abc123DEF0${i}` }).card);
+    const waiting = [];
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        isWatchPagePath: () => false
+    });
+    feature._fetchBranding = () => new Promise((resolve) => waiting.push(resolve));
+    await withGlobals({
+        document: pageDocument({ surface: 'home', renderers: cards }),
+        location: { origin: 'https://www.youtube.com', pathname: '/' }
+    }, async () => {
+        const pass = feature._processPage();
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(waiting.length, feature._FETCH_LANES, 'every lane starts a lookup before any answer');
+        let answered = 0;
+        while (waiting.length) {
+            waiting.shift()(null);
+            answered++;
+            await new Promise((resolve) => setImmediate(resolve));
+        }
+        await pass;
+        assert.equal(answered, cards.length);
+    });
+});
+
+test('a cover with no submission falls back the way the setting says', () => {
+    const make = (mode) => createDeArrowFeature({ appState: { settings: surfaceSettings({ daThumbFallback: mode }) } });
+    const id = 'abc123DEF45';
+    const { card } = lockupCard({ videoId: id });
+    const still = (code) => `https://i.ytimg.com/vi_webp/${id}/${code}.webp`;
+    assert.equal(make('random')._fallbackThumbnailUrl(card, id),
+        `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${id}&redirectUrl=${encodeURIComponent(still('hq1'))}`,
+        'the random frame asks the cache without a time, so upstream never renders for it');
+    assert.equal(make(undefined)._fallbackThumbnailUrl(card, id), make('random')._fallbackThumbnailUrl(card, id),
+        'random frame is the default, as in DeArrow');
+    assert.equal(make('start')._fallbackThumbnailUrl(card, id), still('hq1'));
+    assert.equal(make('middle')._fallbackThumbnailUrl(card, id), still('hq2'));
+    assert.equal(make('end')._fallbackThumbnailUrl(card, id), still('hq3'));
+    assert.equal(make('original')._fallbackThumbnailUrl(card, id), null);
+    for (const badge of ['LIVE', 'Upcoming', 'Premiere', null]) {
+        assert.equal(make('random')._fallbackThumbnailUrl(lockupCard({ videoId: id, badge }).card, id), null,
+            `a card without a running time (${badge}) keeps its cover`);
+    }
+    assert.notEqual(make('random')._fallbackThumbnailUrl(lockupCard({ videoId: id, badge: '1:04:42' }).card, id), null);
+});
+
+test('a submitted thumbnail beats the fallback, and an original vote keeps the cover', () => {
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings({ daThumbFallback: 'middle' }) } });
+    let attributed = 0;
+    feature._ensureAttribution = () => { attributed++; return null; };
+    const id = 'abc123DEF45';
+
+    const submitted = lockupCard({ videoId: id });
+    feature._applyThumbnail(submitted.card, id, { thumbnails: [{ timestamp: 70.08, original: false, votes: 1, locked: false }] });
+    assert.equal(submitted.img.src, `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${id}&time=70.08`);
+    assert.equal(submitted.img.dataset.daOrigSrc, 'https://i.ytimg.com/vi/x/hq720.jpg');
+    assert.equal(attributed, 1, 'a DeArrow frame carries attribution');
+
+    const kept = lockupCard({ videoId: id });
+    feature._applyThumbnail(kept.card, id, { thumbnails: [{ timestamp: null, original: true, votes: 2, locked: false }] });
+    assert.equal(kept.img.src, 'https://i.ytimg.com/vi/x/hq720.jpg', 'voters chose the creator thumbnail');
+
+    const bare = lockupCard({ videoId: id });
+    feature._applyThumbnail(bare.card, id, { thumbnails: [], randomTime: 0.4, videoDuration: null });
+    assert.equal(bare.img.src, `https://i.ytimg.com/vi_webp/${id}/hq2.webp`);
+    assert.equal(attributed, 1, 'a YouTube still carries no DeArrow attribution');
+
+});
+
+test('an off-screen cover waits for its image instead of reprocessing the card', async () => {
+    // Reprocessing redrew the title, which woke the page observer, which
+    // reprocessed every off-screen card again every 300 ms.
+    const observers = [];
+    class FakeMutationObserver {
+        constructor(callback) { this.callback = callback; this.connected = false; observers.push(this); }
+        observe(target, options) { this.target = target; this.options = options; this.connected = true; }
+        disconnect() { this.connected = false; }
+    }
+    const page = { querySelectorAll: () => [], title: '' };
+    await withGlobals({ MutationObserver: FakeMutationObserver, document: page }, () => {
+        const feature = createDeArrowFeature({ appState: { settings: surfaceSettings({ daThumbFallback: 'end' }) } });
+        const id = 'abc123DEF45';
+        const lazy = lockupCard({ videoId: id, cover: '' });
+        lazy.card.dataset.daProcessed = '1';
+        lazy.card.dataset.daVideoId = id;
+        feature._applyThumbnail(lazy.card, id, { thumbnails: [] });
+        feature._applyThumbnail(lazy.card, id, { thumbnails: [] });
+        assert.equal(lazy.card.dataset.daProcessed, '1', 'the card is not handed back to the page pass');
+        assert.equal(observers.length, 1, 'one watcher per cover, however many passes ask');
+        assert.deepEqual(observers[0].options, { attributes: true, attributeFilter: ['src'] });
+
+        lazy.img.src = 'https://i.ytimg.com/vi/x/hq720.jpg';
+        observers[0].callback();
+        assert.equal(lazy.img.src, `https://i.ytimg.com/vi_webp/${id}/hq3.webp`, 'the cover is swapped once YouTube loads it');
+        assert.equal(lazy.img.dataset.daOrigSrc, 'https://i.ytimg.com/vi/x/hq720.jpg');
+        assert.equal(observers[0].connected, false);
+
+        const left = lockupCard({ videoId: id, cover: '' });
+        left.card.dataset.daVideoId = id;
+        feature._applyThumbnail(left.card, id, { thumbnails: [] });
+        assert.equal(observers[1].connected, true);
+        feature._resetCard(page);
+        assert.equal(observers[1].connected, false, 'a route change disconnects every waiting cover');
+    });
+});
+
+test('a lockup replacement keeps its inner span and reads the new title to screen readers', () => {
+    const attrs = (initial = {}) => {
+        const map = new Map(Object.entries(initial));
+        return {
+            getAttribute: (name) => (map.has(name) ? map.get(name) : null),
+            setAttribute: (name, value) => map.set(name, String(value)),
+            hasAttribute: (name) => map.has(name),
+            removeAttribute: (name) => map.delete(name)
+        };
+    };
+    const inserted = [];
+    const parent = { insertBefore: (node) => { inserted.push(node); return node; } };
+    const span = { tagName: 'SPAN', cloneNode: () => ({ tagName: 'SPAN', textContent: '' }) };
+    const clone = {
+        ...attrs({ 'aria-label': 'YOU WONT BELIEVE THIS 12 minutes' }),
+        dataset: {}, children: [], textContent: '',
+        append(node) { this.children.push(node); }
+    };
+    const titleEl = {
+        ...attrs({ 'aria-label': 'YOU WONT BELIEVE THIS 12 minutes' }),
+        textContent: 'YOU WONT BELIEVE THIS', className: 'ytLockupMetadataViewModelTitle', style: { display: '' },
+        dataset: {}, children: [span], parentNode: parent, previousElementSibling: null,
+        classList: { add() {} },
+        cloneNode: () => clone
+    };
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
+    feature._ensureAttribution = () => null;
+    assert.equal(feature._renderTitle(titleEl, 'How the bridge was built'), true);
+    assert.equal(inserted[0], clone);
+    assert.equal(clone.textContent, '', 'the text lives in the copied span, not loose in the link');
+    assert.equal(clone.children[0].textContent, 'How the bridge was built');
+    assert.equal(clone.getAttribute('aria-label'), 'How the bridge was built 12 minutes');
+});
+
+test('the tab title follows the watch heading and is restored on teardown', async () => {
+    const shown = { textContent: 'How the bridge was built', getAttribute: () => 'YOU WONT BELIEVE THIS' };
+    const doc = {
+        title: 'YOU WONT BELIEVE THIS - YouTube',
+        querySelector: (selector) => (selector.includes('[data-ytkit-dearrow-title]') ? shown : null),
+        querySelectorAll: () => []
+    };
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
+    await withGlobals({ document: doc }, () => {
+        feature._syncDocumentTitle();
+        assert.equal(doc.title, 'How the bridge was built - YouTube');
+        doc.title = '(2) YOU WONT BELIEVE THIS - YouTube';
+        feature._syncDocumentTitle();
+        assert.equal(doc.title, '(2) How the bridge was built - YouTube', 'a YouTube rewrite is caught on the next pass');
+        feature._resetCard(doc);
+        assert.equal(doc.title, '(2) YOU WONT BELIEVE THIS - YouTube');
+    });
 });

@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "Страница просмотра"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "Чем заменить миниатюру, которую ещё никто не отправил в DeArrow. Случайный кадр показывает и сам DeArrow, а стоп-кадры YouTube берёт из каждого видео."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "Обложки без предложений"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Как форматировать заменённые заголовки"
   },

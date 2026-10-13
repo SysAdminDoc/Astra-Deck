@@ -12,6 +12,11 @@
         'https://sponsorblock.kavin.rocks'
     ]);
 
+    const DEARROW_THUMB_API = 'https://dearrow-thumb.ajay.app/api/v1/getThumbnail';
+    // YouTube's auto-generated stills, which upstream calls start, middle
+    // and end (checked on a same-day upload 2026-10-12).
+    const YOUTUBE_STILLS = Object.freeze({ start: 'hq1', middle: 'hq2', end: 'hq3' });
+
     function resolveSponsorBlockApiOrigins(settings = {}) {
         const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
         if (typeof sharedResolver === 'function') return sharedResolver(settings);
@@ -70,8 +75,22 @@
             _lastRouteHref: null,
             _processTimer: null,
             _resetTimer: null,
-            _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
+            // Card hosts. Home, Subscriptions and channel grids wrap a
+            // yt-lockup-view-model in ytd-rich-item-renderer, and search and
+            // the watch sidebar render bare lockups. The outer host owns a
+            // card (Video Hider's rule), so a nested match is skipped.
+            _CARD_SELECTORS: 'ytd-rich-item-renderer, yt-lockup-view-model, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer',
+            // Lockups have no #video-title. A drawn replacement keeps the
+            // original's classes, so it is excluded by name.
+            _TITLE_SELECTORS: '#video-title:not(.daCustomTitle), #video-title-link:not(.daCustomTitle), a.ytLockupMetadataViewModelTitle:not(.daCustomTitle)',
             _WATCH_TITLE_SELECTORS: 'ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string:not(.daCustomTitle), ytd-watch-metadata h1 yt-formatted-string:not(.daCustomTitle)',
+            // Scoped to the thumbnail, which keeps the channel avatar out.
+            _CARD_THUMB_SELECTORS: 'yt-thumbnail-view-model img, ytd-thumbnail img, #thumbnail img',
+            _DURATION_BADGE_SELECTORS: 'yt-thumbnail-view-model .ytBadgeShapeText, ytd-thumbnail .ytBadgeShapeText, ytd-thumbnail .badge-shape-wiz__text',
+            _FETCH_LANES: 6,
+            _watchTimer: null,
+            _docTitle: null,
+            _coverWatchers: new Set(),
             _persistTimer: null,
             init() {
                 const self = this;
@@ -99,7 +118,7 @@
                 }
                 const css = `
                     .daCustomTitle { display: block !important; }
-                    .daCustomTitle:not([data-da-together="1"]) + [id="video-title"], .daCustomTitle:not([data-da-together="1"]) + a#video-title-link { display: none !important; }
+                    .daCustomTitle:not([data-da-together="1"]) + [id="video-title"], .daCustomTitle:not([data-da-together="1"]) + a#video-title-link, .daCustomTitle:not([data-da-together="1"]) + a.ytLockupMetadataViewModelTitle { display: none !important; }
                     .daCustomTitle[data-da-together="1"] { margin-bottom: 2px !important; }
                     .daOriginalTitle[data-da-original-title="1"] {
                         display: block !important;
@@ -181,6 +200,7 @@
                     // Keep the churning observer attached only off watch pages.
                     if (isWatchPagePath()) self._disconnectObserver();
                     else self._connectObserver();
+                    self._syncWatchTimer();
                 };
                 this._observer = new MutationObserver(() => {
                     if (isWatchPagePath()) return;
@@ -199,6 +219,7 @@
                 // resetAndProcess's one-shot pass.
                 addNavigateRule(this._navRuleId, resetAndProcess);
                 if (!isWatchPagePath()) this._connectObserver();
+                this._syncWatchTimer();
             },
             _connectObserver() {
                 if (!this._observer) return;
@@ -394,16 +415,13 @@
             },
             _ensureAttribution(outputEl) {
                 if (!outputEl) return null;
-                const owner = outputEl.closest?.(
-                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, '
-                    + 'ytd-grid-video-renderer, ytd-watch-metadata'
-                ) || outputEl.parentElement;
+                const owner = outputEl.closest?.(`${this._CARD_SELECTORS}, ytd-watch-metadata`) || outputEl.parentElement;
                 if (!owner) return null;
                 const existing = owner.querySelector?.('.ytkit-dearrow-attribution');
                 if (existing) return existing;
                 const titleEl = outputEl.matches?.('[data-ytkit-dearrow-title]')
                     ? outputEl
-                    : owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link');
+                    : owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link, a.ytLockupMetadataViewModelTitle');
                 const placement = titleEl?.closest?.('h1, h3') || titleEl || outputEl;
                 if (!placement.parentNode) return null;
                 const link = this._createAttribution();
@@ -416,7 +434,20 @@
                 const clone = titleEl.cloneNode(false);
                 clone.className = `daCustomTitle${fallback ? ' da-formatted-title' : ''} ${titleEl.className}`;
                 clone.removeAttribute('id');
-                clone.textContent = formatted;
+                // A lockup title carries its typography on one inner span.
+                const only = titleEl.children?.length === 1 ? titleEl.children[0] : null;
+                if (only?.tagName === 'SPAN') {
+                    const inner = only.cloneNode(false);
+                    inner.textContent = formatted;
+                    clone.append(inner);
+                } else {
+                    clone.textContent = formatted;
+                }
+                // The copied label would read the clickbait to a screen reader.
+                const label = clone.getAttribute('aria-label');
+                if (label && originalTitle && label.includes(originalTitle)) {
+                    clone.setAttribute('aria-label', label.replace(originalTitle, () => formatted));
+                }
                 clone.title = appState.settings.daShowOriginalHover ? originalTitle : formatted;
                 clone.setAttribute('data-ytkit-dearrow-title', '1');
                 clone.setAttribute('data-ytkit-orig-title', originalTitle);
@@ -537,20 +568,25 @@
                 if (!this._anySurfaceEnabledHere()) return;
                 const gen = this._generation;
                 const route = this._routeToken;
-                const replaceTitles = appState.settings.daReplaceTitles;
-                const replaceThumbs = appState.settings.daReplaceThumbs;
-                const format = appState.settings.daTitleFormat || 'sentence';
-                const fallback = appState.settings.daFallbackFormat;
-                const renderers = document.querySelectorAll('ytd-rich-item-renderer:not([data-da-processed]), ytd-video-renderer:not([data-da-processed]), ytd-compact-video-renderer:not([data-da-processed]), ytd-grid-video-renderer:not([data-da-processed])');
-                for (const el of renderers) {
-                    if (gen !== this._generation || route !== this._routeToken) return;
+                const unprocessed = this._CARD_SELECTORS.split(',')
+                    .map((selector) => `${selector.trim()}:not([data-da-processed])`)
+                    .join(', ');
+                const queued = [];
+                for (const el of document.querySelectorAll(unprocessed)) {
                     // The list is a snapshot. Another pass started while this
                     // one awaited a fetch may already own this card, and taking
                     // it again stacked a second DeArrow title on it.
                     if (el.dataset.daProcessed) continue;
+                    if (this._isNestedCard(el)) {
+                        el.dataset.daProcessed = 'nested';
+                        continue;
+                    }
                     el.dataset.daProcessed = '1';
                     const videoId = this._cardVideoId(el);
                     if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
+                    // A playlist or mix links its first video, and that
+                    // video's title and frames are not the collection's.
+                    if (this._isCollectionCard(el)) continue;
                     el.dataset.daVideoId = videoId;
                     // v3.28 deferred → v4.0+: honor per-channel override.
                     // 'off'      → skip title + thumb replacement entirely for this card
@@ -568,71 +604,162 @@
                         el.dataset.daOverride = overrideMode;
                         continue;
                     }
-                    const branding = await this._fetchBranding(videoId);
-                    if (!branding || gen !== this._generation || route !== this._routeToken) continue;
-                    if (replaceTitles) {
-                        const titleEl = el.querySelector('#video-title, #video-title-link');
-                        if (titleEl) {
-                            const submission = branding.titles?.[0];
-                            const casualMode = appState.settings.deArrowCasualMode;
-                            if (submission?.title) {
-                                const formatted = this._formatTitle(submission.title, format);
-                                this._renderTitle(titleEl, formatted, {
-                                    uuid: submission.UUID || '',
-                                    announce: isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')
-                                });
-                            } else if (fallback && !casualMode) {
-                                const original = titleEl.textContent.trim();
-                                const formatted = this._formatTitle(original, format);
-                                if (formatted !== original) {
-                                    this._renderTitle(titleEl, formatted, { fallback: true });
-                                }
-                            }
-                        }
-                    }
-                    if (replaceThumbs) {
-                        const stamp = this._submittedThumbnailTime(branding);
-                        if (stamp !== null) {
-                            const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
-                            if (img && !img.src) {
-                                // Lazy img not hydrated yet — let the next
-                                // pass replace it once the original src
-                                // exists so error/destroy restores work.
-                                delete el.dataset.daProcessed;
-                            } else if (img && !img.classList.contains('da-replaced-thumb')) {
-                                img.dataset.daOrigSrc = img.src;
-                                img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${encodeURIComponent(videoId)}&time=${stamp}`;
-                                img.classList.add('da-replaced-thumb');
-                                const attribution = this._ensureAttribution(img);
-                                img.onerror = () => {
-                                    if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
-                                    if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
-                                };
-                            }
-                        }
-                    }
+                    queued.push({ el, videoId });
                 }
-                if (isWatchPagePath() && this._surfaceEnabled('watch') && replaceTitles) {
-                    const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
-                    const videoId = getVideoId();
-                    if (titleEl && videoId && VIDEO_ID_PATTERN.test(videoId) && !titleEl.dataset.daProcessed) {
-                        const branding = await this._fetchBranding(videoId);
-                        if (branding && gen === this._generation && route === this._routeToken) {
-                            const submission = branding.titles?.[0];
-                            const casualMode = appState.settings.deArrowCasualMode;
-                            if (submission?.title) {
-                                this._renderTitle(titleEl, this._formatTitle(submission.title, format), {
-                                    uuid: submission.UUID || '',
-                                    announce: true
-                                });
-                            } else if (fallback && !casualMode) {
-                                const original = titleEl.textContent.trim();
-                                const formatted = this._formatTitle(original, format);
-                                if (formatted !== original) this._renderTitle(titleEl, formatted, { fallback: true });
-                            }
-                        }
+                // One card at a time left a 30-card page two thirds untouched
+                // twenty seconds in. A few lanes run side by side; the
+                // in-flight map in _fetchBranding still collapses repeats.
+                let next = 0;
+                const lane = async () => {
+                    while (next < queued.length) {
+                        const { el, videoId } = queued[next++];
+                        await this._applyCard(el, videoId, gen, route);
                     }
+                };
+                await Promise.all(Array.from({ length: Math.min(this._FETCH_LANES, queued.length) }, lane));
+                if (gen !== this._generation || route !== this._routeToken) return;
+                await this._processWatchTitle(gen, route);
+            },
+            async _applyCard(el, videoId, gen, route) {
+                const branding = await this._fetchBranding(videoId);
+                if (!branding || gen !== this._generation || route !== this._routeToken) return;
+                if (appState.settings.daReplaceTitles) {
+                    const titleEl = el.querySelector(this._TITLE_SELECTORS);
+                    if (titleEl) this._applyTitle(titleEl, branding);
                 }
+                if (appState.settings.daReplaceThumbs) this._applyThumbnail(el, videoId, branding);
+            },
+            // Draws the trusted crowd title, or the original run through the
+            // formatter. Returns whether anything was drawn.
+            _applyTitle(titleEl, branding, { announce = false } = {}) {
+                const format = appState.settings.daTitleFormat || 'sentence';
+                const submission = branding.titles?.[0];
+                if (submission?.title && (submission.locked || !(Number(submission.votes) < 0))) {
+                    return this._renderTitle(titleEl, this._formatTitle(submission.title, format), {
+                        uuid: submission.UUID || '',
+                        announce
+                    });
+                }
+                if (!appState.settings.daFallbackFormat || appState.settings.deArrowCasualMode) return false;
+                const original = titleEl.textContent.trim();
+                const formatted = this._formatTitle(original, format);
+                return formatted !== original && this._renderTitle(titleEl, formatted, { fallback: true });
+            },
+            async _processWatchTitle(gen, route) {
+                if (!isWatchPagePath() || !this._surfaceEnabled('watch') || !appState.settings.daReplaceTitles) return;
+                const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
+                const videoId = getVideoId();
+                if (!titleEl || !videoId || !VIDEO_ID_PATTERN.test(videoId)) return;
+                if (titleEl.dataset.daProcessed) {
+                    this._syncDocumentTitle();
+                    return;
+                }
+                // Taken before the fetch, so the timed watch pass never
+                // starts a second lookup for the same heading.
+                titleEl.dataset.daProcessed = '1';
+                const branding = await this._fetchBranding(videoId);
+                if (!branding || gen !== this._generation || route !== this._routeToken) return;
+                if (this._applyTitle(titleEl, branding, { announce: true })) this._syncDocumentTitle();
+            },
+            // The tab title kept the clickbait the heading no longer shows.
+            // YouTube rewrites document.title on its own schedule, so the
+            // timed watch pass puts the replacement back each time.
+            _syncDocumentTitle() {
+                const shown = document.querySelector?.('ytd-watch-metadata [data-ytkit-dearrow-title]');
+                const original = shown?.getAttribute?.('data-ytkit-orig-title');
+                const replacement = shown?.textContent;
+                const current = typeof document.title === 'string' ? document.title : '';
+                if (!original || !replacement || original === replacement || !current.includes(original)) return;
+                const next = current.replace(original, () => replacement);
+                this._docTitle = { original: current, replaced: next };
+                document.title = next;
+            },
+            // The watch page has no body observer (player and comment churn),
+            // and its heading renders late while the sidebar loads in
+            // batches, so a light timed pass covers both while it's open.
+            _syncWatchTimer() {
+                const wanted = isWatchPagePath() && this._anySurfaceEnabledHere();
+                if (wanted && !this._watchTimer) {
+                    this._watchTimer = setInterval(() => this._processPage(), 2500);
+                } else if (!wanted && this._watchTimer) {
+                    clearInterval(this._watchTimer);
+                    this._watchTimer = null;
+                }
+            },
+            _applyThumbnail(el, videoId, branding) {
+                const img = el.querySelector(this._CARD_THUMB_SELECTORS);
+                if (!img || img.classList.contains('da-replaced-thumb')) return;
+                const stamp = this._submittedThumbnailTime(branding);
+                const url = stamp !== null
+                    ? `${DEARROW_THUMB_API}?videoID=${encodeURIComponent(videoId)}&time=${stamp}`
+                    : this._keepsOriginalThumbnail(branding) ? null : this._fallbackThumbnailUrl(el, videoId);
+                if (!url) return;
+                if (!img.src) {
+                    // An off-screen cover YouTube hasn't loaded yet. Swapping
+                    // it now would leave error/destroy nothing to restore, and
+                    // reprocessing the card redrew its title, which woke the
+                    // observer, which reprocessed it again every 300 ms.
+                    this._waitForCover(el, img, videoId, branding);
+                    return;
+                }
+                img.dataset.daOrigSrc = img.src;
+                img.src = url;
+                img.classList.add('da-replaced-thumb');
+                // YouTube's own stills are not DeArrow data.
+                const attribution = url.startsWith(DEARROW_THUMB_API) ? this._ensureAttribution(img) : null;
+                img.onerror = () => {
+                    if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
+                    if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
+                };
+            },
+            _waitForCover(el, img, videoId, branding) {
+                if (typeof MutationObserver !== 'function' || img.dataset.daWaiting) return;
+                img.dataset.daWaiting = '1';
+                const gen = this._generation;
+                const route = this._routeToken;
+                const watcher = new MutationObserver(() => {
+                    if (!img.src) return;
+                    watcher.disconnect();
+                    this._coverWatchers.delete(watcher);
+                    delete img.dataset.daWaiting;
+                    if (gen !== this._generation || route !== this._routeToken || el.dataset.daVideoId !== videoId) return;
+                    this._applyThumbnail(el, videoId, branding);
+                });
+                watcher.observe(img, { attributes: true, attributeFilter: ['src'] });
+                this._coverWatchers.add(watcher);
+            },
+            // Voters picked the creator's own thumbnail, so no frame replaces it.
+            _keepsOriginalThumbnail(branding) {
+                const thumb = branding?.thumbnails?.[0];
+                return !!thumb?.original && (!!thumb.locked || !(Number(thumb.votes) < 0));
+            },
+            // A cover for a video nobody submitted a thumbnail for. DeArrow's
+            // own default is a frame from a random time the server picks;
+            // asked without a time, the thumbnail cache returns that frame
+            // when any DeArrow user has seen the video and otherwise
+            // redirects to redirectUrl without queueing a render, so this
+            // only ever reads upstream's cache. YouTube's own stills near
+            // the start, middle and end (hq1/hq2/hq3, upstream's
+            // "auto-generated" choice) are that redirect and the other modes.
+            _fallbackThumbnailUrl(el, videoId) {
+                const mode = appState.settings.daThumbFallback || 'random';
+                if (mode === 'original' || !this._cardHasDuration(el)) return null;
+                const still = `https://i.ytimg.com/vi_webp/${encodeURIComponent(videoId)}/${YOUTUBE_STILLS[mode] || YOUTUBE_STILLS.start}.webp`;
+                if (mode !== 'random') return still;
+                return `${DEARROW_THUMB_API}?videoID=${encodeURIComponent(videoId)}&redirectUrl=${encodeURIComponent(still)}`;
+            },
+            // Live streams, premieres and upcoming videos carry a badge with
+            // no running time, and keep their cover. Digits and colons read
+            // the same in every interface language.
+            _cardHasDuration(el) {
+                const badges = el.querySelectorAll?.(this._DURATION_BADGE_SELECTORS) || [];
+                return Array.from(badges).some((badge) => /^\d{1,4}(?::\d{2}){1,2}$/.test((badge.textContent || '').trim()));
+            },
+            _isNestedCard(el) {
+                return !!el.parentElement?.closest?.(this._CARD_SELECTORS);
+            },
+            _isCollectionCard(el) {
+                return !!el.querySelector?.('yt-collection-thumbnail-view-model, [class*="CollectionThumbnailViewModel"], a[href*="/playlist?list="], a[href*="start_radio=1"]');
             },
             destroy() {
                 this._generation++;
@@ -642,6 +769,8 @@
                 this._resetTimer = null;
                 clearTimeout(this._persistTimer);
                 this._persistTimer = null;
+                clearInterval(this._watchTimer);
+                this._watchTimer = null;
                 this._cache = {};
                 this._cacheMeta = {};
                 this._pending = {};
@@ -672,6 +801,14 @@
                     if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                     el.classList.remove('da-replaced-thumb');
                 });
+                root.querySelectorAll('img[data-da-waiting]').forEach(el => { delete el.dataset.daWaiting; });
+                if (root !== document) return;
+                for (const watcher of this._coverWatchers) watcher.disconnect();
+                this._coverWatchers.clear();
+                if (this._docTitle) {
+                    if (document.title === this._docTitle.replaced) document.title = this._docTitle.original;
+                    this._docTitle = null;
+                }
             },
             _cardVideoId(el) {
                 const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');

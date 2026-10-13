@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "صفحة المشاهدة"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "ما يحل محل صورة مصغّرة لم يرسلها أحد إلى DeArrow بعد. الإطار العشوائي هو ما يعرضه DeArrow نفسه، والصور الثابتة إطارات يأخذها YouTube من كل فيديو."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "أغلفة بلا اقتراح"
+  },
   "feature_daTitleFormat_desc": {
     "message": "كيفية تنسيق العناوين البديلة"
   },

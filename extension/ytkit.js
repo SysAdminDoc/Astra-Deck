@@ -4446,6 +4446,7 @@ const STORAGE_KEYS = Object.freeze({
             daSurfacePlaylist: true,
             daReplaceTitles: true,
             daReplaceThumbs: true,
+            daThumbFallback: 'random',      // cover for a video with no submitted thumbnail
             daTitleFormat: 'sentence',
             deArrowCasualMode: false,
             daFallbackFormat: true,
@@ -28938,6 +28939,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         { id: 'daSurfacePlaylist', name: t('feature_daSurfacePlaylist_name', 'Playlists'), description: t('feature_daSurfacePlaylist_desc', 'Use DeArrow on playlist pages and in the watch-page playlist panel'), group: 'Content', icon: 'list', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'daThumbFallback', name: t('feature_daThumbFallback_name', 'Covers Without a Submission'), description: t('feature_daThumbFallback_desc', 'What replaces a thumbnail nobody has submitted to DeArrow yet. Random frame matches DeArrow itself, and the stills are frames YouTube takes from every upload.'), group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'random',label:'Random frame (DeArrow)'},{value:'start',label:'Still near the start'},{value:'middle',label:'Still from the middle'},{value:'end',label:'Still near the end'},{value:'original',label:'Keep the original'}], init(){}, destroy(){} },
         { id: 'daTitleFormat', name: 'Title Format', description: 'How to format replacement titles', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'sentence',label:'Sentence case'},{value:'title_case',label:'Title Case'},{value:'original',label:'Original'}], init(){}, destroy(){} },
         { id: 'deArrowCasualMode', name: 'Casual Mode', description: 'Keep descriptive titles unchanged and only replace titles that have crowd-submitted DeArrow alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daFallbackFormat', name: 'Format Original Titles', description: 'Format the original title when no crowdsourced submission exists', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },

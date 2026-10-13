@@ -2392,6 +2392,12 @@
   "feature_daSurfaceWatch_name": {
     "message": "Página de exibição"
   },
+  "feature_daThumbFallback_desc": {
+    "message": "O que substitui uma miniatura que ninguém enviou ao DeArrow ainda. O quadro aleatório é o que o próprio DeArrow mostra, e as imagens fixas são quadros que o YouTube tira de cada vídeo."
+  },
+  "feature_daThumbFallback_name": {
+    "message": "Capas sem envio"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Como formatar os títulos substituídos"
   },
