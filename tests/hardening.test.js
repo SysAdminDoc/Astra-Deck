@@ -3326,10 +3326,10 @@ test('SponsorBlock API/database attribution is pinned across product and store s
     const localeRoot = path.join(__dirname, '..', 'extension', '_locales');
     for (const locale of fs.readdirSync(localeRoot)) {
         const messages = JSON.parse(read(path.join('extension', '_locales', locale, 'messages.json')));
-        assert.ok(messages.sponsorBlockDataAttribution?.message,
-            `${locale} must carry the visible SponsorBlock data label`);
-        assert.match(messages.sponsorBlockDataAttributionTitle?.message || '', /CC BY-NC-SA 4\.0/,
-            `${locale} must carry the licence disclosure for the in-product label`);
+        // The in-product credit is the setting copy below. The per-card
+        // "SponsorBlock data" badge was retired in v4.99.2.
+        assert.equal(messages.sponsorBlockDataAttribution, undefined,
+            `${locale} must not ship the retired per-card badge label`);
         assert.match(messages.feature_sponsorBlock_desc?.message || '', /CC BY-NC-SA 4\.0/,
             `${locale} SponsorBlock settings copy must disclose the data licence`);
         assert.match(messages.feature_deArrow_desc?.message || '', /CC BY-NC-SA 4\.0/,

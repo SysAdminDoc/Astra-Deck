@@ -6493,12 +6493,6 @@
   "speedPopupSub": {
     "message": "在更改之前应用于所有视频。"
   },
-  "sponsorBlockDataAttribution": {
-    "message": "SponsorBlock 数据"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API/数据库数据 — CC BY-NC-SA 4.0"
-  },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label}（缓存于 {time}）"
   },

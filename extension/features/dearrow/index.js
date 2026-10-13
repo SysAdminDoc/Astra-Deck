@@ -135,38 +135,6 @@
                        submission) dim slightly so power users see the
                        distinction from real DeArrow data. */
                     .daCustomTitle[data-da-fallback="1"] { opacity: 0.78 !important; }
-                    .ytkit-dearrow-attribution {
-                        display: inline-flex !important;
-                        align-items: center !important;
-                        width: fit-content !important;
-                        margin-top: 3px !important;
-                        padding: 2px 6px !important;
-                        border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)) !important;
-                        border-radius: 8px !important;
-                        background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.08)) !important;
-                        color: var(--yt-spec-text-secondary, #aaa) !important;
-                        font: 600 10px/1.2 Roboto, Arial, sans-serif !important;
-                        letter-spacing: 0.01em !important;
-                        text-decoration: none !important;
-                    }
-                    .ytkit-dearrow-attribution:hover,
-                    .ytkit-dearrow-attribution:focus-visible {
-                        border-color: var(--yt-spec-text-secondary, #aaa) !important;
-                        color: var(--yt-spec-text-primary, #fff) !important;
-                        outline: 2px solid rgba(255, 107, 74, 0.62) !important;
-                        outline-offset: 1px !important;
-                    }
-                    html:not([dark]) .ytkit-dearrow-attribution {
-                        border-color: rgba(15, 23, 42, 0.18) !important;
-                        background: rgba(15, 23, 42, 0.06) !important;
-                        color: #475569 !important;
-                    }
-                    html:not([dark]) .ytkit-dearrow-attribution:hover,
-                    html:not([dark]) .ytkit-dearrow-attribution:focus-visible {
-                        border-color: rgba(15, 23, 42, 0.4) !important;
-                        background: rgba(255, 255, 255, 0.96) !important;
-                        color: #0f172a !important;
-                    }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
@@ -398,36 +366,6 @@
                 const stamp = Number(thumb.timestamp);
                 return Number.isFinite(stamp) && stamp >= 0 ? stamp : null;
             },
-            _createAttribution() {
-                const link = document.createElement('a');
-                const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
-                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API and database data, licensed CC BY-NC-SA 4.0');
-                link.className = 'ytkit-dearrow-attribution';
-                link.href = 'https://sponsor.ajay.app/';
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = label;
-                link.title = title;
-                link.setAttribute('aria-label', title);
-                link.dataset.ytkitLicense = 'CC BY-NC-SA 4.0';
-                link.addEventListener('click', event => event.stopPropagation());
-                return link;
-            },
-            _ensureAttribution(outputEl) {
-                if (!outputEl) return null;
-                const owner = outputEl.closest?.(`${this._CARD_SELECTORS}, ytd-watch-metadata`) || outputEl.parentElement;
-                if (!owner) return null;
-                const existing = owner.querySelector?.('.ytkit-dearrow-attribution');
-                if (existing) return existing;
-                const titleEl = outputEl.matches?.('[data-ytkit-dearrow-title]')
-                    ? outputEl
-                    : owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link, a.ytLockupMetadataViewModelTitle');
-                const placement = titleEl?.closest?.('h1, h3') || titleEl || outputEl;
-                if (!placement.parentNode) return null;
-                const link = this._createAttribution();
-                placement.parentNode.insertBefore(link, placement.nextSibling || null);
-                return link;
-            },
             _renderTitle(titleEl, formatted, { fallback = false, uuid = '', announce = false } = {}) {
                 if (!titleEl || !formatted) return false;
                 const originalTitle = titleEl.textContent.trim();
@@ -477,7 +415,6 @@
                 const prior = titleEl.previousElementSibling;
                 if (prior?.getAttribute?.('data-ytkit-dearrow-title') === '1') prior.remove();
                 titleEl.parentNode.insertBefore(clone, titleEl);
-                if (!fallback) this._ensureAttribution(clone);
                 if (announce) {
                     const message = t('deArrowTitleReplacedTpl', 'Title replaced by DeArrow: {title}').replace('{title}', () => formatted);
                     try { announceA11y(message); } catch (_) { /* reason: optional accessibility announcement must not interrupt title rendering. */ }
@@ -712,11 +649,8 @@
                 img.dataset.daOrigSrc = img.src;
                 img.src = url;
                 img.classList.add('da-replaced-thumb');
-                // YouTube's own stills are not DeArrow data.
-                const attribution = url.startsWith(DEARROW_THUMB_API) ? this._ensureAttribution(img) : null;
                 img.onerror = () => {
                     if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
-                    if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
                 };
             },
             _waitForCover(el, img, videoId, branding) {
@@ -791,6 +725,8 @@
             // Undo DeArrow's work under root: the whole document on a route
             // change or teardown, or one card YouTube reused for another video.
             _resetCard(root) {
+                // .ytkit-dearrow-attribution: the per-card credit badge builds
+                // before v4.99.2 drew; swept so a reload leaves none behind.
                 root.querySelectorAll('.daCustomTitle, .ytkit-dearrow-attribution').forEach(c => c.remove());
                 const flagged = [...root.querySelectorAll('[data-da-processed]')];
                 if (root.dataset?.daProcessed !== undefined) flagged.push(root);

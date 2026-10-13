@@ -592,20 +592,21 @@ test('DeArrow writes the attributes its peek consumer and a vote surface need', 
         'peek CSS must still key on the marker attribute the replacement writes');
 });
 
-test('DeArrow attributes remote titles and thumbnails but not local fallback formatting', () => {
+test('DeArrow credits its data in the settings, never with a badge on each card', () => {
+    // v4.99.2: the "SponsorBlock data" badge under every replaced card was
+    // removed at the maintainer's request. The licence credit lives in the
+    // DeArrow setting's description and the README, privacy policy and
+    // store copy (pinned in hardening.test.js), the way DeArrow itself
+    // credits on a settings page rather than on the feed.
     const source = dearrowModuleSource;
-    assert.match(source, /if \(!fallback\) this\._ensureAttribution\(clone\)/,
-        'remote title replacements must receive attribution while local formatting stays unattributed');
-    assert.match(source, /const attribution = url\.startsWith\(DEARROW_THUMB_API\) \? this\._ensureAttribution\(img\) : null/,
-        'DeArrow thumbnails must receive attribution, and YouTube stills must not');
-    assert.match(source, /\.ytkit-dearrow-attribution[\s\S]*?CC BY-NC-SA 4\.0/,
-        'the visible attribution surface must identify the licensed SponsorBlock data');
+    assert.doesNotMatch(source, /_ensureAttribution|_createAttribution|sponsorBlockDataAttribution/,
+        'no card may get a credit badge again');
+    assert.doesNotMatch(source, /\.ytkit-dearrow-attribution\s*\{/, 'the badge style is gone with the badge');
     assert.match(source, /root\.querySelectorAll\('\.daCustomTitle, \.ytkit-dearrow-attribution'\)\.forEach\(c => c\.remove\(\)\)/,
-        'navigation and teardown must remove attribution when transformed data disappears');
-    assert.match(source, /href = 'https:\/\/sponsor\.ajay\.app\/'/,
-        'the attribution must link to the upstream data source');
-    assert.match(source, /rel = 'noopener noreferrer'/,
-        'the external attribution link must isolate its opener');
+        'teardown still sweeps a badge an earlier build drew');
+    assert.match(englishMessages.feature_deArrow_desc?.message || '', /CC BY-NC-SA 4\.0/,
+        'the DeArrow setting must keep the data licence credit');
+    assert.equal(englishMessages.sponsorBlockDataAttribution, undefined, 'the badge label is retired');
 });
 
 test('a ">" keep-case marker on any word is honored and never reaches the page', () => {
@@ -752,15 +753,12 @@ test('a cover with no submission falls back the way the setting says', () => {
 
 test('a submitted thumbnail beats the fallback, and an original vote keeps the cover', () => {
     const feature = createDeArrowFeature({ appState: { settings: surfaceSettings({ daThumbFallback: 'middle' }) } });
-    let attributed = 0;
-    feature._ensureAttribution = () => { attributed++; return null; };
     const id = 'abc123DEF45';
 
     const submitted = lockupCard({ videoId: id });
     feature._applyThumbnail(submitted.card, id, { thumbnails: [{ timestamp: 70.08, original: false, votes: 1, locked: false }] });
     assert.equal(submitted.img.src, `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${id}&time=70.08`);
     assert.equal(submitted.img.dataset.daOrigSrc, 'https://i.ytimg.com/vi/x/hq720.jpg');
-    assert.equal(attributed, 1, 'a DeArrow frame carries attribution');
 
     const kept = lockupCard({ videoId: id });
     feature._applyThumbnail(kept.card, id, { thumbnails: [{ timestamp: null, original: true, votes: 2, locked: false }] });
@@ -769,8 +767,6 @@ test('a submitted thumbnail beats the fallback, and an original vote keeps the c
     const bare = lockupCard({ videoId: id });
     feature._applyThumbnail(bare.card, id, { thumbnails: [], randomTime: 0.4, videoDuration: null });
     assert.equal(bare.img.src, `https://i.ytimg.com/vi_webp/${id}/hq2.webp`);
-    assert.equal(attributed, 1, 'a YouTube still carries no DeArrow attribution');
-
 });
 
 test('an off-screen cover waits for its image instead of reprocessing the card', async () => {
@@ -836,7 +832,6 @@ test('a lockup replacement keeps its inner span and reads the new title to scree
         cloneNode: () => clone
     };
     const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
-    feature._ensureAttribution = () => null;
     assert.equal(feature._renderTitle(titleEl, 'How the bridge was built'), true);
     assert.equal(inserted[0], clone);
     assert.equal(clone.textContent, '', 'the text lives in the copied span, not loose in the link');
@@ -873,7 +868,6 @@ test('the watch heading is drawn as a plain span, never a cloned yt-formatted-st
         cloneNode() { throw new Error('a cloned yt-formatted-string renders empty'); }
     };
     const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
-    feature._ensureAttribution = () => null;
     await withGlobals({ document: doc }, () => {
         assert.equal(feature._renderTitle(titleEl, 'How the bridge was built', { announce: true }), true);
     });

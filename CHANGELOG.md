@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Removed
+
+- **DeArrow** no longer puts a "SponsorBlock data" badge under every card it changes. The credit for DeArrow's data (CC BY-NC-SA 4.0) is still in the DeArrow setting's description and in the README.
+
 ## [4.99.1] (2026-10-12)
 
 ### Changed
@@ -18,7 +22,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
-- **DeArrow** is on from the start, with both its title and its cover replacement. It used to ship switched off. If you had turned it off yourself, it stays off.
+- **DeArrow** is on from the start, with both its title and its cover replacement. It used to ship switched off. That only reaches new installs: an existing install keeps the setting it had saved, so turn DeArrow on in Settings if it was off.
 
 ### Added
 

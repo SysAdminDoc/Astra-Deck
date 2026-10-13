@@ -6535,12 +6535,6 @@
   "speedPopupSub": {
     "message": "Applies to every video until changed."
   },
-  "sponsorBlockDataAttribution": {
-    "message": "SponsorBlock data"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API and database data, licensed CC BY-NC-SA 4.0"
-  },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (cached at {time})"
   },

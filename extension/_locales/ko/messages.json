@@ -6493,12 +6493,6 @@
   "speedPopupSub": {
     "message": "변경될 때까지 모든 비디오에 적용됩니다."
   },
-  "sponsorBlockDataAttribution": {
-    "message": "SponsorBlock 데이터"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API/데이터베이스 데이터 — CC BY-NC-SA 4.0"
-  },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} ({time}에 캐시됨)"
   },

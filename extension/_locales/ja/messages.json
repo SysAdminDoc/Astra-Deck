@@ -6493,12 +6493,6 @@
   "speedPopupSub": {
     "message": "変更されるまで、すべての動画に適用されます。"
   },
-  "sponsorBlockDataAttribution": {
-    "message": "SponsorBlock データ"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API／データベースのデータ — CC BY-NC-SA 4.0"
-  },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label}（{time} にキャッシュ）"
   },

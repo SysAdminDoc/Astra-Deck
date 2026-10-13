@@ -6493,12 +6493,6 @@
   "speedPopupSub": {
     "message": "تُطبَّق على كل فيديو حتى يتم التغيير."
   },
-  "sponsorBlockDataAttribution": {
-    "message": "بيانات SponsorBlock"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "بيانات واجهة API وقاعدة بيانات SponsorBlock — CC BY-NC-SA 4.0"
-  },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (مخزّن في {time})"
   },
