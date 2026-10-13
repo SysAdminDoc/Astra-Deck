@@ -51,7 +51,7 @@ test('DeArrow validates the remote thumbnail timestamp before it reaches a URL',
     for (const [label, src] of [
         ['module', read('extension', 'features', 'dearrow', 'index.js')]
     ]) {
-        assert.match(src, /const stamp = Number\(thumb\?\.timestamp\);/, `${label} must coerce`);
+        assert.match(src, /const stamp = Number\(thumb\.timestamp\);/, `${label} must coerce`);
         assert.match(src, /Number\.isFinite\(stamp\) && stamp >= 0/, `${label} must range-check`);
         assert.match(src, /time=\$\{stamp\}/, `${label} must interpolate the validated number`);
         assert.doesNotMatch(src, /time=\$\{thumb\.timestamp\}/,

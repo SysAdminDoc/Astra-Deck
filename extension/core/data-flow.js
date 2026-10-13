@@ -367,6 +367,7 @@
         daSurfacePlaylist: 'deArrow',
         daReplaceTitles: 'deArrow',
         daReplaceThumbs: 'deArrow',
+        daThumbFallback: 'deArrow',
         // Astra Downloader sub-knobs
         downloadQuality: 'showLocalDownloadButton',
         downloadVideoFormat: 'showLocalDownloadButton',

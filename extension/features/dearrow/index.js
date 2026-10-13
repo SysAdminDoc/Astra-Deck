@@ -431,7 +431,14 @@
             _renderTitle(titleEl, formatted, { fallback = false, uuid = '', announce = false } = {}) {
                 if (!titleEl || !formatted) return false;
                 const originalTitle = titleEl.textContent.trim();
-                const clone = titleEl.cloneNode(false);
+                // A cloned yt-formatted-string is upgraded by YouTube's own
+                // definition on insertion, which renders its (empty) text
+                // property over whatever was set here: the watch heading
+                // went blank. A plain span under the h1 inherits its type,
+                // which is what DeArrow itself draws there.
+                const clone = String(titleEl.tagName || '').includes('-')
+                    ? document.createElement('span')
+                    : titleEl.cloneNode(false);
                 clone.className = `daCustomTitle${fallback ? ' da-formatted-title' : ''} ${titleEl.className}`;
                 clone.removeAttribute('id');
                 // A lockup title carries its typography on one inner span.

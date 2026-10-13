@@ -2984,8 +2984,17 @@ test('DeArrow watch-page title replacement announces via aria-live', () => {
     const block = deArrowSource.slice(deArrowStart, deArrowStart + 4200);
     assert.match(block, /announceA11y\(/,
         'DeArrow watch-page replacement must announce via announceA11y');
-    assert.match(deArrowSource, /announce:\s*isWatchPagePath\(\)/,
-        'DeArrow announcement must be gated on isWatchPagePath() to avoid grid spam');
+    // Cards never announce: _applyCard calls _applyTitle without the flag,
+    // and the only announce: true lives in the watch-heading pass, which
+    // returns before fetching anywhere but a watch page.
+    const watchStart = deArrowSource.indexOf('async _processWatchTitle(');
+    assert.ok(watchStart > -1, 'DeArrow watch-heading pass must exist');
+    const watchBlock = deArrowSource.slice(watchStart, deArrowSource.indexOf('_syncDocumentTitle() {', watchStart));
+    assert.match(watchBlock, /if \(!isWatchPagePath\(\)[^\n]*\) return;/,
+        'the watch-heading pass must bail off the watch page');
+    assert.match(watchBlock, /announce:\s*true/, 'the watch heading is the one announced title');
+    assert.equal(deArrowSource.match(/announce:\s*true/g).length, 1,
+        'only the watch heading announces, so grids never spam the screen reader');
 });
 
 // ── v3.23.0 N5: CSP connect-src allowlist on extension pages ──
@@ -5841,11 +5850,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Made With AI Label and its lookup switch add two (490).
     // Classic Watch Layout and its flag list add two (492).
     // Hide AI Chapters adds one (493), Views on Their Own Line one (494).
-    // DeArrow Voting is retired (493).
+    // DeArrow Voting is retired (493). Covers Without a Submission adds one (494).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 493,
-        'SETTINGS_SCHEMA must cover all 493 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 494,
+        'SETTINGS_SCHEMA must cover all 494 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

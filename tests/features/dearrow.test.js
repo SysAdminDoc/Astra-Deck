@@ -844,6 +844,48 @@ test('a lockup replacement keeps its inner span and reads the new title to scree
     assert.equal(clone.getAttribute('aria-label'), 'How the bridge was built 12 minutes');
 });
 
+test('the watch heading is drawn as a plain span, never a cloned yt-formatted-string', async () => {
+    // Live probe 2026-10-12: the cloned custom element was upgraded by
+    // YouTube's definition on insertion and rendered empty, so the watch
+    // heading went blank and the tab title kept the clickbait.
+    const inserted = [];
+    const parent = { insertBefore: (node) => { inserted.push(node); return node; } };
+    const created = [];
+    const doc = {
+        createElement(tag) {
+            const attrs = new Map();
+            const el = {
+                tagName: tag.toUpperCase(), textContent: '', className: '', dataset: {},
+                setAttribute: (name, value) => attrs.set(name, String(value)),
+                getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
+                removeAttribute: (name) => attrs.delete(name)
+            };
+            created.push(el);
+            return el;
+        }
+    };
+    const titleEl = {
+        tagName: 'YT-FORMATTED-STRING', textContent: 'YOU WONT BELIEVE THIS',
+        className: 'style-scope ytd-watch-metadata', style: { display: '' }, dataset: {},
+        children: [], parentNode: parent, previousElementSibling: null,
+        classList: { add() {} },
+        hasAttribute: () => false, getAttribute: () => null, setAttribute() {},
+        cloneNode() { throw new Error('a cloned yt-formatted-string renders empty'); }
+    };
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
+    feature._ensureAttribution = () => null;
+    await withGlobals({ document: doc }, () => {
+        assert.equal(feature._renderTitle(titleEl, 'How the bridge was built', { announce: true }), true);
+    });
+    assert.equal(created.length, 1);
+    assert.equal(created[0].tagName, 'SPAN');
+    assert.equal(inserted[0], created[0]);
+    assert.equal(created[0].textContent, 'How the bridge was built');
+    assert.match(created[0].className, /^daCustomTitle style-scope ytd-watch-metadata$/);
+    assert.equal(created[0].getAttribute('data-ytkit-orig-title'), 'YOU WONT BELIEVE THIS');
+    assert.equal(titleEl.style.display, 'none', 'the original heading is hidden, not removed');
+});
+
 test('the tab title follows the watch heading and is restored on teardown', async () => {
     const shown = { textContent: 'How the bridge was built', getAttribute: () => 'YOU WONT BELIEVE THIS' };
     const doc = {

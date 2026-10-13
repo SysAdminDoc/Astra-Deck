@@ -21,6 +21,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **DeArrow** looks up six cards at a time instead of one by one, so a page fills in within seconds rather than a few cards at a time.
 - The DeArrow title on a watch page is no longer skipped when YouTube draws the heading late, and recommendations that load after the page opens get picked up too.
 - A DeArrow title now reads the new title to screen readers instead of the clickbait one.
+- The DeArrow title on a watch page used to render as a blank heading, because the element YouTube draws it with renders itself empty when copied. The new title is drawn as plain text under the heading, the way DeArrow does it.
 
 ## [4.98.2] (2026-10-12)
 
