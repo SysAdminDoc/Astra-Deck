@@ -309,7 +309,7 @@
   "downloadQuality": "best",
   "downloadVideoFormat": "mp4",
   "downloadAudioFormat": "mp3",
-  "deArrow": false,
+  "deArrow": true,
   "daSurfaceWatch": true,
   "daSurfaceRelated": true,
   "daSurfaceHome": true,

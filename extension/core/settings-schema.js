@@ -599,7 +599,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "downloadAudioFormat", category: "downloads", type: "string", defaultValue: "mp3", enum: Object.freeze(["mp3","m4a","opus","flac","wav"]), risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── enrichment ───
-    Object.freeze({ key: "deArrow", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "deArrow", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "daSurfaceWatch", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),
     Object.freeze({ key: "daSurfaceRelated", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),
     Object.freeze({ key: "daSurfaceHome", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.86.0" }),

@@ -4437,7 +4437,7 @@ const STORAGE_KEYS = Object.freeze({
             downloadQuality: 'best',
             downloadVideoFormat: 'mp4',
             downloadAudioFormat: 'mp3',
-            deArrow: false,
+            deArrow: true,
             daSurfaceWatch: true,
             daSurfaceRelated: true,
             daSurfaceHome: true,
@@ -8186,6 +8186,7 @@ button.ytp-play-button.ytp-button { background-color: transparent; }
 html[dark], [dark], :root[dark], :root,
 html[darker-dark-theme-deprecate], [darker-dark-theme-deprecate] {
     --ytkit-accent: ${t.accent} !important;
+    --ytkit-split-accent: ${t.accent} !important;
     --ytkit-accent-rgb: ${this._hexToRgb(t.accent)} !important;
     --ytkit-accent-light: ${this._lightenHex(t.accent)} !important;
     --yt-spec-base-background: ${t.base} !important;
@@ -27998,7 +27999,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         : rawHex.slice(0, 6);
                     const accentRgb = [0, 2, 4].map((offset) => parseInt(rgbHex.slice(offset, offset + 2), 16)).join(',');
                     css = `
-                    :root { --ytkit-accent: ${accent} !important; --ytkit-accent-rgb: ${accentRgb} !important; }
+                    :root { --ytkit-accent: ${accent} !important; --ytkit-accent-rgb: ${accentRgb} !important; --ytkit-split-accent: ${accent} !important; }
                     .ytp-swatch-background-color, .ytp-play-progress,
                     #progress.ytd-thumbnail-overlay-resume-playback-renderer {
                         background: ${accent} !important;

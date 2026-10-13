@@ -222,7 +222,7 @@ browser to whichever provider you configured, or to your own machine.
 | Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |
 | Known-Breakage Notices, pause features YouTube has broken until a fix ships | On |
 | Comment Search, filter watch-page comments inline | Off |
-| DeArrow, replace clickbait titles/thumbnails via crowdsourced database | Off |
+| DeArrow, replace clickbait titles/thumbnails via crowdsourced database | On |
 
 YouTube changes its layout without warning, and when it does, some features
 stop working. Cutting a release is a slow answer to that, so Known-Breakage
@@ -954,7 +954,7 @@ This generated knowledgebase documents all **489 user-facing settings** in the c
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
-| <a id="setting-deArrow"></a><strong>DeArrow</strong><br><code>deArrow</code> | Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0 | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
+| <a id="setting-deArrow"></a><strong>DeArrow</strong><br><code>deArrow</code> | Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0 | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-daSurfaceWatch"></a><strong>Watch Page</strong><br><code>daSurfaceWatch</code> | Use DeArrow on the primary video and its metadata | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
 | <a id="setting-daSurfaceRelated"></a><strong>Related Videos</strong><br><code>daSurfaceRelated</code> | Use DeArrow in the recommendations beside a video | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
 | <a id="setting-daSurfaceHome"></a><strong>Home Feed</strong><br><code>daSurfaceHome</code> | Use DeArrow on the YouTube home feed | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |

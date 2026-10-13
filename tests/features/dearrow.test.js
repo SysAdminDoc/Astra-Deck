@@ -862,3 +862,14 @@ test('the tab title follows the watch heading and is restored on teardown', asyn
         assert.equal(doc.title, '(2) YOU WONT BELIEVE THIS - YouTube');
     });
 });
+
+test('DeArrow ships on, with titles, covers and the random-frame fallback', () => {
+    // Asked for on 2026-10-12: the feature used to ship switched off.
+    for (const key of ['deArrow', 'daReplaceTitles', 'daReplaceThumbs']) {
+        assert.equal(defaultSettings[key], true, `${key} must default on in default-settings.json`);
+        assert.equal(findSettingEntry(key).defaultValue, true, `${key} must default on in the schema`);
+    }
+    assert.equal(defaultSettings.daThumbFallback, 'random');
+    assert.equal(findSettingEntry('daThumbFallback').defaultValue, 'random');
+    assert.match(sources.ytkit, /\n\s+deArrow: true,/, 'the ytkit.js defaults block must agree');
+});

@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **DeArrow** is on from the start, with both its title and its cover replacement. It used to ship switched off. If you had turned it off yourself, it stays off.
+
 ### Added
 
 - **DeArrow** now changes the cover of a video nobody has submitted a thumbnail for, the way DeArrow itself does. A new setting, **Covers Without a Submission**, picks what goes there: a random frame from DeArrow's thumbnail cache (the default, and DeArrow's own default), one of the stills YouTube takes near the start, middle or end of every upload, or the original cover. Astra only reads DeArrow's cache for the random frame. When the cache has nothing for a video, YouTube's still from near the start shows instead, so DeArrow's server is never asked to render a frame. Live streams, premieres and upcoming videos keep their covers.
