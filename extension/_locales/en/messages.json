@@ -10017,5 +10017,20 @@
   "toastCrashSafeMode": {
     "message": "Astra Deck crashed several times in a row and switched to safe mode. Check your settings or reset them.",
     "description": "Toast message."
+  },
+  "deArrowCoverRandom": {
+    "message": "Random frame (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Still near the start"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Still from the middle"
+  },
+  "deArrowCoverEnd": {
+    "message": "Still near the end"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Keep the original"
   }
 }

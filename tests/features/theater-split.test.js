@@ -367,10 +367,10 @@ test('the standalone stylesheet is generated from the extension sheets', () => {
         'the standalone reparents its player, so the extension\'s player geometry stays out');
     assert.match(css, /body\.ts-active #ts-left \{ background: var\(--ts-player\) !important; \}/,
         'letterboxing behind the video stays black');
-    assert.match(css, /grid-template-areas: "home actions date" !important/);
+    assert.match(css, /grid-template-areas: "date date date" "home actions space" !important/);
     assert.match(css, /grid-template-areas: "owner sub" "actions actions" !important/);
     assert.match(css, /#ts-divider\[data-panel-state="closed"\]/);
-    assert.match(css, /@container ts-owner \(max-width: 420px\)/);
+    assert.match(css, /@container ts-owner \(max-width: 360px\)/);
 });
 
 test('the standalone keeps quiet, compact and stateful comment controls', () => {
@@ -422,8 +422,8 @@ test('the extension split derives every color from the page theme and the Astra 
     // override, so deriving from them is what makes the split follow those.
     assert.match(shell, /--ytkit-split-text: var\(--yt-spec-text-primary,/);
     assert.match(shell, /--ytkit-split-panel: var\(--yt-spec-base-background,/);
-    assert.match(shell, /--ytkit-split-accent: var\(--ytkit-accent,/,
-        'the split uses the accent the user picked, not a fixed coral');
+    assert.match(shell, /--ytkit-split-accent: var\(--ytkit-split-theme-accent,/,
+        'a chosen accent can override the default coral');
     assert.match(shell, /html:not\(\[dark\]\)\.ytkit-split-active \{/,
         'the split must follow YouTube light mode');
     assert.match(shell, /--yt-spec-base-background: var\(--ytkit-split-panel\);/,
@@ -482,8 +482,8 @@ test('the extension split lays metadata out title first in one flat section', ()
     const { meta, comments } = extensionSheets();
     assert.match(meta, /#title h1,\n[^{]*h1\.ytd-watch-metadata \{\n    order: 1 !important/,
         'the video title leads the reading order');
-    assert.match(meta, /\.ytkit-split-title-bar \{\n    order: 2 !important[\s\S]{0,400}grid-template-areas: "home actions date" !important/,
-        'utilities sit on one compact row after the title');
+    assert.match(meta, /\.ytkit-split-title-bar \{\n    order: 2 !important[\s\S]{0,400}grid-template-areas: "date date date" "home actions space" !important/,
+        'upload details precede the utility row');
     assert.match(meta, /ytd-watch-metadata \{\n    display: block !important;[\s\S]{0,400}border: 0 !important;\n    border-bottom: 1px solid var\(--ytkit-split-hairline\) !important;\n    border-radius: 0 !important;\n    background: none !important;/,
         'the watch restyle card is flattened to one section with a hairline under it');
     assert.match(meta, /grid-template-areas: "owner sub" "actions actions" !important/,
@@ -495,7 +495,7 @@ test('the extension split lays metadata out title first in one flat section', ()
         'date and view count read as one line with a separator');
     assert.match(meta, /#description-inline-expander\) \{\n    margin: 0 !important;\n    padding: 0 !important;\n    border: 0 !important;\n    background: none !important;/,
         'the description is one box, not a box in a box');
-    assert.match(comments, /@container ytkit-split-owner \(max-width: 420px\)[\s\S]{0,600}ytkit-watch-action-btn__label[\s\S]{0,200}clip-path: inset\(50%\)/,
+    assert.match(comments, /@container ytkit-split-owner \(max-width: 360px\)[\s\S]{0,600}ytkit-watch-action-btn__label[\s\S]{0,200}clip-path: inset\(50%\)/,
         'a narrow pane keeps the action row on one line and Download named for screen readers');
     // Found on live YouTube: before you subscribe, the bell is laid out but
     // invisible, and in the dock it held an empty 150px slot.

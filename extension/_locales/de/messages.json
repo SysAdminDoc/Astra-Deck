@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck ist mehrmals hintereinander abgestürzt und in den abgesicherten Modus gewechselt. Prüfe deine Einstellungen oder setze sie zurück."
+  },
+  "deArrowCoverRandom": {
+    "message": "Zufälliges Einzelbild (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Standbild vom Anfang"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Standbild aus der Mitte"
+  },
+  "deArrowCoverEnd": {
+    "message": "Standbild vom Ende"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Original beibehalten"
   }
 }

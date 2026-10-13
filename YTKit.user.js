@@ -3872,7 +3872,12 @@ const ASTRA_DECK_BUILD = {
 		"toastTranscriptIndexOff": "Transcript Search Index is off. Turn it on first.",
 		"toastImportTooLargeTpl": "The import file is over the {size} MB limit.",
 		"toastSafeMode": "Safe mode: every feature is off. Run ytkit.unsafe() in the console to leave it.",
-		"toastCrashSafeMode": "Astra Deck crashed several times in a row and switched to safe mode. Check your settings or reset them."
+		"toastCrashSafeMode": "Astra Deck crashed several times in a row and switched to safe mode. Check your settings or reset them.",
+		"deArrowCoverRandom": "Random frame (DeArrow)",
+		"deArrowCoverStart": "Still near the start",
+		"deArrowCoverMiddle": "Still from the middle",
+		"deArrowCoverEnd": "Still near the end",
+		"deArrowCoverOriginal": "Keep the original"
 	}
 };
 

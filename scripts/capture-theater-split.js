@@ -25,8 +25,8 @@ const WATCH_URL = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
 const WIDTH = 1440;
 const HEIGHT = 900;
 const DEFAULT_OUTPUTS = Object.freeze({
-    dark: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-dark-v8.png'),
-    light: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-light-v8.png')
+    dark: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-dark-v9.png'),
+    light: path.join(REPO_ROOT, 'outputs', 'astra-deck-theater-split-light-v9.png')
 });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,7 +110,7 @@ async function launch(binary) {
     return { send, on, evaluate, close };
 }
 
-async function capture(binary, scheme, out) {
+async function capture(binary, scheme, out, { watchUrl = WATCH_URL, metrics = false } = {}) {
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-split-stage-'));
     const settings = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'extension', 'default-settings.json'), 'utf8'));
     buildFixture(stageDir, { runtimeSettings: settings });
@@ -134,7 +134,7 @@ async function capture(binary, scheme, out) {
             }
             return browser.send('Fetch.continueRequest', { requestId }).catch(() => {});
         });
-        await browser.send('Page.navigate', { url: WATCH_URL });
+        await browser.send('Page.navigate', { url: watchUrl });
         await sleep(7000);
         await browser.evaluate(`document.querySelector('video')?.pause?.()`);
         await browser.evaluate(`new Promise((resolve) => {
@@ -162,8 +162,29 @@ async function capture(binary, scheme, out) {
         await browser.evaluate(`document.querySelector('video')?.pause?.()`);
         await browser.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 5 });
         await sleep(1500);
-        const state = await browser.evaluate(`({ open: document.documentElement.classList.contains('ytkit-split-open'), comments: document.querySelectorAll('ytd-comment-thread-renderer').length })`);
-        if (!state.open || !state.comments) throw new Error(`the split is not ready to capture: ${JSON.stringify(state)}`);
+        const state = await browser.evaluate(`({ open: document.documentElement.classList.contains('ytkit-split-open'), comments: document.querySelectorAll('ytd-comment-thread-renderer').length, chat: Boolean(document.querySelector('ytd-live-chat-frame iframe')), replay: Boolean(document.querySelector('#ytkit-split-replay-tabs')) })`);
+        if (!state.open || (!state.comments && !state.chat)) throw new Error(`the split is not ready to capture: ${JSON.stringify(state)}`);
+        if (metrics) {
+            const details = await browser.evaluate(`(() => {
+                const selectors = ['html', '#below', 'ytd-watch-metadata #title h1', '#ytkit-split-right', 'ytd-comment-view-model #content-text', '.ytkit-split-live-header', '.ytkit-split-live-title'];
+                return Object.fromEntries(selectors.map(selector => {
+                    const el = document.querySelector(selector);
+                    if (!el) return [selector, null];
+                    const cs = getComputedStyle(el), box = el.getBoundingClientRect();
+                    const matched = [];
+                    for (const sheet of document.styleSheets) {
+                        try {
+                            for (const rule of sheet.cssRules) {
+                                if (!rule.selectorText || !el.matches(rule.selectorText)) continue;
+                                if (rule.style.fontSize || rule.style.background || rule.style.backgroundColor) matched.push({selector: rule.selectorText, fontSize: rule.style.fontSize, background: rule.style.background || rule.style.backgroundColor});
+                            }
+                        } catch (_) { /* reason: cross-origin native stylesheets cannot be inspected */ }
+                    }
+                    return [selector, {fontSize: cs.fontSize, fontFamily: cs.fontFamily, background: cs.backgroundColor, padding: cs.padding, accent: cs.getPropertyValue('--ytkit-split-accent'), panel: cs.getPropertyValue('--ytkit-split-panel'), text: cs.getPropertyValue('--ytkit-split-text'), width: box.width, height: box.height, matched}];
+                }));
+            })()`);
+            fs.writeFileSync(out.replace(/\.png$/i, '.json'), JSON.stringify({state, details}, null, 2));
+        }
         const { data } = await browser.send('Page.captureScreenshot', { format: 'png' });
         fs.writeFileSync(out, Buffer.from(data, 'base64'));
         console.log(`[capture-theater-split] ${scheme}: ${path.relative(REPO_ROOT, out)} (${state.comments} comments)`);
@@ -183,7 +204,7 @@ async function main() {
     }
     const schemes = args.scheme ? [args.scheme] : ['dark', 'light'];
     for (const scheme of schemes) {
-        await capture(binary, scheme, args.out ? path.resolve(args.out) : DEFAULT_OUTPUTS[scheme]);
+        await capture(binary, scheme, args.out ? path.resolve(args.out) : DEFAULT_OUTPUTS[scheme], { watchUrl: args.url || WATCH_URL, metrics: args.metrics === 'true' });
     }
 }
 

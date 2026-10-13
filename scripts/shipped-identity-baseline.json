@@ -122,6 +122,7 @@
     "daSurfaceSearch",
     "daSurfaceSubscriptions",
     "daSurfaceWatch",
+    "daThumbFallback",
     "daTitleFormat",
     "deArrow",
     "deArrowCasualMode",

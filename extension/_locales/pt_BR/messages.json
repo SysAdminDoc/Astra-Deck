@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "O Astra Deck travou várias vezes seguidas e entrou no modo de segurança. Confira suas configurações ou redefina-as."
+  },
+  "deArrowCoverRandom": {
+    "message": "Quadro aleatório (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Imagem do início"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Imagem do meio"
+  },
+  "deArrowCoverEnd": {
+    "message": "Imagem do final"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Manter a original"
   }
 }

@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck falló varias veces seguidas y pasó al modo seguro. Revisa tus ajustes o restablécelos."
+  },
+  "deArrowCoverRandom": {
+    "message": "Fotograma aleatorio (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Imagen del principio"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Imagen de la mitad"
+  },
+  "deArrowCoverEnd": {
+    "message": "Imagen del final"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Conservar la original"
   }
 }

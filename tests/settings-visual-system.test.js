@@ -37,21 +37,21 @@ function assertUserscriptRunsSettingsPanel() {
 }
 
 test('settings visual system renders the flat command-deck hierarchy', () => {
-    assert.match(visualSystemSource, /settings visual system v5 — imagegen-matched command deck/);
+    assert.match(visualSystemSource, /settings visual system v5\. Shared settings workspace/);
     assert.match(
         commandDeckCss,
-        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*70px[\s\S]*?background:\s*transparent/
+        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*76px[\s\S]*?background:\s*transparent/
     );
-    assert.match(commandDeckCss, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*30px/);
+    assert.match(commandDeckCss, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*32px/);
     assert.match(commandDeckCss, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
     assert.match(commandDeckCss, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*14px[\s\S]*?white-space:\s*normal/);
     assert.match(
         commandDeckCss,
-        /\.ytkit-feature-glyph\s*\{[\s\S]*?display:\s*grid[\s\S]*?width:\s*44px/
+        /\.ytkit-feature-glyph\s*\{[^}]*?width:\s*28px[^}]*?background:\s*transparent/
     );
     assert.match(commandDeckCss, /\.ytkit-nav-group-label\s*\{[\s\S]*?display:\s*none/);
     assert.match(commandDeckCss, /\.ytkit-pane-context\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-    assert.match(commandDeckCss, /\.ytkit-pane-icon\s*\{[\s\S]*?width:\s*78px[\s\S]*?background:\s*color-mix/);
+    assert.match(commandDeckCss, /\.ytkit-pane-icon\s*\{[^}]*?display:\s*none/);
     assert.doesNotMatch(commandDeckCss, /(?:linear|radial)-gradient\(/,
         'command deck should use flat fills without decorative gradients');
     assert.match(commandDeckCss, /\.ytkit-feature-section-title\s*\{[\s\S]*?text-transform:\s*uppercase/);
@@ -210,8 +210,8 @@ test('settings runtime crash accounting is declared in the shared outer scope', 
     assert.doesNotMatch(shell, /const _featureCrashCounts = StorageManager\.get\(/);
 });
 
-test('v6 desktop settings parity keeps labels readable and gives Video Hider a summary dashboard', () => {
-    assert.match(visualSystemSource, /\/\* v6 desktop parity pass\./);
+test('desktop settings keep labels readable and give Video Hider a summary row', () => {
+    assert.match(visualSystemSource, /Category labels wrap at every width/);
     assert.match(
         visualSystemSource,
         /@media \(min-width:\s*1181px\)[\s\S]*?grid-template-columns:\s*320px minmax\(0, 1fr\)/
@@ -263,8 +263,7 @@ test('the settings panel keeps three distinct elevation planes', () => {
     const [lRail, lBg, lPanel] = [rail, bg, panel].map(luminance);
     assert.ok(lRail < lBg, `the nav rail (${rail}) must sit below the content plane (${bg})`);
     assert.ok(lPanel > lBg, `the settings table (${panel}) must sit above the content plane (${bg})`);
-    // The v5 content plane is intentionally midnight navy, but must remain
-    // measurably lifted above the old #090e14 floor (0.0056).
+    // The charcoal content plane stays measurably above near-black.
     assert.ok(lBg > 0.0065, `the content plane (${bg}) must not collapse to near-black (got ${lBg.toFixed(4)})`);
 
     assert.match(visualSystemSource, /\.ytkit-sidebar \{[^}]*background:\s*var\(--ytkit-v3-rail\)/,

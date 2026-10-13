@@ -1698,6 +1698,13 @@ function buildSettingsPanel() {
                 const leadCopy = document.createElement('p');
                 leadCopy.className = 'ytkit-vh-hero__copy';
                 leadCopy.textContent = copy;
+                if (empty) {
+                    const glyph = document.createElement('span');
+                    glyph.className = 'ytkit-vh-empty-icon';
+                    glyph.setAttribute('aria-hidden', 'true');
+                    glyph.appendChild((ICONS['eye-off'] || ICONS.settings)());
+                    lead.appendChild(glyph);
+                }
                 lead.appendChild(leadEyebrow);
                 lead.appendChild(leadTitle);
                 lead.appendChild(leadCopy);

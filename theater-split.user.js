@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.22
+// @name         Theater Split v1.0.23
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.22
+// @version      1.0.23
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -125,15 +125,15 @@
         body.ts-active {
             --ts-text: var(--yt-spec-text-primary, #f1f1f1);
             --ts-muted: var(--yt-spec-text-secondary, #aaaaaa);
-            --ts-canvas: var(--yt-spec-base-background, #0f0f0f);
-            --ts-panel: var(--yt-spec-base-background, #0f0f0f);
+            --ts-canvas: var(--ts-theme-canvas, var(--yt-spec-static-black, #0f0f0f));
+            --ts-panel: var(--ts-theme-panel, color-mix(in srgb, var(--yt-spec-static-brand-black, #212121) 72%, var(--yt-spec-static-black, #0f0f0f)));
             --ts-raised: color-mix(in srgb, var(--ts-text) 7%, var(--ts-panel));
             --ts-hover: color-mix(in srgb, var(--ts-text) 12%, var(--ts-panel));
             --ts-pressed: color-mix(in srgb, var(--ts-text) 17%, var(--ts-panel));
             --ts-border: color-mix(in srgb, var(--ts-text) 14%, transparent);
             --ts-border-strong: color-mix(in srgb, var(--ts-text) 26%, transparent);
             --ts-hairline: color-mix(in srgb, var(--ts-text) 9%, transparent);
-            --ts-accent: var(--yt-spec-call-to-action, #3ea6ff);
+            --ts-accent: var(--yt-spec-call-to-action, #ff6259);
             --ts-accent-ink: color-mix(in srgb, var(--ts-accent) 82%, var(--ts-text));
             --ts-accent-soft: color-mix(in srgb, var(--ts-accent) 16%, transparent);
             --ts-control: var(--ts-raised);
@@ -144,7 +144,8 @@
             --ts-player: #000000;
             --ts-radius: 8px;
             --ts-radius-sm: 6px;
-            --ts-control-h: 32px;
+            --ts-control-h: 36px;
+            --ts-pane-padding: 20px 24px 72px;
             --ts-ease: cubic-bezier(0.2, 0, 0, 1);
             color-scheme: dark;
         }
@@ -508,7 +509,7 @@
             padding: 0 !important;
             color: var(--ts-text) !important;
             font-family: "YouTube Sans", Roboto, Arial, sans-serif !important;
-            font-size: 18px !important;
+            font-size: 24px !important;
             font-weight: 700 !important;
             font-style: normal !important;
             line-height: 1.3 !important;
@@ -540,7 +541,7 @@
             z-index: 5 !important;
             display: grid !important;
             grid-template-columns: auto auto minmax(0, 1fr) !important;
-            grid-template-areas: "home actions date" !important;
+            grid-template-areas: "date date date" "home actions space" !important;
             align-items: center !important;
             gap: 6px !important;
             min-width: 0 !important;
@@ -619,10 +620,10 @@
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-meta {
             grid-area: date !important;
-            justify-self: end !important;
+            justify-self: start !important;
             display: flex !important;
             flex-wrap: wrap !important;
-            justify-content: flex-end !important;
+            justify-content: flex-start !important;
             align-items: baseline !important;
             column-gap: 6px !important;
             min-width: 0 !important;
@@ -635,10 +636,10 @@
             background: none !important;
             box-shadow: none !important;
             color: var(--ts-muted) !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             font-weight: 500 !important;
             line-height: 1.35 !important;
-            text-align: end !important;
+            text-align: start !important;
             font-variant-numeric: tabular-nums !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title :is(.ytkit-split-upload-date, .ytkit-split-view-count) {
@@ -718,7 +719,7 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(#channel-name, #channel-name a, #channel-name #text) {
             min-width: 0 !important;
             color: var(--ts-text) !important;
-            font-size: 15px !important;
+            font-size: 16px !important;
             font-weight: 600 !important;
             line-height: 1.25 !important;
             white-space: nowrap !important;
@@ -730,7 +731,7 @@
             display: block !important;
             margin: 0 !important;
             color: var(--ts-muted) !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             line-height: 1.3 !important;
             white-space: nowrap !important;
             opacity: 1 !important;
@@ -916,8 +917,8 @@
         }
         body.ts-active .ytkit-split-live-card {
             border: 0 !important;
-            border-radius: var(--ts-radius) !important;
-            background: var(--ts-raised) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
             box-shadow: none !important;
             overflow: hidden !important;
         }
@@ -927,14 +928,14 @@
         }
         body.ts-active .ytkit-split-live-channel { font-weight: 600 !important; }
         body.ts-active .ytkit-split-live-title {
-            display: -webkit-box !important;
-            max-height: 2.6em !important;
+            display: block !important;
+            max-height: none !important;
+            font-size: 24px !important;
             font-weight: 700 !important;
             line-height: 1.3 !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            -webkit-box-orient: vertical !important;
-            -webkit-line-clamp: 2 !important;
+            overflow: visible !important;
+            overflow-wrap: anywhere !important;
+            -webkit-line-clamp: unset !important;
         }
         body.ts-active :is(.ytkit-split-live-date, .ytkit-split-live-meta) { color: var(--ts-muted) !important; -webkit-text-fill-color: currentColor !important; }
         body.ts-active .ytkit-split-live-view-count {
@@ -990,7 +991,7 @@
             min-width: 0 !important;
             margin: 0 !important;
         }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer #title { justify-content: flex-start !important; gap: 12px !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer #title { justify-content: space-between !important; gap: 12px !important; }
         /* YouTube leaves an empty h3 beside the count. Its default margins and the row gap
            pushed the count chip about 8px off the header text, so an empty one takes no
            space and a filled one carries no margin. */
@@ -1072,10 +1073,10 @@
             display: flex !important;
             align-items: center !important;
             width: 100% !important;
-            min-height: 40px !important;
+            min-height: 44px !important;
             margin: 0 !important;
             padding: 0 14px !important;
-            border: 1px solid transparent !important;
+            border: 1px solid var(--ts-border) !important;
             border-radius: var(--ts-radius) !important;
             background: var(--ts-raised) !important;
             color: var(--ts-muted) !important;
@@ -1139,13 +1140,16 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox :is(#cancel-button, #submit-button) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):focus-visible { outline: 2px solid var(--ts-accent) !important; outline-offset: 2px !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer {
             display: block !important;
-            margin: 0 !important;
-            padding: 0 0 20px !important;
+            margin: 0 0 16px !important;
+            padding: 0 0 16px !important;
             border: 0 !important;
+            border-bottom: 1px solid var(--ts-hairline) !important;
             background: none !important;
             content-visibility: auto !important;
             contain-intrinsic-size: auto 180px !important;
         }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer:last-child { border-bottom: 0 !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer ytd-comment-thread-renderer { margin: 0 !important; border-bottom: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer div.thread-hitbox { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) {
             display: block !important;
@@ -1422,7 +1426,7 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(#more-replies, #more-replies-sub-thread, #less-replies, #less-replies-sub-thread) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost) * { background: transparent !important; color: inherit !important; -webkit-text-fill-color: currentColor !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer :is(yt-touch-feedback-shape, .ytSpecTouchFeedbackShapeHost) { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-renderer { margin: 8px 0 !important; }
-        @container ts-owner (max-width: 420px) {
+        @container ts-owner (max-width: 360px) {
             body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions { gap: 6px !important; }
             body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-local-dl-btn { width: var(--ts-control-h) !important; padding: 0 !important; }
             body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-local-dl-btn .ytkit-watch-action-btn__label {

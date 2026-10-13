@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck가 여러 번 연속으로 충돌해 안전 모드로 전환했습니다. 설정을 확인하거나 초기화하세요."
+  },
+  "deArrowCoverRandom": {
+    "message": "임의 프레임 (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "시작 부분의 정지 이미지"
+  },
+  "deArrowCoverMiddle": {
+    "message": "중간 부분의 정지 이미지"
+  },
+  "deArrowCoverEnd": {
+    "message": "끝 부분의 정지 이미지"
+  },
+  "deArrowCoverOriginal": {
+    "message": "원본 유지"
   }
 }

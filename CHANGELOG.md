@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings** has a new charcoal workspace across all eleven pages. Simpler headings, larger text and unboxed icons make the controls easier to scan. Video Hider uses a quieter summary row and a clearer empty state.
+- DeArrow's cover choices now use the selected language in all eleven locales.
+- **Theater Split** follows the same design, with a larger video title, upload details on their own line and more room around comments. Reply links use coral by default, and custom themes and accent colors still apply. The Download label stays visible until the pane needs the space.
+
 ## [4.99.0] (2026-10-12)
 
 ### Changed

@@ -8186,7 +8186,9 @@ button.ytp-play-button.ytp-button { background-color: transparent; }
 html[dark], [dark], :root[dark], :root,
 html[darker-dark-theme-deprecate], [darker-dark-theme-deprecate] {
     --ytkit-accent: ${t.accent} !important;
-    --ytkit-split-accent: ${t.accent} !important;
+    --ytkit-split-theme-accent: ${t.accent} !important;
+    --ytkit-split-theme-canvas: ${t.base} !important;
+    --ytkit-split-theme-panel: ${t.mantle} !important;
     --ytkit-accent-rgb: ${this._hexToRgb(t.accent)} !important;
     --ytkit-accent-light: ${this._lightenHex(t.accent)} !important;
     --yt-spec-base-background: ${t.base} !important;
@@ -27999,7 +28001,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         : rawHex.slice(0, 6);
                     const accentRgb = [0, 2, 4].map((offset) => parseInt(rgbHex.slice(offset, offset + 2), 16)).join(',');
                     css = `
-                    :root { --ytkit-accent: ${accent} !important; --ytkit-accent-rgb: ${accentRgb} !important; --ytkit-split-accent: ${accent} !important; }
+                    :root { --ytkit-accent: ${accent} !important; --ytkit-accent-rgb: ${accentRgb} !important; --ytkit-split-theme-accent: ${accent} !important; }
                     .ytp-swatch-background-color, .ytp-play-progress,
                     #progress.ytd-thumbnail-overlay-resume-playback-renderer {
                         background: ${accent} !important;
@@ -28940,7 +28942,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         { id: 'daSurfacePlaylist', name: t('feature_daSurfacePlaylist_name', 'Playlists'), description: t('feature_daSurfacePlaylist_desc', 'Use DeArrow on playlist pages and in the watch-page playlist panel'), group: 'Content', icon: 'list', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
-        { id: 'daThumbFallback', name: t('feature_daThumbFallback_name', 'Covers Without a Submission'), description: t('feature_daThumbFallback_desc', 'What replaces a thumbnail nobody has submitted to DeArrow yet. Random frame matches DeArrow itself, and the stills are frames YouTube takes from every upload.'), group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'random',label:'Random frame (DeArrow)'},{value:'start',label:'Still near the start'},{value:'middle',label:'Still from the middle'},{value:'end',label:'Still near the end'},{value:'original',label:'Keep the original'}], init(){}, destroy(){} },
+        { id: 'daThumbFallback', name: t('feature_daThumbFallback_name', 'Covers Without a Submission'), description: t('feature_daThumbFallback_desc', 'What replaces a thumbnail nobody has submitted to DeArrow yet. Random frame matches DeArrow itself, and the stills are frames YouTube takes from every upload.'), group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'random',label:t('deArrowCoverRandom', 'Random frame (DeArrow)')},{value:'start',label:t('deArrowCoverStart', 'Still near the start')},{value:'middle',label:t('deArrowCoverMiddle', 'Still from the middle')},{value:'end',label:t('deArrowCoverEnd', 'Still near the end')},{value:'original',label:t('deArrowCoverOriginal', 'Keep the original')}], init(){}, destroy(){} },
         { id: 'daTitleFormat', name: 'Title Format', description: 'How to format replacement titles', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'sentence',label:'Sentence case'},{value:'title_case',label:'Title Case'},{value:'original',label:'Original'}], init(){}, destroy(){} },
         { id: 'deArrowCasualMode', name: 'Casual Mode', description: 'Keep descriptive titles unchanged and only replace titles that have crowd-submitted DeArrow alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daFallbackFormat', name: 'Format Original Titles', description: 'Format the original title when no crowdsourced submission exists', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
@@ -39379,6 +39381,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         --yt-saturated-overlay-background: #0a0a0a !important;
                         --ytd-searchbox-legacy-button-color: #0d0d0d !important;
                         --yt-spec-base-background: #000 !important;
+                        --ytkit-split-theme-canvas: #000 !important;
+                        --ytkit-split-theme-panel: #000 !important;
                         --yt-spec-raised-background: #050505 !important;
                         --yt-spec-menu-background: #0a0a0a !important;
                         background: #000 !important;
@@ -42337,6 +42341,10 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-clear, .ytkit-toggle-all) {
+    color: var(--ytkit-v3-muted, #5f6b79) !important;
 }
 
 .ytkit-panel-status {

@@ -370,7 +370,7 @@ const IN_PAGE_CHECKS = `(() => {
         const footerRect = panel.querySelector('.ytkit-footer')?.getBoundingClientRect();
         if (featureName && parseFloat(getComputedStyle(featureName).fontSize) < 16) failures.push('desktop setting names are undersized');
         if (featureDescription && parseFloat(getComputedStyle(featureDescription).fontSize) < 14) failures.push('desktop setting descriptions are undersized');
-        if (headerRect && headerRect.height > 66) failures.push('desktop settings header is taller than 66px');
+        if (headerRect && headerRect.height > 72) failures.push('desktop settings header is taller than 72px');
         if (footerRect && footerRect.height > 66) failures.push('desktop settings footer is taller than 66px');
     }
     const inactiveSwitch = panel.querySelector('#ytkit-toggle-videoScreenshot')?.closest('.ytkit-switch');
@@ -737,12 +737,17 @@ const CATEGORY_PARITY_CHECKS = `(() => {
     const sectionCards = sections.flatMap((section) => Array.from(
         section.querySelectorAll(':scope > .ytkit-feature-section-body > .ytkit-feature-card:not(.ytkit-sub-card)')
     )).filter((card) => getComputedStyle(card).display !== 'none');
-    if (!mission || !lead || !icon || !title?.textContent?.trim()) {
-        failures.push('mission card is missing its lead, icon, or title');
+    if (!mission || !lead || !title?.textContent?.trim()) {
+        failures.push('section header is missing its lead or title');
     }
-    if (icon) {
-        const rect = icon.getBoundingClientRect();
-        if (rect.width < 72 || rect.height < 72) failures.push('mission icon tile is undersized at ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
+    if (icon && getComputedStyle(icon).display !== 'none') {
+        failures.push('section header still displays its decorative icon tile');
+    }
+    if (mission) {
+        const style = getComputedStyle(mission);
+        if (parseFloat(style.borderTopWidth) || parseFloat(style.borderBottomWidth)) {
+            failures.push('section header retains the old card frame');
+        }
     }
     if (window.innerWidth > 1180 && contextItems.length !== 3) {
         failures.push('mission card expected 3 live preference chips, found ' + contextItems.length);

@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck a planté plusieurs fois de suite et est passé en mode sans échec. Vérifiez vos réglages ou réinitialisez-les."
+  },
+  "deArrowCoverRandom": {
+    "message": "Image aléatoire (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Image du début"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Image du milieu"
+  },
+  "deArrowCoverEnd": {
+    "message": "Image de la fin"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Conserver l’originale"
   }
 }

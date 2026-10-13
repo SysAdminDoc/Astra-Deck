@@ -983,7 +983,7 @@
                 } else {
                     if (below) {
                         this._positionOverRight(below, rightPct, '0', '100vh');
-                        this._setStyles(below, {width:`calc(${rightPct}% - 2px)`,padding:'16px 14px 72px'});
+                        this._setStyles(below, {width:`calc(${rightPct}% - 2px)`,padding:'var(--ytkit-split-pane-padding, 16px 14px 72px)'});
                         this._scrollTarget = below;
                     }
                 }

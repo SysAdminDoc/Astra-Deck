@@ -656,8 +656,8 @@ test('split title header and comment composer stay visually compact', () => {
     const { meta, comments } = splitSheets();
     assert.ok(meta.includes('text-wrap: pretty !important;'),
         'extension split title should wrap long titles without orphans');
-    assert.match(comments, /#placeholder-area \{[\s\S]{0,200}min-height: 40px !important;/,
-        'extension split composer placeholder should match the 40px input height');
+    assert.match(comments, /#placeholder-area \{[\s\S]{0,200}min-height: 44px !important;/,
+        'extension split composer placeholder should match the 44px input height');
     assert.ok(comments.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row) { display: none !important; }'),
         'extension expanded split composer should hide the stale placeholder');
     assert.match(comments, /ytd-comment-simplebox-renderer:has\(> #comment-dialog:not\(\[hidden\]\)\) \{\n    display: grid !important;\n    grid-template-columns: minmax\(0, 1fr\) !important;/,
@@ -665,7 +665,7 @@ test('split title header and comment composer stay visually compact', () => {
 
     assert.ok(theaterSplit.includes('text-wrap: pretty !important;'),
         'standalone split title should wrap the same way');
-    assert.match(theaterSplit, /#placeholder-area \{[\s\S]{0,200}min-height: 40px !important;/,
+    assert.match(theaterSplit, /#placeholder-area \{[\s\S]{0,200}min-height: 44px !important;/,
         'standalone split composer placeholder should match the input height');
     assert.ok(theaterSplit.includes('ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > :is(#author-thumbnail, #placeholder-area, #attachments, #thumbnail-input-row)'),
         'standalone expanded split composer should hide the stale placeholder');
@@ -696,7 +696,7 @@ test('split title header shows upload date and docks quick links beside YouTube 
         'extension split should format the current video view count from playerResponse');
     const { meta } = splitSheets();
     assert.ok(meta.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;')
-        && meta.includes('grid-template-areas: "home actions date" !important;'),
+        && meta.includes('grid-template-areas: "date date date" "home actions space" !important;'),
         'extension split title header should keep utilities on one compact row beneath the title');
     // The title sits in normal flow above the owner row now, so nothing can
     // overlap it and it shows in full instead of clamping at three lines.
@@ -731,8 +731,8 @@ test('split title header shows upload date and docks quick links beside YouTube 
         && theaterSplit.includes('new Intl.NumberFormat().format(Math.floor(count))'),
         'standalone split should format the current video view count from playerResponse');
     assert.ok(theaterSplit.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;')
-        && theaterSplit.includes('"home actions date" !important;'),
-        'standalone split title header should keep utilities on one compact row beneath the title');
+        && theaterSplit.includes('"date date date" "home actions space" !important;'),
+        'standalone split title header should put utilities below the upload details');
     assert.ok(theaterSplit.includes('-webkit-line-clamp: unset !important;'),
         'standalone split title should show in full');
     assert.ok(theaterSplit.includes('overflow-wrap: anywhere !important;'),

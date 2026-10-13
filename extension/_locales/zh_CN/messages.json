@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck 连续多次崩溃，已切换到安全模式。请检查设置或将其重置。"
+  },
+  "deArrowCoverRandom": {
+    "message": "随机帧 (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "开头附近的静帧"
+  },
+  "deArrowCoverMiddle": {
+    "message": "中间的静帧"
+  },
+  "deArrowCoverEnd": {
+    "message": "结尾附近的静帧"
+  },
+  "deArrowCoverOriginal": {
+    "message": "保留原图"
   }
 }

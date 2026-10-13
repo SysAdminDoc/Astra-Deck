@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck несколько раз подряд завершился с ошибкой и перешёл в безопасный режим. Проверьте настройки или сбросьте их."
+  },
+  "deArrowCoverRandom": {
+    "message": "Случайный кадр (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Кадр в начале"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Кадр из середины"
+  },
+  "deArrowCoverEnd": {
+    "message": "Кадр в конце"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Оставить оригинал"
   }
 }

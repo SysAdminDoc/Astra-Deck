@@ -444,21 +444,21 @@ Toggle individual elements on/off through the settings panel:
 Click the gear icon in the YouTube masthead or player controls, or use the toolbar popup's **Open Full Settings** action.
 
 <p align="center">
-  <img src="outputs/astra-deck-command-deck-dark-v8.png" alt="Astra Deck Command Deck showing searchable playback controls" width="900">
+  <img src="outputs/astra-deck-command-deck-dark-v9.png" alt="Astra Deck settings with grouped playback controls in a charcoal workspace" width="900">
 </p>
 
 ### Theater Split
 
-Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. On a past live stream the pane opens on the comments, and a bar at the top switches to the live chat replay. The comments pane takes its colors from the page, so it follows dark and light mode, the OLED theme, the color themes and your accent color.
+Keep the video visible while you read or write comments. The divider can collapse, click open, or drag to the width you want. On a past live stream the pane opens on the comments, and a bar at the top switches to the live chat replay. The comments pane uses charcoal surfaces in dark mode and follows light mode, the OLED theme, the color themes and your accent color.
 
 <p align="center">
-  <img src="outputs/astra-deck-theater-split-dark-v8.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
-  <img src="outputs/astra-deck-theater-split-light-v8.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
+  <img src="outputs/astra-deck-theater-split-dark-v9.png" alt="Astra Deck Theater Split with video and comments in dark mode" width="440">
+  <img src="outputs/astra-deck-theater-split-light-v9.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
 </p>
 
 <p align="center"><sub>Captured on YouTube in an offscreen browser session running this version's Theater Split.</sub></p>
 
-- Command Deck workspace with a mission card and three live preference summaries on every category
+- Charcoal settings workspace with clear section headings and grouped controls across eleven pages
 - Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow
 - Full-width semantic control sections with dependency rails for nested settings
 - Toggle switches with instant apply

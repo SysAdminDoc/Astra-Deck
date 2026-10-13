@@ -36,7 +36,7 @@ const DROPPED_SELECTORS = Object.freeze([
 ]);
 
 const RENAMES = Object.freeze([
-    ['--ytkit-split-accent: var(--ytkit-accent, #a78bfa);', '--ytkit-split-accent: var(--yt-spec-call-to-action, #3ea6ff);'],
+    ['--ytkit-split-accent: var(--ytkit-split-theme-accent, #ff6259);', '--ytkit-split-accent: var(--yt-spec-call-to-action, #ff6259);'],
     ['html:not([dark]).ytkit-split-active', 'html:not([dark]) body.ts-active'],
     ['html.ytkit-split-active', 'body.ts-active'],
     ['#ytkit-split-wrapper', '#ts-wrapper'],

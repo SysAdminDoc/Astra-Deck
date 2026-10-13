@@ -45,15 +45,15 @@
 ${ROOT} {
     --ytkit-split-text: var(--yt-spec-text-primary, #f1f1f1);
     --ytkit-split-muted: var(--yt-spec-text-secondary, #aaaaaa);
-    --ytkit-split-canvas: var(--yt-spec-base-background, #0f0f0f);
-    --ytkit-split-panel: var(--yt-spec-base-background, #0f0f0f);
+    --ytkit-split-canvas: var(--ytkit-split-theme-canvas, var(--yt-spec-static-black, #0f0f0f));
+    --ytkit-split-panel: var(--ytkit-split-theme-panel, color-mix(in srgb, var(--yt-spec-static-brand-black, #212121) 72%, var(--yt-spec-static-black, #0f0f0f)));
     --ytkit-split-raised: color-mix(in srgb, var(--ytkit-split-text) 7%, var(--ytkit-split-panel));
     --ytkit-split-hover: color-mix(in srgb, var(--ytkit-split-text) 12%, var(--ytkit-split-panel));
     --ytkit-split-pressed: color-mix(in srgb, var(--ytkit-split-text) 17%, var(--ytkit-split-panel));
     --ytkit-split-border: color-mix(in srgb, var(--ytkit-split-text) 14%, transparent);
     --ytkit-split-border-strong: color-mix(in srgb, var(--ytkit-split-text) 26%, transparent);
     --ytkit-split-hairline: color-mix(in srgb, var(--ytkit-split-text) 9%, transparent);
-    --ytkit-split-accent: var(--ytkit-accent, #a78bfa);
+    --ytkit-split-accent: var(--ytkit-split-theme-accent, #ff6259);
     --ytkit-split-accent-ink: color-mix(in srgb, var(--ytkit-split-accent) 82%, var(--ytkit-split-text));
     --ytkit-split-accent-soft: color-mix(in srgb, var(--ytkit-split-accent) 16%, transparent);
     --ytkit-split-control: var(--ytkit-split-raised);
@@ -63,7 +63,8 @@ ${ROOT} {
     --ytkit-split-scrim: rgba(8, 8, 10, 0.74);
     --ytkit-split-radius: 8px;
     --ytkit-split-radius-sm: 6px;
-    --ytkit-split-control-h: 32px;
+    --ytkit-split-control-h: 36px;
+    --ytkit-split-pane-padding: 20px 24px 72px;
     --ytkit-split-ease: cubic-bezier(0.2, 0, 0, 1);
     color-scheme: dark;
 }
@@ -484,7 +485,7 @@ ${META} h1.ytd-watch-metadata {
     padding: 0 !important;
     color: var(--ytkit-split-text) !important;
     font-family: "YouTube Sans", Roboto, Arial, sans-serif !important;
-    font-size: 18px !important;
+    font-size: 24px !important;
     font-weight: 700 !important;
     font-style: normal !important;
     line-height: 1.3 !important;
@@ -517,7 +518,7 @@ ${META} #title .ytkit-split-title-bar {
     z-index: 5 !important;
     display: grid !important;
     grid-template-columns: auto auto minmax(0, 1fr) !important;
-    grid-template-areas: "home actions date" !important;
+    grid-template-areas: "date date date" "home actions space" !important;
     align-items: center !important;
     gap: 6px !important;
     min-width: 0 !important;
@@ -596,10 +597,10 @@ ${META} #title #ytkit-po-logo-wrap .ytkit-ql-drop {
 }
 ${META} #title .ytkit-split-upload-meta {
     grid-area: date !important;
-    justify-self: end !important;
+    justify-self: start !important;
     display: flex !important;
     flex-wrap: wrap !important;
-    justify-content: flex-end !important;
+    justify-content: flex-start !important;
     align-items: baseline !important;
     column-gap: 6px !important;
     min-width: 0 !important;
@@ -612,10 +613,10 @@ ${META} #title .ytkit-split-upload-meta {
     background: none !important;
     box-shadow: none !important;
     color: var(--ytkit-split-muted) !important;
-    font-size: 12px !important;
+    font-size: 13px !important;
     font-weight: 500 !important;
     line-height: 1.35 !important;
-    text-align: end !important;
+    text-align: start !important;
     font-variant-numeric: tabular-nums !important;
 }
 ${META} #title :is(.ytkit-split-upload-date, .ytkit-split-view-count) {
@@ -696,7 +697,7 @@ ${META} #owner :is(ytd-channel-name, ytd-channel-name #container) {
 ${META} #owner :is(#channel-name, #channel-name a, #channel-name #text) {
     min-width: 0 !important;
     color: var(--ytkit-split-text) !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
     line-height: 1.25 !important;
     white-space: nowrap !important;
@@ -708,7 +709,7 @@ ${META} #owner :is(#owner-sub-count, #owner-sub-count yt-formatted-string) {
     display: block !important;
     margin: 0 !important;
     color: var(--ytkit-split-muted) !important;
-    font-size: 12px !important;
+    font-size: 13px !important;
     line-height: 1.3 !important;
     white-space: nowrap !important;
     opacity: 1 !important;
@@ -900,8 +901,8 @@ ${ROOT} .ytkit-split-live-header {
 }
 ${ROOT} .ytkit-split-live-card {
     border: 0 !important;
-    border-radius: var(--ytkit-split-radius) !important;
-    background: var(--ytkit-split-raised) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
     box-shadow: none !important;
     overflow: hidden !important;
 }
@@ -911,14 +912,14 @@ ${ROOT} :is(.ytkit-split-live-channel, .ytkit-split-live-title) {
 }
 ${ROOT} .ytkit-split-live-channel { font-weight: 600 !important; }
 ${ROOT} .ytkit-split-live-title {
-    display: -webkit-box !important;
-    max-height: 2.6em !important;
+    display: block !important;
+    max-height: none !important;
+    font-size: 24px !important;
     font-weight: 700 !important;
     line-height: 1.3 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    -webkit-box-orient: vertical !important;
-    -webkit-line-clamp: 2 !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere !important;
+    -webkit-line-clamp: unset !important;
 }
 ${ROOT} :is(.ytkit-split-live-date, .ytkit-split-live-meta) { color: var(--ytkit-split-muted) !important; -webkit-text-fill-color: currentColor !important; }
 ${ROOT} .ytkit-split-live-view-count {
@@ -982,7 +983,7 @@ ${PANE} ytd-comments-header-renderer :is(#title, #leading-section, #additional-s
     min-width: 0 !important;
     margin: 0 !important;
 }
-${PANE} ytd-comments-header-renderer #title { justify-content: flex-start !important; gap: 12px !important; }
+${PANE} ytd-comments-header-renderer #title { justify-content: space-between !important; gap: 12px !important; }
 /* YouTube leaves an empty h3 beside the count. Its default margins and the row gap
    pushed the count chip about 8px off the header text, so an empty one takes no
    space and a filled one carries no margin. */
@@ -1065,10 +1066,10 @@ ${PANE} ytd-comment-simplebox-renderer #placeholder-area {
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
-    min-height: 40px !important;
+    min-height: 44px !important;
     margin: 0 !important;
     padding: 0 14px !important;
-    border: 1px solid transparent !important;
+    border: 1px solid var(--ytkit-split-border) !important;
     border-radius: var(--ytkit-split-radius) !important;
     background: var(--ytkit-split-raised) !important;
     color: var(--ytkit-split-muted) !important;
@@ -1133,13 +1134,16 @@ ${PANE} ytd-commentbox :is(#cancel-button, #submit-button) ${BUTTON}:focus-visib
 
 ${PANE} ytd-comment-thread-renderer {
     display: block !important;
-    margin: 0 !important;
-    padding: 0 0 20px !important;
+    margin: 0 0 16px !important;
+    padding: 0 0 16px !important;
     border: 0 !important;
+    border-bottom: 1px solid var(--ytkit-split-hairline) !important;
     background: none !important;
     content-visibility: auto !important;
     contain-intrinsic-size: auto 180px !important;
 }
+${PANE} ytd-comment-thread-renderer:last-child { border-bottom: 0 !important; }
+${PANE} ytd-comment-thread-renderer ytd-comment-thread-renderer { margin: 0 !important; border-bottom: 0 !important; }
 ${PANE} ytd-comment-thread-renderer div.thread-hitbox { display: none !important; }
 ${COMMENT} {
     display: block !important;
@@ -1420,7 +1424,7 @@ ${PANE} ytd-comment-replies-renderer :is(#more-replies, #more-replies-sub-thread
 ${PANE} ytd-comment-replies-renderer :is(yt-touch-feedback-shape, .ytSpecTouchFeedbackShapeHost) { display: none !important; }
 ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-renderer { margin: 8px 0 !important; }
 
-@container ytkit-split-owner (max-width: 420px) {
+@container ytkit-split-owner (max-width: 360px) {
     ${META} #owner .ytkit-split-owner-actions { gap: 6px !important; }
     ${META} #owner .ytkit-local-dl-btn { width: var(--ytkit-split-control-h) !important; padding: 0 !important; }
     ${META} #owner .ytkit-local-dl-btn .ytkit-watch-action-btn__label {

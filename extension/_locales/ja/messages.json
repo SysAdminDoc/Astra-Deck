@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck が続けてクラッシュしたため、セーフモードに切り替えました。設定を確認するか、リセットしてください。"
+  },
+  "deArrowCoverRandom": {
+    "message": "ランダムなフレーム (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "冒頭付近の静止画"
+  },
+  "deArrowCoverMiddle": {
+    "message": "中間の静止画"
+  },
+  "deArrowCoverEnd": {
+    "message": "終盤付近の静止画"
+  },
+  "deArrowCoverOriginal": {
+    "message": "元の画像を保持"
   }
 }

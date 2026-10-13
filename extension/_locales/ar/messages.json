@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "تعطل Astra Deck عدة مرات متتالية وانتقل إلى الوضع الآمن. راجع إعداداتك أو أعد تعيينها."
+  },
+  "deArrowCoverRandom": {
+    "message": "إطار عشوائي (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "صورة ثابتة قرب البداية"
+  },
+  "deArrowCoverMiddle": {
+    "message": "صورة ثابتة من المنتصف"
+  },
+  "deArrowCoverEnd": {
+    "message": "صورة ثابتة قرب النهاية"
+  },
+  "deArrowCoverOriginal": {
+    "message": "الاحتفاظ بالصورة الأصلية"
   }
 }

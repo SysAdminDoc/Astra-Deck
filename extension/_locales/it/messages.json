@@ -9909,5 +9909,20 @@
   },
   "toastCrashSafeMode": {
     "message": "Astra Deck si è bloccato più volte di seguito ed è passato alla modalità provvisoria. Controlla le impostazioni o ripristinale."
+  },
+  "deArrowCoverRandom": {
+    "message": "Fotogramma casuale (DeArrow)"
+  },
+  "deArrowCoverStart": {
+    "message": "Immagine iniziale"
+  },
+  "deArrowCoverMiddle": {
+    "message": "Immagine centrale"
+  },
+  "deArrowCoverEnd": {
+    "message": "Immagine finale"
+  },
+  "deArrowCoverOriginal": {
+    "message": "Mantieni l’originale"
   }
 }
