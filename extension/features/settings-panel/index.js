@@ -1606,8 +1606,21 @@ function buildSettingsPanel() {
                 ? t('videoHiderAllowedChannelsTab', 'Allowed Channels')
                 : t('videoHiderBlockedChannelsTab', 'Blocked Channels');
 
+            // The lists come from the feature when its module loaded, else
+            // straight from storage, so a missing module costs the editing
+            // controls rather than the saved lists or the whole panel.
+            const readVideoList = (method, storageKey) => {
+                if (typeof videoHiderFeature?.[method] === 'function') return videoHiderFeature[method]() || [];
+                const stored = storageRead(storageKey, []);
+                return Array.isArray(stored) ? stored : [];
+            };
+            const getHiddenVideoList = () => readVideoList('_getHiddenVideos', STORAGE_KEYS.hiddenVideos);
+            const getAllowedVideoList = () => readVideoList('_getAllowedVideos', STORAGE_KEYS.allowedVideos);
+            const canEditVideoLists = () => typeof videoHiderFeature?._setHiddenVideos === 'function'
+                && typeof videoHiderFeature?._setAllowedVideos === 'function';
+
             function getVideoCount() {
-                return videoHiderFeature?._getHiddenVideos()?.length || 0;
+                return getHiddenVideoList().length;
             }
 
             function getChannelCount() {
@@ -1615,7 +1628,7 @@ function buildSettingsPanel() {
             }
 
             function getAllowedCount() {
-                return videoHiderFeature?._getAllowedVideos()?.length || 0;
+                return getAllowedVideoList().length;
             }
 
             function getKeywordStatus() {
@@ -1969,7 +1982,7 @@ function buildSettingsPanel() {
                 updateVideoHiderMeta();
 
                 if (tab === 'videos') {
-                    const videos = videoHiderFeature?._getHiddenVideos() || [];
+                    const videos = getHiddenVideoList();
                     const createHiddenEntryForm = () => createVideoIdEntryForm({
                         id: 'ytkit-vh-add-hidden',
                         title: t('videoHiderAddHiddenVideoTitle', 'Add Hidden Video'),
@@ -2117,6 +2130,7 @@ function buildSettingsPanel() {
                             'videoHiderRestoreAllTpl',
                             'Restore & Allow All Hidden Videos ({count})'
                         ).replace('{count}', videos.length);
+                        clearBtn.disabled = !canEditVideoLists();
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getHiddenVideos()];
                             const allowedAdded = videoHiderFeature._addAllowedVideos?.(backup) || [];
@@ -2144,6 +2158,7 @@ function buildSettingsPanel() {
                             'videoHiderClearHiddenListTpl',
                             'Clear Hidden List Only ({count})'
                         ).replace('{count}', videos.length);
+                        clearListBtn.disabled = !canEditVideoLists();
                         clearListBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getHiddenVideos()];
                             videoHiderFeature._setHiddenVideos([]);
@@ -2166,18 +2181,19 @@ function buildSettingsPanel() {
                         const removePageBtn = document.createElement('button');
                         removePageBtn.type = 'button';
                         removePageBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
+                        removePageBtn.disabled = typeof videoHiderFeature?._removeHiddenVideosOnPage !== 'function';
                         removePageBtn.textContent = t(
                             'videoHiderRemovePage',
                             'Remove Hidden Videos On This Page'
                         );
                         removePageBtn.onclick = () => {
-                            videoHiderFeature._removeHiddenVideosOnPage?.();
+                            videoHiderFeature?._removeHiddenVideosOnPage?.();
                             updateVideoHiderMeta();
                         };
                         tabContent.appendChild(removePageBtn);
                     }
                 } else if (tab === 'allowed') {
-                    const allowed = videoHiderFeature?._getAllowedVideos() || [];
+                    const allowed = getAllowedVideoList();
                     const createAllowedEntryForm = () => createVideoIdEntryForm({
                         id: 'ytkit-vh-add-allowed',
                         title: t('videoHiderAddAllowedVideoTitle', 'Add Allowed Video'),
@@ -2315,6 +2331,7 @@ function buildSettingsPanel() {
                             'videoHiderClearAllowedTpl',
                             'Clear Allowed Videos ({count})'
                         ).replace('{count}', allowed.length);
+                        clearBtn.disabled = !canEditVideoLists();
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getAllowedVideos()];
                             videoHiderFeature._setAllowedVideos([]);
@@ -2486,7 +2503,7 @@ function buildSettingsPanel() {
                         appState.settings.hideVideosKeywordFilter = textarea.value;
                         settingsManager.save(appState.settings);
                         videoHiderFeature?._restoreRemovedVideoNodes?.();
-                        videoHiderFeature?._processAllVideos();
+                        videoHiderFeature?._processAllVideos?.();
                         updateVideoHiderMeta();
                     };
                     field.appendChild(textarea);
@@ -2787,7 +2804,7 @@ function buildSettingsPanel() {
                         durInput.value = appState.settings.hideVideosDurationFilter;
                         settingsManager.save(appState.settings);
                         videoHiderFeature?._restoreRemovedVideoNodes?.();
-                        videoHiderFeature?._processAllVideos();
+                        videoHiderFeature?._processAllVideos?.();
                         updateVideoHiderMeta();
                     };
                     const durSuffix = document.createElement('span');
@@ -2911,8 +2928,8 @@ function buildSettingsPanel() {
                     );
                     const statsGrid = document.createElement('div');
                     statsGrid.className = 'ytkit-vh-stat-grid';
-                    const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
-                    const allowedCount = videoHiderFeature?._getAllowedVideos()?.length || 0;
+                    const videoCount = getVideoCount();
+                    const allowedCount = getAllowedCount();
                     const channelCount = getChannelCount();
                     [{ label: t('videoHiderHiddenVideosTab', 'Hidden Videos'), value: videoCount },
                         { label: t('videoHiderAllowedVideosTab', 'Allowed Videos'), value: allowedCount },

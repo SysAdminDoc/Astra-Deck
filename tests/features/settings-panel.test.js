@@ -229,7 +229,7 @@ test('a sub-feature whose own group lands elsewhere goes where its parent goes',
 // The real panel build, on the fake tree document from tests/helpers. The
 // tests above call the grouping helper; this is the code that draws from it.
 // `act` runs against the built panel while its document is still installed.
-function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storage, userscriptHost, version = '0.0.0' } = {}) {
+function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storage, storageKeys = {}, userscriptHost, version = '0.0.0' } = {}) {
     const { fakeTreeDocument } = require('../helpers/monolith');
     const doc = fakeTreeDocument();
     const saved = {
@@ -257,7 +257,7 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storag
             FEATURE_PREVIEWS: {},
             ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
             LEGACY_STORAGE_KEYS: {},
-            STORAGE_KEYS: {},
+            STORAGE_KEYS: storageKeys,
             YTKIT_VERSION: version,
             _i18n: { overrideLocale: '', locale: 'en', availableLocales: ['en'], messages: {} },
             MediaDLManager: {},
@@ -453,6 +453,36 @@ test('Video Hider pane uses its own toggle and shared settings reconciliation', 
         assert.match(source, /_ytkitSyncVideoHiderToggle/,
             `${label} must keep the dedicated toggle synchronized after storage reconciliation`);
     }
+});
+
+// A saved profile with every hider gate off used to leave the descriptor in
+// place of Video Hider, and opening settings threw on _getHiddenVideos.
+test('settings open with saved hidden lists when the Video Hider module is missing', () => {
+    const storage = {
+        'ytkit-hidden-videos': ['aaaaaaaaaaa', 'bbbbbbbbbbb'],
+        'ytkit-video-hider-allowed-videos': ['ccccccccccc']
+    };
+    const before = JSON.stringify(storage);
+    let stats = null;
+    let rows = 0;
+    let clearStates = [];
+    buildRealPanel([
+        { id: 'hideVideosFromHome', name: 'Video Hider', group: 'Playlists', type: 'checkbox', init() {}, destroy() {} },
+        { id: 'hideNotificationButton', name: 'Hide Notification Bell', group: 'Interface', type: 'checkbox' }
+    ], { hideVideosFromHome: false }, {
+        storage,
+        storageKeys: { hiddenVideos: 'ytkit-hidden-videos', allowedVideos: 'ytkit-video-hider-allowed-videos' },
+        act(doc) {
+            assert.ok(doc.getElementById('ytkit-pane-Video-Hider'), 'the Video Hider pane still builds');
+            stats = [...doc.querySelectorAll('.ytkit-vh-summary-card__value')].map((node) => node.textContent);
+            rows = doc.querySelectorAll('.ytkit-vh-card--video').length;
+            clearStates = [...doc.querySelectorAll('.ytkit-vh-clear-btn')].map((node) => node.disabled === true);
+        }
+    });
+    assert.deepEqual(stats?.slice(0, 2), ['2', '1'], 'counts come from storage, not a fabricated zero');
+    assert.equal(rows, 2, 'the hidden list is listed from storage');
+    assert.ok(clearStates.length > 0 && clearStates.every(Boolean), 'clear actions are off without the module');
+    assert.equal(JSON.stringify(storage), before, 'opening the pane writes nothing');
 });
 
 test('Video Hider channels tab follows Channel Allowlist mode', () => {
