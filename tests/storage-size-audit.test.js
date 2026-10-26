@@ -151,7 +151,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Hide AI Chapters adds 25 for its toggle, off by default.
     // Views on Their Own Line adds 28 for its toggle, off by default.
     // Retiring DeArrow Voting trims 22: its toggle.
-    assert.equal(assessment.totalBytes, 186620);
+    // Sort by Length adds 25 for its toggle, on by default.
+    assert.equal(assessment.totalBytes, 186645);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

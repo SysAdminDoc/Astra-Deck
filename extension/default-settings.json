@@ -25,6 +25,7 @@
   "hideSubscriptionOptions": true,
   "hidePaidContentOverlay": true,
   "redirectToVideosTab": true,
+  "channelLengthSort": true,
   "hidePlayables": true,
   "hideMembersOnly": true,
   "hideNewsHome": true,

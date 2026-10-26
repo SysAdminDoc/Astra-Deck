@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "Quita los capítulos que YouTube genera por su cuenta de la barra de progreso y del panel de capítulos. Los capítulos que el creador escribió en la descripción se mantienen."
   },
+  "feature_channelLengthSort_name": {
+    "message": "Ordenar los vídeos del canal por duración"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "Añade Duración al menú de orden de la pestaña Vídeos de un canal. Al elegirla se cargan todos los vídeos y los más largos van primero."
+  },
+  "channelLengthSort_option": {
+    "message": "Duración"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "Visualizaciones en su propia línea"
   },

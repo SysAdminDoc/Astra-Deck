@@ -12761,6 +12761,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "hideSubscriptionOptions", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hidePaidContentOverlay", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "redirectToVideosTab", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "channelLengthSort", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.100.0" }),
 	Object.freeze({ key: "hidePlayables", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideMembersOnly", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideNewsHome", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -24503,6 +24504,391 @@ void 0;
 	}
 })();
 ;
+(() => {
+	'use strict';
+	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+	if (core.channelLengthSort) return;
+	const ITEM_ATTR = 'data-ytkit-length-sort-item';
+	const MAX_PAGES = 400;
+	const PAGE_RETRIES = 2;
+	const SHEET_WAIT_MS = 3000;
+	const SHEET_POLL_MS = 50;
+	const CHANNEL_TAB_RE = /^\/(?:@[^/]+|channel\/[^/]+|c\/[^/]+|user\/[^/]+)\/(?:videos|streams)\/?$/;
+	const DURATION_RE = /^(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/;
+	const GRID_SELECTOR = 'ytd-browse[page-subtype="channels"] ytd-rich-grid-renderer';
+	function parseDurationText(text) {
+		const match = DURATION_RE.exec(String(text == null ? '' : text).trim());
+		if (!match) return -1;
+		const parts = match.slice(1).filter((part) => part !== undefined).map(Number);
+		return parts.reduce((total, part) => total * 60 + part, 0);
+	}
+	function lockupOf(item) {
+		return item && item.richItemRenderer && item.richItemRenderer.content
+			&& item.richItemRenderer.content.lockupViewModel;
+	}
+	function videoRendererOf(item) {
+		return item && item.richItemRenderer && item.richItemRenderer.content
+			&& item.richItemRenderer.content.videoRenderer;
+	}
+	function itemDuration(item) {
+		const lockup = lockupOf(item);
+		const overlays = lockup && lockup.contentImage && lockup.contentImage.thumbnailViewModel
+			&& lockup.contentImage.thumbnailViewModel.overlays;
+		if (Array.isArray(overlays)) {
+			for (const overlay of overlays) {
+				const badges = overlay && overlay.thumbnailBottomOverlayViewModel
+					&& overlay.thumbnailBottomOverlayViewModel.badges;
+				if (!Array.isArray(badges)) continue;
+				for (const badge of badges) {
+					const seconds = parseDurationText(badge && badge.thumbnailBadgeViewModel
+						&& badge.thumbnailBadgeViewModel.text);
+					if (seconds >= 0) return seconds;
+				}
+			}
+		}
+		const renderer = videoRendererOf(item);
+		if (renderer) {
+			const length = renderer.lengthText && (renderer.lengthText.simpleText
+				|| (Array.isArray(renderer.lengthText.runs) && renderer.lengthText.runs.map((run) => run.text).join('')));
+			const seconds = parseDurationText(length);
+			if (seconds >= 0) return seconds;
+		}
+		return -1;
+	}
+	function itemVideoId(item) {
+		const lockup = lockupOf(item);
+		if (lockup && typeof lockup.contentId === 'string') return lockup.contentId;
+		const renderer = videoRendererOf(item);
+		return renderer && typeof renderer.videoId === 'string' ? renderer.videoId : null;
+	}
+	function continuationTokenOf(item) {
+		const renderer = item && item.continuationItemRenderer;
+		const command = renderer && renderer.continuationEndpoint
+			&& renderer.continuationEndpoint.continuationCommand;
+		return command && typeof command.token === 'string' && command.token ? command.token : null;
+	}
+	function splitContents(contents) {
+		const items = [];
+		let token = null;
+		for (const item of Array.isArray(contents) ? contents : []) {
+			if (item && item.richItemRenderer) items.push(item);
+			else if (!token) token = continuationTokenOf(item);
+		}
+		return { items, token };
+	}
+	function continuationItems(response) {
+		const out = [];
+		const actions = []
+			.concat(response && Array.isArray(response.onResponseReceivedActions) ? response.onResponseReceivedActions : [])
+			.concat(response && Array.isArray(response.onResponseReceivedEndpoints) ? response.onResponseReceivedEndpoints : []);
+		for (const action of actions) {
+			const list = (action && action.appendContinuationItemsAction && action.appendContinuationItemsAction.continuationItems)
+				|| (action && action.reloadContinuationItemsCommand && action.reloadContinuationItemsCommand.continuationItems);
+			if (Array.isArray(list)) out.push(...list);
+		}
+		return out;
+	}
+	function sortByLength(items) {
+		return (Array.isArray(items) ? items : [])
+			.map((item, index) => ({ item, index, seconds: itemDuration(item) }))
+			.sort((a, b) => (b.seconds - a.seconds) || (a.index - b.index))
+			.map((entry) => entry.item);
+	}
+	async function collectAllItems({ contents, fetchPage, onProgress, isCancelled, maxPages = MAX_PAGES, retries = PAGE_RETRIES }) {
+		const seen = new Set();
+		const items = [];
+		const add = (list) => {
+			for (const item of list) {
+				const id = itemVideoId(item);
+				if (id) {
+					if (seen.has(id)) continue;
+					seen.add(id);
+				}
+				items.push(item);
+			}
+		};
+		const first = splitContents(contents);
+		add(first.items);
+		let token = first.token;
+		let pages = 0;
+		const cancelled = () => typeof isCancelled === 'function' && isCancelled();
+		while (token) {
+			if (cancelled() || pages >= maxPages) return { items, complete: false, cancelled: cancelled() };
+			let response = null;
+			for (let attempt = 0; attempt <= retries && !response; attempt += 1) {
+				try {
+					response = await fetchPage(token);
+				} catch (error) {
+					response = null;
+				}
+				if (cancelled()) return { items, complete: false, cancelled: true };
+			}
+			if (!response) return { items, complete: false, cancelled: false };
+			pages += 1;
+			const next = splitContents(continuationItems(response));
+			add(next.items);
+			token = next.token;
+			if (typeof onProgress === 'function') onProgress(items.length);
+		}
+		return { items, complete: true, cancelled: false };
+	}
+	function isChannelVideosPath(pathname) {
+		return CHANNEL_TAB_RE.test(String(pathname || ''));
+	}
+	function sortChipOf(gridData) {
+		const chips = gridData && gridData.header && gridData.header.chipBarViewModel
+			&& gridData.header.chipBarViewModel.chips;
+		if (!Array.isArray(chips)) return null;
+		for (let index = 0; index < chips.length; index += 1) {
+			const chip = chips[index] && chips[index].chipViewModel;
+			if (!chip || chip.displayType !== 'CHIP_VIEW_MODEL_DISPLAY_TYPE_DROP_DOWN') continue;
+			const sheet = chip.tapCommand && chip.tapCommand.innertubeCommand
+				&& chip.tapCommand.innertubeCommand.showSheetCommand;
+			const listItems = sheet && sheet.panelLoadingStrategy && sheet.panelLoadingStrategy.inlineContent
+				&& sheet.panelLoadingStrategy.inlineContent.sheetViewModel
+				&& sheet.panelLoadingStrategy.inlineContent.sheetViewModel.content
+				&& sheet.panelLoadingStrategy.inlineContent.sheetViewModel.content.listViewModel
+				&& sheet.panelLoadingStrategy.inlineContent.sheetViewModel.content.listViewModel.listItems;
+			const titles = (Array.isArray(listItems) ? listItems : [])
+				.map((entry) => entry && entry.listItemViewModel && entry.listItemViewModel.title
+					&& entry.listItemViewModel.title.content)
+				.filter((title) => typeof title === 'string' && title);
+			if (titles.length) return { index, titles };
+		}
+		return null;
+	}
+	function textOf(node) {
+		return node && typeof node.textContent === 'string' ? node.textContent.trim() : '';
+	}
+	function createChannelLengthSort(deps) {
+		const doc = deps.document;
+		const win = deps.window;
+		const fetchPage = deps.fetchPage;
+		const setTimer = deps.setTimeout || ((fn, ms) => setTimeout(fn, ms));
+		const report = typeof deps.onStatus === 'function' ? deps.onStatus : () => {};
+		let enabled = false;
+		let label = 'Length';
+		let run = 0;
+		let pollTimer = null;
+		let active = null;
+		const currentPath = () => (win && win.location ? win.location.pathname : '');
+		function channelGrid() {
+			if (!isChannelVideosPath(currentPath())) return null;
+			const grids = doc.querySelectorAll(GRID_SELECTOR);
+			for (const grid of grids) {
+				if (grid && grid.data && grid.offsetParent !== null) return grid;
+			}
+			return grids.length === 1 && grids[0].data ? grids[0] : null;
+		}
+		function sortChipElement(grid, chip) {
+			const chips = grid.querySelectorAll('chip-bar-view-model chip-view-model');
+			return chips[chip.index] || null;
+		}
+		function chipTextNode(chipEl) {
+			return chipEl ? chipEl.querySelector('.ytChipShapeText') : null;
+		}
+		function showChipLabel(chipEl, text) {
+			const node = chipTextNode(chipEl);
+			if (!node) return;
+			if (!active || active.node !== node) {
+				restoreChipLabel();
+				active = { node, original: node.textContent };
+			}
+			node.textContent = text;
+		}
+		function restoreChipLabel() {
+			if (active && active.node && active.node.isConnected && typeof active.original === 'string') {
+				active.node.textContent = active.original;
+			}
+			active = null;
+		}
+		function visibleSortList(titles) {
+			const lists = doc.querySelectorAll('tp-yt-iron-dropdown yt-sheet-view-model yt-list-view-model');
+			for (const list of lists) {
+				if (list.offsetParent === null) continue;
+				const native = list.querySelectorAll('yt-list-item-view-model');
+				if (!native.length) continue;
+				const texts = Array.from(native, textOf);
+				if (titles.every((title) => texts.includes(title))) return list;
+			}
+			return null;
+		}
+		function buildItem(list) {
+			const native = list.querySelectorAll('yt-list-item-view-model');
+			const template = native[native.length - 1] && native[native.length - 1].firstElementChild;
+			if (!template) return null;
+			const host = doc.createElement('div');
+			host.className = 'ytListItemViewModelHost';
+			host.setAttribute('role', 'presentation');
+			host.setAttribute(ITEM_ATTR, '');
+			const body = template.cloneNode(true);
+			const title = body.querySelector('.ytListItemViewModelTitle') || body.querySelector('[role="text"]');
+			if (title) title.textContent = label;
+			for (const extra of body.querySelectorAll('img, yt-icon, .ytListItemViewModelLeadingAccessory, .ytListItemViewModelTrailingAccessory')) {
+				extra.remove();
+			}
+			host.appendChild(body);
+			return host;
+		}
+		function injectInto(list) {
+			const existing = list.querySelector('[' + ITEM_ATTR + ']');
+			if (existing) {
+				const title = existing.querySelector('.ytListItemViewModelTitle') || existing.querySelector('[role="text"]');
+				if (title && title.textContent !== label) title.textContent = label;
+				return true;
+			}
+			const item = buildItem(list);
+			if (!item) return false;
+			list.appendChild(item);
+			const dropdown = list.closest('tp-yt-iron-dropdown');
+			try {
+				if (dropdown && typeof dropdown.refit === 'function') dropdown.refit();
+			} catch (error) {
+			}
+			return true;
+		}
+		function stopPolling() {
+			if (pollTimer !== null && typeof deps.clearTimeout === 'function') deps.clearTimeout(pollTimer);
+			pollTimer = null;
+		}
+		function waitForSheet(titles) {
+			stopPolling();
+			const started = Date.now();
+			const tick = () => {
+				pollTimer = null;
+				if (!enabled) return;
+				const list = visibleSortList(titles);
+				if (list && injectInto(list)) return;
+				if (Date.now() - started < SHEET_WAIT_MS) pollTimer = setTimer(tick, SHEET_POLL_MS);
+			};
+			tick();
+		}
+		function closeSheet(fromNode) {
+			const dropdown = fromNode && fromNode.closest && fromNode.closest('tp-yt-iron-dropdown');
+			try {
+				if (dropdown && typeof dropdown.close === 'function') {
+					dropdown.close();
+					return;
+				}
+			} catch (error) {
+			}
+			try {
+				doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
+			} catch (error) {
+			}
+		}
+		async function sortGrid() {
+			const grid = channelGrid();
+			const chip = grid && sortChipOf(grid.data);
+			if (!grid || !chip) return;
+			const myRun = ++run;
+			const path = currentPath();
+			const chipEl = sortChipElement(grid, chip);
+			const stale = () => !enabled || myRun !== run || currentPath() !== path || !grid.isConnected;
+			showChipLabel(chipEl, label + ' · …');
+			report('loading');
+			const result = await collectAllItems({
+				contents: grid.data.contents,
+				fetchPage,
+				isCancelled: stale,
+				onProgress: (count) => { if (!stale()) showChipLabel(chipEl, label + ' · ' + count + '…'); }
+			});
+			if (stale() || result.cancelled) return;
+			const sorted = sortByLength(result.items);
+			try {
+				grid.data = Object.assign({}, grid.data, { contents: sorted });
+			} catch (error) {
+				restoreChipLabel();
+				report('error');
+				return;
+			}
+			showChipLabel(sortChipElement(grid, chip) || chipEl,
+				result.complete ? label : label + ' · ' + sorted.length + '+');
+			report(result.complete ? 'sorted;videos=' + sorted.length : 'partial;videos=' + sorted.length);
+		}
+		function onClick(event) {
+			if (!enabled) return;
+			const target = event.target;
+			if (!target || typeof target.closest !== 'function') return;
+			const ours = target.closest('[' + ITEM_ATTR + ']');
+			if (ours) {
+				event.preventDefault();
+				event.stopPropagation();
+				closeSheet(ours);
+				sortGrid();
+				return;
+			}
+			const nativeItem = target.closest('tp-yt-iron-dropdown yt-list-item-view-model');
+			if (nativeItem && active && nativeItem.parentElement
+				&& nativeItem.parentElement.querySelector('[' + ITEM_ATTR + ']')) {
+				run += 1;
+				restoreChipLabel();
+				report('on');
+				return;
+			}
+			const chipEl = target.closest('chip-bar-view-model chip-view-model');
+			if (!chipEl) return;
+			const grid = channelGrid();
+			const chip = grid && sortChipOf(grid.data);
+			if (!chip || sortChipElement(grid, chip) !== chipEl) return;
+			waitForSheet(chip.titles);
+		}
+		function onNavigate() {
+			run += 1;
+			active = null;
+			stopPolling();
+		}
+		let listening = false;
+		function listen(on) {
+			if (on === listening) return;
+			listening = on;
+			const method = on ? 'addEventListener' : 'removeEventListener';
+			doc[method]('click', onClick, true);
+			doc[method]('yt-navigate-start', onNavigate, false);
+		}
+		return {
+			setEnabled(next) {
+				const wasEnabled = enabled;
+				enabled = Boolean(next);
+				listen(enabled);
+				if (wasEnabled && !enabled) {
+					run += 1;
+					stopPolling();
+					restoreChipLabel();
+					for (const item of doc.querySelectorAll('[' + ITEM_ATTR + ']')) item.remove();
+				}
+				report(enabled ? 'on' : 'off');
+			},
+			setLabel(next) {
+				if (typeof next === 'string' && next.trim()) label = next.trim().slice(0, 40);
+			},
+			isEnabled: () => enabled,
+			sortGrid
+		};
+	}
+	const channelLengthSort = Object.freeze({
+		ITEM_ATTR,
+		MAX_PAGES,
+		parseDurationText,
+		itemDuration,
+		itemVideoId,
+		splitContents,
+		continuationItems,
+		sortByLength,
+		collectAllItems,
+		isChannelVideosPath,
+		sortChipOf,
+		createChannelLengthSort
+	});
+	core.channelLengthSort = channelLengthSort;
+	const inNodeTests = typeof process !== 'undefined'
+		&& !!process.versions
+		&& typeof process.versions.node === 'string';
+	if (inNodeTests && typeof module !== 'undefined' && module.exports) {
+		module.exports = channelLengthSort;
+	}
+})();
+;
 (function() {
 	'use strict';
 	var _NATIVE = (function() {
@@ -25092,6 +25478,61 @@ void 0;
 			writeStatus();
 		}
 		_obsRegister([ENABLE_ATTR], syncFromAttributes);
+		syncFromAttributes();
+	})();
+	(function installChannelLengthSort() {
+		var lengthSort = globalThis.YTKitCore && globalThis.YTKitCore.channelLengthSort;
+		if (!lengthSort || typeof lengthSort.createChannelLengthSort !== 'function'
+			|| typeof document === 'undefined' || !document.documentElement) return;
+		var ENABLE_ATTR = 'data-ytkit-channel-length-sort';
+		var LABEL_ATTR = 'data-ytkit-channel-length-sort-label';
+		var STATUS_ATTR = 'data-ytkit-channel-length-sort-status';
+		var nativeFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : null;
+		function innertubeContext() {
+			try {
+				var ytcfg = window.ytcfg;
+				var context = ytcfg && typeof ytcfg.get === 'function' ? ytcfg.get('INNERTUBE_CONTEXT') : null;
+				return context || (ytcfg && ytcfg.data_ && ytcfg.data_.INNERTUBE_CONTEXT) || null;
+			} catch (error) {
+				return null;
+			}
+		}
+		function fetchPage(token) {
+			var context = innertubeContext();
+			if (!nativeFetch || !context) return Promise.reject(new Error('no innertube context'));
+			var body = _NATIVE.jsonStringify({ context: context, continuation: token });
+			function send(credentials) {
+				return nativeFetch('/youtubei/v1/browse?prettyPrint=false', {
+					method: 'POST',
+					credentials: credentials,
+					headers: { 'content-type': 'application/json' },
+					body: body
+				}).then(function(response) {
+					if (!response.ok) throw new Error('browse ' + response.status);
+					return response.text();
+				}).then(function(text) { return _NATIVE.jsonParse(text); });
+			}
+			return send('same-origin').catch(function() { return send('omit'); });
+		}
+		var controller = lengthSort.createChannelLengthSort({
+			document: document,
+			window: window,
+			fetchPage: fetchPage,
+			setTimeout: function(fn, ms) { return setTimeout(fn, ms); },
+			clearTimeout: function(id) { clearTimeout(id); },
+			onStatus: function(status) {
+				try {
+					if (_NATIVE.getAttribute(STATUS_ATTR) !== status) _NATIVE.setAttribute(STATUS_ATTR, status);
+				} catch (error) {
+				}
+			}
+		});
+		function syncFromAttributes() {
+			controller.setLabel(_bridgeGet(LABEL_ATTR));
+			var enabled = _bridgeGet(ENABLE_ATTR) === 'on';
+			if (enabled !== controller.isEnabled()) controller.setEnabled(enabled);
+		}
+		_obsRegister([ENABLE_ATTR, LABEL_ATTR], syncFromAttributes);
 		syncFromAttributes();
 	})();
 (function() {

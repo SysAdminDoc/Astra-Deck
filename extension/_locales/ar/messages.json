@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "يزيل الفصول التي ينشئها YouTube تلقائيًا من شريط التقدم ولوحة الفصول. تبقى الفصول التي كتبها صاحب القناة في الوصف."
   },
+  "feature_channelLengthSort_name": {
+    "message": "ترتيب فيديوهات القناة حسب المدة"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "يضيف خيار المدة إلى قائمة الترتيب في تبويب الفيديوهات بالقناة. عند اختياره تُحمَّل كل الفيديوهات وتظهر الأطول أولًا."
+  },
+  "channelLengthSort_option": {
+    "message": "المدة"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "المشاهدات في سطر مستقل"
   },

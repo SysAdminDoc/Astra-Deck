@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "从进度条和章节面板中移除 YouTube 自动生成的章节。创作者在说明中写的章节会保留。"
   },
+  "feature_channelLengthSort_name": {
+    "message": "按时长排序频道视频"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "在频道“视频”标签页的排序菜单中添加“时长”。选择后会加载全部视频，并把最长的排在最前面。"
+  },
+  "channelLengthSort_option": {
+    "message": "时长"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "观看次数单独一行"
   },

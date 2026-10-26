@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "YouTube가 자동으로 만든 챕터를 진행 표시줄과 챕터 패널에서 없앱니다. 크리에이터가 설명란에 작성한 챕터는 그대로 남습니다."
   },
+  "feature_channelLengthSort_name": {
+    "message": "채널 동영상을 길이순으로 정렬"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "채널 동영상 탭의 정렬 메뉴에 길이를 추가합니다. 선택하면 모든 동영상을 불러와 긴 동영상부터 보여 줍니다."
+  },
+  "channelLengthSort_option": {
+    "message": "길이"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "조회수를 별도 줄에 표시"
   },

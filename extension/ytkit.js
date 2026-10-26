@@ -4136,6 +4136,7 @@ const STORAGE_KEYS = Object.freeze({
             hideSubscriptionOptions: true,
             hidePaidContentOverlay: true,
             redirectToVideosTab: true,
+            channelLengthSort: true,
             hidePlayables: true,
             hideMembersOnly: true,
             hideNewsHome: true,
@@ -11124,6 +11125,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._clearTabListWait();
             }
         },
+        (globalThis.YTKitFeatures?.channelLengthSort?.createChannelLengthSortFeature?.({
+            publishBridgeAttribute,
+            clearBridgeAttribute,
+            t
+        }) || {
+            id: 'channelLengthSort',
+            name: t('feature_channelLengthSort_name', 'Sort Channel Videos by Length'),
+            description: t('feature_channelLengthSort_desc', 'Adds Length to the sort menu on a channel\'s Videos tab. Picking it loads every video and puts the longest first.'),
+            group: 'Home / Subscriptions',
+            icon: 'clock',
+            init() { DebugManager.log('ChannelLengthSort', 'Feature module unavailable'); },
+            destroy() {}
+        }),
         cssFeature('hidePlayables', 'Hide Playables', 'Hide YouTube Playables gaming content from feeds', 'Home / Subscriptions', 'gamepad',
             `ytd-rich-section-renderer:has([is-playables]) { display: none !important; }`),
         {
@@ -42664,6 +42678,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         ],
         channel: [
             { id: 'redirectToVideosTab',         label: 'Auto Videos Tab' },
+            { id: 'channelLengthSort',           label: null },
         ],
     };
 

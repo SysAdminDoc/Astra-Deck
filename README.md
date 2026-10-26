@@ -59,8 +59,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.99.3` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `494` entries across `18` categories |
-| Runtime graph | `125` modules, including `33` peeled feature modules and `307` declared feature IDs |
+| Settings schema | `495` entries across `18` categories |
+| Runtime graph | `126` modules, including `34` peeled feature modules and `308` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -303,6 +303,7 @@ still cleared and the next one waits for you.
 |---------|---------|
 | Remove Shorts / Redirect Shorts to Regular Player | On |
 | Channels open on Videos Tab | On |
+| Length in a channel's Videos sort menu (longest first) | On |
 | Hide Collaborations / News / Playlists / Playables / Members Only | On |
 | Hide Watched Videos (dim or hide) / Grayscale Thumbnails | Off |
 | Anti-Translate / Not Interested Button / Open in New Tab | Off |
@@ -478,12 +479,12 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **489 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **490 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
 <details>
-<summary><strong>Shell and appearance</strong>: 49 settings</summary>
+<summary><strong>Shell and appearance</strong>: 50 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -502,6 +503,7 @@ This generated knowledgebase documents all **489 user-facing settings** in the c
 | <a id="setting-chatStyleComments"></a><strong>Studio Comments</strong><br><code>chatStyleComments</code> | Premium comment layout that preserves pinned comments, creator hearts, replies, and native actions | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-fullWidthSubscriptions"></a><strong>Full-Width Subscriptions</strong><br><code>fullWidthSubscriptions</code> | Expand the subscription grid to fill the page | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-redirectToVideosTab"></a><strong>Channels → Videos Tab</strong><br><code>redirectToVideosTab</code> | Open channel pages directly on the Videos tab | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-channelLengthSort"></a><strong>Sort Channel Videos by Length</strong><br><code>channelLengthSort</code> | Adds Length to the sort menu on a channel's Videos tab. Picking it loads every video and puts the longest first. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.100.0</code> |
 | <a id="setting-expandVideoWidth"></a><strong>Expand Video Width</strong><br><code>expandVideoWidth</code> | Stretch the video to fill the space when sidebar is hidden | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-floatingLogoOnWatch"></a><strong>Astra Player Dock</strong><br><code>floatingLogoOnWatch</code> | Replace native player right-controls with Astra quick links, local tools, and settings | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-colorTheme"></a><strong>Color theme</strong><br><code>colorTheme</code> | Applies a built-in dark-mode color palette across YouTube; none leaves the native palette unchanged. | Default: <code>none</code><br>Values: <code>none</code>, <code>catppuccin-mocha</code>, <code>styled-dark</code>, <code>dracula</code>, <code>nord</code>, <code>gruvbox</code>, <code>tokyo-night</code>, <code>nyan-cat</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |

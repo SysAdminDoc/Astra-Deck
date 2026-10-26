@@ -833,6 +833,76 @@
     })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Sort by Length on a channel's Videos tab. The grid's data and its
+    // continuation pages are only reachable from this world, so
+    // core/channel-length-sort.js runs here; this wrapper hands it the page
+    // objects and the browse request, and switches it from the bridge.
+    (function installChannelLengthSort() {
+        var lengthSort = globalThis.YTKitCore && globalThis.YTKitCore.channelLengthSort;
+        if (!lengthSort || typeof lengthSort.createChannelLengthSort !== 'function'
+            || typeof document === 'undefined' || !document.documentElement) return;
+
+        var ENABLE_ATTR = 'data-ytkit-channel-length-sort';
+        var LABEL_ATTR = 'data-ytkit-channel-length-sort-label';
+        var STATUS_ATTR = 'data-ytkit-channel-length-sort-status';
+        var nativeFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : null;
+
+        function innertubeContext() {
+            try {
+                var ytcfg = window.ytcfg;
+                var context = ytcfg && typeof ytcfg.get === 'function' ? ytcfg.get('INNERTUBE_CONTEXT') : null;
+                return context || (ytcfg && ytcfg.data_ && ytcfg.data_.INNERTUBE_CONTEXT) || null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        // Signed-in pages send cookies; a request YouTube refuses that way is
+        // tried once more without them, since channel uploads are public.
+        function fetchPage(token) {
+            var context = innertubeContext();
+            if (!nativeFetch || !context) return Promise.reject(new Error('no innertube context'));
+            var body = _NATIVE.jsonStringify({ context: context, continuation: token });
+            function send(credentials) {
+                return nativeFetch('/youtubei/v1/browse?prettyPrint=false', {
+                    method: 'POST',
+                    credentials: credentials,
+                    headers: { 'content-type': 'application/json' },
+                    body: body
+                }).then(function(response) {
+                    if (!response.ok) throw new Error('browse ' + response.status);
+                    return response.text();
+                }).then(function(text) { return _NATIVE.jsonParse(text); });
+            }
+            return send('same-origin').catch(function() { return send('omit'); });
+        }
+
+        var controller = lengthSort.createChannelLengthSort({
+            document: document,
+            window: window,
+            fetchPage: fetchPage,
+            setTimeout: function(fn, ms) { return setTimeout(fn, ms); },
+            clearTimeout: function(id) { clearTimeout(id); },
+            onStatus: function(status) {
+                try {
+                    if (_NATIVE.getAttribute(STATUS_ATTR) !== status) _NATIVE.setAttribute(STATUS_ATTR, status);
+                } catch (error) {
+                    // reason: diagnostics must not affect the sort
+                }
+            }
+        });
+
+        function syncFromAttributes() {
+            controller.setLabel(_bridgeGet(LABEL_ATTR));
+            var enabled = _bridgeGet(ENABLE_ATTR) === 'on';
+            if (enabled !== controller.isEnabled()) controller.setEnabled(enabled);
+        }
+
+        _obsRegister([ENABLE_ATTR, LABEL_ATTR], syncFromAttributes);
+        syncFromAttributes();
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 1: codec blocker (data-ytkit-codec)
     // ──────────────────────────────────────────────────────────────────
 (function() {

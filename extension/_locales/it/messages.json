@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "Rimuove i capitoli che YouTube genera da solo dalla barra di avanzamento e dal pannello dei capitoli. I capitoli scritti dal creator nella descrizione restano."
   },
+  "feature_channelLengthSort_name": {
+    "message": "Ordina i video del canale per durata"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "Aggiunge Durata al menu di ordinamento della scheda Video di un canale. Sceglierla carica tutti i video e mette prima i più lunghi."
+  },
+  "channelLengthSort_option": {
+    "message": "Durata"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "Visualizzazioni su una riga a parte"
   },

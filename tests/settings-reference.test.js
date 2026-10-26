@@ -26,7 +26,8 @@ test('settings reference covers every user-facing schema entry with audited purp
     // 487 since Classic Watch Layout and Extra Layout Flags joined Watch.
     // 488 since Hide AI Chapters joined it, 489 with Views on Their Own Line.
     // 488 again since DeArrow Voting was retired, 489 with Covers Without a Submission.
-    assert.equal(entries.length, 489);
+    // 490 since Sort by Length joined Home / Subscriptions.
+    assert.equal(entries.length, 490);
     assert.deepEqual(entries.map((entry) => entry.key), expectedKeys);
     for (const entry of entries) {
         assert.ok(entry.title.length >= 2, `${entry.key} needs a readable title`);

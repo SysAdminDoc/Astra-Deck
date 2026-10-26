@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "Entfernt die Kapitel, die YouTube selbst erzeugt, aus der Fortschrittsleiste und dem Kapitelbereich. Kapitel, die der Creator in die Beschreibung geschrieben hat, bleiben."
   },
+  "feature_channelLengthSort_name": {
+    "message": "Kanalvideos nach Länge sortieren"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "Fügt dem Sortiermenü im Videos-Tab eines Kanals „Länge“ hinzu. Bei Auswahl werden alle Videos geladen und die längsten zuerst gezeigt."
+  },
+  "channelLengthSort_option": {
+    "message": "Länge"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "Aufrufe in eigener Zeile"
   },

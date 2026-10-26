@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- A channel's Videos tab gets a Length choice in its sort menu, next to Latest, Popular and Oldest. Picking it loads every video the channel has and lists the longest first. The chip shows a running count while pages load, which takes about 25 seconds for a channel with 3,000 uploads. If YouTube stops answering partway, you get the videos that did load, sorted, and the chip ends in a "+". Picking a native choice afterwards puts the grid back to normal. It's on by default and lives under Home / Subscriptions as Sort Channel Videos by Length.
+
 ## [4.99.3] (2026-10-13)
 
 ### Changed

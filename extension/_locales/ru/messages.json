@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "Убирает главы, которые YouTube создаёт сам, с полосы прокрутки и из панели глав. Главы, которые автор указал в описании, остаются."
   },
+  "feature_channelLengthSort_name": {
+    "message": "Сортировать видео канала по длительности"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "Добавляет пункт «Длительность» в меню сортировки на вкладке «Видео» канала. При выборе загружаются все видео, и самые длинные идут первыми."
+  },
+  "channelLengthSort_option": {
+    "message": "Длительность"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "Просмотры на отдельной строке"
   },

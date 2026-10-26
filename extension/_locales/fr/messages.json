@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "Retire les chapitres que YouTube génère lui-même de la barre de progression et du panneau des chapitres. Les chapitres que le créateur a écrits dans la description restent."
   },
+  "feature_channelLengthSort_name": {
+    "message": "Trier les vidéos de la chaîne par durée"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "Ajoute Durée au menu de tri de l'onglet Vidéos d'une chaîne. En la choisissant, toutes les vidéos se chargent et les plus longues passent en premier."
+  },
+  "channelLengthSort_option": {
+    "message": "Durée"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "Vues sur une ligne à part"
   },

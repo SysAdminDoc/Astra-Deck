@@ -9787,6 +9787,15 @@
   "feature_hideAutoChapters_desc": {
     "message": "YouTube が自動で生成したチャプターを、シークバーとチャプターパネルから取り除きます。クリエイターが概要欄に書いたチャプターはそのまま残ります。"
   },
+  "feature_channelLengthSort_name": {
+    "message": "チャンネル動画を長さで並べ替え"
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "チャンネルの「動画」タブの並べ替えメニューに「長さ」を追加します。選ぶとすべての動画を読み込み、長いものから順に表示します。"
+  },
+  "channelLengthSort_option": {
+    "message": "長さ"
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "視聴回数を別の行に表示"
   },

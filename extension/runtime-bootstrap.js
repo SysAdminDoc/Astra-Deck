@@ -156,6 +156,7 @@
         "features/sticky-chat/index.js",
         "features/classic-watch-layout/index.js",
         "features/hide-auto-chapters/index.js",
+        "features/channel-length-sort/index.js",
         "features/video-hider/index.js",
         "features/video-notes/index.js",
         "features/replay-chat-density/index.js",

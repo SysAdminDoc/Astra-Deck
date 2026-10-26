@@ -462,6 +462,7 @@
     "autoExitFullscreen",
     "autoSubtitlesWhenMuted",
     "channelLandingTab",
+    "channelLengthSort",
     "classicPlayerChrome",
     "cleanUiPreset",
     "commentAuthorBlock",

@@ -374,7 +374,7 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
     assert.deepEqual(
         mainEntry.js,
-        ['core/bridge-channel.js', 'core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'core/classic-watch-layout.js', 'core/auto-chapters.js', 'ytkit-main.js'],
+        ['core/bridge-channel.js', 'core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'core/classic-watch-layout.js', 'core/auto-chapters.js', 'core/channel-length-sort.js', 'ytkit-main.js'],
         'the sealed channel, then resource unlock, player and audio helpers, all before ytkit-main.js'
     );
 
@@ -5853,8 +5853,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // DeArrow Voting is retired (493). Covers Without a Submission adds one (494).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 494,
-        'SETTINGS_SCHEMA must cover all 494 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 495,
+        'SETTINGS_SCHEMA must cover all 495 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -8042,6 +8042,7 @@ test('v4.20.0 userscript ships every file the extension runs in a page or its wo
         'features/sticky-chat/index.js',
         'features/classic-watch-layout/index.js',
         'features/hide-auto-chapters/index.js',
+        'features/channel-length-sort/index.js',
         'features/video-hider/index.js',
         'features/video-notes/index.js',
         'features/player-dock/index.js',

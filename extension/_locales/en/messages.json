@@ -9855,6 +9855,18 @@
     "message": "Removes the chapters YouTube generates on its own, from the progress bar and the chapters panel. Chapters the creator wrote in the description stay.",
     "description": "Description of the setting that removes YouTube's auto-generated (AI) video chapters while keeping chapters the creator wrote."
   },
+  "feature_channelLengthSort_name": {
+    "message": "Sort Channel Videos by Length",
+    "description": "Name of the setting that adds a Length choice to a channel's Videos sort menu."
+  },
+  "feature_channelLengthSort_desc": {
+    "message": "Adds Length to the sort menu on a channel's Videos tab. Picking it loads every video and puts the longest first.",
+    "description": "Description of the setting that adds a Length choice to a channel's Videos sort menu, which loads every video and sorts longest first."
+  },
+  "channelLengthSort_option": {
+    "message": "Length",
+    "description": "The Length choice added to a channel's Videos sort menu (beside YouTube's Latest, Popular and Oldest). Keep it to one short word."
+  },
   "feature_viewsOnSeparateLine_name": {
     "message": "Views on Their Own Line",
     "description": "Name of the setting that puts the view count and upload age on their own line on Home and Subscriptions cards."
