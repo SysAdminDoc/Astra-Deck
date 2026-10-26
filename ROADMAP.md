@@ -255,7 +255,16 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   explicit choices through one visual starter using existing controls and one undo.
   Consolidate overlapping appearance/feed entries without renaming stored keys. Preserve
   every explicit saved true/false/value in sparse and full legacy bags, imports and cross-tab
-  updates. Defaults apply only to absent keys; do not guess touched fields or rewrite old bags.
+  updates. Do not guess touched fields.
+  Blocked on: Matt's call on which defaults flip (2026-10-26 drain). The saved bag is sparse
+  (`extension/core/settings-schema.js:957`, `:996`), so flipping a default silently changes
+  every existing profile that never touched that key, Matt's own included. The seven
+  opinionated keys on today are `widenSearchBar`, `squareSearchBar`, `squareAvatars`,
+  `subscriptionsGrid`, `homepageGridAlign`, `hideSidebar` and `watchPageRestyle`. Matt's
+  recent direction runs the other way (DeArrow on by default in v4.99.0, `channelLengthSort`
+  on in v4.100.0). If he approves, the change needs a one-time migration that writes the old
+  default into existing non-empty bags for each flipped key, so only fresh installs see the
+  new defaults; add a sparse-bag test that an upgraded profile renders unchanged.
   Keep DeArrow's current default unless a separate decision changes it. Verify dark/light
   fresh and migrated profiles, discoverability, opt-in styling, and existing parity gates.
   Complexity: M
