@@ -119,22 +119,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Keep the settings panel usable when a feature module is unavailable
-  Why: a valid saved profile with hider features disabled cannot open settings or recovery.
-  Evidence: Verified live click on `#ytkit-masthead-btn` throws
-  `videoHiderFeature?._getHiddenVideos is not a function` at
-  `extension/features/settings-panel/index.js:1610`, through `:1669` and `:2937`.
-  Other object-only optional calls occur at `:1618`, `:1972`, `:2180`, `:2489`, `:2790`,
-  and `:2914-2915`. Canonical fresh defaults work. See `RESEARCH.md`.
-  Touches: `extension/features/settings-panel/index.js`, Video Hider storage/list access,
-  settings-panel tests, `scripts/smoke-experience-live.js`.
-  Acceptance: after the factory repair above, seed existing hidden records, cold-start with
-  all hider gates off, and open all settings panes through the real button. Also simulate
-  a failed module. Use stable storage-backed reads or method guards with an unavailable/retry
-  state; retain lists and counts without fabricated empty data or destructive writes.
-  Other categories, export and recovery remain reachable, with zero uncaught exceptions.
-  Complexity: S
-
 - [ ] P1 — Bind Resume Playback restores and listeners to the active video generation
   Why: a delayed restore can seek the next video, and a superseded init can leak listeners.
   Evidence: Verified VM using real `resumePlayback._restore` and `init` at
