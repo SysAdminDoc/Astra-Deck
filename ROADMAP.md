@@ -119,23 +119,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Register factory providers even when their features start disabled
-  Why: settings-gated loading can leave descriptor-only fallbacks for the tab's lifetime,
-  so enabling a feature does not reach its implementation. This is a prerequisite for #52.
-  Evidence: Verified source in `scripts/generate-runtime-bootstrap.js:18-36` and factory
-  consumers in `extension/ytkit.js`; `tests/runtime-bootstrap.test.js:167` covers only the
-  Home/Subs and Subscription View gates removed in v4.99.3. See `RESEARCH.md` startup boundary.
-  Touches: `scripts/generate-runtime-bootstrap.js`, `extension/runtime-bootstrap.js`,
-  `extension/runtime-core-loader.mjs`, factory consumers in `extension/ytkit.js`,
-  `tests/runtime-bootstrap.test.js`, `scripts/smoke-experience-live.js`.
-  Acceptance: generate an inventory of factory providers and their consumers; every
-  descriptor-only consumer receives a real factory when cold-disabled, then starts on
-  enable without a reload. Keep actual observers, network requests and feature init gated.
-  Exercise every provider's cold-off transition, plus bounded browser interaction profiles.
-  Click the real settings control and fail the live harness on extension-origin runtime
-  exceptions. Preserve the startup budget without relaxing its baseline.
-  Complexity: M
-
 - [ ] P1 — Keep the settings panel usable when a feature module is unavailable
   Why: a valid saved profile with hider features disabled cannot open settings or recovery.
   Evidence: Verified live click on `#ytkit-masthead-btn` throws
@@ -238,36 +221,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   assert transcript credentials are omitted. Handoff uses the exact store or fails closed.
   Test manager parity separately.
   Complexity: L
-
-- [ ] P1 — Use familiar fresh-install defaults and one opt-in visual starter choice, #52
-  Why: the only open report asks for fewer forced visual changes and clearer choices while
-  retaining all saved preferences. This should compose the existing design, not add a wizard.
-  Evidence: https://github.com/SysAdminDoc/Astra-Deck/issues/52;
-  `extension/core/settings-schema.js:126-174`, `extension/ytkit.js:4112`, and saved-over-default
-  merge at `:5091-5123`. Existing parity checks are in `build-extension.js:899-929` and
-  `scripts/check-settings.js:158-181`. See `RESEARCH.md` reported issues.
-  Touches: canonical defaults, schema/default JSON generation, existing preset machinery,
-  `extension/features/settings-panel/index.js`, appearance/feed control aliases, 11 locales,
-  default-parity and settings migration tests, existing setup docs.
-  Acceptance: land factory activation, partial-runtime settings recovery and preset ownership
-  first. New profiles keep familiar YouTube presentation; make square search/avatars,
-  subscriptions/home grid changes, hidden sidebar, square UI, watch restyle and Theater Split
-  explicit choices through one visual starter using existing controls and one undo.
-  Consolidate overlapping appearance/feed entries without renaming stored keys. Preserve
-  every explicit saved true/false/value in sparse and full legacy bags, imports and cross-tab
-  updates. Do not guess touched fields.
-  Blocked on: Matt's call on which defaults flip (2026-10-26 drain). The saved bag is sparse
-  (`extension/core/settings-schema.js:957`, `:996`), so flipping a default silently changes
-  every existing profile that never touched that key, Matt's own included. The seven
-  opinionated keys on today are `widenSearchBar`, `squareSearchBar`, `squareAvatars`,
-  `subscriptionsGrid`, `homepageGridAlign`, `hideSidebar` and `watchPageRestyle`. Matt's
-  recent direction runs the other way (DeArrow on by default in v4.99.0, `channelLengthSort`
-  on in v4.100.0). If he approves, the change needs a one-time migration that writes the old
-  default into existing non-empty bags for each flipped key, so only fresh installs see the
-  new defaults; add a sparse-bag test that an upgraded profile renders unchanged.
-  Keep DeArrow's current default unless a separate decision changes it. Verify dark/light
-  fresh and migrated profiles, discoverability, opt-in styling, and existing parity gates.
-  Complexity: M
 
 ### Next (P2)
 

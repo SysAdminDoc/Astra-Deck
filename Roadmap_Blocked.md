@@ -8,6 +8,39 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 > name those paths are implemented THERE, against that repo's tree; the paths
 > are kept verbatim because they still resolve inside the companion repo.
 
+## P1 — Needs Matt's call on which defaults flip (2026-10-26)
+
+- [ ] P1 — Use familiar fresh-install defaults and one opt-in visual starter choice, #52
+  Why: the only open report asks for fewer forced visual changes and clearer choices while
+  retaining all saved preferences. This should compose the existing design, not add a wizard.
+  Evidence: https://github.com/SysAdminDoc/Astra-Deck/issues/52;
+  `extension/core/settings-schema.js:126-174`, `extension/ytkit.js:4112`, and saved-over-default
+  merge at `:5091-5123`. Existing parity checks are in `build-extension.js:899-929` and
+  `scripts/check-settings.js:158-181`. See `RESEARCH.md` reported issues.
+  Touches: canonical defaults, schema/default JSON generation, existing preset machinery,
+  `extension/features/settings-panel/index.js`, appearance/feed control aliases, 11 locales,
+  default-parity and settings migration tests, existing setup docs.
+  Acceptance: land factory activation, partial-runtime settings recovery and preset ownership
+  first. New profiles keep familiar YouTube presentation; make square search/avatars,
+  subscriptions/home grid changes, hidden sidebar, square UI, watch restyle and Theater Split
+  explicit choices through one visual starter using existing controls and one undo.
+  Consolidate overlapping appearance/feed entries without renaming stored keys. Preserve
+  every explicit saved true/false/value in sparse and full legacy bags, imports and cross-tab
+  updates. Do not guess touched fields.
+  Blocked on: Matt's call on which defaults flip (2026-10-26 drain). The saved bag is sparse
+  (`extension/core/settings-schema.js:957`, `:996`), so flipping a default silently changes
+  every existing profile that never touched that key, Matt's own included. The seven
+  opinionated keys on today are `widenSearchBar`, `squareSearchBar`, `squareAvatars`,
+  `subscriptionsGrid`, `homepageGridAlign`, `hideSidebar` and `watchPageRestyle`. Matt's
+  recent direction runs the other way (DeArrow on by default in v4.99.0, `channelLengthSort`
+  on in v4.100.0). If he approves, the change needs a one-time migration that writes the old
+  default into existing non-empty bags for each flipped key, so only fresh installs see the
+  new defaults; add a sparse-bag test that an upgraded profile renders unchanged.
+  Keep DeArrow's current default unless a separate decision changes it. Verify dark/light
+  fresh and migrated profiles, discoverability, opt-in styling, and existing parity gates.
+  Complexity: M
+  Blocker: product decision. Flipping these defaults changes every existing profile that never touched them, and Matt's recent direction keeps features on by default.
+
 ## P1 — Premise disproven, needs a product decision (2026-08-27)
 
 - [ ] P2 — Decide whether the YouTube tab honors the Store-safe / GitHub-full profile
