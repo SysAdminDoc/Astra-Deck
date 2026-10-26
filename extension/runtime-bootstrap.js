@@ -177,13 +177,6 @@
     );
     const FEATURE_SETTINGS = Object.freeze(
     {
-        "features/subtitles/index.js": [
-            "autoSubtitles",
-            "autoSubtitlesWhenMuted",
-            "dualLanguageSubtitles",
-            "subtitleDownload",
-            "subtitlesOnRewind"
-        ],
         "features/video-filters/index.js": [
             "videoVisualFilters",
             "photosensitiveFlashProtection"
@@ -198,65 +191,6 @@
         ],
         "features/chat-style-comments/index.js": [
             "chatStyleComments"
-        ],
-        "features/sticky-video-styles/index.js": [
-            "stickyVideo"
-        ],
-        "features/sticky-video-autoscroll/index.js": [
-            "stickyVideo"
-        ],
-        "features/sticky-video-chat/index.js": [
-            "stickyVideo"
-        ],
-        "features/sticky-video-header/index.js": [
-            "stickyVideo"
-        ],
-        "features/sticky-video/index.js": [
-            "stickyVideo"
-        ],
-        "features/sticky-chat/index.js": [
-            "stickyChat"
-        ],
-        "features/video-hider/index.js": [
-            "hideVideosFromHome",
-            "hideVideosHideAutoDubbed",
-            "hideVideosHideLive",
-            "hideVideosHideMixes",
-            "hideVideosHideMovies",
-            "hideVideosHidePlaylists",
-            "hideVideosHideUpcoming"
-        ],
-        "features/element-zapper/index.js": [
-            "elementZapper"
-        ],
-        "features/video-notes/index.js": [
-            "videoNotes"
-        ],
-        "features/digital-wellbeing/index.js": [
-            "digitalWellbeing"
-        ],
-        "features/search-hygiene/index.js": [
-            "searchHideRelatedSearches",
-            "searchHideUnrelatedShelves",
-            "searchHideWatchedRecommended"
-        ],
-        "features/search-while-watching/index.js": [
-            "searchWhileWatching"
-        ],
-        "features/video-insights/index.js": [
-            "videoInsights"
-        ],
-        "features/return-dislike/index.js": [
-            "returnDislike",
-            "returnDislikeOnCards"
-        ],
-        "features/sponsorblock/index.js": [
-            "sponsorBlock"
-        ],
-        "features/dearrow/index.js": [
-            "deArrow",
-            "deArrowChannelOverridesPanel",
-            "dearrowPeekButton"
         ]
     }
     );

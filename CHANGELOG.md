@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Turning on DeArrow, SponsorBlock, Sticky Video, Digital Wellbeing, Video Notes, Return YouTube Dislike, dual-language subtitles or a handful of other features now works right away. If a page loaded while one of them was switched off, switching it back on used to do nothing until you reloaded the tab.
+
 ## [4.100.0] (2026-10-26)
 
 ### Added

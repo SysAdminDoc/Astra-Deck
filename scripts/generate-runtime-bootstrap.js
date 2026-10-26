@@ -9,32 +9,17 @@ const OUTPUT_PATH = path.join(ROOT, 'extension', 'runtime-bootstrap.js');
 const LOADER_OUTPUT_PATH = path.join(ROOT, 'extension', 'runtime-core-loader.mjs');
 const LOADER_MODULE = 'runtime-core-loader.mjs';
 
+// Only modules whose every consumer in ytkit.js has an inline fallback may be
+// skipped while their settings are off. A skipped module never loads later in
+// the tab, so a feature factory (or a runtime factory read at init) left out
+// here would make an off-to-on change a silent no-op until a reload. Everything
+// else always loads: registering a factory starts nothing, init stays gated
+// by the feature's own setting.
 const FEATURE_SETTINGS = Object.freeze({
-    'features/subtitles/index.js': ['autoSubtitles', 'autoSubtitlesWhenMuted', 'dualLanguageSubtitles', 'subtitleDownload', 'subtitlesOnRewind'],
     'features/video-filters/index.js': ['videoVisualFilters', 'photosensitiveFlashProtection'],
     'features/blue-light-filter/index.js': ['blueLightFilter'],
     'features/theme-css/index.js': ['colorTheme', 'oledTheme', 'themeAccentColor'],
     'features/chat-style-comments/index.js': ['chatStyleComments'],
-    'features/sticky-video-styles/index.js': ['stickyVideo'],
-    'features/sticky-video-autoscroll/index.js': ['stickyVideo'],
-    'features/sticky-video-chat/index.js': ['stickyVideo'],
-    'features/sticky-video-header/index.js': ['stickyVideo'],
-    'features/sticky-video/index.js': ['stickyVideo'],
-    'features/sticky-chat/index.js': ['stickyChat'],
-    'features/video-hider/index.js': ['hideVideosFromHome', 'hideVideosHideAutoDubbed', 'hideVideosHideLive', 'hideVideosHideMixes', 'hideVideosHideMovies', 'hideVideosHidePlaylists', 'hideVideosHideUpcoming'],
-    'features/element-zapper/index.js': ['elementZapper'],
-    'features/video-notes/index.js': ['videoNotes'],
-    // Descriptor-only features must register their factory even while off so
-    // an immediate settings change can initialize the real runtime. Keeping
-    // Subscription Groups, Subscription View and the shared feed CSS must
-    // load even with their settings off; their consumers have no runtime fallback.
-    'features/digital-wellbeing/index.js': ['digitalWellbeing'],
-    'features/search-hygiene/index.js': ['searchHideRelatedSearches', 'searchHideUnrelatedShelves', 'searchHideWatchedRecommended'],
-    'features/search-while-watching/index.js': ['searchWhileWatching'],
-    'features/video-insights/index.js': ['videoInsights'],
-    'features/return-dislike/index.js': ['returnDislike', 'returnDislikeOnCards'],
-    'features/sponsorblock/index.js': ['sponsorBlock'],
-    'features/dearrow/index.js': ['deArrow', 'deArrowChannelOverridesPanel', 'dearrowPeekButton'],
 });
 
 // There is deliberately no route gate here. YouTube is a single-page app: the
@@ -42,13 +27,8 @@ const FEATURE_SETTINGS = Object.freeze({
 // everywhere. The monolith builds its feature array at load time, so a module
 // imported after that point can no longer displace the feature object already
 // constructed in the monolith. Route-gated modules therefore stayed missing
-// for the whole session whenever the landing URL did not match. Descriptor-only
-// features also stay out of FEATURE_SETTINGS so an off-to-on change can use the
-// registered factory without reloading the tab.
-//
-// Modules with a working in-place fallback can still be skipped when every
-// feature they provide is switched off (FEATURE_SETTINGS above). A factory-only
-// consumer must preload because its descriptor cannot be replaced after startup.
+// for the whole session whenever the landing URL did not match. The settings
+// gate above has the same problem for any module without an inline fallback.
 
 function readManifest() {
     return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));

@@ -171,6 +171,47 @@ test('feed and subscription view factories are available for off-to-on settings 
         'a descriptor-only consumer cannot replace a missing factory after startup');
 });
 
+// A skipped module never loads later in the tab, so a factory it registers is
+// gone for the session and switching its setting on does nothing until a
+// reload. Only helper modules whose ytkit.js consumers inline a fallback may
+// stay behind the settings gate.
+test('every feature and runtime factory loads even when its settings start off', () => {
+    const match = bootstrapSource.match(/const FEATURE_SETTINGS = Object\.freeze\(\s*(\{[\s\S]*?\})\s*\);/);
+    assert.ok(match, 'runtime bootstrap must contain its generated settings gate');
+    const gated = Object.keys(JSON.parse(match[1]));
+    const inlineFallbackFactories = new Map([
+        ['features/chat-style-comments/index.js', new Set(['createChatStyleCommentsRuntime'])]
+    ]);
+    const ytkitSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    for (const modulePath of gated) {
+        const source = fs.readFileSync(path.join(repoRoot, 'extension', modulePath), 'utf8');
+        const factories = new Set(source.match(/\bcreate[A-Z]\w*(?:Features?|Runtime)\b/g) || []);
+        const allowed = inlineFallbackFactories.get(modulePath) || new Set();
+        for (const name of factories) {
+            assert.ok(allowed.has(name),
+                `${modulePath} registers ${name}, so it must load while its settings are off`);
+        }
+    }
+
+    const offSettings = Object.fromEntries(Object.values(JSON.parse(match[1])).flat().map((key) => [key, false]));
+    const skipped = gated.filter((modulePath) => JSON.parse(match[1])[modulePath].every((key) => offSettings[key] === false));
+    for (const modulePath of [
+        'features/dearrow/index.js',
+        'features/sponsorblock/index.js',
+        'features/digital-wellbeing/index.js',
+        'features/sticky-video/index.js',
+        'features/sticky-video-styles/index.js',
+        'features/video-hider/index.js',
+        'features/subtitles/index.js',
+        'features/element-zapper/index.js'
+    ]) {
+        assert.ok(readGeneratedModules().includes(modulePath), `${modulePath} must stay a runtime module`);
+        assert.ok(!skipped.includes(modulePath), `${modulePath} must load with every setting off`);
+    }
+    assert.ok(ytkitSource.includes('createChatStyleCommentsRuntime'),
+        'the chat-style allowance names a consumer that still exists');
+});
+
 // A dynamic import can reject with no value (seen on Firefox's first page after a
 // temporary install), and the old log line read "Runtime module load failed
 // undefined". These run the real generated loader against modules that throw.
