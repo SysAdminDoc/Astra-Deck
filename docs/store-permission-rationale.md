@@ -249,12 +249,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 129 | `true` on every entry |
-| `store-safe` | firefox | A | 129 | omitted |
-| `chromium-store` | chromium | B | 128 | `true` on every entry |
-| `chromium-store` | firefox | B | 128 | omitted |
-| `github-full` | chromium | A | 129 | `true` on every entry |
-| `github-full` | firefox | A | 129 | omitted |
+| `store-safe` | chromium | A | 131 | `true` on every entry |
+| `store-safe` | firefox | A | 131 | omitted |
+| `chromium-store` | chromium | B | 130 | `true` on every entry |
+| `chromium-store` | firefox | B | 130 | omitted |
+| `github-full` | chromium | A | 131 | `true` on every entry |
+| `github-full` | firefox | A | 131 | omitted |
 
 #### Resource set A
 
@@ -365,6 +365,7 @@ Entry 2 resource paths:
 - `core/hide-attribution.js`
 - `core/heatmap.js`
 - `core/youtube-thumbnails.js`
+- `core/original-titles.js`
 - `core/feed-prefilter.js`
 - `core/credential-vault.js`
 - `core/feature-schedule.js`
@@ -392,6 +393,7 @@ Entry 2 resource paths:
 - `features/classic-watch-layout/index.js`
 - `features/hide-auto-chapters/index.js`
 - `features/channel-length-sort/index.js`
+- `features/anti-translate/index.js`
 - `features/video-hider/index.js`
 - `features/video-notes/index.js`
 - `features/replay-chat-density/index.js`
@@ -518,6 +520,7 @@ Entry 2 resource paths:
 - `core/hide-attribution.js`
 - `core/heatmap.js`
 - `core/youtube-thumbnails.js`
+- `core/original-titles.js`
 - `core/feed-prefilter.js`
 - `core/credential-vault.js`
 - `core/feature-schedule.js`
@@ -545,6 +548,7 @@ Entry 2 resource paths:
 - `features/classic-watch-layout/index.js`
 - `features/hide-auto-chapters/index.js`
 - `features/channel-length-sort/index.js`
+- `features/anti-translate/index.js`
 - `features/video-hider/index.js`
 - `features/video-notes/index.js`
 - `features/replay-chat-density/index.js`

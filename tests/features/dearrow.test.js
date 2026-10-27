@@ -984,6 +984,26 @@ test('the tab title follows the watch heading and is restored on teardown', asyn
     });
 });
 
+// With antiTranslate on, the original attribute holds the untranslated title
+// while the tab still names the translation YouTube rendered.
+test('the tab title follows the heading when antiTranslate restored the original behind it', async () => {
+    const attributes = { 'data-ytkit-orig-title': 'Original title', 'data-ytkit-rendered-title': 'Titulo traducido' };
+    const shown = { textContent: 'How the bridge was built', getAttribute: (name) => attributes[name] ?? null };
+    const doc = {
+        title: 'Titulo traducido - YouTube',
+        querySelector: (selector) => (selector.includes('[data-ytkit-dearrow-title]') ? shown : null),
+        querySelectorAll: () => []
+    };
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
+    await withGlobals({ document: doc }, () => {
+        feature._syncDocumentTitle();
+        assert.equal(doc.title, 'How the bridge was built - YouTube');
+        doc.title = 'Original title - YouTube';
+        feature._syncDocumentTitle();
+        assert.equal(doc.title, 'How the bridge was built - YouTube', 'the untranslated tab title is caught too');
+    });
+});
+
 test('DeArrow ships on, with titles, covers and the random-frame fallback', () => {
     // Asked for on 2026-10-12: the feature used to ship switched off.
     for (const key of ['deArrow', 'daReplaceTitles', 'daReplaceThumbs']) {

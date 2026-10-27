@@ -13575,6 +13575,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "antiTranslateTranscript", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "antiTranslateThumbnails", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.69.0" }),
 	Object.freeze({ key: "antiTranslateChapters", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.70.0" }),
+	Object.freeze({ key: "antiTranslateChannelExceptions", category: "playback-audio", type: "string", maxLength: 16000, defaultValue: "", risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.103.0" }),
 	Object.freeze({ key: "monetizationIndicator", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "subscriptionGroups", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "subscriptionGroupData", category: "subscriptions", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
@@ -17564,6 +17565,293 @@ __astraDeckRegistry["core/youtube-thumbnails.js"] = function (globalThis, self, 
 			resolveOriginalThumbnail,
 			YOUTUBE_OEMBED_ENDPOINT: OEMBED_ENDPOINT
 		};
+	}
+})();
+};
+__astraDeckRegistry["core/original-titles.js"] = function (globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes) {
+'use strict';
+(() => {
+	'use strict';
+	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+	if (core.createOriginalTitleResolver) return;
+	const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+	const CHANNEL_ID_PATTERN = /^UC[A-Za-z0-9_-]{22}$/;
+	const HANDLE_PATTERN = /^@[A-Za-z0-9._-]{3,30}$/;
+	const YOUTUBE_HOST_PATTERN = /^(?:www\.|m\.)?youtube\.com$/i;
+	const OEMBED_ENDPOINT = 'https://www.youtube.com/oembed';
+	const OEMBED_MAX_BYTES = 8 * 1024;
+	const PLAYER_MAX_BYTES = 4 * 1024 * 1024;
+	const MAX_TITLE_CHARS = 500;
+	const MAX_CHANNEL_EXCEPTIONS = 500;
+	function isVideoId(value) {
+		return typeof value === 'string' && VIDEO_ID_PATTERN.test(value);
+	}
+	function isChannelId(value) {
+		return typeof value === 'string' && CHANNEL_ID_PATTERN.test(value);
+	}
+	function buildTitleOEmbedUrl(videoId) {
+		if (!isVideoId(videoId)) return null;
+		const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+		return `${OEMBED_ENDPOINT}?url=${encodeURIComponent(watchUrl)}&format=json`;
+	}
+	function cleanTitle(value) {
+		if (typeof value !== 'string') return '';
+		const title = value.replace(/\s+/g, ' ').trim();
+		return title.length > MAX_TITLE_CHARS ? '' : title;
+	}
+	function parseChannelUrl(raw) {
+		if (typeof raw !== 'string' || !raw || raw.length > 300) return null;
+		let url;
+		try {
+			url = new URL(raw);
+		} catch {
+			return null;
+		}
+		if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+		if (!YOUTUBE_HOST_PATTERN.test(url.hostname)) return null;
+		const parts = url.pathname.split('/').filter(Boolean);
+		if (parts.length < 1 || parts.length > 2) return null;
+		const head = decodeURIComponentSafe(parts[0]);
+		if (head === 'channel' && parts.length === 2 && isChannelId(parts[1])) {
+			return { url: url.href, channelId: parts[1], handle: null };
+		}
+		if (parts.length === 1 && HANDLE_PATTERN.test(head)) {
+			return { url: url.href, channelId: null, handle: head.toLowerCase() };
+		}
+		if ((head === 'c' || head === 'user') && parts.length === 2 && /^[A-Za-z0-9._-]{1,100}$/.test(parts[1])) {
+			return { url: url.href, channelId: null, handle: null };
+		}
+		return null;
+	}
+	function decodeURIComponentSafe(value) {
+		try {
+			return decodeURIComponent(value);
+		} catch {
+			return value;
+		}
+	}
+	function parseJsonBounded(payload, maxBytes) {
+		if (typeof payload !== 'string') return payload;
+		if (payload.length > maxBytes) return null;
+		try {
+			return JSON.parse(payload);
+		} catch {
+			return null;
+		}
+	}
+	function parseOEmbedTitle(payload) {
+		const json = parseJsonBounded(payload, OEMBED_MAX_BYTES);
+		if (!json || typeof json !== 'object' || Array.isArray(json)) return null;
+		const title = cleanTitle(json.title);
+		const channel = parseChannelUrl(json.author_url);
+		if (!title || !channel) return null;
+		return { title, authorUrl: channel.url, channelId: channel.channelId, handle: channel.handle };
+	}
+	function parsePlayerTitle(payload, videoId) {
+		const json = parseJsonBounded(payload, PLAYER_MAX_BYTES);
+		const details = json && typeof json === 'object' ? json.videoDetails : null;
+		if (!details || typeof details !== 'object' || details.videoId !== videoId) return null;
+		const title = cleanTitle(details.title);
+		if (!title) return null;
+		return { title, channelId: isChannelId(details.channelId) ? details.channelId : null };
+	}
+	function parseChannelExceptions(text) {
+		const out = [];
+		const seen = new Set();
+		for (const piece of String(text || '').split(/[\n,]+/)) {
+			const entry = piece.trim();
+			if (!entry) continue;
+			let channelId = isChannelId(entry) ? entry : null;
+			if (!channelId) channelId = parseChannelUrl(entry)?.channelId || null;
+			if (!channelId || seen.has(channelId)) continue;
+			seen.add(channelId);
+			out.push(channelId);
+			if (out.length >= MAX_CHANNEL_EXCEPTIONS) break;
+		}
+		return out;
+	}
+	function normalizeForCompare(value) {
+		return String(value || '').normalize('NFC').replace(/\s+/g, ' ').trim();
+	}
+	function titlesDiffer(displayed, original) {
+		const a = normalizeForCompare(displayed);
+		const b = normalizeForCompare(original);
+		return Boolean(a && b && a !== b);
+	}
+	const TRANSIENT_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+	function isAbort(error) {
+		return error?.name === 'AbortError';
+	}
+	function createOriginalTitleResolver(options = {}) {
+		const fetchImpl = options.fetch;
+		const buildPlayerRequest = typeof options.buildPlayerRequest === 'function'
+			? options.buildPlayerRequest
+			: () => null;
+		const maxCache = Math.max(1, Number(options.maxCache) || 500);
+		const maxConcurrent = Math.max(1, Number(options.maxConcurrent) || 3);
+		const maxQueue = Math.max(1, Number(options.maxQueue) || 60);
+		const maxPlayerFallbacks = Math.max(0, Number.isFinite(options.maxPlayerFallbacks) ? options.maxPlayerFallbacks : 20);
+		const maxAttempts = Math.max(1, Number(options.maxAttempts) || 2);
+		const retryDelayMs = Math.max(0, Number.isFinite(options.retryDelayMs) ? options.retryDelayMs : 30000);
+		const timeoutMs = Math.max(1, Number(options.timeoutMs) || 8000);
+		const now = typeof options.now === 'function' ? options.now : () => Date.now();
+		const log = typeof options.log === 'function' ? options.log : () => {};
+		const setTimer = options.setTimeout || setTimeout;
+		const clearTimer = options.clearTimeout || clearTimeout;
+		const cache = new Map();
+		const waiting = new Map();
+		const queue = [];
+		const controllers = new Set();
+		let active = 0;
+		let playerFallbacks = 0;
+		let closed = false;
+		function remember(videoId, entry) {
+			cache.delete(videoId);
+			cache.set(videoId, entry);
+			while (cache.size > maxCache) cache.delete(cache.keys().next().value);
+		}
+		function peek(videoId) {
+			const entry = cache.get(videoId);
+			if (!entry) return undefined;
+			if ('record' in entry) return entry.record;
+			return undefined;
+		}
+		function attemptsSoFar(videoId) {
+			const entry = cache.get(videoId);
+			return entry && !('record' in entry) ? entry.attempts : 0;
+		}
+		function retryDue(videoId) {
+			const entry = cache.get(videoId);
+			return !entry || 'record' in entry || now() >= entry.retryAt;
+		}
+		async function timedFetch(url, init, consume) {
+			const controller = new AbortController();
+			controllers.add(controller);
+			let timedOut = false;
+			const timer = setTimer(() => {
+				timedOut = true;
+				controller.abort();
+			}, timeoutMs);
+			try {
+				const response = await fetchImpl(url, { ...init, signal: controller.signal });
+				return await consume(response);
+			} catch (error) {
+				if (timedOut && isAbort(error)) throw new Error(`timed out after ${timeoutMs} ms`);
+				throw error;
+			} finally {
+				clearTimer(timer);
+				controllers.delete(controller);
+			}
+		}
+		async function readBounded(response, maxBytes) {
+			const declared = Number(response.headers?.get?.('content-length'));
+			if (Number.isFinite(declared) && declared > maxBytes) return null;
+			const text = await response.text();
+			return text.length > maxBytes ? null : text;
+		}
+		async function viaPlayer(videoId) {
+			if (playerFallbacks >= maxPlayerFallbacks) return { record: null };
+			const request = buildPlayerRequest(videoId);
+			if (!request?.url) return { record: null };
+			playerFallbacks += 1;
+			return timedFetch(request.url, request.init || {}, async (response) => {
+				if (TRANSIENT_STATUS.has(response.status)) return { transient: true };
+				if (!response.ok) return { record: null };
+				const parsed = parsePlayerTitle(await readBounded(response, PLAYER_MAX_BYTES), videoId);
+				return { record: parsed ? { ...parsed, handle: null, source: 'player' } : null };
+			});
+		}
+		async function lookup(videoId) {
+			const url = buildTitleOEmbedUrl(videoId);
+			if (!url || typeof fetchImpl !== 'function') return { record: null };
+			const outcome = await timedFetch(url, { credentials: 'omit', cache: 'force-cache' }, async (response) => {
+				if (response.status === 401 || response.status === 403) return { embeddingOff: true };
+				if (TRANSIENT_STATUS.has(response.status)) return { transient: true };
+				if (!response.ok) return { record: null };
+				const parsed = parseOEmbedTitle(await readBounded(response, OEMBED_MAX_BYTES));
+				return { record: parsed ? { ...parsed, source: 'oembed' } : null };
+			});
+			return outcome.embeddingOff ? viaPlayer(videoId) : outcome;
+		}
+		function settle(videoId, value) {
+			const resolvers = waiting.get(videoId) || [];
+			waiting.delete(videoId);
+			for (const resolve of resolvers) resolve(value);
+		}
+		async function run(videoId) {
+			active += 1;
+			try {
+				const outcome = await lookup(videoId);
+				if (closed) return settle(videoId, null);
+				if (outcome.transient) {
+					const attempts = attemptsSoFar(videoId) + 1;
+					if (attempts >= maxAttempts) remember(videoId, { record: null });
+					else remember(videoId, { attempts, retryAt: now() + retryDelayMs * attempts });
+					return settle(videoId, null);
+				}
+				remember(videoId, { record: outcome.record });
+				settle(videoId, outcome.record);
+			} catch (error) {
+				if (!closed && !isAbort(error)) {
+					const attempts = attemptsSoFar(videoId) + 1;
+					if (attempts >= maxAttempts) remember(videoId, { record: null });
+					else remember(videoId, { attempts, retryAt: now() + retryDelayMs * attempts });
+					log(`title lookup failed for ${videoId}: ${error?.message || error}`);
+				}
+				settle(videoId, null);
+			} finally {
+				active -= 1;
+				pump();
+			}
+		}
+		function pump() {
+			while (!closed && active < maxConcurrent && queue.length) run(queue.shift());
+		}
+		function request(videoId) {
+			if (closed || !isVideoId(videoId)) return Promise.resolve(null);
+			const known = peek(videoId);
+			if (known !== undefined) return Promise.resolve(known);
+			if (!retryDue(videoId)) return Promise.resolve(null);
+			if (waiting.has(videoId)) {
+				return new Promise((resolve) => waiting.get(videoId).push(resolve));
+			}
+			if (queue.length >= maxQueue) return Promise.resolve(null);
+			return new Promise((resolve) => {
+				waiting.set(videoId, [resolve]);
+				queue.push(videoId);
+				pump();
+			});
+		}
+		function cancelPending() {
+			const dropped = queue.splice(0, queue.length);
+			for (const videoId of dropped) settle(videoId, null);
+			return dropped.length;
+		}
+		function close() {
+			closed = true;
+			cancelPending();
+			for (const controller of controllers) controller.abort();
+			controllers.clear();
+			cache.clear();
+		}
+		function stats() {
+			return { cached: cache.size, active, queued: queue.length, playerFallbacks, closed };
+		}
+		return { request, peek, cancelPending, close, stats };
+	}
+	const api = {
+		buildTitleOEmbedUrl,
+		createOriginalTitleResolver,
+		isChannelId,
+		parseChannelExceptions,
+		parseChannelUrl,
+		parseOEmbedTitle,
+		parsePlayerTitle,
+		titlesDiffer
+	};
+	Object.assign(core, api);
+	if (typeof module !== 'undefined' && module.exports) {
+		module.exports = api;
 	}
 })();
 };
@@ -25811,6 +26099,7 @@ void 0;
 		var describe = globalThis.YTKitCore && globalThis.YTKitCore.describeLockupChannels;
 		if (typeof describe !== 'function' || typeof document === 'undefined') return;
 		var ENABLE_ATTR = 'data-ytkit-lockup-channels-on';
+		var TITLES_ENABLE_ATTR = 'data-ytkit-lockup-channels-titles';
 		var TAG_ATTR = 'data-ytkit-lockup-channels';
 		var observer = null;
 		var written = new WeakMap();
@@ -25836,7 +26125,7 @@ void 0;
 			}
 		}
 		function sync() {
-			var on = _bridgeGet(ENABLE_ATTR) === 'on';
+			var on = _bridgeGet(ENABLE_ATTR) === 'on' || _bridgeGet(TITLES_ENABLE_ATTR) === 'on';
 			if (on && !observer) {
 				observer = new _NATIVE.MutationObserver(function(records) {
 					var seen = new Set();
@@ -25852,7 +26141,7 @@ void 0;
 				observer = null;
 			}
 		}
-		_obsRegister([ENABLE_ATTR], sync);
+		_obsRegister([ENABLE_ATTR, TITLES_ENABLE_ATTR], sync);
 		sync();
 	})();
 	(function() {

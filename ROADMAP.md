@@ -69,23 +69,3 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 ### Now (P1)
 
 ### Next (P2)
-
-- [ ] P2 — Restore original titles on modern cards with canonical channel exceptions
-  Why: original-title handling still targets older cards and lacks a bounded per-channel escape.
-  Evidence: `antiTranslate` at `extension/ytkit.js:17371`; upstream renderer/allowlists at
-  https://github.com/zpix1/yt-anti-translate/blob/main/app/src/global.js and cached oEmbed/
-  videoDetails retrieval in `app/src/background.js`. Request-flood failure:
-  https://github.com/zpix1/yt-anti-translate/issues/193.
-  Touches: `extension/ytkit.js` original-title handling, modern feed renderer helpers,
-  existing external request/cache boundaries, settings controls, 11 locales and title tests.
-  Acceptance: after DeArrow identity guards, cover current lockups and watch titles using
-  cached `GET https://www.youtube.com/oembed?url=<encoded-watch-url>` with validated
-  `title` and `author_url`, and a bounded player `videoDetails` fallback for 401. Reuse Astra's
-  current client/version rather than upstream's hardcoded version; do not assume a missing
-  `hl` guarantees original-language output. Test a card whose text and title attribute are
-  both translated. Use canonical channel IDs for title-only exceptions. No extra channel-search request is made
-  merely to evaluate an exception; no lookup occurs while disabled. Bound cache, concurrency
-  and retry, cancel stale work, and prevent MutationObserver request loops. Preserve the
-  accepted DeArrow crowd title while updating its original backing metadata/fallback.
-  Tests cover navigation, renderer reuse, exceptions, offline failure and both writers on.
-  Complexity: M

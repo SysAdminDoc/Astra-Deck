@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-Übersetzung Audiospur"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "Kanäle, deren übersetzte Titel so bleiben, wie YouTube sie zeigt. Eine Kanal-ID (UC...) oder ein /channel/-Link pro Zeile. Handles werden nicht verwendet, weil sie den Besitzer wechseln können."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "Übersetzte Titel behalten für"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "Stellt die Kapiteltitel in der Originalsprache in der Kapitelliste und im Hover-Label des Players wieder her. Sie werden aus der Originalbeschreibung gelesen, denn dort baut YouTube die Kapitel ursprünglich auf."
   },

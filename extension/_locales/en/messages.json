@@ -1814,6 +1814,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-Translate Audio Track"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "Channels whose translated titles stay as YouTube shows them. One channel ID (UC...) or /channel/ link per line. Handles aren't used, since one can change hands."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "Keep Translated Titles For"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "Restores original-language chapter titles in the chapter list and the player hover label. Reads them from the original description, which is where YouTube builds chapters from in the first place."
   },

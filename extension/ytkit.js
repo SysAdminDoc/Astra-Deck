@@ -26,6 +26,10 @@
         withSelectorAttribution,
         buildOEmbedUrl,
         parseOEmbedMetadata,
+        createOriginalTitleResolver,
+        parseChannelExceptions,
+        parseLockupChannels,
+        titlesDiffer,
         parseThumbnailUrl,
         resolveOriginalThumbnail,
         normalizeFeatureSchedules,
@@ -4345,6 +4349,7 @@ const STORAGE_KEYS = Object.freeze({
             hideWatchedVideos: false,
             hideWatchedMode: 'dim',
             antiTranslate: false,
+            antiTranslateChannelExceptions: '',
             pauseOtherTabs: false,
 
             // v3.2.0 wave 2
@@ -17736,108 +17741,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._restoreAll();
             }
         },
-        {
-            id: 'antiTranslate',
-            name: 'Anti-Translate (Original Titles + Descriptions)',
-            description: 'Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page.',
-            group: 'Content',
-            icon: 'languages',
-            _processTimer: null,
-            _scheduleProcess(delay = 1500) {
-                if (this._processTimer) clearTimeout(this._processTimer);
-                this._processTimer = setTimeout(() => {
-                    this._processTimer = null;
-                    this._process();
-                }, delay);
+        ...(globalThis.YTKitFeatures?.antiTranslate?.createAntiTranslateFeatures?.({
+            documentRef: document,
+            readSetting: (key) => appState.settings?.[key],
+            getVideoId,
+            isWatchPage: () => isWatchPagePath(window.location.pathname),
+            getPlayerResponse: () => _rw.ytInitialPlayerResponse,
+            getClientVersion: () => TranscriptService?._getClientVersion?.() || '',
+            getApiKey: () => TranscriptService?._getInnertubeApiKey?.() || '',
+            fetchImpl: (url, init) => fetch(url, init),
+            publishBridgeAttribute,
+            addMutationRule,
+            removeMutationRule,
+            addNavigateRule,
+            removeNavigateRule,
+            log: (message) => DebugManager.log('AntiTranslate', message),
+            createOriginalTitleResolver,
+            parseChannelExceptions,
+            parseLockupChannels,
+            titlesDiffer,
+            t
+        }) || [
+            {
+                id: 'antiTranslate',
+                name: 'Anti-Translate (Original Titles + Descriptions)',
+                description: 'Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page.',
+                group: 'Content',
+                icon: 'languages',
+                init() { DebugManager.log('AntiTranslate', 'Feature module unavailable'); },
+                destroy() {}
             },
-
-            // No on-device language model here on purpose. This feature
-            // compares the rendered title against the `title` attribute and
-            // against ytInitialPlayerResponse, which is a string comparison.
-            // A detector session used to be created from `_process()`, a broad
-            // mutation rule allowing 120 invocations per 5s window, so
-            // concurrent creates orphaned sessions that destroy() never
-            // released. Its only consumer had no callers anywhere in the tree,
-            // so the model was downloaded for a comparison nothing performed.
-            // Both are gone; see tests/teardown-and-leaks.test.js.
-
-
-            _process() {
-                document.querySelectorAll('#video-title[title]:not([ytkit-antitranslate])').forEach(el => {
-                    const original = el.getAttribute('title');
-                    const displayed = el.textContent.trim();
-                    if (original && displayed && original !== displayed) {
-                        el.textContent = original;
-                        el.setAttribute('ytkit-antitranslate', '1');
-                    }
-                });
-                // Watch page title
-                const watchTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string');
-                if (watchTitle && !watchTitle.getAttribute('ytkit-antitranslate')) {
-                    try {
-                        const pr = _rw.ytInitialPlayerResponse;
-                        const original = pr?.videoDetails?.title;
-                        if (original && original !== watchTitle.textContent.trim()) {
-                            watchTitle.textContent = original;
-                            watchTitle.setAttribute('ytkit-antitranslate', '1');
-                        }
-                    } catch { /* reason: title un-translate can fall back to visible title */ }
-                }
-                // v3.23.0 (NX8): Watch page DESCRIPTION un-translate.
-                // YouTube auto-translates the description into the user's
-                // browser locale via the same mechanism that translates the
-                // title. The original description lives in
-                // `ytInitialPlayerResponse.videoDetails.shortDescription`.
-                // The displayed description is rendered into
-                // `#description-inline-expander` (collapsed) and
-                // `ytd-text-inline-expander` (expanded). Both contain a
-                // `<yt-attributed-string>` or `<yt-formatted-string>` for
-                // the actual text.
-                try {
-                    const pr = _rw.ytInitialPlayerResponse;
-                    const originalDesc = pr?.videoDetails?.shortDescription;
-                    if (originalDesc) {
-                        const descTargets = document.querySelectorAll(
-                            '#description-inline-expander yt-attributed-string:not([ytkit-antitranslate]), ' +
-                            'ytd-text-inline-expander yt-attributed-string:not([ytkit-antitranslate]), ' +
-                            '#description yt-formatted-string:not([ytkit-antitranslate])'
-                        );
-                        descTargets.forEach(el => {
-                            const displayed = el.textContent.trim();
-                            // Heuristic: if the displayed text doesn't
-                            // contain a long-enough substring of the
-                            // original, YouTube has translated it. Skip
-                            // identical (already original) and very-short
-                            // descriptions to avoid false positives on
-                            // empty rollouts.
-                            if (displayed && displayed !== originalDesc.trim() && originalDesc.length > 40) {
-                                el.textContent = originalDesc;
-                                el.setAttribute('ytkit-antitranslate', '1');
-                            }
-                        });
-                    }
-                } catch (_) {
-                    // reason: best-effort un-translate; never break the page
-                }
-            },
-
-            init() {
-                this._scheduleProcess(1500);
-                addMutationRule(this.id, () => this._process());
-                addNavigateRule('antiTranslate', () => {
-                    // Clear processed markers so elements get re-checked with new video data
-                    document.querySelectorAll('[ytkit-antitranslate]').forEach(el => el.removeAttribute('ytkit-antitranslate'));
-                    this._scheduleProcess(2000);
-                });
-            },
-            destroy() {
-                if (this._processTimer) clearTimeout(this._processTimer);
-                this._processTimer = null;
-                removeMutationRule(this.id);
-                removeNavigateRule('antiTranslate');
-                document.querySelectorAll('[ytkit-antitranslate]').forEach(el => el.removeAttribute('ytkit-antitranslate'));
+            {
+                id: 'antiTranslateChannelExceptions',
+                name: t('feature_antiTranslateChannelExceptions_name', 'Keep Translated Titles For'),
+                description: t('feature_antiTranslateChannelExceptions_desc', 'Channels whose translated titles stay as YouTube shows them. One channel ID (UC...) or /channel/ link per line. Handles aren\'t used, since one can change hands.'),
+                group: 'Content',
+                icon: 'languages',
+                isSubFeature: true,
+                parentId: 'antiTranslate',
+                type: 'textarea',
+                settingKey: 'antiTranslateChannelExceptions',
+                dependsOn: 'antiTranslate',
+                init() {},
+                destroy() {}
             }
-        },
+        ]),
         {
             id: 'pauseOtherTabs',
             name: 'Pause Other Tabs on Play',

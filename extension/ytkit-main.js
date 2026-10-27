@@ -368,12 +368,15 @@
     // tag whose video is not the card's. A page script can write the same
     // attribute, which can only hide or show a card it could remove anyway.
     //
-    // On only while the hider has channel rules to apply.
+    // On only while the hider has channel rules to apply, or Anti-Translate
+    // has channel exceptions to check (its own switch, so neither turns the
+    // other's off).
     (function installLockupChannelTags() {
         var describe = globalThis.YTKitCore && globalThis.YTKitCore.describeLockupChannels;
         if (typeof describe !== 'function' || typeof document === 'undefined') return;
 
         var ENABLE_ATTR = 'data-ytkit-lockup-channels-on';
+        var TITLES_ENABLE_ATTR = 'data-ytkit-lockup-channels-titles';
         var TAG_ATTR = 'data-ytkit-lockup-channels';
         var observer = null;
         // What was last written on each card, so an unchanged one isn't
@@ -406,7 +409,7 @@
         }
 
         function sync() {
-            var on = _bridgeGet(ENABLE_ATTR) === 'on';
+            var on = _bridgeGet(ENABLE_ATTR) === 'on' || _bridgeGet(TITLES_ENABLE_ATTR) === 'on';
             if (on && !observer) {
                 observer = new _NATIVE.MutationObserver(function(records) {
                     var seen = new Set();
@@ -423,7 +426,7 @@
             }
         }
 
-        _obsRegister([ENABLE_ATTR], sync);
+        _obsRegister([ENABLE_ATTR, TITLES_ENABLE_ATTR], sync);
         sync();
     })();
 

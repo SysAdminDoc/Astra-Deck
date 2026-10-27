@@ -54,8 +54,8 @@ test('antiTranslate builds no on-device model session at all', () => {
     // problem: that consumer, `_isTranslated`, has no callers anywhere in
     // extension/, tests/, or either userscript artifact. The whole apparatus
     // downloaded a model for a comparison nothing performs, so it is gone.
-    const block = monolith.slice(monolith.indexOf("id: 'antiTranslate'"));
-    const feature = block.slice(0, block.indexOf("id: 'pauseOtherTabs'"));
+    // The feature lives in its own module since v4.103.0.
+    const feature = fs.readFileSync(path.join(repoRoot, 'extension/features/anti-translate/index.js'), 'utf8');
     assert.ok(!feature.includes('_languageDetector'),
         'no detector state may come back without a caller to justify it');
     assert.ok(!feature.includes('LanguageDetector'),

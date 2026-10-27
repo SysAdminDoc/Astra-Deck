@@ -446,6 +446,7 @@
   "expectedDefaulted": [
     "_scheduleRestore",
     "actionToasts",
+    "antiTranslateChannelExceptions",
     "antiTranslateChapters",
     "antiTranslateThumbnails",
     "audioAutoGain",

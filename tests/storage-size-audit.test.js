@@ -153,7 +153,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Retiring DeArrow Voting trims 22: its toggle.
     // Sort by Length adds 25 for its toggle, on by default.
     // The ten DeArrow options ported from upstream add 224.
-    assert.equal(assessment.totalBytes, 186869);
+    // Anti-Translate's empty channel exception list adds 36.
+    assert.equal(assessment.totalBytes, 186905);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

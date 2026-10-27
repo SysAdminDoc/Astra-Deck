@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "音声トラック翻訳防止"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "翻訳されたタイトルを YouTube の表示のまま残すチャンネルです。1 行に 1 つ、チャンネル ID (UC...) または /channel/ リンクを入力します。ハンドル (@) は持ち主が変わることがあるため使用しません。"
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "翻訳タイトルを維持するチャンネル"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "チャプター一覧とプレーヤーのホバーラベルで、チャプターのタイトルを元の言語に戻します。YouTube がもともとチャプターを作成する元の説明文から読み取ります。"
   },

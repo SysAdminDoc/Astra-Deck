@@ -896,8 +896,13 @@
                 const original = shown?.getAttribute?.('data-ytkit-orig-title');
                 const replacement = shown?.textContent;
                 const current = typeof document.title === 'string' ? document.title : '';
-                if (!original || !replacement || original === replacement || !current.includes(original)) return;
-                const next = current.replace(original, () => replacement);
+                if (!original || !replacement || original === replacement) return;
+                // Anti-Translate puts the untranslated title in the original
+                // attribute, while the tab still names the one YouTube rendered.
+                const rendered = shown?.getAttribute?.('data-ytkit-rendered-title');
+                const named = [original, rendered].find((value) => value && current.includes(value));
+                if (!named) return;
+                const next = current.replace(named, () => replacement);
                 this._docTitle = { original: current, replaced: next };
                 document.title = next;
             },

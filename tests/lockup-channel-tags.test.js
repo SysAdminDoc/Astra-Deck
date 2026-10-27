@@ -136,6 +136,19 @@ test('the extension page world tags a sidebar lockup once a channel rule exists'
     assert.equal(tag, `${VIDEO};${CHANNEL}@hallandoates`);
 });
 
+// antiTranslate's channel exceptions read the same tags, and switching the
+// hider's rules off must not switch them off for antiTranslate too.
+test('antiTranslate exceptions turn the tagger on by their own attribute', () => {
+    const world = pageWorld();
+    vm.runInContext(read('extension/core/injection-guard.js'), world.context);
+    vm.runInContext(read('extension/core/feed-prefilter.js'), world.context);
+    vm.runInContext(read('extension/ytkit-main.js'), world.context);
+    assert.equal(world.lockup.getAttribute('data-ytkit-lockup-channels'), null);
+    world.channel.publish('data-ytkit-lockup-channels-on', 'off');
+    world.channel.publish('data-ytkit-lockup-channels-titles', 'on');
+    assert.equal(world.lockup.getAttribute('data-ytkit-lockup-channels'), `${VIDEO};${CHANNEL}@hallandoates`);
+});
+
 test('the userscript injects the same tagger, with the describer, after the bridge token', () => {
     const build = readUserscriptBuild(read('YTKit.user.js'));
     const pageScripts = build.modules.mainWorld;

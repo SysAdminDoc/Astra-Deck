@@ -528,6 +528,7 @@
   "antiTranslateTranscript": false,
   "antiTranslateThumbnails": false,
   "antiTranslateChapters": false,
+  "antiTranslateChannelExceptions": "",
   "monetizationIndicator": false,
   "subscriptionGroups": false,
   "subscriptionGroupData": {},

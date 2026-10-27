@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-traduzione traccia audio"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "Canali i cui titoli tradotti restano come li mostra YouTube. Un ID canale (UC...) o un link /channel/ per riga. Gli handle (@) non vengono usati, perché possono cambiare proprietario."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "Mantieni i titoli tradotti per"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "Ripristina i titoli dei capitoli nella lingua originale nell'elenco dei capitoli e nell'etichetta del player al passaggio del mouse. Li legge dalla descrizione originale, che è la fonte da cui YouTube costruisce i capitoli."
   },

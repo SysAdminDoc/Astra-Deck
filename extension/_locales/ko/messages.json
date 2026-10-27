@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "오디오 트랙 자동 번역 방지"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "번역된 제목을 YouTube에 표시된 그대로 둘 채널입니다. 한 줄에 채널 ID(UC...) 또는 /channel/ 링크를 하나씩 입력하세요. 핸들(@)은 소유자가 바뀔 수 있어 사용하지 않습니다."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "번역된 제목 유지 채널"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "챕터 목록과 플레이어 호버 라벨에서 챕터 제목을 원래 언어로 되돌립니다. YouTube가 챕터를 만드는 근원인 원본 설명에서 제목을 읽어 옵니다."
   },

@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "منع ترجمة المسار الصوتي"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "القنوات التي تبقى عناوينها المترجمة كما يعرضها YouTube. معرّف قناة واحد (UC...) أو رابط /channel/ في كل سطر. لا تُستخدم المعرّفات (@) لأنها قد تنتقل إلى مالك آخر."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "الإبقاء على العناوين المترجمة لـ"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "يستعيد عناوين الفصول بلغتها الأصلية في قائمة الفصول وتسمية المشغّل عند التمرير. يقرؤها من الوصف الأصلي، وهو المصدر الذي يبني YouTube الفصول منه أصلاً."
   },

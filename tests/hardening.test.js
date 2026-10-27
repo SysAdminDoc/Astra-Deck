@@ -8147,6 +8147,8 @@ test('v4.20.0 userscript ships every file the extension runs in a page or its wo
         'features/classic-watch-layout/index.js',
         'features/hide-auto-chapters/index.js',
         'features/channel-length-sort/index.js',
+        'features/anti-translate/index.js',
+        'core/original-titles.js',
         'features/video-hider/index.js',
         'features/video-notes/index.js',
         'features/player-dock/index.js',

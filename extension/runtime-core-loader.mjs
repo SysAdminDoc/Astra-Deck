@@ -89,6 +89,7 @@ export const FOUNDATION_MODULES = Object.freeze(
         "core/hide-attribution.js",
         "core/heatmap.js",
         "core/youtube-thumbnails.js",
+        "core/original-titles.js",
         "core/feed-prefilter.js",
         "core/credential-vault.js",
         "core/feature-schedule.js",

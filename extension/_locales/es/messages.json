@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-traducción de pista de audio"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "Canales cuyos títulos traducidos se quedan como los muestra YouTube. Un ID de canal (UC...) o un enlace /channel/ por línea. No se usan los identificadores (@), porque pueden cambiar de dueño."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "Mantener títulos traducidos de"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "Restaura los títulos de los capítulos en el idioma original en la lista de capítulos y en la etiqueta del reproductor al pasar el cursor. Los lee de la descripción original, que es de donde YouTube construye los capítulos en primer lugar."
   },

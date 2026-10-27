@@ -59,8 +59,8 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.102.1` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `505` entries across `18` categories |
-| Runtime graph | `126` modules, including `34` peeled feature modules and `308` declared feature IDs |
+| Settings schema | `506` entries across `18` categories |
+| Runtime graph | `128` modules, including `35` peeled feature modules and `309` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -479,7 +479,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **500 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **501 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -692,7 +692,7 @@ This generated knowledgebase documents all **500 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Playback, audio, and utilities</strong>: 109 settings</summary>
+<summary><strong>Playback, audio, and utilities</strong>: 110 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -786,6 +786,7 @@ This generated knowledgebase documents all **500 user-facing settings** in the c
 | <a id="setting-antiTranslateTranscript"></a><strong>Anti-Translate Transcript</strong><br><code>antiTranslateTranscript</code> | Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-antiTranslateThumbnails"></a><strong>Anti-Translate Thumbnails</strong><br><code>antiTranslateThumbnails</code> | Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.69.0</code> |
 | <a id="setting-antiTranslateChapters"></a><strong>Anti-Translate Chapters</strong><br><code>antiTranslateChapters</code> | Restores original-language chapter titles in the chapter list and the player hover label. Reads them from the original description, which is where YouTube builds chapters from in the first place. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.70.0</code> |
+| <a id="setting-antiTranslateChannelExceptions"></a><strong>Keep Translated Titles For</strong><br><code>antiTranslateChannelExceptions</code> | Channels whose translated titles stay as YouTube shows them. One channel ID (UC...) or /channel/ link per line. Handles aren't used, since one can change hands. | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.103.0</code> |
 | <a id="setting-videoVisualFilters"></a><strong>Video Visual Filters</strong><br><code>videoVisualFilters</code> | Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-photosensitiveFlashProtection"></a><strong>Photosensitive Flash Protection</strong><br><code>photosensitiveFlashProtection</code> | Sample video frames locally and briefly dim the player when a large luminance change is detected. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.57.0</code> |
 | <a id="setting-photosensitiveFlashThreshold"></a><strong>Flash Sensitivity</strong><br><code>photosensitiveFlashThreshold</code> | Minimum frame luminance change that triggers protection. | Default: <code>0.2</code><br>Range: <code>0.05 to 0.8</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.57.0</code> |

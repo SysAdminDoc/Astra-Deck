@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "反翻译音轨"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "这些频道的翻译标题保持 YouTube 显示的样子。每行一个频道 ID (UC...) 或 /channel/ 链接。不使用 @ 用户名，因为它可能易主。"
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "保留以下频道的翻译标题"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "在章节列表和播放器悬停标签中恢复原始语言的章节标题。标题取自原始描述，因为 YouTube 本来就是从那里生成章节的。"
   },

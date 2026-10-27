@@ -1804,6 +1804,12 @@
   "feature_antiTranslateAudioTrack_name": {
     "message": "Антиперевод аудиодорожки"
   },
+  "feature_antiTranslateChannelExceptions_desc": {
+    "message": "Каналы, у которых переведённые названия остаются такими, как их показывает YouTube. По одному ID канала (UC...) или ссылке /channel/ в строке. Хэндлы (@) не используются, потому что могут сменить владельца."
+  },
+  "feature_antiTranslateChannelExceptions_name": {
+    "message": "Оставлять переводные названия для"
+  },
   "feature_antiTranslateChapters_desc": {
     "message": "Возвращает названия глав на языке оригинала в списке глав и во всплывающей подсказке плеера. Названия берутся из исходного описания, на основе которого YouTube и строит главы."
   },
