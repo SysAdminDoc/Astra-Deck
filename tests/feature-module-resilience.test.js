@@ -190,14 +190,17 @@ test('the FOUNDATION tier still fails closed', async () => {
 
 test('a module whose every feature is switched off is not loaded at all', async () => {
     const all = await runBootstrap();
-    const off = await runBootstrap({
-        settings: { sponsorBlock: false, sbPerChannelProfiles: false }
-    });
+    // Only helper modules with inline fallbacks are gated; factory modules
+    // such as SponsorBlock always load so turning them on works without a reload.
+    const off = await runBootstrap({ settings: { blueLightFilter: false } });
+    const on = await runBootstrap({ settings: { blueLightFilter: true } });
 
-    const sponsorBlockLoaded = (run) => run.imported.includes('features/sponsorblock/index.js');
-    assert.equal(sponsorBlockLoaded(all), true, 'it loads with default settings');
-    assert.equal(sponsorBlockLoaded(off), false,
+    const filterLoaded = (run) => run.imported.includes('features/blue-light-filter/index.js');
+    assert.equal(filterLoaded(on), true, 'it loads when its setting is on');
+    assert.equal(filterLoaded(off), false,
         'the settings gate must skip a module with nothing enabled');
+    assert.equal(off.imported.includes('features/sponsorblock/index.js'), true,
+        'a factory module loads even with its settings off');
     assert.ok(off.imported.includes('ytkit.js'), 'skipping a module is not a failure');
 });
 
