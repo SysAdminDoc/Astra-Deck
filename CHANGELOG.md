@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.101.0] (2026-10-27)
+
 ### Added
 
 - DeArrow picks up ten options from the upstream extension. Cards hide their title and cover while the lookup runs, so the clickbait version never flashes (it's on by default and gives up after 7 seconds). A new slider fades covers toward grayscale, and emoji and fancy Unicode letters get stripped from titles unless you turn that off.
