@@ -727,6 +727,13 @@ function styleKeyToProperty(key) {
 }
 
 /** A DOM-ish node: enough surface for feature code, nothing more. */
+function detachFromParent(child) {
+    const siblings = child?.parentElement?.children;
+    if (!Array.isArray(siblings)) return;
+    const at = siblings.indexOf(child);
+    if (at !== -1) siblings.splice(at, 1);
+}
+
 function fakeNode(options = {}) {
     const {
         tag = 'div',
@@ -833,6 +840,7 @@ function fakeNode(options = {}) {
         prepend(...next) {
             next.flat().reverse().forEach((child) => {
                 if (!child) return;
+                detachFromParent(child);
                 this.children.unshift(child);
                 child.parentElement = this;
                 child.isConnected = true;
@@ -846,7 +854,10 @@ function fakeNode(options = {}) {
             this.children.splice(0, this.children.length);
             next.flat().forEach((child) => this.appendChild(child));
         },
+        // A real DOM moves a node that already has a parent; the fake used to
+        // leave it listed under both, so a move looked like a copy.
         insertBefore(child, reference) {
+            detachFromParent(child);
             const at = reference ? this.children.indexOf(reference) : -1;
             if (at === -1) this.children.push(child);
             else this.children.splice(at, 0, child);

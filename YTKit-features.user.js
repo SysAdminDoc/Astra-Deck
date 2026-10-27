@@ -7218,7 +7218,10 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 			_positionOverRight(el, rightPct, topOffset, heightStr) {
 				if (!el) return;
 				this._stashSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
-				if (el.id === 'below') el.classList.add('ytkit-split-scroll-surface');
+				if (el.id === 'below') {
+					el.classList.add('ytkit-split-scroll-surface');
+					getFeatureById('transcriptViewer')?._placePanel?.();
+				}
 				this._setStyles(el, {
 					position:'fixed', top:topOffset||'0', right:'0',
 					width:`calc(${rightPct}% - 6px)`, 'max-width':'none',
@@ -7233,7 +7236,10 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 				if (!this._positionedEls.includes(el)) this._positionedEls.push(el);
 			},
 			_unpositionEl(el) {
-				if (el?.id === 'below') el.classList.remove('ytkit-split-scroll-surface');
+				if (el?.id === 'below') {
+					el.classList.remove('ytkit-split-scroll-surface');
+					getFeatureById('transcriptViewer')?._placePanel?.();
+				}
 				this._restoreSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
 			},
 			_unpositionAll() {

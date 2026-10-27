@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The Transcript Sidebar shows up again while Theater Split is open. It used to stay in YouTube's sidebar, which the split hides, so the panel was there but you couldn't see it. Now it sits in the side panel right under the video title, and it goes back to the sidebar when you collapse or close the split.
+
 ## [4.100.6] (2026-10-26)
 
 ### Added

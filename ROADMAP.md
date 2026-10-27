@@ -135,18 +135,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   half under Tampermonkey and Violentmonkey in a private window.
   Complexity: M
 
-- [ ] P2 — Show the transcript panel while Theater Split is open
-  Why: Theater Split hides `#secondary` except for live chat, and the transcript panel mounts
-  there, so with `stickyVideo` on (the default) an enabled Transcript Viewer is invisible.
-  Evidence: the live experience smoke found the panel's Retry button at a 0x0 rect under the
-  split on 2026-10-26 and now turns `stickyVideo` off for its transcript check.
-  Touches: the panel mount in `transcriptViewer` (`extension/ytkit.js`), the split column in
-  `extension/features/sticky-video/index.js`, transcript and split tests, experience smoke.
-  Acceptance: with the split open, the panel shows in the side column (or a reachable spot
-  next to it) in dark and light, the split's ratio and collapse still work, the smoke check
-  runs with `stickyVideo` on, and closing the split puts the panel back in `#secondary`.
-  Complexity: M
-
 - [ ] P2 — Import compatible BlockTube and ChannelSieve filter backups atomically
   Why: migration has a concrete export contract and documented failures in competing importers.
   Evidence: https://github.com/amitbl/blocktube/blob/master/src/ui/options.js,

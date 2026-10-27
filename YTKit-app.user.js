@@ -14261,10 +14261,29 @@ const STORAGE_KEYS = Object.freeze({
 				panel.appendChild(meta);
 				panel.appendChild(exportBar);
 				panel.appendChild(body);
-				secondary.insertBefore(panel, secondary.firstChild);
 				this._panel = panel;
+				this._placePanel();
 				this._attachVideoTimeUpdates();
 				this._loadTranscript();
+			},
+			_placePanel() {
+				const panel = this._panel;
+				if (!panel) return;
+				const surface = document.querySelector('#below.ytkit-split-scroll-surface');
+				const target = surface || document.querySelector('#secondary, ytd-watch-flexy #secondary');
+				if (!target) return;
+				const kids = Array.from(target.children);
+				const metadata = surface ? kids.find(el => el !== panel
+					&& (el.tagName === 'YTD-WATCH-METADATA' || el.querySelector?.('ytd-watch-metadata'))) : null;
+				const at = metadata ? kids.indexOf(metadata) + 1 : 0;
+				if (kids[at] === panel) return;
+				const active = document.activeElement;
+				const focused = active && active !== panel && panel.contains?.(active) ? active : null;
+				const body = panel.querySelector('.ytkit-transcript-body');
+				const scrollTop = body?.scrollTop || 0;
+				target.insertBefore(panel, kids[at] || null);
+				if (body && scrollTop) body.scrollTop = scrollTop;
+				if (focused?.isConnected) focused.focus?.({ preventScroll: true });
 			},
 			init() {
 				addNavigateRule('transcriptViewer', () => {

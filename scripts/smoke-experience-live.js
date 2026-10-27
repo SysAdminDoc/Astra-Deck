@@ -448,9 +448,12 @@ async function run(client, background) {
         // Every caption route fails while the panel loads, then the block lifts
         // and Retry has to recover in the same document at the same position.
         // The profile is fresh, so no cached transcript can answer instead.
-        // Theater Split hides #secondary, and the panel lives there.
-        await settings({ transcriptViewer: false, stickyVideo: false });
+        // Theater Split stays on: it hides #secondary, so the panel has to
+        // follow #below into the split's side column.
+        const PANEL_HOST = "document.querySelector('#ytkit-transcript-panel')?.parentElement?.id||''";
+        await settings({ transcriptViewer: false, stickyVideo: true });
         await navigate(WATCH);
+        await openSplit();
         const blocked = ['*timedtext*', '*/youtubei/v1/get_transcript*', '*/youtubei/v1/player*', '*youtube.com/watch?*'];
         await client.send('Network.setBlockedURLs', { urls: blocked });
         try {
@@ -461,10 +464,14 @@ async function run(client, background) {
         } finally {
             await client.send('Network.setBlockedURLs', { urls: [] });
         }
+        assert.equal(await read(PANEL_HOST), 'below', 'the panel mounts in the split side column');
+        const belowKids = await read("[...document.querySelector('#below').children].map(e=>e.tagName+(e.id?'#'+e.id:'')+'@'+Math.round(e.getBoundingClientRect().height))");
+        assert.equal(await read("(()=>{const p=document.querySelector('#ytkit-transcript-panel').previousElementSibling;return !!p&&(p.tagName==='YTD-WATCH-METADATA'||!!p.querySelector('ytd-watch-metadata'));})()"), true, `it sits under the video title (#below: ${belowKids.join(' ')})`);
         await read("document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action').scrollIntoView({block:'center'})");
         await sleep(300);
         assert.equal(await read("getComputedStyle(document.querySelector('#ytkit-transcript-panel .ytkit-transcript-export')).display"), 'none', 'a failed load shows no export buttons');
         await capture('transcript-retry-failed-dark');
+        await theme(false); await capture('transcript-retry-failed-light'); await theme(true);
         // Record whether the click starts a fresh load: the body goes busy and
         // the failed Retry button is replaced.
         await read("(()=>{const body=document.querySelector('#ytkit-transcript-panel .ytkit-transcript-body');window.__astraRetryBusy=false;document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action').dataset.astraOld='1';new MutationObserver(()=>{if(body.getAttribute('aria-busy')==='true')window.__astraRetryBusy=true;}).observe(body,{attributes:true,attributeFilter:['aria-busy']});})()");
@@ -482,8 +489,21 @@ async function run(client, background) {
             report.limitations.push('YouTube refused the caption fetch in this signed-out headless profile even after the block lifted, so the live check proves a fresh load, no reload or seek, and the repeated-failure focus, while cue-line recovery rests on the unit tests.');
         } else report.limitations.push('The smoke video reported no caption tracks after Retry, so recovery reached the captionless state rather than cue lines.');
         await capture('transcript-retry-after-dark');
-        await settings({ transcriptViewer: false, stickyVideo: true });
-        return result;
+        // Collapse hands #below back to the page, and reopening takes the panel along again.
+        const ratio = (await split()).ratio;
+        await click('#ytkit-split-divider', 500);
+        assert.equal(await read(OPEN), false, 'the divider still collapses the split');
+        assert.equal(await read(PANEL_HOST), 'secondary', 'a collapsed split gives the panel back to the sidebar');
+        await click('#ytkit-split-divider', 500);
+        await until(OPEN, 'the divider reopens the split');
+        assert.equal(await read(PANEL_HOST), 'below', 'reopening shows the panel in the side column again');
+        assert.equal((await split()).ratio, ratio, 'the split keeps its ratio');
+        assert.equal(await read("document.querySelectorAll('#ytkit-transcript-panel').length"), 1);
+        await click('#ytkit-split-close', 500);
+        assert.equal(await read(PANEL_HOST), 'secondary', 'closing the split puts the panel back in #secondary');
+        assert.equal(await read("document.querySelector('#secondary').firstElementChild?.id"), 'ytkit-transcript-panel');
+        await settings({ transcriptViewer: false });
+        return { ...result, ratio };
     });
 }
 

@@ -214,7 +214,11 @@
             _positionOverRight(el, rightPct, topOffset, heightStr) {
                 if (!el) return;
                 this._stashSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
-                if (el.id === 'below') el.classList.add('ytkit-split-scroll-surface');
+                if (el.id === 'below') {
+                    el.classList.add('ytkit-split-scroll-surface');
+                    // The transcript panel lives in #secondary, which the split hides.
+                    getFeatureById('transcriptViewer')?._placePanel?.();
+                }
                 this._setStyles(el, {
                     position:'fixed', top:topOffset||'0', right:'0',
                     width:`calc(${rightPct}% - 6px)`, 'max-width':'none',
@@ -230,7 +234,10 @@
             },
 
             _unpositionEl(el) {
-                if (el?.id === 'below') el.classList.remove('ytkit-split-scroll-surface');
+                if (el?.id === 'below') {
+                    el.classList.remove('ytkit-split-scroll-surface');
+                    getFeatureById('transcriptViewer')?._placePanel?.();
+                }
                 this._restoreSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
             },
 
