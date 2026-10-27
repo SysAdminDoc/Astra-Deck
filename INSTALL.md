@@ -18,7 +18,12 @@ Best if you just want it working in under a minute.
    [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
    (the file ending in **`.user.js`**).
 3. Your userscript manager opens an install tab. Click **Install**.
-4. Open YouTube. Done. It auto-updates when new versions ship.
+4. On Chrome, Edge or Brave 138 and newer, let the manager run scripts: open
+   `chrome://extensions`, click **Details** on Tampermonkey (or Violentmonkey)
+   and turn on **Allow User Scripts**. It's off for a fresh install, and nothing
+   runs until it's on. Older versions use the **Developer mode** toggle at the
+   top right of `chrome://extensions` instead. Firefox doesn't need this step.
+5. Open YouTube. Done. It auto-updates when new versions ship.
 
 ---
 

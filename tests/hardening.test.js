@@ -3469,6 +3469,82 @@ test('privacy policy covers store data categories and Firefox consent packet', (
     }
 });
 
+test('privacy, permission, setup and intake docs match the origin catalogue and defaults', () => {
+    const read = (relPath) => fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+    const { ORIGIN_CATALOGUE, isOriginAvailableForProfile } = require('../extension/core/data-flow');
+    const defaults = JSON.parse(read('extension/default-settings.json'));
+    const policy = read('docs/privacy-policy.md');
+    const checklist = read('docs/cws-submission-checklist.md');
+    const rationale = read('docs/store-permission-rationale.md');
+
+    // The policy's GitHub-full table may only hold origins no other build can reach.
+    const fullOnlyStart = policy.indexOf('GitHub-full builds can additionally contact');
+    assert.ok(fullOnlyStart > 0, 'privacy policy must keep a GitHub-full-only table');
+    const fullOnlyTable = policy.slice(fullOnlyStart, policy.indexOf('\n## ', fullOnlyStart));
+    const everyBuildTable = policy.slice(0, fullOnlyStart);
+    for (const entry of ORIGIN_CATALOGUE) {
+        if (!entry.origin.startsWith('http') || entry.origin.includes('*')) continue;
+        // The companion's origin is a port range, which URL() rejects.
+        const host = entry.origin.replace(/^https?:\/\//, '');
+        const inFullOnly = fullOnlyTable.includes(host);
+        if (isOriginAvailableForProfile(entry, 'store-safe')) {
+            assert.equal(inFullOnly, false, `${host} reaches store-safe builds, so it can't sit in the GitHub-full-only table`);
+        }
+        if (entry.hostGrant === 'required' && isOriginAvailableForProfile(entry, 'chromium-store')) {
+            assert.ok(everyBuildTable.includes(host), `privacy policy must list ${host}, which every build contacts without a prompt`);
+        }
+    }
+    const repairRow = policy.split('\n').find((line) => line.includes('raw.githubusercontent.com'));
+    assert.ok(repairRow, 'privacy policy must disclose the GitHub raw repair checks');
+    assert.match(repairRow, /six hours/, 'the repair row must state the automatic six-hour check');
+    assert.match(repairRow, /selector refresh/, 'the repair row must state the manual selector refresh');
+    assert.equal(defaults.featureDisableFeed, true);
+    assert.match(repairRow, /on by default/, 'Known-Breakage Notices is on by default, so the row must say so');
+    assert.match(policy, /`chromium-store` build has no loopback access/);
+
+    for (const key of ['sponsorBlock', 'deArrow']) {
+        assert.equal(defaults[key], true, `${key} is a default-on API feature`);
+    }
+    const sponsorRow = policy.split('\n').find((line) => line.startsWith('| SponsorBlock / DeArrow'));
+    assert.match(sponsorRow, /on by default/, 'the policy must not imply SponsorBlock and DeArrow are opt-in');
+
+    const companion = ORIGIN_CATALOGUE.find((entry) => entry.purpose.startsWith('Astra Downloader'));
+    assert.ok(isOriginAvailableForProfile(companion, 'store-safe'));
+    assert.equal(isOriginAvailableForProfile(companion, 'chromium-store'), false);
+    const loopbackRow = checklist.split('\n').find((line) => line.includes('127.0.0.1:9751-9851'));
+    assert.doesNotMatch(loopbackRow, /GitHub-full only/i, 'the companion ships in store-safe too');
+    assert.match(loopbackRow, /chromium-store/);
+    assert.match(checklist, /`host_permissions: raw\.githubusercontent\.com`/,
+        'the checklist must justify the GitHub raw host grant');
+    assert.doesNotMatch(rationale, /companion is available in both profiles/,
+        'there are three profiles; the rationale must say which two carry the companion');
+
+    const contributing = read('CONTRIBUTING.md');
+    const install = read('INSTALL.md');
+    assert.match(contributing, /Allow User Scripts/);
+    assert.match(install, /Allow User Scripts/, 'INSTALL.md must state the Chrome 138+ userscript permission step');
+
+    const featureTpl = read('.github/ISSUE_TEMPLATE/feature_request.md');
+    assert.doesNotMatch(featureTpl, /Default-off/i, 'SponsorBlock and DeArrow are API features that default on');
+    const companionLine = featureTpl.split('\n').find((line) => line.includes('**local-companion**'));
+    assert.doesNotMatch(companionLine, /GitHub-Full only/i);
+    assert.doesNotMatch(featureTpl, /§ Phase 1/, 'ROADMAP.md has no Phase 1 competitor table');
+
+    const prTpl = read('.github/pull_request_template.md');
+    assert.doesNotMatch(prTpl, /\b(Fixes|Closes|Resolves) #\d/,
+        'issues close on reporter confirmation, so the template must not suggest closing keywords');
+    assert.match(prTpl, /Refs #\d/);
+
+    const blocked = read('Roadmap_Blocked.md');
+    assert.doesNotMatch(blocked, /Cannot verify without a running browser/,
+        'scripts/smoke-chromium-optional-hosts.js loads the extension in headless Chromium');
+    assert.ok(fs.existsSync(path.join(__dirname, '..', 'scripts', 'smoke-chromium-optional-hosts.js')));
+    const sidepanel = read('extension/sidepanel.js');
+    assert.match(sidepanel, /async function requestOptionalHostsForToggle/);
+    assert.doesNotMatch(blocked, /Side-panel toggles bypass optional-host permission/,
+        'the side panel already gates API toggles on the host grant');
+});
+
 // ── v3.23.0 N3: Reaction Spammer default-OFF + cooldown floor ──
 
 test('reactionSpammer defaults to false in both ytkit.js source and the generated catalog', () => {

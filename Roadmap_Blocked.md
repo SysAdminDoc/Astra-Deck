@@ -534,14 +534,14 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/early.css`
   Acceptance: Settings panel `<select>` elements render with dark-theme styling on Chrome 135+. Unsupported browsers fall back to native `<select>`.
   Complexity: S
-  Blocker: Requires live browser testing on Chrome 135+ to verify progressive enhancement and cross-browser fallback. Cannot verify without a running browser.
+  Blocker: A browser isn't what's missing: `scripts/smoke-chromium-optional-hosts.js` already loads the staged extension in headless Chromium. What's owed is a screenshot review of the styled dropdowns against the dark theme, and a pre-135 Chromium build pinned for the harness to prove the native `<select>` fallback.
 
 - [ ] P2 — `@starting-style` adoption for panel entry animations
   Why: `@starting-style` (Baseline 2025) would replace JS rAF timing hacks for toast/panel animations with pure CSS.
   Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/core/toast-dom.js`
   Acceptance: Panel/toast animations use `@starting-style` with `transition-behavior: allow-discrete`.
   Complexity: S
-  Blocker: Toast CSS is duplicated in both the monolith and toast-dom.js (userscript parity). Requires live browser verification that the CSS fallback degrades gracefully on older browsers. Cannot verify without a running browser.
+  Blocker: Toast CSS is duplicated in both the monolith and toast-dom.js (userscript parity). The headless Chromium harness (`scripts/smoke-chromium-optional-hosts.js`) can load the extension, so the open part is an older engine without `@starting-style` (Chromium before 117, Firefox before 129) pinned for that harness to show toasts and panels still appear there.
 
 - [ ] P2 — Exclusive Accordion for settings categories
   Why: `<details name="settings">` would create accordion behavior for settings categories.
@@ -602,13 +602,17 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   static half is covered by the P0's symbol-resolution gate; only the in-browser
   behavioural confirmation needs the vehicle.
 
-- [ ] P2 — Side-panel toggles bypass optional-host permission + profile gating
-  Why: side-panel `writeSetting` does not call `requestOptionalHostsForSetting`,
-  so enabling an API-backed feature (SponsorBlock/DeArrow) reports success while
-  the feature silently no-ops without host access. Mirror the popup gating.
-  Where: extension/sidepanel.js (~437-453)
-  Blocker: Requires browser verification that `chrome.permissions.request()` works
-  from the side panel's user-gesture context. Cannot verify without a running browser.
+- [ ] P2 — Side-panel optional-host grant needs a live permission-prompt check
+  Why: the gating itself ships. `requestOptionalHostsForToggle` in
+  `extension/sidepanel.js` asks for the host before an API-backed toggle
+  (SponsorBlock, DeArrow) is written, and the toggle handler only saves when the
+  grant succeeds. What hasn't been seen is `chrome.permissions.request()`
+  resolving from the side panel's gesture and the toggle then landing.
+  Where: extension/sidepanel.js (`requestOptionalHostsForToggle` and its call in the toggle handler)
+  Blocker: headless Chromium loads the extension fine (the optional-hosts smoke
+  harness does), but Chrome's host permission prompt is native browser UI that
+  automation can't answer. Someone has to
+  click Allow once in a real Chrome window.
 
 - [ ] P1 — MAIN-world audio graph reconnect needs browser verification
   Why: The WeakMap-cached source node fix (shipped in v4.46.29) is architecturally
@@ -700,9 +704,6 @@ deleted from ROADMAP.md; what remains here is the coverage ledger.
 **Blocked on:** The source roadmap marked this work as parked, optional, or dependent on external input.
 
 Blocked items moved from the actionable roadmap:
-
-- `Roadmap_Blocked.md` "P2 — Side-panel toggles bypass optional-host permission + profile gating" is **partly stale**: `extension/sidepanel.js` now implements the gating (`requestOptionalHostsForToggle` at `:616-637`, called from the toggle handler at `:818`, which only writes when the grant succeeds). What remains blocked is the live-browser half — verifying that `chrome.permissions.request()` actually resolves from the side panel's user-gesture context. Narrow the item to that verification rather than re-implementing the gating.
-
 
 - `Roadmap_Blocked.md` "P1 — Companion release EXE + SHA256 sidecar + clean-machine verification" is **half-unblocked as of 2026-08-02**: its stated blocker includes "maintainer GitHub authentication ... `gh auth status` reports the SysAdminDoc token is invalid", but `gh auth status` now reports a valid `SysAdminDoc` token with `repo` scope. Only the clean-Windows-machine verification half remains blocked, and the asset itself now ships from `SysAdminDoc/AstraDownloader`. Rewrite the blocker accordingly.
 

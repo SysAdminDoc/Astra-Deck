@@ -135,22 +135,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   half under Tampermonkey and Violentmonkey in a private window.
   Complexity: M
 
-- [ ] P2 — Align existing privacy, permission, setup and intake documents with behavior
-  Why: current copy misstates automatic network flows, store-safe loopback access and defaults.
-  Evidence: Verified source mismatch between `docs/privacy-policy.md` and
-  `extension/core/data-flow.js:184-203`, `docs/cws-submission-checklist.md:462` and retained
-  store-safe companion access, `INSTALL.md` versus `CONTRIBUTING.md:27`, and the API-default
-  and automatic-close text in the two `.github` templates. See `RESEARCH.md` documentation truth.
-  Touches: those existing docs, `.github/ISSUE_TEMPLATE/feature_request.md`,
-  `.github/pull_request_template.md`, stale descriptions in `Roadmap_Blocked.md`, and existing
-  doc-truth check anchors. Do not create new Markdown docs or duplicate blocked store tasks.
-  Acceptance: disclose raw-GitHub repair checks and their six-hour/manual triggers, correctly
-  describe companion loopback access per profile, state Chrome's userscript permission step,
-  match current opt-in/default behavior, and stop encouraging automatic issue closure before
-  reporter confirmation. Correct browser-absent and sidebar permission-gating claims against
-  current tooling and `extension/sidepanel.js`. Existing doc-truth checks catch these mismatches.
-  Complexity: S
-
 - [ ] P2 — Retry a failed transcript load without reloading the watch page
   Why: a transient caption failure leaves reload advice without a working recovery action.
   Evidence: Verified live unavailable state after a failed caption fetch with `transcriptViewer`

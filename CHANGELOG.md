@@ -10,6 +10,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - With the Diagnostic Error Log on, an error is now saved within a few seconds of happening, and right away when the page closes. It used to wait for the next time you changed a setting, so a reload could lose it. A burst of errors still keeps the log to its 500-entry cap and saves at most six times a minute. These saves write only the log, so they never carry along a setting you're halfway through changing. If the browser refuses one, Astra quietly stops trying for five minutes. There's no "settings could not be saved" toast, and the failure isn't added to the log itself. Private windows still keep the log in memory only.
 
+### Documentation
+
+- The privacy policy now lists the automatic check of the project's signed known-breakage list on GitHub (at most every six hours while Known-Breakage Notices is on, which it is by default) and the manual selector refresh. It also says plainly that the store-safe build talks to Astra Downloader too, not just GitHub-full, and that SponsorBlock and DeArrow are on by default. The store checklist and permission notes got the same corrections.
+- INSTALL.md now covers the Allow User Scripts switch that Chrome 138 and newer need before a userscript manager runs anything.
+- The feature request and pull request templates match how things work now: API features aren't all off by default, the companion isn't GitHub-full only, and PRs link issues with "Refs #n" because an issue stays open until its reporter confirms the fix.
+
 ## [4.100.4] (2026-10-26)
 
 ### Fixed

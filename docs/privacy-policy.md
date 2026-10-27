@@ -1,6 +1,6 @@
 # Astra Deck Privacy Policy
 
-Last updated: 2026-08-13
+Last updated: 2026-10-26
 
 Astra Deck is a local-first browser extension and companion workflow for
 YouTube. It improves playback, layout, comments, transcripts, notes, exports,
@@ -51,15 +51,25 @@ save normally, and Copy, Export and Download keep working.
 
 ## Data Transmissions
 
-Store-safe builds can contact these origins for user-visible features:
+Every build (`chromium-store`, `store-safe` and `github-full`) can contact
+these origins for user-visible features:
 
 | Destination | Data sent | When |
 | --- | --- | --- |
 | YouTube / YouTube-nocookie / youtu.be / i.ytimg.com | YouTube page requests, video IDs, caption/thumbnail requests, and page context needed by YouTube features. | When the extension runs on YouTube pages or the user uses transcript/thumbnail features. |
 | YouTube InnerTube (`www.youtube.com/youtubei/v1/next`) | One video ID per feed card, with a field mask that asks only for the watch page's label badges. No cookies are sent, so the lookup isn't tied to your account. At most four run at once. | Only when Look Up AI Labels and Made With AI Label are both on. Made With AI Label alone sends nothing: it reads the label from watch pages you open. |
-| SponsorBlock / DeArrow (`sponsor.ajay.app`) | Video IDs and feature requests for sponsor segments, titles, and thumbnails. | Only when SponsorBlock or DeArrow features are enabled. |
-| Return YouTube Dislike | Video IDs for estimated dislike counts. | Only when RYD features are enabled. |
-| Reddit | YouTube video URL or search context for Reddit discussion lookup. | Only when the Reddit discussion panel is enabled. |
+| SponsorBlock / DeArrow (`sponsor.ajay.app`) | Video IDs and feature requests for sponsor segments, titles, and thumbnails. | While SponsorBlock or DeArrow is on. Both are on by default, but the extension sends nothing until you grant access to `sponsor.ajay.app` from the popup or the Grant access banner. |
+| Return YouTube Dislike | Video IDs for estimated dislike counts. | Only when RYD features are enabled. They're off by default. |
+| Reddit | YouTube video URL or search context for Reddit discussion lookup. | Only when the Reddit discussion panel is enabled. It's off by default. |
+| GitHub raw (`raw.githubusercontent.com`, the project's own repository) | An anonymous GET with no cookies, page data or settings. Each file comes with a detached signature that's checked before anything is used. | Two repair paths. The list of features the project has confirmed broken by a YouTube change is checked automatically, at most once every six hours, while Known-Breakage Notices is on (it's on by default). The selector packs are fetched only when you run a selector refresh from the selector-health dashboard. |
+
+The `store-safe` and `github-full` builds can also reach the local Astra
+Downloader companion. The `chromium-store` build has no loopback access, no
+downloader module and no cookie or native-messaging permission.
+
+| Destination | Data sent | When |
+| --- | --- | --- |
+| Astra Downloader (`127.0.0.1:9751-9851`) | Download request metadata, selected format/quality, health/history requests, and the minimum YouTube sign-in cookie set described below. | Only for explicit local downloader actions or enabled download panels; cookies require a fresh registered native-host proof. |
 
 GitHub-full builds can additionally contact these destinations when the user
 explicitly chooses the broader profile and enables the relevant feature:
@@ -68,7 +78,6 @@ explicitly chooses the broader profile and enables the relevant feature:
 | --- | --- | --- |
 | OpenAI, Anthropic, Gemini, or user-configured AI endpoint | User-selected transcript/video context and the user's own API key or configured endpoint. | Only for opt-in BYO-key AI summary or transcript-translation fallback features; Chrome's built-in AI lane does not contact these services. |
 | Local Ollama (`127.0.0.1:11434`) | Transcript/video context for local summarization. | Only when the local AI feature is enabled and Ollama is running locally. |
-| Astra Downloader (`127.0.0.1:9751-9851`) | Download request metadata, selected format/quality, health/history requests, and the minimum YouTube sign-in cookie set described below. | Only for explicit local downloader actions or enabled download panels; cookies require a fresh registered native-host proof. |
 | User-configured Video Hider filter-list host | An anonymous GET for the exact HTTPS URL the user entered. No YouTube page data, cookies, credentials, or local rules are sent. | Only after the user configures a list and grants that exact origin in GitHub-full; checks follow the selected daily, weekly, or manual cadence. |
 | User-configured self-hosted Cobalt | The canonical YouTube watch URL containing only the video ID. Cookies, credentials, playlist context, and the page's other query parameters are omitted. | Only when GitHub-full fallback is enabled, Astra Downloader is offline, and the user has configured and granted one HTTPS instance they operate or are authorized to use. Astra Deck does not use `api.cobalt.tools`. |
 

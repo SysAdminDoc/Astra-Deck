@@ -126,7 +126,9 @@ settings imports cannot turn a restricted artifact into a broader one.
 
 ## Store-Safe Companion Host Permissions
 
-The authenticated local companion is available in both profiles. These literal
+The authenticated local companion is available in the `store-safe` and
+`github-full` profiles. The `chromium-store` package has none of these grants.
+These literal
 loopback grants are limited to the companion's six documented discovery ports;
 the runtime still requires the companion service identity and bearer token.
 
