@@ -373,3 +373,80 @@ test('live-chat module declares the complete scoped feature set', () => {
         'chatKeywordFilter'
     ]);
 });
+
+function makeRaceRuntime({ settingsRead, reactionRead }) {
+    const document = new FakeDocument();
+    const changeListeners = new Set();
+    const windowListeners = new Set();
+    const browser = {
+        storage: {
+            local: {
+                get: (key) => (key === 'ytkitReactionSpammerState' ? reactionRead() : settingsRead()),
+                set: async () => {}
+            },
+            onChanged: {
+                addListener: (listener) => changeListeners.add(listener),
+                removeListener: (listener) => changeListeners.delete(listener)
+            }
+        }
+    };
+    const window = {
+        location: { pathname: '/live_chat' },
+        MutationObserver: class { observe() {} disconnect() {} },
+        MouseEvent: class { constructor(type) { this.type = type; } },
+        addEventListener: (type) => windowListeners.add(type),
+        removeEventListener: (type) => windowListeners.delete(type),
+        requestAnimationFrame: (callback) => callback(),
+        setTimeout,
+        clearTimeout
+    };
+    const injectStyle = (_css, id) => {
+        const style = document.createElement('style');
+        style.id = `yt-suite-style-${id}`;
+        document.body.append(style);
+        return style;
+    };
+    const runtime = liveChatModule.createLiveChatRuntime({
+        browser,
+        document,
+        injectStyle,
+        policy: { resolveEffectiveProfile: () => 'github-full' },
+        scope: { document, window },
+        window
+    });
+    return { runtime, document, changeListeners, windowListeners };
+}
+
+test('live-chat: toggling the reaction sender off while its state loads leaves no orphan launcher', async () => {
+    let releaseReaction;
+    const reactionGate = new Promise((resolve) => { releaseReaction = resolve; });
+    const { runtime, document } = makeRaceRuntime({
+        settingsRead: async () => ({}),
+        reactionRead: () => reactionGate
+    });
+    const on = runtime.applySettings({ reactionSpammer: true });
+    await new Promise((resolve) => setImmediate(resolve));
+    await runtime.applySettings({ reactionSpammer: false });
+    releaseReaction({});
+    await on;
+    assert.equal(!!document.getElementById('ytkit-reaction-spammer-launcher'), false,
+        'a controller destroyed mid-load must not append its launcher afterwards');
+    assert.equal(!!document.getElementById('yt-suite-style-reactionSpammer'), false,
+        'a controller destroyed mid-load must not append its style afterwards');
+    runtime.destroy();
+});
+
+test('live-chat: a runtime destroyed while start() reads settings registers no listeners', async () => {
+    let releaseSettings;
+    const settingsGate = new Promise((resolve) => { releaseSettings = resolve; });
+    const { runtime, changeListeners, windowListeners } = makeRaceRuntime({
+        settingsRead: () => settingsGate,
+        reactionRead: async () => ({})
+    });
+    const starting = runtime.start();
+    runtime.destroy();
+    releaseSettings({});
+    await starting;
+    assert.equal(changeListeners.size, 0, 'no storage listener after destroy');
+    assert.equal(windowListeners.size, 0, 'no pagehide listener after destroy');
+});

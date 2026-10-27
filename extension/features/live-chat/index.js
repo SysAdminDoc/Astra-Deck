@@ -286,6 +286,7 @@
             let panel = null;
             let timer = null;
             let running = false;
+            let disposed = false;
             let state = { selected: [], intervalMs: 600 };
             // The top-frame reaction spammer persists extra fields (pos,
             // collapsed) under the same storage key; preserve them on write.
@@ -510,6 +511,9 @@
 
             async function init() {
                 await loadState();
+                // destroy() can run while loadState awaits storage; mounting
+                // afterwards would leave a launcher and style nothing removes.
+                if (disposed) return;
                 setStyle('reactionSpammer', REACTION_CSS, true);
                 launcher = doc.createElement('button');
                 launcher.id = 'ytkit-reaction-spammer-launcher';
@@ -522,6 +526,7 @@
             }
 
             function destroy() {
+                disposed = true;
                 stop();
                 panel?.remove();
                 launcher?.remove();
@@ -619,6 +624,7 @@
             if (started || destroyed || !isChatPath()) return false;
             started = true;
             await applySettings(await readSettings());
+            if (destroyed) return false;
             observer = new win.MutationObserver(queueScan);
             observer.observe(doc.documentElement, { childList: true, subtree: true });
             storageListener = (changes, areaName) => {
