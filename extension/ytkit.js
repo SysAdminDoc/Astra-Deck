@@ -21370,9 +21370,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _lastPersist: 0,
             _dirty: false,
             _flushHandler: null,
+            // Bumped by every init and destroy, so an init or restore that was
+            // superseded while it awaited can tell and stop.
+            _generation: 0,
+            _cancelReadyWait: null,
 
             _scheduleRestore(delay = 2000) {
                 if (this._restoreTimer) clearTimeout(this._restoreTimer);
+                this._cancelReadyWait?.();
                 this._restoreTimer = setTimeout(() => {
                     this._restoreTimer = null;
                     void this._restore();
@@ -21442,6 +21447,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async _restore() {
+                const generation = this._generation;
                 const vid = this._getVideoId();
                 if (!vid || !this._positions) return;
                 const saved = this._positions.get(vid);
@@ -21451,18 +21457,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!video) return;
 
                 const waitForReady = () => new Promise(resolve => {
-                    if (video.readyState >= 2) return resolve();
+                    if (video.readyState >= 2) return resolve(true);
                     let timer = null;
-                    const done = () => {
+                    const finish = (ready) => {
                         if (timer) { clearTimeout(timer); timer = null; }
-                        video.removeEventListener('loadeddata', done);
-                        resolve();
+                        video.removeEventListener('loadeddata', onLoaded);
+                        if (this._cancelReadyWait === cancel) this._cancelReadyWait = null;
+                        resolve(ready);
                     };
-                    video.addEventListener('loadeddata', done, { once: true });
-                    timer = setTimeout(done, 5000);
+                    const onLoaded = () => finish(true);
+                    const cancel = () => finish(false);
+                    video.addEventListener('loadeddata', onLoaded, { once: true });
+                    timer = setTimeout(onLoaded, 5000);
+                    this._cancelReadyWait = cancel;
                 });
 
-                await waitForReady();
+                const ready = await waitForReady();
+                // A reused player element can be on the next video by now.
+                if (!ready || generation !== this._generation || this._getVideoId() !== vid) return;
                 if (Math.abs(video.currentTime - saved.time) > 5) {
                     video.currentTime = saved.time;
                     DebugManager.log('Resume', `Resumed at ${Math.floor(saved.time)}s`);
@@ -21470,9 +21482,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async init() {
+                const generation = ++this._generation;
                 await this._load();
-                // Feature may have been destroyed during the async load
-                if (!this._initialized) return;
+                // Destroyed, or re-initialized, during the async load.
+                if (!this._initialized || generation !== this._generation) return;
                 addNavigateRule('resumePlayback', () => {
                     // Note: _savePosition() is intentionally omitted here.
                     // yt-navigate-finish fires after the URL has already changed to the new video,
@@ -21495,7 +21508,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._scheduleRestore(2000);
             },
             destroy() {
+                this._generation++;
                 if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
+                this._cancelReadyWait?.();
                 if (this._flushHandler) {
                     window.removeEventListener('pagehide', this._flushHandler);
                     this._flushHandler = null;

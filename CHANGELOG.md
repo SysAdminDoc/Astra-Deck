@@ -10,6 +10,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Turning on DeArrow, SponsorBlock, Sticky Video, Digital Wellbeing, Video Notes, Return YouTube Dislike, dual-language subtitles or a handful of other features now works right away. If a page loaded while one of them was switched off, switching it back on used to do nothing until you reloaded the tab.
 - Settings open again when the Video Hider module failed to load or started switched off. Your hidden and allowed video lists still show with their real counts, and the clear buttons stay greyed out until the module is back.
+- Resume Playback no longer jumps the next video to the previous one's saved spot when you click away before the player finishes loading. Turning it off and on quickly also stops leaving an extra save handler behind.
 
 ## [4.100.0] (2026-10-26)
 
