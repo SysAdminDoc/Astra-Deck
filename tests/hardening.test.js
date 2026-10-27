@@ -5421,7 +5421,8 @@ test('deArrow honors per-channel override before fetching branding', () => {
     assert.match(block, /deArrowChannelOverrides/,
         'must read deArrowChannelOverrides setting');
     const procIdx = deArrowSource.indexOf('async _processPage()');
-    const procBlock = deArrowSource.slice(procIdx, procIdx + 4000);
+    // Through the end of _applyCard, which _processPage's lanes call.
+    const procBlock = deArrowSource.slice(procIdx, deArrowSource.indexOf('_applyTitle(titleEl, branding, {', procIdx));
     const overrideCheckPos = procBlock.indexOf('_channelOverrideMode(el)');
     const brandFetchPos = procBlock.indexOf('this._fetchBranding(videoId)');
     assert.ok(overrideCheckPos > -1 && brandFetchPos > -1,

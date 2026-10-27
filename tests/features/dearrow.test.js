@@ -798,6 +798,9 @@ test('cards are looked up in parallel lanes, not one at a time', async () => {
         const pass = feature._processPage();
         await new Promise((resolve) => setImmediate(resolve));
         assert.equal(waiting.length, feature._FETCH_LANES, 'every lane starts a lookup before any answer');
+        // Cards still waiting for a lane are hidden too, or they would show
+        // their clickbait until a lane frees up.
+        assert.deepEqual(cards.map((card) => card.dataset.daHide), cards.map(() => 'title thumb'));
         let answered = 0;
         while (waiting.length) {
             waiting.shift()(null);
@@ -806,6 +809,7 @@ test('cards are looked up in parallel lanes, not one at a time', async () => {
         }
         await pass;
         assert.equal(answered, cards.length);
+        assert.ok(cards.every((card) => card.dataset.daHide === undefined), 'every card is shown once answered');
     });
 });
 
@@ -1129,7 +1133,11 @@ test('the title formatter keeps acronyms and brand casing the way upstream title
         ['MrBeast vs. the U.S. army', 'title_case', 'MrBeast vs. the U.S. Army'],
         ["i think i'm lost", 'sentence', "I think I'm lost"],
         ['Top 10 GTA 5 Mods #shorts', 'sentence', 'Top 10 GTA 5 Mods #shorts'],
-        ['you WON the NEW car', 'sentence', 'You won the new car']
+        ['you WON the NEW car', 'sentence', 'You won the new car'],
+        // Trailing punctuation goes, except a dotted acronym's own period.
+        ['Made in the U.S.', 'sentence', 'Made in the U.S.'],
+        ['Wait for it...', 'sentence', 'Wait for it'],
+        ['Why?!', 'title_case', 'Why?']
     ];
     for (const [input, format, expected] of cases) {
         assert.equal(feature._formatTitle(input, format), expected, `${format}: ${input}`);

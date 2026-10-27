@@ -24263,6 +24263,8 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 		}).join(' ');
 	}
 	function cleanPunctuation(title) {
+		const last = title.trim().split(' ').pop();
+		if (forceKeepFormatting(last) || (isAcronymStrict(last) && last.endsWith('.'))) return title;
 		let end = title.length;
 		let question = false;
 		while (end > 0 && /[!?.\s]/.test(title[end - 1])) {
@@ -24419,11 +24421,11 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				this._revealTimers.add(timer);
 				return reveal;
 			},
-			_cardHideParts() {
+			_hideCard(el, videoId) {
 				const parts = [];
 				if (appState.settings.daReplaceTitles) parts.push('title');
 				if (appState.settings.daReplaceThumbs) parts.push('thumb');
-				return parts;
+				return this._hideWhileFetching(el, parts, videoId);
 			},
 			_connectObserver() {
 				if (!this._observer) return;
@@ -24742,13 +24744,13 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 						el.dataset.daOverride = overrideMode;
 						continue;
 					}
-					queued.push({ el, videoId });
+					queued.push({ el, videoId, reveal: this._hideCard(el, videoId) });
 				}
 				let next = 0;
 				const lane = async () => {
 					while (next < queued.length) {
-						const { el, videoId } = queued[next++];
-						await this._applyCard(el, videoId, gen, route);
+						const { el, videoId, reveal } = queued[next++];
+						await this._applyCard(el, videoId, gen, route, reveal);
 					}
 				};
 				await Promise.all(Array.from({ length: Math.min(this._FETCH_LANES, queued.length) }, lane));
@@ -24762,8 +24764,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					&& el.dataset.daVideoId === videoId
 					&& this._cardVideoId(el) === videoId;
 			},
-			async _applyCard(el, videoId, gen, route) {
-				const reveal = this._hideWhileFetching(el, this._cardHideParts(), videoId);
+			async _applyCard(el, videoId, gen, route, reveal = this._hideCard(el, videoId)) {
 				try {
 					const branding = await this._fetchBranding(videoId);
 					if (!branding || !this._cardStillShows(el, videoId, gen, route)) return;
