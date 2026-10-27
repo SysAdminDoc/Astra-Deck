@@ -13634,3 +13634,73 @@ test('the settings footer wraps rather than overflowing a narrow viewport', () =
     assert.match(block, /flex-wrap: wrap !important;/);
     assert.match(block, /max-width: 100% !important;/);
 });
+
+test('toast-dom: a toast made while the panel was open times out once the panel closes', () => {
+    // `persistent` was computed once at creation, so an action toast shown with
+    // the settings panel open stayed persistent and resumeDismiss bailed out
+    // forever, even after the panel closed.
+    delete require.cache[require.resolve('../extension/core/toast-dom.js')];
+    const stub = {};
+    const prevCore = global.YTKitCore;
+    global.YTKitCore = stub;
+    require('../extension/core/toast-dom.js');
+    global.YTKitCore = prevCore;
+
+    const makeEl = () => {
+        const el = {
+            children: [], dataset: {}, listeners: {}, isConnected: false, textContent: '',
+            style: { setProperty() {} },
+            classList: { add() {}, remove() {} },
+            setAttribute() {}, removeAttribute() {},
+            addEventListener(type, fn) { el.listeners[type] = fn; },
+            removeEventListener() {},
+            appendChild(child) { el.children.push(child); return child; },
+            contains: () => false,
+            remove() { el.isConnected = false; }
+        };
+        return el;
+    };
+    let panelOpen = true;
+    const toasts = [];
+    const fakeDocument = {
+        body: {
+            classList: { contains: (name) => panelOpen && name === 'ytkit-panel-open' },
+            appendChild(child) { child.isConnected = true; toasts.push(child); return child; }
+        },
+        querySelector: () => null,
+        createElement: makeEl
+    };
+    const timers = [];
+    const saved = {
+        document: global.document, raf: global.requestAnimationFrame,
+        setTimeout: global.setTimeout, clearTimeout: global.clearTimeout
+    };
+    try {
+        global.document = fakeDocument;
+        global.requestAnimationFrame = () => 0;
+        global.setTimeout = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
+        global.clearTimeout = () => {};
+        const sys = stub.toastDom.createToastSystem({ supportsPopover: () => false });
+
+        const toast = sys.showToast('Saved', '#22c55e', { actions: [{ text: 'Undo' }], duration: 2.5 });
+        assert.equal(timers.length, 0, 'while the panel is open the action toast arms no timer');
+
+        toast.listeners.pointerleave();
+        assert.equal(timers.length, 0, 'still held while the panel is open');
+
+        panelOpen = false;
+        toast.listeners.pointerleave();
+        assert.equal(timers.length, 1, 'once the panel closes the toast resumes its dismiss timer');
+        assert.equal(timers[0].ms, 2500);
+
+        // An explicit persistent toast must stay put either way.
+        const pinned = sys.showToast('Pinned', '#22c55e', { persistent: true });
+        pinned.listeners.pointerleave();
+        assert.equal(timers.length, 1, 'options.persistent keeps the toast on screen');
+    } finally {
+        global.document = saved.document;
+        global.requestAnimationFrame = saved.raf;
+        global.setTimeout = saved.setTimeout;
+        global.clearTimeout = saved.clearTimeout;
+    }
+});

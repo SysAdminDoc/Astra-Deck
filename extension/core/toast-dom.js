@@ -110,9 +110,11 @@
                 ...(options.action ? [options.action] : [])
             ].filter(Boolean).slice(0, 2);
             const durationMs = Math.max(0, Number(options.duration ?? 2.5) * 1000);
-            const keepActionReachable = actions.length > 0
-                && document.body?.classList.contains('ytkit-panel-open');
-            const persistent = options.persistent === true || keepActionReachable;
+            // Re-evaluated on every resume: a toast shown while the panel was
+            // open must start timing out once the panel closes.
+            const isPersistent = () => options.persistent === true
+                || (actions.length > 0 && !!document.body?.classList.contains('ytkit-panel-open'));
+            const persistent = isPersistent();
 
             const toast = document.createElement('div');
             toast.className = 'ytkit-global-toast';
@@ -226,7 +228,7 @@
                 remainingMs = Math.max(0, dismissAt - Date.now());
             };
             const resumeDismiss = () => {
-                if (!toast.isConnected || remainingMs <= 0 || persistent) return;
+                if (!toast.isConnected || remainingMs <= 0 || isPersistent()) return;
                 dismissAt = Date.now() + remainingMs;
                 toast._dismissTimer = setTimeout(() => dismissToast(toast), remainingMs);
             };
