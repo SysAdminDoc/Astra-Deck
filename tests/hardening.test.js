@@ -5813,7 +5813,7 @@ test('videoHider resets the predicate-sandbox circuit on SPA navigate', () => {
         'navigate rule must reset the predicate evaluator circuit each route');
 });
 
-test('core/registry.js register({replace:true}) drops orphaned cleanups for the replaced id', () => {
+test('core/registry.js register({replace:true}) runs and drops orphaned cleanups for the replaced id', () => {
     const regSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'core', 'registry.js'),
         'utf8'
@@ -5822,8 +5822,10 @@ test('core/registry.js register({replace:true}) drops orphaned cleanups for the 
     assert.ok(fnIdx > -1, 'register() must exist');
     const fnBody = regSrc.slice(fnIdx, fnIdx + 1500);
     assert.match(fnBody, /registerOptions\.replace/, 'replace option must be honoured');
-    assert.match(fnBody, /cleanups\.delete\(id\)/,
-        'when replacing a registered feature, prior cleanups must be dropped to avoid leaking onto the new feature');
+    // runCleanups() runs the list and deletes the entry; behavior is covered
+    // in tests/core-fixes.test.js.
+    assert.match(fnBody, /runCleanups\(id\)/,
+        'when replacing a registered feature, prior cleanups must be run and dropped to avoid leaking onto the new feature');
 });
 
 // ── v4.3.0 P1: AI tags for subscription groups ──

@@ -194,6 +194,28 @@ test('featureRegistry clear() drops health entries so the snapshot has no ghosts
         'clear() must empty health alongside features/cleanups — ghost entries reported forever otherwise');
 });
 
+test('featureRegistry runs a feature\'s cleanups when it is replaced or unregistered', () => {
+    const core = loadCoreModule('extension/core/registry.js');
+    const registry = core.createFeatureRegistry({ logger: { error() {} } });
+    const ran = [];
+
+    registry.register({ id: 'alpha' });
+    registry.addCleanup('alpha', () => ran.push('alpha-old'));
+    registry.register({ id: 'alpha' }, { replace: true });
+    assert.deepEqual(ran, ['alpha-old'],
+        'replacing must tear down the old registration\'s listeners, not just forget them');
+    registry.addCleanup('alpha', () => ran.push('alpha-new'));
+    registry.destroy('alpha');
+    assert.deepEqual(ran, ['alpha-old', 'alpha-new'],
+        'the replaced cleanup must not run again on the new feature\'s destroy');
+
+    registry.register({ id: 'beta' });
+    registry.addCleanup('beta', () => ran.push('beta'));
+    assert.equal(registry.unregister('beta'), true);
+    assert.deepEqual(ran, ['alpha-old', 'alpha-new', 'beta'],
+        'unregister must run cleanups nothing can reach once the id is gone');
+});
+
 // ── Fix 6: queued rAF must not re-tag the DOM after runtime destroy() ──
 
 test('chatStyleComments runtime ignores a rAF queued before destroy() and re-arms on init()', () => {

@@ -137,12 +137,13 @@
                 throw new Error(`Feature "${id}" is already registered.`);
             }
             // Audit pass: when replacing an already-registered feature without
-            // having destroyed it first, drop any orphaned per-feature cleanups
-            // so we don't leak them onto the new feature's destroy() call.
-            // Category cleanups are intentionally preserved — those are
-            // category-level lifecycle, not per-feature.
+            // having destroyed it first, run its per-feature cleanups now so
+            // they neither leak onto the new feature's destroy() call nor
+            // leave the old listeners/observers/styles orphaned. Category
+            // cleanups are intentionally preserved — those are category-level
+            // lifecycle, not per-feature.
             if (features.has(id) && registerOptions.replace) {
-                if (cleanups.has(id)) cleanups.delete(id);
+                runCleanups(id);
             }
             features.set(id, feature);
             setHealth(id, {
@@ -329,8 +330,10 @@
             const featureId = normalizeId(id);
             if (!featureId || !features.has(featureId)) return false;
             if (unregisterOptions.destroy) destroy(featureId);
+            // Nothing can reach these once the id is gone, so run them rather
+            // than drop them (destroy() above already emptied the list).
+            runCleanups(featureId);
             features.delete(featureId);
-            cleanups.delete(featureId);
             setHealth(featureId, { status: 'unregistered', lastError: null });
             return true;
         }
