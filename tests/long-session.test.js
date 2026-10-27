@@ -242,8 +242,13 @@ test('long-session route/mutation stress keeps observers and diagnostics bounded
     core.configureNavigationRuntime({ navDebounce: 0 });
 
     const settings = { diagnosticLog: true, _errors: [] };
+    // This harness runs every queued timer at once whatever its due time, so
+    // the log's save watchdog and failure pause would re-arm forever. The
+    // test is about ring bounds; saving is covered in diagnostic-journal.
     const log = core.createDiagnosticLog({
         getSettings: () => settings,
+        setTimer: () => 0,
+        clearTimer: () => {},
         cap: 64
     });
 

@@ -46,13 +46,14 @@ function fakeClock() {
     };
 }
 
-function createLog({ settings, save, clock, keepInMemory, cap } = {}) {
+function createLog({ settings, save, saveEntries, clock, keepInMemory, cap } = {}) {
     const sandbox = { YTKitCore: {}, console: { warn: (...args) => sandbox.warnings.push(args) }, warnings: [] };
     sandbox.globalThis = sandbox;
     vm.runInNewContext(SOURCE, sandbox);
     const log = sandbox.YTKitCore.createDiagnosticLog({
         getSettings: () => settings,
         saveSettings: save,
+        saveEntries,
         now: clock.now,
         setTimer: clock.setTimer,
         clearTimer: clock.clearTimer,
@@ -184,6 +185,8 @@ test('a private window and a log that is not opted in never write', async () => 
     const privateSettings = { diagnosticLog: true, _errors: [] };
     const priv = createLog({ settings: privateSettings, save: store.save, clock, keepInMemory: () => true });
     priv.log.record('window', 'watched /watch?v=abc');
+    assert.equal(priv.log._journal.pending, false, 'a private record schedules nothing');
+    assert.equal(clock.pending(), 0);
     priv.log.flush({ force: true });
     await clock.advance(60000);
     assert.equal(store.writes.length, 0);
@@ -192,6 +195,8 @@ test('a private window and a log that is not opted in never write', async () => 
     const off = createLog({ settings: { diagnosticLog: false, _errors: [] }, save: store.save, clock });
     off.log.enable();
     off.log.record('window', 'dev switch only');
+    assert.equal(off.log._journal.pending, false, 'the dev switch schedules nothing');
+    assert.equal(clock.pending(), 0);
     off.log.flush({ force: true });
     await clock.advance(60000);
     assert.equal(store.writes.length, 0, 'the in-memory test switch is not consent to save');
@@ -240,6 +245,97 @@ test('clearing the log cancels a pending save', async () => {
     assert.equal(clock.pending(), 0);
 });
 
+test('the timed write sends only the ring and keeps entries recorded while it is in flight', async () => {
+    const clock = fakeClock();
+    const settings = { diagnosticLog: true, _errors: [], theme: 'half-edited' };
+    const sent = [];
+    let wholeSaves = 0;
+    let settle;
+    const { log } = createLog({
+        settings,
+        save: () => { wholeSaves += 1; return Promise.resolve({ ok: true }); },
+        saveEntries: (entries) => {
+            sent.push(entries);
+            return new Promise((resolve) => { settle = resolve; });
+        },
+        clock
+    });
+    log.record('a', 'first');
+    await clock.advance(2000);
+    assert.equal(sent.length, 1);
+    assert.equal(wholeSaves, 0, 'no whole-settings save, so unrelated edits are not flushed');
+    log.record('a', 'during the write');
+    sent[0].push({ ctx: 'x', msg: 'mutated by the receiver' });
+    assert.equal(settings._errors.length, 2, 'the sent copy is not the live ring');
+    settle({ ok: true });
+    await clock.advance(0);
+    await clock.advance(2000);
+    assert.equal(sent.length, 2, 'the entry recorded mid-write gets its own write');
+    assert.deepEqual(sent[1].map((entry) => entry.msg), ['first', 'during the write']);
+});
+
+test('a failed ring write never falls back to a whole-settings save', async () => {
+    const clock = fakeClock();
+    let wholeSaves = 0;
+    let attempts = 0;
+    const { log } = createLog({
+        settings: { diagnosticLog: true, _errors: [] },
+        save: () => { wholeSaves += 1; return Promise.resolve({ ok: true }); },
+        saveEntries: () => { attempts += 1; return Promise.resolve({ ok: false, error: 'QUOTA_BYTES' }); },
+        clock
+    });
+    log.record('a', '1');
+    await clock.advance(2000);
+    log.record('a', '2');
+    await clock.advance(6 * 60 * 1000);
+    assert.equal(attempts, 2, 'one try, then one more after the pause');
+    assert.equal(wholeSaves, 0);
+});
+
+test('a save that never settles stops blocking the log after thirty seconds', async () => {
+    const clock = fakeClock();
+    const sent = [];
+    const { log, warnings } = createLog({
+        settings: { diagnosticLog: true, _errors: [] },
+        saveEntries: (entries) => {
+            sent.push(entries.length);
+            return sent.length === 1 ? new Promise(() => {}) : Promise.resolve({ ok: true });
+        },
+        clock
+    });
+    log.record('a', '1');
+    await clock.advance(2000);
+    log.record('a', '2');
+    await clock.advance(29000);
+    assert.equal(log._journal.flushing, true, 'still waiting inside the timeout');
+    await clock.advance(1000);
+    assert.equal(log._journal.flushing, false);
+    assert.equal(warnings.length, 1, 'the hung write counts as a failure');
+    await clock.advance(5 * 60 * 1000);
+    assert.deepEqual(sent, [1, 2], 'saving resumes after the failure pause');
+    assert.equal(clock.pending(), 0, 'no watchdog timer is left behind');
+});
+
+test('clearing the log swallows a rejected save', async () => {
+    const clock = fakeClock();
+    const unhandled = [];
+    const onUnhandled = (reason) => unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+        const { log } = createLog({
+            settings: { diagnosticLog: true, _errors: [] },
+            save: () => Promise.reject(new Error('quota')),
+            clock
+        });
+        log.clear();
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+    } finally {
+        process.off('unhandledRejection', onUnhandled);
+    }
+    assert.equal(unhandled.length, 0);
+});
+
 test('the page flushes the log when it is hidden', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
     const start = src.indexOf("id: 'diagnosticLog'");
@@ -248,4 +344,12 @@ test('the page flushes the log when it is hidden', () => {
     assert.match(block, /removeEventListener\('pagehide', this\._onPageHide\)/);
     assert.match(src, /return settingsManager\.save\(settings\);/,
         'the save result reaches the log so a failed write can pause it');
+    assert.match(src, /saveEntries: \(entries\) => \{\s*if \(typeof settingsManager !== 'undefined' && settingsManager\?\.saveDiagnosticEntries\) \{\s*return settingsManager\.saveDiagnosticEntries\(entries\);/,
+        'the timed write goes through the ring-only path');
+    const method = src.slice(src.indexOf('saveDiagnosticEntries(entries) {'), src.indexOf('getFirstRunStatus() {'));
+    assert.match(method, /controller\.mutate\('_errors', snapshot\)/, 'only the ring key is written');
+    assert.match(method, /_rememberLocalWrite\(STORAGE_KEYS\.settings, settingsEchoForm\(expected\)\)/,
+        'the write is remembered so its own echo does not replace the page settings');
+    assert.doesNotMatch(method, /applyExternalSettingsUpdate|showToast|setPanelStatus/,
+        'a failed ring write neither rolls the page back nor toasts');
 });

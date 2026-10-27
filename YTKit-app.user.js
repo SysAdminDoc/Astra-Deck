@@ -581,6 +581,12 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 					}
 					return undefined;
 				},
+				saveEntries: (entries) => {
+					if (typeof settingsManager !== 'undefined' && settingsManager?.saveDiagnosticEntries) {
+						return settingsManager.saveDiagnosticEntries(entries);
+					}
+					return undefined;
+				},
 				getVersion: () => (typeof YTKIT_VERSION !== 'undefined' ? YTKIT_VERSION : 'unknown'),
 				keepInMemory: () => (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') !== 'regular',
 				cap: 500
@@ -3672,6 +3678,27 @@ const STORAGE_KEYS = Object.freeze({
 						setPanelStatus(message, 'error');
 						showToast(message, undefined, { tone: 'error' });
 					}
+				}
+				return result;
+			});
+		},
+		saveDiagnosticEntries(entries) {
+			const snapshot = JSON.parse(JSON.stringify(Array.isArray(entries) ? entries : []));
+			const controller = this._getSettingsMutationController();
+			const stored = StorageManager.get(STORAGE_KEYS.settings, {}) || {};
+			const expected = { ...stored, _errors: snapshot };
+			if (!controller) {
+				StorageManager.set(STORAGE_KEYS.settings, expected);
+				if (this._lastSubmittedSettings) this._lastSubmittedSettings._errors = snapshot;
+				return Promise.resolve({ ok: true, persisted: true });
+			}
+			if (hasExtensionContext()) {
+				StorageManager._rememberLocalWrite(STORAGE_KEYS.settings, settingsEchoForm(expected));
+			}
+			return controller.mutate('_errors', snapshot).then((result) => {
+				if (result && result.ok) {
+					if (this._lastSubmittedSettings) this._lastSubmittedSettings._errors = snapshot;
+					StorageManager.syncFromExternal(STORAGE_KEYS.settings, result.settings || expected);
 				}
 				return result;
 			});

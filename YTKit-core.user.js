@@ -4976,6 +4976,7 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 	const WRITE_BUDGET = 6;
 	const WRITE_WINDOW_MS = 60000;
 	const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
+	const SAVE_TIMEOUT_MS = 30000;
 	function createDiagnosticLog(options = {}) {
 		const getSettings = typeof options.getSettings === 'function'
 			? options.getSettings
@@ -4983,6 +4984,9 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 		const saveSettings = typeof options.saveSettings === 'function'
 			? options.saveSettings
 			: () => {};
+		const saveEntries = typeof options.saveEntries === 'function'
+			? options.saveEntries
+			: null;
 		const getVersion = typeof options.getVersion === 'function'
 			? options.getVersion
 			: () => 'unknown';
@@ -5060,21 +5064,28 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 			if (!settings || !settings.diagnosticLog) return;
 			journal.flushing = true;
 			journal.writes.push(at);
+			let settled = false;
+			const finish = (error) => {
+				if (settled) return;
+				settled = true;
+				clearTimer(watchdog);
+				journal.flushing = false;
+				if (error !== undefined) _flushFailed(error);
+				if (journal.pending) _armFlush();
+			};
+			const watchdog = setTimer(() => finish(new Error('DiagnosticLog save timed out')), SAVE_TIMEOUT_MS);
 			let result;
 			try {
-				result = saveSettings(settings);
+				result = saveEntries
+					? saveEntries(Array.isArray(settings._errors) ? settings._errors.slice() : [])
+					: saveSettings(settings);
 			} catch (error) {
-				journal.flushing = false;
-				_flushFailed(error);
-				if (journal.pending) _armFlush();
+				finish(error);
 				return;
 			}
 			Promise.resolve(result).then((outcome) => {
-				if (outcome && outcome.ok === false) _flushFailed(outcome.error || outcome.reason);
-			}, _flushFailed).then(() => {
-				journal.flushing = false;
-				if (journal.pending) _armFlush();
-			});
+				finish(outcome && outcome.ok === false ? (outcome.error || outcome.reason || 'save failed') : undefined);
+			}, (error) => finish(error === undefined ? 'save failed' : error));
 		}
 		function _resyncCounts() {
 			const settings = getSettings();
@@ -5141,7 +5152,10 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 			state.countsResynced = true;
 			_cancelFlush();
 			journal.pending = false;
-			try { saveSettings(settings); } catch (_) {
+			try {
+				Promise.resolve(saveSettings(settings)).catch(() => {
+				});
+			} catch (_) {
 			}
 		}
 		function download() {

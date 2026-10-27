@@ -13,8 +13,9 @@
     // The log couples to two ytkit.js internals:
     // - `appState.settings` (the persisted ring lives at
     // `appState.settings._errors`)
-    // - `settingsManager.save`, which this module calls on its own bounded
-    // schedule after a record and directly for the Clear path
+    // - `settingsManager.saveDiagnosticEntries`, an `_errors`-only write this
+    // module calls on its own bounded schedule after a record, and
+    // `settingsManager.save` for the Clear path
     //
     // We pass both through as accessor callbacks at instantiation time —
     // the module itself stays free of any feature-monolith coupling and
@@ -36,6 +37,9 @@
     const WRITE_BUDGET = 6;
     const WRITE_WINDOW_MS = 60000;
     const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
+    // A save that never settles (the worker died mid-write) counts as a
+    // failure after this long, so the log doesn't stop saving for good.
+    const SAVE_TIMEOUT_MS = 30000;
 
     function createDiagnosticLog(options = {}) {
         // Accessor callbacks — the caller (ytkit.js) wires these to its
@@ -46,6 +50,13 @@
         const saveSettings = typeof options.saveSettings === 'function'
             ? options.saveSettings
             : () => {};
+        // Writes only the saved ring. The timed flush prefers it to a whole
+        // settings save, which would carry along unrelated unsaved edits and
+        // answer a full quota with a rollback and a "could not be saved"
+        // toast every few minutes.
+        const saveEntries = typeof options.saveEntries === 'function'
+            ? options.saveEntries
+            : null;
         const getVersion = typeof options.getVersion === 'function'
             ? options.getVersion
             : () => 'unknown';
@@ -138,21 +149,28 @@
             if (!settings || !settings.diagnosticLog) return;
             journal.flushing = true;
             journal.writes.push(at);
+            let settled = false;
+            const finish = (error) => {
+                if (settled) return;
+                settled = true;
+                clearTimer(watchdog);
+                journal.flushing = false;
+                if (error !== undefined) _flushFailed(error);
+                if (journal.pending) _armFlush();
+            };
+            const watchdog = setTimer(() => finish(new Error('DiagnosticLog save timed out')), SAVE_TIMEOUT_MS);
             let result;
             try {
-                result = saveSettings(settings);
+                result = saveEntries
+                    ? saveEntries(Array.isArray(settings._errors) ? settings._errors.slice() : [])
+                    : saveSettings(settings);
             } catch (error) {
-                journal.flushing = false;
-                _flushFailed(error);
-                if (journal.pending) _armFlush();
+                finish(error);
                 return;
             }
             Promise.resolve(result).then((outcome) => {
-                if (outcome && outcome.ok === false) _flushFailed(outcome.error || outcome.reason);
-            }, _flushFailed).then(() => {
-                journal.flushing = false;
-                if (journal.pending) _armFlush();
-            });
+                finish(outcome && outcome.ok === false ? (outcome.error || outcome.reason || 'save failed') : undefined);
+            }, (error) => finish(error === undefined ? 'save failed' : error));
         }
 
         function _resyncCounts() {
@@ -239,7 +257,12 @@
             state.countsResynced = true;
             _cancelFlush();
             journal.pending = false;
-            try { saveSettings(settings); } catch (_) {
+            try {
+                Promise.resolve(saveSettings(settings)).catch(() => {
+                    // reason: the settings save reports its own failure; a
+                    // rejection here must not surface as an unhandled one.
+                });
+            } catch (_) {
                 // reason: saveSettings is best-effort; clear() returns successfully
                 // even if the persistence path throws (the in-memory ring is reset).
             }
