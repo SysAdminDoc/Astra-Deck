@@ -588,6 +588,8 @@
         }
 
         function retry(task, reason, token) {
+            // An async task can reject after a route bump or destroy().
+            if (token !== routeToken || task.cancelled) return;
             if (task.attempt >= task.maxAttempts) return;
             task.attempt += 1;
             const delay = nextDelay(task);
@@ -758,7 +760,13 @@
         }
 
         function destroy() {
-            for (const task of tasks.values()) cancelTimer(task);
+            // Cancel and bump the token too: a task still in flight holds its
+            // own reference and settles through the same stale guard.
+            routeToken += 1;
+            for (const task of tasks.values()) {
+                task.cancelled = true;
+                cancelTimer(task);
+            }
             tasks.clear();
             if (!installed || !root?.removeEventListener || !win?.removeEventListener) return;
             root.removeEventListener('loadstart', onMediaEvent, true);

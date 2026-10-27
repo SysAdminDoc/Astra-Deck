@@ -503,3 +503,37 @@ test('volume curve preserves logical volume across native changes and disable', 
     assert.ok(Math.abs(video.volume - 0.75) < 1e-9);
     assert.equal(controller.readLogicalVolume(video), 0.75);
 });
+
+test('player task manager does not re-arm an async task that settles after destroy', async () => {
+    const core = loadPlayerCore();
+    const env = createFakeEnv();
+    env.state.video = env.video;
+    const manager = core.createPlayerTaskManager({
+        document: env.document,
+        window: env.window,
+        setTimeout: env.setTimeoutFake,
+        clearTimeout: env.clearTimeoutFake
+    });
+
+    const settlers = [];
+    let runs = 0;
+    for (const outcome of ['false', 'retry', 'reject']) {
+        manager.schedule(`async:${outcome}`, () => {
+            runs += 1;
+            return new Promise((resolve, reject) => {
+                settlers.push(() => (outcome === 'reject'
+                    ? reject(new Error('late'))
+                    : resolve(outcome === 'false' ? false : 'retry')));
+            });
+        }, { retryDelays: [0, 20], maxAttempts: 3 });
+    }
+    while (env.timers.size) env.flushOne();
+    assert.equal(runs, 3, 'each task ran once and is now in flight');
+
+    manager.destroy();
+    for (const settle of settlers) settle();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(env.timers.size, 0,
+        'a task that resolves false/retry or rejects after destroy must not schedule another run');
+});
