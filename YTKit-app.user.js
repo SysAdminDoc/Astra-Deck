@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.100.1
+// @version      4.100.2
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -742,7 +742,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.100.1';
+	const YTKIT_VERSION = '4.100.2';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -4715,7 +4715,7 @@ const STORAGE_KEYS = Object.freeze({
 				name: getFeatureName(feature) || feature.id,
 				category: feature.group || null,
 				settingKey: getFeatureSettingKey(feature),
-				initialized: !!feature._initialized,
+				initialized: status !== 'starting' && !!feature._initialized,
 				lastError: error ? String(error?.message || error) : null
 			};
 			if (typeof elapsedMs === 'number') {
@@ -4730,24 +4730,72 @@ const STORAGE_KEYS = Object.freeze({
 	function initFeatureLifecycle(feature, source = 'runtime') {
 		if (!feature || feature._arrayKey) return false;
 		const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+		const generation = feature._lifecycleGeneration = (feature._lifecycleGeneration || 0) + 1;
+		feature._initSettled = null;
+		let result;
 		try {
 			if (typeof withSelectorAttribution === 'function') {
-				withSelectorAttribution(feature.id, () => feature.init?.());
+				result = withSelectorAttribution(feature.id, () => feature.init?.());
 			} else {
-				feature.init?.();
+				result = feature.init?.();
 			}
-			feature._initialized = true;
-			const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
-			updateFeatureHealth(feature, 'initialized', source, null, elapsed);
-			return true;
 		} catch (error) {
 			updateFeatureHealth(feature, 'init-error', source, error);
 			throw error;
 		}
+		feature._initialized = true;
+		const elapsedSince = () => (typeof performance !== 'undefined' ? performance.now() - t0 : 0);
+		if (!result || typeof result.then !== 'function') {
+			updateFeatureHealth(feature, 'initialized', source, null, elapsedSince());
+			return true;
+		}
+		updateFeatureHealth(feature, 'starting', source);
+		const current = () => feature._lifecycleGeneration === generation && feature._initialized;
+		feature._initSettled = Promise.resolve(result).then(() => {
+			if (!current()) {
+				if (!feature._initialized) {
+					try {
+						feature.destroy?.();
+					} catch (cleanupError) {
+						DebugManager.log('Runtime', `Cleanup after a late init of "${feature.id}" failed: ${cleanupError?.message || cleanupError}`);
+					}
+				}
+				return { ok: false, error: null };
+			}
+			updateFeatureHealth(feature, 'initialized', source, null, elapsedSince());
+			return { ok: true, error: null };
+		}, (error) => {
+			if (!current()) {
+				DebugManager.log('Runtime', `Ignored a late init failure for "${feature.id}" after it was restarted or stopped: ${error?.message || error}`);
+				return { ok: false, error: null };
+			}
+			try {
+				feature.destroy?.();
+			} catch (cleanupError) {
+				DebugManager.log('Runtime', `Cleanup after a failed init of "${feature.id}" failed: ${cleanupError?.message || cleanupError}`);
+			}
+			feature._initialized = false;
+			feature._lifecycleGeneration++;
+			updateFeatureHealth(feature, 'init-error', source, error);
+			console.warn(`[YTKit] Feature init failed during ${source}:`, feature.id, error);
+			return { ok: false, error };
+		});
+		return true;
+	}
+	function settleFeatureInitOutcome(feature, onSuccess, onCrash) {
+		if (!feature?._initSettled) {
+			onSuccess();
+			return Promise.resolve();
+		}
+		return feature._initSettled.then(({ ok, error }) => {
+			if (ok) onSuccess();
+			else if (error) onCrash(error);
+		});
 	}
 	function destroyFeatureLifecycle(feature, source = 'runtime') {
 		if (!feature || feature._arrayKey) return false;
 		const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+		feature._lifecycleGeneration = (feature._lifecycleGeneration || 0) + 1;
 		try {
 			feature.destroy?.();
 			feature._initialized = false;
@@ -5105,14 +5153,51 @@ const STORAGE_KEYS = Object.freeze({
 		}
 		return changedKeys;
 	}
-	function buildPresetRecipeUpdate(recipe) {
+	function activePresetLayers(exceptId) {
+		const layers = [];
+		if (typeof featureIndex === 'undefined') return layers;
+		for (const feature of featureIndex.values()) {
+			if (feature.id === exceptId || !feature._RECIPE || typeof feature._readBackup !== 'function') continue;
+			if (appState.settings?.[feature.settingKey || feature.id] !== true) continue;
+			const backup = feature._readBackup();
+			if (backup && typeof backup === 'object') layers.push({ recipe: feature._RECIPE, backup });
+		}
+		return layers;
+	}
+	const PRESET_EXPLICIT_KEYS = '__presetExplicit';
+	function buildPresetRecipeUpdate(recipe, presetId) {
 		const backup = {};
+		const explicit = [];
 		const next = { ...appState.settings };
+		const others = activePresetLayers(presetId);
 		for (const key of Object.keys(recipe || {})) {
-			backup[key] = appState.settings[key];
+			const owners = others.filter((layer) => Object.hasOwn(layer.recipe, key) && Object.hasOwn(layer.backup, key));
+			const owner = owners.find((layer) => layer.recipe[key] === appState.settings[key]);
+			if (owners.length && !owner) explicit.push(key);
+			backup[key] = owner ? owner.backup[key] : appState.settings[key];
 			next[key] = recipe[key];
 		}
+		if (explicit.length) backup[PRESET_EXPLICIT_KEYS] = explicit;
 		return { backup, next };
+	}
+	function buildPresetRestoreUpdate(recipe, backup, presetId) {
+		const next = { ...appState.settings };
+		const others = activePresetLayers(presetId);
+		const explicit = Array.isArray(backup?.[PRESET_EXPLICIT_KEYS]) ? backup[PRESET_EXPLICIT_KEYS] : [];
+		for (const key of Object.keys(backup || {})) {
+			if (key === PRESET_EXPLICIT_KEYS) continue;
+			const current = appState.settings[key];
+			const owners = others.filter((layer) => Object.hasOwn(layer.recipe, key));
+			const heldByOther = owners.some((layer) => layer.recipe[key] === current);
+			const ownsKey = !!recipe && Object.hasOwn(recipe, key);
+			if (ownsKey && current !== recipe[key] && !heldByOther) continue;
+			if (owners.length && !explicit.includes(key)) {
+				if (!heldByOther) next[key] = owners[owners.length - 1].recipe[key];
+				continue;
+			}
+			next[key] = backup[key];
+		}
+		return next;
 	}
 	function commitPresetSettings(nextSettings) {
 		settingsManager.save(nextSettings);
@@ -25916,15 +26001,15 @@ const STORAGE_KEYS = Object.freeze({
 				catch { return null; }
 			},
 			_writeBackup(snapshot) {
-				try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); }
+				try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); }
 				catch (e) { DebugManager.log('FeedTriage', `Backup write failed: ${e.message}`); }
 			},
 			_clearBackup() {
-				try { storageWriteJSON?.(this._BACKUP_KEY, null); }
+				try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); }
 				catch {   }
 			},
 			_apply() {
-				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
 				this._writeBackup(backup);
 				commitPresetSettings(next);
 				if (typeof showToast === 'function') {
@@ -25934,7 +26019,7 @@ const STORAGE_KEYS = Object.freeze({
 			_restore() {
 				const backup = this._readBackup();
 				if (!backup || typeof backup !== 'object') return;
-				const next = { ...appState.settings, ...backup };
+				const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
 				this._clearBackup();
 				commitPresetSettings(next);
 				if (typeof showToast === 'function') {
@@ -29177,14 +29262,14 @@ const STORAGE_KEYS = Object.freeze({
 				catch { return null; }
 			},
 			_writeBackup(snapshot) {
-				try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); }
+				try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); }
 				catch (e) { DebugManager.log('LowPower', `Backup write failed: ${e.message}`); }
 			},
 			_clearBackup() {
-				try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch {   }
+				try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch {   }
 			},
 			_apply() {
-				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
 				this._writeBackup(backup);
 				commitPresetSettings(next);
 				if (typeof showToast === 'function') {
@@ -29194,7 +29279,7 @@ const STORAGE_KEYS = Object.freeze({
 			_restore() {
 				const backup = this._readBackup();
 				if (!backup || typeof backup !== 'object') return;
-				const next = { ...appState.settings, ...backup };
+				const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
 				this._clearBackup();
 				commitPresetSettings(next);
 				if (typeof showToast === 'function') {
@@ -29229,16 +29314,16 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_BACKUP_KEY: 'ytkit-preset-privacy-backup',
 			_readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
-			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch {   } },
+			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
+			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch {   } },
 			_apply() {
-				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
 				this._writeBackup(backup); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetPrivacyOn', 'Privacy preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
 			},
 			_restore() {
 				const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-				const next = { ...appState.settings, ...backup };
+				const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
 				this._clearBackup(); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetPrivacyOff', 'Privacy preset off. Previous values restored.'), '#6b7280', { duration: 4 });
 			},
@@ -29265,16 +29350,16 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_BACKUP_KEY: 'ytkit-preset-researcher-backup',
 			_readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
-			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch {   } },
+			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
+			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch {   } },
 			_apply() {
-				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
 				this._writeBackup(backup); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetResearcherOn', 'Researcher preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
 			},
 			_restore() {
 				const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-				const next = { ...appState.settings, ...backup };
+				const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
 				this._clearBackup(); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetResearcherOff', 'Researcher preset off. Previous values restored.'), '#6b7280', { duration: 4 });
 			},
@@ -29303,16 +29388,16 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_BACKUP_KEY: 'ytkit-preset-power-backup',
 			_readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
-			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch {   } },
+			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
+			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch {   } },
 			_apply() {
-				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
 				this._writeBackup(backup); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetPowerUserOn', 'Power User preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
 			},
 			_restore() {
 				const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-				const next = { ...appState.settings, ...backup };
+				const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
 				this._clearBackup(); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetPowerUserOff', 'Power User preset off. Previous values restored.'), '#6b7280', { duration: 4 });
 			},
@@ -29341,16 +29426,16 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_BACKUP_KEY: 'ytkit-preset-focus-backup',
 			_readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
-			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch {   } },
+			_writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
+			_clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch {   } },
 			_apply() {
-				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+				const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
 				this._writeBackup(backup); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetFocusOn', 'Focus preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
 			},
 			_restore() {
 				const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-				const next = { ...appState.settings, ...backup };
+				const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
 				this._clearBackup(); commitPresetSettings(next);
 				if (typeof showToast === 'function') showToast(t('presetFocusOff', 'Focus preset off. Previous values restored.'), '#6b7280', { duration: 4 });
 			},
@@ -31206,13 +31291,20 @@ const STORAGE_KEYS = Object.freeze({
 					DebugManager.log('Init', `Skipping "${f.id}" — crashed ${MAX_FEATURE_CRASHES}+ times`);
 					return;
 				}
-				try { initFeatureLifecycle(f, 'startup'); if (_featureCrashCounts[f.id]) { delete _featureCrashCounts[f.id]; _persistCrashCounts(); } } catch(err) {
+				const clearCrashes = () => { if (_featureCrashCounts[f.id]) { delete _featureCrashCounts[f.id]; _persistCrashCounts(); } };
+				const countCrash = (err) => {
 					_featureCrashCounts[f.id] = (_featureCrashCounts[f.id] || 0) + 1;
 					_persistCrashCounts();
 					console.error(`[YTKit] Error initializing "${f.id}" (crash ${_featureCrashCounts[f.id]}/${MAX_FEATURE_CRASHES}):`, err);
 					if (_featureCrashCounts[f.id] >= MAX_FEATURE_CRASHES) {
 						console.warn(`[YTKit] Feature "${f.id}" auto-disabled after ${MAX_FEATURE_CRASHES} crashes`);
 					}
+				};
+				try {
+					initFeatureLifecycle(f, 'startup');
+					void settleFeatureInitOutcome(f, clearCrashes, countCrash);
+				} catch(err) {
+					countCrash(err);
 				}
 			};
 			const topoSort = (featureList) => {
@@ -31287,16 +31379,22 @@ const STORAGE_KEYS = Object.freeze({
 					const shouldBeActiveNow = shouldFeatureBeActive(f, appState.settings, newPage);
 					if (!wasActive && shouldBeActiveNow && !f._initialized) {
 						if ((_featureCrashCounts[f.id] || 0) >= MAX_FEATURE_CRASHES) return;
-						try {
-							initFeatureLifecycle(f, 'navigation');
+						const clearCrashes = () => {
 							if (_featureCrashCounts[f.id]) {
 								delete _featureCrashCounts[f.id];
 								_persistCrashCounts();
 							}
-						} catch (e) {
+						};
+						const countCrash = (e) => {
 							_featureCrashCounts[f.id] = (_featureCrashCounts[f.id] || 0) + 1;
 							_persistCrashCounts();
 							console.error(`[YTKit] Nav re-init error "${f.id}" (crash ${_featureCrashCounts[f.id]}/${MAX_FEATURE_CRASHES}):`, e);
+						};
+						try {
+							initFeatureLifecycle(f, 'navigation');
+							void settleFeatureInitOutcome(f, clearCrashes, countCrash);
+						} catch (e) {
+							countCrash(e);
 						}
 					} else if (wasActive && !shouldBeActiveNow && f._initialized) {
 						try {

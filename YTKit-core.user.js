@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.100.1
+// @version      4.100.2
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -13566,14 +13566,32 @@ __astraDeckRegistry["core/feature-lifecycle.js"] = function (globalThis, self, w
 		}
 		function start(id, ctxExtra) {
 			const record = getRecord(id);
-			if (record.started) return;
+			if (record.started) return record.pending ? record.pendingResult : undefined;
 			record.controller = new AbortController();
 			record.startedAt = now();
 			const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
 			const ctx = buildContext(record, ctxExtra);
 			try {
-				record.spec.init(ctx);
+				const result = record.spec.init(ctx);
 				record.started = true;
+				if (result && typeof result.then === 'function') {
+					const attempt = record.controller;
+					record.pending = true;
+					record.pendingResult = Promise.resolve(result).then(() => {
+						if (record.controller !== attempt) return false;
+						record.pending = false;
+						record.pendingResult = null;
+						record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
+						return true;
+					}, (e) => {
+						if (record.controller !== attempt) return false;
+						logger.warn?.(`[lifecycle] init failed for ${id}: ${e?.message || e}`);
+						destroy(id, ctxExtra);
+						record.lastError = e;
+						return false;
+					});
+					return record.pendingResult;
+				}
 				record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
 			} catch (e) {
 				record.lastError = e;
@@ -13614,6 +13632,8 @@ __astraDeckRegistry["core/feature-lifecycle.js"] = function (globalThis, self, w
 			}
 			record.destroyMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
 			record.started = false;
+			record.pending = false;
+			record.pendingResult = null;
 			record.controller = null;
 		}
 		function notifyRouteChange() {
@@ -13626,6 +13646,7 @@ __astraDeckRegistry["core/feature-lifecycle.js"] = function (globalThis, self, w
 					id,
 					category: record.spec.category || null,
 					started: record.started,
+					pending: record.pending === true,
 					startedAt: record.startedAt,
 					initMs: record.initMs ?? null,
 					destroyMs: record.destroyMs ?? null,
