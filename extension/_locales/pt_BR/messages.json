@@ -6091,6 +6091,39 @@
     "message": "Timer de desligamento",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "O timer de desligamento terminou. Reprodução pausada."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Timer de desligamento cancelado."
+  },
+  "sleepTimerChipLabel": {
+    "message": "Desligar em:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "Adicionar 5 minutos"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "Adicionar 5 minutos ao timer de desligamento"
+  },
+  "sleepTimerCancel": {
+    "message": "Cancelar"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Cancelar o timer de desligamento"
+  },
+  "sleepTimerRangeError": {
+    "message": "Digite um valor de 1 a 180 minutos."
+  },
+  "sleepTimerSetAria": {
+    "message": "Definir o timer de desligamento"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Minutos"
+  },
+  "sleepTimerStart": {
+    "message": "Iniciar"
+  },
   "spAgeNever": {
     "message": "nunca"
   },

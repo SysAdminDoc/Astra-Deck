@@ -6091,6 +6091,39 @@
     "message": "Sleeptimer",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "Der Sleeptimer ist abgelaufen. Wiedergabe pausiert."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Sleeptimer abgebrochen."
+  },
+  "sleepTimerChipLabel": {
+    "message": "Sleeptimer:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "5 Minuten hinzufügen"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "5 Minuten zum Sleeptimer hinzufügen"
+  },
+  "sleepTimerCancel": {
+    "message": "Abbrechen"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Sleeptimer abbrechen"
+  },
+  "sleepTimerRangeError": {
+    "message": "Geben Sie einen Wert von 1 bis 180 Minuten ein."
+  },
+  "sleepTimerSetAria": {
+    "message": "Sleeptimer stellen"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Minuten"
+  },
+  "sleepTimerStart": {
+    "message": "Starten"
+  },
   "spAgeNever": {
     "message": "nie"
   },

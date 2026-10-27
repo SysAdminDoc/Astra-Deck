@@ -6133,6 +6133,50 @@
     "message": "Sleep timer",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "Sleep timer elapsed. Playback paused.",
+    "description": "Screen-reader announcement when the sleep timer pauses the video"
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Sleep timer cancelled.",
+    "description": "Screen-reader announcement after the sleep timer is cancelled"
+  },
+  "sleepTimerChipLabel": {
+    "message": "Sleep:",
+    "description": "Label before the countdown on the sleep timer chip"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "Add 5 minutes",
+    "description": "Tooltip on the +5 button of the sleep timer chip"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "Add 5 minutes to sleep timer",
+    "description": "Accessible name of the +5 button of the sleep timer chip"
+  },
+  "sleepTimerCancel": {
+    "message": "Cancel",
+    "description": "Cancel button on the sleep timer chip and popover"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Cancel sleep timer",
+    "description": "Accessible name of the sleep timer chip Cancel button"
+  },
+  "sleepTimerRangeError": {
+    "message": "Enter a value from 1 to 180 minutes.",
+    "description": "Error under the sleep timer minutes field"
+  },
+  "sleepTimerSetAria": {
+    "message": "Set sleep timer",
+    "description": "Accessible name of the sleep timer launcher and popover"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Minutes",
+    "description": "Label of the sleep timer minutes field"
+  },
+  "sleepTimerStart": {
+    "message": "Start",
+    "description": "Button that starts the sleep timer"
+  },
   "spAgeNever": {
     "message": "never"
   },

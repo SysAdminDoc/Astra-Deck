@@ -11175,7 +11175,7 @@ const STORAGE_KEYS = Object.freeze({
 					if (video && !video.paused) {
 						try { video.pause(); } catch (_) {   }
 					}
-					announceA11y('Sleep timer elapsed. Playback paused.');
+					announceA11y(t('sleepTimerElapsedAnnounce', 'Sleep timer elapsed. Playback paused.'));
 					showToast(t('toastSleepTimerElapsed', 'Sleep timer is up. Playback paused.'), '#22c55e', { duration: 4 });
 					return;
 				}
@@ -11219,7 +11219,7 @@ const STORAGE_KEYS = Object.freeze({
 				chip.setAttribute('role', 'status');
 				chip.setAttribute('aria-live', 'polite');
 				const label = document.createElement('span');
-				label.textContent = 'Sleep:';
+				label.textContent = t('sleepTimerChipLabel', 'Sleep:');
 				const time = document.createElement('span');
 				time.className = 'sleep-time';
 				time.style.cssText = 'font-variant-numeric:tabular-nums;font-weight:600;';
@@ -11227,19 +11227,19 @@ const STORAGE_KEYS = Object.freeze({
 				const plus = document.createElement('button');
 				plus.type = 'button';
 				plus.textContent = '+5';
-				plus.title = 'Add 5 minutes';
-				plus.setAttribute('aria-label', 'Add 5 minutes to sleep timer');
+				plus.title = t('sleepTimerAddFiveTitle', 'Add 5 minutes');
+				plus.setAttribute('aria-label', t('sleepTimerAddFiveAria', 'Add 5 minutes to sleep timer'));
 				plus.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#cdd6f4;padding:2px 6px;cursor:pointer;font:11px system-ui;';
 				plus.addEventListener('click', () => this._extend(5));
 				const cancel = document.createElement('button');
 				cancel.type = 'button';
-				cancel.textContent = 'Cancel';
-				cancel.title = 'Cancel sleep timer';
-				cancel.setAttribute('aria-label', 'Cancel sleep timer');
+				cancel.textContent = t('sleepTimerCancel', 'Cancel');
+				cancel.title = t('sleepTimerCancelAria', 'Cancel sleep timer');
+				cancel.setAttribute('aria-label', cancel.title);
 				cancel.style.cssText = plus.style.cssText;
 				cancel.addEventListener('click', () => {
 					this._stop();
-					announceA11y('Sleep timer cancelled.');
+					announceA11y(t('sleepTimerCancelledAnnounce', 'Sleep timer cancelled.'));
 				});
 				chip.append(label, time, plus, cancel);
 				player.appendChild(chip);
@@ -11255,7 +11255,7 @@ const STORAGE_KEYS = Object.freeze({
 				const raw = String(input?.value || '').trim();
 				const minutes = Number(raw);
 				if (!Number.isFinite(minutes) || minutes < 1 || minutes > 180) {
-					if (error) error.textContent = 'Enter a value from 1 to 180 minutes.';
+					if (error) error.textContent = t('sleepTimerRangeError', 'Enter a value from 1 to 180 minutes.');
 					input?.focus?.();
 					return false;
 				}
@@ -11269,7 +11269,7 @@ const STORAGE_KEYS = Object.freeze({
 				const popover = document.createElement('div');
 				popover.className = 'ytkit-sleep-popover';
 				popover.setAttribute('role', 'dialog');
-				popover.setAttribute('aria-label', 'Set sleep timer');
+				popover.setAttribute('aria-label', t('sleepTimerSetAria', 'Set sleep timer'));
 				popover.style.cssText = 'position:absolute;right:12px;bottom:64px;z-index:2147483641;width:min(280px,calc(100vw - 32px));box-sizing:border-box;padding:12px;background:rgba(20,20,28,0.98);color:#f4f6fb;border:1px solid rgba(255,255,255,0.14);border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,0.55);font:12px/1.35 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;gap:10px;';
 				const focusRing = '0 0 0 2px rgba(96,165,250,0.75)';
 				const wireFocus = (node, restingBoxShadow = '') => {
@@ -11283,7 +11283,7 @@ const STORAGE_KEYS = Object.freeze({
 				hint.textContent = t('sleepTimerHint', 'Pause playback after the selected number of minutes.');
 				hint.style.cssText = 'color:rgba(244,246,251,0.72);';
 				const label = document.createElement('label');
-				label.textContent = 'Minutes';
+				label.textContent = t('sleepTimerMinutesLabel', 'Minutes');
 				label.style.cssText = 'display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;color:rgba(244,246,251,0.78);';
 				const input = document.createElement('input');
 				input.type = 'number';
@@ -11318,7 +11318,7 @@ const STORAGE_KEYS = Object.freeze({
 				actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
 				const cancel = document.createElement('button');
 				cancel.type = 'button';
-				cancel.textContent = 'Cancel';
+				cancel.textContent = t('sleepTimerCancel', 'Cancel');
 				cancel.style.cssText = 'height:34px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(244,246,251,0.78);padding:0 12px;font:600 12px system-ui;cursor:pointer;';
 				wireFocus(cancel);
 				cancel.addEventListener('click', () => {
@@ -11327,7 +11327,7 @@ const STORAGE_KEYS = Object.freeze({
 				});
 				const start = document.createElement('button');
 				start.type = 'button';
-				start.textContent = 'Start';
+				start.textContent = t('sleepTimerStart', 'Start');
 				start.style.cssText = 'height:34px;border-radius:6px;border:1px solid rgba(34,197,94,0.42);background:rgba(34,197,94,0.18);color:#bbf7d0;padding:0 14px;font:700 12px system-ui;cursor:pointer;';
 				wireFocus(start);
 				start.addEventListener('click', () => this._startFromInput(input, error));
@@ -11360,8 +11360,8 @@ const STORAGE_KEYS = Object.freeze({
 				if (!controls || controls.querySelector('.ytkit-sleep-launcher')) return;
 				const btn = document.createElement('button');
 				btn.className = 'ytp-button ytkit-player-btn ytkit-sleep-launcher';
-				btn.title = 'Sleep timer';
-				btn.setAttribute('aria-label', 'Set sleep timer');
+				btn.title = t('sleepTimerTitle', 'Sleep timer');
+				btn.setAttribute('aria-label', t('sleepTimerSetAria', 'Set sleep timer'));
 				TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>');
 				btn.addEventListener('click', () => this._showTimerPopover(btn));
 				controls.insertBefore(btn, controls.firstChild);

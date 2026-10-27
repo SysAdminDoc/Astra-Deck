@@ -6091,6 +6091,39 @@
     "message": "مؤقت النوم",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "انتهى مؤقت النوم. تم إيقاف التشغيل مؤقتًا."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "تم إلغاء مؤقت النوم."
+  },
+  "sleepTimerChipLabel": {
+    "message": "النوم:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "إضافة 5 دقائق"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "إضافة 5 دقائق إلى مؤقت النوم"
+  },
+  "sleepTimerCancel": {
+    "message": "إلغاء"
+  },
+  "sleepTimerCancelAria": {
+    "message": "إلغاء مؤقت النوم"
+  },
+  "sleepTimerRangeError": {
+    "message": "أدخل قيمة من 1 إلى 180 دقيقة."
+  },
+  "sleepTimerSetAria": {
+    "message": "ضبط مؤقت النوم"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "الدقائق"
+  },
+  "sleepTimerStart": {
+    "message": "بدء"
+  },
   "spAgeNever": {
     "message": "أبدًا"
   },

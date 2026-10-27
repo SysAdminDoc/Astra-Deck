@@ -19,16 +19,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   `features/return-dislike` (54094a4f) and `features/player-dock` (b0f4565f) on 2026-10-09;
   confirm those three count as read before starting on the rest.
 
-- [ ] P3 — Translate the Sleep Timer chip's leftover English
-  Why: the 2026-10 translation pass missed literal strings in the chip: the two screen-reader
-  announcements ("Sleep timer elapsed. Playback paused.", "Sleep timer cancelled.") and the "+5"
-  button's title and aria-label ("Add 5 minutes", "Add 5 minutes to sleep timer"), plus its Cancel
-  label. Found 2026-10-12 while fixing the tests that pass left behind.
-  Where: `extension/ytkit.js` `sleepTimer` (~17609, ~17660-17676), 11 locale catalogues.
-  Acceptance: each string goes through `t()` with a new key translated in all 11 locales, the
-  i18n gates and placeholder baseline are updated, and the sleepTimer render test reads the keys.
-  Complexity: S
-
 ## Research-Driven Additions
 
 - [ ] P2 — Apply the comment features to the comments panel on YouTube's side-panel watch page

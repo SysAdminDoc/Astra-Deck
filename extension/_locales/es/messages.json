@@ -6091,6 +6091,39 @@
     "message": "Temporizador",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "El temporizador terminó. Reproducción en pausa."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Temporizador cancelado."
+  },
+  "sleepTimerChipLabel": {
+    "message": "Temporizador:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "Añadir 5 minutos"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "Añadir 5 minutos al temporizador"
+  },
+  "sleepTimerCancel": {
+    "message": "Cancelar"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Cancelar el temporizador"
+  },
+  "sleepTimerRangeError": {
+    "message": "Introduce un valor de 1 a 180 minutos."
+  },
+  "sleepTimerSetAria": {
+    "message": "Configurar el temporizador"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Minutos"
+  },
+  "sleepTimerStart": {
+    "message": "Iniciar"
+  },
   "spAgeNever": {
     "message": "nunca"
   },

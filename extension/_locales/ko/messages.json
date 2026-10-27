@@ -6091,6 +6091,39 @@
     "message": "취침 타이머",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "취침 타이머가 끝났습니다. 재생을 일시정지했습니다."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "취침 타이머를 취소했습니다."
+  },
+  "sleepTimerChipLabel": {
+    "message": "취침:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "5분 추가"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "취침 타이머에 5분 추가"
+  },
+  "sleepTimerCancel": {
+    "message": "취소"
+  },
+  "sleepTimerCancelAria": {
+    "message": "취침 타이머 취소"
+  },
+  "sleepTimerRangeError": {
+    "message": "1~180분 사이의 값을 입력하세요."
+  },
+  "sleepTimerSetAria": {
+    "message": "취침 타이머 설정"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "분"
+  },
+  "sleepTimerStart": {
+    "message": "시작"
+  },
   "spAgeNever": {
     "message": "없음"
   },

@@ -6091,6 +6091,39 @@
     "message": "スリープタイマー",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "スリープタイマーが終了しました。再生を一時停止しました。"
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "スリープタイマーをキャンセルしました。"
+  },
+  "sleepTimerChipLabel": {
+    "message": "スリープ:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "5 分追加"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "スリープタイマーに 5 分追加"
+  },
+  "sleepTimerCancel": {
+    "message": "キャンセル"
+  },
+  "sleepTimerCancelAria": {
+    "message": "スリープタイマーをキャンセル"
+  },
+  "sleepTimerRangeError": {
+    "message": "1〜180 分の値を入力してください。"
+  },
+  "sleepTimerSetAria": {
+    "message": "スリープタイマーを設定"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "分"
+  },
+  "sleepTimerStart": {
+    "message": "開始"
+  },
   "spAgeNever": {
     "message": "未実行"
   },

@@ -13,6 +13,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Casual mode has a vote threshold per category (funny, creative, clever, descriptive, other), can still format the original title, and can keep the original cover when it accepts the original title.
 - The watch page title is looked up by a short hash of the video ID instead of the ID itself, the same privacy lookup DeArrow uses.
 
+### Fixed
+
+- The Sleep Timer's countdown chip and popover now show up in your language. The chip label, the +5 and Cancel buttons, the Minutes field, its error and the screen-reader announcements were still English.
+
 ## [4.100.8] (2026-10-26)
 
 ### Fixed

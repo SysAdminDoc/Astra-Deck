@@ -6091,6 +6091,39 @@
     "message": "Таймер сна",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "Таймер сна истёк. Воспроизведение приостановлено."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Таймер сна отменён."
+  },
+  "sleepTimerChipLabel": {
+    "message": "Сон:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "Добавить 5 минут"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "Добавить 5 минут к таймеру сна"
+  },
+  "sleepTimerCancel": {
+    "message": "Отмена"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Отменить таймер сна"
+  },
+  "sleepTimerRangeError": {
+    "message": "Введите значение от 1 до 180 минут."
+  },
+  "sleepTimerSetAria": {
+    "message": "Установить таймер сна"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Минуты"
+  },
+  "sleepTimerStart": {
+    "message": "Запустить"
+  },
   "spAgeNever": {
     "message": "никогда"
   },

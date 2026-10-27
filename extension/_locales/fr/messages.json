@@ -6091,6 +6091,39 @@
     "message": "Minuteur",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "Minuteur écoulé. Lecture en pause."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Minuteur annulé."
+  },
+  "sleepTimerChipLabel": {
+    "message": "Minuteur :"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "Ajouter 5 minutes"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "Ajouter 5 minutes au minuteur"
+  },
+  "sleepTimerCancel": {
+    "message": "Annuler"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Annuler le minuteur"
+  },
+  "sleepTimerRangeError": {
+    "message": "Saisissez une valeur de 1 à 180 minutes."
+  },
+  "sleepTimerSetAria": {
+    "message": "Régler le minuteur"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Durée (minutes)"
+  },
+  "sleepTimerStart": {
+    "message": "Démarrer"
+  },
   "spAgeNever": {
     "message": "jamais"
   },

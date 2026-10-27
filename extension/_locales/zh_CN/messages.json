@@ -6091,6 +6091,39 @@
     "message": "睡眠定时器",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "睡眠定时器已到时，播放已暂停。"
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "睡眠定时器已取消。"
+  },
+  "sleepTimerChipLabel": {
+    "message": "睡眠："
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "增加 5 分钟"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "为睡眠定时器增加 5 分钟"
+  },
+  "sleepTimerCancel": {
+    "message": "取消"
+  },
+  "sleepTimerCancelAria": {
+    "message": "取消睡眠定时器"
+  },
+  "sleepTimerRangeError": {
+    "message": "请输入 1 到 180 分钟之间的值。"
+  },
+  "sleepTimerSetAria": {
+    "message": "设置睡眠定时器"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "分钟"
+  },
+  "sleepTimerStart": {
+    "message": "开始"
+  },
   "spAgeNever": {
     "message": "从未"
   },

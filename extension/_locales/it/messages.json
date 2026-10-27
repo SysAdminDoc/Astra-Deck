@@ -6091,6 +6091,39 @@
     "message": "Timer di spegnimento",
     "description": "Heading of the sleep timer popover"
   },
+  "sleepTimerElapsedAnnounce": {
+    "message": "Il timer di spegnimento è scaduto. Riproduzione in pausa."
+  },
+  "sleepTimerCancelledAnnounce": {
+    "message": "Timer di spegnimento annullato."
+  },
+  "sleepTimerChipLabel": {
+    "message": "Spegnimento:"
+  },
+  "sleepTimerAddFiveTitle": {
+    "message": "Aggiungi 5 minuti"
+  },
+  "sleepTimerAddFiveAria": {
+    "message": "Aggiungi 5 minuti al timer di spegnimento"
+  },
+  "sleepTimerCancel": {
+    "message": "Annulla"
+  },
+  "sleepTimerCancelAria": {
+    "message": "Annulla il timer di spegnimento"
+  },
+  "sleepTimerRangeError": {
+    "message": "Inserisci un valore da 1 a 180 minuti."
+  },
+  "sleepTimerSetAria": {
+    "message": "Imposta il timer di spegnimento"
+  },
+  "sleepTimerMinutesLabel": {
+    "message": "Minuti"
+  },
+  "sleepTimerStart": {
+    "message": "Avvia"
+  },
   "spAgeNever": {
     "message": "mai"
   },

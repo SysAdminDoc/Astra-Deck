@@ -336,6 +336,49 @@ test('sleepTimer rejects an out-of-range value in the popover instead of startin
     assert.equal(player.children[0].querySelector('.sleep-time').textContent, '45:00');
 });
 
+test('sleepTimer chip, popover and announcements come from the catalogue', () => {
+    const player = fakeNode({ tag: 'div', attributes: { class: 'ytp-chrome-bottom' } });
+    const announced = [];
+    const doc = renderDocument((selector) => (selector === '.ytp-chrome-bottom' ? player : []));
+    const feature = loadFeature('sleepTimer', {
+        document: doc,
+        t: catalogueT('de'),
+        announceA11y: (message) => announced.push(message),
+        showToast: () => {},
+        getMainVideoElement: () => ({ paused: true }),
+        setInterval: () => 1,
+        clearInterval: () => {}
+    });
+
+    feature._showTimerPopover(null);
+    const popover = player.children[0];
+    assert.equal(popover.getAttribute('aria-label'), 'Sleeptimer stellen');
+    assert.equal(popover.querySelector('label').textContent, 'Minuten');
+    assert.deepEqual(Array.from(popover.querySelectorAll('button'), (button) => button.textContent).slice(-2),
+        ['Abbrechen', 'Starten']);
+    const input = popover.querySelector('input');
+    const error = popover.querySelector('[role="alert"]');
+    input.value = '900';
+    feature._startFromInput(input, error);
+    assert.equal(error.textContent, 'Geben Sie einen Wert von 1 bis 180 Minuten ein.');
+
+    feature._start(30);
+    const chip = player.children[0];
+    assert.deepEqual(Array.from(chip.children, (child) => child.textContent),
+        ['Sleeptimer:', '30:00', '+5', 'Abbrechen']);
+    assert.equal(chip.children[2].title, '5 Minuten hinzufügen');
+    assert.equal(chip.children[2].getAttribute('aria-label'), '5 Minuten zum Sleeptimer hinzufügen');
+    assert.equal(chip.children[3].title, 'Sleeptimer abbrechen');
+    assert.equal(chip.children[3].getAttribute('aria-label'), 'Sleeptimer abbrechen');
+
+    chip.children[3].handlers.get('click')();
+    assert.equal(announced.at(-1), 'Sleeptimer abgebrochen.');
+    feature._start(1);
+    feature._endsAt = Date.now() - 1;
+    feature._tick();
+    assert.equal(announced.at(-1), 'Der Sleeptimer ist abgelaufen. Wiedergabe pausiert.');
+});
+
 // ── watchHistoryAnalytics ──────────────────────────────────────────────
 function analyticsFixture(stats) {
     const doc = renderDocument(() => []);
