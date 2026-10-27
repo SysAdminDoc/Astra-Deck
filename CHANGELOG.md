@@ -9,6 +9,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Fixed
 
 - A feature that takes a moment to start now shows as starting in diagnostics until it's actually running. If it fails partway, it's reported as failed, cleans up what it had set up and counts toward the crash limit, instead of showing healthy while doing nothing. Switching a feature off and on quickly can no longer let the earlier attempt's late result overwrite the new one.
+- Presets that share settings no longer undo each other. With Privacy and Focus both on, turning Privacy off used to bring Shorts back even though Focus still hides them, and turning the last one off could restore the other preset's values or undo a change you'd made yourself. Each setting now goes back to what you had before any preset only when no other active preset needs it, and anything you changed by hand stays.
 
 ## [4.100.1] (2026-10-26)
 

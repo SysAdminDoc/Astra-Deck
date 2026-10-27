@@ -3884,11 +3884,13 @@ test('feedTriageProfile backs up prior values before applying the recipe', () =>
     // The snapshot itself now lives in the shared buildPresetRecipeUpdate
     // helper, which derives a new settings object rather than mutating
     // appState in place; the feature must still take and persist it.
-    assert.match(block, /const \{ backup, next \} = buildPresetRecipeUpdate\(this\._RECIPE\)/,
+    assert.match(block, /const \{ backup, next \} = buildPresetRecipeUpdate\(this\._RECIPE, this\.id\)/,
         'feedTriageProfile must snapshot current settings through the shared helper');
     assert.match(block, /this\._writeBackup\(backup\)/,
         'feedTriageProfile must persist the snapshot before applying the recipe');
-    assert.match(ytkitSource, /function buildPresetRecipeUpdate\(recipe\) \{[\s\S]*?backup\[key\] = appState\.settings\[key\];/,
+    // A key another active preset already owns keeps that preset's baseline
+    // (tests/preset-layers.test.js); every other key snapshots its current value.
+    assert.match(ytkitSource, /function buildPresetRecipeUpdate\(recipe, presetId\) \{[\s\S]*?backup\[key\] = owner \? owner\.backup\[key\] : appState\.settings\[key\];/,
         'the shared helper must snapshot the current value of every recipe key');
 });
 
@@ -4744,7 +4746,7 @@ test('lowPowerProfile backs up flags before applying, restores on destroy', () =
         'must persist backup under the documented storage key');
     // Snapshotting moved into the shared buildPresetRecipeUpdate helper when
     // the recipes stopped mutating appState.settings in place.
-    assert.match(block, /const \{ backup, next \} = buildPresetRecipeUpdate\(this\._RECIPE\)/,
+    assert.match(block, /const \{ backup, next \} = buildPresetRecipeUpdate\(this\._RECIPE, this\.id\)/,
         'must snapshot current settings through the shared helper');
     assert.match(block, /this\._writeBackup\(backup\)/,
         'must persist the snapshot before applying the recipe');
@@ -13288,8 +13290,10 @@ test('preset recipes build a next settings object instead of mutating appState i
     assert.doesNotMatch(ytkitSource, /for \(const key of Object\.keys\(backup\)\) appState\.settings\[key\] = backup\[key\]/,
         'a preset restore must not write backup values straight into appState.settings');
 
-    assert.match(ytkitSource, /function buildPresetRecipeUpdate\(recipe\) \{[\s\S]*?const next = \{ \.\.\.appState\.settings \};/,
+    assert.match(ytkitSource, /function buildPresetRecipeUpdate\(recipe, presetId\) \{[\s\S]*?const next = \{ \.\.\.appState\.settings \};/,
         'buildPresetRecipeUpdate must derive a new settings object');
+    assert.match(ytkitSource, /function buildPresetRestoreUpdate\(recipe, backup, presetId\) \{[\s\S]*?const next = \{ \.\.\.appState\.settings \};/,
+        'buildPresetRestoreUpdate must derive a new settings object');
     assert.match(ytkitSource, /function commitPresetSettings\(nextSettings\) \{[\s\S]*?settingsManager\.save\(nextSettings\);[\s\S]*?applyExternalSettingsUpdate\(\{ source: 'preset-recipe', nextSettings \}\);/,
         'commitPresetSettings must persist AND reconcile through applyExternalSettingsUpdate');
 

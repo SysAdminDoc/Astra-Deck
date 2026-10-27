@@ -7028,14 +7028,55 @@ const STORAGE_KEYS = Object.freeze({
     // type. The recipe persisted, but nothing was destroyed or initialized
     // until a reload or a cross-tab update. Build the next settings object
     // instead and hand it to the shared reconciler.
-    function buildPresetRecipeUpdate(recipe) {
+    //
+    // Presets overlap (Privacy and Focus both remove Shorts), so each key is
+    // layered: the baseline from before any preset touched it, then every
+    // active preset's recipe. A preset is active while its backup record
+    // exists. Turning one off restores a key only when no other active preset
+    // owns it, and leaves alone a value no active recipe would have set, since
+    // that is the user's own edit. Everything lives in the existing backup
+    // records, so reload, import and other tabs see the same layers.
+    function activePresetLayers(exceptId) {
+        const layers = [];
+        if (typeof featureIndex === 'undefined') return layers;
+        for (const feature of featureIndex.values()) {
+            if (feature.id === exceptId || !feature._RECIPE || typeof feature._readBackup !== 'function') continue;
+            const backup = feature._readBackup();
+            if (backup && typeof backup === 'object') layers.push({ recipe: feature._RECIPE, backup });
+        }
+        return layers;
+    }
+
+    function buildPresetRecipeUpdate(recipe, presetId) {
         const backup = {};
         const next = { ...appState.settings };
+        const others = activePresetLayers(presetId);
         for (const key of Object.keys(recipe || {})) {
-            backup[key] = appState.settings[key];
+            // Another active preset already holds the value from before
+            // either touched the key; the current value is its recipe.
+            const owner = others.find((layer) => Object.hasOwn(layer.recipe, key) && Object.hasOwn(layer.backup, key));
+            backup[key] = owner ? owner.backup[key] : appState.settings[key];
             next[key] = recipe[key];
         }
         return { backup, next };
+    }
+
+    function buildPresetRestoreUpdate(recipe, backup, presetId) {
+        const next = { ...appState.settings };
+        const others = activePresetLayers(presetId);
+        for (const key of Object.keys(backup || {})) {
+            const current = appState.settings[key];
+            const owners = others.filter((layer) => Object.hasOwn(layer.recipe, key));
+            const heldByOther = owners.some((layer) => layer.recipe[key] === current);
+            const ownsKey = !!recipe && Object.hasOwn(recipe, key);
+            if (ownsKey && current !== recipe[key] && !heldByOther) continue;
+            if (owners.length) {
+                if (!heldByOther) next[key] = owners[owners.length - 1].recipe[key];
+                continue;
+            }
+            next[key] = backup[key];
+        }
+        return next;
     }
 
     function commitPresetSettings(nextSettings) {
@@ -35217,7 +35258,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _apply() {
-                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 // Write the backup before committing: a re-entrant init() from
                 // the reconciler returns early once the record exists.
                 this._writeBackup(backup);
@@ -35230,7 +35271,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _restore() {
                 const backup = this._readBackup();
                 if (!backup || typeof backup !== 'object') return;
-                const next = { ...appState.settings, ...backup };
+                const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
                 // Clear before committing so a re-entrant destroy() no-ops.
                 this._clearBackup();
                 commitPresetSettings(next);
@@ -39178,7 +39219,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _apply() {
-                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 // Write the backup before committing: a re-entrant init() from
                 // the reconciler returns early once the record exists.
                 this._writeBackup(backup);
@@ -39191,7 +39232,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _restore() {
                 const backup = this._readBackup();
                 if (!backup || typeof backup !== 'object') return;
-                const next = { ...appState.settings, ...backup };
+                const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
                 // Clear before committing so a re-entrant destroy() no-ops.
                 this._clearBackup();
                 commitPresetSettings(next);
@@ -39235,13 +39276,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
             _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
             _apply() {
-                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetPrivacyOn', 'Privacy preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-                const next = { ...appState.settings, ...backup };
+                const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
                 this._clearBackup(); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetPrivacyOff', 'Privacy preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
@@ -39271,13 +39312,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
             _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
             _apply() {
-                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetResearcherOn', 'Researcher preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-                const next = { ...appState.settings, ...backup };
+                const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
                 this._clearBackup(); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetResearcherOff', 'Researcher preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
@@ -39309,13 +39350,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
             _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
             _apply() {
-                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetPowerUserOn', 'Power User preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-                const next = { ...appState.settings, ...backup };
+                const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
                 this._clearBackup(); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetPowerUserOff', 'Power User preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
@@ -39347,13 +39388,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
             _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
             _apply() {
-                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
+                const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetFocusOn', 'Focus preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
-                const next = { ...appState.settings, ...backup };
+                const next = buildPresetRestoreUpdate(this._RECIPE, backup, this.id);
                 this._clearBackup(); commitPresetSettings(next);
                 if (typeof showToast === 'function') showToast(t('presetFocusOff', 'Focus preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
