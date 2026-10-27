@@ -3185,6 +3185,10 @@ const STORAGE_KEYS = Object.freeze({
             clearTimeout(toast._removeTimer);
             toast._removeTimer = null;
         }
+        if (toast._panelWatch) {
+            toast._panelWatch.disconnect();
+            toast._panelWatch = null;
+        }
         if (toast._closeWatcher) {
             const watcher = toast._closeWatcher;
             toast._closeWatcher = null;
@@ -3450,6 +3454,19 @@ const STORAGE_KEYS = Object.freeze({
                 dismissToast(toast);
             }
         });
+
+        // Closing the panel fires no event on the toast, so a toast it held
+        // would otherwise wait for a hover that may never come.
+        if (persistent && options.persistent !== true && durationMs > 0
+            && typeof MutationObserver === 'function') {
+            toast._panelWatch = new MutationObserver(() => {
+                if (isPersistent()) return;
+                toast._panelWatch.disconnect();
+                toast._panelWatch = null;
+                if (!toast.contains(document.activeElement)) resumeDismiss();
+            });
+            toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        }
 
         requestAnimationFrame(() => toast.classList.add('is-visible'));
         if (!persistent && durationMs > 0) {

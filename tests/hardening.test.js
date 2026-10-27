@@ -13706,3 +13706,110 @@ test('toast-dom: a toast made while the panel was open times out once the panel 
         global.clearTimeout = saved.clearTimeout;
     }
 });
+
+test('toast-dom: the panel closing starts the held toast timer with no pointer event', () => {
+    // Re-checking only on pointerleave/focusout left a toast that was never
+    // hovered on screen forever once the panel closed.
+    delete require.cache[require.resolve('../extension/core/toast-dom.js')];
+    const stub = {};
+    const prevCore = global.YTKitCore;
+    global.YTKitCore = stub;
+    require('../extension/core/toast-dom.js');
+    global.YTKitCore = prevCore;
+
+    const makeEl = () => {
+        const el = {
+            children: [], dataset: {}, listeners: {}, isConnected: false, textContent: '',
+            style: { setProperty() {} },
+            classList: { add() {}, remove() {} },
+            setAttribute() {}, removeAttribute() {},
+            addEventListener(type, fn) { el.listeners[type] = fn; },
+            removeEventListener() {},
+            appendChild(child) { el.children.push(child); return child; },
+            contains: () => false,
+            remove() { el.isConnected = false; }
+        };
+        return el;
+    };
+    let panelOpen = true;
+    const fakeDocument = {
+        body: {
+            classList: { contains: (name) => panelOpen && name === 'ytkit-panel-open' },
+            appendChild(child) { child.isConnected = true; return child; }
+        },
+        querySelector: () => null,
+        createElement: makeEl
+    };
+    const observers = [];
+    class FakeObserver {
+        constructor(callback) { this.callback = callback; this.connected = false; observers.push(this); }
+        observe(target, options) {
+            this.connected = true;
+            this.watchesBody = target === fakeDocument.body;
+            this.filter = options?.attributeFilter;
+        }
+        disconnect() { this.connected = false; }
+    }
+    const timers = [];
+    const saved = {
+        document: global.document, raf: global.requestAnimationFrame,
+        setTimeout: global.setTimeout, clearTimeout: global.clearTimeout,
+        MutationObserver: global.MutationObserver
+    };
+    try {
+        global.document = fakeDocument;
+        global.requestAnimationFrame = () => 0;
+        global.setTimeout = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
+        global.clearTimeout = () => {};
+        global.MutationObserver = FakeObserver;
+        const sys = stub.toastDom.createToastSystem({ supportsPopover: () => false });
+
+        sys.showToast('Saved', '#22c55e', { actions: [{ text: 'Undo' }], duration: 2.5 });
+        assert.equal(timers.length, 0, 'held while the panel is open');
+        assert.equal(observers.length, 1, 'a held action toast watches for the panel closing');
+        assert.ok(observers[0].watchesBody, 'the watch is on body');
+        assert.deepEqual(observers[0].filter, ['class']);
+
+        observers[0].callback([]);
+        assert.equal(timers.length, 0, 'an unrelated body change while the panel stays open arms nothing');
+
+        panelOpen = false;
+        observers[0].callback([]);
+        assert.equal(timers.length, 1, 'the panel closing arms the dismiss timer by itself');
+        assert.equal(timers[0].ms, 2500);
+        assert.ok(!observers[0].connected, 'the watch ends once the timer is armed');
+
+        // A toast that leaves before the panel closes drops its watch too.
+        panelOpen = true;
+        const second = sys.showToast('Saved again', '#22c55e', { actions: [{ text: 'Undo' }], duration: 2.5 });
+        assert.equal(observers.length, 2);
+        sys.dismissToast(second, true);
+        assert.ok(!observers[1].connected, 'dismissing the toast disconnects its watch');
+
+        // Toasts that are never held by the panel don't watch at all.
+        sys.showToast('Pinned', '#22c55e', { persistent: true });
+        sys.showToast('Plain', '#22c55e', {});
+        assert.equal(observers.length, 2, 'only panel-held toasts watch the body');
+    } finally {
+        global.document = saved.document;
+        global.requestAnimationFrame = saved.raf;
+        global.setTimeout = saved.setTimeout;
+        global.clearTimeout = saved.clearTimeout;
+        if (saved.MutationObserver === undefined) delete global.MutationObserver;
+        else global.MutationObserver = saved.MutationObserver;
+    }
+});
+
+test('ytkit.js toast fallback mirrors the panel-close watch', () => {
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const toastDom = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'toast-dom.js'), 'utf8');
+    for (const marker of [
+        "toast._panelWatch = new MutationObserver(",
+        "toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });",
+        "toast._panelWatch.disconnect();"
+    ]) {
+        assert.ok(ytkit.includes(marker), `ytkit.js fallback must contain ${marker}`);
+        assert.ok(toastDom.includes(marker), `core/toast-dom.js must contain ${marker}`);
+    }
+});
