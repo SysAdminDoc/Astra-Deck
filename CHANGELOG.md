@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.103.0] (2026-10-27)
+
 ### Added
 
 - Anti-Translate brings back original titles on the cards YouTube shows today. Those cards translate the title in both the text and the hover title, so Astra now asks YouTube's own oEmbed page for the original (once per video, without your cookies) and, on the watch page, reads the title YouTube already sent for that video. The hover title and what a screen reader hears change with it. New setting `Keep Translated Titles For` takes channel IDs (UC...) or /channel/ links, one per line, and leaves those channels' titles translated. It never makes an extra request just to work out a card's channel. Lookups are capped per page and in flight, a failed lookup is retried once at most, and turning the feature off puts every translated title back. With DeArrow on, its crowd title stays and its "show original" hover now offers the real original.
