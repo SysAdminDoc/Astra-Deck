@@ -36,7 +36,15 @@ test('no shipped string uses the (s) plural hack', () => {
 // Spanish, Italian and Portuguese do ("1 activée", "3 activées"). A pair named
 // here may read the same in English, and it has to earn that: at least one
 // shipped locale must tell its halves apart.
-const ENGLISH_INVARIANT_PAIRS = new Set(['pageModalEnabledCountTpl']);
+const ENGLISH_INVARIANT_PAIRS = new Set([
+    'pageModalEnabledCountTpl',
+    // BlockTube import counts: "1 already there" / "3 already there", but
+    // "ya estaba" / "ya estaban", "non valido" / "non validi".
+    'blockTubeImportDuplicateTpl',
+    'blockTubeImportInvalidTpl',
+    'blockTubeImportUnsupportedTpl',
+    'blockTubeImportOverLimitTpl'
+]);
 
 test('every count string ships both halves of its pair', () => {
     const stems = new Set(entries

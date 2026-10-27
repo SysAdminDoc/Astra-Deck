@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "{count} resumos de IA"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "{count} regra de título ou canal"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "{count} regras de título ou canal"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "{count} filtro adicionado"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "{count} filtros adicionados"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count} já existia"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "{count} já existiam"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count} inválido"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "{count} inválidos"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count} sem suporte"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "{count} sem suporte"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count} acima do limite"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "{count} acima do limite"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "Backup do BlockTube: {summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}. Nada foi alterado."
+  },
+  "blockTubeImportTooLarge": {
+    "message": "Esse backup do BlockTube passa de 8 MB, então nada foi importado."
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "{count} duplicata"
   },

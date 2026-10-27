@@ -330,6 +330,7 @@
             _MARKED_WATCHED_KEY: 'ytkit-marked-watched-videos',
             _CHANNELS_KEY: 'ytkit-blocked-channels',
             _ALLOWED_CHANNELS_KEY: 'ytkit-allowed-channels',
+            _IMPORTED_FILTER_RULES_KEY: 'ytkit-imported-filter-rules',
             _FILTER_LIST_SUBSCRIPTION_KEY: FILTER_LIST_SUBSCRIPTION_KEY,
             _FILTER_LIST_REFRESH_MS: 24 * 60 * 60 * 1000,
             _FILTER_LIST_REFRESH_MIN_MS: 6 * 60 * 60 * 1000,
@@ -345,6 +346,7 @@
             _channelKeyCache: null,
             _allowedChannelsCache: null,
             _allowedChannelKeyCache: null,
+            _importedFilterMatchers: null,
             _filterListSubscription: null,
             _filterListRefreshTimer: null,
             // destroy() clears the refresh timer, but a refresh already in
@@ -703,6 +705,28 @@
                     predicateEnabled: false,
                     predicateCode: ''
                 };
+            },
+            // Title and channel-name rules from a BlockTube backup, compiled
+            // once per stored list. Without the codec nothing compiles, so the
+            // rules stay off rather than running unguarded.
+            _setImportedFilterRulesCache(rules) {
+                const sanitize = codec?.sanitizeImportedFilterRules;
+                const compile = codec?.compileImportedFilterRule;
+                const matchers = [];
+                if (typeof sanitize === 'function' && typeof compile === 'function') {
+                    for (const rule of sanitize(rules)) {
+                        const regex = compile(rule);
+                        if (regex) matchers.push({ field: rule.field, regex });
+                    }
+                }
+                this._importedFilterMatchers = matchers;
+                return matchers;
+            },
+            _getImportedFilterMatchers() {
+                if (this._importedFilterMatchers === null) {
+                    this._setImportedFilterRulesCache(storageRead(this._IMPORTED_FILTER_RULES_KEY, []));
+                }
+                return this._importedFilterMatchers;
             },
             _getEffectiveKeywordFilters() {
                 const filters = [];
@@ -1803,7 +1827,11 @@
             // carry no #video-title; their title anchor's visible text is the
             // title, while its aria-label appends the duration.
             _extractTitle(element) {
-                return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title, .shortsLockupViewModelHostMetadataTitle')?.textContent?.trim()?.toLowerCase() || '';
+                return this._extractDisplayTitle(element).toLowerCase();
+            },
+            // Case kept: an imported regex rule without `i` is case-sensitive.
+            _extractDisplayTitle(element) {
+                return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title, .shortsLockupViewModelHostMetadataTitle')?.textContent?.trim() || '';
             },
 
             _parseCompactCount(text, options = {}) {
@@ -2601,7 +2629,8 @@
                 }
 
                 const filterStrings = this._getEffectiveKeywordFilters();
-                if (filterStrings.length) {
+                const importedMatchers = this._getImportedFilterMatchers();
+                if (filterStrings.length || importedMatchers.length) {
                     const title = this._extractTitle(element);
                     const channelName = channelInfos.map(info => info?.name || '').filter(Boolean).join(' ').toLowerCase();
                     const searchText = (title + ' ' + channelName).toLowerCase();
@@ -2656,6 +2685,20 @@
                                 .map(k => k.trim())
                                 .filter(k => k && !k.startsWith('!'));
                             if (positiveKw.some(k => searchText.includes(k))) return hideForReason('keyword');
+                        }
+                    }
+
+                    // Imported rules keep their own field: a title rule never
+                    // matches a channel name, and the reverse. Both see the
+                    // text as shown, not lowercased; keyword rules carry `i`.
+                    if (importedMatchers.length) {
+                        const displayTitle = this._extractDisplayTitle(element);
+                        const names = channelInfos.map(info => String(info?.name || '')).filter(Boolean);
+                        for (const matcher of importedMatchers) {
+                            const hit = matcher.field === 'title'
+                                ? matcher.regex.test(displayTitle)
+                                : names.some(name => matcher.regex.test(name));
+                            if (hit) return hideForReason('keyword');
                         }
                     }
                 }

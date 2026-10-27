@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "{count} 条 AI 摘要"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "{count} 条标题或频道规则"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "{count} 条标题或频道规则"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "已添加 {count} 个过滤器"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "已添加 {count} 个过滤器"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count} 个已存在"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "{count} 个已存在"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count} 个无效"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "{count} 个无效"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count} 个不支持"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "{count} 个不支持"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count} 个超出上限"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "{count} 个超出上限"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "BlockTube 备份：{summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}。未做任何更改。"
+  },
+  "blockTubeImportTooLarge": {
+    "message": "该 BlockTube 备份超过 8 MB，因此未导入任何内容。"
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "{count} 条重复"
   },

@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- Import a BlockTube or ChannelSieve backup straight from Import, in the popup or the settings panel. Blocked channel IDs and video IDs go into your Video Hider lists, and title and channel-name rules keep working the way they did in BlockTube. Each rule checks only its own field, with BlockTube's whole-word matching, and regex rules pass the same safety check as your own filters. Comment rules, the duration range and the JavaScript filter don't have an Astra equivalent, so they're counted and left behind. Imported code is never run or stored, and neither is BlockTube's password. You get a count of what was added, what was already there and what was skipped, and one Undo Import puts everything back. Nothing you already have gets pushed out to make room.
+
 ## [4.101.3] (2026-10-27)
 
 ### Fixed

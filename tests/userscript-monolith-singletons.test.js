@@ -102,7 +102,7 @@ test('MediaDLManager.runInstallAssist falls back to opening the URL when the dow
  * serialized-size estimator is contiguous and has no side-effecting top-level
  * initializers, so it is evaluated whole rather than stitched per helper.
  */
-function loadSettingsManager() {
+function loadSettingsManager({ rejectKey = '' } = {}) {
     const store = new Map();
     const { createSettingsImportTransaction } = require(path.join(REPO_ROOT, 'extension', 'core', 'settings-import-transaction.js'));
     const begin = sources.ytkit.indexOf('const STORAGE_KEYS = Object.freeze({');
@@ -120,13 +120,23 @@ function loadSettingsManager() {
             get: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
             set: (key, value) => { store.set(key, value); },
             // setSync resolves { ok } the way the real storage cache does.
-            setSync: (key, value) => { store.set(key, value); return Promise.resolve({ ok: true }); },
+            setSync: (key, value) => {
+                if (key === rejectKey) return Promise.resolve({ ok: false, error: new Error('quota') });
+                store.set(key, value);
+                return Promise.resolve({ ok: true });
+            },
         },
         // The real transaction engine — this is the integration the port exists for.
         YTKitCore: { createSettingsImportTransaction },
     };
     sandbox.globalThis = sandbox;
     vm.createContext(sandbox);
+    // The persisted-domain codec runs in the same realm as ytkit.js, the way
+    // the manifest loads it: its isPlainObject checks reject objects parsed
+    // in another realm.
+    for (const file of ['regex-safety.js', 'persisted-domains.js']) {
+        vm.runInContext(require('fs').readFileSync(path.join(REPO_ROOT, 'extension', 'core', file), 'utf8'), sandbox);
+    }
     vm.runInContext([
         sources.ytkit.slice(begin, end),
         declarationSourceFrom(sources.ytkit, 'RETIRED_SETTING_KEYS'),
@@ -200,6 +210,48 @@ test('settingsManager.undoLastSettingsImport restores the pre-import snapshot', 
     assert.equal(undone.ok, true, undone.message);
     assert.equal(typeof undone.message, 'string');
     assert.deepEqual(read('hiddenVideos'), ['originalvid'], 'undo must restore the pre-import list');
+});
+
+const BLOCKTUBE_BACKUP = require('fs').readFileSync(path.join(__dirname, 'fixtures', 'blocktube-backup.json'), 'utf8');
+
+test('a BlockTube backup imports its filters in one transaction, leaves settings alone, and undoes as one', async () => {
+    const { obj, store, keys, read } = loadSettingsManager();
+    store.set(keys.hiddenVideos, ['originalvid']);
+    const result = await obj.importAllSettingsDetailed(BLOCKTUBE_BACKUP);
+    assert.equal(result.ok, true, result.message);
+    assert.equal(result.message, 'BlockTube backup: 7 filters added, 2 already there, 4 invalid, 6 not supported.');
+    assert.equal(store.has(keys.settings), false, 'a BlockTube file holds no Astra settings');
+    assert.deepEqual(read('hiddenVideos'), ['originalvid', 'dQw4w9WgXcQ']);
+    assert.deepEqual(read('blockedChannels').map((row) => row.id), ['UCabcdefghijklmnopqrstuv', 'UCzyxwvutsrqponmlkjihgfe']);
+    assert.equal(read('blockedChannels')[0].name, 'Loud Reactions (Official)');
+    assert.deepEqual(read('importedFilterRules').map((rule) => `${rule.field}:${rule.pattern}`),
+        ['title:reaction', 'title:\\bprank(s)?\\b', 'channel:Clickbait Central', 'channel:^News']);
+    assert.doesNotMatch(JSON.stringify([...store.values()]), /video\) => true|5f4dcc3b/, 'JavaScript and the UI password never land');
+
+    const undone = await obj.undoLastSettingsImport();
+    assert.equal(undone.ok, true, undone.message);
+    assert.deepEqual(read('hiddenVideos'), ['originalvid']);
+    assert.deepEqual(read('blockedChannels'), []);
+    assert.deepEqual(read('importedFilterRules'), []);
+});
+
+test('a BlockTube import that storage rejects rolls every list back', async () => {
+    const { obj, store, keys, read } = loadSettingsManager({ rejectKey: 'ytkit-imported-filter-rules' });
+    store.set(keys.hiddenVideos, ['originalvid']);
+    const result = await obj.importAllSettingsDetailed(BLOCKTUBE_BACKUP);
+    assert.equal(result.ok, false);
+    assert.match(result.message, /previous state was restored/);
+    assert.deepEqual(read('hiddenVideos'), ['originalvid'], 'the video list written first is restored');
+    assert.deepEqual(read('blockedChannels'), []);
+});
+
+test('a BlockTube backup with nothing usable writes nothing and says why', async () => {
+    const { obj, store } = loadSettingsManager();
+    const result = await obj.importAllSettingsDetailed(JSON.stringify({ filterData: { comment: ['spoiler'], channelId: ['UC_bad'] } }));
+    assert.equal(result.ok, false);
+    assert.equal(result.message, 'BlockTube backup: 0 filters added, 1 invalid, 1 not supported. Nothing was changed.');
+    assert.equal(store.size, 0);
+    assert.equal((await obj.undoLastSettingsImport()).ok, false, 'no undo point was staged');
 });
 
 test('settingsManager.importYouTubeTakeoutWatchHistory returns a result object and merges entries', () => {

@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "AI 要約 {count} 件"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "タイトル・チャンネルのルール {count} 件"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "タイトル・チャンネルのルール {count} 件"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "フィルターを {count} 件追加"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "フィルターを {count} 件追加"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count} 件は登録済み"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "{count} 件は登録済み"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count} 件は無効"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "{count} 件は無効"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count} 件は非対応"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "{count} 件は非対応"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count} 件は上限超過"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "{count} 件は上限超過"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "BlockTube のバックアップ: {summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}。何も変更されていません。"
+  },
+  "blockTubeImportTooLarge": {
+    "message": "この BlockTube のバックアップは 8 MB を超えているため、何もインポートしていません。"
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "重複 {count} 件"
   },

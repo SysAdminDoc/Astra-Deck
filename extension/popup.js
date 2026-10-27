@@ -530,6 +530,7 @@ const STORAGE_KEYS = {
     blockedChannels: 'ytkit-blocked-channels',
     allowedChannels: 'ytkit-allowed-channels',
     filterListSubscription: 'ytkit-video-filter-list-subscription',
+    importedFilterRules: 'ytkit-imported-filter-rules',
     bookmarks: 'ytkit-bookmarks',
     watchProgress: 'ytkit-watch-progress',
     watchTime: 'ytkit-watch-time',
@@ -5946,6 +5947,7 @@ function buildExportData(allStorage, transcriptRecords) {
         blockedChannels: domains.blockedChannels || blockedChannels,
         allowedChannels: domains.allowedChannels || allowedChannels,
         bookmarks: domains.bookmarks || bookmarks,
+        importedFilterRules: domains.importedFilterRules || [],
         domains,
         unavailableDomains: transcriptAvailable ? [] : ['transcriptIndex'],
         exclusions: (persistedDomains?.EXCLUDED_DOMAINS || []).map(({ id, reason }) => ({ id, reason })),
@@ -6538,56 +6540,83 @@ async function importSettings(file) {
             throw userFacingError(t('statusImportNotBackup',
                 'That file is not an Astra Deck backup. Choose the .json file produced by Export. A valid backup contains an "exportVersion" field.'), parseError);
         }
-        // Version validation happens before any snapshot or write. A backup
-        // from a future Astra version must be a strict no-op, not a best-effort
-        // partial import that silently drops unknown domains.
-        const importCatalog = await loadSettingsImportCatalog();
-        let migrated;
-        try {
-            migrated = persistedDomains.migrateBackup(data, {
-                isSettingsKey: (key) => Object.prototype.hasOwnProperty.call(importCatalog.defaults, key)
-                    || RETIRED_SETTING_KEYS.has(key)
-            });
-        } catch (rejection) {
-            if (rejection?.code === 'backup-too-new') {
-                throw userFacingError(t('statusImportBackupTooNew',
-                    'That backup comes from a newer version of Astra Deck. Update Astra Deck, then import it again. Nothing was changed.'), rejection);
+        // BlockTube and ChannelSieve backups add to the Video Hider lists and
+        // leave settings alone. The merge reads the same snapshot the undo
+        // point is cut from, so nothing can land in between.
+        let writes;
+        let sanitized = null;
+        let previewText;
+        let blockTubeLocal = null;
+        if (persistedDomains.isBlockTubeBackup(data)) {
+            if (text.length > persistedDomains.BLOCKTUBE_MAX_BYTES) {
+                throw userFacingError(t('blockTubeImportTooLarge', 'That BlockTube backup is over 8 MB, so nothing was imported.'));
             }
-            if (rejection?.code === 'not-a-backup') {
-                throw userFacingError(t('statusImportWrongFile',
-                    'That file isn\'t an Astra Deck backup, so nothing was imported. Choose the .json file that Export saved.'), rejection);
+            blockTubeLocal = await readLocalStorageSnapshot();
+            const merged = persistedDomains.mergeBlockTubeBackup(data, {
+                hiddenVideos: blockTubeLocal[STORAGE_KEYS.hiddenVideos],
+                blockedChannels: blockTubeLocal[STORAGE_KEYS.blockedChannels],
+                filterRules: blockTubeLocal[STORAGE_KEYS.importedFilterRules]
+            }, { source: /channelsieve/i.test(String(file.name || '')) ? 'channelsieve' : 'blocktube' });
+            previewText = persistedDomains.formatBlockTubeImportSummary(merged.counts, { t, tCount });
+            if (!merged.changed) {
+                throw userFacingError(t('blockTubeImportNothingTpl', '{summary}. Nothing was changed.')
+                    .replace('{summary}', () => previewText));
             }
-            throw rejection;
+            writes = {};
+            if (merged.added.hiddenVideos) writes[STORAGE_KEYS.hiddenVideos] = merged.hiddenVideos;
+            if (merged.added.blockedChannels) writes[STORAGE_KEYS.blockedChannels] = merged.blockedChannels;
+            if (merged.added.filterRules) writes[STORAGE_KEYS.importedFilterRules] = merged.filterRules;
+        } else {
+            // Version validation happens before any snapshot or write. A backup
+            // from a future Astra version must be a strict no-op, not a best-effort
+            // partial import that silently drops unknown domains.
+            const importCatalog = await loadSettingsImportCatalog();
+            let migrated;
+            try {
+                migrated = persistedDomains.migrateBackup(data, {
+                    isSettingsKey: (key) => Object.prototype.hasOwnProperty.call(importCatalog.defaults, key)
+                        || RETIRED_SETTING_KEYS.has(key)
+                });
+            } catch (rejection) {
+                if (rejection?.code === 'backup-too-new') {
+                    throw userFacingError(t('statusImportBackupTooNew',
+                        'That backup comes from a newer version of Astra Deck. Update Astra Deck, then import it again. Nothing was changed.'), rejection);
+                }
+                if (rejection?.code === 'not-a-backup') {
+                    throw userFacingError(t('statusImportWrongFile',
+                        'That file isn\'t an Astra Deck backup, so nothing was imported. Choose the .json file that Export saved.'), rejection);
+                }
+                throw rejection;
+            }
+            sanitized = persistedDomains.sanitizeMigratedDomains(migrated, (importedSettings) => (
+                mergeImportedSettingsWithDefaults(
+                    importedSettings,
+                    importCatalog.defaults,
+                    importCatalog.settingsVersion,
+                    'popup-import',
+                    { backupSchemaVersion: migrated.settingsSchemaVersion }
+                )
+            ));
+            writes = persistedDomains.domainsToExtensionWrites(sanitized.domains);
+            if (Object.keys(writes).length === 0 && !Object.prototype.hasOwnProperty.call(sanitized.domains, 'transcriptIndex')) {
+                throw userFacingError(t('statusImportNothingFound',
+                    'That backup holds nothing Astra Deck can import, so nothing was changed.'));
+            }
+            const preview = persistedDomains.buildImportPreview(
+                sanitized.domains,
+                sanitized.droppedByDomain,
+                sanitized.appliedByDomain
+            );
+            previewText = persistedDomains.formatImportPreview(preview, { t, tCount });
         }
-        const sanitized = persistedDomains.sanitizeMigratedDomains(migrated, (importedSettings) => (
-            mergeImportedSettingsWithDefaults(
-                importedSettings,
-                importCatalog.defaults,
-                importCatalog.settingsVersion,
-                'popup-import',
-                { backupSchemaVersion: migrated.settingsSchemaVersion }
-            )
-        ));
-        const writes = persistedDomains.domainsToExtensionWrites(sanitized.domains);
-        const hasTranscriptDomain = Object.prototype.hasOwnProperty.call(sanitized.domains, 'transcriptIndex');
-        if (Object.keys(writes).length === 0 && !hasTranscriptDomain) {
-            throw userFacingError(t('statusImportNothingFound',
-                'That backup holds nothing Astra Deck can import, so nothing was changed.'));
-        }
+        const hasTranscriptDomain = !!sanitized && Object.prototype.hasOwnProperty.call(sanitized.domains, 'transcriptIndex');
         if (estimateSerializedBytes(writes) > 64 * 1024 * 1024) throw new Error('Extension-local import data exceeds the 64 MB safety limit');
-
-        const preview = persistedDomains.buildImportPreview(
-            sanitized.domains,
-            sanitized.droppedByDomain,
-            sanitized.appliedByDomain
-        );
-        const previewText = persistedDomains.formatImportPreview(preview, { t, tCount });
         showStatus(t('statusImportPreviewApplyTpl', 'Import preview: {preview}. Applying with rollback…')
             .replace('{preview}', () => previewText), 'success', 6000);
         await new Promise((resolve) => (globalThis.requestAnimationFrame || setTimeout)(resolve, 0));
 
-        const currentLocal = await readLocalStorageSnapshot();
-        const keysToRemove = persistedDomains.extensionKeysToRemove(sanitized.domains, currentLocal);
+        const currentLocal = blockTubeLocal || await readLocalStorageSnapshot();
+        const keysToRemove = sanitized ? persistedDomains.extensionKeysToRemove(sanitized.domains, currentLocal) : [];
         const snapshot = await createCoordinatedSnapshot('import', {
             includePage: hasTranscriptDomain,
             allowPageUnavailable: true,

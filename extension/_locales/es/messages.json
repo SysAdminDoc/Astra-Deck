@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "{count} resúmenes de IA"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "{count} regla de título o canal"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "{count} reglas de título o canal"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "{count} filtro añadido"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "{count} filtros añadidos"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count} ya estaba"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "{count} ya estaban"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count} no válido"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "{count} no válidos"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count} no compatible"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "{count} no compatibles"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count} supera el límite"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "{count} superan el límite"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "Copia de BlockTube: {summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}. No se cambió nada."
+  },
+  "blockTubeImportTooLarge": {
+    "message": "Esa copia de BlockTube supera los 8 MB, así que no se importó nada."
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "{count} duplicado"
   },

@@ -1,0 +1,24 @@
+{
+  "filterData": {
+    "channelId": [
+      "// Blocked by context menu (Loud Reactions (Official)) (10/1/2026, 9:15:02 AM)",
+      "UCabcdefghijklmnopqrstuv",
+      "UCabcdefghijklmnopqrstuv",
+      "UC_bad",
+      "/^UC.*/",
+      "UCzyxwvutsrqponmlkjihgfe"
+    ],
+    "videoId": ["dQw4w9WgXcQ", "short", "/x/"],
+    "title": ["// my keywords", "reaction", "Reaction", "/\\bprank(s)?\\b/i", "/(a+)+$/", "/ok/zz", ""],
+    "channelName": ["Clickbait Central", "/^News/"],
+    "comment": ["first", "// note", "spoiler"],
+    "javascript": "(video) => true",
+    "vidLength": [60, null]
+  },
+  "options": {
+    "enable_javascript": true,
+    "trending": false
+  },
+  "uiPass": "5f4dcc3b5aa765d61d8327deb882cf99",
+  "uiTheme": "dark"
+}

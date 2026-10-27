@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "{count} ملخصات AI"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "{count} قاعدة عنوان أو قناة"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "{count} قواعد عنوان أو قناة"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "تمت إضافة {count} عامل تصفية"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "تمت إضافة {count} عوامل تصفية"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count} موجود بالفعل"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "{count} موجودة بالفعل"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count} غير صالح"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "{count} غير صالحة"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count} غير مدعوم"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "{count} غير مدعومة"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count} يتجاوز الحد"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "{count} تتجاوز الحد"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "نسخة BlockTube الاحتياطية: {summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}. لم يتغير شيء."
+  },
+  "blockTubeImportTooLarge": {
+    "message": "نسخة BlockTube الاحتياطية هذه أكبر من 8 MB، لذا لم يُستورد شيء."
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "{count} مكرر"
   },

@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "AI 요약 {count}개"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "제목 또는 채널 규칙 {count}개"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "제목 또는 채널 규칙 {count}개"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "필터 {count}개 추가됨"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "필터 {count}개 추가됨"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count}개는 이미 있음"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "{count}개는 이미 있음"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count}개 잘못됨"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "{count}개 잘못됨"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count}개 지원 안 됨"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "{count}개 지원 안 됨"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count}개 한도 초과"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "{count}개 한도 초과"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "BlockTube 백업: {summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}. 변경된 내용이 없습니다."
+  },
+  "blockTubeImportTooLarge": {
+    "message": "이 BlockTube 백업은 8 MB를 넘어서 아무것도 가져오지 않았습니다."
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "중복 {count}개"
   },

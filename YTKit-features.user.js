@@ -8902,6 +8902,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			_MARKED_WATCHED_KEY: 'ytkit-marked-watched-videos',
 			_CHANNELS_KEY: 'ytkit-blocked-channels',
 			_ALLOWED_CHANNELS_KEY: 'ytkit-allowed-channels',
+			_IMPORTED_FILTER_RULES_KEY: 'ytkit-imported-filter-rules',
 			_FILTER_LIST_SUBSCRIPTION_KEY: FILTER_LIST_SUBSCRIPTION_KEY,
 			_FILTER_LIST_REFRESH_MS: 24 * 60 * 60 * 1000,
 			_FILTER_LIST_REFRESH_MIN_MS: 6 * 60 * 60 * 1000,
@@ -8917,6 +8918,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			_channelKeyCache: null,
 			_allowedChannelsCache: null,
 			_allowedChannelKeyCache: null,
+			_importedFilterMatchers: null,
 			_filterListSubscription: null,
 			_filterListRefreshTimer: null,
 			_destroyed: false,
@@ -9203,6 +9205,25 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					predicateEnabled: false,
 					predicateCode: ''
 				};
+			},
+			_setImportedFilterRulesCache(rules) {
+				const sanitize = codec?.sanitizeImportedFilterRules;
+				const compile = codec?.compileImportedFilterRule;
+				const matchers = [];
+				if (typeof sanitize === 'function' && typeof compile === 'function') {
+					for (const rule of sanitize(rules)) {
+						const regex = compile(rule);
+						if (regex) matchers.push({ field: rule.field, regex });
+					}
+				}
+				this._importedFilterMatchers = matchers;
+				return matchers;
+			},
+			_getImportedFilterMatchers() {
+				if (this._importedFilterMatchers === null) {
+					this._setImportedFilterRulesCache(storageRead(this._IMPORTED_FILTER_RULES_KEY, []));
+				}
+				return this._importedFilterMatchers;
 			},
 			_getEffectiveKeywordFilters() {
 				const filters = [];
@@ -10218,7 +10239,10 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				return 0;
 			},
 			_extractTitle(element) {
-				return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title, .shortsLockupViewModelHostMetadataTitle')?.textContent?.trim()?.toLowerCase() || '';
+				return this._extractDisplayTitle(element).toLowerCase();
+			},
+			_extractDisplayTitle(element) {
+				return element.querySelector('#video-title, .title, [id="video-title"], .ytLockupMetadataViewModelTitle, .yt-lockup-metadata-view-model__title, .shortsLockupViewModelHostMetadataTitle')?.textContent?.trim() || '';
 			},
 			_parseCompactCount(text, options = {}) {
 				const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
@@ -10906,7 +10930,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					if (matched) return hideForReason('blockedChannel', matched.name);
 				}
 				const filterStrings = this._getEffectiveKeywordFilters();
-				if (filterStrings.length) {
+				const importedMatchers = this._getImportedFilterMatchers();
+				if (filterStrings.length || importedMatchers.length) {
 					const title = this._extractTitle(element);
 					const channelName = channelInfos.map(info => info?.name || '').filter(Boolean).join(' ').toLowerCase();
 					const searchText = (title + ' ' + channelName).toLowerCase();
@@ -10942,6 +10967,16 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 								.map(k => k.trim())
 								.filter(k => k && !k.startsWith('!'));
 							if (positiveKw.some(k => searchText.includes(k))) return hideForReason('keyword');
+						}
+					}
+					if (importedMatchers.length) {
+						const displayTitle = this._extractDisplayTitle(element);
+						const names = channelInfos.map(info => String(info?.name || '')).filter(Boolean);
+						for (const matcher of importedMatchers) {
+							const hit = matcher.field === 'title'
+								? matcher.regex.test(displayTitle)
+								: names.some(name => matcher.regex.test(name));
+							if (hit) return hideForReason('keyword');
 						}
 					}
 				}
@@ -20176,6 +20211,7 @@ function attachUIEventListeners() {
 							[STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
 							[STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
 							[STORAGE_KEYS.allowedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.allowedChannels, []) },
+							[STORAGE_KEYS.importedFilterRules]: { newValue: StorageManager.get(STORAGE_KEYS.importedFilterRules, []) },
 							[STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
 						}, 'import', { forceApplyLocal: true });
 						showToast(result.message, '#22c55e', {
@@ -20191,6 +20227,7 @@ function attachUIEventListeners() {
 											[STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
 											[STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
 											[STORAGE_KEYS.allowedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.allowedChannels, []) },
+											[STORAGE_KEYS.importedFilterRules]: { newValue: StorageManager.get(STORAGE_KEYS.importedFilterRules, []) },
 											[STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
 										}, 'import-undo', { forceApplyLocal: true });
 										showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });

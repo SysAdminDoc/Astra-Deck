@@ -8384,6 +8384,14 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		} catch (_) {
 		}
 	}
+	if (!globalThis.YTKitCore?.hasUnsafeRegexQuantifiers
+		&& typeof module !== 'undefined' && module.exports
+		&& typeof require === 'function') {
+		try {
+			require('./regex-safety');
+		} catch (_) {
+		}
+	}
 	const BACKUP_EXPORT_VERSION = 5;
 	const BACKUP_SCHEMA_VERSION = 2;
 	const MAX_BACKUP_BYTES = 512 * 1024 * 1024;
@@ -8401,6 +8409,14 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		'unreachable', 'bad-format', 'too-large', 'http-error', 'storage-error',
 		'integrity-error', 'not-modified-without-cache', 'unknown'
 	]);
+	const IMPORTED_FILTER_RULES_KEY = 'ytkit-imported-filter-rules';
+	const IMPORTED_FILTER_RULES_MAX = 1000;
+	const IMPORTED_FILTER_RULE_MAX_CHARS = 200;
+	const IMPORTED_FILTER_SOURCES = new Set(['blocktube', 'channelsieve']);
+	const BLOCKTUBE_MAX_BYTES = 8 * 1024 * 1024;
+	const BLOCKTUBE_MAX_LINES_PER_FIELD = 20000;
+	const BLOCKTUBE_LIMITS = Object.freeze({ blockedChannels: 2000, hiddenVideos: 5000, filterRules: IMPORTED_FILTER_RULES_MAX });
+	const BLOCKTUBE_KEYWORD_BOUNDARY = "[ \n\r\t!@#$%^&*()_\\-=+\\[\\]\\\\\\|;:'\",\\.\\/<>\\?`~:]+";
 	const HIGHLIGHT_EXPORT_VERSION = 1;
 	const HIGHLIGHT_EXPORT_KIND = 'video-highlight-bundle';
 	const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
@@ -8457,6 +8473,7 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		{ id: 'aiSummaries', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
 		{ id: 'aiTranscriptQa', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
 		{ id: 'elementZapperRules', location: 'extension-local', key: 'ytkit-element-zapper-rules', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'element-zapper-rules-v1' },
+		{ id: 'importedFilterRules', location: 'extension-local', key: IMPORTED_FILTER_RULES_KEY, backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'imported-filter-rules-v1' },
 		{ id: 'credentialVault', location: 'extension-session-and-indexeddb', key: 'ytkit-credential-vault', backup: 'exclude', reason: 'Credentials are intentionally non-portable and write-only.', credentialScrub: 'entire-domain', migration: 'none' },
 		{ id: 'deArrowIdentity', location: 'extension-local', key: 'ytkit-da-user-id', backup: 'exclude', reason: 'Pseudonymous API identity must rotate with a new installation.', credentialScrub: 'entire-domain', migration: 'none' },
 		{ id: 'deArrowCache', location: 'extension-local', privateContext: 'memory', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
@@ -8639,6 +8656,197 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 			exportedAt: typeof value.exportedAt === 'string' ? value.exportedAt : '',
 			rules: sanitizeRemoteFilterListRules(rules)
 		};
+	}
+	function normalizeImportedRuleFlags(value) {
+		const flags = typeof value === 'string' ? value : '';
+		if (!/^[dgimsuy]*$/.test(flags) || new Set(flags).size !== flags.length) return null;
+		return flags.replace(/[dgy]/g, '').split('').sort().join('');
+	}
+	function importedFilterRuleKey(rule) {
+		return rule.kind === 'keyword'
+			? `${rule.field}|keyword|${rule.pattern.toLowerCase()}`
+			: `${rule.field}|regex|${rule.pattern}|${rule.flags}`;
+	}
+	function sanitizeImportedFilterRules(value) {
+		if (!Array.isArray(value)) return [];
+		const seen = new Set();
+		const out = [];
+		for (const row of value) {
+			if (!isPlainObject(row)) continue;
+			const field = row.field === 'title' || row.field === 'channel' ? row.field : '';
+			const kind = row.kind === 'keyword' || row.kind === 'regex' ? row.kind : '';
+			const rawPattern = typeof row.pattern === 'string' ? row.pattern : '';
+			const pattern = kind === 'keyword' ? rawPattern.trim() : rawPattern;
+			if (!field || !kind || !pattern.trim() || pattern.length > IMPORTED_FILTER_RULE_MAX_CHARS) continue;
+			const flags = kind === 'regex' ? normalizeImportedRuleFlags(row.flags) : '';
+			if (flags === null) continue;
+			const rule = { field, kind, pattern };
+			if (kind === 'regex') rule.flags = flags;
+			rule.source = IMPORTED_FILTER_SOURCES.has(row.source) ? row.source : 'blocktube';
+			const key = importedFilterRuleKey(rule);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			out.push(rule);
+			if (out.length >= IMPORTED_FILTER_RULES_MAX) break;
+		}
+		return out;
+	}
+	function escapeRegExpLiteral(text) {
+		return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
+	function compileImportedFilterRule(rule, guard = globalThis.YTKitCore?.hasUnsafeRegexQuantifiers) {
+		if (!isPlainObject(rule) || typeof rule.pattern !== 'string' || !rule.pattern) return null;
+		if (rule.pattern.length > IMPORTED_FILTER_RULE_MAX_CHARS) return null;
+		try {
+			if (rule.kind === 'keyword') {
+				const boundary = BLOCKTUBE_KEYWORD_BOUNDARY;
+				return new RegExp('(^|' + boundary + ')(' + escapeRegExpLiteral(rule.pattern) + ')(' + boundary + '|$)', 'i');
+			}
+			if (rule.kind !== 'regex' || typeof guard !== 'function' || guard(rule.pattern)) return null;
+			const flags = normalizeImportedRuleFlags(rule.flags);
+			return flags === null ? null : new RegExp(rule.pattern, flags);
+		} catch (_) {
+			return null;
+		}
+	}
+	function isBlockTubeBackup(value) {
+		return isPlainObject(value)
+			&& isPlainObject(value.filterData)
+			&& value.astraDeckBackup === undefined
+			&& value.exportVersion === undefined;
+	}
+	function blockTubeLines(value) {
+		if (Array.isArray(value)) return value;
+		if (typeof value === 'string') return value.split('\n');
+		return [];
+	}
+	const BLOCKTUBE_MENU_COMMENT = /^\/\/\s*Blocked by context menu \((.*)\) \(([^()]*)\)\s*$/;
+	const BLOCKTUBE_REGEX_LINE = /^\/(.*)\/(.*)$/;
+	const BLOCKTUBE_CHANNEL_ID = /^UC[A-Za-z0-9_-]{22}$/;
+	const BLOCKTUBE_KNOWN_FIELDS = new Set(['title', 'channelName', 'channelId', 'videoId', 'comment', 'javascript', 'vidLength']);
+	function mergeBlockTubeBackup(raw, current = {}, options = {}) {
+		if (!isBlockTubeBackup(raw)) throw backupError('bad-format', 'Not a BlockTube backup');
+		const source = IMPORTED_FILTER_SOURCES.has(options.source) ? options.source : 'blocktube';
+		const guard = typeof options.hasUnsafeRegexQuantifiers === 'function'
+			? options.hasUnsafeRegexQuantifiers
+			: globalThis.YTKitCore?.hasUnsafeRegexQuantifiers;
+		const now = Number.isFinite(Number(options.now)) ? Math.floor(Number(options.now)) : Date.now();
+		const data = raw.filterData;
+		const counts = { valid: 0, duplicate: 0, invalid: 0, unsupported: 0, overLimit: 0 };
+		const blockedChannels = Array.isArray(current.blockedChannels) ? current.blockedChannels.slice() : [];
+		const hiddenVideos = Array.isArray(current.hiddenVideos) ? current.hiddenVideos.slice() : [];
+		const filterRules = sanitizeImportedFilterRules(current.filterRules);
+		const channelSeen = new Set(blockedChannels
+			.map((row) => (isPlainObject(row) ? String(row.channelId || row.id || '') : String(row || '')).trim())
+			.filter(Boolean));
+		const videoSeen = new Set(hiddenVideos.filter((id) => typeof id === 'string'));
+		const ruleSeen = new Set(filterRules.map(importedFilterRuleKey));
+		const added = { blockedChannels: 0, hiddenVideos: 0, filterRules: 0 };
+		const accept = (list, limit, key, entry) => {
+			if (list.length >= limit) { counts.overLimit += 1; return; }
+			list.push(entry);
+			added[key] += 1;
+			counts.valid += 1;
+		};
+		const eachLine = (field, visit) => {
+			const lines = blockTubeLines(data[field]);
+			if (lines.length > BLOCKTUBE_MAX_LINES_PER_FIELD) {
+				counts.overLimit += lines.length - BLOCKTUBE_MAX_LINES_PER_FIELD;
+			}
+			let menuName = '';
+			for (const rawLine of lines.slice(0, BLOCKTUBE_MAX_LINES_PER_FIELD)) {
+				if (typeof rawLine !== 'string') { counts.invalid += 1; continue; }
+				const line = rawLine.trim();
+				if (!line) continue;
+				if (line.startsWith('//')) {
+					const menu = line.match(BLOCKTUBE_MENU_COMMENT);
+					menuName = menu ? menu[1].trim().slice(0, 200) : '';
+					continue;
+				}
+				visit(line, menuName);
+				menuName = '';
+			}
+		};
+		eachLine('channelId', (line, menuName) => {
+			if (BLOCKTUBE_REGEX_LINE.test(line)) { counts.unsupported += 1; return; }
+			if (!BLOCKTUBE_CHANNEL_ID.test(line)) { counts.invalid += 1; return; }
+			if (channelSeen.has(line)) { counts.duplicate += 1; return; }
+			channelSeen.add(line);
+			accept(blockedChannels, BLOCKTUBE_LIMITS.blockedChannels, 'blockedChannels',
+				{ id: line, name: menuName || line, channelId: line, blockedAt: now, source });
+		});
+		eachLine('videoId', (line) => {
+			if (BLOCKTUBE_REGEX_LINE.test(line)) { counts.unsupported += 1; return; }
+			if (!VIDEO_ID_PATTERN.test(line)) { counts.invalid += 1; return; }
+			if (videoSeen.has(line)) { counts.duplicate += 1; return; }
+			videoSeen.add(line);
+			accept(hiddenVideos, BLOCKTUBE_LIMITS.hiddenVideos, 'hiddenVideos', line);
+		});
+		for (const [dataField, field] of [['title', 'title'], ['channelName', 'channel']]) {
+			eachLine(dataField, (line) => {
+				const regexParts = line.match(BLOCKTUBE_REGEX_LINE);
+				const rule = regexParts
+					? { field, kind: 'regex', pattern: regexParts[1], flags: normalizeImportedRuleFlags(regexParts[2]), source }
+					: { field, kind: 'keyword', pattern: line, source };
+				if (rule.kind === 'regex' && rule.flags === null) { counts.invalid += 1; return; }
+				if (rule.pattern.length > IMPORTED_FILTER_RULE_MAX_CHARS || !compileImportedFilterRule(rule, guard)) {
+					counts.invalid += 1;
+					return;
+				}
+				if (rule.kind === 'keyword') delete rule.flags;
+				const key = importedFilterRuleKey(rule);
+				if (ruleSeen.has(key)) { counts.duplicate += 1; return; }
+				ruleSeen.add(key);
+				accept(filterRules, BLOCKTUBE_LIMITS.filterRules, 'filterRules', rule);
+			});
+		}
+		eachLine('comment', () => { counts.unsupported += 1; });
+		const vidLength = Array.isArray(data.vidLength) ? data.vidLength : [];
+		if (vidLength.some((bound) => Number(bound) > 0)) {
+			counts.unsupported += 1;
+		}
+		if (raw.options?.enable_javascript === true
+			&& typeof data.javascript === 'string' && data.javascript.trim()) {
+			counts.unsupported += 1;
+		}
+		for (const field of Object.keys(data)) {
+			if (BLOCKTUBE_KNOWN_FIELDS.has(field) || UNSAFE_KEYS.has(field)) continue;
+			eachLine(field, () => { counts.unsupported += 1; });
+		}
+		return {
+			source,
+			blockedChannels,
+			hiddenVideos,
+			filterRules,
+			added,
+			counts,
+			changed: added.blockedChannels + added.hiddenVideos + added.filterRules > 0
+		};
+	}
+	function formatBlockTubeImportSummary(counts, i18n = {}) {
+		const c = counts || {};
+		const t = typeof i18n.t === 'function' ? i18n.t : (_key, fallback) => fallback;
+		const tCount = typeof i18n.tCount === 'function'
+			? i18n.tCount
+			: (count, key, one, other) => (Math.abs(Number(count)) === 1 ? t(key + 'One', one) : t(key + 'Other', other));
+		const parts = [];
+		const valid = Number(c.valid) || 0;
+		const duplicate = Number(c.duplicate) || 0;
+		const invalid = Number(c.invalid) || 0;
+		const unsupported = Number(c.unsupported) || 0;
+		const overLimit = Number(c.overLimit) || 0;
+		parts.push(tCount(valid, 'blockTubeImportValidTpl', '{count} filter added', '{count} filters added')
+			.replace('{count}', () => String(valid)));
+		if (duplicate) parts.push(tCount(duplicate, 'blockTubeImportDuplicateTpl', '{count} already there', '{count} already there')
+			.replace('{count}', () => String(duplicate)));
+		if (invalid) parts.push(tCount(invalid, 'blockTubeImportInvalidTpl', '{count} invalid', '{count} invalid')
+			.replace('{count}', () => String(invalid)));
+		if (unsupported) parts.push(tCount(unsupported, 'blockTubeImportUnsupportedTpl', '{count} not supported', '{count} not supported')
+			.replace('{count}', () => String(unsupported)));
+		if (overLimit) parts.push(tCount(overLimit, 'blockTubeImportOverLimitTpl', '{count} over the limit', '{count} over the limit')
+			.replace('{count}', () => String(overLimit)));
+		return t('blockTubeImportSummaryTpl', 'BlockTube backup: {summary}')
+			.replace('{summary}', () => parts.join(', '));
 	}
 	function sanitizeVideoFilterListSubscription(value) {
 		const raw = isPlainObject(value) ? value : {};
@@ -8970,6 +9178,7 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		case 'theaterSplitRatio': return Math.max(20, Math.min(85, Number(value) || 75));
 		case 'digitalWellbeingDismissal': return typeof value === 'string' ? value.slice(0, 32) : '';
 		case 'transcriptIndex': return sanitizeTranscriptRecords(value);
+		case 'importedFilterRules': return sanitizeImportedFilterRules(value);
 		case 'elementZapperRules': {
 			const zapperSanitizer = globalThis.YTKitCore?.sanitizeZapperRules;
 			return typeof zapperSanitizer === 'function' ? zapperSanitizer(value) : [];
@@ -8993,7 +9202,7 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		return value === undefined || value === null ? 0 : 1;
 	}
 	function defaultDomainValue(id) {
-		if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'transcriptIndex', 'elementZapperRules'].includes(id)) return [];
+		if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'transcriptIndex', 'elementZapperRules', 'importedFilterRules'].includes(id)) return [];
 		if (id === 'videoFilterListSubscription') return sanitizeVideoFilterListSubscription({});
 		if (id === 'persistentQueue') return { v: 1, items: [] };
 		if (id === 'reactionSpammerState') return sanitizeReactionState({});
@@ -9109,6 +9318,7 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 			if (version >= 2 && Array.isArray(raw.blockedChannels)) domains.blockedChannels = raw.blockedChannels;
 			if (version >= 3 && Array.isArray(raw.allowedChannels)) domains.allowedChannels = raw.allowedChannels;
 			if (version >= 3 && isPlainObject(raw.bookmarks)) domains.bookmarks = raw.bookmarks;
+			if (version >= 3 && Array.isArray(raw.importedFilterRules)) domains.importedFilterRules = raw.importedFilterRules;
 			const legacySummaries = isPlainObject(raw.aiSummaries)
 				? raw.aiSummaries
 				: (isPlainObject(raw.settings?.aiSummaryArtifactsData) ? raw.settings.aiSummaryArtifactsData : null);
@@ -9558,6 +9768,15 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		createVideoFilterList,
 		parseVideoFilterList,
 		parseRemoteVideoFilterList,
+		IMPORTED_FILTER_RULES_KEY,
+		IMPORTED_FILTER_RULES_MAX,
+		BLOCKTUBE_MAX_BYTES,
+		BLOCKTUBE_LIMITS,
+		sanitizeImportedFilterRules,
+		compileImportedFilterRule,
+		isBlockTubeBackup,
+		mergeBlockTubeBackup,
+		formatBlockTubeImportSummary,
 		sanitizeTranscriptRecords,
 		buildImportPreview,
 		formatImportPreview,

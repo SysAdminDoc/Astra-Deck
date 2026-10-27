@@ -32,6 +32,18 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   the watchdog fired on a whole-page stall that wasn't the rule's doing.
   Complexity: S
 
+- [ ] P3 — Show and clear imported BlockTube title and channel rules
+  Why: a BlockTube or ChannelSieve import stores per-field rules in
+  `ytkit-imported-filter-rules` and Video Hider applies them, but no panel lists them. The
+  only ways to drop one today are Undo Import or restoring an older backup.
+  Where: the Video Hider section of `extension/features/settings-panel/index.js`, next to the
+  keyword filter; the store and sanitizer are `sanitizeImportedFilterRules` in
+  `extension/core/persisted-domains.js`.
+  Acceptance: the panel lists each rule with its field (title or channel), kind and source,
+  removes one with a click and clears all with toast feedback, and Video Hider picks the
+  change up live through `_setImportedFilterRulesCache`. 11 locales.
+  Complexity: S
+
 - [ ] P3 — List view for Home, search and channel grids
   Note (2026-10-13): `listFeedLayout` already covers Home, Subscriptions and search in
   `extension/features/home-subs-css/index.js:329-434` with lifecycle handling at line 493.
@@ -57,23 +69,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 ### Now (P1)
 
 ### Next (P2)
-
-- [ ] P2 — Import compatible BlockTube and ChannelSieve filter backups atomically
-  Why: migration has a concrete export contract and documented failures in competing importers.
-  Evidence: https://github.com/amitbl/blocktube/blob/master/src/ui/options.js,
-  https://github.com/825i/channelsieve/blob/master/CHANGES-FORK.md,
-  https://github.com/varshneydevansh/FilterTube/issues/79, and its `js/io_manager.js` parser.
-  Astra's Takeout/NewPipe subscription imports already ship and are a different workflow.
-  Touches: `extension/features/video-hider/index.js`, `extension/features/settings-panel/index.js`,
-  `extension/popup.js`, `extension/core/settings-import-transaction.js`, `regex-safety.js`,
-  11 locales and import fixtures.
-  Acceptance: recognize top-level `filterData` separately from Astra settings; import stable
-  channel/video IDs and literal/regex rules only when semantics map losslessly. Show counts
-  for valid, duplicate, invalid and unsupported entries, including comment/duration rules
-  that cannot map. Discard JavaScript, `uiPass`, account state and unknown options; never
-  execute imported code. Bound file size, rule count and regex work. Parse/validate before
-  one atomic merge with one undo; failures leave existing settings and hidden records intact.
-  Complexity: M
 
 - [ ] P2 — Restore original titles on modern cards with canonical channel exceptions
   Why: original-title handling still targets older cards and lacks a bounded per-channel escape.

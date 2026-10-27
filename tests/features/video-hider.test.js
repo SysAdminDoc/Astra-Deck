@@ -1723,3 +1723,61 @@ test('the hidden-reason label names the channel that matched', () => {
         feature._filterReasonLabel('keyword'),
         'only the two channel reasons take a name');
 });
+
+function titledChannelCard(title, channelName) {
+    const titleNode = { textContent: title };
+    const link = { href: 'https://youtube.com/@someone', textContent: channelName, getAttribute: key => key === 'href' ? link.href : null };
+    return {
+        textContent: '',
+        dataset: {},
+        querySelector(selector) {
+            if (selector.includes('#video-title')) return titleNode;
+            if (selector.includes('a[href*="/@"]') || selector.includes('#channel-name a')) return link;
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector.includes('a[href*="/@"]') || selector.includes('a[href*="/channel/"]')) return [link];
+            return [];
+        }
+    };
+}
+
+test('Video Hider applies imported BlockTube rules to their own field with BlockTube word boundaries', () => {
+    const { mod } = loadModule();
+    const storage = new Map([['ytkit-imported-filter-rules', [
+        { field: 'title', kind: 'keyword', pattern: 'cat', source: 'blocktube' },
+        { field: 'channel', kind: 'regex', pattern: '^Spam', flags: '', source: 'blocktube' }
+    ]]]);
+    const appState = { settings: { hideVideosKeywordFilter: '', hideVideosChannelAllowlist: false } };
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState,
+        storageRead: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
+        storageWrite: (key, value) => storage.set(key, value),
+        sanitizeImportedBlockedChannels: value => Array.isArray(value) ? value : [],
+        normalizeBlockedChannelRecord: entry => (entry?.id ? { id: entry.id, name: entry.name || entry.id } : null),
+        getBlockedChannelIdentityKeys: channel => channel?.id ? [String(channel.id)] : []
+    });
+
+    const keywordHit = titledChannelCard('Cat videos, all day', 'Good channel');
+    assert.equal(feature._shouldHide(keywordHit), true, 'a title keyword hides the card');
+    assert.equal(keywordHit.dataset.ytkitFilterReason, 'keyword');
+    assert.equal(feature._shouldHide(titledChannelCard('Concatenate strings', 'Good channel')), false,
+        'a keyword only matches as a whole word, as in BlockTube');
+    assert.equal(feature._shouldHide(titledChannelCard('Spam recipes', 'Good channel')), false,
+        'a channel rule never matches the title');
+    assert.equal(feature._shouldHide(titledChannelCard('Daily news', 'Spammer HQ')), true,
+        'a channel rule matches the channel name');
+    assert.equal(feature._shouldHide(titledChannelCard('Daily news', 'spammer hq')), false,
+        'a regex rule without i stays case-sensitive');
+
+    appState.settings.hideVideosKeywordFilter = '!all day';
+    assert.equal(feature._shouldHide(titledChannelCard('Cat videos, all day', 'Good channel')), false,
+        'Astra exclusions still win over imported rules');
+    appState.settings.hideVideosKeywordFilter = '';
+
+    feature._setImportedFilterRulesCache([{ field: 'title', kind: 'regex', pattern: '(a+)+$', flags: '' }]);
+    assert.equal(feature._getImportedFilterMatchers().length, 0, 'an unsafe stored regex never compiles');
+    feature._setImportedFilterRulesCache([]);
+    assert.equal(feature._shouldHide(titledChannelCard('Cat videos', 'Spammer HQ')), false,
+        'clearing the stored rules turns them off');
+});

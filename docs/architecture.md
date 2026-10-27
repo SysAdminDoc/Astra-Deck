@@ -68,7 +68,7 @@ Toolbar popup (on demand)
     popup.html               Hero card + storage stats + data-flow panel
                              + selector-health dashboard + quick toggles
                              + schema overview (all source-derived schema keys editable).
-    Bundles                  15 core modules, listed in popup.html
+    Bundles                  16 core modules, listed in popup.html
                              Communicates with content scripts via
                              chrome.tabs.sendMessage.
 ```

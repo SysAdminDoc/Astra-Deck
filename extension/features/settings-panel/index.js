@@ -4312,6 +4312,7 @@ function attachUIEventListeners() {
                             [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                             [STORAGE_KEYS.allowedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.allowedChannels, []) },
+                            [STORAGE_KEYS.importedFilterRules]: { newValue: StorageManager.get(STORAGE_KEYS.importedFilterRules, []) },
                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                         }, 'import', { forceApplyLocal: true });
                         showToast(result.message, '#22c55e', {
@@ -4327,6 +4328,7 @@ function attachUIEventListeners() {
                                             [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
                                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                                             [STORAGE_KEYS.allowedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.allowedChannels, []) },
+                                            [STORAGE_KEYS.importedFilterRules]: { newValue: StorageManager.get(STORAGE_KEYS.importedFilterRules, []) },
                                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                                         }, 'import-undo', { forceApplyLocal: true });
                                         showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });

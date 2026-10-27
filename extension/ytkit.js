@@ -1501,6 +1501,7 @@ const STORAGE_KEYS = Object.freeze({
         blockedChannels: 'ytkit-blocked-channels',
         allowedChannels: 'ytkit-allowed-channels',
         filterListSubscription: 'ytkit-video-filter-list-subscription',
+        importedFilterRules: 'ytkit-imported-filter-rules',
         bookmarks: 'ytkit-bookmarks',
         watchProgress: 'ytkit-watch-progress',
         watchTime: 'ytkit-watch-time',
@@ -5393,6 +5394,7 @@ const STORAGE_KEYS = Object.freeze({
             if (n.allowedChannels) parts.push(fill(tCount(n.allowedChannels, 'importSummaryAllowedChannelsTpl', '{count} allowed channel', '{count} allowed channels'), n.allowedChannels));
             if (n.bookmarkVideos) parts.push(fill(tCount(n.bookmarkVideos, 'importSummaryBookmarksTpl', '{count} video with bookmarks', '{count} videos with bookmarks'), n.bookmarkVideos));
             if (n.aiSummaries) parts.push(fill(tCount(n.aiSummaries, 'importSummaryAiSummariesTpl', '{count} AI summary', '{count} AI summaries'), n.aiSummaries));
+            if (n.importedFilterRules) parts.push(fill(tCount(n.importedFilterRules, 'importSummaryFilterRulesTpl', '{count} title or channel rule', '{count} title or channel rules'), n.importedFilterRules));
             const main = parts.length ? parts.join(', ') : t('importSummaryNoChanges', 'no value changes');
             const extras = [];
             if (n.skipped) extras.push(fill(t('importSummarySkippedTpl', '{count} skipped'), n.skipped));
@@ -5412,7 +5414,10 @@ const STORAGE_KEYS = Object.freeze({
             let allowedChannels = [];
             let bookmarks = {};
             let aiSummaries = {};
+            let importedFilterRules = [];
             try {
+                importedFilterRules = globalThis.YTKitCore?.persistedDomains?.sanitizeImportedFilterRules?.(
+                    StorageManager.get(STORAGE_KEYS.importedFilterRules, [])) || [];
                 hiddenVideos = StorageManager.get(STORAGE_KEYS.hiddenVideos, []);
                 allowedVideos = StorageManager.get(STORAGE_KEYS.allowedVideos, []);
                 markedWatchedVideos = StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []);
@@ -5439,6 +5444,7 @@ const STORAGE_KEYS = Object.freeze({
                 blockedChannels: sanitizeImportedBlockedChannels(blockedChannels),
                 allowedChannels: sanitizeImportedAllowedChannels(allowedChannels),
                 bookmarks: sanitizeImportedBookmarks(bookmarks),
+                importedFilterRules,
                 aiSummaries,
                 exportVersion: 4,
                 backupSchemaVersion: 1,
@@ -5455,6 +5461,9 @@ const STORAGE_KEYS = Object.freeze({
             try {
                 const importedData = JSON.parse(jsonString);
                 if (!isPlainObject(importedData)) return { ok: false, message: t('statusSettingsImportInvalidFormat', 'Invalid file format.') };
+                if (globalThis.YTKitCore?.persistedDomains?.isBlockTubeBackup?.(importedData)) {
+                    return await this._importBlockTubeBackup(importedData, jsonString.length);
+                }
 
                 // Handle different export versions
                 let settings, hiddenVideos, allowedVideos, markedWatchedVideos, blockedChannels, allowedChannels, bookmarks;
@@ -5464,6 +5473,12 @@ const STORAGE_KEYS = Object.freeze({
                 let rawBlockedChannels = null;
                 let rawAllowedChannels = null;
                 let rawBookmarks = null;
+                const filterRuleSanitizer = globalThis.YTKitCore?.persistedDomains?.sanitizeImportedFilterRules;
+                const importedFilterRules = importedData.exportVersion >= 3
+                    && Array.isArray(importedData.importedFilterRules)
+                    && typeof filterRuleSanitizer === 'function'
+                    ? filterRuleSanitizer(importedData.importedFilterRules)
+                    : null;
                 // AI summaries: new backups carry a top-level aiSummaries
                 // store; pre-4.49.7 backups embedded aiSummaryArtifactsData
                 // inside the settings bag (now a retired settings key). Read
@@ -5528,7 +5543,8 @@ const STORAGE_KEYS = Object.freeze({
                     || (blockedChannels !== null && blockedChannels.length > 0)
                     || (allowedChannels !== null && allowedChannels.length > 0)
                     || (bookmarks !== null && Object.keys(bookmarks).length > 0)
-                    || (aiSummaries !== null && Object.keys(aiSummaries).length > 0);
+                    || (aiSummaries !== null && Object.keys(aiSummaries).length > 0)
+                    || (importedFilterRules !== null && importedFilterRules.length > 0);
                 if (Object.keys(settings).length > 0 && !hasValidKey) return { ok: false, message: t('statusSettingsImportNoKnownKeys', 'No known settings found in file.') };
                 if (!hasImportedData) return { ok: false, message: t('statusSettingsImportNothing', 'No importable settings or local data found.') };
 
@@ -5543,6 +5559,7 @@ const STORAGE_KEYS = Object.freeze({
                     allowedChannels: StorageManager.get(STORAGE_KEYS.allowedChannels, []),
                     bookmarks: StorageManager.get(STORAGE_KEYS.bookmarks, {}),
                     aiSummaries: StorageManager.get(STORAGE_KEYS.aiSummaries, {}),
+                    importedFilterRules: StorageManager.get(STORAGE_KEYS.importedFilterRules, []),
                 };
 
                 const newSettings = this._prepareImportedSettings(settings, {
@@ -5556,7 +5573,8 @@ const STORAGE_KEYS = Object.freeze({
                     ...(blockedChannels !== null ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
                     ...(allowedChannels !== null ? { [STORAGE_KEYS.allowedChannels]: allowedChannels } : {}),
                     ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {}),
-                    ...(aiSummaries !== null ? { [STORAGE_KEYS.aiSummaries]: aiSummaries } : {})
+                    ...(aiSummaries !== null ? { [STORAGE_KEYS.aiSummaries]: aiSummaries } : {}),
+                    ...(importedFilterRules !== null ? { [STORAGE_KEYS.importedFilterRules]: importedFilterRules } : {})
                 });
                 if (!Number.isFinite(bytesEstimate) || bytesEstimate > IMPORT_LIMITS.totalBytes) {
                     throw new Error('Import data exceeds extension storage budget');
@@ -5589,6 +5607,7 @@ const STORAGE_KEYS = Object.freeze({
                     allowedChannels: allowedChannelSummary.imported,
                     bookmarkVideos: bookmarkSummary.imported,
                     aiSummaries: aiSummarySummary.imported,
+                    importedFilterRules: importedFilterRules?.length || 0,
                     skipped: hiddenSummary.skipped + allowedSummary.skipped + markedWatchedSummary.skipped + blockedSummary.skipped + allowedChannelSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
                     duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + markedWatchedSummary.duplicates + blockedSummary.duplicates + allowedChannelSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
                 };
@@ -5607,7 +5626,8 @@ const STORAGE_KEYS = Object.freeze({
                         StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels),
                         StorageManager.setSync(STORAGE_KEYS.allowedChannels, snapshot.allowedChannels),
                         StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks),
-                        StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries)
+                        StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries),
+                        StorageManager.setSync(STORAGE_KEYS.importedFilterRules, snapshot.importedFilterRules)
                     ];
                     return Promise.all(writes).then((results) => {
                         const failed = results.find((result) => result && result.ok === false);
@@ -5641,6 +5661,7 @@ const STORAGE_KEYS = Object.freeze({
                         if (allowedChannels !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.allowedChannels, allowedChannels));
                         if (bookmarks !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks));
                         if (aiSummaries !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.aiSummaries, aiSummaries));
+                        if (importedFilterRules !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.importedFilterRules, importedFilterRules));
                         return Promise.all(writes).then((results) => {
                             const failed = results.find((result) => result && result.ok === false);
                             if (failed) {
@@ -5669,6 +5690,96 @@ const STORAGE_KEYS = Object.freeze({
                 console.error("[YTKit] Failed to import settings:", e);
                 return { ok: false, message: e?.message || 'Invalid file format.' };
             }
+        },
+        // A BlockTube or ChannelSieve backup adds to the Video Hider lists; it
+        // never touches settings. Parsing and merging finish before the one
+        // transaction writes, so a refused file changes nothing, and Undo puts
+        // back the three lists exactly as they were.
+        async _importBlockTubeBackup(importedData, byteLength = 0) {
+            const codec = globalThis.YTKitCore?.persistedDomains;
+            if (typeof codec?.mergeBlockTubeBackup !== 'function') {
+                return { ok: false, message: t('statusSettingsImportInvalidFormat', 'Invalid file format.') };
+            }
+            if (byteLength > codec.BLOCKTUBE_MAX_BYTES) {
+                return { ok: false, message: t('blockTubeImportTooLarge', 'That BlockTube backup is over 8 MB, so nothing was imported.') };
+            }
+            const backup = {
+                hiddenVideos: StorageManager.get(STORAGE_KEYS.hiddenVideos, []),
+                blockedChannels: StorageManager.get(STORAGE_KEYS.blockedChannels, []),
+                importedFilterRules: StorageManager.get(STORAGE_KEYS.importedFilterRules, [])
+            };
+            const merged = codec.mergeBlockTubeBackup(importedData, {
+                hiddenVideos: backup.hiddenVideos,
+                blockedChannels: backup.blockedChannels,
+                filterRules: backup.importedFilterRules
+            });
+            const countsText = codec.formatBlockTubeImportSummary(merged.counts, { t, tCount });
+            if (!merged.changed) {
+                return {
+                    ok: false,
+                    counts: merged.counts,
+                    message: t('blockTubeImportNothingTpl', '{summary}. Nothing was changed.').replace('{summary}', () => countsText)
+                };
+            }
+            const hiddenVideos = merged.added.hiddenVideos ? sanitizeImportedHiddenVideos(merged.hiddenVideos) : null;
+            const blockedChannels = merged.added.blockedChannels ? sanitizeImportedBlockedChannels(merged.blockedChannels) : null;
+            const filterRules = merged.added.filterRules ? codec.sanitizeImportedFilterRules(merged.filterRules) : null;
+            const bytesEstimate = estimateSerializedBytes({
+                ...(hiddenVideos ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
+                ...(blockedChannels ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
+                ...(filterRules ? { [STORAGE_KEYS.importedFilterRules]: filterRules } : {})
+            });
+            if (!Number.isFinite(bytesEstimate) || bytesEstimate > IMPORT_LIMITS.totalBytes) {
+                return { ok: false, message: t('blockTubeImportTooLarge', 'That BlockTube backup is over 8 MB, so nothing was imported.') };
+            }
+            const settle = (results, failure) => {
+                const failed = results.find((result) => result && result.ok === false);
+                if (failed) throw failed.error instanceof Error ? failed.error : new Error(failure);
+                return results;
+            };
+            const transaction = this._getSettingsImportTransaction();
+            if (!transaction) throw new Error('Settings import transaction service unavailable');
+            let heldInMemory = false;
+            const summary = {
+                hiddenVideos: merged.added.hiddenVideos,
+                blockedChannels: merged.added.blockedChannels,
+                importedFilterRules: merged.added.filterRules,
+                skipped: merged.counts.invalid + merged.counts.unsupported + merged.counts.overLimit,
+                duplicates: merged.counts.duplicate
+            };
+            const outcome = await transaction.run({
+                snapshot: () => backup,
+                summary,
+                restore: (snapshot) => Promise.all([
+                    StorageManager.setSync(STORAGE_KEYS.hiddenVideos, snapshot.hiddenVideos),
+                    StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels),
+                    StorageManager.setSync(STORAGE_KEYS.importedFilterRules, snapshot.importedFilterRules)
+                ]).then((results) => { settle(results, 'Extension storage rejected the restored data.'); }),
+                apply: () => {
+                    const writes = [];
+                    if (hiddenVideos) writes.push(StorageManager.setSync(STORAGE_KEYS.hiddenVideos, hiddenVideos));
+                    if (blockedChannels) writes.push(StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels));
+                    if (filterRules) writes.push(StorageManager.setSync(STORAGE_KEYS.importedFilterRules, filterRules));
+                    return Promise.all(writes).then((results) => {
+                        settle(results, 'Extension storage rejected the imported data.');
+                        heldInMemory = results.some((result) => result?.heldInMemory?.length);
+                    });
+                }
+            });
+            if (!outcome.ok) {
+                console.error('[YTKit] BlockTube import failed, rolling back:', outcome.error || outcome.rollbackError);
+                return { ok: false, message: t('statusSettingsImportFailed', 'Import failed while applying data; previous state was restored.') };
+            }
+            const message = `${countsText}.`;
+            return {
+                ok: true,
+                summary,
+                counts: merged.counts,
+                heldInMemory,
+                message: heldInMemory
+                    ? `${message} ${t('privateImportHeldNotice', 'This is a private window, so imported history, Watch Feed and bookmarks last only until you close it.')}`
+                    : message
+            };
         },
         async importAllSettings(jsonString) {
             return (await this.importAllSettingsDetailed(jsonString)).ok;
@@ -7301,7 +7412,7 @@ const STORAGE_KEYS = Object.freeze({
             updateAllToggleStates();
         }
 
-        if (filteredChanges[STORAGE_KEYS.hiddenVideos] || filteredChanges[STORAGE_KEYS.allowedVideos] || filteredChanges[STORAGE_KEYS.markedWatchedVideos] || filteredChanges[STORAGE_KEYS.blockedChannels] || filteredChanges[STORAGE_KEYS.allowedChannels] || filteredChanges[STORAGE_KEYS.filterListSubscription]) {
+        if (filteredChanges[STORAGE_KEYS.hiddenVideos] || filteredChanges[STORAGE_KEYS.allowedVideos] || filteredChanges[STORAGE_KEYS.markedWatchedVideos] || filteredChanges[STORAGE_KEYS.blockedChannels] || filteredChanges[STORAGE_KEYS.allowedChannels] || filteredChanges[STORAGE_KEYS.filterListSubscription] || filteredChanges[STORAGE_KEYS.importedFilterRules]) {
             const videoHider = getFeatureById('hideVideosFromHome');
             if (videoHider) {
                 if (filteredChanges[STORAGE_KEYS.hiddenVideos]) {
@@ -7333,6 +7444,9 @@ const STORAGE_KEYS = Object.freeze({
                     videoHider._filterListSubscription = null;
                     videoHider._filterListRemoteRules = null;
                     videoHider._scheduleFilterListRefresh?.();
+                }
+                if (filteredChanges[STORAGE_KEYS.importedFilterRules]) {
+                    videoHider._setImportedFilterRulesCache?.(filteredChanges[STORAGE_KEYS.importedFilterRules].newValue || []);
                 }
                 if (videoHider._initialized) {
                     try { videoHider._processAllVideos?.(); } catch (error) {

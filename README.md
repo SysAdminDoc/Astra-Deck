@@ -469,7 +469,7 @@ Run `node scripts/smoke-experience-live.js --browser <chromium-path>` for an iso
 - Toggle switches with instant apply
 - Sub-feature controls for granular element hiding
 - Textarea editors for keyword filters, quick links, custom CSS
-- Schema-validated Export / Import / Reset with credential scrub
+- Schema-validated Export / Import / Reset with credential scrub. Import also takes BlockTube and ChannelSieve backups
 - Conflict detection (auto-disables conflicting features with toast notification)
 - Verified dark/light and RTL layouts at supported desktop viewports, including normal YouTube, native Theater, and Theater Split. The live browser check measures metadata, comments, related videos or chat, scrolling, and player geometry across repeated mode changes. The mobile light state is exercised in the settings fixture; mobile browser support remains host-dependent.
 

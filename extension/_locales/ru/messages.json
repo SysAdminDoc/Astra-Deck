@@ -9592,6 +9592,51 @@
   "importSummaryAiSummariesTplOther": {
     "message": "сводок ИИ: {count}"
   },
+  "importSummaryFilterRulesTplOne": {
+    "message": "{count} правило для названия или канала"
+  },
+  "importSummaryFilterRulesTplOther": {
+    "message": "правил для названий и каналов: {count}"
+  },
+  "blockTubeImportValidTplOne": {
+    "message": "добавлен {count} фильтр"
+  },
+  "blockTubeImportValidTplOther": {
+    "message": "добавлено фильтров: {count}"
+  },
+  "blockTubeImportDuplicateTplOne": {
+    "message": "{count} уже есть"
+  },
+  "blockTubeImportDuplicateTplOther": {
+    "message": "уже есть: {count}"
+  },
+  "blockTubeImportInvalidTplOne": {
+    "message": "{count} недопустимый"
+  },
+  "blockTubeImportInvalidTplOther": {
+    "message": "недопустимых: {count}"
+  },
+  "blockTubeImportUnsupportedTplOne": {
+    "message": "{count} не поддерживается"
+  },
+  "blockTubeImportUnsupportedTplOther": {
+    "message": "не поддерживается: {count}"
+  },
+  "blockTubeImportOverLimitTplOne": {
+    "message": "{count} сверх лимита"
+  },
+  "blockTubeImportOverLimitTplOther": {
+    "message": "сверх лимита: {count}"
+  },
+  "blockTubeImportSummaryTpl": {
+    "message": "Резервная копия BlockTube: {summary}"
+  },
+  "blockTubeImportNothingTpl": {
+    "message": "{summary}. Ничего не изменено."
+  },
+  "blockTubeImportTooLarge": {
+    "message": "Эта резервная копия BlockTube больше 8 MB, поэтому ничего не импортировано."
+  },
   "importSummaryDuplicatesTplOne": {
     "message": "{count} дубликат"
   },
