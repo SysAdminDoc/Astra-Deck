@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.104.0
+// @version      4.105.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -760,7 +760,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.104.0';
+	const YTKIT_VERSION = '4.105.0';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -6784,11 +6784,11 @@ const STORAGE_KEYS = Object.freeze({
 			|| 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)'),
 		cssFeature('listFeedLayout',
 			t('feature_listFeedLayout_name', 'List Feed Layout'),
-			t('feature_listFeedLayout_desc', 'Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row.'),
+			t('feature_listFeedLayout_desc', 'Show Home, Subscriptions, Search and channel video cards as rows with thumbnails on the left and metadata on the right. On Subscriptions the View switcher takes over when it\'s on. Off by default and mutually exclusive with Videos Per Row.'),
 			'Home / Subscriptions',
 			'rows-3',
 			(globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildListFeedLayoutCss && globalThis.YTKitFeatures.homeSubsCss.buildListFeedLayoutCss())
-			|| `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer,ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer{display:flex!important;flex-direction:column!important}ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,ytd-browse[page-subtype="home"] yt-lockup-view-model,ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,ytd-browse[page-subtype="search"] yt-lockup-view-model{display:grid!important;grid-template-columns:minmax(180px,min(32vw,360px)) minmax(0,1fr)!important;gap:16px!important}`),
+			|| `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer,ytd-browse[page-subtype="subscriptions"]:not([data-ytkit-subscription-view]) #contents.ytd-rich-grid-renderer{display:flex!important;flex-direction:column!important}ytd-browse[page-subtype="home"] ytd-rich-item-renderer :is(#dismissible,.ytLockupViewModelHost),ytd-browse[page-subtype="subscriptions"]:not([data-ytkit-subscription-view]) ytd-rich-item-renderer :is(#dismissible,.ytLockupViewModelHost),ytd-search[page-subtype="search"] ytd-video-renderer #dismissible{display:grid!important;grid-template-columns:minmax(180px,min(32vw,360px)) minmax(0,1fr)!important;gap:16px!important}`),
 		cssFeature('viewsOnSeparateLine',
 			t('feature_viewsOnSeparateLine_name', 'Views on Their Own Line'),
 			t('feature_viewsOnSeparateLine_desc', 'On Home and Subscriptions, put the views and the upload age back on their own line under the channel name, so a long channel name no longer cuts them off.'),

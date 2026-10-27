@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.105.0] (2026-10-27)
+
 ### Added
 
 - List view now works on channel Videos tabs, and it handles YouTube's new card layout on Home, search and channels. You get one video per row with the thumbnail on the left and the title and details beside it. Shorts shelves keep their grid. On Subscriptions the View switcher takes over when it's showing, so the two don't fight.
