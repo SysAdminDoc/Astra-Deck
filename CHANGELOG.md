@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.100.8] (2026-10-26)
+
 ### Fixed
 
 - Live Latency Catch-up works on today's watch player again. It couldn't tell it was on a live stream anymore, and the delay it read came from a range that ends about a day past the edge. Now it asks the player itself how far behind the live edge you are. At the edge the readout says 0s and the speed is left alone. When you've fallen behind (after a pause, say) it speeds up within your limit and goes back to normal speed once you're within your target of the edge. The readout also hides, and the speed goes back to normal, when the stream pauses or stalls.
