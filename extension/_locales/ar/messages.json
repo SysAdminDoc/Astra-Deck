@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "تم تحديث المسار"
   },
-  "transcriptRetryHelp": {
-    "message": "أعد تحميل الصفحة أو حاول مجددًا بعد لحظات إذا كانت التسميات التوضيحية لا تزال قيد المعالجة."
+  "transcriptRetry": {
+    "message": "إعادة المحاولة"
+  },
+  "transcriptRetryableHelp": {
+    "message": "ربما لا يزال YouTube يجهّز التسميات التوضيحية. حاول مجددًا بعد لحظات."
+  },
+  "transcriptLoadingTitle": {
+    "message": "جارٍ تحميل النص…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "جارٍ التحقق من مسارات التسميات التوضيحية المتاحة لهذا الفيديو."
+  },
+  "transcriptLoadingMeta": {
+    "message": "جارٍ البحث عن مسارات التسميات التوضيحية وتجهيز إجراءات التصدير."
+  },
+  "transcriptEmptyTitle": {
+    "message": "النص فارغ"
+  },
+  "transcriptEmptyHelp": {
+    "message": "لدى YouTube مسار تسميات توضيحية لهذا الفيديو، لكنه لا يحتوي على أسطر مقروءة بعد. حاول مجددًا بعد لحظات."
+  },
+  "transcriptEmptyMeta": {
+    "message": "تم تحميل مسار التسميات التوضيحية، لكن لم تُرجَع أي أسطر مقروءة."
+  },
+  "transcriptReadProblem": {
+    "message": "واجه Astra Deck مشكلة أثناء قراءة النص."
   },
   "transcriptShowOriginal": {
     "message": "إظهار الأصلي"

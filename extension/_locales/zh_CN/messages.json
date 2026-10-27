@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "字幕轨道已刷新"
   },
-  "transcriptRetryHelp": {
-    "message": "如果字幕仍在处理中，请重新加载页面或稍后重试。"
+  "transcriptRetry": {
+    "message": "重试"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube 可能仍在准备字幕。请稍后再试。"
+  },
+  "transcriptLoadingTitle": {
+    "message": "正在加载转写…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "正在检查此视频可用的字幕轨道。"
+  },
+  "transcriptLoadingMeta": {
+    "message": "正在查找字幕轨道并准备导出操作。"
+  },
+  "transcriptEmptyTitle": {
+    "message": "转写为空"
+  },
+  "transcriptEmptyHelp": {
+    "message": "YouTube 为此视频提供了字幕轨道，但其中还没有可读的内容。请稍后再试。"
+  },
+  "transcriptEmptyMeta": {
+    "message": "字幕轨道已加载，但没有返回可读的内容。"
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck 读取转写时遇到问题。"
   },
   "transcriptShowOriginal": {
     "message": "显示原文"

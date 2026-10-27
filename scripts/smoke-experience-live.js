@@ -37,7 +37,7 @@ async function run(client, background) {
         await sleep(700);
     }
     async function point(selector) {
-        return read(`(() => { const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&b.top>=0&&b.top<innerHeight&&getComputedStyle(e).visibility!=='hidden';}); if(!e)throw Error('Missing visible target: '+${JSON.stringify(selector)}); const b=e.getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2};})()`);
+        return read(`(() => { const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>{const b=e.getBoundingClientRect();return b.width&&b.height&&b.top>=0&&b.top<innerHeight&&getComputedStyle(e).visibility!=='hidden';}); if(!e){const f=document.querySelector(${JSON.stringify(selector)}),r=f&&f.getBoundingClientRect();throw Error('Missing visible target: '+${JSON.stringify(selector)}+(r?' (first match at '+[r.x,r.y,r.width,r.height].map(Math.round).join(',')+' in a '+innerWidth+'x'+innerHeight+' viewport, on top: '+(document.elementFromPoint(innerWidth/2,innerHeight/2)?.closest('[id]')?.id||'?')+')':' (no match)'));} const b=e.getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2};})()`);
     }
     async function click(selector, delay = 250) {
         const p = await point(selector);
@@ -101,8 +101,9 @@ async function run(client, background) {
     await settings({ hideSidebar: false, hideVideosFromHome: false, hideVideosKeywordFilter: false, hideVideosHideLive: false, daShowOriginalTitle: false, colorTheme: 'none', disableAutoplayNext: true });
     await navigate(WATCH);
     await navigate('https://www.youtube.com/');
-    await until('document.querySelectorAll("ytd-rich-item-renderer").length>2', 'public home recommendations');
-    await check('home grid and hidden ad shells', async () => {
+    const homeCheck = 'home grid and hidden ad shells';
+    if (!from || from === homeCheck) await until('document.querySelectorAll("ytd-rich-item-renderer").length>2', 'public home recommendations');
+    await check(homeCheck, async () => {
         const result = await read(`(()=>{const grid=document.querySelector('#contents.ytd-rich-grid-renderer');return {columns:getComputedStyle(grid).gridTemplateColumns,cards:[...grid.querySelectorAll('ytd-rich-item-renderer')].filter(e=>getComputedStyle(e).display!=='none').length,empty:[...grid.children].filter(e=>e.tagName==='YTD-RICH-ITEM-RENDERER'&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().height===0).length,chip:getComputedStyle(document.querySelector('.ytChipShapeInactive')).color};})()`);
         assert.equal(result.empty, 0); assert.ok(result.cards > 2); assert.notEqual(result.chip, 'rgb(0, 0, 0)');
         await capture('home-dark');
@@ -344,6 +345,47 @@ async function run(client, background) {
         assert.deepEqual(extensionErrors(), [], 'no extension exceptions while opening panes or switching on');
         await settings({ deArrow: true, sponsorBlock: true });
         return { tabs: tabs.length, deArrowTab };
+    });
+    await check('transcript Retry recovers a failed load without reloading or seeking', async () => {
+        // Every caption route fails while the panel loads, then the block lifts
+        // and Retry has to recover in the same document at the same position.
+        // The profile is fresh, so no cached transcript can answer instead.
+        // Theater Split hides #secondary, and the panel lives there.
+        await settings({ transcriptViewer: false, stickyVideo: false });
+        await navigate(WATCH);
+        const blocked = ['*timedtext*', '*/youtubei/v1/get_transcript*', '*/youtubei/v1/player*', '*youtube.com/watch?*'];
+        await client.send('Network.setBlockedURLs', { urls: blocked });
+        try {
+            await read('window.__astraTranscriptRetryProbe=true;document.querySelector("video").currentTime=7;document.querySelector("video").pause()');
+            await settings({ transcriptViewer: true });
+            await until("!!document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action')", 'retryable transcript failure', 45000);
+            assert.equal(await read("document.querySelector('#ytkit-transcript-panel .ytkit-transcript-body').getAttribute('aria-busy')"), 'false');
+        } finally {
+            await client.send('Network.setBlockedURLs', { urls: [] });
+        }
+        await read("document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action').scrollIntoView({block:'center'})");
+        await sleep(300);
+        assert.equal(await read("getComputedStyle(document.querySelector('#ytkit-transcript-panel .ytkit-transcript-export')).display"), 'none', 'a failed load shows no export buttons');
+        await capture('transcript-retry-failed-dark');
+        // Record whether the click starts a fresh load: the body goes busy and
+        // the failed Retry button is replaced.
+        await read("(()=>{const body=document.querySelector('#ytkit-transcript-panel .ytkit-transcript-body');window.__astraRetryBusy=false;document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action').dataset.astraOld='1';new MutationObserver(()=>{if(body.getAttribute('aria-busy')==='true')window.__astraRetryBusy=true;}).observe(body,{attributes:true,attributeFilter:['aria-busy']});})()");
+        await click('#ytkit-transcript-panel .ytkit-transcript-state__action', 100);
+        const settled = "window.__astraRetryBusy&&document.querySelector('#ytkit-transcript-panel .ytkit-transcript-body').getAttribute('aria-busy')==='false'&&!document.querySelector('[data-astra-old]')&&(document.querySelectorAll('#ytkit-transcript-panel .ytkit-transcript-line').length>0||!!document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state'))";
+        await until(settled, 'Retry starts a fresh load and settles', 45000);
+        const result = await read("({lines:document.querySelectorAll('#ytkit-transcript-panel .ytkit-transcript-line').length,exportDisplay:getComputedStyle(document.querySelector('#ytkit-transcript-panel .ytkit-transcript-export')).display,retry:!!document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action'),retryFocused:document.activeElement?.classList.contains('ytkit-transcript-state__action')===true,probe:window.__astraTranscriptRetryProbe===true,time:Math.round(document.querySelector('video').currentTime),paused:document.querySelector('video').paused})");
+        assert.equal(result.probe, true, 'Retry must not reload the page');
+        assert.equal(result.time, 7, 'Retry must not seek playback');
+        assert.equal(result.paused, true);
+        if (result.lines) assert.notEqual(result.exportDisplay, 'none', 'exports appear with the recovered transcript');
+        else if (result.retry) {
+            assert.equal(result.retryFocused, true, 'a failed retry hands focus to the new Retry button');
+            assert.equal(result.exportDisplay, 'none');
+            report.limitations.push('YouTube refused the caption fetch in this signed-out headless profile even after the block lifted, so the live check proves a fresh load, no reload or seek, and the repeated-failure focus, while cue-line recovery rests on the unit tests.');
+        } else report.limitations.push('The smoke video reported no caption tracks after Retry, so recovery reached the captionless state rather than cue lines.');
+        await capture('transcript-retry-after-dark');
+        await settings({ transcriptViewer: false, stickyVideo: true });
+        return result;
     });
 }
 

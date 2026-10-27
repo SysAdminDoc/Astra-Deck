@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "Дорожка обновлена"
   },
-  "transcriptRetryHelp": {
-    "message": "Обновите страницу или повторите попытку через несколько секунд, если субтитры ещё обрабатываются."
+  "transcriptRetry": {
+    "message": "Повторить"
+  },
+  "transcriptRetryableHelp": {
+    "message": "Возможно, YouTube ещё готовит субтитры. Повторите попытку через несколько секунд."
+  },
+  "transcriptLoadingTitle": {
+    "message": "Загрузка расшифровки…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "Проверяем доступные дорожки субтитров для этого видео."
+  },
+  "transcriptLoadingMeta": {
+    "message": "Ищем дорожки субтитров и готовим действия экспорта."
+  },
+  "transcriptEmptyTitle": {
+    "message": "Расшифровка пуста"
+  },
+  "transcriptEmptyHelp": {
+    "message": "У YouTube есть дорожка субтитров для этого видео, но в ней пока нет читаемых строк. Повторите попытку через несколько секунд."
+  },
+  "transcriptEmptyMeta": {
+    "message": "Дорожка субтитров загружена, но читаемых строк не получено."
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck столкнулся с проблемой при чтении расшифровки."
   },
   "transcriptShowOriginal": {
     "message": "Показать оригинал"

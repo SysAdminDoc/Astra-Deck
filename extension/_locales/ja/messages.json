@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "トラックを更新"
   },
-  "transcriptRetryHelp": {
-    "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。"
+  "transcriptRetry": {
+    "message": "再試行"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube がまだ字幕を準備している可能性があります。しばらくしてからもう一度お試しください。"
+  },
+  "transcriptLoadingTitle": {
+    "message": "文字起こしを読み込み中…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "この動画で利用できる字幕トラックを確認しています。"
+  },
+  "transcriptLoadingMeta": {
+    "message": "字幕トラックを探し、エクスポート操作を準備しています。"
+  },
+  "transcriptEmptyTitle": {
+    "message": "文字起こしが空です"
+  },
+  "transcriptEmptyHelp": {
+    "message": "この動画には YouTube の字幕トラックがありますが、まだ読み取れる行がありません。しばらくしてからもう一度お試しください。"
+  },
+  "transcriptEmptyMeta": {
+    "message": "字幕トラックは読み込まれましたが、読み取れる行は返されませんでした。"
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck で文字起こしの読み取り中に問題が発生しました。"
   },
   "transcriptShowOriginal": {
     "message": "原文を表示"

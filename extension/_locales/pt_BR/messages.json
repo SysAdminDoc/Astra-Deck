@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "Faixa atualizada"
   },
-  "transcriptRetryHelp": {
-    "message": "Recarregue a página ou tente novamente em instantes se as legendas ainda estiverem sendo processadas."
+  "transcriptRetry": {
+    "message": "Tentar novamente"
+  },
+  "transcriptRetryableHelp": {
+    "message": "O YouTube talvez ainda esteja preparando as legendas. Tente novamente em instantes."
+  },
+  "transcriptLoadingTitle": {
+    "message": "Carregando transcrição…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "Verificando as faixas de legenda disponíveis para este vídeo."
+  },
+  "transcriptLoadingMeta": {
+    "message": "Procurando faixas de legenda e preparando as ações de exportação."
+  },
+  "transcriptEmptyTitle": {
+    "message": "A transcrição está vazia"
+  },
+  "transcriptEmptyHelp": {
+    "message": "O YouTube tem uma faixa de legenda para este vídeo, mas ela ainda não tem linhas legíveis. Tente novamente em instantes."
+  },
+  "transcriptEmptyMeta": {
+    "message": "A faixa de legenda foi carregada, mas nenhuma linha legível foi retornada."
+  },
+  "transcriptReadProblem": {
+    "message": "O Astra Deck encontrou um problema ao ler a transcrição."
   },
   "transcriptShowOriginal": {
     "message": "Mostrar original"

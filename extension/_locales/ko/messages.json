@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "트랙 새로 고침"
   },
-  "transcriptRetryHelp": {
-    "message": "자막 처리 중이라면 페이지를 새로 고치거나 잠시 후 다시 시도하세요."
+  "transcriptRetry": {
+    "message": "다시 시도"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube에서 아직 자막을 준비 중일 수 있습니다. 잠시 후 다시 시도하세요."
+  },
+  "transcriptLoadingTitle": {
+    "message": "스크립트 불러오는 중…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "이 동영상에서 사용할 수 있는 자막 트랙을 확인하는 중입니다."
+  },
+  "transcriptLoadingMeta": {
+    "message": "자막 트랙을 찾고 내보내기 작업을 준비하는 중입니다."
+  },
+  "transcriptEmptyTitle": {
+    "message": "스크립트가 비어 있습니다"
+  },
+  "transcriptEmptyHelp": {
+    "message": "이 동영상에 YouTube 자막 트랙이 있지만 아직 읽을 수 있는 줄이 없습니다. 잠시 후 다시 시도하세요."
+  },
+  "transcriptEmptyMeta": {
+    "message": "자막 트랙을 불러왔지만 읽을 수 있는 줄이 반환되지 않았습니다."
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck에서 스크립트를 읽는 중 문제가 발생했습니다."
   },
   "transcriptShowOriginal": {
     "message": "원본 표시"

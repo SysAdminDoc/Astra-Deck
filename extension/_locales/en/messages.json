@@ -7886,8 +7886,32 @@
   "transcriptRefreshedTrack": {
     "message": "Refreshed Track"
   },
-  "transcriptRetryHelp": {
-    "message": "Reload the page or try again in a moment if captions are still processing."
+  "transcriptRetry": {
+    "message": "Retry"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube may still be preparing the captions. Try again in a moment."
+  },
+  "transcriptLoadingTitle": {
+    "message": "Loading transcript…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "Checking the available caption tracks for this video."
+  },
+  "transcriptLoadingMeta": {
+    "message": "Looking for caption tracks and preparing export actions."
+  },
+  "transcriptEmptyTitle": {
+    "message": "Transcript is empty"
+  },
+  "transcriptEmptyHelp": {
+    "message": "YouTube has a caption track for this video, but it doesn't have readable lines yet. Try again in a moment."
+  },
+  "transcriptEmptyMeta": {
+    "message": "The caption track loaded, but no readable lines came back."
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck hit a problem while reading the transcript."
   },
   "transcriptShowOriginal": {
     "message": "Show Original"

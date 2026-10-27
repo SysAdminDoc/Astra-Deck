@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "Spur aktualisiert"
   },
-  "transcriptRetryHelp": {
-    "message": "Laden Sie die Seite neu oder versuchen Sie es gleich erneut, falls die Untertitel noch verarbeitet werden."
+  "transcriptRetry": {
+    "message": "Erneut versuchen"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube bereitet die Untertitel möglicherweise noch vor. Versuchen Sie es gleich noch einmal."
+  },
+  "transcriptLoadingTitle": {
+    "message": "Transkript wird geladen…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "Verfügbare Untertitelspuren für dieses Video werden geprüft."
+  },
+  "transcriptLoadingMeta": {
+    "message": "Untertitelspuren werden gesucht und Exportaktionen vorbereitet."
+  },
+  "transcriptEmptyTitle": {
+    "message": "Transkript ist leer"
+  },
+  "transcriptEmptyHelp": {
+    "message": "YouTube hat eine Untertitelspur für dieses Video, aber sie enthält noch keine lesbaren Zeilen. Versuchen Sie es gleich noch einmal."
+  },
+  "transcriptEmptyMeta": {
+    "message": "Die Untertitelspur wurde geladen, aber es kamen keine lesbaren Zeilen zurück."
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck ist beim Lesen des Transkripts auf ein Problem gestoßen."
   },
   "transcriptShowOriginal": {
     "message": "Original anzeigen"

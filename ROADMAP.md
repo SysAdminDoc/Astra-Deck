@@ -135,18 +135,17 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   half under Tampermonkey and Violentmonkey in a private window.
   Complexity: M
 
-- [ ] P2 — Retry a failed transcript load without reloading the watch page
-  Why: a transient caption failure leaves reload advice without a working recovery action.
-  Evidence: Verified live unavailable state after a failed caption fetch with `transcriptViewer`
-  enabled. `extension/ytkit.js:20840` already has an abort/generation-aware load path.
-  This is not evidence that the inspected video has no captions. See `RESEARCH.md` UI recovery.
-  Touches: transcript viewer error/render/load paths in `extension/ytkit.js`, 11 locales,
-  transcript tests and live experience smoke.
-  Acceptance: a visible Retry reuses the bounded load path without seeking playback or
-  reloading. Distinguish no-caption results from retryable failures, announce busy/result
-  state, prevent duplicate retries, and abort on close, disable or navigation. Empty cues
-  cannot be exported. Failure-to-success, repeated failure and late old-response tests pass.
-  Complexity: S
+- [ ] P2 — Show the transcript panel while Theater Split is open
+  Why: Theater Split hides `#secondary` except for live chat, and the transcript panel mounts
+  there, so with `stickyVideo` on (the default) an enabled Transcript Viewer is invisible.
+  Evidence: the live experience smoke found the panel's Retry button at a 0x0 rect under the
+  split on 2026-10-26 and now turns `stickyVideo` off for its transcript check.
+  Touches: the panel mount in `transcriptViewer` (`extension/ytkit.js`), the split column in
+  `extension/features/sticky-video/index.js`, transcript and split tests, experience smoke.
+  Acceptance: with the split open, the panel shows in the side column (or a reachable spot
+  next to it) in dark and light, the split's ratio and collapse still work, the smoke check
+  runs with `stickyVideo` on, and closing the split puts the panel back in `#secondary`.
+  Complexity: M
 
 - [ ] P2 — Add a click-only pointer alternative for Theater Split width changes
   Why: pointer users must drag to resize; existing keyboard support alone does not meet

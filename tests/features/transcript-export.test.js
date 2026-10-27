@@ -105,7 +105,7 @@ test('provenance is cleared when a new video starts loading', () => {
     // the previous video's source line rides along with the next transcript.
     const source = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
-    const at = source.indexOf("this._setTranscriptMeta('Loading…'");
+    const at = source.indexOf("this._setTranscriptMeta(t('commonLoading', 'Loading…')");
     assert.ok(at > -1, 'the transcript load should still reset its panel state');
     const window = source.slice(at, at + 400);
     assert.match(window, /this\._lastProvenance = null/,

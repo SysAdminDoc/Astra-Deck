@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "Traccia aggiornata"
   },
-  "transcriptRetryHelp": {
-    "message": "Ricarica la pagina o riprova tra poco se i sottotitoli sono ancora in elaborazione."
+  "transcriptRetry": {
+    "message": "Riprova"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube potrebbe star ancora preparando i sottotitoli. Riprova tra poco."
+  },
+  "transcriptLoadingTitle": {
+    "message": "Caricamento della trascrizione…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "Controllo delle tracce di sottotitoli disponibili per questo video."
+  },
+  "transcriptLoadingMeta": {
+    "message": "Ricerca delle tracce di sottotitoli e preparazione delle azioni di esportazione."
+  },
+  "transcriptEmptyTitle": {
+    "message": "La trascrizione è vuota"
+  },
+  "transcriptEmptyHelp": {
+    "message": "YouTube ha una traccia di sottotitoli per questo video, ma non contiene ancora righe leggibili. Riprova tra poco."
+  },
+  "transcriptEmptyMeta": {
+    "message": "La traccia dei sottotitoli è stata caricata, ma non ha restituito righe leggibili."
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck ha riscontrato un problema durante la lettura della trascrizione."
   },
   "transcriptShowOriginal": {
     "message": "Mostra originale"

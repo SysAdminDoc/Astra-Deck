@@ -3560,6 +3560,10 @@
             background: var(--ytkit-premium-raised) !important;
         }
 
+        .ytkit-transcript-export[hidden] {
+            display: none !important;
+        }
+
         .ytkit-transcript-export__btn {
             min-height: 42px !important;
             border: 0 !important;
@@ -3650,6 +3654,19 @@
         .ytkit-transcript-state--error {
             border-color: color-mix(in srgb, var(--ytkit-premium-danger) 38%, transparent) !important;
             background: color-mix(in srgb, var(--ytkit-premium-danger) 8%, var(--ytkit-premium-raised)) !important;
+        }
+
+        .ytkit-transcript-state__action {
+            min-height: 36px !important;
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-premium-raised) !important;
+            color: var(--ytkit-premium-text) !important;
+            transform: none !important;
+        }
+
+        .ytkit-transcript-state__action:hover {
+            background: var(--ytkit-premium-hover) !important;
         }
 
         .ytkit-dl-popup {

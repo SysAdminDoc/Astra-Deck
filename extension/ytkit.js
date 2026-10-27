@@ -20494,6 +20494,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cues: [],
             _loadController: null,
             _loadGeneration: 0,
+            // 'loading' | 'loaded' | 'captionless' | 'failed' | 'interrupted'
+            _loadOutcome: null,
+            _focusRetryResult: false,
             _scheduleCreate(delay = 2000) {
                 if (this._createTimer) clearTimeout(this._createTimer);
                 this._createTimer = setTimeout(() => {
@@ -20995,8 +20998,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 );
             },
 
-            _renderBodyState(body, state, title, copy) {
-                if (!body) return;
+            _renderBodyState(body, state, title, copy, action = null) {
+                if (!body) return null;
                 body.textContent = '';
                 body.classList.toggle('is-stateful', true);
                 const shell = document.createElement('div');
@@ -21025,7 +21028,57 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     shell.appendChild(skeleton);
                 }
 
+                if (action) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'ytkit-transcript-state__action';
+                    button.textContent = action.label;
+                    button.addEventListener('click', action.onClick);
+                    shell.appendChild(button);
+                }
+
                 body.appendChild(shell);
+                return shell;
+            },
+
+            // Only failures that might clear up get a Retry. A video with no
+            // caption tracks will not grow one by asking again.
+            _renderRetryableState(body, state, title, copy) {
+                const shell = this._renderBodyState(body, state, title, copy, {
+                    label: t('transcriptRetry', 'Retry'),
+                    onClick: () => this._retryTranscript()
+                });
+                if (this._focusRetryResult) {
+                    shell?.querySelector?.('.ytkit-transcript-state__action')?.focus?.({ preventScroll: true });
+                }
+                return shell;
+            },
+
+            // Retry goes through the same bounded load as the first attempt:
+            // one abort controller, the generation check, and nothing that
+            // touches playback or reloads the page.
+            _retryTranscript() {
+                const panel = this._panel;
+                if (!panel || !panel.isConnected || this._loadController) return false;
+                const body = panel.querySelector('.ytkit-transcript-body');
+                // The pressed button is about to be replaced by the loading
+                // state. Park focus on the body so it doesn't fall back to the
+                // top of the page, and hand it to the next Retry if this one
+                // fails too.
+                this._focusRetryResult = true;
+                if (body) {
+                    body.tabIndex = -1;
+                    body.focus?.({ preventScroll: true });
+                }
+                this._loadTranscript();
+                return true;
+            },
+
+            _abortTranscriptLoad() {
+                this._loadController?.abort();
+                this._loadController = null;
+                this._loadGeneration += 1;
+                this._panel?.querySelector('.ytkit-transcript-body')?.setAttribute('aria-busy', 'false');
             },
 
             async _loadTranscript() {
@@ -21040,10 +21093,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const body = panel.querySelector('.ytkit-transcript-body');
                 const exportBar = panel.querySelector('.ytkit-transcript-export');
                 if (!body) return;
+                this._loadOutcome = 'loading';
                 body.setAttribute('aria-busy', 'true');
-                this._renderBodyState(body, 'loading', 'Loading transcript…', 'Checking the available caption tracks for this video.');
+                this._renderBodyState(body, 'loading',
+                    t('transcriptLoadingTitle', 'Loading transcript…'),
+                    t('transcriptLoadingHelp', 'Checking the available caption tracks for this video.'));
                 if (exportBar) exportBar.hidden = true;
-                this._setTranscriptMeta('Loading…', 'Looking for caption tracks & preparing export actions.', 'info');
+                this._setTranscriptMeta(t('commonLoading', 'Loading…'),
+                    t('transcriptLoadingMeta', 'Looking for caption tracks and preparing export actions.'), 'info');
                 this._cues = [];
                 // Cleared with the cues: an export must never label this
                 // video's transcript with the previous video's provenance.
@@ -21063,23 +21120,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         || !panel.isConnected) return;
                     if (!result.cues || result.cues.length === 0) {
                         const noCaptions = result.status === 'captionless';
+                        this._loadOutcome = noCaptions ? 'captionless' : 'failed';
                         this._setTranscriptMeta(
                             noCaptions ? t('transcriptNoCaptions', 'No Captions') : t('transcriptUnavailableLabel', 'Unavailable'),
                             result.error || t('transcriptUnavailableNow', 'The transcript could not be fetched from YouTube right now.'),
                             noCaptions ? 'warning' : 'danger'
                         );
-                        this._renderBodyState(
-                            body,
-                            noCaptions ? 'empty' : 'error',
-                            noCaptions ? t('transcriptUnavailable', 'No transcript available for this video') : t('transcriptLoadFailed', 'Failed to load transcript'),
-                            noCaptions
-                                ? t('transcriptNoCaptionsHelp', 'Try another video with captions enabled, or reopen this panel after captions finish loading.')
-                                : t('transcriptRetryHelp', 'Reload the page or try again in a moment if captions are still processing.')
-                        );
+                        if (noCaptions) {
+                            this._renderBodyState(body, 'empty',
+                                t('transcriptUnavailable', 'No transcript available for this video'),
+                                t('transcriptNoCaptionsHelp', 'Try another video with captions enabled, or reopen this panel after captions finish loading.'));
+                        } else {
+                            this._renderRetryableState(body, 'error',
+                                t('transcriptLoadFailed', 'Failed to load transcript'),
+                                t('transcriptRetryableHelp', 'YouTube may still be preparing the captions. Try again in a moment.'));
+                        }
+                        this._focusRetryResult = false;
                         body.setAttribute('aria-busy', 'false');
                         return;
                     }
-                    this._cues = result.cues;
+                    // Blank cues stay out of `_cues` rather than only out of
+                    // the DOM. The export builders, the active-line sync and
+                    // the translation swap all index `_cues` against the
+                    // rendered lines, and a track of nothing but blank cues
+                    // has to land in the empty state, not an export bar.
+                    this._cues = result.cues.filter((cue) => cue && typeof cue.text === 'string' && cue.text.trim());
                     const trackLabel = result.source === 'panel'
                         ? t('transcriptPanelFallback', 'Panel Fallback')
                         : this._getTrackLabel(result.track);
@@ -21088,7 +21153,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     this._cues.forEach(cue => {
                         const { start: startSec, end: endSec, text } = cue;
-                        if (!text) return;
                         const stamp = this._fmtTimestamp(startSec);
 
                         const line = document.createElement('button');
@@ -21122,21 +21186,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     });
                     this._attachVideoTimeUpdates();
                     if (this._cues.length === 0) {
-                        this._setTranscriptMeta(trackLabel, 'The transcript track loaded, but no readable lines were returned.', 'warning');
-                        this._renderBodyState(body, 'empty', 'Transcript is empty', 'YouTube exposed a caption track, but it does not contain readable cue lines yet.');
+                        this._loadOutcome = 'failed';
+                        this._setTranscriptMeta(trackLabel, t('transcriptEmptyMeta', 'The caption track loaded, but no readable lines came back.'), 'warning');
+                        this._renderRetryableState(body, 'empty',
+                            t('transcriptEmptyTitle', 'Transcript is empty'),
+                            t('transcriptEmptyHelp', "YouTube has a caption track for this video, but it doesn't have readable lines yet. Try again in a moment."));
                     } else {
+                        this._loadOutcome = 'loaded';
                         this._lastProvenance = result.provenance || null;
                         this._showTranscriptProvenance(trackLabel, result.provenance);
                         if (exportBar) exportBar.hidden = false;
                     }
+                    this._focusRetryResult = false;
                     body.setAttribute('aria-busy', 'false');
                 } catch(e) {
                     if (e?.name === 'AbortError'
                         || generation !== this._loadGeneration
                         || getVideoId() !== videoId
                         || this._panel !== panel) return;
-                    this._setTranscriptMeta('Unavailable', 'Astra Deck hit a problem while reading the transcript.', 'danger');
-                    this._renderBodyState(body, 'error', 'Failed to load transcript', 'Refresh the page or reopen the panel after YouTube finishes loading the video metadata.');
+                    this._loadOutcome = 'failed';
+                    this._setTranscriptMeta(t('transcriptUnavailableLabel', 'Unavailable'),
+                        t('transcriptReadProblem', 'Astra Deck hit a problem while reading the transcript.'), 'danger');
+                    this._renderRetryableState(body, 'error',
+                        t('transcriptLoadFailed', 'Failed to load transcript'),
+                        t('transcriptRetryableHelp', 'YouTube may still be preparing the captions. Try again in a moment.'));
+                    this._focusRetryResult = false;
                     body.setAttribute('aria-busy', 'false');
                 } finally {
                     if (this._loadController === controller) this._loadController = null;
@@ -21200,7 +21274,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     b.textContent = label;
                     b.title = title;
                     b.setAttribute('aria-label', title);
-                    b.addEventListener('click', handler);
+                    // The bar is hidden without cues, but a hidden bar is not
+                    // a guard: nothing may export or translate an empty file.
+                    b.addEventListener('click', () => {
+                        if (!this._cues.length) return;
+                        handler();
+                    });
                     return b;
                 };
                 exportBar.appendChild(mkBtn(t('transcriptCopyText', 'Copy Text'), t('transcriptCopyTextTitle', 'Copy plain-text transcript to clipboard'),
@@ -21223,6 +21302,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 body.setAttribute('aria-live', 'polite');
                 closeBtn.addEventListener('click', () => {
                     const collapsed = panel.classList.toggle('is-collapsed');
+                    // Collapsing is the panel's close: it stops a load in
+                    // flight, and expanding again picks that load back up.
+                    if (collapsed && this._loadController) {
+                        this._abortTranscriptLoad();
+                        this._loadOutcome = 'interrupted';
+                    } else if (!collapsed && this._loadOutcome === 'interrupted') {
+                        this._loadTranscript();
+                    }
                     body.hidden = collapsed;
                     meta.hidden = collapsed;
                     exportBar.hidden = collapsed || !this._cues.length;
@@ -21247,9 +21334,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addNavigateRule('transcriptViewer', () => {
-                    this._loadController?.abort();
-                    this._loadController = null;
-                    this._loadGeneration += 1;
+                    this._abortTranscriptLoad();
+                    this._loadOutcome = null;
+                    this._focusRetryResult = false;
                     this._detachVideoTimeUpdates();
                     this._panel?.remove(); this._panel = null;
                     this._translatedCues = null;
@@ -21261,9 +21348,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._createTimer) clearTimeout(this._createTimer);
                 this._createTimer = null;
-                this._loadController?.abort();
-                this._loadController = null;
-                this._loadGeneration += 1;
+                this._abortTranscriptLoad();
+                this._loadOutcome = null;
+                this._focusRetryResult = false;
                 removeNavigateRule('transcriptViewer');
                 this._detachVideoTimeUpdates();
                 this._panel?.remove(); this._panel = null;
@@ -48582,7 +48669,11 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             border-bottom: 1px solid rgba(255,255,255,0.06);
             flex-wrap: wrap;
         }
-        .ytkit-transcript-export__btn {
+        .ytkit-transcript-export[hidden] {
+            display: none !important;
+        }
+        .ytkit-transcript-export__btn,
+        .ytkit-transcript-state__action {
             background: rgba(255,255,255,0.06);
             color: #f3f4f6;
             border: 1px solid rgba(255,255,255,0.10);
@@ -48595,15 +48686,24 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             touch-action: manipulation;
             transition: background 120ms ease, transform 120ms ease, border-color 120ms ease;
         }
-        .ytkit-transcript-export__btn:hover {
+        .ytkit-transcript-export__btn:hover,
+        .ytkit-transcript-state__action:hover {
             background: rgba(99, 102, 241, 0.18);
             border-color: rgba(99, 102, 241, 0.45);
             transform: translateY(-1px);
         }
-        .ytkit-transcript-export__btn:active { transform: translateY(0); }
-        .ytkit-transcript-export__btn:focus-visible {
+        .ytkit-transcript-export__btn:active,
+        .ytkit-transcript-state__action:active { transform: translateY(0); }
+        .ytkit-transcript-export__btn:focus-visible,
+        .ytkit-transcript-state__action:focus-visible {
             outline: 2px solid #818cf8;
             outline-offset: 2px;
+        }
+        .ytkit-transcript-state__action {
+            justify-self: start;
+            margin-top: 4px;
+            min-height: 32px;
+            padding: 0 16px;
         }
 
         .ytkit-transcript-body {
@@ -48745,7 +48845,8 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         html:not([dark]) .ytkit-transcript-eyebrow,
         html:not([dark]) .ytkit-transcript-toggle,
         html:not([dark]) .ytkit-transcript-meta__pill,
-        html:not([dark]) .ytkit-transcript-export__btn {
+        html:not([dark]) .ytkit-transcript-export__btn,
+        html:not([dark]) .ytkit-transcript-state__action {
             border-color: #d8dde5;
             background: #f1f3f6;
             color: #4e5b6a;

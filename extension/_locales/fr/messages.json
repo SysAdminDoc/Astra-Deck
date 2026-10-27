@@ -7830,8 +7830,32 @@
   "transcriptRefreshedTrack": {
     "message": "Piste actualisée"
   },
-  "transcriptRetryHelp": {
-    "message": "Rechargez la page ou réessayez dans un instant si les sous-titres sont encore en cours de traitement."
+  "transcriptRetry": {
+    "message": "Réessayer"
+  },
+  "transcriptRetryableHelp": {
+    "message": "YouTube prépare peut-être encore les sous-titres. Réessayez dans un instant."
+  },
+  "transcriptLoadingTitle": {
+    "message": "Chargement de la transcription…"
+  },
+  "transcriptLoadingHelp": {
+    "message": "Vérification des pistes de sous-titres disponibles pour cette vidéo."
+  },
+  "transcriptLoadingMeta": {
+    "message": "Recherche des pistes de sous-titres et préparation des actions d'exportation."
+  },
+  "transcriptEmptyTitle": {
+    "message": "La transcription est vide"
+  },
+  "transcriptEmptyHelp": {
+    "message": "YouTube propose une piste de sous-titres pour cette vidéo, mais elle ne contient pas encore de lignes lisibles. Réessayez dans un instant."
+  },
+  "transcriptEmptyMeta": {
+    "message": "La piste de sous-titres a été chargée, mais aucune ligne lisible n'a été renvoyée."
+  },
+  "transcriptReadProblem": {
+    "message": "Astra Deck a rencontré un problème lors de la lecture de la transcription."
   },
   "transcriptShowOriginal": {
     "message": "Afficher l’original"
