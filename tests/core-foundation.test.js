@@ -1029,7 +1029,9 @@ function loadStorageModule({ setImpl }) {
     };
     // storage.js reads these off the shared core namespace rather than
     // defining them, so seed the namespace before the module installs onto it.
-    sandbox.YTKitCore = { hasExtensionContext: () => true };
+    // A regular window: without env.js the private-window fence reads the
+    // context as unknown and holds every write in memory.
+    sandbox.YTKitCore = { hasExtensionContext: () => true, privateContextState: () => 'regular' };
     sandbox.globalThis = sandbox;
     vm.createContext(sandbox);
     vm.runInContext(src, sandbox);
