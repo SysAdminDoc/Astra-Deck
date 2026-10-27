@@ -485,7 +485,7 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
         // Only the watch heading announces; a card never does (grid spam).
         assert.match(source, /async _processWatchTitle\(gen, route\) \{\s*if \(!isWatchPagePath\(\)[\s\S]*?this\._applyTitle\(titleEl, branding, \{ announce: true \}\)/,
             `DeArrow announcement must come from the watch-gated heading pass (${label})`);
-        assert.match(source, /if \(titleEl\) this\._applyTitle\(titleEl, branding\);/,
+        assert.match(source, /&& titleEl\) this\._applyTitle\(titleEl, branding\);/,
             `DeArrow card titles must not announce (${label})`);
         assert.match(region, /daTogether/,
             `DeArrow title renderer must mark the opt-in paired-title mode (${label})`);
@@ -629,7 +629,8 @@ test('a ">" keep-case marker on any word is honored and never reaches the page',
     assert.equal(feature._formatTitle('>iPhone 17 REVIEW', 'sentence'), 'iPhone 17 review');
     assert.equal(feature._formatTitle('the >macOS guide FOR beginners', 'title_case'), 'The macOS Guide for Beginners');
     assert.equal(feature._formatTitle('Why >NASA waited', 'original'), 'Why NASA waited');
-    assert.equal(feature._formatTitle('Is 5 > 3? MATH', 'sentence'), 'Is 5 > 3? math',
+    // A question mark starts a new sentence, as in upstream's formatter.
+    assert.equal(feature._formatTitle('Is 5 > 3? MATH', 'sentence'), 'Is 5 > 3? Math',
         'a spaced ">" is ordinary text, not a marker');
 });
 
@@ -988,4 +989,231 @@ test('DeArrow ships on, with titles, covers and the random-frame fallback', () =
     assert.equal(defaultSettings.daThumbFallback, 'random');
     assert.equal(findSettingEntry('daThumbFallback').defaultValue, 'random');
     assert.match(sources.ytkit, /\n\s+deArrow: true,/, 'the ytkit.js defaults block must agree');
+});
+
+// Upstream's config (src/config/config.ts syncDefaults) and what Astra ships.
+const UPSTREAM_OPTIONS = Object.freeze({
+    daHideWhileFetching: true,
+    daThumbSaturation: 100,
+    daCleanEmojis: true,
+    daCasualFunny: 1,
+    daCasualCreative: 1,
+    daCasualClever: 1,
+    daCasualDescriptive: 1,
+    daCasualOther: 1,
+    daCasualFormat: true,
+    daCasualOriginalThumb: false
+});
+
+test('the DeArrow options ship with upstream defaults, a panel row and a name in every locale', () => {
+    const localeDir = path.join(__dirname, '..', '..', 'extension', '_locales');
+    const locales = fs.readdirSync(localeDir).map((name) => require(path.join(localeDir, name, 'messages.json')));
+    assert.equal(locales.length, 11);
+    for (const [key, value] of Object.entries(UPSTREAM_OPTIONS)) {
+        assert.equal(findSettingEntry(key)?.defaultValue, value, `${key} schema default`);
+        assert.equal(defaultSettings[key], value, `${key} default-settings.json`);
+        assert.match(sources.ytkit, new RegExp(`\\n\\s+${key}: ${value},`), `${key} ytkit.js default`);
+        assert.match(sources.ytkit, new RegExp(`id: '${key}'[\\s\\S]{0,700}parentId: 'deArrow'`), `${key} panel row`);
+        for (const messages of locales) {
+            assert.ok(messages[`feature_${key}_name`]?.message && messages[`feature_${key}_desc`]?.message, `${key} strings`);
+        }
+    }
+});
+
+async function initCss(settings) {
+    let css = '';
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings(settings) },
+        injectStyle: (text) => { css = text; return { remove() {} }; }
+    });
+    await withGlobals({
+        MutationObserver: class { observe() {} disconnect() {} },
+        document: pageDocument({ surface: 'home' }),
+        location: { origin: 'https://www.youtube.com', pathname: '/', href: 'https://www.youtube.com/' }
+    }, () => feature.init());
+    return css;
+}
+
+test('hideDetailsWhileFetching hides a card until its lookup answers, and never longer than the timeout', async () => {
+    const css = await initCss({});
+    assert.match(css, /\[data-da-hide~="title"\] :is\(#video-title,[^)]*a\.ytLockupMetadataViewModelTitle\)/);
+    assert.match(css, /\[data-da-hide~="thumb"\] :is\(yt-thumbnail-view-model img/);
+    assert.match(css, /\[data-da-hide~="self"\] \{ visibility: hidden !important; \}/);
+
+    const run = async (settings, answer) => {
+        const { card } = lockupCard({ videoId: 'abc123DEF45' });
+        card.dataset.daVideoId = 'abc123DEF45';
+        let resolve;
+        const feature = createDeArrowFeature({ appState: { settings: surfaceSettings(settings) } });
+        feature._fetchBranding = () => new Promise((r) => { resolve = r; });
+        const pass = feature._applyCard(card, 'abc123DEF45', feature._generation, feature._routeToken);
+        const during = { hide: card.dataset.daHide, fetching: card.dataset.daFetching };
+        resolve(answer);
+        await pass;
+        return { during, after: { hide: card.dataset.daHide, fetching: card.dataset.daFetching } };
+    };
+    const on = await run({}, { titles: [], thumbnails: [] });
+    assert.deepEqual(on.during, { hide: 'title thumb', fetching: 'abc123DEF45' }, 'on by default, as upstream');
+    assert.deepEqual(on.after, { hide: undefined, fetching: undefined }, 'shown again once the answer is in');
+    assert.deepEqual((await run({}, null)).after, { hide: undefined, fetching: undefined }, 'a failed lookup shows the original');
+    assert.deepEqual((await run({ daReplaceThumbs: false }, null)).during.hide, 'title', 'only what may change is hidden');
+    assert.deepEqual((await run({ daHideWhileFetching: false }, null)).during, { hide: undefined, fetching: undefined });
+
+    const { card } = lockupCard({ videoId: 'abc123DEF45' });
+    card.dataset.daVideoId = 'abc123DEF45';
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
+    feature._REVEAL_AFTER_MS = 5;
+    feature._fetchBranding = () => new Promise(() => {});
+    feature._applyCard(card, 'abc123DEF45', feature._generation, feature._routeToken);
+    assert.equal(card.dataset.daHide, 'title thumb');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(card.dataset.daHide, undefined, 'a lookup that never answers stops hiding at the timeout');
+    assert.equal(feature._revealTimers.size, 0);
+
+    // The watch heading hides too, and asks by hash prefix.
+    const heading = { dataset: {}, isConnected: true };
+    let resolveWatch;
+    let options;
+    const watch = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        isWatchPagePath: () => true,
+        getVideoId: () => 'abc123DEF45'
+    });
+    watch._fetchBranding = (_id, opts) => { options = opts; return new Promise((r) => { resolveWatch = r; }); };
+    await withGlobals({ document: pageDocument({ watchTitle: heading }) }, async () => {
+        const pass = watch._processWatchTitle(watch._generation, watch._routeToken);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(heading.dataset.daHide, 'self');
+        resolveWatch(null);
+        await pass;
+    });
+    assert.equal(heading.dataset.daHide, undefined);
+    assert.deepEqual(options, { byHash: true });
+});
+
+test('thumbnailSaturationLevel fades covers on the cards DeArrow handles', async () => {
+    assert.doesNotMatch(await initCss({}), /grayscale/, '100 leaves covers alone');
+    const faded = await initCss({ daThumbSaturation: 40 });
+    assert.match(faded, /\[data-da-video-id\]:not\(\[data-da-surface-skipped\]\):not\(\[data-da-override\]\) :is\(yt-thumbnail-view-model img, ytd-thumbnail img, #thumbnail img\) \{ filter: grayscale\(0\.6\) !important; \}/);
+    assert.match(await initCss({ daThumbSaturation: 0 }), /grayscale\(1\)/);
+});
+
+test('shouldCleanEmojis strips emojis the way upstream does, before formatting', () => {
+    const cp = String.fromCodePoint;
+    const fire = cp(0x1F525);
+    const make = (settings) => createDeArrowFeature({ appState: { settings: surfaceSettings(settings) } });
+    const on = make({});
+    assert.equal(on._formatTitle(`Best ${fire} video ${fire}${fire} EVER`, 'sentence'), 'Best video ever',
+        'on by default; an emoji word goes with its space');
+    assert.equal(on._formatTitle(`fire${fire}works`, 'original'), 'fire works', 'between letters it becomes a space');
+    assert.equal(on._formatTitle(`${fire}${fire}`, 'original'), `${fire}${fire}`, 'a title of only emojis is kept');
+    assert.equal(on._formatTitle(`Family ${cp(0x1F468, 0x200D, 0x1F469)} trip ${cp(0x1F44D, 0x1F3FD)}`, 'original'), 'Family trip',
+        'joined and skin-tone sequences go whole');
+    assert.equal(on._formatTitle(`Blood type ${cp(0x1F170, 0xFE0F)} wins`, 'original'), `Blood type ${cp(0x1F170, 0xFE0F)} wins`,
+        'letter emojis stay');
+    assert.equal(on._formatTitle(`${cp(0x1D407, 0x1D41E, 0x1D425, 0x1D425, 0x1D428)} world`, 'original'), 'Hello world',
+        'bold math letters read as plain text');
+    assert.equal(make({ daCleanEmojis: false })._formatTitle(`Best ${fire} video`, 'original'), `Best ${fire} video`);
+});
+
+test('the title formatter keeps acronyms and brand casing the way upstream titleFormatter.ts does', () => {
+    const feature = createDeArrowFeature({ appState: { settings: surfaceSettings() } });
+    const cases = [
+        ['THIS IS INSANE!!!', 'sentence', 'This is insane'],
+        ['I Bought The CHEAPEST iPhone On eBay', 'sentence', 'I bought the cheapest iPhone on eBay'],
+        ['I Bought The CHEAPEST iPhone On eBay', 'title_case', 'I Bought the Cheapest iPhone on eBay'],
+        ['why the US army uses this', 'title_case', 'Why the US Army Uses This'],
+        ['Going to Paris with my GF - day 2', 'sentence', 'Going to Paris with my GF - Day 2'],
+        ['the history of self-driving cars in the 1990s', 'title_case', 'The History of Self-Driving Cars in the 1990s'],
+        ['My new 4K TV is here???', 'sentence', 'My new 4K TV is here?'],
+        ['MrBeast vs. the U.S. army', 'title_case', 'MrBeast vs. the U.S. Army'],
+        ["i think i'm lost", 'sentence', "I think I'm lost"],
+        ['Top 10 GTA 5 Mods #shorts', 'sentence', 'Top 10 GTA 5 Mods #shorts'],
+        ['you WON the NEW car', 'sentence', 'You won the new car']
+    ];
+    for (const [input, format, expected] of cases) {
+        assert.equal(feature._formatTitle(input, format), expected, `${format}: ${input}`);
+    }
+    // A crowd title's unusual capitals are trusted even when all caps
+    // surround them; an uploader's are not.
+    assert.equal(feature._formatTitle('HOW I FIXED my iPHONE', 'sentence', { isCustom: true }), 'How I fixed my iPHONE');
+});
+
+test('casual mode keeps the original title once a category reaches its vote threshold', () => {
+    const rendered = [];
+    const make = (settings) => {
+        const feature = createDeArrowFeature({
+            appState: { settings: surfaceSettings({ deArrowCasualMode: true, daFallbackFormat: true, ...settings }) }
+        });
+        feature._renderTitle = (_el, text, options) => { rendered.push([text, !!options.fallback]); return true; };
+        return feature;
+    };
+    const titleEl = { textContent: 'MY TRIP TO PARIS' };
+    const branding = (casualVotes) => ({ titles: [{ title: 'A week in Paris', votes: 2, UUID: 'u1' }], casualVotes });
+    const apply = (settings, votes) => {
+        rendered.length = 0;
+        const drawn = make(settings)._applyTitle(titleEl, branding(votes));
+        return { drawn, rendered: [...rendered] };
+    };
+    assert.deepEqual(apply({}, [{ id: 'funny', count: 1 }]).rendered, [['My trip to paris', true]],
+        'a vote at the default threshold of 1 keeps the original, formatted');
+    assert.deepEqual(apply({ daCasualFunny: 3 }, [{ id: 'funny', count: 2 }]).rendered, [['A week in Paris', false]],
+        'below the threshold the crowd title wins');
+    assert.deepEqual(apply({ daCasualFunny: 0 }, [{ id: 'funny', count: 9 }]).rendered, [['A week in Paris', false]],
+        'a threshold of 0 ignores the category');
+    assert.deepEqual(apply({ daCasualFunny: 3, daCasualClever: 2 }, [{ id: 'funny', count: 2 }, { id: 'clever', count: 2 }]).rendered,
+        [['My trip to paris', true]], 'any one category is enough');
+    assert.deepEqual(apply({}, [{ id: 'descriptive', count: 5, title: 'My trip to Rome' }]).rendered, [['A week in Paris', false]],
+        'votes cast on a different original title do not count');
+    assert.deepEqual(apply({}, [{ id: 'descriptive', count: 5, title: 'my trip to paris' }]).rendered, [['My trip to paris', true]],
+        'the title match ignores case');
+    assert.deepEqual(apply({ daCasualFormat: false }, [{ id: 'other', count: 1 }]), { drawn: false, rendered: [] },
+        'with formatting off the original is left untouched');
+    assert.deepEqual(apply({ deArrowCasualMode: false }, [{ id: 'funny', count: 5 }]).rendered, [['A week in Paris', false]],
+        'votes mean nothing outside casual mode');
+});
+
+test('showOriginalThumbWhenCasual keeps the creator thumbnail when casual mode accepts the original', async () => {
+    const run = async (settings, votes) => {
+        const { card, img } = lockupCard({ videoId: 'abc123DEF45' });
+        card.dataset.daVideoId = 'abc123DEF45';
+        const feature = createDeArrowFeature({
+            appState: { settings: surfaceSettings({ deArrowCasualMode: true, daReplaceTitles: false, ...settings }) }
+        });
+        feature._fetchBranding = async () => ({ titles: [], thumbnails: [{ timestamp: 42, votes: 1 }], casualVotes: votes });
+        await withGlobals({ location: { origin: 'https://www.youtube.com', pathname: '/' } },
+            () => feature._applyCard(card, 'abc123DEF45', feature._generation, feature._routeToken));
+        return img.classList.contains('da-replaced-thumb');
+    };
+    assert.equal(await run({}, [{ id: 'funny', count: 1 }]), true, 'off by default, as upstream');
+    assert.equal(await run({ daCasualOriginalThumb: true }, [{ id: 'funny', count: 1 }]), false);
+    assert.equal(await run({ daCasualOriginalThumb: true }, []), true, 'without accepting votes the frame still replaces it');
+});
+
+test('the watch page looks itself up by SHA-256 hash prefix, cards by video ID', async () => {
+    const id = 'abc123DEF45';
+    const prefix = require('crypto').createHash('sha256').update(id).digest('hex').slice(0, 4);
+    const urls = [];
+    const make = (answer) => createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        extensionFetchJson: async ({ url }) => { urls.push(url); return answer(url); }
+    });
+    const entry = { titles: [{ title: 'Real title', votes: 3 }], thumbnails: [], casualVotes: [] };
+    const hashed = await make(() => ({ data: { [id]: entry, zzzzzzzzzzz: { titles: [{ title: 'other' }] } } }))._fetchBranding(id, { byHash: true });
+    assert.equal(urls.pop(), `https://sponsor.ajay.app/api/branding/${prefix}`);
+    assert.equal(hashed.titles[0].title, 'Real title', 'the entry for this video is picked out');
+    const missing = await make(() => ({ data: { zzzzzzzzzzz: entry } }))._fetchBranding(id, { byHash: true });
+    assert.deepEqual([missing.titles, missing.thumbnails], [[], []], 'no entry is an empty answer');
+    const notFound = await make(() => { throw Object.assign(new Error('404'), { response: { status: 404 }, data: {} }); })
+        ._fetchBranding(id, { byHash: true });
+    assert.deepEqual(notFound.titles, [], 'a 404 for the prefix is an empty answer');
+    await make(() => ({ data: entry }))._fetchBranding(id);
+    assert.equal(urls.pop(), `https://sponsor.ajay.app/api/branding?videoID=${id}`, 'cards keep the plain lookup');
+    const noHash = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        sha256Hex: async () => { throw new Error('no subtle crypto'); },
+        extensionFetchJson: async ({ url }) => { urls.push(url); return { data: entry }; }
+    });
+    await noHash._fetchBranding(id, { byHash: true });
+    assert.equal(urls.pop(), `https://sponsor.ajay.app/api/branding?videoID=${id}`, 'without hashing it falls back to the plain lookup');
 });

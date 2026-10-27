@@ -600,6 +600,44 @@ async function run(client, background) {
         assert.equal(await read("document.documentElement.getAttribute('data-ytkit-live-edge-state')"), null, 'turning it off withdraws the state');
         return { stream: stream.id, vod, atHead, paused, behind, released, after, samples: trace.length };
     });
+    await check('DeArrow cards still fill in with hide-while-loading, saturation and emoji cleanup on', async () => {
+        // Hide While Loading must never leave a card blank: every hidden
+        // title and cover comes back once its lookup answers or times out.
+        await settings({ deArrow: true, daReplaceTitles: true, daReplaceThumbs: true, daHideWhileFetching: true, daThumbSaturation: 50, daCleanEmojis: true, daFallbackFormat: true });
+        await navigate('https://www.youtube.com/');
+        await until("document.querySelectorAll('ytd-rich-item-renderer[data-da-video-id]').length>2", 'DeArrow takes the home cards');
+        await until("!document.querySelector('[data-da-fetching]')", 'every hidden card shown again', 15000);
+        const home = await read(`(() => {
+            const cards = [...document.querySelectorAll('ytd-rich-item-renderer[data-da-video-id]')];
+            const thumbs = cards.map(c => c.querySelector('yt-thumbnail-view-model img, ytd-thumbnail img')).filter(Boolean);
+            const titles = cards.map(c => c.querySelector('.daCustomTitle, a.ytLockupMetadataViewModelTitle, #video-title')).filter(Boolean);
+            return {
+                cards: cards.length,
+                drawnTitles: document.querySelectorAll('.daCustomTitle').length,
+                replacedCovers: document.querySelectorAll('.da-replaced-thumb').length,
+                hiddenTitles: titles.filter(t => getComputedStyle(t).visibility !== 'visible').length,
+                // YouTube keeps its own not-yet-loaded covers (no src) hidden, so
+                // only a loaded cover or one under our marker counts as ours.
+                hiddenCovers: thumbs.filter(i => getComputedStyle(i).visibility !== 'visible' && (i.getAttribute('src') || i.closest('[data-da-hide]'))).length,
+                leftMarked: document.querySelectorAll('[data-da-hide]:not([data-da-hide=""])').length,
+                faded: thumbs.filter(i => getComputedStyle(i).filter === 'grayscale(0.5)').length,
+                thumbs: thumbs.length
+            };
+        })()`);
+        assert.ok(home.drawnTitles + home.replacedCovers > 0, `DeArrow drew nothing on ${home.cards} cards`);
+        assert.equal(home.hiddenTitles, 0, 'no title is left hidden');
+        assert.equal(home.hiddenCovers, 0, 'no cover is left hidden');
+        assert.equal(home.leftMarked, 0, 'no card keeps a hide marker');
+        assert.ok(home.thumbs > 0 && home.faded === home.thumbs, `covers at 50% saturation (${home.faded} of ${home.thumbs})`);
+        await capture('dearrow-options-home');
+        await navigate(WATCH);
+        await until("document.querySelector('ytd-watch-metadata h1 yt-formatted-string')?.dataset.daProcessed==='1'", 'watch heading looked up by hash prefix');
+        await until("!document.querySelector('[data-da-fetching]')", 'watch heading shown again', 15000);
+        const heading = await read("[...document.querySelector('ytd-watch-metadata h1').children].filter(e=>getComputedStyle(e).display!=='none'&&getComputedStyle(e).visibility==='visible'&&e.textContent.trim()).map(e=>e.textContent.trim())");
+        assert.equal(heading.length, 1, 'one visible watch title');
+        await settings({ daThumbSaturation: 100 });
+        return { home, heading: heading[0] };
+    });
 }
 
 async function main() {

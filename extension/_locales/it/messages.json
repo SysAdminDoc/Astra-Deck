@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "Mantieni l’originale"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "Nascondi durante il caricamento"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "Nasconde titolo e miniatura di una scheda finché DeArrow non risponde, così il clickbait non compare mai. Tornano dopo 7 secondi se non risponde."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "Saturazione delle miniature"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "Toglie colore alle miniature delle schede gestite da DeArrow. 0% è bianco e nero."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "Rimuovi emoji"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "Toglie emoji e lettere decorative dai titoli che DeArrow formatta."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "Formatta gli originali accettati"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "In modalità casual formatta comunque un titolo originale accettato dai votanti."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "Mantieni anche la miniatura"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "In modalità casual mantiene anche la miniatura del creator quando i votanti hanno accettato il titolo originale."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "Voti casual: Divertente"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "Voti nella categoria «Divertente» che mantengono il titolo originale in modalità casual. 0 ignora la categoria."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "Voti casual: Creativo"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "Voti nella categoria «Creativo» che mantengono il titolo originale in modalità casual. 0 ignora la categoria."
+  },
+  "feature_daCasualClever_name": {
+    "message": "Voti casual: Arguto"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "Voti nella categoria «Arguto» che mantengono il titolo originale in modalità casual. 0 ignora la categoria."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "Voti casual: Descrittivo"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "Voti nella categoria «Descrittivo» che mantengono il titolo originale in modalità casual. 0 ignora la categoria."
+  },
+  "feature_daCasualOther_name": {
+    "message": "Voti casual: Altro"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "Voti nella categoria «Altro» che mantengono il titolo originale in modalità casual. 0 ignora la categoria."
+  },
+  "deArrowCasualIgnored": {
+    "message": "Ignorato"
   }
 }

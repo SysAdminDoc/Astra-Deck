@@ -27,7 +27,8 @@ test('settings reference covers every user-facing schema entry with audited purp
     // 488 since Hide AI Chapters joined it, 489 with Views on Their Own Line.
     // 488 again since DeArrow Voting was retired, 489 with Covers Without a Submission.
     // 490 since Sort by Length joined Home / Subscriptions.
-    assert.equal(entries.length, 490);
+    // 500 with the ten DeArrow options ported from upstream.
+    assert.equal(entries.length, 500);
     assert.deepEqual(entries.map((entry) => entry.key), expectedKeys);
     for (const entry of entries) {
         assert.ok(entry.title.length >= 2, `${entry.key} needs a readable title`);

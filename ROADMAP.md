@@ -19,22 +19,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   `features/return-dislike` (54094a4f) and `features/player-dock` (b0f4565f) on 2026-10-09;
   confirm those three count as read before starting on the rest.
 
-- [ ] P2 — DeArrow options Astra still lacks
-  Why: v4.99.0 brought DeArrow to YouTube's lockup cards and added its cover fallback, but
-  upstream's config (`src/config/config.ts` syncDefaults) has more that people use:
-  `hideDetailsWhileFetching` (hide a card's title and cover until the lookup answers, so the
-  clickbait never flashes; upstream default on), `thumbnailSaturationLevel`,
-  `shouldCleanEmojis` (default on), the smarter title-case formatter (keeps acronyms and
-  all-caps brand words, `src/titles/titleFormatter.ts`), casual mode's per-category vote
-  thresholds (`casualVotes` in the branding answer) and `showOriginalThumbWhenCasual`, and
-  the privacy lookup `GET /api/branding/:sha256HashPrefix` (first 4 hex chars). Voting and
-  submitting stay in Roadmap_Blocked (they write to the live database).
-  Where: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js`,
-  `extension/_locales/**`, `tests/features/dearrow.test.js`.
-  Acceptance: each option behaves as upstream's does, with a test per option and a live
-  headless check that cards still fill in.
-  Complexity: M
-
 - [ ] P3 — Translate the Sleep Timer chip's leftover English
   Why: the 2026-10 translation pass missed literal strings in the chip: the two screen-reader
   announcements ("Sleep timer elapsed. Playback paused.", "Sleep timer cancelled.") and the "+5"

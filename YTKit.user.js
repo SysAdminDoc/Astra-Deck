@@ -3824,7 +3824,28 @@ const ASTRA_DECK_BUILD = {
 		"deArrowCoverStart": "Still near the start",
 		"deArrowCoverMiddle": "Still from the middle",
 		"deArrowCoverEnd": "Still near the end",
-		"deArrowCoverOriginal": "Keep the original"
+		"deArrowCoverOriginal": "Keep the original",
+		"feature_daHideWhileFetching_name": "Hide While Loading",
+		"feature_daHideWhileFetching_desc": "Hide a card's title and thumbnail until DeArrow answers, so the clickbait never flashes. They come back after 7 seconds if it doesn't.",
+		"feature_daThumbSaturation_name": "Thumbnail Saturation",
+		"feature_daThumbSaturation_desc": "Fades the color out of thumbnails on cards DeArrow handles. 0% is black and white.",
+		"feature_daCleanEmojis_name": "Remove Emojis",
+		"feature_daCleanEmojis_desc": "Strips emojis and fancy lettering from the titles DeArrow formats.",
+		"feature_daCasualFormat_name": "Format Accepted Originals",
+		"feature_daCasualFormat_desc": "In casual mode, still format an original title that voters accepted.",
+		"feature_daCasualOriginalThumb_name": "Keep the Thumbnail Too",
+		"feature_daCasualOriginalThumb_desc": "In casual mode, also keep the creator's thumbnail when voters accepted the original title.",
+		"feature_daCasualFunny_name": "Casual Votes: Funny",
+		"feature_daCasualFunny_desc": "Votes in the funny category that keep an original title in casual mode. 0 ignores the category.",
+		"feature_daCasualCreative_name": "Casual Votes: Creative",
+		"feature_daCasualCreative_desc": "Votes in the creative category that keep an original title in casual mode. 0 ignores the category.",
+		"feature_daCasualClever_name": "Casual Votes: Clever",
+		"feature_daCasualClever_desc": "Votes in the clever category that keep an original title in casual mode. 0 ignores the category.",
+		"feature_daCasualDescriptive_name": "Casual Votes: Descriptive",
+		"feature_daCasualDescriptive_desc": "Votes in the descriptive category that keep an original title in casual mode. 0 ignores the category.",
+		"feature_daCasualOther_name": "Casual Votes: Other",
+		"feature_daCasualOther_desc": "Votes in the other category that keep an original title in casual mode. 0 ignores the category.",
+		"deArrowCasualIgnored": "Ignored"
 	}
 };
 

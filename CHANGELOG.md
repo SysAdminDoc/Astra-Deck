@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- DeArrow picks up ten options from the upstream extension. Cards hide their title and cover while the lookup runs, so the clickbait version never flashes (it's on by default and gives up after 7 seconds). A new slider fades covers toward grayscale, and emoji and fancy Unicode letters get stripped from titles unless you turn that off.
+- Title formatting now follows DeArrow's own rules. Short acronyms like TV, 4K or PSG and words like iPhone keep their caps, shouting titles get calmed down, and trailing "!!!" goes away.
+- Casual mode has a vote threshold per category (funny, creative, clever, descriptive, other), can still format the original title, and can keep the original cover when it accepts the original title.
+- The watch page title is looked up by a short hash of the video ID instead of the ID itself, the same privacy lookup DeArrow uses.
+
 ## [4.100.8] (2026-10-26)
 
 ### Fixed

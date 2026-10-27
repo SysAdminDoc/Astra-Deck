@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "Conservar la original"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "Ocultar mientras carga"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "Oculta el título y la miniatura de una tarjeta hasta que DeArrow responde, para que el clickbait nunca aparezca. Vuelven a los 7 segundos si no responde."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "Saturación de miniaturas"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "Quita color a las miniaturas de las tarjetas que procesa DeArrow. 0 % es blanco y negro."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "Quitar emojis"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "Elimina los emojis y las letras decorativas de los títulos que formatea DeArrow."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "Formatear originales aceptados"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "En el modo casual, formatea igualmente un título original que los votantes aceptaron."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "Conservar también la miniatura"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "En el modo casual, conserva también la miniatura del creador cuando los votantes aceptaron el título original."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "Votos casuales: Divertido"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "Votos en la categoría «Divertido» que mantienen el título original en el modo casual. 0 ignora la categoría."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "Votos casuales: Creativo"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "Votos en la categoría «Creativo» que mantienen el título original en el modo casual. 0 ignora la categoría."
+  },
+  "feature_daCasualClever_name": {
+    "message": "Votos casuales: Ingenioso"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "Votos en la categoría «Ingenioso» que mantienen el título original en el modo casual. 0 ignora la categoría."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "Votos casuales: Descriptivo"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "Votos en la categoría «Descriptivo» que mantienen el título original en el modo casual. 0 ignora la categoría."
+  },
+  "feature_daCasualOther_name": {
+    "message": "Votos casuales: Otro"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "Votos en la categoría «Otro» que mantienen el título original en el modo casual. 0 ignora la categoría."
+  },
+  "deArrowCasualIgnored": {
+    "message": "Ignorado"
   }
 }

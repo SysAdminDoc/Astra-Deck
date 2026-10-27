@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "원본 유지"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "불러오는 동안 숨기기"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "DeArrow가 응답할 때까지 카드의 제목과 썸네일을 숨겨서 낚시성 제목이 잠깐도 보이지 않게 합니다. 응답이 없으면 7초 뒤에 다시 나타납니다."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "썸네일 채도"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "DeArrow가 처리하는 카드의 썸네일 색을 옅게 합니다. 0%는 흑백입니다."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "이모지 제거"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "DeArrow가 다듬는 제목에서 이모지와 장식 글자를 지웁니다."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "인정된 원래 제목도 다듬기"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "캐주얼 모드에서 투표자가 인정한 원래 제목도 다듬습니다."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "썸네일도 그대로 두기"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "캐주얼 모드에서 원래 제목이 인정되면 크리에이터의 썸네일도 그대로 둡니다."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "캐주얼 투표: 재미있음"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "캐주얼 모드에서 원래 제목을 유지하는 '재미있음' 카테고리의 투표 수입니다. 0이면 이 카테고리를 무시합니다."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "캐주얼 투표: 창의적"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "캐주얼 모드에서 원래 제목을 유지하는 '창의적' 카테고리의 투표 수입니다. 0이면 이 카테고리를 무시합니다."
+  },
+  "feature_daCasualClever_name": {
+    "message": "캐주얼 투표: 재치 있음"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "캐주얼 모드에서 원래 제목을 유지하는 '재치 있음' 카테고리의 투표 수입니다. 0이면 이 카테고리를 무시합니다."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "캐주얼 투표: 설명적"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "캐주얼 모드에서 원래 제목을 유지하는 '설명적' 카테고리의 투표 수입니다. 0이면 이 카테고리를 무시합니다."
+  },
+  "feature_daCasualOther_name": {
+    "message": "캐주얼 투표: 기타"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "캐주얼 모드에서 원래 제목을 유지하는 '기타' 카테고리의 투표 수입니다. 0이면 이 카테고리를 무시합니다."
+  },
+  "deArrowCasualIgnored": {
+    "message": "무시됨"
   }
 }

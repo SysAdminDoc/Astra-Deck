@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "Conserver l’originale"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "Masquer pendant le chargement"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "Masque le titre et la miniature d'une carte jusqu'à la réponse de DeArrow, pour que le piège à clics n'apparaisse jamais. Ils reviennent après 7 secondes sans réponse."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "Saturation des miniatures"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "Atténue les couleurs des miniatures sur les cartes traitées par DeArrow. 0 % donne du noir et blanc."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "Retirer les emojis"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "Retire les emojis et les lettres fantaisie des titres que DeArrow met en forme."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "Mettre en forme les originaux acceptés"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "En mode décontracté, met quand même en forme un titre original accepté par les votants."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "Garder aussi la miniature"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "En mode décontracté, garde aussi la miniature du créateur quand les votants ont accepté le titre original."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "Votes décontractés : Drôle"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "Votes dans la catégorie « Drôle » qui gardent le titre original en mode décontracté. 0 ignore la catégorie."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "Votes décontractés : Créatif"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "Votes dans la catégorie « Créatif » qui gardent le titre original en mode décontracté. 0 ignore la catégorie."
+  },
+  "feature_daCasualClever_name": {
+    "message": "Votes décontractés : Malin"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "Votes dans la catégorie « Malin » qui gardent le titre original en mode décontracté. 0 ignore la catégorie."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "Votes décontractés : Descriptif"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "Votes dans la catégorie « Descriptif » qui gardent le titre original en mode décontracté. 0 ignore la catégorie."
+  },
+  "feature_daCasualOther_name": {
+    "message": "Votes décontractés : Autre"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "Votes dans la catégorie « Autre » qui gardent le titre original en mode décontracté. 0 ignore la catégorie."
+  },
+  "deArrowCasualIgnored": {
+    "message": "Ignoré"
   }
 }

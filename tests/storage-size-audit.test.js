@@ -152,7 +152,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Views on Their Own Line adds 28 for its toggle, off by default.
     // Retiring DeArrow Voting trims 22: its toggle.
     // Sort by Length adds 25 for its toggle, on by default.
-    assert.equal(assessment.totalBytes, 186645);
+    // The ten DeArrow options ported from upstream add 224.
+    assert.equal(assessment.totalBytes, 186869);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

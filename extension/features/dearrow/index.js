@@ -37,6 +37,178 @@
         return Array.from(new Set([primary, mirror].filter(Boolean)));
     }
 
+    // Title cleanup ported from upstream DeArrow (src/titles/titleFormatter.ts).
+    // Code points are built at load time so the source stays ASCII.
+    const KEPT_LETTER_EMOJI = String.fromCodePoint(0x1F170, 0x1F171, 0x1F17E, 0x1F18E, 0x1F191);
+    const EMOJI = `(?=\\p{Extended_Pictographic}|${String.fromCodePoint(0x2606)})(?=[^${KEPT_LETTER_EMOJI}])\\S(?:\\p{Variation_Selector}?\\p{Emoji_Modifier}?\\p{Join_Control}?)*`;
+    const EMOJI_WORDS = new RegExp(` (?:${EMOJI})+(?= )`, 'gu');
+    const EMOJI_BETWEEN_LETTERS = new RegExp(`(\\p{L}|\\p{Variation_Selector}|[${String.fromCodePoint(0x1F18E, 0x1F191)}])(?:${EMOJI})+(\\p{L}|[${KEPT_LETTER_EMOJI}])`, 'gu');
+    const EMOJI_ANY = new RegExp(EMOJI, 'gu');
+    // Bold, italic, script and full-width letters that clickbait uses for
+    // emphasis read as plain letters after compatibility normalization.
+    const FANCY_TEXT = /[\u{1D400}-\u{1D7FF}\u{FF01}-\u{FF5E}\u{24B6}-\u{24E9}]/gu;
+
+    function cleanEmojis(title) {
+        const cleaned = title
+            .replace(EMOJI_WORDS, '')
+            .replace(EMOJI_BETWEEN_LETTERS, '$1 $2')
+            .replace(EMOJI_ANY, '')
+            .trim();
+        return cleaned.length > 0 ? cleaned : title;
+    }
+
+    function cleanFancyText(title) {
+        return title.replace(FANCY_TEXT, (c) => c.normalize('NFKC'));
+    }
+
+    const TITLE_CASE_SMALL_WORDS = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'yet', 'so', 'as', 'in', 'of', 'on', 'to', 'from', 'into', 'with', 'w/', 'upon', 'at', 'by', 'via', 'vs', 'v.s.', 'vs.', 'ft', 'ft.', 'feat', 'feat.', 'etc', 'etc.']);
+    const NOT_ACRONYMS = new Set(['not', 'see', 'be', 'you', 'are', 'is', 'it', 'of', 'the', 'to', 'new', 'end', 'won', 'sue', 'day', 'fly', 'so', 'one', 'two', 'six', 'ten', 'can', 'pro', 'why', 'did', 'now', 'too', 'bad', 'big', 'all', 'old']);
+    const NOT_SENTENCE_ENDS = new Set(['vs.', 'ft.', 'feat.', 'mr.', 'mrs.', 'ms.', 'dr.', 'prof.', 'sr.', 'jr.']);
+    const DELIMITERS = new Set(['-', ':', ';', '~', '|', String.fromCharCode(0x2014), String.fromCharCode(0x2013)]);
+
+    const trimPunctuation = (word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+    const letterCount = (word) => (word.match(/\p{L}/gu) || []).length;
+    const isAllCaps = (word) => !!word && /\p{Lu}/u.test(word) && word === word.toUpperCase();
+    const isWordAllLower = (word) => /\p{L}/u.test(word) && !/\p{Lu}/u.test(word);
+    const isWordCapitalCase = (word) => /^[^\p{L}]*\p{Lu}[^\p{Lu}]+$/u.test(word) && /\p{Ll}/u.test(word);
+    const isAcronymStrict = (word) => /^\p{Lu}(?:\.\p{Lu})+\.?$/u.test(word.replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, ''));
+    const isNumberThenLetter = (word) => /^\p{N}+\p{L}{1,2}$/u.test(trimPunctuation(word));
+    const isYear = (word) => /^(?:\d{4}s?|'\d{2}s?|\d{2}s)$/.test(word.replace(/^[^\d']+|[^\ds]+$/g, ''));
+
+    function isAcronym(word) {
+        const core = trimPunctuation(word);
+        return isAllCaps(core) && (core.length <= 3 || letterCount(core) <= 3)
+            && letterCount(core) > 0 && !NOT_ACRONYMS.has(core.toLowerCase());
+    }
+
+    // iPhone, eBay, YouTube: a capital past the first letter of a part.
+    function isWordCustomCapitalization(word) {
+        const core = trimPunctuation(word);
+        return /\p{Ll}/u.test(core) && core.split('-').some((part) => /^.+\p{Lu}/u.test(part));
+    }
+
+    function forceKeepFormatting(word) {
+        return word.startsWith('>')
+            || /^#[\p{L}\p{N}_]/u.test(word)
+            || /^\/?[ru]\/\S/.test(word)
+            || /^[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|net|org|io|tv|gg|co|me|app|dev|ly|ai)(?:\/\S*)?$/iu.test(word.replace(/[^\p{L}\p{N}/]+$/u, ''));
+    }
+
+    function isInTitleCase(words) {
+        let count = 0;
+        let ignored = 0;
+        for (const word of words) {
+            if (isWordCapitalCase(word)) count++;
+            else if (!isWordAllLower(word) || TITLE_CASE_SMALL_WORDS.has(word.toLowerCase())) ignored++;
+        }
+        const length = words.length - ignored;
+        return (length > 4 && count >= Math.min(length - 1, length * 0.9)) || count >= length;
+    }
+
+    // An all-caps neighbor marks shouting, unless it is an acronym itself
+    // (4K TV, GTA 5).
+    const isShouting = (word) => isAllCaps(word) && !isAcronym(word);
+    const isMostlyAllCaps = (words) => words.filter(isAllCaps).length > words.length * 0.5;
+
+    function startOfSentence(index, words) {
+        if (index === 0) return true;
+        const previous = words[index - 1] || '';
+        if (DELIMITERS.has(previous)) return true;
+        return /[:?.!\]]$/.test(previous) && !NOT_SENTENCE_ENDS.has(previous.toLowerCase()) && !isAcronymStrict(previous);
+    }
+
+    function capitalizeFirstLetter(word) {
+        const lower = word.toLowerCase();
+        const at = lower.search(/\p{L}/u);
+        return at < 0 ? word : lower.slice(0, at) + lower.charAt(at).toUpperCase() + lower.slice(at + 1);
+    }
+
+    function toSentenceCase(title, isCustom) {
+        const words = title.split(' ');
+        const inTitleCase = isInTitleCase(words);
+        const mostlyAllCaps = isMostlyAllCaps(words);
+        return words.map((word, index) => {
+            const trustCaps = !mostlyAllCaps && !(isShouting(words[index - 1]) || isShouting(words[index + 1]));
+            if (/^[Ii]$|^[Ii]['\u2019]\p{L}{1,3}$/u.test(word)) return capitalizeFirstLetter(word);
+            if (forceKeepFormatting(word)
+                || isAcronymStrict(word)
+                || ((!inTitleCase || !isWordCapitalCase(word)) && trustCaps && isAcronym(word))
+                || (!inTitleCase && isWordCapitalCase(word))
+                || (isCustom && isWordCustomCapitalization(word))
+                || (!isAllCaps(word) && isWordCustomCapitalization(word))) {
+                return word;
+            }
+            if (startOfSentence(index, words) && !isNumberThenLetter(word)) return capitalizeFirstLetter(word);
+            return word.toLowerCase();
+        }).join(' ');
+    }
+
+    function wordToTitleCase(word, sentenceStart, trustCaps, isCustom) {
+        if (forceKeepFormatting(word)
+            || (isCustom && isWordCustomCapitalization(word))
+            || (!isAllCaps(word) && (isWordCustomCapitalization(word) || isNumberThenLetter(word)))
+            || isYear(word)) {
+            return word;
+        }
+        const parts = word.split('-');
+        if (parts.length > 1 && parts.every(Boolean)) {
+            return parts.map((part, i) => wordToTitleCase(part, sentenceStart && i === 0, trustCaps, isCustom)).join('-');
+        }
+        if (!sentenceStart && TITLE_CASE_SMALL_WORDS.has(word.toLowerCase())) return word.toLowerCase();
+        if (isAcronymStrict(word) || (trustCaps && isAcronym(word))) return word;
+        return capitalizeFirstLetter(word);
+    }
+
+    function toTitleCase(title, isCustom) {
+        const words = title.split(' ');
+        const mostlyAllCaps = isMostlyAllCaps(words);
+        return words.map((word, index) => {
+            const trustCaps = !mostlyAllCaps && !(isShouting(words[index - 1]) || isShouting(words[index + 1]));
+            return wordToTitleCase(word, startOfSentence(index, words), trustCaps, isCustom);
+        }).join(' ');
+    }
+
+    // Trailing ! and . go, and a run of question marks becomes one.
+    function cleanPunctuation(title) {
+        let end = title.length;
+        let question = false;
+        while (end > 0 && /[!?.\s]/.test(title[end - 1])) {
+            if (title[end - 1] === '?') question = true;
+            end--;
+        }
+        if (end === 0 || end === title.length) return title;
+        return title.slice(0, end) + (question ? '?' : '');
+    }
+
+    // format: sentence, title_case or original. isCustom marks a crowd
+    // title, whose unusual capitals are trusted over an uploader's.
+    function formatDeArrowTitle(title, format, { isCustom = false, cleanEmoji = false } = {}) {
+        if (!title) return title;
+        let text = cleanEmoji ? cleanFancyText(cleanEmojis(title)) : title;
+        if (format === 'sentence') text = cleanPunctuation(toSentenceCase(text, isCustom));
+        else if (format === 'title_case') text = cleanPunctuation(toTitleCase(text, isCustom));
+        // DeArrow marks a word ">Word" to keep its casing, anywhere in the
+        // title. Every marker is dropped the way upstream's
+        // cleanResultingTitle does.
+        return text.replace(/(^|\s)>(\S)/g, '$1$2');
+    }
+
+    // Upstream's casual categories. A threshold of 0 ignores that category.
+    const CASUAL_CATEGORIES = Object.freeze({
+        funny: 'daCasualFunny',
+        creative: 'daCasualCreative',
+        clever: 'daCasualClever',
+        descriptive: 'daCasualDescriptive',
+        other: 'daCasualOther'
+    });
+
+    async function defaultSha256Hex(text) {
+        const subtle = globalThis.crypto?.subtle;
+        if (!subtle || typeof TextEncoder !== 'function') return null;
+        const digest = await subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
     function createDeArrowFeature(deps = {}) {
         const {
             appState = { settings: {} },
@@ -54,6 +226,7 @@
             announceA11y = () => {},
             VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
             PageTypes = { WATCH: 'watch' },
+            sha256Hex = defaultSha256Hex,
             t = (_key, fallback) => fallback
         } = deps;
 
@@ -92,6 +265,10 @@
             _docTitle: null,
             _coverWatchers: new Set(),
             _persistTimer: null,
+            // Upstream's fetchTimeout: a card hidden while its lookup runs
+            // shows its own title and cover again after this long.
+            _REVEAL_AFTER_MS: 7000,
+            _revealTimers: new Set(),
             init() {
                 const self = this;
                 // Load persistent cache
@@ -135,6 +312,10 @@
                        submission) dim slightly so power users see the
                        distinction from real DeArrow data. */
                     .daCustomTitle[data-da-fallback="1"] { opacity: 0.78 !important; }
+                    [data-da-hide~="title"] :is(#video-title, #video-title-link, a.ytLockupMetadataViewModelTitle),
+                    [data-da-hide~="thumb"] :is(${this._CARD_THUMB_SELECTORS}),
+                    [data-da-hide~="self"] { visibility: hidden !important; }
+                    ${this._saturationCss()}
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
@@ -189,6 +370,39 @@
                 if (!isWatchPagePath()) this._connectObserver();
                 this._syncWatchTimer();
             },
+            // Upstream's thumbnailSaturationLevel: 100 leaves covers alone, 0
+            // is grayscale, on every card DeArrow handles.
+            _saturationCss() {
+                const level = Number(appState.settings.daThumbSaturation);
+                if (!Number.isFinite(level) || level >= 100) return '';
+                const gray = (100 - Math.max(0, level)) / 100;
+                return `[data-da-video-id]:not([data-da-surface-skipped]):not([data-da-override]) :is(${this._CARD_THUMB_SELECTORS}) { filter: grayscale(${gray}) !important; }`;
+            },
+            // Hides what a lookup may replace until it answers, so the
+            // clickbait never flashes (upstream's hideDetailsWhileFetching).
+            // Returns the function that shows it again.
+            _hideWhileFetching(el, parts, videoId) {
+                if (appState.settings.daHideWhileFetching === false || !parts.length) return () => {};
+                el.dataset.daHide = parts.join(' ');
+                el.dataset.daFetching = videoId;
+                let timer = null;
+                const reveal = () => {
+                    clearTimeout(timer);
+                    this._revealTimers.delete(timer);
+                    if (el.dataset.daFetching !== videoId) return;
+                    delete el.dataset.daHide;
+                    delete el.dataset.daFetching;
+                };
+                timer = setTimeout(reveal, this._REVEAL_AFTER_MS);
+                this._revealTimers.add(timer);
+                return reveal;
+            },
+            _cardHideParts() {
+                const parts = [];
+                if (appState.settings.daReplaceTitles) parts.push('title');
+                if (appState.settings.daReplaceThumbs) parts.push('thumb');
+                return parts;
+            },
             _connectObserver() {
                 if (!this._observer) return;
                 if (!this._anySurfaceEnabledHere()) {
@@ -204,7 +418,7 @@
                 this._observer.disconnect();
                 this._observing = false;
             },
-            async _fetchBranding(videoId) {
+            async _fetchBranding(videoId, { byHash = false } = {}) {
                 // Check cache with TTL enforcement
                 if (this._cache[videoId]) {
                     const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
@@ -227,12 +441,31 @@
                 }
                 // Deduplicate in-flight fetches for the same videoId
                 if (this._pending[videoId]) return this._pending[videoId];
-                const promise = this._doFetch(videoId);
+                const promise = this._doFetch(videoId, byHash);
                 this._pending[videoId] = promise;
                 try { return await promise; } finally { delete this._pending[videoId]; }
             },
-            async _doFetch(videoId) {
+            // byHash asks for every video sharing the first four hex digits
+            // of the ID's SHA-256, so the server never learns which one is
+            // being watched (upstream's privacy lookup).
+            async _hashPrefix(videoId) {
+                try {
+                    const hex = await sha256Hex(videoId);
+                    return typeof hex === 'string' && /^[0-9a-f]{4}/.test(hex) ? hex.slice(0, 4) : null;
+                } catch (_) {
+                    return null; // reason: no hashing here means the plain lookup.
+                }
+            },
+            async _doFetch(videoId, byHash = false) {
                 const gen = this._generation;
+                const prefix = byHash ? await this._hashPrefix(videoId) : null;
+                const pickEntry = (payload) => {
+                    if (!prefix || !payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
+                    const entry = Object.prototype.hasOwnProperty.call(payload, videoId) ? payload[videoId] : null;
+                    return entry && typeof entry === 'object' && !Array.isArray(entry)
+                        ? entry
+                        : { titles: [], thumbnails: [], casualVotes: [] };
+                };
                 let data;
                 let expectedMiss = false;
                 const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
@@ -244,9 +477,12 @@
                     try {
                         ({ data } = await extensionFetchJson({
                             method: 'GET',
-                            url: `${host}/api/branding?videoID=${encodeURIComponent(videoId)}`,
+                            url: prefix
+                                ? `${host}/api/branding/${prefix}`
+                                : `${host}/api/branding?videoID=${encodeURIComponent(videoId)}`,
                             timeout: 8000,
                         }));
+                        data = pickEntry(data);
                         answeredHost = host;
                     } catch (error) {
                         // DeArrow uses HTTP 404 for a valid video with no submitted
@@ -257,7 +493,7 @@
                             expectedMiss = true;
                             answeredHost = host;
                             data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
-                                ? error.data
+                                ? pickEntry(error.data)
                                 : { titles: [], thumbnails: [], casualVotes: [] };
                             break;
                         }
@@ -336,21 +572,26 @@
                     storageWriteJSON('da_branding_cache', Object.fromEntries(entries));
                 }, 5000);
             },
-            _formatTitle(title, format) {
-                if (!title) return title;
-                // DeArrow marks a word ">Word" to keep its casing, anywhere in
-                // the title. Marked words skip the case pass, then every marker
-                // is dropped the way upstream's cleanResultingTitle does.
-                const keep = (w) => w.startsWith('>');
-                const capitalize = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-                let words = title.split(' ');
-                if (format === 'sentence') {
-                    words = words.map((w, i) => keep(w) ? w : i === 0 ? capitalize(w) : w.toLowerCase());
-                } else if (format === 'title_case') {
-                    const lower = new Set(['a','an','the','and','but','or','for','nor','on','at','to','by','in','of','up','as','is','it']);
-                    words = words.map((w, i) => keep(w) ? w : i === 0 || !lower.has(w.toLowerCase()) ? capitalize(w) : w.toLowerCase());
-                }
-                return words.join(' ').replace(/(^|\s)>(\S)/g, '$1$2');
+            _formatTitle(title, format, { isCustom = false } = {}) {
+                return formatDeArrowTitle(title, format, {
+                    isCustom,
+                    cleanEmoji: appState.settings.daCleanEmojis !== false
+                });
+            },
+            // Casual mode keeps the uploader's title when enough people voted
+            // it acceptable in some category. Votes cast against a different
+            // original title don't count.
+            _casualAccepts(branding, originalTitle) {
+                if (!appState.settings.deArrowCasualMode || !Array.isArray(branding?.casualVotes)) return false;
+                const current = String(originalTitle || '').trim().toLowerCase();
+                return branding.casualVotes.some((vote) => {
+                    const key = CASUAL_CATEGORIES[vote?.id];
+                    if (!key) return false;
+                    if (typeof vote.title === 'string' && vote.title.trim().toLowerCase() !== current) return false;
+                    const raw = Number(appState.settings[key]);
+                    const threshold = Number.isFinite(raw) ? raw : 1;
+                    return threshold > 0 && Number(vote.count) >= threshold;
+                });
             },
             // The top thumbnail's frame time, or null to keep the creator's.
             // A vote for the original carries timestamp null, and Number(null)
@@ -584,27 +825,38 @@
                     && this._cardVideoId(el) === videoId;
             },
             async _applyCard(el, videoId, gen, route) {
-                const branding = await this._fetchBranding(videoId);
-                if (!branding || !this._cardStillShows(el, videoId, gen, route)) return;
-                if (appState.settings.daReplaceTitles) {
+                const reveal = this._hideWhileFetching(el, this._cardHideParts(), videoId);
+                try {
+                    const branding = await this._fetchBranding(videoId);
+                    if (!branding || !this._cardStillShows(el, videoId, gen, route)) return;
                     const titleEl = el.querySelector(this._TITLE_SELECTORS);
-                    if (titleEl) this._applyTitle(titleEl, branding);
+                    if (appState.settings.daReplaceTitles && titleEl) this._applyTitle(titleEl, branding);
+                    if (!appState.settings.daReplaceThumbs) return;
+                    if (appState.settings.daCasualOriginalThumb
+                        && this._casualAccepts(branding, titleEl?.textContent)) return;
+                    this._applyThumbnail(el, videoId, branding);
+                } finally {
+                    reveal();
                 }
-                if (appState.settings.daReplaceThumbs) this._applyThumbnail(el, videoId, branding);
             },
             // Draws the trusted crowd title, or the original run through the
             // formatter. Returns whether anything was drawn.
             _applyTitle(titleEl, branding, { announce = false } = {}) {
                 const format = appState.settings.daTitleFormat || 'sentence';
+                const original = titleEl.textContent.trim();
+                const casual = this._casualAccepts(branding, original);
                 const submission = branding.titles?.[0];
-                if (submission?.title && (submission.locked || !(Number(submission.votes) < 0))) {
-                    return this._renderTitle(titleEl, this._formatTitle(submission.title, format), {
+                if (!casual && submission?.title && (submission.locked || !(Number(submission.votes) < 0))) {
+                    return this._renderTitle(titleEl, this._formatTitle(submission.title, format, { isCustom: true }), {
                         uuid: submission.UUID || '',
                         announce
                     });
                 }
-                if (!appState.settings.daFallbackFormat || appState.settings.deArrowCasualMode) return false;
-                const original = titleEl.textContent.trim();
+                // Upstream's formatCasualTitles formats an accepted original.
+                const formatOriginal = casual
+                    ? appState.settings.daCasualFormat !== false
+                    : appState.settings.daFallbackFormat && !appState.settings.deArrowCasualMode;
+                if (!formatOriginal) return false;
                 const formatted = this._formatTitle(original, format);
                 return formatted !== original && this._renderTitle(titleEl, formatted, { fallback: true });
             },
@@ -620,7 +872,13 @@
                 // Taken before the fetch, so the timed watch pass never
                 // starts a second lookup for the same heading.
                 titleEl.dataset.daProcessed = '1';
-                const branding = await this._fetchBranding(videoId);
+                const reveal = this._hideWhileFetching(titleEl, ['self'], videoId);
+                let branding;
+                try {
+                    branding = await this._fetchBranding(videoId, { byHash: true });
+                } finally {
+                    reveal();
+                }
                 if (!branding || gen !== this._generation || route !== this._routeToken) return;
                 if (getVideoId() !== videoId || titleEl.isConnected === false) return;
                 if (this._applyTitle(titleEl, branding, { announce: true })) this._syncDocumentTitle();
@@ -732,6 +990,8 @@
                 this._persistTimer = null;
                 clearInterval(this._watchTimer);
                 this._watchTimer = null;
+                for (const timer of this._revealTimers) clearTimeout(timer);
+                this._revealTimers.clear();
                 this._cache = {};
                 this._cacheMeta = {};
                 this._pending = {};
@@ -758,7 +1018,14 @@
                     el.removeAttribute('data-da-original-title');
                     delete el.dataset.daProcessed;
                     delete el.dataset.daSurfaceSkipped;
+                    delete el.dataset.daOverride;
                     delete el.dataset.daVideoId;
+                }
+                const hidden = [...root.querySelectorAll('[data-da-fetching]')];
+                if (root.dataset?.daFetching !== undefined) hidden.push(root);
+                for (const el of hidden) {
+                    delete el.dataset.daHide;
+                    delete el.dataset.daFetching;
                 }
                 root.querySelectorAll('.da-replaced-thumb').forEach(el => {
                     if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
@@ -796,6 +1063,6 @@
     ns.createDeArrowFeature = createDeArrowFeature;
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { createDeArrowFeature };
+        module.exports = { createDeArrowFeature, formatDeArrowTitle, cleanEmojis };
     }
 })();

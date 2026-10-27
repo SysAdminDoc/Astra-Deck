@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "元の画像を保持"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "読み込み中は隠す"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "DeArrow の応答があるまでカードのタイトルとサムネイルを隠し、釣りタイトルが一瞬でも見えないようにします。応答がなければ 7 秒後に元に戻ります。"
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "サムネイルの彩度"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "DeArrow が処理するカードのサムネイルの色を薄くします。0% で白黒になります。"
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "絵文字を取り除く"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "DeArrow が整形するタイトルから絵文字や装飾文字を取り除きます。"
+  },
+  "feature_daCasualFormat_name": {
+    "message": "承認された元のタイトルも整形"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "カジュアルモードで、投票者が承認した元のタイトルも整形します。"
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "サムネイルも元のままにする"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "カジュアルモードで元のタイトルが承認されたとき、投稿者のサムネイルも残します。"
+  },
+  "feature_daCasualFunny_name": {
+    "message": "カジュアル投票: 面白い"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "カジュアルモードで元のタイトルを残すのに必要な「面白い」カテゴリーの票数です。0 にするとそのカテゴリーを無視します。"
+  },
+  "feature_daCasualCreative_name": {
+    "message": "カジュアル投票: 独創的"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "カジュアルモードで元のタイトルを残すのに必要な「独創的」カテゴリーの票数です。0 にするとそのカテゴリーを無視します。"
+  },
+  "feature_daCasualClever_name": {
+    "message": "カジュアル投票: 巧み"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "カジュアルモードで元のタイトルを残すのに必要な「巧み」カテゴリーの票数です。0 にするとそのカテゴリーを無視します。"
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "カジュアル投票: 説明的"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "カジュアルモードで元のタイトルを残すのに必要な「説明的」カテゴリーの票数です。0 にするとそのカテゴリーを無視します。"
+  },
+  "feature_daCasualOther_name": {
+    "message": "カジュアル投票: その他"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "カジュアルモードで元のタイトルを残すのに必要な「その他」カテゴリーの票数です。0 にするとそのカテゴリーを無視します。"
+  },
+  "deArrowCasualIgnored": {
+    "message": "無視"
   }
 }

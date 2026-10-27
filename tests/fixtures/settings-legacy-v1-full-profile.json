@@ -573,7 +573,17 @@
     "volumeBoostLevel",
     "watchLaterWorkbench",
     "watchLayoutFlagOverrides",
-    "zenMode"
+    "zenMode",
+    "daHideWhileFetching",
+    "daThumbSaturation",
+    "daCleanEmojis",
+    "daCasualFunny",
+    "daCasualCreative",
+    "daCasualClever",
+    "daCasualDescriptive",
+    "daCasualOther",
+    "daCasualFormat",
+    "daCasualOriginalThumb"
   ],
   "expectedAbsent": [
     "preferredQuality",

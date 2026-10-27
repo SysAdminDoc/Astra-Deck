@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "Оставить оригинал"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "Скрывать при загрузке"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "Скрывает название и превью карточки, пока DeArrow не ответит, чтобы кликбейт не мелькал. Без ответа они вернутся через 7 секунд."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "Насыщенность превью"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "Приглушает цвет превью на карточках, которые обрабатывает DeArrow. При 0% превью чёрно-белое."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "Убирать эмодзи"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "Удаляет эмодзи и декоративные буквы из названий, которые форматирует DeArrow."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "Форматировать принятые оригиналы"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "В обычном режиме всё равно форматирует оригинальное название, принятое голосующими."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "Оставлять и превью"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "В обычном режиме оставляет и превью автора, если голосующие приняли оригинальное название."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "Голоса обычного режима: Смешное"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "Число голосов в категории «Смешное», при котором в обычном режиме остаётся оригинальное название. 0 отключает категорию."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "Голоса обычного режима: Творческое"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "Число голосов в категории «Творческое», при котором в обычном режиме остаётся оригинальное название. 0 отключает категорию."
+  },
+  "feature_daCasualClever_name": {
+    "message": "Голоса обычного режима: Остроумное"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "Число голосов в категории «Остроумное», при котором в обычном режиме остаётся оригинальное название. 0 отключает категорию."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "Голоса обычного режима: Описательное"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "Число голосов в категории «Описательное», при котором в обычном режиме остаётся оригинальное название. 0 отключает категорию."
+  },
+  "feature_daCasualOther_name": {
+    "message": "Голоса обычного режима: Другое"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "Число голосов в категории «Другое», при котором в обычном режиме остаётся оригинальное название. 0 отключает категорию."
+  },
+  "deArrowCasualIgnored": {
+    "message": "Не учитывается"
   }
 }

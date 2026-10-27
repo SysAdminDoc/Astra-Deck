@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "保留原图"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "加载时隐藏"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "在 DeArrow 返回结果前隐藏卡片的标题和缩略图，让标题党内容不会闪现。若 7 秒内没有结果，就恢复显示。"
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "缩略图饱和度"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "降低 DeArrow 处理的卡片缩略图的色彩。0% 为黑白。"
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "移除表情符号"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "从 DeArrow 格式化的标题中去掉表情符号和花体字。"
+  },
+  "feature_daCasualFormat_name": {
+    "message": "格式化已认可的原标题"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "在休闲模式下，仍然格式化投票者认可的原标题。"
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "同时保留缩略图"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "在休闲模式下，投票者认可原标题时也保留创作者的缩略图。"
+  },
+  "feature_daCasualFunny_name": {
+    "message": "休闲投票：有趣"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "在休闲模式下保留原标题所需的“有趣”类别票数。设为 0 则忽略该类别。"
+  },
+  "feature_daCasualCreative_name": {
+    "message": "休闲投票：有创意"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "在休闲模式下保留原标题所需的“有创意”类别票数。设为 0 则忽略该类别。"
+  },
+  "feature_daCasualClever_name": {
+    "message": "休闲投票：机智"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "在休闲模式下保留原标题所需的“机智”类别票数。设为 0 则忽略该类别。"
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "休闲投票：描述性"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "在休闲模式下保留原标题所需的“描述性”类别票数。设为 0 则忽略该类别。"
+  },
+  "feature_daCasualOther_name": {
+    "message": "休闲投票：其他"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "在休闲模式下保留原标题所需的“其他”类别票数。设为 0 则忽略该类别。"
+  },
+  "deArrowCasualIgnored": {
+    "message": "已忽略"
   }
 }

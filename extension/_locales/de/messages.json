@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "Original beibehalten"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "Beim Laden ausblenden"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "Blendet Titel und Vorschaubild einer Karte aus, bis DeArrow antwortet, damit der Clickbait nie aufblitzt. Ohne Antwort kommen sie nach 7 Sekunden zurück."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "Sättigung der Vorschaubilder"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "Nimmt den Vorschaubildern auf Karten, die DeArrow bearbeitet, die Farbe. 0 % ist Schwarzweiß."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "Emojis entfernen"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "Entfernt Emojis und verzierte Schrift aus den Titeln, die DeArrow formatiert."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "Akzeptierte Originale formatieren"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "Im Casual-Modus wird ein von Abstimmenden akzeptierter Originaltitel trotzdem formatiert."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "Auch das Vorschaubild behalten"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "Im Casual-Modus bleibt auch das Vorschaubild des Kanals, wenn der Originaltitel akzeptiert wurde."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "Casual-Stimmen: Lustig"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "Stimmen in der Kategorie „Lustig“, ab denen der Originaltitel im Casual-Modus bleibt. 0 ignoriert die Kategorie."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "Casual-Stimmen: Kreativ"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "Stimmen in der Kategorie „Kreativ“, ab denen der Originaltitel im Casual-Modus bleibt. 0 ignoriert die Kategorie."
+  },
+  "feature_daCasualClever_name": {
+    "message": "Casual-Stimmen: Clever"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "Stimmen in der Kategorie „Clever“, ab denen der Originaltitel im Casual-Modus bleibt. 0 ignoriert die Kategorie."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "Casual-Stimmen: Beschreibend"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "Stimmen in der Kategorie „Beschreibend“, ab denen der Originaltitel im Casual-Modus bleibt. 0 ignoriert die Kategorie."
+  },
+  "feature_daCasualOther_name": {
+    "message": "Casual-Stimmen: Sonstiges"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "Stimmen in der Kategorie „Sonstiges“, ab denen der Originaltitel im Casual-Modus bleibt. 0 ignoriert die Kategorie."
+  },
+  "deArrowCasualIgnored": {
+    "message": "Ignoriert"
   }
 }

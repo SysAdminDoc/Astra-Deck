@@ -9978,5 +9978,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "الاحتفاظ بالصورة الأصلية"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "إخفاء أثناء التحميل"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "يخفي عنوان البطاقة وصورتها المصغرة حتى يرد DeArrow، فلا يظهر العنوان المضلل أبدًا. يعودان بعد 7 ثوانٍ إن لم يرد."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "تشبع الصور المصغرة"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "يخفف ألوان الصور المصغرة في البطاقات التي يعالجها DeArrow. القيمة 0% أبيض وأسود."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "إزالة الرموز التعبيرية"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "يحذف الرموز التعبيرية والحروف المزخرفة من العناوين التي ينسقها DeArrow."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "تنسيق العناوين الأصلية المقبولة"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "في الوضع العفوي، ينسق العنوان الأصلي الذي قبله المصوتون."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "الإبقاء على الصورة المصغرة أيضًا"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "في الوضع العفوي، يبقي أيضًا صورة صانع المحتوى المصغرة عندما يقبل المصوتون العنوان الأصلي."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "أصوات الوضع العفوي: مضحك"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "عدد الأصوات في فئة «مضحك» الذي يبقي العنوان الأصلي في الوضع العفوي. القيمة 0 تتجاهل الفئة."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "أصوات الوضع العفوي: مبدع"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "عدد الأصوات في فئة «مبدع» الذي يبقي العنوان الأصلي في الوضع العفوي. القيمة 0 تتجاهل الفئة."
+  },
+  "feature_daCasualClever_name": {
+    "message": "أصوات الوضع العفوي: ذكي"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "عدد الأصوات في فئة «ذكي» الذي يبقي العنوان الأصلي في الوضع العفوي. القيمة 0 تتجاهل الفئة."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "أصوات الوضع العفوي: وصفي"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "عدد الأصوات في فئة «وصفي» الذي يبقي العنوان الأصلي في الوضع العفوي. القيمة 0 تتجاهل الفئة."
+  },
+  "feature_daCasualOther_name": {
+    "message": "أصوات الوضع العفوي: أخرى"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "عدد الأصوات في فئة «أخرى» الذي يبقي العنوان الأصلي في الوضع العفوي. القيمة 0 تتجاهل الفئة."
+  },
+  "deArrowCasualIgnored": {
+    "message": "متجاهَل"
   }
 }

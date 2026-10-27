@@ -10089,5 +10089,68 @@
   },
   "deArrowCoverOriginal": {
     "message": "Keep the original"
+  },
+  "feature_daHideWhileFetching_name": {
+    "message": "Hide While Loading"
+  },
+  "feature_daHideWhileFetching_desc": {
+    "message": "Hide a card's title and thumbnail until DeArrow answers, so the clickbait never flashes. They come back after 7 seconds if it doesn't."
+  },
+  "feature_daThumbSaturation_name": {
+    "message": "Thumbnail Saturation"
+  },
+  "feature_daThumbSaturation_desc": {
+    "message": "Fades the color out of thumbnails on cards DeArrow handles. 0% is black and white."
+  },
+  "feature_daCleanEmojis_name": {
+    "message": "Remove Emojis"
+  },
+  "feature_daCleanEmojis_desc": {
+    "message": "Strips emojis and fancy lettering from the titles DeArrow formats."
+  },
+  "feature_daCasualFormat_name": {
+    "message": "Format Accepted Originals"
+  },
+  "feature_daCasualFormat_desc": {
+    "message": "In casual mode, still format an original title that voters accepted."
+  },
+  "feature_daCasualOriginalThumb_name": {
+    "message": "Keep the Thumbnail Too"
+  },
+  "feature_daCasualOriginalThumb_desc": {
+    "message": "In casual mode, also keep the creator's thumbnail when voters accepted the original title."
+  },
+  "feature_daCasualFunny_name": {
+    "message": "Casual Votes: Funny"
+  },
+  "feature_daCasualFunny_desc": {
+    "message": "Votes in the funny category that keep an original title in casual mode. 0 ignores the category."
+  },
+  "feature_daCasualCreative_name": {
+    "message": "Casual Votes: Creative"
+  },
+  "feature_daCasualCreative_desc": {
+    "message": "Votes in the creative category that keep an original title in casual mode. 0 ignores the category."
+  },
+  "feature_daCasualClever_name": {
+    "message": "Casual Votes: Clever"
+  },
+  "feature_daCasualClever_desc": {
+    "message": "Votes in the clever category that keep an original title in casual mode. 0 ignores the category."
+  },
+  "feature_daCasualDescriptive_name": {
+    "message": "Casual Votes: Descriptive"
+  },
+  "feature_daCasualDescriptive_desc": {
+    "message": "Votes in the descriptive category that keep an original title in casual mode. 0 ignores the category."
+  },
+  "feature_daCasualOther_name": {
+    "message": "Casual Votes: Other"
+  },
+  "feature_daCasualOther_desc": {
+    "message": "Votes in the other category that keep an original title in casual mode. 0 ignores the category."
+  },
+  "deArrowCasualIgnored": {
+    "message": "Ignored"
   }
 }
