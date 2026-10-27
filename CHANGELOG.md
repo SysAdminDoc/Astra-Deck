@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.102.1] (2026-10-27)
+
 ### Fixed
 
 - The userscript loads again on a fresh install. jsDelivr, which serves its three library files, stopped serving the repository once it grew past 50 MB, and old settings mockups made up most of that. They're gone (git history still has them) and a test now keeps the repository well under the limit.
