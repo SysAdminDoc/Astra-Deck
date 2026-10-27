@@ -34,8 +34,12 @@
 
     const _URL_ATTRS = ['href', 'src', 'xlink:href', 'action', 'formaction', 'data'];
     const _DANGEROUS_URL = /^\s*(?:javascript|data|vbscript):/i;
+    // noscript: DOMParser runs with scripting off, so its body parses as
+    // markup and survives the attribute pass; a live element re-parses it as
+    // raw text, where a `</noscript>` inside an attribute turns the rest into
+    // real elements (mXSS). template: inert content no caller needs.
     const _BLOCKED_TAGS = new Set([
-        'base', 'embed', 'iframe', 'link', 'meta', 'object', 'script', 'style'
+        'base', 'embed', 'iframe', 'link', 'meta', 'noscript', 'object', 'script', 'style', 'template'
     ]);
 
     // Defense-in-depth for the DOMParser fallback (used on engines lacking the

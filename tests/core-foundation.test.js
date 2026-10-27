@@ -625,6 +625,52 @@ test('toTrustedHTML sanitizes markup before a direct TrustedHTML sink', () => {
     assert.doesNotMatch(assigned, /onerror/i);
 });
 
+// Top-level elements only, each ending at the LAST matching close tag, which is
+// how a scripting-disabled DOMParser treats <noscript>: its body is markup, so
+// a `</noscript>` inside an attribute value never closes it.
+function createTopLevelTestParser() {
+    return class TestDOMParser {
+        parseFromString(value) {
+            const raw = String(value ?? '');
+            const children = [];
+            let at = 0;
+            while (at < raw.length) {
+                const open = /^<([a-z]+)\b[^>]*>/i.exec(raw.slice(at));
+                if (!open) throw new Error(`test parser expects top-level elements: ${raw.slice(at)}`);
+                const tag = open[1].toLowerCase();
+                const close = `</${tag}>`;
+                const end = raw.lastIndexOf(close);
+                if (end < at) throw new Error(`test parser found no ${close}`);
+                const el = {
+                    nodeType: 1,
+                    tagName: tag.toUpperCase(),
+                    attributes: [],
+                    outerHTML: raw.slice(at, end + close.length),
+                    remove() { children.splice(children.indexOf(el), 1); }
+                };
+                children.push(el);
+                at = end + close.length;
+            }
+            return {
+                body: {
+                    querySelectorAll() { return children.slice(); },
+                    get innerHTML() { return children.map((el) => el.outerHTML).join(''); }
+                }
+            };
+        }
+    };
+}
+
+test('trusted html sanitizer drops noscript and template wrappers', () => {
+    const core = loadFoundation({ DOMParser: createTopLevelTestParser() });
+    // A live element re-parses noscript content as raw text, so the attribute
+    // below closes the noscript and the img becomes real markup (mXSS).
+    const noscript = '<noscript><p title="</noscript><img src=x onerror=alert(1)>"></p></noscript>';
+    assert.equal(core.toTrustedHTML(`${noscript}<b>ok</b>`), '<b>ok</b>');
+    const template = '<template><img src=x onerror=alert(1)></template>';
+    assert.equal(core.toTrustedHTML(`${template}<b>ok</b>`), '<b>ok</b>');
+});
+
 test('trusted-html.js feature-detects Sanitizer API setHTML when available', () => {
     const src = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'core', 'trusted-html.js'), 'utf8'
