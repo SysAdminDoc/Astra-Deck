@@ -310,6 +310,41 @@ async function run(client, background) {
         await settings({ hideSidebar: false });
         assert.notEqual(await read("getComputedStyle(document.querySelector('#guide-button')).display"), 'none');
     });
+    await check('features off at load turn on from settings, and every pane opens with Video Hider off', async () => {
+        // A module skipped at startup never loaded later in the tab, so its
+        // switch did nothing until a reload, and a missing Video Hider made
+        // the masthead button throw before the panel drew.
+        await evaluate(background, "chrome.storage.local.set({'ytkit-hidden-videos':['aaaaaaaaaaa','bbbbbbbbbbb'],'ytkit-video-hider-allowed-videos':['ccccccccccc']})");
+        await settings({ deArrow: false, hideVideosFromHome: false, hideVideosKeywordFilter: false, hideVideosHideLive: false, sponsorBlock: false });
+        await navigate('https://www.youtube.com/');
+        await until('document.querySelectorAll("ytd-rich-item-renderer").length>2', 'home cards with features off');
+        const seen = client.events.length;
+        const extensionErrors = () => client.events.slice(seen)
+            .filter(e => e.method === 'Runtime.exceptionThrown')
+            .map(e => e.params.exceptionDetails)
+            .filter(d => JSON.stringify(d).includes('chrome-extension://'))
+            .map(d => d.exception?.description || d.text);
+        assert.equal(await read("document.querySelectorAll('[data-da-video-id]').length"), 0, 'DeArrow stays idle while off');
+        await click('#ytkit-masthead-btn', 800);
+        await until("!!document.getElementById('ytkit-settings-panel')", 'settings panel');
+        const tabs = await read("[...document.querySelectorAll('#ytkit-settings-panel .ytkit-nav-btn')].map(b=>b.dataset.tab)");
+        assert.ok(tabs.length > 5, 'settings lists its categories');
+        for (const tab of tabs) {
+            await click(`#ytkit-settings-panel .ytkit-nav-btn[data-tab="${tab}"]`, 300);
+            assert.equal(await read(`document.querySelector('#ytkit-settings-panel .ytkit-nav-btn[data-tab="${tab}"]').classList.contains('active')`), true, `${tab} pane opens`);
+        }
+        const deArrowTab = await read("document.getElementById('ytkit-toggle-deArrow').closest('[id^=\"ytkit-pane-\"]').id.replace('ytkit-pane-','')");
+        await click(`#ytkit-settings-panel .ytkit-nav-btn[data-tab="${deArrowTab}"]`, 400);
+        await read("document.getElementById('ytkit-toggle-deArrow').closest('.ytkit-switch,label').scrollIntoView({block:'center'})");
+        await sleep(300);
+        await click('.ytkit-switch:has(#ytkit-toggle-deArrow)', 600);
+        assert.equal(await read("document.getElementById('ytkit-toggle-deArrow').checked"), true, 'the switch turned on');
+        await escape();
+        await until("document.querySelectorAll('[data-da-video-id]').length>0", 'DeArrow working on the same tab without a reload', 20000);
+        assert.deepEqual(extensionErrors(), [], 'no extension exceptions while opening panes or switching on');
+        await settings({ deArrow: true, sponsorBlock: true });
+        return { tabs: tabs.length, deArrowTab };
+    });
 }
 
 async function main() {
