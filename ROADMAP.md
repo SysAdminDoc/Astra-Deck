@@ -119,18 +119,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Recheck DeArrow renderer identity before applying asynchronous branding
-  Why: same-route card reuse can receive an older video's title or thumbnail.
-  Evidence: Likely source-supported race at `extension/features/dearrow/index.js:577-584`;
-  `_resetReusedCards` at `:777` handles reuse, while `_waitForCover` at `:676` already checks
-  video identity. Analogous report: https://github.com/ajayyy/DeArrow/issues/530.
-  Touches: `extension/features/dearrow/index.js`, `tests/features/dearrow.test.js`.
-  Acceptance: share a guard for connected renderer, active generation, dataset video ID
-  and resolved video ID before title, thumbnail and peek writes. Defer A's branding,
-  recycle its renderer to B or remove it, then resolve A. No A content is painted and B
-  still processes. Verify the normal title/cover fallback and original-peek paths.
-  Complexity: S
-
 - [ ] P1 — Report asynchronous feature initialization only after it settles
   Why: rejected initialization is currently marked healthy and becomes an unhandled rejection.
   Evidence: Verified VM of `initFeatureLifecycle` at `extension/ytkit.js:6545`; an async
