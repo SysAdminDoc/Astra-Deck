@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.100.2
+// @version      4.100.3
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -683,8 +683,17 @@ __astraDeckRegistry["core/env.js"] = function (globalThis, self, window, chrome,
 			return false;
 		}
 	}
+	function privateContextState() {
+		try {
+			const flag = chrome.extension?.inIncognitoContext;
+			if (typeof flag === 'boolean') return flag ? 'private' : 'regular';
+		} catch (_) {
+		}
+		return 'unknown';
+	}
 	Object.assign(core, {
 		hasExtensionContext,
+		privateContextState,
 		isLiveChatFrame,
 		isLiveChatPath,
 		isTopLevelFrame,
@@ -714,6 +723,37 @@ __astraDeckRegistry["core/storage.js"] = function (globalThis, self, window, chr
 	const STORAGE_PERSISTENT_FAILURE_THRESHOLD = 3;
 	let storagePersistentFailureReported = false;
 	let onStoragePersistentFailure = null;
+	const privateMemoryKeys = new Set();
+	let privateMemoryNoticeSent = false;
+	function keepsInPrivateMemory(key) {
+		const state = typeof core.privateContextState === 'function' ? core.privateContextState() : 'unknown';
+		if (state === 'regular') return false;
+		const classify = core.persistedDomains?.isPrivateMemoryStorageKey;
+		return typeof classify === 'function' ? classify(key) === true : true;
+	}
+	function splitPrivateMemoryWrites(entries) {
+		const durable = Object.create(null);
+		const held = [];
+		for (const key of Object.keys(entries)) {
+			if (keepsInPrivateMemory(key)) {
+				privateMemoryKeys.add(key);
+				held.push(key);
+			} else {
+				durable[key] = entries[key];
+			}
+		}
+		if (held.length > 0 && !privateMemoryNoticeSent) {
+			privateMemoryNoticeSent = true;
+			try {
+				window.dispatchEvent(new CustomEvent('ytkit-private-memory-write'));
+			} catch (_) {
+			}
+		}
+		return { durable, held };
+	}
+	function hasPrivateMemoryKeys() {
+		return privateMemoryKeys.size > 0;
+	}
 	function setStoragePersistentFailureHandler(handler) {
 		onStoragePersistentFailure = typeof handler === 'function' ? handler : null;
 	}
@@ -1010,12 +1050,14 @@ __astraDeckRegistry["core/storage.js"] = function (globalThis, self, window, chr
 	}
 	function storageWriteMany(entries, options = {}) {
 		Object.assign(extensionStateCache, entries);
-		Object.assign(pendingStorageWrites, entries);
+		const { durable, held } = splitPrivateMemoryWrites(entries);
+		Object.assign(pendingStorageWrites, durable);
+		const noteHeld = (result) => (held.length ? { ...result, heldInMemory: held } : result);
 		if (options.immediate) {
-			return flushPendingStorageWrites();
+			return flushPendingStorageWrites().then(noteHeld);
 		}
 		schedulePendingStorageFlush();
-		return Promise.resolve({ ok: true, queued: true });
+		return Promise.resolve(noteHeld({ ok: true, queued: true }));
 	}
 	function storageWrite(key, value, options = {}) {
 		return storageWriteMany({ [key]: value }, options);
@@ -1055,6 +1097,7 @@ __astraDeckRegistry["core/storage.js"] = function (globalThis, self, window, chr
 			try {
 				const normalizedChanges = {};
 				for (const [key, change] of Object.entries(changes)) {
+					if (privateMemoryKeys.has(key)) continue;
 					if ('newValue' in change) {
 						extensionStateCache[key] = change.newValue;
 						preloadWindowDeletions.delete(key);
@@ -1067,7 +1110,7 @@ __astraDeckRegistry["core/storage.js"] = function (globalThis, self, window, chr
 						newValue: change.newValue
 					};
 				}
-				emitStorageUpdate(normalizedChanges);
+				if (Object.keys(normalizedChanges).length > 0) emitStorageUpdate(normalizedChanges);
 			} catch (error) {
 				console.error('[YTKit] Storage listener error:', error);
 			}
@@ -1078,6 +1121,7 @@ __astraDeckRegistry["core/storage.js"] = function (globalThis, self, window, chr
 		createYouTubeStateManager,
 		flushPendingStorageWrites,
 		getStoragePreloadError,
+		hasPrivateMemoryKeys,
 		installStorageChangeListener,
 		installStorageFlushGuards,
 		preloadExtensionState,
@@ -4940,6 +4984,10 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 		const cap = Number.isFinite(options.cap) && options.cap > 0
 			? Math.floor(options.cap)
 			: DEFAULT_CAP;
+		const keepInMemory = typeof options.keepInMemory === 'function'
+			? options.keepInMemory
+			: () => false;
+		const memoryEntries = [];
 		const state = {
 			enabled: false,
 			ctxCounts: Object.create(null),
@@ -4947,8 +4995,9 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 		};
 		function _resyncCounts() {
 			const settings = getSettings();
-			const arr = settings && Array.isArray(settings._errors) ? settings._errors : null;
-			if (!arr) return;
+			const persisted = settings && Array.isArray(settings._errors) ? settings._errors : null;
+			if (!persisted && !memoryEntries.length) return;
+			const arr = (persisted || []).concat(memoryEntries);
 			const next = Object.create(null);
 			for (let i = 0; i < arr.length; i++) {
 				const ctx = arr[i] && typeof arr[i].ctx === 'string' ? arr[i].ctx : '';
@@ -4963,7 +5012,8 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 			if (!state.enabled && !(settings && settings.diagnosticLog)) return;
 			if (!settings) return;
 			try {
-				const arr = settings._errors || [];
+				const inMemory = keepInMemory() === true;
+				const arr = inMemory ? memoryEntries : (settings._errors || []);
 				const ctxKey = String(ctx).slice(0, CTX_MAX_LEN);
 				if (!state.countsResynced) _resyncCounts();
 				arr.push({
@@ -4980,7 +5030,7 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 						if (state.ctxCounts[dropCtx] <= 0) delete state.ctxCounts[dropCtx];
 					}
 				}
-				settings._errors = arr;
+				if (!inMemory) settings._errors = arr;
 			} catch (e) {
 				if (typeof console !== 'undefined') {
 					console.warn('[YTKit] DiagnosticLog.record failed:', e);
@@ -4993,12 +5043,14 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 		}
 		function get() {
 			const settings = getSettings();
-			return settings && Array.isArray(settings._errors) ? settings._errors : [];
+			const persisted = settings && Array.isArray(settings._errors) ? settings._errors : [];
+			return memoryEntries.length ? persisted.concat(memoryEntries) : persisted;
 		}
 		function clear() {
 			const settings = getSettings();
 			if (!settings) return;
 			settings._errors = [];
+			memoryEntries.length = 0;
 			state.ctxCounts = Object.create(null);
 			state.countsResynced = true;
 			try { saveSettings(settings); } catch (_) {
@@ -8263,22 +8315,22 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		{ id: 'settings', location: 'extension-local', key: 'ytSuiteSettings', backup: 'include', strategy: 'merge-defaults-then-replace', credentialScrub: 'schema-and-sensitive-keys', migration: 'settings-schema' },
 		{ id: 'hiddenVideos', location: 'extension-local', key: 'ytkit-hidden-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list' },
 		{ id: 'allowedVideos', location: 'extension-local', key: 'ytkit-video-hider-allowed-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list' },
-		{ id: 'markedWatchedVideos', location: 'extension-local', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
+		{ id: 'markedWatchedVideos', location: 'extension-local', privateContext: 'memory', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
 		{ id: 'blockedChannels', location: 'extension-local', key: 'ytkit-blocked-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'blocked-channel-list' },
 		{ id: 'allowedChannels', location: 'extension-local', key: 'ytkit-allowed-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'allowed-channel-list' },
 		{ id: 'videoFilterListSubscription', location: 'extension-local', key: FILTER_LIST_SUBSCRIPTION_KEY, backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-filter-list-subscription-v2' },
-		{ id: 'bookmarks', location: 'extension-local', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
-		{ id: 'watchProgress', location: 'extension-local', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
-		{ id: 'watchTime', location: 'extension-local', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
+		{ id: 'bookmarks', location: 'extension-local', privateContext: 'memory', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
+		{ id: 'watchProgress', location: 'extension-local', privateContext: 'memory', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
+		{ id: 'watchTime', location: 'extension-local', privateContext: 'memory', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
 		{ id: 'channelSpeeds', location: 'extension-local', key: 'ytkit-channel-speeds', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'channel-speed-v1' },
-		{ id: 'resumePositions', location: 'extension-local', key: 'ytkit_resume_positions', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'resume-position-v1' },
-		{ id: 'playlistResume', location: 'extension-local', key: 'ytkit-playlist-resume', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'playlist-resume-v1' },
-		{ id: 'persistentQueue', location: 'extension-local', key: 'ytkit-queue', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'queue-v1' },
+		{ id: 'resumePositions', location: 'extension-local', privateContext: 'memory', key: 'ytkit_resume_positions', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'resume-position-v1' },
+		{ id: 'playlistResume', location: 'extension-local', privateContext: 'memory', key: 'ytkit-playlist-resume', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'playlist-resume-v1' },
+		{ id: 'persistentQueue', location: 'extension-local', privateContext: 'memory', key: 'ytkit-queue', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'queue-v1' },
 		{ id: 'reactionSpammerState', location: 'extension-local', key: 'ytkitReactionSpammerState', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'reaction-state-v1' },
-		{ id: 'watchLaterRemovalLog', location: 'extension-local', key: 'ytkit-wl-removal-log', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
-		{ id: 'recommendationScrubSessions', location: 'extension-local', key: 'ytkit-scrub-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
-		{ id: 'subscriptionUnsubscribeSessions', location: 'extension-local', key: 'ytkit-subscription-unsubscribe-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
-		{ id: 'usageStats', location: 'extension-local', key: 'ytkit_stats', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-object-v1' },
+		{ id: 'watchLaterRemovalLog', location: 'extension-local', privateContext: 'memory', key: 'ytkit-wl-removal-log', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+		{ id: 'recommendationScrubSessions', location: 'extension-local', privateContext: 'memory', key: 'ytkit-scrub-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+		{ id: 'subscriptionUnsubscribeSessions', location: 'extension-local', privateContext: 'memory', key: 'ytkit-subscription-unsubscribe-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+		{ id: 'usageStats', location: 'extension-local', privateContext: 'memory', key: 'ytkit_stats', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-object-v1' },
 		{ id: 'localeOverride', location: 'extension-local', key: '_localeOverride', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'locale-tag-v1' },
 		{ id: 'debugPreference', location: 'extension-local', key: 'ytkit_debug', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'boolean-v1' },
 		{ id: 'playerControlDismissals', location: 'extension-local-prefix', keyPrefix: 'ytkit_pc_', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'boolean-map-v1' },
@@ -8291,15 +8343,15 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		{ id: 'powerPresetRecovery', location: 'extension-local', key: 'ytkit-preset-power-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
 		{ id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
 		{ id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
-		{ id: 'aiSummaries', location: 'extension-local', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
-		{ id: 'aiTranscriptQa', location: 'extension-local', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
+		{ id: 'aiSummaries', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
+		{ id: 'aiTranscriptQa', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
 		{ id: 'elementZapperRules', location: 'extension-local', key: 'ytkit-element-zapper-rules', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'element-zapper-rules-v1' },
 		{ id: 'credentialVault', location: 'extension-session-and-indexeddb', key: 'ytkit-credential-vault', backup: 'exclude', reason: 'Credentials are intentionally non-portable and write-only.', credentialScrub: 'entire-domain', migration: 'none' },
 		{ id: 'deArrowIdentity', location: 'extension-local', key: 'ytkit-da-user-id', backup: 'exclude', reason: 'Pseudonymous API identity must rotate with a new installation.', credentialScrub: 'entire-domain', migration: 'none' },
-		{ id: 'deArrowCache', location: 'extension-local', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
-		{ id: 'sponsorBlockCache', location: 'extension-local', key: 'sb_segments_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
-		{ id: 'returnDislikeCache', location: 'extension-local', key: 'ytkit-ryd-cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
-		{ id: 'aiLabelVerdicts', location: 'extension-local', key: 'ytkit-ai-label-verdicts', backup: 'exclude', reason: 'Rebuildable cache of YouTube\'s own AI labels.', credentialScrub: 'not-applicable', migration: 'none' },
+		{ id: 'deArrowCache', location: 'extension-local', privateContext: 'memory', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+		{ id: 'sponsorBlockCache', location: 'extension-local', privateContext: 'memory', key: 'sb_segments_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+		{ id: 'returnDislikeCache', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ryd-cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+		{ id: 'aiLabelVerdicts', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-label-verdicts', backup: 'exclude', reason: 'Rebuildable cache of YouTube\'s own AI labels.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'featureCrashCounts', location: 'extension-local', key: 'ytkit_crash_counts', backup: 'exclude', reason: 'Installation-specific diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'safeModeState', location: 'extension-local', key: 'ytkit_safe_mode', backup: 'exclude', reason: 'Installation-specific crash recovery state.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'diagnosticErrors', location: 'settings-nested', key: '_errors', backup: 'exclude', reason: 'Installation-specific diagnostics are scrubbed from settings.', credentialScrub: 'entire-domain', migration: 'none' },
@@ -8319,6 +8371,12 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		{ id: 'playbackRecovery', location: 'youtube-session-storage', key: 'ytkit-playback-recovery', backup: 'exclude', reason: 'Short-lived tab recovery state expires after one minute.', credentialScrub: 'not-applicable', migration: 'none' },
 		{ id: 'pageCrashGuard', location: 'youtube-local-storage', key: '_ytkit_crash_guard', backup: 'exclude', reason: 'Installation-specific crash-loop guard.', credentialScrub: 'not-applicable', migration: 'none' }
 	].map(Object.freeze));
+	const PRIVATE_MEMORY_KEYS = new Set(DURABLE_DOMAIN_REGISTRY
+		.filter((entry) => entry.privateContext === 'memory' && entry.key)
+		.map((entry) => entry.key));
+	function isPrivateMemoryStorageKey(key) {
+		return PRIVATE_MEMORY_KEYS.has(String(key));
+	}
 	const INCLUDED_DOMAINS = Object.freeze(DURABLE_DOMAIN_REGISTRY.filter((entry) => entry.backup === 'include'));
 	const EXCLUDED_DOMAINS = Object.freeze(DURABLE_DOMAIN_REGISTRY.filter((entry) => entry.backup === 'exclude'));
 	const DOMAIN_BY_ID = new Map(DURABLE_DOMAIN_REGISTRY.map((entry) => [entry.id, entry]));
@@ -9366,6 +9424,7 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		HIGHLIGHT_EXPORT_VERSION,
 		HIGHLIGHT_EXPORT_KIND,
 		DURABLE_DOMAIN_REGISTRY,
+		isPrivateMemoryStorageKey,
 		INCLUDED_DOMAINS,
 		EXCLUDED_DOMAINS,
 		PAGE_DB,
@@ -20671,8 +20730,39 @@ function cookieHandoffSenderBinding(sender) {
 		documentUrl: parsed.origin + parsed.pathname + parsed.search,
 		cookieStoreId: typeof sender.tab.cookieStoreId === 'string'
 			? sender.tab.cookieStoreId.slice(0, 128)
-			: null
+			: null,
+		incognito: typeof sender.tab.incognito === 'boolean' ? sender.tab.incognito : null
 	};
+}
+function senderMayBePrivate(sender) {
+	return !!sender?.tab && sender.tab.incognito !== false;
+}
+async function resolveCookieHandoffStore(binding) {
+	if (binding.cookieStoreId) return { ok: true, storeId: binding.cookieStoreId };
+	if (typeof ext.cookies?.getAllCookieStores !== 'function') {
+		return binding.incognito === false
+			? { ok: true, storeId: null }
+			: { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+	}
+	let stores;
+	try {
+		stores = await callExtensionApi(ext.cookies, 'getAllCookieStores');
+	} catch (_) {
+		return { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+	}
+	const matches = (Array.isArray(stores) ? stores : [])
+		.filter(store => Array.isArray(store?.tabIds) && store.tabIds.includes(binding.tabId));
+	if (matches.length !== 1 || typeof matches[0].id !== 'string') {
+		return { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+	}
+	const store = matches[0];
+	if (typeof store.incognito === 'boolean' && binding.incognito !== null && store.incognito !== binding.incognito) {
+		return { ok: false, code: 'COOKIE_STORE_MISMATCH' };
+	}
+	if (binding.incognito === null && store.incognito !== false) {
+		return { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+	}
+	return { ok: true, storeId: store.id };
 }
 function sameCookieHandoffBinding(left, right) {
 	return !!left && !!right
@@ -20680,7 +20770,8 @@ function sameCookieHandoffBinding(left, right) {
 		&& left.frameId === right.frameId
 		&& left.documentId === right.documentId
 		&& left.documentUrl === right.documentUrl
-		&& left.cookieStoreId === right.cookieStoreId;
+		&& left.cookieStoreId === right.cookieStoreId
+		&& left.incognito === right.incognito;
 }
 function pruneCookieHandoffCapabilities(now = Date.now()) {
 	for (const [token, capability] of _cookieHandoffCapabilities) {
@@ -21994,7 +22085,8 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 				controller.abort();
 				sendResponse({ timeout: true });
 			}, clampedTimeout);
-			const sendsCredentials = shouldSendCredentials(url) && credentials !== 'omit';
+			const sendsCredentials = shouldSendCredentials(url) && credentials !== 'omit'
+				&& !senderMayBePrivate(sender);
 			const fetchOpts = {
 				method: normalizedMethod,
 				signal: controller.signal,
@@ -22149,9 +22241,16 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 			sendResponse(cookieHandoffFailure('COOKIE_API_UNAVAILABLE'));
 			return false;
 		}
-		const query = { domain: COOKIE_HANDOFF.QUERY_DOMAIN };
-		if (consumed.binding.cookieStoreId) query.storeId = consumed.binding.cookieStoreId;
-		callExtensionApi(ext.cookies, 'getAll', query).then((rawCookies) => {
+		resolveCookieHandoffStore(consumed.binding).then((resolved) => {
+			if (!resolved.ok) return { failure: resolved.code };
+			const query = { domain: COOKIE_HANDOFF.QUERY_DOMAIN };
+			if (resolved.storeId) query.storeId = resolved.storeId;
+			return callExtensionApi(ext.cookies, 'getAll', query);
+		}).then((rawCookies) => {
+			if (rawCookies?.failure) {
+				sendResponse(cookieHandoffFailure(rawCookies.failure));
+				return;
+			}
 			const handoff = COOKIE_HANDOFF.sanitizeCookieHandoff(rawCookies);
 			sendResponse({
 				ok: true,

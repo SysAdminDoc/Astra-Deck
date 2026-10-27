@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.100.2
+// @version      4.100.3
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -581,6 +581,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 					}
 				},
 				getVersion: () => (typeof YTKIT_VERSION !== 'undefined' ? YTKIT_VERSION : 'unknown'),
+				keepInMemory: () => (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') !== 'regular',
 				cap: 500
 			});
 		}
@@ -742,7 +743,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.100.2';
+	const YTKIT_VERSION = '4.100.3';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -3945,6 +3946,7 @@ const STORAGE_KEYS = Object.freeze({
 				};
 				const transaction = this._getSettingsImportTransaction();
 				if (!transaction) throw new Error('Settings import transaction service unavailable');
+				let heldInMemory = false;
 				const outcome = await transaction.run({
 					snapshot: () => backup,
 					summary,
@@ -3968,6 +3970,7 @@ const STORAGE_KEYS = Object.freeze({
 									? failed.error
 									: new Error('Extension storage rejected the imported data.');
 							}
+							heldInMemory = results.some((result) => result?.heldInMemory?.length);
 						});
 					}
 				});
@@ -3975,10 +3978,14 @@ const STORAGE_KEYS = Object.freeze({
 					console.error('[YTKit] Import apply failed, rolling back:', outcome.error || outcome.rollbackError);
 					return { ok: false, message: t('statusSettingsImportFailed', 'Import failed while applying data; previous state was restored.') };
 				}
+				const message = this._formatSettingsImportSummary(summary);
 				return {
 					ok: true,
 					summary,
-					message: this._formatSettingsImportSummary(summary)
+					heldInMemory,
+					message: heldInMemory
+						? `${message} ${t('privateImportHeldNotice', 'This is a private window, so imported history, Watch Feed and bookmarks last only until you close it.')}`
+						: message
 				};
 			} catch (e) {
 				console.error("[YTKit] Failed to import settings:", e);
@@ -5310,6 +5317,25 @@ const STORAGE_KEYS = Object.freeze({
 		window.addEventListener('ytkit-storage-changed', (event) => {
 			const detail = event.detail || {};
 			handleExternalStorageChanges(detail.changes || {}, detail.source || 'storage');
+		});
+		window.addEventListener('ytkit-private-memory-write', () => {
+			const MARK = '_ytkit_private_memory_notice';
+			const known = globalThis.YTKitCore?.privateContextState?.() === 'private';
+			let markStore = null;
+			try {
+				markStore = known ? localStorage : sessionStorage;
+				if (markStore.getItem(MARK)) return;
+			} catch (_) {
+				markStore = null;
+			}
+			const message = known
+				? t('privateMemoryNotice', 'Private window: watch progress, history, Watch Feed changes and bookmarks you make here are kept only until you close it. Copy, Export and Download still work.')
+				: t('privateMemoryUnknownNotice', 'Astra can\'t tell whether this is a private window, so watch progress, history, Watch Feed changes and bookmarks are kept only until you close this tab.');
+			showToast(message, '#f59e0b', { duration: 8, tone: 'warning' });
+			try {
+				markStore?.setItem(MARK, '1');
+			} catch (_) {
+			}
 		});
 		if (chrome.runtime?.onMessage) {
 			chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
