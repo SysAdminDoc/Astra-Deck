@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.100.5] (2026-10-26)
+
 ### Added
 
 - When a transcript fails to load, the panel now has a Retry button. It asks YouTube again right there, so you don't have to reload the page and lose your spot. A video that simply has no captions doesn't get one, since asking again won't change that. Pressing Retry twice still starts only one request, and collapsing the panel, leaving the video or turning the feature off cancels it. If the retry fails too, focus lands back on the new Retry button.
