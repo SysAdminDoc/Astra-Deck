@@ -609,7 +609,10 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         toastDom.includes("toast.setAttribute('data-ytkit-focus-portal', 'true')") &&
         toastDom.includes("document.body?.classList.contains('ytkit-panel-open')") &&
         ytkit.includes('(activeIndex + direction + focusable.length) % focusable.length') &&
-        toastDom.includes('const persistent = options.persistent === true || keepActionReachable'),
+        // Held only while the panel is open, re-checked when it closes.
+        toastDom.includes('const isPersistent = () => options.persistent === true') &&
+        toastDom.includes('const persistent = isPersistent();') &&
+        toastDom.includes("toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });"),
         'Settings Undo toasts must join the focus trap and remain until dismissed or activated');
     add('Settings panel tabs expose keyboard navigation and selected state',
         ['ArrowRight', 'ArrowLeft', 'Home', 'End'].every((key) => settingsPanel.includes(`event.key === '${key}'`)) &&
