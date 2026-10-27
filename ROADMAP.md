@@ -119,19 +119,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Bind Resume Playback restores and listeners to the active video generation
-  Why: a delayed restore can seek the next video, and a superseded init can leak listeners.
-  Evidence: Verified VM using real `resumePlayback._restore` and `init` at
-  `extension/ytkit.js:21430` and `:21458`. A saved 123-second restore for A sought reused
-  video B; deferred enable/disable/enable reads installed two `pagehide` listeners and
-  final destroy left one. See `RESEARCH.md` async ownership.
-  Touches: `extension/ytkit.js` `resumePlayback`, its feature tests and readiness cleanup.
-  Acceptance: check generation and current video identity after every await and before a
-  seek; own and cancel readiness listeners/timers. Real-method tests defer storage reads,
-  navigate A to B on a reused element, and resolve old work after destroy or a newer init.
-  B retains its own position and final teardown leaves zero listeners and timers.
-  Complexity: S
-
 - [ ] P1 — Recheck DeArrow renderer identity before applying asynchronous branding
   Why: same-route card reuse can receive an older video's title or thumbnail.
   Evidence: Likely source-supported race at `extension/features/dearrow/index.js:577-584`;
