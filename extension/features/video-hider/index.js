@@ -19,7 +19,10 @@
         return svg;
     }
 
-    const SUBSCRIBER_COUNT_LABELS = /(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
+    // Settings outside the hideVideos* family that still change which cards
+    // a scan hides or marks.
+    const REFILTER_SETTING_KEYS = new Set(['advancedLocalPredicate', 'advancedLocalPredicateCode', 'markWatchedVideos']);
+    const SUBSCRIBER_COUNT_LABELS =/(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
     const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
     // These markers are deliberately explicit rather than a general-purpose
     // "AI detector": a false positive is more harmful than leaving a card
@@ -3009,6 +3012,33 @@
                 });
                 return handle;
             },
+            // The panel's keyword box re-runs the scan itself. A change made
+            // anywhere else (popup, side panel, another tab) arrives through
+            // applyExternalSettingsUpdate, which restarts a feature only when
+            // its own toggle changes, so the open feed kept its old filters
+            // until the next navigation.
+            _settingsChangeRefilters(keys) {
+                return keys.some((key) => typeof key === 'string' && key !== 'hideVideosFromHome'
+                    && (key.startsWith('hideVideos') || REFILTER_SETTING_KEYS.has(key)));
+            },
+            _onSettingsChanged(detail) {
+                if (this._destroyed) return;
+                const keys = Array.isArray(detail?.keys) ? detail.keys : [detail?.key];
+                if (!this._settingsChangeRefilters(keys)) return;
+                this._restoreRemovedVideoNodes();
+                this._processAllVideos();
+            },
+            _attachSettingsListener() {
+                // A second init without a destroy must not orphan the first handler.
+                this._detachSettingsListener();
+                this._settingsHandler = (event) => this._onSettingsChanged(event.detail);
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
+            },
+            _detachSettingsListener() {
+                if (!this._settingsHandler) return;
+                document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                this._settingsHandler = null;
+            },
             _processAllVideosDebounced(delay = 300) {
                 // A filter-list fetch started before destroy() still resolves
                 // afterwards and lands here; without this the switched-off
@@ -3809,6 +3839,7 @@
                     }
                 };
                 document.addEventListener('click', this._chipClickHandler, true);
+                this._attachSettingsListener();
 
                 DebugManager.log('VideoHider', 'Initialized:', this._getHiddenVideos().length, 'videos,', this._getBlockedChannels().length, 'channels');
             },
@@ -3841,6 +3872,7 @@
                     ?.forEach?.((placeholder) => placeholder.remove());
                 this._hiddenReasonPlaceholders = new WeakMap();
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
+                this._detachSettingsListener();
                 if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
                 if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
                 removeNavigateRule('hideVideosFromHomeNav');

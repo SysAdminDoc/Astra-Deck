@@ -1781,3 +1781,61 @@ test('Video Hider applies imported BlockTube rules to their own field with Block
     assert.equal(feature._shouldHide(titledChannelCard('Cat videos', 'Spammer HQ')), false,
         'clearing the stored rules turns them off');
 });
+
+test('a filter setting changed outside the panel re-filters the open feed', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({ appState: { settings: {} } });
+    const calls = [];
+    feature._restoreRemovedVideoNodes = () => calls.push('restore');
+    feature._processAllVideos = () => calls.push('scan');
+
+    // The shared reconciler reports { keys, source }; the panel's toggles report { key }.
+    feature._onSettingsChanged({ keys: ['hideVideosKeywordFilter'], source: 'storage' });
+    assert.deepEqual(calls, ['restore', 'scan'], 'a keyword edit from the popup or another tab rescans');
+    calls.length = 0;
+    feature._onSettingsChanged({ key: 'hideVideosHideLive' });
+    feature._onSettingsChanged({ keys: ['advancedLocalPredicateCode'] });
+    assert.deepEqual(calls, ['restore', 'scan', 'restore', 'scan']);
+    calls.length = 0;
+
+    feature._onSettingsChanged({ keys: ['listFeedLayout', 'videosPerRow'] });
+    feature._onSettingsChanged({ keys: ['hideVideosFromHome'] });
+    feature._onSettingsChanged({ keys: [] });
+    feature._onSettingsChanged(undefined);
+    assert.deepEqual(calls, [], 'unrelated keys and the toggle itself (which restarts the feature) do not rescan');
+
+    feature._destroyed = true;
+    feature._onSettingsChanged({ keys: ['hideVideosKeywordFilter'] });
+    assert.deepEqual(calls, [], 'a switched-off Video Hider never re-hides cards');
+
+    // init and destroy reach the listener only through these two calls.
+    assert.match(MODULE_SOURCE, /this\._attachSettingsListener\(\);\s*\n\s*DebugManager\.log\('VideoHider', 'Initialized:'/);
+    assert.match(MODULE_SOURCE, /destroy\(\) \{[\s\S]*?this\._detachSettingsListener\(\);[\s\S]*?removeNavigateRule\('hideVideosFromHomeNav'\)/,
+        'destroy must drop the listener init added');
+});
+
+test('the settings listener runs on a real document event and is gone after detach', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({ appState: { settings: {} } });
+    const originalDocument = globalThis.document;
+    const target = new EventTarget();
+    globalThis.document = target;
+    const scans = [];
+    feature._restoreRemovedVideoNodes = () => {};
+    feature._processAllVideos = () => scans.push('scan');
+    const fire = () => target.dispatchEvent(new CustomEvent('ytkit-settings-changed', {
+        detail: { keys: ['hideVideosKeywordFilter'], source: 'storage' },
+    }));
+    try {
+        feature._attachSettingsListener();
+        feature._attachSettingsListener();
+        fire();
+        assert.equal(scans.length, 1, 'a repeated attach replaces the handler instead of adding a second one');
+        feature._detachSettingsListener();
+        fire();
+        assert.equal(scans.length, 1, 'nothing rescans after detach');
+        assert.equal(feature._settingsHandler, null);
+    } finally {
+        globalThis.document = originalDocument;
+    }
+});

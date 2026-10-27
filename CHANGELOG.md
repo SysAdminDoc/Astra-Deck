@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Changing a Video Hider keyword or filter from the popup, the side panel or another tab now re-filters the feed you already have open. Before, the old filters stuck around until you went to another page.
+
 ## [4.104.0] (2026-10-27)
 
 ### Added
