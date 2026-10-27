@@ -12,13 +12,15 @@ const coreFiles = [
     'navigation.js'
 ];
 
-function createLongSessionHarness({ navigationApi = false } = {}) {
+function createLongSessionHarness({ navigationApi = false, deferViewTransitions = false, watchFlexy = false } = {}) {
     const documentListeners = new Map();
     const windowListeners = new Map();
     const navigationListeners = new Map();
     const observers = [];
     const rafQueue = [];
+    const pendingTransitions = [];
     const timers = new Map();
+    const watchFlexyNode = { nodeType: 1, nodeName: 'YTD-WATCH-FLEXY' };
     let nextTimerId = 1;
     let viewTransitions = 0;
     let viewTransitionThrows = false;
@@ -61,8 +63,10 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
     const document = {
         body,
         documentElement,
-        querySelector() { return null; },
-        contains() { return false; },
+        querySelector(selector) {
+            return watchFlexy && selector === 'ytd-watch-flexy' ? watchFlexyNode : null;
+        },
+        contains(node) { return watchFlexy && node === watchFlexyNode; },
         addEventListener(type, callback) { addListener(documentListeners, type, callback); },
         removeEventListener(type, callback) { removeListener(documentListeners, type, callback); },
         dispatchEvent(event) {
@@ -72,7 +76,10 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
         startViewTransition(callback) {
             viewTransitions += 1;
             if (viewTransitionThrows) throw new Error('transition already active');
-            callback();
+            // The real API runs the update callback asynchronously, after the
+            // old-state snapshot; deferring it lets a test act in that gap.
+            if (deferViewTransitions) pendingTransitions.push(callback);
+            else callback();
             return { finished: Promise.resolve() };
         }
     };
@@ -176,6 +183,14 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
         document,
         flushRaf,
         flushTimers,
+        flushViewTransitions() {
+            for (const callback of pendingTransitions.splice(0, pendingTransitions.length)) callback();
+        },
+        isWatchFlexyObserved() {
+            return activeObservers().some((observer) => (
+                observer.targets.some((entry) => entry.target === watchFlexyNode)
+            ));
+        },
         activeObservers,
         sharedMutationObserver,
         listenerCount,
@@ -501,4 +516,70 @@ test('the pre-commit navigate event does not dispatch route rules', () => {
         'the post-commit signal must run route rules exactly once');
 
     core.removeNavigateRule('post-commit-only');
+});
+
+test('a view transition that fires after the listener stops does not revive the watch-flexy observer', () => {
+    const harness = createLongSessionHarness({ deferViewTransitions: true, watchFlexy: true });
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+
+    let navRuns = 0;
+    core.addNavigateRule('late-transition', () => { navRuns += 1; });
+    assert.equal(harness.isWatchFlexyObserved(), true, 'attaching observes ytd-watch-flexy');
+
+    harness.location.href = 'https://www.youtube.com/watch?v=late-transition';
+    harness.document.dispatchEvent({ type: 'yt-navigate-finish' });
+    harness.flushTimers();
+    assert.equal(harness.viewTransitionCount(), 1, 'the route change queued a transition');
+
+    core.removeNavigateRule('late-transition');
+    assert.equal(harness.activeObservers().length, 0, 'stopping disconnects every observer');
+    const runsAtStop = navRuns;
+
+    harness.flushViewTransitions();
+    assert.equal(harness.activeObservers().length, 0,
+        'a transition callback landing after stop must not reconnect an observer nothing will disconnect');
+    assert.equal(navRuns, runsAtStop, 'and must not run rules for a stopped listener');
+});
+
+test('a throwing first navigate run still leaves the listener state stoppable', () => {
+    const harness = createLongSessionHarness();
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+
+    let bridgeThrows = true;
+    core.notifyBridgeNavigate = () => {
+        if (bridgeThrows) throw new Error('bridge not ready');
+    };
+    assert.throws(() => core.addNavigateRule('throws-first', () => {}), /bridge not ready/);
+    bridgeThrows = false;
+    assert.equal(harness.listenerCount('document', 'yt-page-data-updated'), 1);
+
+    core.removeNavigateRule('throws-first');
+    assert.equal(harness.listenerCount('document', 'yt-page-data-updated'), 0,
+        'listeners attached before the throw must be removed by stop');
+    assert.equal(harness.listenerCount('document', 'yt-navigate-finish'), 0);
+    assert.equal(harness.listenerCount('window', 'popstate'), 0);
+});
+
+test('a navigate rule registered during the first run does not re-run the attach path', () => {
+    const harness = createLongSessionHarness();
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+
+    let bridgeNotifies = 0;
+    let nested = false;
+    core.notifyBridgeNavigate = () => {
+        bridgeNotifies += 1;
+        if (!nested) {
+            nested = true;
+            core.addNavigateRule('nested', () => {});
+        }
+    };
+    core.addNavigateRule('outer', () => {});
+    assert.equal(bridgeNotifies, 1, 'the nested registration must see the listener as attached');
+
+    core.removeNavigateRule('outer');
+    core.removeNavigateRule('nested');
+    assert.equal(harness.listenerCount('document', 'yt-page-data-updated'), 0);
 });

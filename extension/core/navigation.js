@@ -147,6 +147,9 @@
     }
 
     function ensureWatchFlexyObserver() {
+        // Only the attached listener owns this observer: stop is the one place
+        // that disconnects it, so a late caller must not create one after stop.
+        if (!isNavigateListenerAttached) return;
         const watchFlexy = document.querySelector('ytd-watch-flexy');
         if (!watchFlexy) {
             if (watchFlexyObservedNode && !document.contains(watchFlexyObservedNode)) {
@@ -213,6 +216,9 @@
         try {
             document.startViewTransition(() => {
                 executed = true;
+                // The update callback runs after the old-state snapshot, so
+                // stopNavigateListener() can land in between.
+                if (!isNavigateListenerAttached) return;
                 _executeNavigateRules();
             });
         } catch (_) {
@@ -296,9 +302,12 @@
         // detector; keep it active for feed/page-data re-renders.
         document.addEventListener('yt-page-data-updated', debouncedRunNavigateRules);
 
+        // Mark attached before the first run: a rule that registers another
+        // rule re-enters here, and a throw in the run must still leave stop
+        // able to undo the listeners above.
+        isNavigateListenerAttached = true;
         ensureWatchFlexyObserver();
         runNavigateRules();
-        isNavigateListenerAttached = true;
     }
 
     function stopNavigateListener() {
