@@ -5954,11 +5954,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Hide AI Chapters adds one (493), Views on Their Own Line one (494).
     // DeArrow Voting is retired (493). Covers Without a Submission adds one (494).
     // Sort by Length makes it 495, and the ten DeArrow options ported from
-    // upstream make it 505.
+    // upstream make it 505. Anti-Translate's Keep Translated Titles For
+    // makes it 506.
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 505,
-        'SETTINGS_SCHEMA must cover all 505 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 506,
+        'SETTINGS_SCHEMA must cover all 506 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
