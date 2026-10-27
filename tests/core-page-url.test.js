@@ -54,6 +54,19 @@ test('core video id helper supports shorts, live, and embed routes', () => {
     assert.equal(core.extractVideoIdFromUrl('https://www.youtube.com/embed/M7lc1UVf-VE?start=30'), 'M7lc1UVf-VE');
 });
 
+test('core helpers treat youtube.com/live/<id> as a watch page', () => {
+    const core = loadCoreAtUrl('https://www.youtube.com/live/dQw4w9WgXcQ?si=abc');
+    assert.equal(core.getCurrentPage(), core.PageTypes.WATCH);
+    assert.equal(core.isWatchPagePath(), true);
+    assert.equal(core.getVideoId(), 'dQw4w9WgXcQ');
+    assert.equal(core.getCurrentPage('/live/dQw4w9WgXcQ/'), core.PageTypes.WATCH);
+    // A channel's live tab and the chat iframe are not watch pages.
+    assert.equal(core.getCurrentPage('/@LofiGirl/live'), core.PageTypes.CHANNEL);
+    assert.equal(core.getCurrentPage('/live_chat'), core.PageTypes.LIVE_CHAT);
+    assert.equal(core.isWatchPagePath('/live/abc123'), false);
+    assert.equal(core.isWatchPagePath('/live/dQw4w9WgXcQ/extra'), false);
+});
+
 test('core helpers treat youtu.be short links as watch pages', () => {
     const core = loadCoreAtUrl('https://youtu.be/dQw4w9WgXcQ?t=43');
     assert.equal(core.getCurrentPage(), core.PageTypes.WATCH);

@@ -109,11 +109,19 @@ test('a flag list the settings field would refuse is left out, and the switch st
 test('only a watch page qualifies', () => {
     const { early } = loadEarly({ pathname: '/' });
     assert.equal(early.isWatchPath('/watch'), true);
-    // core/page.js doesn't count /live/ID as a watch page, so the features
-    // never start there and an early switch would only be withdrawn.
-    for (const no of ['/', '/live/abc123', '/watchlater', '/watch/x', '/shorts/abc', '/results', '/@channel/live', '', undefined]) {
+    // youtube.com/live/<id> renders the watch page, and core/page.js starts
+    // the features there, so the early switches have to go out too.
+    assert.equal(early.isWatchPath('/live/dQw4w9WgXcQ'), true);
+    assert.equal(early.isWatchPath('/live/dQw4w9WgXcQ/'), true);
+    for (const no of ['/', '/live/abc123', '/live/dQw4w9WgXcQ/x', '/live_chat', '/watchlater', '/watch/x', '/shorts/abc', '/results', '/@channel/live', '', undefined]) {
         assert.equal(early.isWatchPath(no), false, String(no));
     }
+});
+
+test('a hard load of a /live/<id> link publishes the switches like /watch does', async () => {
+    const run = loadEarly({ stored: { ytSuiteSettings: ALL_ON }, pathname: '/live/dQw4w9WgXcQ' });
+    assert.equal(await run.ready, 4);
+    assert.deepEqual(run.reads, [['ytSuiteSettings', 'ytkit_safe_mode']]);
 });
 
 test('on a watch page with the switches stored on, they publish as soon as storage answers', async () => {

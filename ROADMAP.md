@@ -35,21 +35,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   headless check that cards still fill in.
   Complexity: M
 
-- [ ] P2 — Treat `youtube.com/live/<id>` links as watch pages
-  Why: `core/url.js` reads a video id from `/live/<id>` (VIDEO_ID_PATH_PREFIXES), but
-  `core/page.js` `isWatchPagePath` only accepts `/watch` and youtu.be ids, so `getCurrentPage`
-  never returns WATCH on a `/live/` link and every watch-page feature (Force DVR included) stays
-  off there. The 2026-10-10 review of the early switches found the mismatch; the early pass now
-  follows `page.js` and skips `/live/` until this lands.
-  Evidence: `extension/core/page.js` ~53-59, `extension/core/url.js` ~8-12,
-  `tests/core-page-url.test.js:53`, `extension/core/early-switches.js` `isWatchPath`.
-  Touches: `core/page.js`, `core/early-switches.js` (accept `/live/<11-char id>` again),
-  `tests/core-page-url.test.js`, `tests/early-switches.test.js`.
-  Acceptance: `getCurrentPage('/live/<id>')` is WATCH while `/@channel/live` and `/live_chat` are
-  not; the early pass publishes on a `/live/<id>` hard load; a headless load of a live `/live/`
-  link shows a watch-page feature running (owed check).
-  Complexity: S
-
 - [ ] P2 — Live Latency Catch-up never runs on the 2026-10-12 watch player
   Why: its `_isLive` looks for `#movie_player.ytp-live`, a class the watch player no longer
   carries (checked on a live stream 2026-10-12), and its fallback needs a latency from

@@ -654,6 +654,7 @@ function navigatorFixture(threads = []) {
     const feature = loadFeature('commentNavigator', {
         document: doc,
         window: { location: { pathname: '/watch' } },
+        isWatchPagePath: () => true,
         Intl,
         HTMLElement: FakeHTMLElement,
         getComputedStyle: () => ({ display: 'block' })

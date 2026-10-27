@@ -9,6 +9,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Fixed
 
 - The Transcript Sidebar shows up again while Theater Split is open. It used to stay in YouTube's sidebar, which the split hides, so the panel was there but you couldn't see it. Now it sits in the side panel right under the video title, and it goes back to the sidebar when you collapse or close the split.
+- Links in the youtube.com/live/<id> form (what the share button gives you for a stream) now count as watch pages. Before, Theater Split, the Player Dock, Force DVR and the rest of the watch-page features stayed off until you opened the same stream through a /watch link.
 
 ## [4.100.6] (2026-10-26)
 

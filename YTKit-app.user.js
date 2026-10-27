@@ -2572,7 +2572,7 @@ const STORAGE_KEYS = Object.freeze({
 		}
 	}
 	function tryInjectButton(id) {
-		if (!window.location.pathname.startsWith('/watch')) return false;
+		if (!isWatchPagePath()) return false;
 		const config = persistentButtons.get(id);
 		if (!config) return false;
 		if (document.querySelector(config.checkSelector)) return true;
@@ -2638,7 +2638,7 @@ const STORAGE_KEYS = Object.freeze({
 	}
 	let lastVideoId = null;
 	function checkAllButtons() {
-		if (!window.location.pathname.startsWith('/watch')) return;
+		if (!isWatchPagePath()) return;
 		const currentVideoId = getVideoId();
 		if (currentVideoId && currentVideoId !== lastVideoId) {
 			lastVideoId = currentVideoId;
@@ -6576,7 +6576,7 @@ const STORAGE_KEYS = Object.freeze({
 				};
 				scanPage();
 				addMutationRule(this.id, () => {
-					if (window.location.pathname.startsWith('/watch')) return;
+					if (isWatchPagePath()) return;
 					if (!isExemptPage()) {
 						document.querySelectorAll('a[href^="/shorts"]').forEach(hideShort);
 					}
@@ -6894,7 +6894,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (hasButtonsToHide) {
 					this._hideButtons();
 					addMutationRule(this._ruleId, () => {
-						if (!window.location.pathname.startsWith('/watch')) return;
+						if (!isWatchPagePath()) return;
 						this._hideButtons();
 					});
 				}
@@ -7008,6 +7008,7 @@ const STORAGE_KEYS = Object.freeze({
 			PageTypes,
 			VideoTypeDetector,
 			getVideoId,
+			isWatchPagePath,
 			_rw,
 			getFeatureById,
 			storageRead,
@@ -19108,7 +19109,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (this._openTimer) clearTimeout(this._openTimer);
 				this._openTimer = setTimeout(() => {
 					this._openTimer = null;
-					if (!window.location.pathname.startsWith('/watch')) return;
+					if (!isWatchPagePath()) return;
 					const chaptersButton = document.querySelector('ytd-video-description-chapters-section-renderer button');
 					if (chaptersButton && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]')) {
 						chaptersButton.click();
@@ -19135,7 +19136,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (this._openTimer) clearTimeout(this._openTimer);
 				this._openTimer = setTimeout(() => {
 					this._openTimer = null;
-					if (!window.location.pathname.startsWith('/watch')) return;
+					if (!isWatchPagePath()) return;
 					const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
 					if (moreBtn && !globalThis.YTKitCore?.getTranscriptPanelElement?.(document)) {
 						moreBtn.click();
@@ -19415,7 +19416,7 @@ const STORAGE_KEYS = Object.freeze({
 			_preloadTimer: null,
 			init() {
 				const preloadRule = () => {
-					if (!window.location.pathname.startsWith('/watch')) return;
+					if (!isWatchPagePath()) return;
 					if (this._preloadTimer) { clearTimeout(this._preloadTimer); this._preloadTimer = null; }
 					const tryPreload = (attempts = 0) => {
 						if (!this._preloadTimer && attempts > 0) return;
@@ -19454,7 +19455,7 @@ const STORAGE_KEYS = Object.freeze({
 				const css = `body.ytkit-adaptive-live ytd-watch-flexy[theater] #columns.ytd-watch-flexy{flex-direction:row!important;max-width:none!important}body.ytkit-adaptive-live ytd-watch-flexy[theater] #primary.ytd-watch-flexy{flex:1 1 auto!important;max-width:none!important}body.ytkit-adaptive-live ytd-watch-flexy[theater] #secondary.ytd-watch-flexy{display:block!important;flex:0 0 400px!important;max-width:400px!important}body.ytkit-adaptive-live ytd-live-chat-frame{min-height:500px!important}`;
 				this._styleElement = injectStyle(css, this.id, true);
 				const checkLive = () => {
-					const isWatch = window.location.pathname.startsWith('/watch');
+					const isWatch = isWatchPagePath();
 					const liveBadge = document.querySelector('.ytp-live-badge');
 					const isLive = isWatch && liveBadge && window.getComputedStyle(liveBadge).display !== 'none';
 					document.body.classList.toggle('ytkit-adaptive-live', isLive);
@@ -19488,7 +19489,7 @@ const STORAGE_KEYS = Object.freeze({
 				return new Intl.NumberFormat().format(Math.max(0, Math.floor(Number(value) || 0)));
 			},
 			_ensureNav() {
-				if (this._container || !window.location.pathname.startsWith('/watch')) return;
+				if (this._container || !isWatchPagePath()) return;
 				const comments = document.querySelector('ytd-comments#comments');
 				if (!comments) return;
 				const nav = document.createElement('aside');
@@ -19633,7 +19634,7 @@ const STORAGE_KEYS = Object.freeze({
 				const css = `#ytkit-comment-nav{position:fixed;right:18px;bottom:20px;width:min(286px,calc(100vw - 24px));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:radial-gradient(circle at top right,rgba(var(--ytkit-accent-rgb),0.14),transparent 42%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.012)),rgba(8,11,18,0.94);box-shadow:0 18px 42px rgba(0,0,0,0.24),inset 0 1px 0 rgba(255,255,255,0.04);backdrop-filter:none;z-index:10020}#ytkit-comment-nav[data-filtered="1"]{border-color:rgba(var(--ytkit-accent-rgb),0.2);box-shadow:0 20px 46px rgba(0,0,0,0.24),0 0 0 1px rgba(var(--ytkit-accent-rgb),0.08)}#ytkit-comment-nav .ytkit-comment-nav-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}#ytkit-comment-nav .ytkit-comment-nav-meta{display:grid;gap:6px;min-width:0}#ytkit-comment-nav .ytkit-comment-nav-topline{display:flex;align-items:center;justify-content:space-between;gap:10px}#ytkit-comment-nav .ytkit-comment-nav-label{font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.46)}#ytkit-comment-nav .ytkit-comment-nav-filter{display:inline-flex;align-items:center;max-width:132px;min-width:0;padding:5px 10px;border-radius:10px;border:1px solid rgba(var(--ytkit-accent-rgb),0.18);background:rgba(var(--ytkit-accent-rgb),0.1);color:rgba(255,255,255,0.9);font-size:10px;font-weight:700;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#ytkit-comment-nav .ytkit-comment-nav-count{color:rgba(255,255,255,0.96);font-size:28px;line-height:1;letter-spacing:0;font-variant-numeric:tabular-nums}#ytkit-comment-nav .ytkit-comment-nav-status{color:rgba(255,255,255,0.68);font-size:12px;font-weight:600;line-height:1.4;text-wrap:pretty}#ytkit-comment-nav .ytkit-comment-nav-controls{display:flex;align-items:center;gap:8px;flex-shrink:0}#ytkit-comment-nav .ytkit-comment-nav-btn{min-width:92px;min-height:38px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.03));color:rgba(255,255,255,0.84);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;touch-action:manipulation;transition:border-color 160ms ease,background 160ms ease,color 160ms ease,transform 160ms ease}#ytkit-comment-nav .ytkit-comment-nav-btn:hover:not(:disabled){border-color:rgba(var(--ytkit-accent-rgb),0.18);background:rgba(var(--ytkit-accent-rgb),0.12);color:rgba(255,255,255,0.96);transform:translateY(-1px)}#ytkit-comment-nav .ytkit-comment-nav-btn:focus-visible{outline:2px solid rgba(var(--ytkit-accent-rgb),0.44);outline-offset:2px}#ytkit-comment-nav .ytkit-comment-nav-btn:disabled{opacity:0.42;cursor:not-allowed}#ytkit-comment-nav .ytkit-comment-nav-arrow{font-size:13px;opacity:0.86}#comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"]{scroll-margin-top:88px!important}#comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-view-model,#comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-renderer{border-color:rgba(var(--ytkit-accent-rgb),0.28)!important;box-shadow:0 12px 26px rgba(0,0,0,0.2),0 0 0 1px rgba(var(--ytkit-accent-rgb),0.14)!important}html.ytkit-split-active:not(.ytkit-split-open) #ytkit-comment-nav{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(12px)!important}html.ytkit-split-open #ytkit-comment-nav{right:12px;bottom:12px;left:auto;width:clamp(196px,calc(var(--ytkit-split-right-width,320px) - 18px),272px);padding:10px;border-radius:12px;box-shadow:0 14px 32px rgba(0,0,0,0.22)}html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-head{flex-direction:column;align-items:stretch;gap:8px}html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-count{font-size:22px}html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-status{font-size:11px}html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-controls{width:100%}html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-btn{flex:1 1 0;min-width:0;min-height:34px;padding:0 10px}html.ytkit-split-open #comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-view-model,html.ytkit-split-open #comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-renderer{box-shadow:0 10px 22px rgba(0,0,0,0.18),0 0 0 1px rgba(var(--ytkit-accent-rgb),0.12)!important}@media (max-width:1100px){#ytkit-comment-nav{right:16px;left:16px;bottom:16px;width:auto}}@media (max-width:640px){#ytkit-comment-nav .ytkit-comment-nav-head{flex-direction:column;align-items:stretch}#ytkit-comment-nav .ytkit-comment-nav-topline{flex-wrap:wrap}#ytkit-comment-nav .ytkit-comment-nav-controls{width:100%}#ytkit-comment-nav .ytkit-comment-nav-btn{flex:1 1 0}}`;
 				this._styleEl = injectStyle(css, this.id, true);
 				const refresh = () => {
-					if (!window.location.pathname.startsWith('/watch')) return;
+					if (!isWatchPagePath()) return;
 					this._ensureNav();
 					this._updateState();
 				};
@@ -19927,7 +19928,7 @@ const STORAGE_KEYS = Object.freeze({
 				}, delay);
 			},
 			_scrollIfReady() {
-				if (!window.location.pathname.startsWith('/watch')) return true;
+				if (!isWatchPagePath()) return true;
 				if (!appState.settings.autoTheaterMode) return true;
 				const watchFlexy = document.querySelector('ytd-watch-flexy');
 				if (!watchFlexy?.hasAttribute('theater')) return false;
@@ -20303,7 +20304,7 @@ const STORAGE_KEYS = Object.freeze({
 			init() {
 				const self = this;
 				addNavigateRule(this.id, () => {
-					if (!window.location.pathname.startsWith('/watch')) return;
+					if (!isWatchPagePath()) return;
 					const videoId = getVideoId();
 					if (!videoId || videoId === self._lastDownloaded) return;
 					self._lastDownloaded = videoId;
@@ -20715,7 +20716,7 @@ const STORAGE_KEYS = Object.freeze({
 					saveStats(s);
 				};
 				addNavigateRule(this.id, () => {
-					if (!window.location.pathname.startsWith('/watch')) return;
+					if (!isWatchPagePath()) return;
 					const vid = getVideoId();
 					if (vid && vid !== self._lastVideoId) {
 						self._lastVideoId = vid;
@@ -20916,8 +20917,8 @@ const STORAGE_KEYS = Object.freeze({
 			_styleElement: null,
 			_ruleId: 'fitPlayerToWindowRule',
 			_applyStyles() {
-				if (appState.settings.stickyVideo && window.location.pathname.startsWith('/watch')) return;
-				const isWatchPage = window.location.pathname.startsWith('/watch');
+				if (appState.settings.stickyVideo && isWatchPagePath()) return;
+				const isWatchPage = isWatchPagePath();
 				document.documentElement.classList.toggle('ytkit-fit-to-window', isWatchPage);
 				document.body.classList.toggle('ytkit-fit-to-window', isWatchPage);
 				if (isWatchPage) {
@@ -30532,7 +30533,7 @@ const STORAGE_KEYS = Object.freeze({
 	}
 	function injectSettingsButton() {
 		const handleDisplay = () => {
-			const isWatchPage = window.location.pathname.startsWith('/watch');
+			const isWatchPage = isWatchPagePath();
 			const createButton = (id, variant) => {
 				const btn = document.createElement('button');
 				btn.id = id;
@@ -31198,7 +31199,7 @@ const STORAGE_KEYS = Object.freeze({
 	}
 	function injectPageModalButton() {
 		const handleDisplay = () => {
-			const isWatch = window.location.pathname.startsWith('/watch');
+			const isWatch = isWatchPagePath();
 			if (isWatch) {
 				document.getElementById('ytkit-page-btn')?.remove();
 			} else {

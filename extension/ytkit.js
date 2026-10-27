@@ -3889,7 +3889,7 @@ const STORAGE_KEYS = Object.freeze({
     }
 
     function tryInjectButton(id) {
-        if (!window.location.pathname.startsWith('/watch')) return false;
+        if (!isWatchPagePath()) return false;
 
         const config = persistentButtons.get(id);
         if (!config) return false;
@@ -3970,7 +3970,7 @@ const STORAGE_KEYS = Object.freeze({
     let lastVideoId = null;
 
     function checkAllButtons() {
-        if (!window.location.pathname.startsWith('/watch')) return;
+        if (!isWatchPagePath()) return;
 
         // Check if video changed
         const currentVideoId = getVideoId();
@@ -11093,7 +11093,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 // Use shared observer for new content (skip on watch pages — no shorts there)
                 addMutationRule(this.id, () => {
-                    if (window.location.pathname.startsWith('/watch')) return;
+                    if (isWatchPagePath()) return;
                     if (!isExemptPage()) {
                         document.querySelectorAll('a[href^="/shorts"]').forEach(hideShort);
                     }
@@ -11494,7 +11494,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     // Add mutation rule to catch dynamically loaded content
                     addMutationRule(this._ruleId, () => {
-                        if (!window.location.pathname.startsWith('/watch')) return;
+                        if (!isWatchPagePath()) return;
                         this._hideButtons();
                     });
                 }
@@ -11631,6 +11631,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             PageTypes,
             VideoTypeDetector,
             getVideoId,
+            isWatchPagePath,
             _rw,
             getFeatureById,
             storageRead,
@@ -27190,7 +27191,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._openTimer) clearTimeout(this._openTimer);
                 this._openTimer = setTimeout(() => {
                     this._openTimer = null;
-                    if (!window.location.pathname.startsWith('/watch')) return;
+                    if (!isWatchPagePath()) return;
                     const chaptersButton = document.querySelector('ytd-video-description-chapters-section-renderer button');
                     if (chaptersButton && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]')) {
                         chaptersButton.click();
@@ -27219,7 +27220,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._openTimer) clearTimeout(this._openTimer);
                 this._openTimer = setTimeout(() => {
                     this._openTimer = null;
-                    if (!window.location.pathname.startsWith('/watch')) return;
+                    if (!isWatchPagePath()) return;
                     const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
                     if (moreBtn && !globalThis.YTKitCore?.getTranscriptPanelElement?.(document)) {
                         moreBtn.click();
@@ -27526,7 +27527,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _preloadTimer: null,
             init() {
                 const preloadRule = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
+                    if (!isWatchPagePath()) return;
                     // Cancel any pending retry chain from the previous navigation
                     if (this._preloadTimer) { clearTimeout(this._preloadTimer); this._preloadTimer = null; }
                     const tryPreload = (attempts = 0) => {
@@ -27579,7 +27580,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
                 const checkLive = () => {
-                    const isWatch = window.location.pathname.startsWith('/watch');
+                    const isWatch = isWatchPagePath();
                     const liveBadge = document.querySelector('.ytp-live-badge');
                     const isLive = isWatch && liveBadge && window.getComputedStyle(liveBadge).display !== 'none';
                     document.body.classList.toggle('ytkit-adaptive-live', isLive);
@@ -27615,7 +27616,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return new Intl.NumberFormat().format(Math.max(0, Math.floor(Number(value) || 0)));
             },
             _ensureNav() {
-                if (this._container || !window.location.pathname.startsWith('/watch')) return;
+                if (this._container || !isWatchPagePath()) return;
                 const comments = document.querySelector('ytd-comments#comments');
                 if (!comments) return;
 
@@ -28001,7 +28002,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const refresh = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
+                    if (!isWatchPagePath()) return;
                     this._ensureNav();
                     this._updateState();
                 };
@@ -28339,7 +28340,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
             _scrollIfReady() {
-                if (!window.location.pathname.startsWith('/watch')) return true;
+                if (!isWatchPagePath()) return true;
                 if (!appState.settings.autoTheaterMode) return true;
                 const watchFlexy = document.querySelector('ytd-watch-flexy');
                 if (!watchFlexy?.hasAttribute('theater')) return false;
@@ -28760,7 +28761,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 const self = this;
                 addNavigateRule(this.id, () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
+                    if (!isWatchPagePath()) return;
                     const videoId = getVideoId();
                     if (!videoId || videoId === self._lastDownloaded) return;
                     self._lastDownloaded = videoId;
@@ -29255,7 +29256,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     saveStats(s);
                 };
                 addNavigateRule(this.id, () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
+                    if (!isWatchPagePath()) return;
                     const vid = getVideoId();
                     if (vid && vid !== self._lastVideoId) {
                         self._lastVideoId = vid;
@@ -29501,8 +29502,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _ruleId: 'fitPlayerToWindowRule',
             _applyStyles() {
-                if (appState.settings.stickyVideo && window.location.pathname.startsWith('/watch')) return;
-                const isWatchPage = window.location.pathname.startsWith('/watch');
+                if (appState.settings.stickyVideo && isWatchPagePath()) return;
+                const isWatchPage = isWatchPagePath();
                 document.documentElement.classList.toggle('ytkit-fit-to-window', isWatchPage);
                 document.body.classList.toggle('ytkit-fit-to-window', isWatchPage);
                 if (isWatchPage) {
@@ -41062,7 +41063,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     function injectSettingsButton() {
         const handleDisplay = () => {
-            const isWatchPage = window.location.pathname.startsWith('/watch');
+            const isWatchPage = isWatchPagePath();
 
             const createButton = (id, variant) => {
                 const btn = document.createElement('button');
@@ -43413,7 +43414,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
     function injectPageModalButton() {
         const handleDisplay = () => {
-            const isWatch = window.location.pathname.startsWith('/watch');
+            const isWatch = isWatchPagePath();
 
             // Clean up wrong-context button
             if (isWatch) {

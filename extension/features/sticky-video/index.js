@@ -60,6 +60,7 @@
                 getChatEl() { return null; }
             },
             getVideoId = () => '',
+            isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (() => window.location.pathname.startsWith('/watch')),
             _rw = {},
             getFeatureById = () => null,
             storageRead = (_key, fallbackValue) => fallbackValue,
@@ -1367,7 +1368,7 @@
             },
 
             _activate() {
-                if (!window.location.pathname.startsWith('/watch')) return;
+                if (!isWatchPagePath()) return;
 
                 const vid = getVideoId();
                 if (vid !== this._lastVideoId) {
@@ -1412,7 +1413,7 @@
                         if (this._destroyed) return;
                         this._pendingWaits.push(waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
                             if (this._destroyed) return;
-                            if (window.location.pathname.startsWith('/watch')) doMount();
+                            if (isWatchPagePath()) doMount();
                         }));
                     }));
                 }

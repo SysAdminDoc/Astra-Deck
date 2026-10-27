@@ -51,10 +51,10 @@
 
     // Only a watch page carries the inline data these features act on. This
     // matches core/page.js, which decides whether the features start at all:
-    // a /live/ID link isn't a watch page there, so a switch published for one
-    // would only be settled away.
+    // /watch, and /live/<id>, which renders the watch page under its own path.
     function isWatchPath(pathname) {
-        return String(pathname || '') === '/watch';
+        var path = String(pathname || '');
+        return path === '/watch' || /^\/live\/[A-Za-z0-9_-]{11}\/?$/.test(path);
     }
 
     function isSafeModeUrl(search) {

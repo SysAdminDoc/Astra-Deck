@@ -252,6 +252,7 @@
             normalizeBlockedChannelRecord = value => value,
             getBlockedChannelIdentityKeys = value => (value ? [String(value.id || value.channelId || value.handle || value.url || value)] : []),
             parseLockupChannels = globalThis.YTKitCore?.parseLockupChannels || (() => null),
+            isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (path => String(path || '').startsWith('/watch')),
             publishBridgeAttribute = () => {},
             isPlainObject = value => !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype,
             createSVG = (globalThis.YTKitCore && globalThis.YTKitCore.createSVG) || createFallbackSvg,
@@ -1485,7 +1486,7 @@
                 if (path === '/') return 'home';
                 if (path === '/feed/subscriptions') return 'subscriptions';
                 if (path === '/results') return 'search';
-                if (path.startsWith('/watch')) return 'watch';
+                if (isWatchPagePath(path)) return 'watch';
                 if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/') || path.startsWith('/user/')) return 'channel';
                 return 'other';
             },
@@ -2742,7 +2743,7 @@
                 if (path === '/' || path === '') page = 'home';
                 else if (path.startsWith('/feed/subscriptions')) page = 'subscriptions';
                 else if (path.startsWith('/results')) page = 'search';
-                else if (path.startsWith('/watch')) page = 'watch';
+                else if (isWatchPagePath(path)) page = 'watch';
                 else if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/') || path.startsWith('/user/')) page = 'channel';
                 const ctx = {
                     videoId: videoId || '',

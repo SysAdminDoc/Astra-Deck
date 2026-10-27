@@ -340,8 +340,8 @@ async function run(client, background) {
                 // The channel's /live link resolves to whatever is streaming now.
                 // A signed-out headless profile is not always served live media,
                 // and without it the split never opens.
-                // That page is not a watch page for Astra, so load the stream's
-                // own /watch link.
+                // That page is a channel page, so load the stream's own
+                // /live/<id> link, the form YouTube's share button hands out.
                 const end = Date.now() + 30000;
                 let state = null;
                 while (Date.now() < end) {
@@ -353,15 +353,16 @@ async function run(client, background) {
                     report.limitations.push(`Watch Feed live leg skipped: no playable live stream for the signed-out profile (${JSON.stringify(state)}); tests/features/theater-split.test.js covers the live pin`);
                     break;
                 }
-                await navigate(`https://www.youtube.com/watch?v=${state.id}`, { video: false });
+                await navigate(`https://www.youtube.com/live/${state.id}`, { video: false });
                 await until('document.querySelector("video")?.readyState>=2', 'live video loaded');
                 await read('document.querySelector("video")?.pause()');
+                assert.equal(await read('location.pathname'), `/live/${state.id}`, 'the stream stays on its /live/<id> link');
                 proofs.liveStream = state.id;
             }
             await openSplit();
             await until(`!!document.querySelector('${host} > ${BUTTON}')`, `${kind} Watch Feed button docked`);
             await sleep(400);
-            const id = await read("new URLSearchParams(location.search).get('v')");
+            const id = kind === 'live' ? proofs.liveStream : await read("new URLSearchParams(location.search).get('v')");
             await settle(id, 0, `${kind}: starts outside the Watch Feed`);
             await click(BUTTON, 500);
             await settle(id, 1, `${kind}: one click adds exactly once`);

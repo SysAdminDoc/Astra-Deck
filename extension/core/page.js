@@ -53,6 +53,10 @@
     function isWatchPagePath(path = window.location.pathname, host = window.location.hostname) {
         const currentPath = normalizePath(path);
         if (currentPath.startsWith('/watch')) return true;
+        // youtube.com/live/<id> renders the watch page under its own path.
+        // /@channel/live and /live_chat are not watch pages.
+        const live = /^\/live\/([^/?#]+)\/?$/.exec(currentPath);
+        if (live) return VIDEO_ID_PATTERN.test(live[1]);
         if (!isYoutuBeHost(host)) return false;
         const candidate = currentPath.replace(/^\/+/, '').split(/[/?#]/, 1)[0];
         return VIDEO_ID_PATTERN.test(candidate);

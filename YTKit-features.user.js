@@ -7086,6 +7086,7 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 				getChatEl() { return null; }
 			},
 			getVideoId = () => '',
+			isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (() => window.location.pathname.startsWith('/watch')),
 			_rw = {},
 			getFeatureById = () => null,
 			storageRead = (_key, fallbackValue) => fallbackValue,
@@ -8132,7 +8133,7 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 				DebugManager.log('Theater', 'Overlay unmounted');
 			},
 			_activate() {
-				if (!window.location.pathname.startsWith('/watch')) return;
+				if (!isWatchPagePath()) return;
 				const vid = getVideoId();
 				if (vid !== this._lastVideoId) {
 					this._lastVideoId = vid;
@@ -8166,7 +8167,7 @@ __astraDeckRegistry["features/sticky-video/index.js"] = function (globalThis, se
 						if (this._destroyed) return;
 						this._pendingWaits.push(waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
 							if (this._destroyed) return;
-							if (window.location.pathname.startsWith('/watch')) doMount();
+							if (isWatchPagePath()) doMount();
 						}));
 					}));
 				}
@@ -8827,6 +8828,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			normalizeBlockedChannelRecord = value => value,
 			getBlockedChannelIdentityKeys = value => (value ? [String(value.id || value.channelId || value.handle || value.url || value)] : []),
 			parseLockupChannels = globalThis.YTKitCore?.parseLockupChannels || (() => null),
+			isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (path => String(path || '').startsWith('/watch')),
 			publishBridgeAttribute = () => {},
 			isPlainObject = value => !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype,
 			createSVG = (globalThis.YTKitCore && globalThis.YTKitCore.createSVG) || createFallbackSvg,
@@ -9936,7 +9938,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				if (path === '/') return 'home';
 				if (path === '/feed/subscriptions') return 'subscriptions';
 				if (path === '/results') return 'search';
-				if (path.startsWith('/watch')) return 'watch';
+				if (isWatchPagePath(path)) return 'watch';
 				if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/') || path.startsWith('/user/')) return 'channel';
 				return 'other';
 			},
@@ -11002,7 +11004,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				if (path === '/' || path === '') page = 'home';
 				else if (path.startsWith('/feed/subscriptions')) page = 'subscriptions';
 				else if (path.startsWith('/results')) page = 'search';
-				else if (path.startsWith('/watch')) page = 'watch';
+				else if (isWatchPagePath(path)) page = 'watch';
 				else if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/') || path.startsWith('/user/')) page = 'channel';
 				const ctx = {
 					videoId: videoId || '',
@@ -20880,7 +20882,8 @@ __astraDeckRegistry["features/player-dock/index.js"] = function (globalThis, sel
 			BRAND = { name: 'Astra Deck' },
 			appendStyleSheet = appendStyleSheetFallback,
 			addNavigateRule = () => {},
-			removeNavigateRule = () => {}
+			removeNavigateRule = () => {},
+			isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (() => window.location.pathname.startsWith('/watch'))
 		} = deps;
 		return {
 			id: 'floatingLogoOnWatch',
@@ -21013,7 +21016,7 @@ __astraDeckRegistry["features/player-dock/index.js"] = function (globalThis, sel
 				return appState.settings.logoToSubscriptions ? '/feed/subscriptions' : '/';
 			},
 			_inject() {
-				if (!window.location.pathname.startsWith('/watch')) {
+				if (!isWatchPagePath()) {
 					document.getElementById('ytkit-player-controls')?.remove();
 					this._ccObserver?.disconnect();
 					this._ccObserver = null;

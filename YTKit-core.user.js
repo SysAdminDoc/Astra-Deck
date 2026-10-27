@@ -69,7 +69,8 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 		})
 	]);
 	function isWatchPath(pathname) {
-		return String(pathname || '') === '/watch';
+		var path = String(pathname || '');
+		return path === '/watch' || /^\/live\/[A-Za-z0-9_-]{11}\/?$/.test(path);
 	}
 	function isSafeModeUrl(search) {
 		return /[?&]ytkit=safe(?:&|$)/.test(String(search || ''));
@@ -11517,6 +11518,8 @@ __astraDeckRegistry["core/page.js"] = function (globalThis, self, window, chrome
 	function isWatchPagePath(path = window.location.pathname, host = window.location.hostname) {
 		const currentPath = normalizePath(path);
 		if (currentPath.startsWith('/watch')) return true;
+		const live = /^\/live\/([^/?#]+)\/?$/.exec(currentPath);
+		if (live) return VIDEO_ID_PATTERN.test(live[1]);
 		if (!isYoutuBeHost(host)) return false;
 		const candidate = currentPath.replace(/^\/+/, '').split(/[/?#]/, 1)[0];
 		return VIDEO_ID_PATTERN.test(candidate);

@@ -51,7 +51,8 @@
             BRAND = { name: 'Astra Deck' },
             appendStyleSheet = appendStyleSheetFallback,
             addNavigateRule = () => {},
-            removeNavigateRule = () => {}
+            removeNavigateRule = () => {},
+            isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (() => window.location.pathname.startsWith('/watch'))
         } = deps;
 
         return {
@@ -209,7 +210,7 @@
                 return appState.settings.logoToSubscriptions ? '/feed/subscriptions' : '/';
             },
             _inject() {
-                if (!window.location.pathname.startsWith('/watch')) {
+                if (!isWatchPagePath()) {
                     document.getElementById('ytkit-player-controls')?.remove();
                     this._ccObserver?.disconnect();
                     this._ccObserver = null;
