@@ -801,10 +801,11 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions > * { flex: 0 0 auto !important; margin: 0 !important; transform: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions > :is(segmented-like-dislike-button-view-model, ytd-segmented-like-dislike-button-renderer, like-button-view-model) { order: 1 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions > .ytkit-local-dl-btn { order: 2 !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions > .ytkit-watch-feed-btn { order: 2 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions > #notification-preference-button { order: 3 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions > :is(#ytkit-page-btn-watch, #ytkit-watch-btn) { order: 4 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost),
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-trigger-btn) {
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-watch-feed-btn, .ytkit-trigger-btn) {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -833,13 +834,14 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-trigger-btn,
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):is(.yt-spec-button-shape-next--icon-button, .ytSpecButtonShapeNextIconButton) { width: var(--ts-control-h) !important; padding: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):hover,
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-trigger-btn):hover { background: var(--ts-control-hover) !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-watch-feed-btn, .ytkit-trigger-btn):hover { background: var(--ts-control-hover) !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):active,
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-trigger-btn):active { background: var(--ts-control-active) !important; transform: scale(0.97) !important; }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost)[aria-pressed="true"] { background: var(--ts-accent-soft) !important; color: var(--ts-accent-ink) !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-watch-feed-btn, .ytkit-trigger-btn):active { background: var(--ts-control-active) !important; transform: scale(0.97) !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost)[aria-pressed="true"],
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-watch-feed-btn[aria-pressed="true"] { background: var(--ts-accent-soft) !important; color: var(--ts-accent-ink) !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):is([disabled], [aria-disabled="true"]) { opacity: 0.45 !important; cursor: default !important; transform: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):focus-visible,
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-trigger-btn):focus-visible,
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-watch-feed-btn, .ytkit-trigger-btn):focus-visible,
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title :is(.ytkit-split-youtube-link, .ytkit-ql-launcher--player, .ytkit-ql-toggle):focus-visible {
             outline: 2px solid var(--ts-accent) !important;
             outline-offset: 2px !important;
@@ -852,7 +854,7 @@
             margin: 0 !important;
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(.ytIconWrapperHost, .yt-icon-shape) svg { width: 100% !important; height: 100% !important; }
-        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn svg, .ytkit-trigger-btn svg, .ytkit-watch-action-btn__icon) { width: 16px !important; height: 16px !important; }
+        body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn svg, .ytkit-watch-feed-btn svg, .ytkit-trigger-btn svg, .ytkit-watch-action-btn__icon) { width: 16px !important; height: 16px !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(#owner, #actions) :is(yt-touch-feedback-shape, .ytSpecTouchFeedbackShapeHost, yt-interaction) { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata :is(segmented-like-dislike-button-view-model, ytd-segmented-like-dislike-button-renderer) :is(.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper, #segmented-buttons-wrapper) {
             display: inline-flex !important;
@@ -1452,8 +1454,8 @@
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-renderer { margin: 8px 0 !important; }
         @container ts-owner (max-width: 360px) {
             body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-split-owner-actions { gap: 6px !important; }
-            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-local-dl-btn { width: var(--ts-control-h) !important; padding: 0 !important; }
-            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner .ytkit-local-dl-btn .ytkit-watch-action-btn__label {
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn, .ytkit-watch-feed-btn) { width: var(--ts-control-h) !important; padding: 0 !important; }
+            body.ts-active #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(.ytkit-local-dl-btn .ytkit-watch-action-btn__label, .ytkit-watch-feed-btn > span) {
                 position: absolute !important;
                 width: 1px !important;
                 height: 1px !important;
@@ -1506,14 +1508,14 @@
             body.ts-active #ts-replay-tabs .ts-replay-tab { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
             body.ts-active #ts-replay-tabs .ts-replay-tab[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
             body.ts-active #ts-replay-tabs .ts-replay-tab:focus-visible { outline: 2px solid Highlight !important; }
-            body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost, #placeholder-area, #description, .ytkit-local-dl-btn, .ytkit-trigger-btn) {
+            body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost, #placeholder-area, #description, .ytkit-local-dl-btn, .ytkit-watch-feed-btn, .ytkit-trigger-btn) {
                 border: 1px solid ButtonText !important;
                 background: ButtonFace !important;
                 color: ButtonText !important;
             }
             body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost)[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
             body.ts-active :is(#ts-close, .ts-width-btn, #ts-divider .ts-divider-pip):focus-visible,
-            body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost, .ytkit-local-dl-btn, .ytkit-trigger-btn, a, tp-yt-paper-button):focus-visible { outline: 2px solid Highlight !important; }
+            body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost, .ytkit-local-dl-btn, .ytkit-watch-feed-btn, .ytkit-trigger-btn, a, tp-yt-paper-button):focus-visible { outline: 2px solid Highlight !important; }
             body.ts-active #below.ytkit-split-scroll-surface { border-inline-start: 1px solid CanvasText !important; }
         }
     `;

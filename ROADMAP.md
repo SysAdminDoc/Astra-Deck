@@ -147,20 +147,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   runs with `stickyVideo` on, and closing the split puts the panel back in `#secondary`.
   Complexity: M
 
-- [ ] P2 — Keep the Watch Feed Add action reachable in Theater Split
-  Why: the enabled native watch button is hidden with `#actions` while Split is open.
-  Evidence: Verified live zero-geometry Add button in Split; disabling `stickyVideo` exposes
-  it and a real click adds the video. `extension/features/sticky-video-header/index.js:890-893`
-  docks other actions but omits Watch Feed; Quick Links has no alternate action
-  (`extension/ytkit.js:14990`). `README.md:248-253` promises the control on every watch page.
-  Touches: `extension/features/sticky-video-header/index.js`, Watch Feed button ownership in
-  `extension/ytkit.js`, split restore tests, `scripts/smoke-experience-live.js`.
-  Acceptance: dock the existing Add button or put it in the existing compact overflow when
-  enabled. Preserve its pressed state, label and listener identity across split open/close,
-  comment collapse and navigation. Real clicks add/remove exactly once on VOD and live pages;
-  the control stays reachable in narrow panes, and teardown restores its native location.
-  Complexity: S
-
 - [ ] P2 — Import compatible BlockTube and ChannelSieve filter backups atomically
   Why: migration has a concrete export contract and documented failures in competing importers.
   Evidence: https://github.com/amitbl/blocktube/blob/master/src/ui/options.js,

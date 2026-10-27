@@ -298,6 +298,99 @@ test('Theater Split width buttons resize by single clicks inside the divider bou
     }
 });
 
+test('Theater Split keeps the Watch Feed button reachable on VOD and live pages', () => {
+    // The split hides #actions once it docks the owner controls, which took the
+    // Watch Feed button, mounted in #top-level-buttons-computed, along with it.
+    delete require.cache[require.resolve('../../extension/features/sticky-video-header/index.js')];
+    const { createStickyVideoHeaderMethods } = require('../../extension/features/sticky-video-header/index.js');
+    const styles = loadModule().styles;
+    const documentRef = fakeTreeDocument();
+    const make = (tag, attrs = {}, parent = null) => {
+        const node = documentRef.createElement(tag);
+        for (const [name, value] of Object.entries(attrs)) {
+            if (name === 'class') node.className = value;
+            else node.setAttribute(name, value);
+        }
+        node.getBoundingClientRect = () => ({ left: 0, top: 0, right: 120, bottom: 36, width: 120, height: 36 });
+        if (parent) parent.appendChild(node);
+        return node;
+    };
+    const below = make('div', { id: 'below' }, documentRef.body);
+    const metadata = make('ytd-watch-metadata', {}, below);
+    const topRow = make('div', { id: 'top-row' }, metadata);
+    const owner = make('div', { id: 'owner' }, topRow);
+    make('div', { id: 'subscribe-button' }, owner);
+    const actions = make('div', { id: 'actions' }, topRow);
+    const buttons = make('div', { id: 'top-level-buttons-computed' }, actions);
+    const watchFeed = make('button', { class: 'ytkit-watch-feed-btn', 'aria-pressed': 'false' }, buttons);
+    let toggles = 0;
+    const onClick = () => { toggles += 1; };
+    watchFeed.addEventListener('click', onClick);
+
+    const savedDocument = globalThis.document;
+    globalThis.document = documentRef;
+    try {
+        const feature = Object.assign(
+            { _isActive: true, _isSplit: true, _videoType: 'vod', _getBelow: () => below },
+            createStickyVideoHeaderMethods({ t: (_key, fallback) => fallback, getFeatureById: () => null })
+        );
+        feature._dockSplitHeader = () => {};
+
+        feature._dockSplitActions();
+        const dock = owner.querySelector('.ytkit-split-owner-actions');
+        assert.ok(dock, 'the owner dock exists');
+        assert.ok(watchFeed.parentElement === dock, 'the Watch Feed button moves into the visible owner dock');
+        assert.equal(dock.hidden, false);
+        assert.equal(topRow.dataset.ytkitSplitActionsDocked, '1', 'hiding #actions is safe once the button is out of it');
+        assert.equal(watchFeed.getAttribute('aria-pressed'), 'false', 'docking keeps its pressed state');
+        watchFeed.dispatchEvent({ type: 'click' });
+        assert.equal(toggles, 1, 'the original listener answers a click in the dock exactly once');
+
+        feature._dockSplitActions();
+        assert.ok(watchFeed.parentElement === dock);
+        assert.ok(feature._splitActionDockMoved.get(watchFeed).parent === buttons,
+            'a second dock pass keeps the native row as the place to restore it');
+
+        feature._restoreSplitActionDock();
+        assert.ok(watchFeed.parentElement === buttons, 'closing the split puts it back in the action row');
+        assert.ok(!watchFeed.dataset.ytkitSplitDocked);
+
+        feature._videoType = 'live';
+        feature._splitLiveHeader = make('div', { class: 'ytkit-split-live-header' }, documentRef.body);
+        const liveCard = make('div', { class: 'ytkit-split-live-card' }, feature._splitLiveHeader);
+        const liveMeta = make('div', { class: 'ytkit-split-live-meta' }, liveCard);
+        make('div', { class: 'ytkit-split-live-actions' }, feature._splitLiveHeader);
+        // The header was measured before the button mounted; the move must re-fit it.
+        feature._splitLiveHeaderFit = { narrow: false, baseHeaderHeight: 132, maxHeaderHeight: 260 };
+        feature._splitLiveHeader.style.height = '132px';
+        liveCard.scrollHeight = 180;
+        feature._dockSplitLiveHeaderActions();
+        assert.ok(watchFeed.parentElement === liveMeta, 'live pages move it into the LIVE badge row');
+        assert.ok(!watchFeed.dataset.ytkitSplitLivePinned, 'it stays out of the narrow pinned action row');
+        assert.equal(feature._splitLiveHeader.style.height, '200px', 'a late mount grows the clipped header to fit the button');
+        feature._dockSplitLiveHeaderActions();
+        assert.ok(watchFeed.parentElement === liveMeta);
+        assert.ok(feature._splitActionDockMoved.get(watchFeed).parent === buttons,
+            'a header refresh keeps the native row as the place to restore it');
+        watchFeed.dispatchEvent({ type: 'click' });
+        assert.equal(toggles, 2, 'the moved button keeps its listener');
+        feature._restoreSplitActionDock();
+        assert.ok(watchFeed.parentElement === buttons, 'closing a live split puts it back in the action row');
+        assert.ok(!feature._splitLiveHeader, 'and removes the live header without taking the button along');
+    } finally {
+        globalThis.document = savedDocument;
+    }
+
+    const css = styles.buildSplitShellCss() + styles.buildSplitMetaCss() + styles.buildSplitCommentsCss();
+    assert.match(css, /#owner :is\(\.ytkit-local-dl-btn, \.ytkit-watch-feed-btn, \.ytkit-trigger-btn\) \{/,
+        'the docked button takes the split control look');
+    assert.match(css, /#owner \.ytkit-watch-feed-btn\[aria-pressed="true"\] \{/, 'its added state still shows');
+    assert.match(css, /#owner :is\(\.ytkit-local-dl-btn \.ytkit-watch-action-btn__label, \.ytkit-watch-feed-btn > span\) \{/,
+        'narrow panes fold it to an icon');
+    assert.match(css, /\.ytkit-split-live-meta > \.ytkit-watch-feed-btn \{[^}]*height: 26px !important;/, 'it sits as a pill in the live meta row');
+    assert.match(css, /\.ytkit-split-live-meta > \.ytkit-watch-feed-btn\[aria-pressed="true"\] \{/);
+});
+
 test('Theater Split divider separates a click toggle from a drag resize', () => {
     const { mod } = loadModule();
     const documentRef = fakeTreeDocument();

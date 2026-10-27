@@ -33,8 +33,9 @@ const DROPPED_SELECTORS = Object.freeze([
     /ytd-player > #container/, /:is\(#secondary, #below, #player-full-bleed-container/,
     /:is\(#ytkit-split-wrapper, #ytkit-split-left\)/,
     /ytd-watch-flexy\.loading ytd-live-chat-frame#chat/,
-    // The click-to-resize buttons are extension-only.
-    /#ytkit-split-width/, /^\s*html\.ytkit-split-active \.ytkit-split-width-btn/
+    // The click-to-resize buttons and the Watch Feed button are extension-only.
+    /#ytkit-split-width/, /^\s*html\.ytkit-split-active \.ytkit-split-width-btn/,
+    /\.ytkit-split-live-meta > \.ytkit-watch-feed-btn/
 ]);
 
 const RENAMES = Object.freeze([

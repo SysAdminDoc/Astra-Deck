@@ -6,7 +6,7 @@
     // Theater Split header surfaces: the compact title bar with upload date and
     // view count, the live-stream header that sits over live chat, and the
     // action dock that moves the YouTube like and notification controls, and
-    // the Astra page and download buttons, into the split and back.
+    // the Astra page, download and Watch Feed buttons, into the split and back.
     // features/sticky-video merges these methods onto the feature object, so
     // this is the feature and the header and dock state lives there.
 
@@ -546,7 +546,19 @@
                     else dateEl.removeAttribute('title');
                 }
                 header.setAttribute('aria-label', [t('stickyVideoLiveVideoFallback', 'Live video'), channel, viewText, dateInfo, title].filter(Boolean).join(' | '));
+                this._splitLiveHeaderFit = { narrow, baseHeaderHeight, maxHeaderHeight };
                 this._dockSplitLiveHeaderActions();
+                return this._fitSplitLiveHeaderHeight();
+            },
+
+            // The header has a fixed height with overflow hidden, so anything that
+            // adds to it (a wrapped meta row, a late Watch Feed button) re-measures.
+            _fitSplitLiveHeaderHeight() {
+                const header = this._splitLiveHeader;
+                const fit = this._splitLiveHeaderFit;
+                if (!header || !fit) return 0;
+                const { narrow, baseHeaderHeight, maxHeaderHeight } = fit;
+                const card = header.querySelector('.ytkit-split-live-card');
                 const outerVerticalPadding = narrow ? 16 : 20;
                 const measuredCardHeight = Math.max(card?.scrollHeight || 0, card?.getBoundingClientRect?.().height || 0);
                 const measuredHeaderHeight = Math.ceil((measuredCardHeight || baseHeaderHeight - outerVerticalPadding) + outerVerticalPadding);
@@ -705,6 +717,14 @@
                 const root = this._getBelow() || document;
                 const controls = Array.from(root.querySelectorAll(
                     'ytd-watch-metadata #actions .ytkit-local-dl-btn, ytd-watch-metadata #top-level-buttons-computed .ytkit-local-dl-btn'
+                ));
+                return controls.find(el => !el.closest('.ytkit-split-owner-actions')) || null;
+            },
+
+            _findSplitWatchFeedControl() {
+                const root = this._getBelow() || document;
+                const controls = Array.from(root.querySelectorAll(
+                    'ytd-watch-metadata #actions .ytkit-watch-feed-btn, ytd-watch-metadata #top-level-buttons-computed .ytkit-watch-feed-btn'
                 ));
                 return controls.find(el => !el.closest('.ytkit-split-owner-actions')) || null;
             },
@@ -872,6 +892,15 @@
                     this._findSplitSubscribeControl()
                 ].filter(Boolean);
 
+                // The pinned row is too narrow for a third control, so Watch Feed
+                // moves into the LIVE badge row the split owns; the close path
+                // puts it back with the other docked controls. It often mounts after
+                // the header was measured, so a move re-fits the header height.
+                if (this._dockSplitControl(this._findSplitWatchFeedControl(),
+                    this._splitLiveHeader.querySelector('.ytkit-split-live-meta'))) {
+                    this._fitSplitLiveHeaderHeight();
+                }
+
                 return this._pinSplitLiveHeaderActions(controls, actions);
             },
 
@@ -891,6 +920,7 @@
                 this._dockSplitControl(this._findSplitPageControl(), dock);
                 this._dockSplitControl(this._findSplitLikeControl(), dock);
                 this._dockSplitControl(this._findSplitDownloadControl(), dock);
+                this._dockSplitControl(this._findSplitWatchFeedControl(), dock);
 
                 const hasControls = dock.children.length > 0;
                 dock.hidden = !hasControls;

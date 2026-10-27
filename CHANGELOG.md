@@ -9,6 +9,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Added
 
 - Theater Split has Wider and Narrower buttons next to the close button, so you can resize the side panel with a click or a tap instead of dragging the divider. Each click moves it 5%, the size sticks for next time, and the buttons grey out at the smallest and largest widths. They're only there while the panel is open.
+- The Add to Watch Feed button no longer disappears when Theater Split opens. On regular videos it sits next to Like and Download in the side panel. On live streams it moves into the LIVE row, because the pinned row up top only has room for Like and Subscribe. Closing the split puts it back where YouTube had it.
 
 ## [4.100.5] (2026-10-26)
 

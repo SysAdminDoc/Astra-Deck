@@ -61,11 +61,11 @@ async function run(client, background) {
         fs.writeFileSync(file, Buffer.from(data, 'base64'));
         report.screenshots.push(file);
     }
-    async function navigate(url) {
+    async function navigate(url, { video = true } = {}) {
         await client.send('Page.navigate', { url });
         await until('document.readyState==="complete"&&document.querySelectorAll("style[id^=yt-suite-style-]").length>20', 'extension styles');
         await sleep(2000);
-        if (url.includes('/watch?')) await until('document.querySelector("video")?.readyState>=2', 'watch video loaded');
+        if (video && url.includes('/watch?')) await until('document.querySelector("video")?.readyState>=2', 'watch video loaded');
         await read('document.querySelector("video")?.pause()');
     }
     async function theme(dark) {
@@ -318,6 +318,79 @@ async function run(client, background) {
         await until(OPEN, 'divider click reopens the comments');
         assert.equal((await split()).ratio, wider, 'reopening keeps the clicked width');
         return { start, wider };
+    });
+    await check('Watch Feed Add stays reachable in the split on VOD and live pages', async () => {
+        const BUTTON = '.ytkit-watch-feed-btn';
+        const queued = async (id) => {
+            const raw = await evaluate(background, "new Promise(resolve => chrome.storage.local.get('ytkit-queue', r => resolve(r['ytkit-queue'] ?? null)))");
+            const store = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            return (store?.items || []).filter(item => item.id === id).length;
+        };
+        const settle = async (id, count, label) => {
+            const end = Date.now() + 5000;
+            while (Date.now() < end && await queued(id) !== count) await sleep(200);
+            assert.equal(await queued(id), count, label);
+        };
+        await evaluate(background, "chrome.storage.local.remove('ytkit-queue')");
+        await settings({ persistentQueue: true });
+        const proofs = {};
+        for (const [kind, url, host] of [['vod', WATCH, '.ytkit-split-owner-actions'], ['live', 'https://www.youtube.com/@LofiGirl/live', '.ytkit-split-live-meta']]) {
+            await navigate(url, { video: kind === 'vod' });
+            if (kind === 'live') {
+                // The channel's /live link resolves to whatever is streaming now.
+                // A signed-out headless profile is not always served live media,
+                // and without it the split never opens.
+                // That page is not a watch page for Astra, so load the stream's
+                // own /watch link.
+                const end = Date.now() + 30000;
+                let state = null;
+                while (Date.now() < end) {
+                    state = await read("({id:document.querySelector('#movie_player')?.getVideoData?.()?.video_id||'',ready:document.querySelector('video')?.readyState||0,live:!!document.querySelector('#movie_player')?.getVideoData?.()?.isLive})").catch(() => null);
+                    if (state?.ready >= 2 && state.live && /^[\w-]{11}$/.test(state.id)) break;
+                    await sleep(500);
+                }
+                if (!(state?.ready >= 2 && state.live && /^[\w-]{11}$/.test(state.id))) {
+                    report.limitations.push(`Watch Feed live leg skipped: no playable live stream for the signed-out profile (${JSON.stringify(state)}); tests/features/theater-split.test.js covers the live pin`);
+                    break;
+                }
+                await navigate(`https://www.youtube.com/watch?v=${state.id}`, { video: false });
+                await until('document.querySelector("video")?.readyState>=2', 'live video loaded');
+                await read('document.querySelector("video")?.pause()');
+                proofs.liveStream = state.id;
+            }
+            await openSplit();
+            await until(`!!document.querySelector('${host} > ${BUTTON}')`, `${kind} Watch Feed button docked`);
+            await sleep(400);
+            const id = await read("new URLSearchParams(location.search).get('v')");
+            await settle(id, 0, `${kind}: starts outside the Watch Feed`);
+            await click(BUTTON, 500);
+            await settle(id, 1, `${kind}: one click adds exactly once`);
+            assert.equal(await read(`document.querySelector('${BUTTON}').getAttribute('aria-pressed')`), 'true');
+            if (kind === 'vod') {
+                for (const dark of [true, false]) { await theme(dark); await capture(`theater-watch-feed-${dark ? 'dark' : 'light'}`); }
+                await theme(true);
+                await click('#ytkit-split-divider', 500);
+                await click('#ytkit-split-divider', 500);
+                await until(OPEN, 'comments reopen');
+                assert.equal(await read(`document.querySelectorAll('${BUTTON}').length`), 1, 'collapse and reopen keep one button');
+            } else {
+                // Like and Subscribe keep the pinned row to themselves.
+                const pins = await read("[...document.querySelectorAll('[data-ytkit-split-live-pinned=\"1\"]')].map(e=>({tag:e.tagName,width:Math.round(e.getBoundingClientRect().width)}))");
+                assert.ok(!pins.some(pin => pin.tag === 'BUTTON'), 'the Watch Feed button is not squeezed into the pinned row');
+                proofs.livePins = pins;
+                for (const dark of [true, false]) { await theme(dark); await capture(`theater-watch-feed-live-${dark ? 'dark' : 'light'}`); }
+                await theme(true);
+            }
+            await click(BUTTON, 500);
+            await settle(id, 0, `${kind}: a second click removes it`);
+            assert.equal(await read(`document.querySelector('${BUTTON}').getAttribute('aria-pressed')`), 'false');
+            proofs[kind] = id;
+        }
+        if (!await read(OPEN)) { await navigate(WATCH); await openSplit(); }
+        await click('#ytkit-split-close', 500);
+        assert.equal(await read(`!!document.querySelector('#top-level-buttons-computed ${BUTTON}')`), true, 'closing the split puts it back in the action row');
+        await navigate(WATCH); await openSplit();
+        return proofs;
     });
     await check('close action, watch navigation and teardown', async () => {
         await click('#ytkit-split-close'); assert.equal(await read(OPEN), false);
