@@ -15529,7 +15529,8 @@ __astraDeckRegistry["core/feature-disable-feed.js"] = function (globalThis, self
 		return `${FEED_ENVELOPE_PREFIX} sequence=${sequence} issued=${stamp(issuedAt)} expires=${stamp(expiresAt)}`;
 	}
 	function stampFeedEnvelope(text, envelope) {
-		const body = String(text || '');
+		let body = String(text || '');
+		if (body.charCodeAt(0) === 0xFEFF) body = body.slice(1);
 		const eol = body.includes('\r\n') ? '\r\n' : '\n';
 		const lines = body.split(/\r?\n/);
 		if (lines[0].startsWith(FEED_ENVELOPE_PREFIX)) lines.shift();
@@ -21285,6 +21286,15 @@ async function readFeatureDisableFeedWatermark() {
 		return null;
 	}
 }
+async function featureDisableFeedFloor() {
+	const [watermark, cached] = await Promise.all([
+		readFeatureDisableFeedWatermark(),
+		readFeatureDisableFeedCache()
+	]);
+	const envelope = cached ? featureDisableFeedEnvelope(cached.text) : null;
+	if (!envelope || (watermark && watermark.sequence >= envelope.sequence)) return watermark;
+	return { sequence: envelope.sequence, digest: await sha256Hex(cached.text) };
+}
 async function sha256Hex(text) {
 	const bytes = new TextEncoder().encode(text);
 	const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
@@ -21341,7 +21351,7 @@ function fetchFeatureDisableFeed() {
 			if (envelopeProblem) return { text: null, problem: envelopeProblem };
 			const digest = await sha256Hex(text);
 			const replayProblem = featureDisableFeedReplayProblem(
-				envelope, digest, await readFeatureDisableFeedWatermark());
+				envelope, digest, await featureDisableFeedFloor());
 			if (replayProblem) return { text: null, problem: replayProblem };
 			await writeFeatureDisableFeedCache(text, envelope, digest);
 			await purgeLegacyFeatureDisableFeedCache();

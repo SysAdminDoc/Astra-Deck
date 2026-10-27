@@ -6294,6 +6294,7 @@ const STORAGE_KEYS = Object.freeze({
                 : null;
         } catch (_) {
             // reason: an unreachable feed is a no-op by design, never an error
+            _featureDisableFeedStatus = null;
         }
         if (text === null) return null;
 

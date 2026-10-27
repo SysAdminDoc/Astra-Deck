@@ -299,7 +299,10 @@
 
     // Replaces the envelope line, or adds one above an unsigned body.
     function stampFeedEnvelope(text, envelope) {
-        const body = String(text || '');
+        let body = String(text || '');
+        // An editor-added byte-order mark would hide the old envelope from the
+        // check below, leaving two, which the reader refuses.
+        if (body.charCodeAt(0) === 0xFEFF) body = body.slice(1);
         const eol = body.includes('\r\n') ? '\r\n' : '\n';
         const lines = body.split(/\r?\n/);
         if (lines[0].startsWith(FEED_ENVELOPE_PREFIX)) lines.shift();

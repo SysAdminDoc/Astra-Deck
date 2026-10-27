@@ -2135,17 +2135,33 @@ test('changed bytes at the same sequence are refused', async () => {
 });
 
 test('receiving the same bytes again does not extend the signed expiry', async () => {
-    const text = envelopedFeed('', { sequence: 2 });
-    const signedExpiry = feedEnvelope.readFeedEnvelope(text).expiresAt;
-    const { bg, ask } = testFeedBackground({ text });
-    await ask();
-    bg.getLocal()[FEED_CACHE].cachedAt = Date.now() - 7 * HOUR;
-    const replayed = await ask();
-    assert.equal(replayed.source, 'stale');
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Signed to run out about two seconds from now. Fetching the identical
+    // bytes again resets the receipt clock, and must leave that date alone.
+    const expiresAt = (Math.floor(Date.now() / 1000) + 2) * 1000;
+    const text = envelopedFeed('', { sequence: 2, issuedAt: expiresAt - DAY, expiresAt });
+    const current = { text };
+    const { bg, ask } = testFeedBackground(current);
+    assert.equal((await ask()).source, 'network');
+    delete bg.getLocal()[FEED_CACHE];
     const again = await ask();
-    assert.equal(again.source, 'cache', 'the same bytes refresh the polling clock');
-    assert.equal(again.expiresAt, signedExpiry, 'but the usable-until date is still the signed one');
+    assert.equal(again.source, 'network', 'the same bytes at the same sequence are accepted');
+    assert.equal(again.expiresAt, expiresAt);
+
+    await new Promise((resolve) => setTimeout(resolve, Math.max(0, expiresAt - Date.now()) + 100));
+    assert.ok(Date.now() - bg.getLocal()[FEED_CACHE].cachedAt < 6 * HOUR, 'the receipt is still fresh');
+    const after = await ask();
+    assert.equal(after.ok, false, 'a fresh receipt does not outlive the signed expiry');
+    assert.equal(after.problem, 'expired', 'and the same bytes from the network are refused too');
+});
+
+test('an unreadable watermark still cannot roll back below the cached copy', async () => {
+    const current = { text: envelopedFeed('returnDislike,412,4.80.0,', { sequence: 5 }) };
+    const { bg, ask } = testFeedBackground(current);
+    bg.getLocal()[FEED_CACHE] = { text: envelopedFeed('', { sequence: 9 }), cachedAt: Date.now() - 7 * HOUR };
+    bg.getLocal()[FEED_MARK] = { sequence: 'nine', digest: 'damaged' };
+    assert.equal((await ask()).source, 'stale');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.match(bg.getLocal()[FEED_CACHE].text, /sequence=9/, 'the older body did not replace the cache');
 });
 
 test('an expired or future-dated feed is refused from the network', async () => {

@@ -1350,6 +1350,19 @@ async function readFeatureDisableFeedWatermark() {
     }
 }
 
+// The mark a fetched body is checked against: the watermark, or the cached
+// copy's own sequence when that is higher. An unreadable or damaged mark then
+// still can't let a body older than the cache replace it.
+async function featureDisableFeedFloor() {
+    const [watermark, cached] = await Promise.all([
+        readFeatureDisableFeedWatermark(),
+        readFeatureDisableFeedCache()
+    ]);
+    const envelope = cached ? featureDisableFeedEnvelope(cached.text) : null;
+    if (!envelope || (watermark && watermark.sequence >= envelope.sequence)) return watermark;
+    return { sequence: envelope.sequence, digest: await sha256Hex(cached.text) };
+}
+
 async function sha256Hex(text) {
     const bytes = new TextEncoder().encode(text);
     const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
@@ -1434,7 +1447,7 @@ function fetchFeatureDisableFeed() {
             if (envelopeProblem) return { text: null, problem: envelopeProblem };
             const digest = await sha256Hex(text);
             const replayProblem = featureDisableFeedReplayProblem(
-                envelope, digest, await readFeatureDisableFeedWatermark());
+                envelope, digest, await featureDisableFeedFloor());
             if (replayProblem) return { text: null, problem: replayProblem };
             await writeFeatureDisableFeedCache(text, envelope, digest);
             await purgeLegacyFeatureDisableFeedCache();

@@ -4570,6 +4570,7 @@ const STORAGE_KEYS = Object.freeze({
 				? { state: 'stale', checkedAt: response.cachedAt, expiresAt: response.expiresAt }
 				: null;
 		} catch (_) {
+			_featureDisableFeedStatus = null;
 		}
 		if (text === null) return null;
 		const knownIds = new Set(features.map((feature) => feature?.id).filter(Boolean));

@@ -322,6 +322,14 @@ test('an envelope that is not the first line, repeated, or out of bounds is not 
     assert.equal(feed.readFeedEnvelope('feature,issue,broken-from,fixed-in\n'), null);
 });
 
+test('re-stamping a feed saved with a byte-order mark leaves one envelope', () => {
+    const feed = loadFeed();
+    const signed = feed.stampFeedEnvelope('feature,issue,broken-from,fixed-in\n', ENVELOPE);
+    const restamped = feed.stampFeedEnvelope(String.fromCharCode(0xFEFF) + signed, { ...ENVELOPE, sequence: 5 });
+    assert.equal(feed.readFeedEnvelope(restamped)?.sequence, 5);
+    assert.equal(restamped.charCodeAt(0), '#'.charCodeAt(0));
+});
+
 test('envelope checks cover expiry and a bounded clock skew', () => {
     const feed = loadFeed();
     assert.equal(feed.checkFeedEnvelope(null, ENVELOPE.issuedAt), 'missing-envelope');
