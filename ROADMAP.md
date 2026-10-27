@@ -21,17 +21,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-- [ ] P3 — Find what tripped Firefox's slow-script watchdog under Violentmonkey
-  Why: a 2026-10-27 `smoke:private-window --browser violentmonkey` run logged "Script
-  terminated by timeout" in a `_scan` called from `executeMutationRule` (YTKit.user.js
-  4.101.2, line 59569 of the sandbox build). The lane still passed, but a terminated mutation
-  rule leaves that feature half applied.
-  Where: map the bundled line back to its source `_scan` (the live-chat engagement hider at
-  `extension/ytkit.js:12386` is a candidate), then profile the mutation drain on a busy watch page.
-  Acceptance: name the rule, show how long one drain takes, and either bound its work or show
-  the watchdog fired on a whole-page stall that wasn't the rule's doing.
-  Complexity: S
-
 - [ ] P3 — Show and clear imported BlockTube title and channel rules
   Why: a BlockTube or ChannelSieve import stores per-field rules in
   `ytkit-imported-filter-rules` and Video Hider applies them, but no panel lists them. The
