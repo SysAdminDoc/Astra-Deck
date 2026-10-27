@@ -289,3 +289,41 @@ test('a failed import with no prior import still exposes no undo', () => {
     assert.equal(bad.ok, false);
     assert.equal(transaction.hasUndo(), false, 'a failed import offers no undo of its own');
 });
+
+test('a superseded import that fails does not roll back over the newer import', async () => {
+    let state = { settings: { theme: 'original' } };
+    const transaction = createSettingsImportTransaction({ now: () => 1720972800000 });
+    const failure = new Error('import A flush failed');
+    let rejectA;
+    let restoresA = 0;
+
+    const pendingA = transaction.run({
+        snapshot: () => clone(state),
+        apply: () => {
+            state = { settings: { theme: 'from-A' } };
+            return new Promise((_resolve, reject) => { rejectA = reject; });
+        },
+        restore: (snapshot) => { restoresA += 1; state = clone(snapshot); }
+    });
+
+    const resultB = await transaction.run({
+        snapshot: () => clone(state),
+        apply: () => {
+            state = { settings: { theme: 'from-B' } };
+            return Promise.resolve();
+        },
+        restore: (snapshot) => { state = clone(snapshot); }
+    });
+    assert.equal(resultB.ok, true);
+
+    rejectA(failure);
+    const resultA = await pendingA;
+
+    assert.equal(restoresA, 0, 'the straggler must not run its restore');
+    assert.deepEqual(state, { settings: { theme: 'from-B' } },
+        'import B\'s applied settings must survive A\'s late failure');
+    assert.equal(resultA.ok, false);
+    assert.equal(resultA.rolledBack, false);
+    assert.equal(resultA.error, failure);
+    assert.equal(transaction.hasUndo(), true, 'B\'s undo point is untouched');
+});

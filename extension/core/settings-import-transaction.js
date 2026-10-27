@@ -100,6 +100,19 @@
                     if (checkpoint?.generation === generation) checkpoint = null;
                     return { ok: false, phase: 'apply', rolledBack: true, error };
                 };
+                // A newer import ran while this one's writes were in flight.
+                // Its state is what is on disk now; restoring this snapshot
+                // would silently undo it.
+                if (generation !== operationGeneration) {
+                    return {
+                        ok: false,
+                        phase: 'apply',
+                        rolledBack: false,
+                        superseded: true,
+                        error,
+                        canUndo: checkpoint !== null
+                    };
+                }
                 let restored;
                 try {
                     restored = operation.restore(snapshot);
