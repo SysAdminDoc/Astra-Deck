@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "视频循环按钮"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "频道规则"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "关键词"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "正则表达式"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "移除"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "移除规则 {rule}"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "标题规则"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "清除导入的规则 ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "已清除导入的规则 ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "来自 BlockTube 或 ChannelSieve 导入的规则。每条规则只检查标题或只检查频道名称。"
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "从 BlockTube 或 ChannelSieve 导入的标题和频道规则会显示在这里。"
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "已恢复导入的规则"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "更改未保存，请重试。"
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "导入的标题和频道规则"
+  },
   "videoLoopButtonDockNote": {
     "message": "开启 Astra 播放器停靠栏时，此按钮会被隐藏。请改用停靠栏中的循环播放按钮。"
   },

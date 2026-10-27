@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "Bouton boucle vidéo"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "Règle de chaîne"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "Mot-clé"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "Expression régulière"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "Retirer"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "Retirer la règle {rule}"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "Règle de titre"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "Effacer les règles importées ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "Règles importées effacées ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "Règles issues d'une importation BlockTube ou ChannelSieve. Chacune vérifie seulement le titre ou seulement le nom de la chaîne."
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "Les règles de titre et de chaîne d'une importation BlockTube ou ChannelSieve s'affichent ici."
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "Règles importées restaurées"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "La modification n'a pas été enregistrée. Réessayez."
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "Règles de titre et de chaîne importées"
+  },
   "videoLoopButtonDockNote": {
     "message": "Tant que le Dock Astra du Player est activé, il masque ce bouton. Utilisez plutôt le bouton Répéter du dock."
   },

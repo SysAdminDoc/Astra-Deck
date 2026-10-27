@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "動画ループボタン"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "チャンネルのルール"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "キーワード"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "正規表現"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "削除"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "ルール {rule} を削除"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "タイトルのルール"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "インポートしたルールを消去 ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "インポートしたルールを消去しました ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "BlockTube または ChannelSieve からインポートしたルールです。各ルールはタイトルかチャンネル名のどちらか一方だけを確認します。"
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "BlockTube または ChannelSieve からインポートしたタイトルとチャンネルのルールがここに表示されます。"
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "インポートしたルールを元に戻しました"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "変更を保存できませんでした。もう一度お試しください。"
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "インポートしたタイトルとチャンネルのルール"
+  },
   "videoLoopButtonDockNote": {
     "message": "Astra プレーヤードックがオンの間、このボタンは表示されません。代わりにドックのリピートボタンを使ってください。"
   },

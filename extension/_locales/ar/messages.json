@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "زر تكرار الفيديو"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "قاعدة قناة"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "كلمة مفتاحية"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "تعبير نمطي"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "إزالة"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "إزالة القاعدة {rule}"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "قاعدة عنوان"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "مسح القواعد المستوردة ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "تم مسح القواعد المستوردة ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "قواعد من استيراد BlockTube أو ChannelSieve. كل قاعدة تفحص العنوان فقط أو اسم القناة فقط."
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "تظهر هنا قواعد العناوين والقنوات المستوردة من BlockTube أو ChannelSieve."
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "تمت استعادة القواعد المستوردة"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "لم يتم حفظ التغيير. حاول مرة أخرى."
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "قواعد العناوين والقنوات المستوردة"
+  },
   "videoLoopButtonDockNote": {
     "message": "عند تشغيل لوحة مشغّل Astra يُخفى هذا الزر. استخدم زر تكرار في اللوحة بدلاً منه."
   },

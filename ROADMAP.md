@@ -21,18 +21,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-- [ ] P3 — Show and clear imported BlockTube title and channel rules
-  Why: a BlockTube or ChannelSieve import stores per-field rules in
-  `ytkit-imported-filter-rules` and Video Hider applies them, but no panel lists them. The
-  only ways to drop one today are Undo Import or restoring an older backup.
-  Where: the Video Hider section of `extension/features/settings-panel/index.js`, next to the
-  keyword filter; the store and sanitizer are `sanitizeImportedFilterRules` in
-  `extension/core/persisted-domains.js`.
-  Acceptance: the panel lists each rule with its field (title or channel), kind and source,
-  removes one with a click and clears all with toast feedback, and Video Hider picks the
-  change up live through `_setImportedFilterRulesCache`. 11 locales.
-  Complexity: S
-
 - [ ] P3 — List view for Home, search and channel grids
   Note (2026-10-13): `listFeedLayout` already covers Home, Subscriptions and search in
   `extension/features/home-subs-css/index.js:329-434` with lifecycle handling at line 493.

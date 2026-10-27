@@ -4257,6 +4257,45 @@
   "feature_videoLoopButton_name": {
     "message": "Video Loop Button"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "Channel rule"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "Keyword"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "Regex"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "Remove"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "Remove rule {rule}"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "Title rule"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "Clear Imported Rules ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "Cleared imported rules ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "Rules from a BlockTube or ChannelSieve import. Each one checks only the title or only the channel name."
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "Title and channel rules from a BlockTube or ChannelSieve import show up here."
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "Imported rules restored"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "That change wasn't saved. Try again."
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "Imported Title and Channel Rules"
+  },
   "videoLoopButtonDockNote": {
     "message": "While Astra Player Dock is on, it hides this button. Use the dock's Repeat button instead."
   },

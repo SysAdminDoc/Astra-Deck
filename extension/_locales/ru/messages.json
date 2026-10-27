@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "Кнопка зацикливания видео"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "Правило для канала"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "Ключевое слово"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "Регулярное выражение"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "Удалить"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "Удалить правило {rule}"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "Правило для названия"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "Очистить импортированные правила ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "Импортированные правила очищены ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "Правила из импорта BlockTube или ChannelSieve. Каждое проверяет только название или только имя канала."
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "Здесь появятся правила для названий и каналов из импорта BlockTube или ChannelSieve."
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "Импортированные правила восстановлены"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "Изменение не сохранено. Попробуйте ещё раз."
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "Импортированные правила для названий и каналов"
+  },
   "videoLoopButtonDockNote": {
     "message": "Пока включён Док Astra в плеере, эта кнопка скрыта. Используйте кнопку «Повтор» в доке."
   },

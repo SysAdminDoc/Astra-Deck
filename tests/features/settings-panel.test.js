@@ -228,8 +228,10 @@ test('a sub-feature whose own group lands elsewhere goes where its parent goes',
 
 // The real panel build, on the fake tree document from tests/helpers. The
 // tests above call the grouping helper; this is the code that draws from it.
-// `act` runs against the built panel while its document is still installed.
-function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storage, storageKeys = {}, userscriptHost, version = '0.0.0' } = {}) {
+// `act` runs against the built panel while its document is still installed;
+// when it returns a promise the globals stay installed until it settles.
+// `deps` overrides runtime dependencies after the defaults.
+function buildRealPanel(features, settings = {}, { shortsKeys, act, core, deps = {}, storage, storageKeys = {}, userscriptHost, version = '0.0.0' } = {}) {
     const { fakeTreeDocument } = require('../helpers/monolith');
     const doc = fakeTreeDocument();
     const saved = {
@@ -245,6 +247,16 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storag
     if (core) globalThis.YTKitCore = { ...(globalThis.YTKitCore || {}), ...core };
     if (userscriptHost) globalThis.__astraDeckUserscript = userscriptHost;
     else delete globalThis.__astraDeckUserscript;
+    const restore = () => {
+        globalThis.document = saved.document;
+        globalThis.chrome = saved.chrome;
+        globalThis.CSS = saved.CSS;
+        if (saved.host === undefined) delete globalThis.__astraDeckUserscript;
+        else globalThis.__astraDeckUserscript = saved.host;
+        if (saved.YTKitCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = saved.YTKitCore;
+    };
+    let deferred = false;
     try {
         const byId = new Map(features.map((feature) => [feature.id, feature]));
         const noop = () => {};
@@ -283,7 +295,8 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storag
             trapFocusWithin: noop,
             storageRead: storage ? (key, fallback) => (key in storage ? storage[key] : fallback) : () => null,
             storageReadJSON: () => null,
-            storageWrite: storage ? (key, value) => { storage[key] = value; } : noop
+            storageWrite: storage ? (key, value) => { storage[key] = value; } : noop,
+            ...deps
         });
         runtime.buildSettingsPanel();
         const placed = {};
@@ -301,16 +314,14 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act, core, storag
             }
             (placed[card.dataset.featureId] ||= []).push(where);
         }
-        act?.(doc, runtime);
+        const pending = act?.(doc, runtime);
+        if (pending && typeof pending.then === 'function') {
+            deferred = true;
+            return Promise.resolve(pending).then(() => placed).finally(restore);
+        }
         return placed;
     } finally {
-        globalThis.document = saved.document;
-        globalThis.chrome = saved.chrome;
-        globalThis.CSS = saved.CSS;
-        if (saved.host === undefined) delete globalThis.__astraDeckUserscript;
-        else globalThis.__astraDeckUserscript = saved.host;
-        if (saved.YTKitCore === undefined) delete globalThis.YTKitCore;
-        else globalThis.YTKitCore = saved.YTKitCore;
+        if (!deferred) restore();
     }
 }
 
@@ -518,6 +529,116 @@ test('Video Hider channels tab follows Channel Allowlist mode', () => {
         assert.doesNotMatch(source, /videoHiderHiddenCountTpl|videoHiderAllowedCountTpl|videoHiderBlockedCountTpl/,
             `${label} summary cards must show bare counts under their labels`);
     }
+});
+
+// A BlockTube or ChannelSieve import stored per-field rules that Video Hider
+// applied, but no panel listed them; Undo Import or an older backup were the
+// only ways to drop one.
+test('imported title and channel rules are listed, removed one at a time, and cleared with an undo', async () => {
+    const KEY = 'ytkit-imported-filter-rules';
+    const store = {
+        [KEY]: [
+            { field: 'title', kind: 'keyword', pattern: 'reaction', source: 'blocktube' },
+            { field: 'channel', kind: 'regex', pattern: '^Spam', flags: 'i', source: 'channelsieve' },
+            { field: 'description', kind: 'keyword', pattern: 'junk' }
+        ]
+    };
+    // `store` is StorageManager's cache and `disk` what was really written.
+    // Like the real setSync, the mock updates the cache before the write.
+    const disk = { [KEY]: store[KEY] };
+    const echoes = [];
+    const pushed = [];
+    const toasts = [];
+    let restored = 0;
+    let failNextSave = false;
+    const hider = {
+        id: 'hideVideosFromHome', name: 'Video Hider', group: 'Playlists', type: 'checkbox',
+        init() {}, destroy() {},
+        _restoreRemovedVideoNodes() { restored += 1; }
+    };
+    const rows = (doc) => [...doc.querySelectorAll('.ytkit-vh-card--rule')].map((card) => [
+        card.querySelector('.ytkit-vh-item-label')?.textContent,
+        card.querySelector('.ytkit-vh-item-title')?.textContent,
+        card.querySelector('.ytkit-vh-item-meta')?.textContent
+    ].join(' | '));
+    const clearButton = (doc) => doc.querySelector('.ytkit-vh-imported-rules .ytkit-vh-clear-btn');
+    await buildRealPanel([hider], { hideVideosFromHome: true }, {
+        storageKeys: { importedFilterRules: KEY },
+        core: { persistedDomains: require('../../extension/core/persisted-domains.js') },
+        deps: {
+            StorageManager: {
+                get: (key, fallback) => (key in store ? store[key] : fallback),
+                set() {},
+                setSync: async (key, value) => {
+                    store[key] = value;
+                    echoes.push(JSON.stringify(value));
+                    if (failNextSave) { failNextSave = false; return { ok: false, error: 'quota' }; }
+                    disk[key] = value;
+                    return { ok: true };
+                },
+                syncFromExternal: (key, value) => { store[key] = value; },
+                consumeLocalEcho: (_key, value) => {
+                    const at = echoes.indexOf(JSON.stringify(value));
+                    if (at >= 0) echoes.splice(at, 1);
+                    return at >= 0;
+                }
+            },
+            handleExternalStorageChanges: (changes, source, options) => {
+                pushed.push({ rules: (changes[KEY]?.newValue || []).map((rule) => rule.pattern), source, force: options?.forceApplyLocal === true });
+            },
+            showToast: (message, _color, options) => toasts.push({ message, undo: options?.action?.onClick || null })
+        },
+        async act(doc) {
+            doc.getElementById('ytkit-vh-tab-keywords').onclick();
+            assert.deepEqual(rows(doc), [
+                'Title rule | reaction | Keyword / BlockTube',
+                'Channel rule | /^Spam/i | Regex / ChannelSieve'
+            ], 'each sanitized rule shows its field, pattern, kind and source');
+            assert.equal(doc.getElementById('ytkit-vh-tab-keywords').querySelector('.ytkit-vh-tab__badge')?.textContent, 'Live',
+                'imported rules alone make the keyword tab live');
+            assert.equal(clearButton(doc)?.textContent, 'Clear Imported Rules (2)');
+
+            const firstRemove = doc.querySelector('.ytkit-vh-card--rule .ytkit-vh-list-btn');
+            assert.equal(firstRemove?.getAttribute('aria-label'), 'Remove rule reaction');
+            await firstRemove.onclick();
+            assert.deepEqual(store[KEY].map((rule) => rule.pattern), ['^Spam'], 'only the clicked rule is gone');
+            assert.deepEqual(pushed.at(-1), { rules: ['^Spam'], source: 'video-hider-imported-rules', force: true },
+                'Video Hider is handed the new list through the live storage path');
+            assert.equal(restored, 1, 'cards removed from the feed come back before refiltering');
+            assert.deepEqual(rows(doc), ['Channel rule | /^Spam/i | Regex / ChannelSieve'], 'the list redraws');
+
+            echoes.length = 0;
+            failNextSave = true;
+            await doc.querySelector('.ytkit-vh-card--rule .ytkit-vh-list-btn').onclick();
+            assert.deepEqual(store[KEY].map((rule) => rule.pattern), ['^Spam'], 'a failed save puts the cached list back');
+            assert.deepEqual(disk[KEY].map((rule) => rule.pattern), ['^Spam']);
+            assert.deepEqual(echoes, [], 'and forgets the echo of the write that never landed');
+            assert.equal(pushed.length, 1, 'a failed save is not pushed to Video Hider');
+            assert.match(toasts.at(-1)?.message || '', /wasn't saved/);
+            assert.deepEqual(rows(doc), ['Channel rule | /^Spam/i | Regex / ChannelSieve'], 'the row is still listed');
+
+            // A failed Clear followed by a retry must still clear, and its
+            // Undo must still have the rules to put back.
+            failNextSave = true;
+            await clearButton(doc).onclick();
+            assert.deepEqual(store[KEY].map((rule) => rule.pattern), ['^Spam'], 'a failed clear keeps the rules');
+            assert.equal(rows(doc).length, 1);
+
+            await clearButton(doc).onclick();
+            assert.deepEqual(store[KEY], [], 'clear all empties the store');
+            assert.deepEqual(pushed.at(-1)?.rules, []);
+            assert.equal(toasts.at(-1)?.message, 'Cleared imported rules (1)');
+            assert.equal(doc.querySelectorAll('.ytkit-vh-card--rule').length, 0);
+            assert.ok(!clearButton(doc), 'no clear button on an empty list');
+            assert.match(doc.querySelector('.ytkit-vh-imported-rules .ytkit-vh-section-copy')?.textContent || '', /show up here/);
+
+            await toasts.at(-1).undo();
+            assert.deepEqual(store[KEY].map((rule) => rule.pattern), ['^Spam'], 'undo puts the cleared rules back');
+            assert.deepEqual(pushed.at(-1)?.rules, ['^Spam']);
+            assert.equal(toasts.at(-1)?.message, 'Imported rules restored');
+            assert.equal(rows(doc).length, 1);
+        }
+    });
 });
 
 test('page quick controls reconcile feature settings without in-place mutation', () => {

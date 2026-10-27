@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "Videoschleife-Schaltfläche"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "Kanalregel"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "Stichwort"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "Regulärer Ausdruck"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "Entfernen"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "Regel {rule} entfernen"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "Titelregel"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "Importierte Regeln löschen ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "Importierte Regeln gelöscht ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "Regeln aus einem BlockTube- oder ChannelSieve-Import. Jede prüft nur den Titel oder nur den Kanalnamen."
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "Titel- und Kanalregeln aus einem BlockTube- oder ChannelSieve-Import erscheinen hier."
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "Importierte Regeln wiederhergestellt"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "Die Änderung wurde nicht gespeichert. Bitte erneut versuchen."
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "Importierte Titel- und Kanalregeln"
+  },
   "videoLoopButtonDockNote": {
     "message": "Solange das Astra Player-Dock aktiv ist, blendet es diese Schaltfläche aus. Verwenden Sie stattdessen die Schaltfläche „Wiederholen“ im Dock."
   },

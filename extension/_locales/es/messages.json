@@ -4243,6 +4243,45 @@
   "feature_videoLoopButton_name": {
     "message": "Botón de bucle de video"
   },
+  "videoHiderImportedRuleChannelField": {
+    "message": "Regla de canal"
+  },
+  "videoHiderImportedRuleKeyword": {
+    "message": "Palabra clave"
+  },
+  "videoHiderImportedRuleRegex": {
+    "message": "Expresión regular"
+  },
+  "videoHiderImportedRuleRemove": {
+    "message": "Quitar"
+  },
+  "videoHiderImportedRuleRemoveAriaTpl": {
+    "message": "Quitar la regla {rule}"
+  },
+  "videoHiderImportedRuleTitleField": {
+    "message": "Regla de título"
+  },
+  "videoHiderImportedRulesClearTpl": {
+    "message": "Borrar reglas importadas ({count})"
+  },
+  "videoHiderImportedRulesClearedTpl": {
+    "message": "Reglas importadas borradas ({count})"
+  },
+  "videoHiderImportedRulesCopy": {
+    "message": "Reglas de una importación de BlockTube o ChannelSieve. Cada una revisa solo el título o solo el nombre del canal."
+  },
+  "videoHiderImportedRulesEmpty": {
+    "message": "Las reglas de título y canal de una importación de BlockTube o ChannelSieve aparecen aquí."
+  },
+  "videoHiderImportedRulesRestored": {
+    "message": "Reglas importadas restauradas"
+  },
+  "videoHiderImportedRulesSaveFailed": {
+    "message": "No se guardó el cambio. Inténtalo de nuevo."
+  },
+  "videoHiderImportedRulesTitle": {
+    "message": "Reglas importadas de título y canal"
+  },
   "videoLoopButtonDockNote": {
     "message": "Mientras el Panel Astra en el Player está activado, oculta este botón. Usa en su lugar el botón Repetir del panel."
   },

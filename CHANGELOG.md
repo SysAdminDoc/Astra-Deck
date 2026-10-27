@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- Video Hider's Keyword Rules tab now lists the title and channel rules a BlockTube or ChannelSieve import brought in. Each row shows whether it checks the title or the channel name, whether it's a keyword or a regex, and which tool it came from. Remove drops one rule, and Clear Imported Rules drops them all with an Undo in the toast. The feed refilters right away. Before this, Undo Import or an older backup were the only ways to get rid of one.
+
 ## [4.103.0] (2026-10-27)
 
 ### Added
