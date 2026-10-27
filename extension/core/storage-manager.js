@@ -32,8 +32,9 @@
     if (core.createStorageCache) return;
 
     // Module-scoped so the guard actually spans factory invocations: it is
-// keyed on the window whose listeners were installed.
-const _installedUnloadHooks = new WeakSet();
+// keyed on the window whose listeners were installed. The value is every
+// manager registered on that window, so the single hook flushes all of them.
+const _installedUnloadHooks = new WeakMap();
 
 const DEFAULT_ECHO_TTL_MS = 1500;
     const DEFAULT_SAVE_DEBOUNCE_MS = 500;
@@ -170,20 +171,31 @@ const DEFAULT_ECHO_TTL_MS = 1500;
             // would stack listeners closing over a dead manager.
             _initUnloadFlush() {
                 if (typeof window === 'undefined' || typeof document === 'undefined') return;
-                if (_installedUnloadHooks.has(window)) return;
-                _installedUnloadHooks.add(window);
-                const self = this;
+                const entry = { manager: this, flushPendingStorageWrites };
+                const registered = _installedUnloadHooks.get(window);
+                if (registered) {
+                    // The hook is already installed; a later manager joins it
+                    // instead of being skipped.
+                    if (!registered.some((item) => item.manager === this)) registered.push(entry);
+                    return;
+                }
+                const managers = [entry];
+                _installedUnloadHooks.set(window, managers);
                 window.addEventListener('beforeunload', () => {
-                    if (self._saveTimeout) {
-                        clearTimeout(self._saveTimeout);
-                        self._saveTimeout = null;
+                    for (const { manager: self, flushPendingStorageWrites: flushPending } of managers) {
+                        if (self._saveTimeout) {
+                            clearTimeout(self._saveTimeout);
+                            self._saveTimeout = null;
+                        }
+                        if (self._dirty.size > 0) self._flush();
+                        void flushPending();
                     }
-                    if (self._dirty.size > 0) self._flush();
-                    void flushPendingStorageWrites();
                 });
                 document.addEventListener('yt-navigate-start', () => {
-                    if (self._dirty.size > 0) self._flush();
-                    void flushPendingStorageWrites();
+                    for (const { manager: self, flushPendingStorageWrites: flushPending } of managers) {
+                        if (self._dirty.size > 0) self._flush();
+                        void flushPending();
+                    }
                 });
             }
         };

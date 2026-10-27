@@ -174,3 +174,44 @@ test('ytkit.js no longer declares the inline `const StorageManager = {` block', 
     assert.ok(src.includes('createStorageCache('),
         'ytkit.js should instantiate StorageManager via the createStorageCache factory');
 });
+
+test('two managers on one window both flush their debounced writes on unload', () => {
+    // The unload hook is installed once per window, and it used to close over
+    // whichever manager installed it first; a second manager's dirty keys
+    // never reached storage when the page went away.
+    const factory = loadFactoryIntoFreshGlobal();
+    const handlers = { window: {}, document: {} };
+    const priorWindow = global.window;
+    const priorDocument = global.document;
+    const fakeWindow = { addEventListener: (type, fn) => { handlers.window[type] = fn; } };
+    const fakeDocument = { addEventListener: (type, fn) => { handlers.document[type] = fn; } };
+    try {
+        global.window = fakeWindow;
+        global.document = fakeDocument;
+        const first = makeBackingStore();
+        const second = makeBackingStore();
+        const a = factory({ ...first, getSaveDebounceMs: () => 60000 });
+        const b = factory({ ...second, getSaveDebounceMs: () => 60000 });
+        a._initUnloadFlush();
+        b._initUnloadFlush();
+        a.set('fromA', 1);
+        b.set('fromB', 2);
+        try {
+            handlers.window.beforeunload();
+        } finally {
+            clearTimeout(a._saveTimeout);
+            clearTimeout(b._saveTimeout);
+        }
+        assert.deepEqual(first.writeLog.find(e => e.kind === 'many')?.entries, { fromA: 1 });
+        assert.deepEqual(second.writeLog.find(e => e.kind === 'many')?.entries, { fromB: 2 },
+            'the second manager must flush too');
+
+        b.set('later', 3);
+        handlers.document['yt-navigate-start']();
+        assert.deepEqual(second.writeLog.filter(e => e.kind === 'many').at(-1).entries, { later: 3 });
+        clearTimeout(b._saveTimeout);
+    } finally {
+        global.window = priorWindow;
+        global.document = priorDocument;
+    }
+});
