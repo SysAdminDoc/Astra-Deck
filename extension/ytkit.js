@@ -6530,7 +6530,8 @@ const STORAGE_KEYS = Object.freeze({
                 name: getFeatureName(feature) || feature.id,
                 category: feature.group || null,
                 settingKey: getFeatureSettingKey(feature),
-                initialized: !!feature._initialized,
+                // A feature still starting is not running yet, so it is not healthy.
+                initialized: status !== 'starting' && !!feature._initialized,
                 lastError: error ? String(error?.message || error) : null
             };
             if (typeof elapsedMs === 'number') {
@@ -6543,32 +6544,65 @@ const STORAGE_KEYS = Object.freeze({
         }
     }
 
+    // Returns true once init has started. An init that returns a promise is
+    // reported as starting until it settles, and the outcome lands on
+    // feature._initSettled ({ ok, error }). A destroy or a newer init bumps
+    // the generation, so old work settling late changes nothing.
     function initFeatureLifecycle(feature, source = 'runtime') {
         if (!feature || feature._arrayKey) return false;
         const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+        const generation = feature._lifecycleGeneration = (feature._lifecycleGeneration || 0) + 1;
+        feature._initSettled = null;
+        let result;
         try {
             // Credit every selector surface this feature resolves during init
             // to the feature, so the health panel can name what broke rather
             // than reporting an anonymous surface miss. The mutation-rule
             // dispatcher does the same for the steady-state path.
             if (typeof withSelectorAttribution === 'function') {
-                withSelectorAttribution(feature.id, () => feature.init?.());
+                result = withSelectorAttribution(feature.id, () => feature.init?.());
             } else {
-                feature.init?.();
+                result = feature.init?.();
             }
-            feature._initialized = true;
-            const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
-            updateFeatureHealth(feature, 'initialized', source, null, elapsed);
-            return true;
         } catch (error) {
             updateFeatureHealth(feature, 'init-error', source, error);
             throw error;
         }
+        feature._initialized = true;
+        const elapsedSince = () => (typeof performance !== 'undefined' ? performance.now() - t0 : 0);
+        if (!result || typeof result.then !== 'function') {
+            updateFeatureHealth(feature, 'initialized', source, null, elapsedSince());
+            return true;
+        }
+        updateFeatureHealth(feature, 'starting', source);
+        const current = () => feature._lifecycleGeneration === generation && feature._initialized;
+        feature._initSettled = Promise.resolve(result).then(() => {
+            if (!current()) return { ok: false, error: null };
+            updateFeatureHealth(feature, 'initialized', source, null, elapsedSince());
+            return { ok: true, error: null };
+        }, (error) => {
+            if (!current()) {
+                DebugManager.log('Runtime', `Ignored a late init failure for "${feature.id}" after it was restarted or stopped: ${error?.message || error}`);
+                return { ok: false, error: null };
+            }
+            try {
+                feature.destroy?.();
+            } catch (cleanupError) {
+                DebugManager.log('Runtime', `Cleanup after a failed init of "${feature.id}" failed: ${cleanupError?.message || cleanupError}`);
+            }
+            feature._initialized = false;
+            feature._lifecycleGeneration++;
+            updateFeatureHealth(feature, 'init-error', source, error);
+            console.warn(`[YTKit] Feature init failed during ${source}:`, feature.id, error);
+            return { ok: false, error };
+        });
+        return true;
     }
 
     function destroyFeatureLifecycle(feature, source = 'runtime') {
         if (!feature || feature._arrayKey) return false;
         const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+        feature._lifecycleGeneration = (feature._lifecycleGeneration || 0) + 1;
         try {
             feature.destroy?.();
             feature._initialized = false;
@@ -49600,13 +49634,22 @@ html:not([dark]) .ytkit-sb-channel-chip {
                     DebugManager.log('Init', `Skipping "${f.id}" — crashed ${MAX_FEATURE_CRASHES}+ times`);
                     return;
                 }
-                try { initFeatureLifecycle(f, 'startup'); if (_featureCrashCounts[f.id]) { delete _featureCrashCounts[f.id]; _persistCrashCounts(); } } catch(err) {
+                const clearCrashes = () => { if (_featureCrashCounts[f.id]) { delete _featureCrashCounts[f.id]; _persistCrashCounts(); } };
+                const countCrash = (err) => {
                     _featureCrashCounts[f.id] = (_featureCrashCounts[f.id] || 0) + 1;
                     _persistCrashCounts();
                     console.error(`[YTKit] Error initializing "${f.id}" (crash ${_featureCrashCounts[f.id]}/${MAX_FEATURE_CRASHES}):`, err);
                     if (_featureCrashCounts[f.id] >= MAX_FEATURE_CRASHES) {
                         console.warn(`[YTKit] Feature "${f.id}" auto-disabled after ${MAX_FEATURE_CRASHES} crashes`);
                     }
+                };
+                try {
+                    initFeatureLifecycle(f, 'startup');
+                    // An async init only counts as a success or a crash once it settles.
+                    if (f._initSettled) f._initSettled.then(({ ok, error }) => { if (ok) clearCrashes(); else if (error) countCrash(error); });
+                    else clearCrashes();
+                } catch(err) {
+                    countCrash(err);
                 }
             };
 
@@ -49718,16 +49761,23 @@ html:not([dark]) .ytkit-sb-channel-chip {
 
                     if (!wasActive && shouldBeActiveNow && !f._initialized) {
                         if ((_featureCrashCounts[f.id] || 0) >= MAX_FEATURE_CRASHES) return;
-                        try {
-                            initFeatureLifecycle(f, 'navigation');
+                        const clearCrashes = () => {
                             if (_featureCrashCounts[f.id]) {
                                 delete _featureCrashCounts[f.id];
                                 _persistCrashCounts();
                             }
-                        } catch (e) {
+                        };
+                        const countCrash = (e) => {
                             _featureCrashCounts[f.id] = (_featureCrashCounts[f.id] || 0) + 1;
                             _persistCrashCounts();
                             console.error(`[YTKit] Nav re-init error "${f.id}" (crash ${_featureCrashCounts[f.id]}/${MAX_FEATURE_CRASHES}):`, e);
+                        };
+                        try {
+                            initFeatureLifecycle(f, 'navigation');
+                            if (f._initSettled) f._initSettled.then(({ ok, error }) => { if (ok) clearCrashes(); else if (error) countCrash(error); });
+                            else clearCrashes();
+                        } catch (e) {
+                            countCrash(e);
                         }
                     } else if (wasActive && !shouldBeActiveNow && f._initialized) {
                         try {

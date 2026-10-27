@@ -119,8 +119,27 @@
             const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
             const ctx = buildContext(record, ctxExtra);
             try {
-                record.spec.init(ctx);
+                const result = record.spec.init(ctx);
                 record.started = true;
+                if (result && typeof result.then === 'function') {
+                    // Started, not finished. The attempt is this controller, so
+                    // a destroy or a newer start() turns its late settle into a
+                    // no-op. The returned promise resolves to whether it took.
+                    const attempt = record.controller;
+                    record.pending = true;
+                    return Promise.resolve(result).then(() => {
+                        if (record.controller !== attempt) return false;
+                        record.pending = false;
+                        record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
+                        return true;
+                    }, (e) => {
+                        if (record.controller !== attempt) return false;
+                        logger.warn?.(`[lifecycle] init failed for ${id}: ${e?.message || e}`);
+                        destroy(id, ctxExtra);
+                        record.lastError = e;
+                        return false;
+                    });
+                }
                 record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             } catch (e) {
                 record.lastError = e;
@@ -170,6 +189,7 @@
             }
             record.destroyMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             record.started = false;
+            record.pending = false;
             record.controller = null;
         }
 
@@ -186,6 +206,7 @@
                     id,
                     category: record.spec.category || null,
                     started: record.started,
+                    pending: record.pending === true,
                     startedAt: record.startedAt,
                     initMs: record.initMs ?? null,
                     destroyMs: record.destroyMs ?? null,

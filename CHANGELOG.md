@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- A feature that takes a moment to start now shows as starting in diagnostics until it's actually running. If it fails partway, it's reported as failed, cleans up what it had set up and counts toward the crash limit, instead of showing healthy while doing nothing. Switching a feature off and on quickly can no longer let the earlier attempt's late result overwrite the new one.
+
 ## [4.100.1] (2026-10-26)
 
 ### Fixed
