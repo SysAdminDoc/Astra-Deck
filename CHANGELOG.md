@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Opening YouTube in a private window no longer leaves a trace in your regular storage. Every page load stamps a small crash-loop guard, and a private window used to write that stamp to the same storage your normal windows use. It now stays in the private tab and goes away with it.
+
 ## [4.101.2] (2026-10-27)
 
 ### Fixed

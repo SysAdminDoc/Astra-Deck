@@ -222,6 +222,47 @@ test('the private notice is a visible toast, shown once, and an unknown context 
     assert.equal(unknown.stores.sessionStorage.size, 1);
 });
 
+// Boots the real crash-loop guard from ytkit.js. Every page boot stamps it,
+// so a private boot that stamps regular storage leaves a trace of the visit
+// (scripts/smoke-private-window.js caught it under both userscript managers).
+function bootCrashGuard(state) {
+    const ytkit = read('extension/ytkit.js');
+    const start = ytkit.indexOf("const _CRASH_SESSION_KEY = '_ytkit_crash_guard'");
+    const end = ytkit.indexOf('const isSafeMode = _crashGuardTriggered', start);
+    assert.ok(start > 0 && end > start, 'the crash-loop guard is where the test expects it');
+    const writes = [];
+    const stores = { localStorage: new Map(), sessionStorage: new Map() };
+    const storage = (map) => ({ getItem: (k) => map.get(k) ?? null, setItem: (k, v) => map.set(k, String(v)), removeItem: (k) => map.delete(k) });
+    const context = vm.createContext({
+        hasExtensionContext: () => true,
+        storageRead: (_key, fallback) => fallback,
+        storageWrite: (key) => { writes.push(key); },
+        localStorage: storage(stores.localStorage),
+        sessionStorage: storage(stores.sessionStorage),
+        YTKitCore: { privateContextState: () => state },
+        DiagnosticLog: null,
+        console
+    });
+    context.globalThis = context;
+    vm.runInContext(ytkit.slice(start, end), context);
+    return { writes, stores, clear: () => vm.runInContext('_clearCrashGuardTimestamps();', context) };
+}
+
+test('a private or unknown boot stamps the crash-loop guard in the tab, not regular storage', () => {
+    for (const state of ['private', 'unknown']) {
+        const guard = bootCrashGuard(state);
+        assert.equal(guard.writes.length, 0, `${state}: the boot stamp must not reach extension storage`);
+        assert.equal(guard.stores.localStorage.size, 0, `${state}: nor the profile's page storage`);
+        assert.equal(guard.stores.sessionStorage.size, 1, `${state}: the tab still guards against a crash loop across reloads`);
+        guard.clear();
+        assert.equal(guard.writes.length, 0, `${state}: clearing stays in the tab too`);
+        assert.equal(guard.stores.sessionStorage.size, 0);
+    }
+    const regular = bootCrashGuard('regular');
+    assert.deepEqual(regular.writes, ['_ytkit_crash_guard'], 'a regular boot still uses extension storage');
+    assert.equal(regular.stores.sessionStorage.size, 0);
+});
+
 // Built in memory from the current host.js, not the committed YTKit.user.js,
 // which only catches up at the next release sync.
 const userscriptSource = buildUserscriptOutputs(repoRoot).get('YTKit.user.js');

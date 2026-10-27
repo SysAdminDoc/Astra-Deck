@@ -49881,11 +49881,20 @@ html:not([dark]) .ytkit-sb-channel-chip {
             if (!Array.isArray(value)) return [];
             return value.filter(t => typeof t === 'number' && Number.isFinite(t));
         };
+        // Every boot stamps the guard, so a private (or unknown) window keeps
+        // its stamps in the tab's sessionStorage: a crash loop reloads the
+        // same tab, and regular storage never hears about the visit.
+        const _crashGuardStore = () => {
+            if (!hasExtensionContext()) return 'page';
+            return (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') === 'regular' ? 'extension' : 'session';
+        };
         const _readCrashGuardTimestamps = () => {
             try {
-                if (hasExtensionContext()) {
+                const store = _crashGuardStore();
+                if (store === 'extension') {
                     return _normalizeCrashGuardTimestamps(storageRead(_CRASH_SESSION_KEY, []));
                 }
+                if (store === 'session') return _normalizeCrashGuardTimestamps(sessionStorage.getItem(_CRASH_SESSION_KEY));
                 return _normalizeCrashGuardTimestamps(localStorage.getItem(_CRASH_SESSION_KEY));
             } catch (error) {
                 _recordCrashGuardStorageDegraded('read', error);
@@ -49896,8 +49905,13 @@ html:not([dark]) .ytkit-sb-channel-chip {
             const next = _normalizeCrashGuardTimestamps(timestamps).slice(-(_CRASH_THRESHOLD + 1));
             _crashGuardMemoryTimestamps = next.slice();
             try {
-                if (hasExtensionContext()) {
+                const store = _crashGuardStore();
+                if (store === 'extension') {
                     void storageWrite(_CRASH_SESSION_KEY, next, { immediate: true });
+                    return;
+                }
+                if (store === 'session') {
+                    sessionStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(next));
                     return;
                 }
                 localStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(next));
@@ -49908,8 +49922,13 @@ html:not([dark]) .ytkit-sb-channel-chip {
         const _clearCrashGuardTimestamps = () => {
             _crashGuardMemoryTimestamps = [];
             try {
-                if (hasExtensionContext()) {
+                const store = _crashGuardStore();
+                if (store === 'extension') {
                     void storageWrite(_CRASH_SESSION_KEY, [], { immediate: true });
+                    return;
+                }
+                if (store === 'session') {
+                    sessionStorage.removeItem(_CRASH_SESSION_KEY);
                     return;
                 }
                 localStorage.removeItem(_CRASH_SESSION_KEY);

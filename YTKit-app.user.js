@@ -31360,11 +31360,17 @@ const STORAGE_KEYS = Object.freeze({
 			if (!Array.isArray(value)) return [];
 			return value.filter(t => typeof t === 'number' && Number.isFinite(t));
 		};
+		const _crashGuardStore = () => {
+			if (!hasExtensionContext()) return 'page';
+			return (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') === 'regular' ? 'extension' : 'session';
+		};
 		const _readCrashGuardTimestamps = () => {
 			try {
-				if (hasExtensionContext()) {
+				const store = _crashGuardStore();
+				if (store === 'extension') {
 					return _normalizeCrashGuardTimestamps(storageRead(_CRASH_SESSION_KEY, []));
 				}
+				if (store === 'session') return _normalizeCrashGuardTimestamps(sessionStorage.getItem(_CRASH_SESSION_KEY));
 				return _normalizeCrashGuardTimestamps(localStorage.getItem(_CRASH_SESSION_KEY));
 			} catch (error) {
 				_recordCrashGuardStorageDegraded('read', error);
@@ -31375,8 +31381,13 @@ const STORAGE_KEYS = Object.freeze({
 			const next = _normalizeCrashGuardTimestamps(timestamps).slice(-(_CRASH_THRESHOLD + 1));
 			_crashGuardMemoryTimestamps = next.slice();
 			try {
-				if (hasExtensionContext()) {
+				const store = _crashGuardStore();
+				if (store === 'extension') {
 					void storageWrite(_CRASH_SESSION_KEY, next, { immediate: true });
+					return;
+				}
+				if (store === 'session') {
+					sessionStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(next));
 					return;
 				}
 				localStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(next));
@@ -31387,8 +31398,13 @@ const STORAGE_KEYS = Object.freeze({
 		const _clearCrashGuardTimestamps = () => {
 			_crashGuardMemoryTimestamps = [];
 			try {
-				if (hasExtensionContext()) {
+				const store = _crashGuardStore();
+				if (store === 'extension') {
 					void storageWrite(_CRASH_SESSION_KEY, [], { immediate: true });
+					return;
+				}
+				if (store === 'session') {
+					sessionStorage.removeItem(_CRASH_SESSION_KEY);
 					return;
 				}
 				localStorage.removeItem(_CRASH_SESSION_KEY);
