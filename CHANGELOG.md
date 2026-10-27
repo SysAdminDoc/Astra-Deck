@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.100.6] (2026-10-26)
+
 ### Added
 
 - Theater Split has Wider and Narrower buttons next to the close button, so you can resize the side panel with a click or a tap instead of dragging the divider. Each click moves it 5%, the size sticks for next time, and the buttons grey out at the smallest and largest widths. They're only there while the panel is open.
