@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "Astra kann nicht erkennen, ob dies ein privates Fenster ist. Wiedergabefortschritt, Verlauf, Änderungen am Watch Feed und Lesezeichen bleiben daher nur erhalten, bis du diesen Tab schließt."
   },
+  "privateImportHeldNotice": {
+    "message": "Das ist ein privates Fenster. Importierter Verlauf, Watch Feed und Lesezeichen bleiben daher nur erhalten, bis du es schließt."
+  },
   "featureHealthTitle": {
     "message": "Funktionszustand"
   },

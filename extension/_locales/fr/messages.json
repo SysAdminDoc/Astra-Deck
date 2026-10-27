@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "Astra ne peut pas savoir s'il s'agit d'une fenêtre privée : la progression, l'historique, les changements du Watch Feed et les signets ne sont donc gardés que jusqu'à la fermeture de cet onglet."
   },
+  "privateImportHeldNotice": {
+    "message": "C'est une fenêtre privée, donc l'historique, le Watch Feed et les signets importés ne restent que jusqu'à sa fermeture."
+  },
   "featureHealthTitle": {
     "message": "État des fonctionnalités"
   },

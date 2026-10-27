@@ -5546,6 +5546,7 @@ const STORAGE_KEYS = Object.freeze({
                 };
                 const transaction = this._getSettingsImportTransaction();
                 if (!transaction) throw new Error('Settings import transaction service unavailable');
+                let heldInMemory = false;
                 const outcome = await transaction.run({
                     snapshot: () => backup,
                     summary,
@@ -5573,6 +5574,7 @@ const STORAGE_KEYS = Object.freeze({
                                     ? failed.error
                                     : new Error('Extension storage rejected the imported data.');
                             }
+                            heldInMemory = results.some((result) => result?.heldInMemory?.length);
                         });
                     }
                 });
@@ -5580,10 +5582,14 @@ const STORAGE_KEYS = Object.freeze({
                     console.error('[YTKit] Import apply failed, rolling back:', outcome.error || outcome.rollbackError);
                     return { ok: false, message: t('statusSettingsImportFailed', 'Import failed while applying data; previous state was restored.') };
                 }
+                const message = this._formatSettingsImportSummary(summary);
                 return {
                     ok: true,
                     summary,
-                    message: this._formatSettingsImportSummary(summary)
+                    heldInMemory,
+                    message: heldInMemory
+                        ? `${message} ${t('privateImportHeldNotice', 'This is a private window, so imported history, Watch Feed and bookmarks last only until you close it.')}`
+                        : message
                 };
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
@@ -7262,21 +7268,32 @@ const STORAGE_KEYS = Object.freeze({
 
         // A private window keeps watch history, the Watch Feed and in-app
         // saves in memory (core/storage.js). Say so the first time that
-        // happens in a private session. The page's own localStorage is
-        // private there too, so the mark goes away with the window.
+        // happens in a private session. A known private window's
+        // localStorage is private too, so the mark goes away with the
+        // window. An unknown context may be a regular window, so its mark
+        // stays in sessionStorage and never lands in the profile's page
+        // storage. The tone is a warning because quiet toasts only reach
+        // screen readers, and this one has to be seen.
         window.addEventListener('ytkit-private-memory-write', () => {
             const MARK = '_ytkit_private_memory_notice';
+            const known = globalThis.YTKitCore?.privateContextState?.() === 'private';
+            let markStore = null;
             try {
-                if (localStorage.getItem(MARK)) return;
-                localStorage.setItem(MARK, '1');
+                markStore = known ? localStorage : sessionStorage;
+                if (markStore.getItem(MARK)) return;
             } catch (_) {
                 // reason: blocked page storage still gets the notice once per tab
+                markStore = null;
             }
-            const known = globalThis.YTKitCore?.privateContextState?.() === 'private';
             const message = known
                 ? t('privateMemoryNotice', 'Private window: watch progress, history, Watch Feed changes and bookmarks you make here are kept only until you close it. Copy, Export and Download still work.')
                 : t('privateMemoryUnknownNotice', 'Astra can\'t tell whether this is a private window, so watch progress, history, Watch Feed changes and bookmarks are kept only until you close this tab.');
-            showToast(message, '#6b7280', { duration: 8 });
+            showToast(message, '#f59e0b', { duration: 8, tone: 'warning' });
+            try {
+                markStore?.setItem(MARK, '1');
+            } catch (_) {
+                // reason: the toast already showed; storage.js sends this event once per tab
+            }
         });
 
         if (chrome.runtime?.onMessage) {

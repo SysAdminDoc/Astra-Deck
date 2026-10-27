@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "Astra はこれがプライベートウィンドウかどうか判断できないため、再生位置、履歴、Watch Feed の変更、ブックマークはこのタブを閉じるまでしか保持されません。"
   },
+  "privateImportHeldNotice": {
+    "message": "これはプライベートウィンドウのため、インポートした履歴、Watch Feed、ブックマークは閉じるまでしか保持されません。"
+  },
   "featureHealthTitle": {
     "message": "機能の状態"
   },

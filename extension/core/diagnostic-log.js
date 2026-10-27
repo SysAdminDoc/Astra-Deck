@@ -127,6 +127,9 @@
             return memoryEntries.length ? persisted.concat(memoryEntries) : persisted;
         }
 
+        // Clears both rings. From a private window that still empties the
+        // saved one, because the user asked for an empty log and the panel
+        // shows both.
         function clear() {
             const settings = getSettings();
             if (!settings) return;

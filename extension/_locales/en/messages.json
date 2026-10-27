@@ -1679,6 +1679,9 @@
   "privateMemoryUnknownNotice": {
     "message": "Astra can't tell whether this is a private window, so watch progress, history, Watch Feed changes and bookmarks are kept only until you close this tab."
   },
+  "privateImportHeldNotice": {
+    "message": "This is a private window, so imported history, Watch Feed and bookmarks last only until you close it."
+  },
   "featureHealthTitle": {
     "message": "Feature health"
   },

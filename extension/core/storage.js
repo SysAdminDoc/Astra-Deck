@@ -56,16 +56,16 @@
 
     function splitPrivateMemoryWrites(entries) {
         const durable = Object.create(null);
-        let held = 0;
+        const held = [];
         for (const key of Object.keys(entries)) {
             if (keepsInPrivateMemory(key)) {
                 privateMemoryKeys.add(key);
-                held += 1;
+                held.push(key);
             } else {
                 durable[key] = entries[key];
             }
         }
-        if (held > 0 && !privateMemoryNoticeSent) {
+        if (held.length > 0 && !privateMemoryNoticeSent) {
             privateMemoryNoticeSent = true;
             try {
                 window.dispatchEvent(new CustomEvent('ytkit-private-memory-write'));
@@ -73,7 +73,7 @@
                 // reason: the notice is a courtesy; the fence already held
             }
         }
-        return durable;
+        return { durable, held };
     }
 
     function hasPrivateMemoryKeys() {
@@ -465,14 +465,18 @@
 
     function storageWriteMany(entries, options = {}) {
         Object.assign(extensionStateCache, entries);
-        Object.assign(pendingStorageWrites, splitPrivateMemoryWrites(entries));
+        const { durable, held } = splitPrivateMemoryWrites(entries);
+        Object.assign(pendingStorageWrites, durable);
+        // A held key never reaches disk. Say so in the result, or a caller
+        // that confirms persistence (import, undo) reports it saved.
+        const noteHeld = (result) => (held.length ? { ...result, heldInMemory: held } : result);
 
         if (options.immediate) {
-            return flushPendingStorageWrites();
+            return flushPendingStorageWrites().then(noteHeld);
         }
 
         schedulePendingStorageFlush();
-        return Promise.resolve({ ok: true, queued: true });
+        return Promise.resolve(noteHeld({ ok: true, queued: true }));
     }
 
     function storageWrite(key, value, options = {}) {

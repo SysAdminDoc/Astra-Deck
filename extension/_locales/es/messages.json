@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "Astra no puede saber si esta es una ventana privada, así que el progreso, el historial, los cambios en Watch Feed y los marcadores solo se guardan hasta que cierres esta pestaña."
   },
+  "privateImportHeldNotice": {
+    "message": "Esta es una ventana privada, así que el historial, Watch Feed y los marcadores importados solo duran hasta que la cierres."
+  },
   "featureHealthTitle": {
     "message": "Estado de las funciones"
   },

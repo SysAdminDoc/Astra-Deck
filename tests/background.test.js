@@ -2277,6 +2277,32 @@ test('a private or unknown tab gets no cookies when the store lookup is unavaila
     assert.equal(regular.reads[0].storeId, undefined);
 });
 
+test('a store lookup settles an unknown tab and keeps Chrome flagless stores for regular tabs', async () => {
+    const unknown = youtubeSender();
+    delete unknown.tab.incognito;
+    const settled = await cookieHandoffWith({
+        sender: unknown,
+        cookieStoresImpl: async () => [{ id: '0', incognito: false, tabIds: [9] }]
+    });
+    assert.equal(settled.response.ok, true, 'a store that says regular settles an unknown tab');
+    assert.equal(settled.reads[0].storeId, '0');
+
+    const unsettled = await cookieHandoffWith({
+        sender: unknown,
+        cookieStoresImpl: async () => [{ id: '1', tabIds: [9] }]
+    });
+    assert.equal(unsettled.response.error.code, 'COOKIE_STORE_UNRESOLVED', 'a flagless store cannot settle an unknown tab');
+    assert.equal(unsettled.reads.length, 0);
+
+    // Chrome's CookieStore has no incognito field; tab membership decides.
+    const chrome = await cookieHandoffWith({
+        sender: youtubeSender({ incognito: false }),
+        cookieStoresImpl: async () => [{ id: '0', tabIds: [9] }]
+    });
+    assert.equal(chrome.response.ok, true);
+    assert.equal(chrome.reads[0].storeId, '0');
+});
+
 test('a Firefox container store id is used as-is', async () => {
     const { response, reads } = await cookieHandoffWith({
         sender: youtubeSender({ incognito: true, cookieStoreId: 'firefox-private' }),

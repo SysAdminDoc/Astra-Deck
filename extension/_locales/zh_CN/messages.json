@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "Astra 无法判断这是否为隐私窗口，因此观看进度、历史记录、Watch Feed 更改和书签只保留到关闭此标签页为止。"
   },
+  "privateImportHeldNotice": {
+    "message": "这是隐私窗口，因此导入的历史记录、Watch Feed 和书签只保留到关闭窗口为止。"
+  },
   "featureHealthTitle": {
     "message": "功能健康状态"
   },

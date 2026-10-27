@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "O Astra não consegue saber se esta é uma janela privada, então progresso, histórico, mudanças no Watch Feed e favoritos ficam guardados só até você fechar esta aba."
   },
+  "privateImportHeldNotice": {
+    "message": "Esta é uma janela privada, então o histórico, o Watch Feed e os favoritos importados ficam só até você fechá-la."
+  },
   "featureHealthTitle": {
     "message": "Saúde dos recursos"
   },

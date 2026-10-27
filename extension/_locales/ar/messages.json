@@ -1669,6 +1669,9 @@
   "privateMemoryUnknownNotice": {
     "message": "لا يستطيع Astra معرفة ما إذا كانت هذه نافذة خاصة، لذا يبقى تقدم المشاهدة والسجل وتغييرات Watch Feed والإشارات المرجعية فقط حتى تغلق علامة التبويب هذه."
   },
+  "privateImportHeldNotice": {
+    "message": "هذه نافذة خاصة، لذا يبقى السجل وWatch Feed والإشارات المرجعية المستوردة فقط حتى تغلقها."
+  },
   "featureHealthTitle": {
     "message": "حالة الميزات"
   },

@@ -93,6 +93,19 @@ test('a private window keeps history and Watch Feed writes in memory and still s
     assert.equal(events.filter((e) => e.type === 'ytkit-private-memory-write').length, 1, 'the notice fires once per tab');
 });
 
+test('a held write says so in its result, so import and undo never report it saved', async () => {
+    const { core } = loadStorage({ incognito: true });
+    const held = await core.storageWriteMany({ [WATCH]: { abc: 42 }, [SETTINGS]: { theme: 'oled' } }, { immediate: true });
+    assert.equal(held.ok, true);
+    assert.deepEqual([...held.heldInMemory], [WATCH]);
+    const queued = await core.storageWriteMany({ [FEED]: ['abc'] });
+    assert.deepEqual([...queued.heldInMemory], [FEED]);
+
+    const regular = loadStorage({ incognito: false });
+    const saved = await regular.core.storageWriteMany({ [WATCH]: { abc: 42 } }, { immediate: true });
+    assert.equal(saved.heldInMemory, undefined);
+});
+
 test('a regular tab write never overwrites the private copy', async () => {
     const { core, events, echo } = loadStorage({ incognito: true });
     await core.storageWriteMany({ [WATCH]: { abc: 42 } }, { immediate: true });
@@ -159,6 +172,54 @@ test('the page wires the private context into diagnostics and tells the user onc
     const en = JSON.parse(read('extension/_locales/en/messages.json'));
     assert.ok(en.privateMemoryNotice?.message, 'the private notice is localized');
     assert.ok(en.privateMemoryUnknownNotice?.message);
+    assert.ok(en.privateImportHeldNotice?.message);
+});
+
+// Boots the real listener from ytkit.js against a stub showToast and the
+// real quiet-toast rule, so a neutral tone that only reaches screen readers
+// fails here.
+function bootPrivateNotice(state) {
+    const ytkit = read('extension/ytkit.js');
+    const start = ytkit.indexOf("window.addEventListener('ytkit-private-memory-write'");
+    const end = ytkit.indexOf('\n        });\n', start) + '\n        });\n'.length;
+    assert.ok(start > 0 && end > start, 'the listener is where the test expects it');
+    const quietStart = ytkit.indexOf('function isQuietToast(');
+    const quietEnd = ytkit.indexOf('\n    }\n', quietStart) + '\n    }\n'.length;
+    const toasts = [];
+    const stores = { localStorage: new Map(), sessionStorage: new Map() };
+    const storage = (map) => ({ getItem: (k) => map.get(k) ?? null, setItem: (k, v) => map.set(k, v) });
+    let listener = null;
+    const context = vm.createContext({
+        appState: { settings: { actionToasts: false } },
+        document: { body: { classList: { contains: () => false } } },
+        normalizeToastTone: (tone) => tone,
+        inferToastTone: (color) => (color === '#f59e0b' ? 'warning' : 'neutral'),
+        t: (_key, fallback) => fallback,
+        localStorage: storage(stores.localStorage),
+        sessionStorage: storage(stores.sessionStorage),
+        YTKitCore: { privateContextState: () => state },
+        window: { addEventListener: (_type, fn) => { listener = fn; } }
+    });
+    context.globalThis = context;
+    vm.runInContext(`${ytkit.slice(quietStart, quietEnd)}
+        function showToast(message, color, options = {}) { toasts.push({ message, quiet: isQuietToast(color, options) }); }
+        ${ytkit.slice(start, end)}`, Object.assign(context, { toasts }));
+    return { fire: () => listener(), toasts, stores };
+}
+
+test('the private notice is a visible toast, shown once, and an unknown context marks only the tab session', () => {
+    const known = bootPrivateNotice('private');
+    known.fire();
+    known.fire();
+    assert.equal(known.toasts.length, 1, 'once per private session');
+    assert.equal(known.toasts[0].quiet, false, 'a quiet toast only reaches screen readers');
+    assert.equal(known.stores.localStorage.size, 1);
+
+    const unknown = bootPrivateNotice('unknown');
+    unknown.fire();
+    assert.equal(unknown.toasts.length, 1);
+    assert.equal(unknown.stores.localStorage.size, 0, 'a maybe-regular window gets no mark in the profile page storage');
+    assert.equal(unknown.stores.sessionStorage.size, 1);
 });
 
 // Built in memory from the current host.js, not the committed YTKit.user.js,
