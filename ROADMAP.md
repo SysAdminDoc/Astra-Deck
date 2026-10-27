@@ -135,20 +135,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   half under Tampermonkey and Violentmonkey in a private window.
   Complexity: M
 
-- [ ] P2 — Resolve npm links and package identities in the release SBOM
-  Why: the generated inventory reports nested paths and link stubs as required package names.
-  Evidence: Verified read-only `buildSbom` evaluation of `scripts/generate-release-sbom.js:46-73`
-  includes bogus `web-ext/node_modules/@devicefarmer/adbkit@0.0.0`;
-  https://docs.npmjs.com/cli/v11/configuring-npm/package-lock-json/ and
-  https://cyclonedx.org/docs/1.5/json/ define the relevant structures.
-  Touches: `scripts/generate-release-sbom.js`, release SBOM tests and existing artifact docs.
-  Acceptance: resolve link targets before classification, derive real names/versions and
-  dependency reachability, and deduplicate by valid PURL without merging distinct versions.
-  Local, nested, dev-only and dangling-link fixtures produce an accurate dependency closure
-  or an explicit invalid-link error. Describe this as build-tooling scope, not browser
-  runtime dependencies. Preserve the adbkit security stub.
-  Complexity: S
-
 - [ ] P2 — Authenticate repair-feed sequence and expiry rather than receipt time alone
   Why: replaying a valid old signature currently refreshes the apparent age of the feed.
   Evidence: Verified source at `extension/background.js:1194-1208` and `:1246-1330`;
