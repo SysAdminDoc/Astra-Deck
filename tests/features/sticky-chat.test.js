@@ -24,7 +24,10 @@ class FakeElement {
         this.attributes = new Map();
         this.listeners = new Map();
         this.styleValues = new Map();
-        this.style = { setProperty: (key, value) => this.styleValues.set(key, value) };
+        this.style = {
+            setProperty: (key, value) => this.styleValues.set(key, value),
+            removeProperty: (key) => this.styleValues.delete(key)
+        };
         this.hidden = false;
         this.isConnected = true;
         this.value = '';
@@ -272,4 +275,54 @@ test('the drag handle describes its keys', () => {
     const hint = harness.feature._controls.children.find((child) => child.id === hintId);
     assert.ok(hint, 'and that description must exist in the same toolbar');
     assert.match(hint.textContent, /arrow keys/);
+});
+
+test('leaving floating mode and destroy remove the inline layout properties', () => {
+    const harness = createHarness({ x: 700, y: 20, opacity: 0.8 });
+    harness.documentRef.fullscreenElement = harness.documentRef.documentElement;
+    harness.feature.init();
+    for (const key of ['--ytkit-floating-chat-x', '--ytkit-floating-chat-y', '--ytkit-floating-chat-opacity']) {
+        assert.ok(harness.frame.styleValues.has(key), `${key} is set while floating`);
+    }
+
+    harness.documentRef.fullscreenElement = null;
+    harness.feature._sync();
+    assert.deepEqual([...harness.frame.styleValues.keys()], [],
+        'no --ytkit-floating-chat-* property may stay on the frame after leaving fullscreen');
+
+    harness.documentRef.fullscreenElement = harness.documentRef.documentElement;
+    harness.feature._sync();
+    assert.ok(harness.frame.styleValues.size > 0);
+    harness.feature.destroy();
+    assert.deepEqual([...harness.frame.styleValues.keys()], [], 'destroy clears them too');
+});
+
+test('a second init() does not stack observers or fullscreen and resize listeners', () => {
+    const live = { observers: 0, listeners: new Map() };
+    const track = (target) => ({
+        addEventListener: (type, fn) => live.listeners.set(fn, `${target}:${type}`),
+        removeEventListener: (type, fn) => live.listeners.delete(fn)
+    });
+    const documentRef = { documentElement: {}, ...track('document'), querySelector: () => null };
+    const windowRef = { innerWidth: 1280, innerHeight: 720, ...track('window') };
+    const feature = createStickyChatFeature({
+        documentRef,
+        windowRef,
+        MutationObserverCtor: class {
+            constructor() { this.on = false; }
+            observe() { if (!this.on) { this.on = true; live.observers++; } }
+            disconnect() { if (this.on) { this.on = false; live.observers--; } }
+        },
+        setTimeoutFn: () => 1,
+        clearTimeoutFn: () => {}
+    });
+    feature.init();
+    assert.equal(live.observers, 1);
+    assert.equal(live.listeners.size, 2);
+    feature.init();
+    assert.equal(live.observers, 1, 'only one observer stays connected');
+    assert.equal(live.listeners.size, 2, 'fullscreen and resize listeners must not stack');
+    feature.destroy();
+    assert.equal(live.observers, 0);
+    assert.equal(live.listeners.size, 0);
 });

@@ -37,6 +37,7 @@
             group: 'Live Chat',
             icon: 'message-circle',
             _styleEl: null,
+            _initialized: false,
             _observer: null,
             _frame: null,
             _controls: null,
@@ -213,6 +214,11 @@
                 this._controls?.remove?.();
                 this._controls = null;
                 this._frame?.classList?.remove?.(FLOATING_CLASS);
+                // _applyLayout writes these inline; the class going away does
+                // not clear them, and the frame outlives floating mode.
+                for (const property of ['--ytkit-floating-chat-x', '--ytkit-floating-chat-y', '--ytkit-floating-chat-opacity']) {
+                    this._frame?.style?.removeProperty?.(property);
+                }
                 this._frame = null;
             },
 
@@ -238,6 +244,10 @@
             },
 
             init() {
+                // A second init without destroy() would leak the first
+                // observer and the fullscreen/resize listeners.
+                if (this._initialized) this.destroy();
+                this._initialized = true;
                 const css = `
                     ytd-live-chat-frame:not(.ytkit-floating-chat),
                     #chat-container { position: sticky !important; top: 8px !important; z-index: 100 !important; }
@@ -312,6 +322,7 @@
             },
 
             destroy() {
+                this._initialized = false;
                 if (this._syncTimer) { clearTimeoutFn(this._syncTimer); this._syncTimer = null; }
                 this._observer?.disconnect?.();
                 this._observer = null;
