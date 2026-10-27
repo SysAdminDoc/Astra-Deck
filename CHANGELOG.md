@@ -12,7 +12,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Documentation
 
-- The privacy policy now lists the automatic check of the project's signed known-breakage list on GitHub (at most every six hours while Known-Breakage Notices is on, which it is by default) and the manual selector refresh. It also says plainly that the store-safe build talks to Astra Downloader too, not just GitHub-full, and that SponsorBlock and DeArrow are on by default. The store checklist and permission notes got the same corrections.
+- The privacy policy now lists the automatic check of the project's signed known-breakage list on GitHub (at most every six hours while Known-Breakage Notices is on, which it is by default) and the selector packs, which download when you run a selector refresh or about once a day if you turn on selector auto-refresh (off by default). It also says plainly that the store-safe build talks to Astra Downloader too, not just GitHub-full, and that SponsorBlock and DeArrow are on by default. The store checklist and permission notes got the same corrections.
 - INSTALL.md now covers the Allow User Scripts switch that Chrome 138 and newer need before a userscript manager runs anything.
 - The feature request and pull request templates match how things work now: API features aren't all off by default, the companion isn't GitHub-full only, and PRs link issues with "Refs #n" because an issue stays open until its reporter confirms the fix.
 

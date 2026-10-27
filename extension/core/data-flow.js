@@ -182,9 +182,10 @@
         }),
         Object.freeze({
             origin: 'https://raw.githubusercontent.com',
-            purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (only when you run a selector refresh), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
+            purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (when you run a selector refresh, or about once a day while selector auto-refresh is on, which is off by default), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
             // The selector refresh is driven by an explicit user action from
-            // the selector-health dashboard rather than a feature toggle. It is
+            // the selector-health dashboard, or by the off-by-default
+            // selectorAutoRefresh schedule (about once a day). It is
             // catalogued because the extension does fetch it: the dev manifest
             // declared the permission while the catalogue did not, so every
             // BUILT artifact dropped it and the request survived only because

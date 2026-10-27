@@ -3499,14 +3499,37 @@ test('privacy, permission, setup and intake docs match the origin catalogue and 
     assert.match(repairRow, /six hours/, 'the repair row must state the automatic six-hour check');
     assert.match(repairRow, /selector refresh/, 'the repair row must state the manual selector refresh');
     assert.equal(defaults.featureDisableFeed, true);
-    assert.match(repairRow, /on by default/, 'Known-Breakage Notices is on by default, so the row must say so');
+    assert.match(repairRow, /\(it's on by default\)/, 'Known-Breakage Notices is on by default, so the row must say so');
+    // selectorAutoRefresh fetches the packs on a daily schedule, so "manual only" is false for anyone who turns it on.
+    assert.equal(defaults.selectorAutoRefresh, false);
+    assert.match(read('extension/ytkit.js'), /const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 \* 60 \* 60 \* 1000;/,
+        'the docs say "about once a day"; change them with the interval');
+    for (const [label, text] of [
+        ['privacy policy', repairRow],
+        ['submission checklist', checklist.split('\n').find((line) => line.startsWith('| `host_permissions: raw.githubusercontent.com`'))],
+        ['origin catalogue', ORIGIN_CATALOGUE.find((entry) => entry.origin === 'https://raw.githubusercontent.com').purpose]
+    ]) {
+        assert.doesNotMatch(text, /only when (you run|the user runs) a selector refresh/, `${label}: the selector packs also refresh on a schedule`);
+        assert.match(text, /about once a day/, `${label} must disclose the daily selector auto-refresh`);
+        assert.match(text, /off by default/, `${label} must say selector auto-refresh is off by default`);
+    }
     assert.match(policy, /`chromium-store` build has no loopback access/);
 
     for (const key of ['sponsorBlock', 'deArrow']) {
         assert.equal(defaults[key], true, `${key} is a default-on API feature`);
     }
     const sponsorRow = policy.split('\n').find((line) => line.startsWith('| SponsorBlock / DeArrow'));
-    assert.match(sponsorRow, /on by default/, 'the policy must not imply SponsorBlock and DeArrow are opt-in');
+    assert.match(sponsorRow, /Both are on by default/, 'the policy must not imply SponsorBlock and DeArrow are opt-in');
+    // The mirror (sponsorblock.kavin.rocks) has its own grant, so naming one host undersells it.
+    assert.match(sponsorRow, /grant access to the SponsorBlock host/);
+
+    // The companion row belongs to its own table, introduced by the profiles that carry it.
+    const flatPolicy = policy.replace(/\s+/g, ' ');
+    assert.match(flatPolicy, /The `store-safe` and `github-full` builds can also reach the local Astra Downloader companion\. The `chromium-store` build has no loopback access/);
+    const companionTableStart = policy.indexOf('can also reach the local Astra');
+    const companionRowAt = policy.indexOf('| Astra Downloader (`127.0.0.1:9751-9851`)');
+    assert.ok(companionTableStart > 0 && companionRowAt > companionTableStart && companionRowAt < fullOnlyStart,
+        'the companion row must sit in the store-safe/github-full table, before the GitHub-full-only one');
 
     const companion = ORIGIN_CATALOGUE.find((entry) => entry.purpose.startsWith('Astra Downloader'));
     assert.ok(isOriginAvailableForProfile(companion, 'store-safe'));

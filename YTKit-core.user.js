@@ -18189,7 +18189,7 @@ __astraDeckRegistry["core/data-flow.js"] = function (globalThis, self, window, c
 		}),
 		Object.freeze({
 			origin: 'https://raw.githubusercontent.com',
-			purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (only when you run a selector refresh), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
+			purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (when you run a selector refresh, or about once a day while selector auto-refresh is on, which is off by default), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
 			requiredByFeatures: ['featureDisableFeed'],
 			credentialsPolicy: 'no-cookies',
 			profile: 'store-safe',
