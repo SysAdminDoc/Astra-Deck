@@ -61,6 +61,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 		getCurrentPage,
 		getCategoryHealthSnapshot,
 		getLivePlaybackMetrics,
+		parseLiveEdgeState,
 		getMainVideoElement,
 		getMoviePlayerElement,
 		getPlayerProgressBar,
@@ -154,6 +155,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 		!getCurrentPage ||
 		!getCategoryHealthSnapshot ||
 		!getLivePlaybackMetrics ||
+		!parseLiveEdgeState ||
 		!getMainVideoElement ||
 		!getMoviePlayerElement ||
 		!getPlayerProgressBar ||
@@ -15867,6 +15869,7 @@ const STORAGE_KEYS = Object.freeze({
 			_readout: null,
 			_baseRate: null,
 			_appliedRate: null,
+			_staleTimer: null,
 			_targetSeconds() {
 				const raw = Number(appState.settings.liveLatencyTargetSeconds);
 				return Number.isFinite(raw) ? Math.min(60, Math.max(2, Math.round(raw))) : 8;
@@ -15875,15 +15878,19 @@ const STORAGE_KEYS = Object.freeze({
 				const raw = Number(appState.settings.liveLatencyMaxRate);
 				return Number.isFinite(raw) ? Math.min(2, Math.max(1.05, raw)) : 1.25;
 			},
-			_isLive() {
-				const video = this._videoRef;
-				if (!video) return false;
-				if (document.querySelector('#movie_player.ytp-live')) return true;
-				const metrics = getLivePlaybackMetrics(video);
-				return !Number.isFinite(Number(video.duration)) && metrics?.latencySeconds != null;
-			},
 			_metrics() {
-				return getLivePlaybackMetrics(this._videoRef);
+				const video = this._videoRef;
+				if (!video) return null;
+				const state = parseLiveEdgeState(
+					document.documentElement?.getAttribute?.('data-ytkit-live-edge-state'),
+					{ videoId: getVideoId(), nowMs: Date.now() }
+				);
+				if (!state) return null;
+				return {
+					latencySeconds: state.behindSeconds,
+					bufferSeconds: getLivePlaybackMetrics(video)?.bufferSeconds ?? null,
+					atHead: state.atHead
+				};
 			},
 			_formatSeconds(value) {
 				if (!Number.isFinite(value)) return '—';
@@ -15948,21 +15955,23 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_tick() {
 				const video = this._videoRef;
-				if (!video || !this._isLive()) {
+				clearTimeout(this._staleTimer);
+				this._staleTimer = null;
+				const metrics = video && !isAdShowingIn(video) ? this._metrics() : null;
+				if (!metrics) {
 					if (this._readout) this._readout.hidden = true;
 					this._releaseRate();
 					return;
 				}
-				const metrics = this._metrics();
+				this._staleTimer = setTimeout(() => {
+					this._staleTimer = null;
+					this._tick();
+				}, 3100);
 				this._renderReadout(metrics);
-				const latency = metrics?.latencySeconds;
-				if (latency == null) {
-					this._releaseRate();
-					return;
-				}
+				const latency = metrics.latencySeconds;
 				const target = this._targetSeconds();
 				const maxRate = this._maxRate();
-				if (latency <= target) {
+				if (metrics.atHead || latency <= target) {
 					this._releaseRate();
 					return;
 				}
@@ -15985,6 +15994,8 @@ const STORAGE_KEYS = Object.freeze({
 					}
 					if (this._rateHandler) video.removeEventListener('ratechange', this._rateHandler);
 				}
+				clearTimeout(this._staleTimer);
+				this._staleTimer = null;
 				this._releaseRate();
 				this._videoRef = null;
 			},
@@ -16008,6 +16019,7 @@ const STORAGE_KEYS = Object.freeze({
 			init() {
 				this._handler = () => this._tick();
 				this._rateHandler = () => { this._onRateChange(); this._tick(); };
+				publishBridgeAttribute('data-ytkit-live-edge', 'on');
 				this._attach();
 				this._navRule = () => this._attach();
 				this._mutationRule = () => { this._attach(); this._mountReadout(); };
@@ -16018,6 +16030,8 @@ const STORAGE_KEYS = Object.freeze({
 				removeNavigateRule('liveLatencyCatchup');
 				removeMutationRule(this.id);
 				this._detachVideo();
+				clearBridgeAttribute('data-ytkit-live-edge');
+				document.documentElement?.removeAttribute?.('data-ytkit-live-edge-state');
 				this._readout?.remove?.();
 				this._readout = null;
 				this._handler = null;

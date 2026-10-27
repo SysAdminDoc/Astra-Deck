@@ -12214,7 +12214,7 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 (() => {
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-	if (core.__playerCoreVersion >= 5) return;
+	if (core.__playerCoreVersion >= 6) return;
 	const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
 	const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
 	const DEFAULT_VIDEO_FRAME_BUDGET_MS = 8;
@@ -12427,6 +12427,51 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 		const bufferSeconds = getBufferedAhead(video, currentTime);
 		if (latencySeconds === null && bufferSeconds === null) return null;
 		return Object.freeze({ latencySeconds, bufferSeconds });
+	}
+	const LIVE_EDGE_FORMAT = 'v1';
+	const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
+	const MAX_LIVE_EDGE_SECONDS = 86400;
+	function readLiveEdgeState(player, nowSeconds) {
+		if (!player || typeof player.getProgressState !== 'function') return null;
+		let data = null;
+		let progress = null;
+		try {
+			data = typeof player.getVideoData === 'function' ? player.getVideoData() : null;
+			progress = player.getProgressState();
+		} catch (_) {
+			return null;
+		}
+		if (!data || data.isLive !== true || !progress) return null;
+		const current = Number(progress.current);
+		const edge = Number(progress.seekableEnd);
+		if (!Number.isFinite(current) || !Number.isFinite(edge)) return null;
+		const ingestion = Number(progress.ingestionTime);
+		const latency = ingestion > 0 && Number.isFinite(Number(nowSeconds)) ? Number(nowSeconds) - ingestion : NaN;
+		return Object.freeze({
+			videoId: typeof data.video_id === 'string' ? data.video_id : '',
+			atHead: progress.isAtLiveHead === true,
+			behindSeconds: Math.min(MAX_LIVE_EDGE_SECONDS, Math.max(0, edge - current)),
+			latencySeconds: latency >= 0 && latency < MAX_LIVE_EDGE_SECONDS ? latency : null
+		});
+	}
+	function formatLiveEdgeState(state, atMs) {
+		if (!state || !VIDEO_ID_PATTERN.test(state.videoId) || !Number.isFinite(atMs)) return '';
+		const latency = state.latencySeconds == null ? '' : state.latencySeconds.toFixed(2);
+		return [LIVE_EDGE_FORMAT, state.videoId, state.atHead ? '1' : '0',
+			state.behindSeconds.toFixed(2), latency, String(Math.round(atMs))].join('|');
+	}
+	function parseLiveEdgeState(text, { videoId, nowMs, maxAgeMs = 3000 } = {}) {
+		const parts = typeof text === 'string' && text.length <= 128 ? text.split('|') : [];
+		if (parts.length !== 6 || parts[0] !== LIVE_EDGE_FORMAT) return null;
+		const [, id, head, behindText, latencyText, atText] = parts;
+		if (!VIDEO_ID_PATTERN.test(id) || id !== videoId || (head !== '0' && head !== '1')) return null;
+		const behind = Number(behindText);
+		const latency = latencyText === '' ? null : Number(latencyText);
+		const at = Number(atText);
+		if (!(behind >= 0 && behind <= MAX_LIVE_EDGE_SECONDS)) return null;
+		if (latency !== null && !(latency >= 0 && latency <= MAX_LIVE_EDGE_SECONDS)) return null;
+		if (!Number.isFinite(at) || !Number.isFinite(nowMs) || Math.abs(nowMs - at) > maxAgeMs) return null;
+		return Object.freeze({ videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency });
 	}
 	function toEventSet(events) {
 		const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
@@ -12822,7 +12867,7 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 	const volumeCurveController = core.volumeCurveController || createVolumeCurveController();
 	const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 	Object.assign(core, {
-		__playerCoreVersion: 5,
+		__playerCoreVersion: 6,
 		createPlayerTaskManager,
 		createVideoFrameSampler,
 		createFrameLuminanceReader,
@@ -12830,6 +12875,9 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 		computeFrameLuminance,
 		createVolumeCurveController,
 		getLivePlaybackMetrics,
+		readLiveEdgeState,
+		formatLiveEdgeState,
+		parseLiveEdgeState,
 		getMainVideoElement,
 		getMoviePlayerElement,
 		getPlayerProgressBar,
@@ -23203,7 +23251,7 @@ void 0;
 (() => {
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-	if (core.__playerCoreVersion >= 5) return;
+	if (core.__playerCoreVersion >= 6) return;
 	const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
 	const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
 	const DEFAULT_VIDEO_FRAME_BUDGET_MS = 8;
@@ -23416,6 +23464,51 @@ void 0;
 		const bufferSeconds = getBufferedAhead(video, currentTime);
 		if (latencySeconds === null && bufferSeconds === null) return null;
 		return Object.freeze({ latencySeconds, bufferSeconds });
+	}
+	const LIVE_EDGE_FORMAT = 'v1';
+	const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
+	const MAX_LIVE_EDGE_SECONDS = 86400;
+	function readLiveEdgeState(player, nowSeconds) {
+		if (!player || typeof player.getProgressState !== 'function') return null;
+		let data = null;
+		let progress = null;
+		try {
+			data = typeof player.getVideoData === 'function' ? player.getVideoData() : null;
+			progress = player.getProgressState();
+		} catch (_) {
+			return null;
+		}
+		if (!data || data.isLive !== true || !progress) return null;
+		const current = Number(progress.current);
+		const edge = Number(progress.seekableEnd);
+		if (!Number.isFinite(current) || !Number.isFinite(edge)) return null;
+		const ingestion = Number(progress.ingestionTime);
+		const latency = ingestion > 0 && Number.isFinite(Number(nowSeconds)) ? Number(nowSeconds) - ingestion : NaN;
+		return Object.freeze({
+			videoId: typeof data.video_id === 'string' ? data.video_id : '',
+			atHead: progress.isAtLiveHead === true,
+			behindSeconds: Math.min(MAX_LIVE_EDGE_SECONDS, Math.max(0, edge - current)),
+			latencySeconds: latency >= 0 && latency < MAX_LIVE_EDGE_SECONDS ? latency : null
+		});
+	}
+	function formatLiveEdgeState(state, atMs) {
+		if (!state || !VIDEO_ID_PATTERN.test(state.videoId) || !Number.isFinite(atMs)) return '';
+		const latency = state.latencySeconds == null ? '' : state.latencySeconds.toFixed(2);
+		return [LIVE_EDGE_FORMAT, state.videoId, state.atHead ? '1' : '0',
+			state.behindSeconds.toFixed(2), latency, String(Math.round(atMs))].join('|');
+	}
+	function parseLiveEdgeState(text, { videoId, nowMs, maxAgeMs = 3000 } = {}) {
+		const parts = typeof text === 'string' && text.length <= 128 ? text.split('|') : [];
+		if (parts.length !== 6 || parts[0] !== LIVE_EDGE_FORMAT) return null;
+		const [, id, head, behindText, latencyText, atText] = parts;
+		if (!VIDEO_ID_PATTERN.test(id) || id !== videoId || (head !== '0' && head !== '1')) return null;
+		const behind = Number(behindText);
+		const latency = latencyText === '' ? null : Number(latencyText);
+		const at = Number(atText);
+		if (!(behind >= 0 && behind <= MAX_LIVE_EDGE_SECONDS)) return null;
+		if (latency !== null && !(latency >= 0 && latency <= MAX_LIVE_EDGE_SECONDS)) return null;
+		if (!Number.isFinite(at) || !Number.isFinite(nowMs) || Math.abs(nowMs - at) > maxAgeMs) return null;
+		return Object.freeze({ videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency });
 	}
 	function toEventSet(events) {
 		const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
@@ -23811,7 +23904,7 @@ void 0;
 	const volumeCurveController = core.volumeCurveController || createVolumeCurveController();
 	const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 	Object.assign(core, {
-		__playerCoreVersion: 5,
+		__playerCoreVersion: 6,
 		createPlayerTaskManager,
 		createVideoFrameSampler,
 		createFrameLuminanceReader,
@@ -23819,6 +23912,9 @@ void 0;
 		computeFrameLuminance,
 		createVolumeCurveController,
 		getLivePlaybackMetrics,
+		readLiveEdgeState,
+		formatLiveEdgeState,
+		parseLiveEdgeState,
 		getMainVideoElement,
 		getMoviePlayerElement,
 		getPlayerProgressBar,
@@ -26810,6 +26906,43 @@ void 0;
 		_connectedVideo = null;
 		setTimeout(connect, 500);
 	});
+})();
+(function() {
+	'use strict';
+	if (typeof document === 'undefined' || !document.documentElement) return;
+	var core = globalThis.YTKitCore;
+	var readState = core && core.readLiveEdgeState;
+	var formatState = core && core.formatLiveEdgeState;
+	if (typeof readState !== 'function' || typeof formatState !== 'function') return;
+	if (typeof _NATIVE.docAddEventListener !== 'function') return;
+	var ENABLE_ATTR = 'data-ytkit-live-edge';
+	var STATE_ATTR = 'data-ytkit-live-edge-state';
+	var PUBLISH_EVERY_MS = 1000;
+	var enabled = false;
+	var lastAt = -Infinity;
+	function publish(force) {
+		var now = _NATIVE.now();
+		if (!force && now - lastAt < PUBLISH_EVERY_MS) return;
+		lastAt = now;
+		var text = formatState(readState(document.getElementById('movie_player'), now / 1000), now);
+		if (text) _NATIVE.setAttribute(STATE_ATTR, text);
+		else _NATIVE.removeAttribute(STATE_ATTR);
+	}
+	_NATIVE.docAddEventListener('timeupdate', function(event) {
+		if (!enabled) return;
+		var target = event && event.target;
+		if (!target || !target.classList || !target.classList.contains('html5-main-video')) return;
+		publish(false);
+	}, true);
+	function sync() {
+		var next = _bridgeGet(ENABLE_ATTR) === 'on';
+		if (next === enabled) return;
+		enabled = next;
+		if (enabled) publish(true);
+		else _NATIVE.removeAttribute(STATE_ATTR);
+	}
+	_obsRegister([ENABLE_ATTR], sync);
+	sync();
 })();
 (function() {
 	'use strict';

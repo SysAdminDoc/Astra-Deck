@@ -2,7 +2,7 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.__playerCoreVersion >= 5) return;
+    if (core.__playerCoreVersion >= 6) return;
 
     const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
     const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
@@ -272,6 +272,68 @@
         const bufferSeconds = getBufferedAhead(video, currentTime);
         if (latencySeconds === null && bufferSeconds === null) return null;
         return Object.freeze({ latencySeconds, bufferSeconds });
+    }
+
+    // The watch player's own view of the live edge, checked on a live stream
+    // 2026-10-26. getProgressState() carries isAtLiveHead, seekableEnd (the
+    // newest segment the player knows of: equal to current at the head, a
+    // segment or two short of the real edge while behind it) and ingestionTime
+    // (the wall-clock second the frame on screen was captured). The <video>
+    // is no help here: its seekable range ends at the media source's duration,
+    // about a day past the edge. The player's methods only exist in the MAIN
+    // world, so ytkit-main.js reads this and publishes it as text.
+    const LIVE_EDGE_FORMAT = 'v1';
+    const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
+    const MAX_LIVE_EDGE_SECONDS = 86400;
+
+    function readLiveEdgeState(player, nowSeconds) {
+        if (!player || typeof player.getProgressState !== 'function') return null;
+        let data = null;
+        let progress = null;
+        try {
+            data = typeof player.getVideoData === 'function' ? player.getVideoData() : null;
+            progress = player.getProgressState();
+        } catch (_) {
+            return null;
+        }
+        if (!data || data.isLive !== true || !progress) return null;
+        const current = Number(progress.current);
+        const edge = Number(progress.seekableEnd);
+        if (!Number.isFinite(current) || !Number.isFinite(edge)) return null;
+        const ingestion = Number(progress.ingestionTime);
+        const latency = ingestion > 0 && Number.isFinite(Number(nowSeconds)) ? Number(nowSeconds) - ingestion : NaN;
+        return Object.freeze({
+            videoId: typeof data.video_id === 'string' ? data.video_id : '',
+            atHead: progress.isAtLiveHead === true,
+            behindSeconds: Math.min(MAX_LIVE_EDGE_SECONDS, Math.max(0, edge - current)),
+            latencySeconds: latency >= 0 && latency < MAX_LIVE_EDGE_SECONDS ? latency : null
+        });
+    }
+
+    function formatLiveEdgeState(state, atMs) {
+        if (!state || !VIDEO_ID_PATTERN.test(state.videoId) || !Number.isFinite(atMs)) return '';
+        const latency = state.latencySeconds == null ? '' : state.latencySeconds.toFixed(2);
+        return [LIVE_EDGE_FORMAT, state.videoId, state.atHead ? '1' : '0',
+            state.behindSeconds.toFixed(2), latency, String(Math.round(atMs))].join('|');
+    }
+
+    /**
+     * The published state for `videoId`, or null. A page script can write the
+     * attribute as easily as the MAIN world can, so everything is bounded, and
+     * a state for another video or older than `maxAgeMs` doesn't count.
+     */
+    function parseLiveEdgeState(text, { videoId, nowMs, maxAgeMs = 3000 } = {}) {
+        const parts = typeof text === 'string' && text.length <= 128 ? text.split('|') : [];
+        if (parts.length !== 6 || parts[0] !== LIVE_EDGE_FORMAT) return null;
+        const [, id, head, behindText, latencyText, atText] = parts;
+        if (!VIDEO_ID_PATTERN.test(id) || id !== videoId || (head !== '0' && head !== '1')) return null;
+        const behind = Number(behindText);
+        const latency = latencyText === '' ? null : Number(latencyText);
+        const at = Number(atText);
+        if (!(behind >= 0 && behind <= MAX_LIVE_EDGE_SECONDS)) return null;
+        if (latency !== null && !(latency >= 0 && latency <= MAX_LIVE_EDGE_SECONDS)) return null;
+        if (!Number.isFinite(at) || !Number.isFinite(nowMs) || Math.abs(nowMs - at) > maxAgeMs) return null;
+        return Object.freeze({ videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency });
     }
 
     function toEventSet(events) {
@@ -726,7 +788,7 @@
     const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 
     Object.assign(core, {
-        __playerCoreVersion: 5,
+        __playerCoreVersion: 6,
         createPlayerTaskManager,
         createVideoFrameSampler,
         createFrameLuminanceReader,
@@ -734,6 +796,9 @@
         computeFrameLuminance,
         createVolumeCurveController,
         getLivePlaybackMetrics,
+        readLiveEdgeState,
+        formatLiveEdgeState,
+        parseLiveEdgeState,
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,

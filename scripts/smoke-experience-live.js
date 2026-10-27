@@ -506,6 +506,100 @@ async function run(client, background) {
         await settings({ transcriptViewer: false });
         return { ...result, ratio };
     });
+    await check('Live Latency Catch-up reads the player, boosts only while behind and stops at the head', async () => {
+        const READOUT = '.ytkit-live-latency-readout';
+        const sample = () => read(`(() => { const p = document.querySelector('#movie_player'), v = document.querySelector('#movie_player video.html5-main-video'), r = document.querySelector('${READOUT}'), g = p?.getProgressState?.();
+            return { state: document.documentElement.getAttribute('data-ytkit-live-edge-state'), readout: r && !r.hidden ? r.textContent : null, rate: v?.playbackRate, time: v?.currentTime || 0, paused: !!v?.paused, ready: v?.readyState, player: p?.getPlayerState?.(),
+                ad: !!p?.classList.contains('ad-showing'), head: g?.isAtLiveHead === true, behind: g ? +(g.seekableEnd - g.current).toFixed(1) : null }; })()`);
+        const play = () => read("document.querySelector('#movie_player')?.playVideo?.()");
+        await settings({ liveLatencyCatchup: true, liveLatencyTargetSeconds: 8, liveLatencyMaxRate: 1.25 });
+        // A VOD has no live edge: nothing published, no readout, no boost.
+        await navigate(WATCH);
+        await play();
+        await sleep(3000);
+        const vod = await sample();
+        assert.equal(vod.state, null, 'nothing is published for a VOD');
+        assert.equal(vod.readout, null, 'and no readout shows');
+        assert.equal(vod.rate, 1);
+        await navigate('https://www.youtube.com/@LofiGirl/live', { video: false });
+        const end = Date.now() + 30000;
+        let stream = null;
+        while (Date.now() < end) {
+            stream = await read("({id:document.querySelector('#movie_player')?.getVideoData?.()?.video_id||'',ready:document.querySelector('video')?.readyState||0,live:!!document.querySelector('#movie_player')?.getVideoData?.()?.isLive})").catch(() => null);
+            if (stream?.ready >= 2 && stream.live && /^[\w-]{11}$/.test(stream.id)) break;
+            await sleep(500);
+        }
+        if (!(stream?.ready >= 2 && stream.live && /^[\w-]{11}$/.test(stream.id))) {
+            report.limitations.push(`Live Latency check skipped: no playable live stream for the signed-out profile (${JSON.stringify(stream)}); tests/features/live-latency.test.js and tests/live-edge-bridge.test.js cover it`);
+            await settings({ liveLatencyCatchup: false });
+            return { skipped: true };
+        }
+        await navigate(`https://www.youtube.com/live/${stream.id}`, { video: false });
+        await until('document.querySelector("video")?.readyState>=2', 'live video loaded');
+        await play();
+        await until("!document.querySelector('#movie_player')?.classList.contains('ad-showing')", 'pre-roll ad finished', 120000);
+        await play();
+        await until(`(() => { const r = document.querySelector('${READOUT}'); return !!r && !r.hidden && document.querySelector('#movie_player')?.getProgressState?.()?.isAtLiveHead === true; })()`, 'readout shown at the live head', 30000);
+        // At the head: a readout of a few seconds at most, and the rate left alone.
+        const atHead = [];
+        for (let i = 0; i < 4; i++) { atHead.push(await sample()); await sleep(1500); }
+        for (const s of atHead) {
+            assert.match(s.readout || '', /^Live \d/, `readout at the head: ${JSON.stringify(s)}`);
+            assert.ok(Number(s.readout.match(/^Live ([\d.]+)/)[1]) <= 8, `at the head the readout is a few seconds: ${s.readout}`);
+            assert.equal(s.rate, 1, 'no boost at the head');
+        }
+        await capture('live-latency-head-dark');
+        // Fall about 30 seconds behind: the boost starts within the cap, then ends by the head.
+        // A pause rather than a seek. A live seek reloads the media, and in this
+        // signed-out headless profile that reload often never starts again.
+        await read("(() => { const p = document.querySelector('#movie_player'); p.mute(); p.pauseVideo(); })()");
+        await sleep(6000);
+        const paused = await sample();
+        assert.equal(paused.readout, null, `a paused stream's state goes stale and the readout hides: ${JSON.stringify(paused)}`);
+        await sleep(24000);
+        await play();
+        const resuming = [];
+        let behind = null;
+        for (const stop = Date.now() + 30000; Date.now() < stop && !behind;) {
+            await sleep(1000);
+            const s = await sample();
+            resuming.push(s);
+            if (s.rate > 1) behind = s;
+        }
+        if (!behind && resuming.every(s => s.ready === 0 || s.player === -1 || s.time === 0)) {
+            report.limitations.push(`Live Latency boost leg skipped: the headless player did not resume the live stream (${JSON.stringify(resuming.at(-1))}); the head leg passed, and tests/features/live-latency.test.js covers the boost`);
+            await settings({ liveLatencyCatchup: false });
+            return { stream: stream.id, vod, atHead, paused, resumed: false };
+        }
+        assert.ok(behind, `the boost starts behind the edge: ${JSON.stringify(resuming.slice(-5))}`);
+        assert.ok(behind.rate <= 1.25, `the boost honors the cap: ${behind.rate}`);
+        assert.match(behind.readout || '', /^Live \d/);
+        await capture('live-latency-behind-dark');
+        const trace = [behind];
+        const deadline = Date.now() + 300000;
+        let released = null;
+        while (Date.now() < deadline) {
+            await sleep(3000);
+            const s = await sample();
+            trace.push(s);
+            assert.ok(s.ad || s.rate <= 1.25, `never past the cap: ${JSON.stringify(s)}`);
+            if (!s.ad && s.rate === 1) { released = s; break; }
+        }
+        assert.ok(released, `the boost is released: ${JSON.stringify(trace.slice(-4))}`);
+        assert.ok(released.head || released.behind <= 10, `released at the head or the target: ${JSON.stringify(released)}`);
+        // Back at the plain rate after the release. Whether the stream keeps
+        // going after that is the player's: on 2026-10-26 a signed-out headless
+        // player ran dry about 45 seconds after falling behind, with this
+        // feature off too.
+        const before = await sample();
+        await sleep(6000);
+        const after = await sample();
+        assert.equal(after.rate, 1, 'no new boost once released');
+        if (!(after.time - before.time > 3)) report.limitations.push(`The headless player stopped after the release (${before.time} -> ${after.time}); it does that with Live Latency Catch-up off too.`);
+        await settings({ liveLatencyCatchup: false });
+        assert.equal(await read("document.documentElement.getAttribute('data-ytkit-live-edge-state')"), null, 'turning it off withdraws the state');
+        return { stream: stream.id, vod, atHead, paused, behind, released, after, samples: trace.length };
+    });
 }
 
 async function main() {

@@ -35,21 +35,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   headless check that cards still fill in.
   Complexity: M
 
-- [ ] P2 — Live Latency Catch-up never runs on the 2026-10-12 watch player
-  Why: its `_isLive` looks for `#movie_player.ytp-live`, a class the watch player no longer
-  carries (checked on a live stream 2026-10-12), and its fallback needs a latency from
-  `getLivePlaybackMetrics`, which reads `video.seekable`. That range now ends at the media
-  source's duration, about a day past the edge, so the latency it reports is never real.
-  Switching `_isLive` to `isLiveStreamPlaying()` alone would boost the rate at the edge from that
-  bogus latency, so it was left as is when the speed features moved to the badge.
-  Where: `extension/ytkit.js` `liveLatencyCatchup` (`_isLive`, `_metrics`),
-  `extension/core/player.js` `getLivePlaybackMetrics`.
-  Acceptance: latency comes from the MAIN-world player (its live-edge state or
-  `getProgressState`), the readout shows a few seconds on a live stream at the edge, the boost
-  only runs while behind the target, and `tests/features/live-latency.test.js` drives a badge-only
-  live page.
-  Complexity: M
-
 - [ ] P3 — Translate the Sleep Timer chip's leftover English
   Why: the 2026-10 translation pass missed literal strings in the chip: the two screen-reader
   announcements ("Sleep timer elapsed. Playback paused.", "Sleep timer cancelled.") and the "+5"

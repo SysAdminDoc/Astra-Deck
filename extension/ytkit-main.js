@@ -2030,6 +2030,63 @@
 })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature 6.5: live-edge state for Live Latency Catch-up
+    // ──────────────────────────────────────────────────────────────────
+    // The isolated feature can't call the player's methods, and the <video>
+    // it can see reports a seekable range a day past the edge. While the
+    // feature is on, this reads the player's progress state on the main
+    // video's timeupdate, at most once a second, and publishes it as plain
+    // numbers (core/player.js formats and parses it). A page can write that
+    // attribute too, so the isolated side bounds every value and drops a
+    // state for another video or an old one. The worst a forged one can do is
+    // what the feature does anyway: a playback rate inside its own cap.
+(function() {
+    'use strict';
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    var core = globalThis.YTKitCore;
+    var readState = core && core.readLiveEdgeState;
+    var formatState = core && core.formatLiveEdgeState;
+    if (typeof readState !== 'function' || typeof formatState !== 'function') return;
+    if (typeof _NATIVE.docAddEventListener !== 'function') return;
+
+    var ENABLE_ATTR = 'data-ytkit-live-edge';
+    var STATE_ATTR = 'data-ytkit-live-edge-state';
+    var PUBLISH_EVERY_MS = 1000;
+    var enabled = false;
+    var lastAt = -Infinity;
+
+    function publish(force) {
+        var now = _NATIVE.now();
+        if (!force && now - lastAt < PUBLISH_EVERY_MS) return;
+        lastAt = now;
+        var text = formatState(readState(document.getElementById('movie_player'), now / 1000), now);
+        if (text) _NATIVE.setAttribute(STATE_ATTR, text);
+        else _NATIVE.removeAttribute(STATE_ATTR);
+    }
+
+    // Media events don't bubble, but a capturing listener on the document
+    // hears them, and it runs before the isolated feature's own listener on
+    // the video, so that one reads this tick's state.
+    _NATIVE.docAddEventListener('timeupdate', function(event) {
+        if (!enabled) return;
+        var target = event && event.target;
+        if (!target || !target.classList || !target.classList.contains('html5-main-video')) return;
+        publish(false);
+    }, true);
+
+    function sync() {
+        var next = _bridgeGet(ENABLE_ATTR) === 'on';
+        if (next === enabled) return;
+        enabled = next;
+        if (enabled) publish(true);
+        else _NATIVE.removeAttribute(STATE_ATTR);
+    }
+
+    _obsRegister([ENABLE_ATTR], sync);
+    sync();
+})();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 7: local photosensitive flash protection
     // ──────────────────────────────────────────────────────────────────
     // The isolated feature owns the warning surface and settings. This
