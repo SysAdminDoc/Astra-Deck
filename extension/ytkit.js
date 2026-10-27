@@ -7035,42 +7035,57 @@ const STORAGE_KEYS = Object.freeze({
     // exists. Turning one off restores a key only when no other active preset
     // owns it, and leaves alone a value no active recipe would have set, since
     // that is the user's own edit. Everything lives in the existing backup
-    // records, so reload, import and other tabs see the same layers.
+    // records, so reload, import and other tabs see the same layers. A record
+    // whose preset is switched off (turned off with no YouTube tab open, or a
+    // failed clear) is an orphan, not a layer.
     function activePresetLayers(exceptId) {
         const layers = [];
         if (typeof featureIndex === 'undefined') return layers;
         for (const feature of featureIndex.values()) {
             if (feature.id === exceptId || !feature._RECIPE || typeof feature._readBackup !== 'function') continue;
+            if (appState.settings?.[feature.settingKey || feature.id] !== true) continue;
             const backup = feature._readBackup();
             if (backup && typeof backup === 'object') layers.push({ recipe: feature._RECIPE, backup });
         }
         return layers;
     }
 
+    // Keys whose value at enable time was the user's edit over another active
+    // preset. That value is the one to put back, even while the other preset
+    // still owns the key. Lives inside the backup record, never in settings.
+    const PRESET_EXPLICIT_KEYS = '__presetExplicit';
+
     function buildPresetRecipeUpdate(recipe, presetId) {
         const backup = {};
+        const explicit = [];
         const next = { ...appState.settings };
         const others = activePresetLayers(presetId);
         for (const key of Object.keys(recipe || {})) {
             // Another active preset already holds the value from before
-            // either touched the key; the current value is its recipe.
-            const owner = others.find((layer) => Object.hasOwn(layer.recipe, key) && Object.hasOwn(layer.backup, key));
+            // either touched the key, as long as the current value is still
+            // its recipe. A different current value is the user's own edit.
+            const owners = others.filter((layer) => Object.hasOwn(layer.recipe, key) && Object.hasOwn(layer.backup, key));
+            const owner = owners.find((layer) => layer.recipe[key] === appState.settings[key]);
+            if (owners.length && !owner) explicit.push(key);
             backup[key] = owner ? owner.backup[key] : appState.settings[key];
             next[key] = recipe[key];
         }
+        if (explicit.length) backup[PRESET_EXPLICIT_KEYS] = explicit;
         return { backup, next };
     }
 
     function buildPresetRestoreUpdate(recipe, backup, presetId) {
         const next = { ...appState.settings };
         const others = activePresetLayers(presetId);
+        const explicit = Array.isArray(backup?.[PRESET_EXPLICIT_KEYS]) ? backup[PRESET_EXPLICIT_KEYS] : [];
         for (const key of Object.keys(backup || {})) {
+            if (key === PRESET_EXPLICIT_KEYS) continue;
             const current = appState.settings[key];
             const owners = others.filter((layer) => Object.hasOwn(layer.recipe, key));
             const heldByOther = owners.some((layer) => layer.recipe[key] === current);
             const ownsKey = !!recipe && Object.hasOwn(recipe, key);
             if (ownsKey && current !== recipe[key] && !heldByOther) continue;
-            if (owners.length) {
+            if (owners.length && !explicit.includes(key)) {
                 if (!heldByOther) next[key] = owners[owners.length - 1].recipe[key];
                 continue;
             }
@@ -35248,12 +35263,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _writeBackup(snapshot) {
-                try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); }
+                try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); }
                 catch (e) { DebugManager.log('FeedTriage', `Backup write failed: ${e.message}`); }
             },
 
             _clearBackup() {
-                try { storageWriteJSON?.(this._BACKUP_KEY, null); }
+                try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); }
                 catch { /* reason: backup cleanup failure is non-critical */ }
             },
 
@@ -39210,12 +39225,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _writeBackup(snapshot) {
-                try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); }
+                try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); }
                 catch (e) { DebugManager.log('LowPower', `Backup write failed: ${e.message}`); }
             },
 
             _clearBackup() {
-                try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: backup cleanup failure is non-critical */ }
+                try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch { /* reason: backup cleanup failure is non-critical */ }
             },
 
             _apply() {
@@ -39273,8 +39288,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _BACKUP_KEY: 'ytkit-preset-privacy-backup',
             _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
-            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch { /* reason: non-critical */ } },
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
@@ -39309,8 +39324,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _BACKUP_KEY: 'ytkit-preset-researcher-backup',
             _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
-            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch { /* reason: non-critical */ } },
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
@@ -39347,8 +39362,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _BACKUP_KEY: 'ytkit-preset-power-backup',
             _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
-            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch { /* reason: non-critical */ } },
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
@@ -39385,8 +39400,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _BACKUP_KEY: 'ytkit-preset-focus-backup',
             _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
-            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
-            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot, { immediate: true }); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null, { immediate: true }); } catch { /* reason: non-critical */ } },
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE, this.id);
                 this._writeBackup(backup); commitPresetSettings(next);
