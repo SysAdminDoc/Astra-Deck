@@ -686,8 +686,9 @@
                 getSettings: () => (appState && appState.settings) || null,
                 saveSettings: (settings) => {
                     if (typeof settingsManager !== 'undefined' && settingsManager?.save) {
-                        settingsManager.save(settings);
+                        return settingsManager.save(settings);
                     }
+                    return undefined;
                 },
                 getVersion: () => (typeof YTKIT_VERSION !== 'undefined' ? YTKIT_VERSION : 'unknown'),
                 keepInMemory: () => (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') !== 'regular',
@@ -31298,6 +31299,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         DiagnosticLog.record('window', `${ev.message} @ ${ev.filename}:${ev.lineno}`);
                     }
                 });
+                // An entry recorded just before a reload would otherwise wait
+                // out the save delay and be lost with the page.
+                window.addEventListener('pagehide', this._onPageHide = () => DiagnosticLog.flush?.({ force: true }));
                 window.__ytkitDiagnostics = {
                     get: () => DiagnosticLog.get(),
                     clear: () => DiagnosticLog.clear(),
@@ -31308,6 +31312,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._origConsoleError) console.error = this._origConsoleError;
                 if (this._onWinError) window.removeEventListener('error', this._onWinError);
+                if (this._onPageHide) window.removeEventListener('pagehide', this._onPageHide);
                 DiagnosticLog.disable();
                 // v3.14.0: Immediately drop the _errors ring buffer so disabling
                 // diagnosticLog releases its storage budget now, not at the next

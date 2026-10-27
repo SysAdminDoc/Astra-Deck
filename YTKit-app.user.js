@@ -577,8 +577,9 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 				getSettings: () => (appState && appState.settings) || null,
 				saveSettings: (settings) => {
 					if (typeof settingsManager !== 'undefined' && settingsManager?.save) {
-						settingsManager.save(settings);
+						return settingsManager.save(settings);
 					}
+					return undefined;
 				},
 				getVersion: () => (typeof YTKIT_VERSION !== 'undefined' ? YTKIT_VERSION : 'unknown'),
 				keepInMemory: () => (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') !== 'regular',
@@ -22497,6 +22498,7 @@ const STORAGE_KEYS = Object.freeze({
 						DiagnosticLog.record('window', `${ev.message} @ ${ev.filename}:${ev.lineno}`);
 					}
 				});
+				window.addEventListener('pagehide', this._onPageHide = () => DiagnosticLog.flush?.({ force: true }));
 				window.__ytkitDiagnostics = {
 					get: () => DiagnosticLog.get(),
 					clear: () => DiagnosticLog.clear(),
@@ -22507,6 +22509,7 @@ const STORAGE_KEYS = Object.freeze({
 			destroy() {
 				if (this._origConsoleError) console.error = this._origConsoleError;
 				if (this._onWinError) window.removeEventListener('error', this._onWinError);
+				if (this._onPageHide) window.removeEventListener('pagehide', this._onPageHide);
 				DiagnosticLog.disable();
 				try { DiagnosticLog.clear(); } catch (e) {
 					console.warn('[YTKit] DiagnosticLog.clear on disable failed:', e);

@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- With the Diagnostic Error Log on, an error is now saved within a few seconds of happening, and right away when the page closes. It used to wait for the next time you changed a setting, so a reload could lose it. A burst of errors still keeps the log to its 500-entry cap and saves at most six times a minute. If the browser refuses the save, Astra stops trying for five minutes instead of logging its own failure. Private windows still keep the log in memory only.
+
 ## [4.100.4] (2026-10-26)
 
 ### Fixed

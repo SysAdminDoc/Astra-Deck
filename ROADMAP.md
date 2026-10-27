@@ -135,18 +135,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   half under Tampermonkey and Violentmonkey in a private window.
   Complexity: M
 
-- [ ] P2 — Persist a bounded diagnostic failure journal independently of settings edits
-  Why: an error can disappear on reload before the next unrelated preference save.
-  Evidence: Verified `record()` behavior and its persistence comment in
-  `extension/core/diagnostic-log.js:66-100`. See `RESEARCH.md` diagnostics.
-  Touches: `extension/core/diagnostic-log.js`, storage-domain ownership, diagnostic tests.
-  Acceptance: after private-context isolation and promise-aware lifecycle reporting, an
-  opted-in redacted error survives reload without a settings edit. Debounce bounded writes
-  and retain the existing ring cap/redaction. Quota failure cannot recursively log or break
-  the feature. Error storms stay within the cap and write budget; private contexts remain
-  memory-only and secret/page-sensitive data never enters exports or backups improperly.
-  Complexity: M
-
 - [ ] P2 — Align existing privacy, permission, setup and intake documents with behavior
   Why: current copy misstates automatic network flows, store-safe loopback access and defaults.
   Evidence: Verified source mismatch between `docs/privacy-policy.md` and

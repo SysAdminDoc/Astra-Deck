@@ -12,9 +12,9 @@
     //
     // The log couples to two ytkit.js internals:
     // - `appState.settings` (the persisted ring lives at
-    // `appState.settings._errors` and is debounce-saved through
-    // `settingsManager`)
-    // - `settingsManager.save` for the Clear path
+    // `appState.settings._errors`)
+    // - `settingsManager.save`, which this module calls on its own bounded
+    // schedule after a record and directly for the Clear path
     //
     // We pass both through as accessor callbacks at instantiation time —
     // the module itself stays free of any feature-monolith coupling and
@@ -26,6 +26,16 @@
     const DEFAULT_CAP = 500;
     const CTX_MAX_LEN = 40;
     const MSG_MAX_LEN = 500;
+    // A recorded entry is saved on its own, without waiting for an unrelated
+    // settings edit: two seconds after the last one, never more than ten
+    // after the first, and at most six writes a minute however hard errors
+    // arrive. A failed save pauses saving for five minutes and is never
+    // itself recorded, so a full quota can't feed the log that fills it.
+    const FLUSH_DELAY_MS = 2000;
+    const FLUSH_MAX_WAIT_MS = 10000;
+    const WRITE_BUDGET = 6;
+    const WRITE_WINDOW_MS = 60000;
+    const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
 
     function createDiagnosticLog(options = {}) {
         // Accessor callbacks — the caller (ytkit.js) wires these to its
@@ -49,12 +59,101 @@
             ? options.keepInMemory
             : () => false;
         const memoryEntries = [];
+        const now = typeof options.now === 'function' ? options.now : () => Date.now();
+        const setTimer = typeof options.setTimer === 'function'
+            ? options.setTimer
+            : (fn, ms) => setTimeout(fn, ms);
+        const clearTimer = typeof options.clearTimer === 'function'
+            ? options.clearTimer
+            : (id) => clearTimeout(id);
 
         const state = {
             enabled: false,
             ctxCounts: Object.create(null),
             countsResynced: false
         };
+        const journal = {
+            pending: false,
+            firstPendingAt: 0,
+            timer: null,
+            flushing: false,
+            writes: [],
+            blockedUntil: 0,
+            warned: false
+        };
+
+        function _cancelFlush() {
+            if (journal.timer !== null) clearTimer(journal.timer);
+            journal.timer = null;
+        }
+
+        function _armFlush() {
+            _cancelFlush();
+            const at = now();
+            journal.writes = journal.writes.filter((ts) => at - ts < WRITE_WINDOW_MS);
+            let delay = Math.min(FLUSH_DELAY_MS, journal.firstPendingAt + FLUSH_MAX_WAIT_MS - at);
+            if (journal.writes.length >= WRITE_BUDGET) {
+                delay = Math.max(delay, journal.writes[0] + WRITE_WINDOW_MS - at);
+            }
+            if (journal.blockedUntil > at) delay = Math.max(delay, journal.blockedUntil - at);
+            journal.timer = setTimer(() => {
+                journal.timer = null;
+                flush();
+            }, Math.max(0, delay));
+        }
+
+        function _scheduleFlush() {
+            if (!journal.pending) {
+                journal.pending = true;
+                journal.firstPendingAt = now();
+            }
+            if (!journal.flushing) _armFlush();
+        }
+
+        function _flushFailed(error) {
+            journal.blockedUntil = now() + FAILURE_BACKOFF_MS;
+            // Deliberately not record(): the entry would only schedule the
+            // write that just failed.
+            if (!journal.warned && typeof console !== 'undefined') {
+                journal.warned = true;
+                console.warn('[YTKit] DiagnosticLog could not save; entries stay in this tab for now:', error);
+            }
+        }
+
+        // Writes the saved ring now. `force` (page hide) skips the write
+        // budget but not a failure pause.
+        function flush({ force = false } = {}) {
+            _cancelFlush();
+            if (!journal.pending || journal.flushing) return;
+            const at = now();
+            journal.writes = journal.writes.filter((ts) => at - ts < WRITE_WINDOW_MS);
+            if (journal.blockedUntil > at || (!force && journal.writes.length >= WRITE_BUDGET)) {
+                _armFlush();
+                return;
+            }
+            journal.pending = false;
+            const settings = getSettings();
+            // Only an opted-in log is saved; the in-memory test switch isn't
+            // the user's consent to write anything.
+            if (!settings || !settings.diagnosticLog) return;
+            journal.flushing = true;
+            journal.writes.push(at);
+            let result;
+            try {
+                result = saveSettings(settings);
+            } catch (error) {
+                journal.flushing = false;
+                _flushFailed(error);
+                if (journal.pending) _armFlush();
+                return;
+            }
+            Promise.resolve(result).then((outcome) => {
+                if (outcome && outcome.ok === false) _flushFailed(outcome.error || outcome.reason);
+            }, _flushFailed).then(() => {
+                journal.flushing = false;
+                if (journal.pending) _armFlush();
+            });
+        }
 
         function _resyncCounts() {
             const settings = getSettings();
@@ -104,9 +203,10 @@
                         if (state.ctxCounts[dropCtx] <= 0) delete state.ctxCounts[dropCtx];
                     }
                 }
-                if (!inMemory) settings._errors = arr;
-                // Debounced save handled by settingsManager on next settings
-                // touch; we don't force a write here to avoid thrashing.
+                if (!inMemory) {
+                    settings._errors = arr;
+                    if (settings.diagnosticLog) _scheduleFlush();
+                }
             } catch (e) {
                 // Best-effort — never let diagnostic recording fail the
                 // call site. console.warn matches the prior IIFE.
@@ -137,6 +237,8 @@
             memoryEntries.length = 0;
             state.ctxCounts = Object.create(null);
             state.countsResynced = true;
+            _cancelFlush();
+            journal.pending = false;
             try { saveSettings(settings); } catch (_) {
                 // reason: saveSettings is best-effort; clear() returns successfully
                 // even if the persistence path throws (the in-memory ring is reset).
@@ -171,8 +273,10 @@
             // Test hook — surface internal state for assertions; not part
             // of the documented public API.
             _state: state,
+            _journal: journal,
             _resyncCounts,
             record,
+            flush,
             countsByCtx,
             get,
             clear,

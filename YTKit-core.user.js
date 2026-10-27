@@ -4971,6 +4971,11 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 	const DEFAULT_CAP = 500;
 	const CTX_MAX_LEN = 40;
 	const MSG_MAX_LEN = 500;
+	const FLUSH_DELAY_MS = 2000;
+	const FLUSH_MAX_WAIT_MS = 10000;
+	const WRITE_BUDGET = 6;
+	const WRITE_WINDOW_MS = 60000;
+	const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
 	function createDiagnosticLog(options = {}) {
 		const getSettings = typeof options.getSettings === 'function'
 			? options.getSettings
@@ -4988,11 +4993,89 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 			? options.keepInMemory
 			: () => false;
 		const memoryEntries = [];
+		const now = typeof options.now === 'function' ? options.now : () => Date.now();
+		const setTimer = typeof options.setTimer === 'function'
+			? options.setTimer
+			: (fn, ms) => setTimeout(fn, ms);
+		const clearTimer = typeof options.clearTimer === 'function'
+			? options.clearTimer
+			: (id) => clearTimeout(id);
 		const state = {
 			enabled: false,
 			ctxCounts: Object.create(null),
 			countsResynced: false
 		};
+		const journal = {
+			pending: false,
+			firstPendingAt: 0,
+			timer: null,
+			flushing: false,
+			writes: [],
+			blockedUntil: 0,
+			warned: false
+		};
+		function _cancelFlush() {
+			if (journal.timer !== null) clearTimer(journal.timer);
+			journal.timer = null;
+		}
+		function _armFlush() {
+			_cancelFlush();
+			const at = now();
+			journal.writes = journal.writes.filter((ts) => at - ts < WRITE_WINDOW_MS);
+			let delay = Math.min(FLUSH_DELAY_MS, journal.firstPendingAt + FLUSH_MAX_WAIT_MS - at);
+			if (journal.writes.length >= WRITE_BUDGET) {
+				delay = Math.max(delay, journal.writes[0] + WRITE_WINDOW_MS - at);
+			}
+			if (journal.blockedUntil > at) delay = Math.max(delay, journal.blockedUntil - at);
+			journal.timer = setTimer(() => {
+				journal.timer = null;
+				flush();
+			}, Math.max(0, delay));
+		}
+		function _scheduleFlush() {
+			if (!journal.pending) {
+				journal.pending = true;
+				journal.firstPendingAt = now();
+			}
+			if (!journal.flushing) _armFlush();
+		}
+		function _flushFailed(error) {
+			journal.blockedUntil = now() + FAILURE_BACKOFF_MS;
+			if (!journal.warned && typeof console !== 'undefined') {
+				journal.warned = true;
+				console.warn('[YTKit] DiagnosticLog could not save; entries stay in this tab for now:', error);
+			}
+		}
+		function flush({ force = false } = {}) {
+			_cancelFlush();
+			if (!journal.pending || journal.flushing) return;
+			const at = now();
+			journal.writes = journal.writes.filter((ts) => at - ts < WRITE_WINDOW_MS);
+			if (journal.blockedUntil > at || (!force && journal.writes.length >= WRITE_BUDGET)) {
+				_armFlush();
+				return;
+			}
+			journal.pending = false;
+			const settings = getSettings();
+			if (!settings || !settings.diagnosticLog) return;
+			journal.flushing = true;
+			journal.writes.push(at);
+			let result;
+			try {
+				result = saveSettings(settings);
+			} catch (error) {
+				journal.flushing = false;
+				_flushFailed(error);
+				if (journal.pending) _armFlush();
+				return;
+			}
+			Promise.resolve(result).then((outcome) => {
+				if (outcome && outcome.ok === false) _flushFailed(outcome.error || outcome.reason);
+			}, _flushFailed).then(() => {
+				journal.flushing = false;
+				if (journal.pending) _armFlush();
+			});
+		}
 		function _resyncCounts() {
 			const settings = getSettings();
 			const persisted = settings && Array.isArray(settings._errors) ? settings._errors : null;
@@ -5030,7 +5113,10 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 						if (state.ctxCounts[dropCtx] <= 0) delete state.ctxCounts[dropCtx];
 					}
 				}
-				if (!inMemory) settings._errors = arr;
+				if (!inMemory) {
+					settings._errors = arr;
+					if (settings.diagnosticLog) _scheduleFlush();
+				}
 			} catch (e) {
 				if (typeof console !== 'undefined') {
 					console.warn('[YTKit] DiagnosticLog.record failed:', e);
@@ -5053,6 +5139,8 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 			memoryEntries.length = 0;
 			state.ctxCounts = Object.create(null);
 			state.countsResynced = true;
+			_cancelFlush();
+			journal.pending = false;
 			try { saveSettings(settings); } catch (_) {
 			}
 		}
@@ -5079,8 +5167,10 @@ __astraDeckRegistry["core/diagnostic-log.js"] = function (globalThis, self, wind
 			enable() { state.enabled = true; },
 			disable() { state.enabled = false; },
 			_state: state,
+			_journal: journal,
 			_resyncCounts,
 			record,
+			flush,
 			countsByCtx,
 			get,
 			clear,
