@@ -72,7 +72,7 @@ function loadLiveFeature(video, writes, { ad = false } = {}) {
         getVideoId: () => VIDEO_ID,
         getLivePlaybackMetrics: core.getLivePlaybackMetrics,
         parseLiveEdgeState: core.parseLiveEdgeState,
-        isAdShowingIn: () => ad,
+        isAdShowingIn: () => (typeof ad === 'function' ? ad() : ad),
         isProgrammaticPlaybackRateChange: () => false,
         setProgrammaticPlaybackRate: (current, rate) => {
             writes.push(rate);
@@ -131,6 +131,11 @@ test('the published live-edge state round-trips and refuses anything off', () =>
         `v1|${VIDEO_ID}|0|NaN|1|${now}`,
         `v2|${VIDEO_ID}|0|5|1|${now}`,
         `v1|${VIDEO_ID}|0|5|1`,
+        `v1|${VIDEO_ID}|0||1|${now}`,
+        `v1|${VIDEO_ID}|0| 5 |1|${now}`,
+        `v1|${VIDEO_ID}|0|5| |${now}`,
+        `v1|${VIDEO_ID}|0|5|1|1e12`,
+        `v1|${VIDEO_ID}|0|0x10|1|${now}`,
         null
     ]) {
         assert.equal(core.parseLiveEdgeState(forged, { videoId: VIDEO_ID, nowMs: now }), null, String(forged));
@@ -216,6 +221,37 @@ test('a paused or stalled stream hides the readout and hands the rate back', () 
     assert.equal(feature._readout.hidden, true, 'a stale readout does not stay up');
     assert.equal(video.playbackRate, 1, 'and the boost ends with it');
     assert.equal(pending().length, 0, 'nothing more to wait for until playback moves');
+
+    // A tick from some other event (progress keeps firing while paused) must
+    // not push the re-check out past the state's own expiry.
+    publish(document, livePlayer({ current: 565670 }), Date.now() - 2500);
+    feature._tick();
+    assert.ok(pending()[0].ms <= 700, `re-check when this state expires, not 3 s from now: ${pending()[0].ms}`);
+
+    feature.destroy();
+    assert.equal(pending().length, 0, 'teardown leaves no re-check behind');
+});
+
+test('an ad starting mid-boost takes the rate back to normal', () => {
+    let ad = false;
+    const writes = [];
+    const video = liveVideo();
+    const { feature, document } = loadLiveFeature(video, writes, { ad: () => ad });
+    publish(document, livePlayer({ current: 565640 }));
+    feature._tick();
+    assert.ok(video.playbackRate > 1);
+    ad = true;
+    feature._tick();
+    assert.equal(video.playbackRate, 1);
+});
+
+test('at the live head the readout says 0 seconds', () => {
+    const writes = [];
+    const { feature, document } = loadLiveFeature(liveVideo({ buffer: 19 }), writes);
+    publish(document, livePlayer({ current: 565700, seekableEnd: 565700, atHead: true }));
+    feature._tick();
+    assert.match(feature._readout.textContent, /^Live 0\.0s · buffer 19s$/);
+    assert.deepEqual(writes, []);
 });
 
 test('live latency catch-up never slows a saved channel speed', () => {

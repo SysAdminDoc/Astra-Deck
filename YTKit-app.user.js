@@ -15889,7 +15889,8 @@ const STORAGE_KEYS = Object.freeze({
 				return {
 					latencySeconds: state.behindSeconds,
 					bufferSeconds: getLivePlaybackMetrics(video)?.bufferSeconds ?? null,
-					atHead: state.atHead
+					atHead: state.atHead,
+					freshForMs: state.freshForMs
 				};
 			},
 			_formatSeconds(value) {
@@ -15966,7 +15967,7 @@ const STORAGE_KEYS = Object.freeze({
 				this._staleTimer = setTimeout(() => {
 					this._staleTimer = null;
 					this._tick();
-				}, 3100);
+				}, (metrics.freshForMs ?? 3000) + 100);
 				this._renderReadout(metrics);
 				const latency = metrics.latencySeconds;
 				const target = this._targetSeconds();

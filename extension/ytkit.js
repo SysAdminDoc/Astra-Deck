@@ -23204,7 +23204,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return {
                     latencySeconds: state.behindSeconds,
                     bufferSeconds: getLivePlaybackMetrics(video)?.bufferSeconds ?? null,
-                    atHead: state.atHead
+                    atHead: state.atHead,
+                    freshForMs: state.freshForMs
                 };
             },
             _formatSeconds(value) {
@@ -23279,13 +23280,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._releaseRate();
                     return;
                 }
-                // A paused or stalled stream fires no more media events, so look
-                // again once this state is too old to trust: that hides the
-                // readout and hands the rate back.
+                // A paused or stalled stream fires no more timeupdates, so look
+                // again just after this state is too old to trust: that hides
+                // the readout and hands the rate back.
                 this._staleTimer = setTimeout(() => {
                     this._staleTimer = null;
                     this._tick();
-                }, 3100);
+                }, (metrics.freshForMs ?? 3000) + 100);
                 this._renderReadout(metrics);
                 const latency = metrics.latencySeconds;
                 const target = this._targetSeconds();

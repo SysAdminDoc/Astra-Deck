@@ -12431,6 +12431,7 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 	const LIVE_EDGE_FORMAT = 'v1';
 	const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
 	const MAX_LIVE_EDGE_SECONDS = 86400;
+	const LIVE_EDGE_SECONDS_PATTERN = /^\d{1,5}(\.\d{1,2})?$/;
 	function readLiveEdgeState(player, nowSeconds) {
 		if (!player || typeof player.getProgressState !== 'function') return null;
 		let data = null;
@@ -12465,13 +12466,18 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 		if (parts.length !== 6 || parts[0] !== LIVE_EDGE_FORMAT) return null;
 		const [, id, head, behindText, latencyText, atText] = parts;
 		if (!VIDEO_ID_PATTERN.test(id) || id !== videoId || (head !== '0' && head !== '1')) return null;
+		if (!LIVE_EDGE_SECONDS_PATTERN.test(behindText) || !/^\d{1,16}$/.test(atText)) return null;
+		if (latencyText !== '' && !LIVE_EDGE_SECONDS_PATTERN.test(latencyText)) return null;
 		const behind = Number(behindText);
 		const latency = latencyText === '' ? null : Number(latencyText);
 		const at = Number(atText);
 		if (!(behind >= 0 && behind <= MAX_LIVE_EDGE_SECONDS)) return null;
 		if (latency !== null && !(latency >= 0 && latency <= MAX_LIVE_EDGE_SECONDS)) return null;
 		if (!Number.isFinite(at) || !Number.isFinite(nowMs) || Math.abs(nowMs - at) > maxAgeMs) return null;
-		return Object.freeze({ videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency });
+		return Object.freeze({
+			videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency,
+			freshForMs: Math.max(0, maxAgeMs - Math.abs(nowMs - at))
+		});
 	}
 	function toEventSet(events) {
 		const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
@@ -23468,6 +23474,7 @@ void 0;
 	const LIVE_EDGE_FORMAT = 'v1';
 	const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
 	const MAX_LIVE_EDGE_SECONDS = 86400;
+	const LIVE_EDGE_SECONDS_PATTERN = /^\d{1,5}(\.\d{1,2})?$/;
 	function readLiveEdgeState(player, nowSeconds) {
 		if (!player || typeof player.getProgressState !== 'function') return null;
 		let data = null;
@@ -23502,13 +23509,18 @@ void 0;
 		if (parts.length !== 6 || parts[0] !== LIVE_EDGE_FORMAT) return null;
 		const [, id, head, behindText, latencyText, atText] = parts;
 		if (!VIDEO_ID_PATTERN.test(id) || id !== videoId || (head !== '0' && head !== '1')) return null;
+		if (!LIVE_EDGE_SECONDS_PATTERN.test(behindText) || !/^\d{1,16}$/.test(atText)) return null;
+		if (latencyText !== '' && !LIVE_EDGE_SECONDS_PATTERN.test(latencyText)) return null;
 		const behind = Number(behindText);
 		const latency = latencyText === '' ? null : Number(latencyText);
 		const at = Number(atText);
 		if (!(behind >= 0 && behind <= MAX_LIVE_EDGE_SECONDS)) return null;
 		if (latency !== null && !(latency >= 0 && latency <= MAX_LIVE_EDGE_SECONDS)) return null;
 		if (!Number.isFinite(at) || !Number.isFinite(nowMs) || Math.abs(nowMs - at) > maxAgeMs) return null;
-		return Object.freeze({ videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency });
+		return Object.freeze({
+			videoId: id, atHead: head === '1', behindSeconds: behind, latencySeconds: latency,
+			freshForMs: Math.max(0, maxAgeMs - Math.abs(nowMs - at))
+		});
 	}
 	function toEventSet(events) {
 		const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
