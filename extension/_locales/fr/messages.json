@@ -3227,7 +3227,7 @@
     "message": "Ratio J'aime/vues"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Affiche les cartes vidéo de l’accueil, des abonnements et de la recherche sous forme de lignes, avec la miniature à gauche et les métadonnées à droite. Désactivé par défaut et incompatible avec Vidéos par ligne."
+    "message": "Affiche les cartes vidéo de l’accueil, des abonnements, de la recherche et des chaînes sous forme de lignes, avec la miniature à gauche et les métadonnées à droite. Sur les abonnements, le sélecteur de vue prend le relais quand il est activé. Désactivé par défaut et incompatible avec Vidéos par ligne."
   },
   "feature_listFeedLayout_name": {
     "message": "Fil en liste"

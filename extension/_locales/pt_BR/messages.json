@@ -3227,7 +3227,7 @@
     "message": "Proporção Curtidas/Visualizações"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Mostra os cards de vídeo de Início, Inscrições e Pesquisa como linhas, com a miniatura à esquerda e os metadados à direita. Desativado por padrão e incompatível com Vídeos por Linha."
+    "message": "Mostra os cards de vídeo de Início, Inscrições, Pesquisa e canais como linhas, com a miniatura à esquerda e os metadados à direita. Em Inscrições, o seletor de visualização assume quando está ativado. Desativado por padrão e incompatível com Vídeos por Linha."
   },
   "feature_listFeedLayout_name": {
     "message": "Layout de Feed em Lista"

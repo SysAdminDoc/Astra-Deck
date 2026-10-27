@@ -6,8 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- List view now works on channel Videos tabs, and it handles YouTube's new card layout on Home, search and channels. You get one video per row with the thumbnail on the left and the title and details beside it. Shorts shelves keep their grid. On Subscriptions the View switcher takes over when it's showing, so the two don't fight.
+
 ### Fixed
 
+- List view no longer brings back videos Video Hider hid. Its layout rule was stronger than the hide rule, so filtered cards could pop back into the list.
 - Changing a Video Hider keyword or filter from the popup, the side panel or another tab now re-filters the feed you already have open. Before, the old filters stuck around until you went to another page.
 
 ## [4.104.0] (2026-10-27)

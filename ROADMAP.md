@@ -21,28 +21,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-- [ ] P3 — List view for Home, search and channel grids
-  Note (2026-10-13): `listFeedLayout` already covers Home, Subscriptions and search in
-  `extension/features/home-subs-css/index.js:329-434` with lifecycle handling at line 493.
-  Keep those paths and their saved keys. The remaining implementation scope is channel
-  `/videos` grids and consistent entry controls, plus the live acceptance checks below.
-  `scripts/smoke-headless-a11y.js` does not currently capture feeds; add a feed reflow
-  fixture/lane to it for the 320 px acceptance below rather than assuming one exists.
-  Add `scripts/smoke-headless-a11y.js` and the new feed fixture to Touches.
-  Why: a list layout has 19 reactions on ImprovedTube's request and Control Panel
-  ships "grid as list" (`gridAsListPageSelector` in page.js); `subscriptionViewMode` offers
-  list and compact on Subscriptions only (`settings-schema.js:130`).
-  Evidence: https://github.com/code-charity/youtube/issues/3593; Control Panel page.js
-  ~2620-2650 (`yt-lockup-metadata-view-model { display: grid }` under the list selector).
-  Touches: `extension/features/subscription-view/index.js`, `extension/core/settings-schema.js`
-  (widen `subscriptionViewMode`'s scope or add `feedViewMode`),
-  `extension/features/home-subs-css/index.js`, 11 locales.
-  Acceptance: with list mode on, Home, search and channel `/videos` grids render one card
-  per row with the thumbnail left and metadata right on the 2026-09 lockup fixture, the
-  filters and the quick-hide X still attach, and the 320 px `smoke:a11y` lane shows no
-  overflow (owed check).
-  Complexity: M
-
 ### Now (P1)
 
 ### Next (P2)

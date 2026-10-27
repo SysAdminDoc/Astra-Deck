@@ -91,6 +91,30 @@ test('headless accessibility smoke CLI parsing stays deterministic', () => {
     assert.throws(() => smoke.parseArgs(['--headed']), /unknown argument/);
 });
 
+test('headless accessibility smoke renders the list feed layout on captured feed cards', () => {
+    assert.deepEqual(smoke.FEED_SURFACES.map((surface) => surface.name),
+        ['feed-home', 'feed-search', 'feed-channel']);
+    assert.deepEqual(smoke.parseArgs(['--surface', 'feed-channel']).surfaces, ['feed-channel']);
+    assert.match(source, /listFeedLayout: true/);
+    assert.match(source, /\['normal', 'reflow-320'\]/);
+    assert.match(source, /auditLocaleReflow\(client, prepared, locale/);
+    const stageDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'astra-feed-stage-'));
+    try {
+        const pages = smoke.stageFeedPages(stageDir);
+        assert.deepEqual(pages, ['feed-home.html', 'feed-search.html', 'feed-channel-videos.html']);
+        for (const surface of smoke.FEED_SURFACES) {
+            const html = fs.readFileSync(path.join(stageDir, surface.page), 'utf8');
+            assert.ok(html.includes(surface.keyword), `${surface.name} needs a card its keyword hides`);
+            // /@astra/videos is two levels deep: without a root base the
+            // relative script tags 404 and the content script never boots.
+            assert.ok(html.includes('<base href="/">'), `${surface.name} must resolve its scripts from the root`);
+            assert.ok(html.includes('yt-lockup-view-model') || surface.name === 'feed-search');
+        }
+    } finally {
+        fs.rmSync(stageDir, { recursive: true, force: true });
+    }
+});
+
 test('rendered accessibility fixes remain pinned at their root causes', () => {
     const popupFocusHandler = popupJs.slice(
         popupJs.indexOf('function handlePopupDialogKeydown'),

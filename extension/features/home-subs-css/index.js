@@ -56,7 +56,12 @@
     function buildFeedGridCss(page = 'home') {
         const feed = `ytd-browse[page-subtype="${page === 'subscriptions' ? 'subscriptions' : 'home'}"]`;
         const active = `html:has(ytd-page-manager > ${feed}:not([hidden]))`;
-        const grid = `body:not(.ytkit-listFeedLayout) ${feed}:not([data-ytkit-subscription-view="list"]):not([data-ytkit-subscription-view="compact"])`;
+        // On Subscriptions a mounted View switcher set to Grid outranks List
+        // Feed Layout, the same hand-over buildListFeedLayoutCss makes.
+        const notOwnView = `${feed}:not([data-ytkit-subscription-view="list"]):not([data-ytkit-subscription-view="compact"])`;
+        const grid = page === 'subscriptions'
+            ? `${notOwnView}:is(body:not(.ytkit-listFeedLayout) *, [data-ytkit-subscription-view="grid"])`
+            : `body:not(.ytkit-listFeedLayout) ${notOwnView}`;
         return `
 ${active} {
     --ytkit-feed-canvas: var(--ytkit-split-theme-canvas, #111214);
@@ -326,57 +331,83 @@ yt-chip-cloud-chip-renderer .ytChipShapeTextContent { font-size: 13px !important
         `;
     }
 
+    // listFeedLayout: one card per row, thumbnail left and details right, on
+    // Home, Subscriptions, search and a channel's video grids.
+    //  * Since 2026-09 a lockup wraps its thumbnail link and its metadata in
+    //    .ytLockupViewModelHost, so the row grid has to live on that host. The
+    //    earlier form (both as direct children of yt-lockup-view-model) and the
+    //    #dismissible renderers search still uses keep their own rules; the host
+    //    spans both columns when its lockup is a grid too.
+    //  * Channel grids are matched as grid items only, so the shelves on a
+    //    channel's Home tab keep their own layout, and a grid holding Shorts
+    //    lockups (the Shorts tab) stays a grid.
+    //  * Subscriptions hand over to the in-page View switcher once Subscription
+    //    View Controls has stamped the page, so the switcher never reads Grid
+    //    over a list.
+    //  * The title clamp rules keep their old selectors: fullTitles has to
+    //    out-specify them (full-titles-css.test.js).
     function buildListFeedLayoutCss() {
+        const SEARCH = 'ytd-search[page-subtype="search"]';
+        const GRID = '#contents.ytd-rich-grid-renderer';
+        const CHANNEL_GRID = 'ytd-browse[page-subtype="channels"]'
+            + ` ytd-rich-grid-renderer:not(:has(ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2)) > ${GRID}`;
+        const grids = [
+            `ytd-browse[page-subtype="home"] ${GRID}`,
+            `ytd-browse[page-subtype="subscriptions"]:not([data-ytkit-subscription-view]) ${GRID}`,
+            CHANNEL_GRID
+        ];
+        const itemsOf = (grid) => [
+            `${grid} > ytd-rich-item-renderer`,
+            `${grid} > ytd-rich-grid-row ytd-rich-item-renderer`
+        ];
+        const items = grids.flatMap(itemsOf);
+        const lockupScopes = [...items, SEARCH];
+        const legacyCards = [...items, `${SEARCH} ytd-video-renderer`];
+        const rowGrid = [
+            ...legacyCards.map((card) => `${card} #dismissible`),
+            // Video Hider can tag a search lockup itself as hidden.
+            ...lockupScopes.map((scope) => `${scope} yt-lockup-view-model:not(.ytkit-video-hidden)`),
+            ...lockupScopes.map((scope) => `${scope} .ytLockupViewModelHost`)
+        ];
+        const join = (selectors) => selectors.join(',\n            ');
         return `
-            ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer,
-            ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer {
+            ${join(grids)} {
                 display: flex !important;
                 flex-direction: column !important;
                 gap: 12px !important;
                 width: 100% !important;
             }
-            ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row,
-            ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row,
-            ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row > #contents,
-            ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row > #contents {
+            ${join(grids.flatMap((grid) => [`${grid} > ytd-rich-grid-row`, `${grid} > ytd-rich-grid-row > #contents`]))} {
                 display: contents !important;
             }
-            ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer,
-            ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer,
-            ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer,
-            ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer,
-            ytd-search[page-subtype="search"] ytd-video-renderer,
-            ytd-search[page-subtype="search"] yt-lockup-view-model {
+            ${join([...items, `${SEARCH} ytd-video-renderer`, `${SEARCH} yt-lockup-view-model`]
+                .map((card) => `${card}:not(.ytkit-video-hidden)`))} {
                 display: block !important;
                 width: 100% !important;
                 max-width: none !important;
                 margin: 0 !important;
             }
-            ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,
-            ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,
-            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible,
-            ytd-browse[page-subtype="home"] yt-lockup-view-model,
-            ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,
-            ytd-search[page-subtype="search"] yt-lockup-view-model {
+            ${join(rowGrid)} {
                 display: grid !important;
                 grid-template-columns: minmax(180px, min(32vw, 360px)) minmax(0, 1fr) !important;
                 align-items: start !important;
                 column-gap: 16px !important;
                 width: 100% !important;
                 min-width: 0 !important;
+                margin: 0 !important;
             }
-            ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > #thumbnail,
-            ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > ytd-thumbnail,
-            ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > #thumbnail,
-            ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > ytd-thumbnail,
-            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > #thumbnail,
-            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > ytd-thumbnail,
-            ytd-browse[page-subtype="home"] yt-lockup-view-model > yt-thumbnail-view-model,
-            ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > yt-thumbnail-view-model,
-            ytd-search[page-subtype="search"] yt-lockup-view-model > yt-thumbnail-view-model,
-            ytd-browse[page-subtype="home"] yt-lockup-view-model > a.yt-lockup-view-model__content-image,
-            ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > a.yt-lockup-view-model__content-image,
-            ytd-search[page-subtype="search"] yt-lockup-view-model > a.yt-lockup-view-model__content-image {
+            ${join(lockupScopes.map((scope) => `${scope} yt-lockup-view-model > .ytLockupViewModelHost`))} {
+                grid-column: 1 / -1 !important;
+                grid-row: 1 !important;
+            }
+            ${join([
+                ...legacyCards.flatMap((card) => [`${card} #dismissible > #thumbnail`, `${card} #dismissible > ytd-thumbnail`]),
+                ...lockupScopes.flatMap((scope) => [
+                    `${scope} yt-lockup-view-model > yt-thumbnail-view-model`,
+                    `${scope} yt-lockup-view-model > a.yt-lockup-view-model__content-image`,
+                    `${scope} .ytLockupViewModelHost > .ytLockupViewModelContentImage`
+                ])
+            ])} {
                 grid-column: 1 !important;
                 grid-row: 1 !important;
                 width: 100% !important;
@@ -385,12 +416,13 @@ yt-chip-cloud-chip-renderer .ytChipShapeTextContent { font-size: 13px !important
                 margin: 0 !important;
                 aspect-ratio: 16 / 9 !important;
             }
-            ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > #details,
-            ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > #details,
-            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > #details,
-            ytd-browse[page-subtype="home"] yt-lockup-view-model > yt-lockup-metadata-view-model,
-            ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > yt-lockup-metadata-view-model,
-            ytd-search[page-subtype="search"] yt-lockup-view-model > yt-lockup-metadata-view-model {
+            ${join([
+                ...legacyCards.flatMap((card) => [`${card} #dismissible > #details`, `${card} #dismissible > .text-wrapper`]),
+                ...lockupScopes.flatMap((scope) => [
+                    `${scope} yt-lockup-view-model > yt-lockup-metadata-view-model`,
+                    `${scope} .ytLockupViewModelHost > .ytLockupViewModelMetadata`
+                ])
+            ])} {
                 grid-column: 2 !important;
                 grid-row: 1 !important;
                 min-width: 0 !important;
@@ -408,23 +440,16 @@ yt-chip-cloud-chip-renderer .ytChipShapeTextContent { font-size: 13px !important
                 overflow: hidden !important;
                 white-space: normal !important;
             }
-            ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line,
-            ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #metadata-line,
-            ytd-search[page-subtype="search"] ytd-video-renderer #metadata-line,
-            ytd-browse[page-subtype="home"] yt-lockup-metadata-view-model,
-            ytd-browse[page-subtype="subscriptions"] yt-lockup-metadata-view-model,
-            ytd-search[page-subtype="search"] yt-lockup-metadata-view-model {
+            ${join([
+                ...legacyCards.map((card) => `${card} #metadata-line`),
+                ...lockupScopes.map((scope) => `${scope} yt-lockup-metadata-view-model`)
+            ])} {
                 min-width: 0 !important;
                 max-width: 100% !important;
                 overflow: hidden !important;
             }
             @media (max-width: 700px) {
-                ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,
-                ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,
-                ytd-search[page-subtype="search"] ytd-video-renderer #dismissible,
-                ytd-browse[page-subtype="home"] yt-lockup-view-model,
-                ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,
-                ytd-search[page-subtype="search"] yt-lockup-view-model {
+                ${join(rowGrid)} {
                     grid-template-columns: minmax(128px, 38vw) minmax(0, 1fr) !important;
                     column-gap: 10px !important;
                 }
@@ -490,7 +515,7 @@ yt-chip-cloud-chip-renderer .ytChipShapeTextContent { font-size: 13px !important
         createLifecycleSpec('disablePlayOnHover',      'shorts',       buildDisablePlayOnHoverCss,      ['home', 'subscriptions', 'search', 'channel']),
         createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss,  ['subscriptions']),
         createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss, ['subscriptions']),
-        createLifecycleSpec('listFeedLayout',           'feed',         buildListFeedLayoutCss,          ['home', 'subscriptions', 'search']),
+        createLifecycleSpec('listFeedLayout',           'feed',         buildListFeedLayoutCss,          ['home', 'subscriptions', 'search', 'channel']),
         createLifecycleSpec('fullTitles',              'feed',         buildFullTitlesCss,              ['all']),
         createLifecycleSpec('viewsOnSeparateLine',     'feed',         buildViewsOnSeparateLineCss,     ['home', 'subscriptions']),
     ]);

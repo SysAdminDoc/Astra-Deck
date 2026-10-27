@@ -45,6 +45,103 @@ test('listFeedLayout covers the three feed surfaces and modern card metadata', (
     }
 });
 
+/** Rules as { selectors, body, media }. The sheet ends in one @media block. */
+function cssRules(css) {
+    const at = css.indexOf('@media');
+    const chunks = at === -1
+        ? [[css, '']]
+        : [[css.slice(0, at), ''], [css.slice(css.indexOf('{', at) + 1), css.slice(at, css.indexOf('{', at)).trim()]];
+    const rules = [];
+    for (const [chunk, media] of chunks) {
+        for (const match of chunk.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+            rules.push({
+                // Commas inside :not(...)/:has(...) don't separate selectors.
+                selectors: match[1].split(/,(?![^(]*\))/).map((part) => part.trim().replace(/\s+/g, ' ')),
+                body: match[2].replace(/\s+/g, ' ').trim(),
+                media
+            });
+        }
+    }
+    return rules;
+}
+
+test('listFeedLayout puts the 2026-09 lockup in a row on Home and channel video grids', () => {
+    // The 2026-09 lockup nests the thumbnail link and the metadata inside
+    // .ytLockupViewModelHost, so the rules on yt-lockup-view-model's direct
+    // children never matched and each card sat in the narrow thumbnail column.
+    const html = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'feed-card-layouts-2026-10.html'), 'utf8');
+    const channelCard = html.split('<!-- lockup: channel videos grid -->')[1].split('<!--')[0];
+    assert.match(channelCard, /<yt-lockup-view-model[^>]*><div class="ytLockupViewModelHost[^"]*"><a [^>]*class="ytLockupViewModelContentImage"/,
+        'the captured lockup still nests its thumbnail link inside the host');
+    assert.match(channelCard, /<\/a><div class="ytLockupViewModelMetadata">/, 'with the metadata as the next sibling');
+
+    delete require.cache[require.resolve('../../extension/features/home-subs-css/index.js')];
+    const mod = require('../../extension/features/home-subs-css/index.js');
+    const rules = cssRules(mod.buildListFeedLayoutCss());
+    const declarations = (selector, media = '') => rules
+        .filter((rule) => rule.media === media && rule.selectors.includes(selector))
+        .map((rule) => rule.body)
+        .join(' ');
+
+    const GRID = '#contents.ytd-rich-grid-renderer';
+    const channelGrid = 'ytd-browse[page-subtype="channels"] ytd-rich-grid-renderer:not(:has(ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2)) > ' + GRID;
+    for (const item of [
+        `ytd-browse[page-subtype="home"] ${GRID} > ytd-rich-item-renderer`,
+        `ytd-browse[page-subtype="subscriptions"]:not([data-ytkit-subscription-view]) ${GRID} > ytd-rich-item-renderer`,
+        `${channelGrid} > ytd-rich-item-renderer`
+    ]) {
+        assert.match(declarations(`${item} .ytLockupViewModelHost`), /display: grid !important; grid-template-columns: minmax\(180px/, `${item}: the host is the row grid`);
+        assert.match(declarations(`${item} yt-lockup-view-model > .ytLockupViewModelHost`), /grid-column: 1 \/ -1 !important/, `${item}: the host spans its lockup's grid`);
+        assert.match(declarations(`${item} .ytLockupViewModelHost > .ytLockupViewModelContentImage`), /grid-column: 1 !important/, `${item}: thumbnail on the left`);
+        assert.match(declarations(`${item} .ytLockupViewModelHost > .ytLockupViewModelMetadata`), /grid-column: 2 !important/, `${item}: details on the right`);
+        assert.match(declarations(`${item} .ytLockupViewModelHost`, '@media (max-width: 700px)'), /grid-template-columns: minmax\(128px, 38vw\)/, `${item}: narrow column below 700px`);
+    }
+    assert.match(declarations(channelGrid), /flex-direction: column !important/, 'a channel video grid becomes one column');
+    assert.ok(!rules.some((rule) => rule.selectors.some((selector) => selector.startsWith('ytd-browse[page-subtype="channels"]')
+        && !selector.startsWith(channelGrid))), 'channel rules reach grid items only, never Home-tab shelves or the Shorts grid');
+    assert.match(declarations('ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > .text-wrapper'), /grid-column: 2 !important/,
+        'a search result keeps its text beside the thumbnail');
+
+    const spec = mod.LIFECYCLE_SPECS.find((entry) => entry.id === 'listFeedLayout');
+    assert.deepEqual([...spec.pageScopes], ['home', 'subscriptions', 'search', 'channel']);
+});
+
+test('listFeedLayout steps aside on Subscriptions once the View switcher is mounted', () => {
+    // Subscription View Controls stamps data-ytkit-subscription-view on the
+    // page. With List Feed Layout on too, the switcher read Grid over a list
+    // and its Grid button did nothing.
+    delete require.cache[require.resolve('../../extension/features/home-subs-css/index.js')];
+    const mod = require('../../extension/features/home-subs-css/index.js');
+    const layout = cssRules(mod.buildListFeedLayoutCss())
+        .filter((rule) => !/-webkit-line-clamp/.test(rule.body));
+    const subsSelectors = layout.flatMap((rule) => rule.selectors)
+        .filter((selector) => selector.includes('page-subtype="subscriptions"'));
+    assert.ok(subsSelectors.length > 0);
+    for (const selector of subsSelectors) {
+        assert.ok(selector.includes(':not([data-ytkit-subscription-view])'), `${selector} must yield to the switcher`);
+    }
+    const grid = mod.buildFeedGridCss('subscriptions');
+    assert.match(grid, /:is\(body:not\(\.ytkit-listFeedLayout\) \*, \[data-ytkit-subscription-view="grid"\]\) #contents\.ytd-rich-grid-renderer/,
+        'the switcher set to Grid keeps the workspace grid even with List Feed Layout on');
+    assert.match(mod.buildFeedGridCss('home'), /body:not\(\.ytkit-listFeedLayout\) ytd-browse\[page-subtype="home"\]/, 'Home is unchanged');
+});
+
+test('listFeedLayout never shows a card Video Hider hid', () => {
+    // The list rule's display: block !important on each card out-specified
+    // the hider's .ytkit-video-hidden { display: none !important }, so every
+    // hidden or filtered card came back once list mode was on.
+    delete require.cache[require.resolve('../../extension/features/home-subs-css/index.js')];
+    const mod = require('../../extension/features/home-subs-css/index.js');
+    const cardEnd = /(?:ytd-rich-item-renderer|ytd-video-renderer|yt-lockup-view-model)(?::not\([^)]*\))*$/;
+    const cardRules = cssRules(mod.buildListFeedLayoutCss())
+        .filter((rule) => /\bdisplay:/.test(rule.body))
+        .flatMap((rule) => rule.selectors.filter((selector) => cardEnd.test(selector)));
+    assert.ok(cardRules.length >= 7, 'Home, Subscriptions and channel items plus search cards are styled');
+    for (const selector of cardRules) {
+        assert.ok(selector.endsWith(':not(.ytkit-video-hidden)'), `${selector} must leave hidden cards hidden`);
+    }
+});
+
 test('hideCreateButton does not depend on the English aria-label alone', () => {
     // The label is English-only, so the toggle silently did nothing on the ten
     // other shipped locales. The "+" glyph path is identical in every language

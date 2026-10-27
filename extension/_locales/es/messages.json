@@ -3227,7 +3227,7 @@
     "message": "Relación me gusta/vistas"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Muestra las tarjetas de video de Inicio, Suscripciones y Búsqueda como filas, con la miniatura a la izquierda y los metadatos a la derecha. Desactivado de forma predeterminada y excluyente con Videos por fila."
+    "message": "Muestra las tarjetas de video de Inicio, Suscripciones, Búsqueda y canales como filas, con la miniatura a la izquierda y los metadatos a la derecha. En Suscripciones manda el selector de vista cuando está activado. Desactivado de forma predeterminada y excluyente con Videos por fila."
   },
   "feature_listFeedLayout_name": {
     "message": "Diseño de feed en lista"

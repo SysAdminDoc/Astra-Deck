@@ -3227,7 +3227,7 @@
     "message": "Rapporto mi piace/visualizzazioni"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Mostra le schede video di Home, Iscrizioni e Ricerca come righe, con le miniature a sinistra e i metadati a destra. Disattivato per impostazione predefinita e incompatibile con Video per riga."
+    "message": "Mostra le schede video di Home, Iscrizioni, Ricerca e canali come righe, con le miniature a sinistra e i metadati a destra. In Iscrizioni decide il selettore di vista quando è attivo. Disattivato per impostazione predefinita e incompatibile con Video per riga."
   },
   "feature_listFeedLayout_name": {
     "message": "Layout feed a elenco"

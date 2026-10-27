@@ -186,6 +186,69 @@ const SURFACES = Object.freeze([
     }),
 ]);
 
+// Feed pages for List Feed Layout. They are built from the trimmed 2026-09
+// captures in tests/fixtures/feed-card-layouts-2026-10.html and served at the
+// real YouTube paths, because core/page.js classifies the page from the path
+// and the home-subs-css lifecycle only mounts the layout where it applies.
+// These surfaces get their own audit instead of the keyboard sweep: the
+// controls on them are YouTube's links plus the quick-hide X, and the
+// questions owed are layout ones (one card per row, thumbnail left of the
+// metadata, the X and the keyword filter still attached, no overflow at 320px).
+const FEED_FIXTURE_PATH = path.join(REPO_ROOT, 'tests', 'fixtures', 'feed-card-layouts-2026-10.html');
+const FEED_LOCKUP_PARTS = Object.freeze({
+    card: 'ytd-rich-item-renderer',
+    thumbnail: '.ytLockupViewModelContentImage',
+    metadata: '.ytLockupViewModelMetadata',
+    title: 'a.ytLockupMetadataViewModelTitle',
+});
+const FEED_SURFACES = Object.freeze([
+    Object.freeze({
+        name: 'feed-home',
+        page: 'feed-home.html',
+        httpPath: '/',
+        selector: 'ytd-browse[page-subtype="home"]',
+        cards: 'ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer',
+        parts: FEED_LOCKUP_PARTS,
+        keyword: 'Undocking',
+        quickHide: true,
+        width: 1280,
+        height: 860,
+    }),
+    Object.freeze({
+        name: 'feed-search',
+        page: 'feed-search.html',
+        httpPath: '/results?search_query=lofi',
+        selector: 'ytd-search[page-subtype="search"]',
+        cards: 'ytd-search[page-subtype="search"] ytd-video-renderer',
+        parts: Object.freeze({
+            card: 'ytd-video-renderer',
+            thumbnail: '#dismissible > ytd-thumbnail',
+            metadata: '#dismissible > .text-wrapper',
+            title: '#video-title',
+        }),
+        keyword: 'cozy',
+        quickHide: true,
+        width: 1280,
+        height: 860,
+    }),
+    Object.freeze({
+        name: 'feed-channel',
+        page: 'feed-channel-videos.html',
+        httpPath: '/@astra/videos',
+        selector: 'ytd-browse[page-subtype="channels"]',
+        cards: '#fixture-videos-grid > #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer',
+        parts: FEED_LOCKUP_PARTS,
+        keyword: 'halloween',
+        // No X on channel pages by design: a hide recorded there would not
+        // apply there (_videoIdHidesApplyHere), so it must stay absent.
+        quickHide: false,
+        shortsGrid: '#fixture-shorts-grid > #contents.ytd-rich-grid-renderer',
+        width: 1280,
+        height: 860,
+    }),
+]);
+const FEED_SURFACE_NAMES = new Set(FEED_SURFACES.map((surface) => surface.name));
+
 const REAL_EXTENSION_SURFACES = Object.freeze([
     Object.freeze({
         name: 'popup',
@@ -243,8 +306,9 @@ function parseArgs(argv) {
             options.keepStage = true;
         } else if (arg === '--surface') {
             const surface = argv[++index] || '';
-            if (!SURFACES.some((candidate) => candidate.name === surface)) {
-                throw new Error(`--surface requires one of: ${SURFACES.map((candidate) => candidate.name).join(', ')}`);
+            const known = [...SURFACES, ...FEED_SURFACES].map((candidate) => candidate.name);
+            if (!known.includes(surface)) {
+                throw new Error(`--surface requires one of: ${known.join(', ')}`);
             }
             if (!options.surfaces.includes(surface)) options.surfaces.push(surface);
         } else if (arg === '--real-extension-pages') {
@@ -286,7 +350,117 @@ function createStage(stageDir) {
     injectChromeStub(stageDir, 'sidepanel.html', 'sidepanel-a11y.html');
     injectChromeStub(stageDir, 'sidebar.html', 'sidebar-a11y.html');
     stagePseudoLocale(stageDir);
+    stageFeedPages(stageDir);
     return fixturePath;
+}
+
+function feedFixtureSections() {
+    const sections = new Map();
+    const source = fs.readFileSync(FEED_FIXTURE_PATH, 'utf8').replace(/\r\n/g, '\n');
+    for (const chunk of source.split(/\n(?=<!-- )/)) {
+        // The file's header comment spans several lines, so it never matches.
+        const match = chunk.match(/^<!-- (.+?) -->\n([\s\S]*)$/);
+        if (match) sections.set(match[1], match[2].trim());
+    }
+    return sections;
+}
+
+// Base styles stand in for YouTube's own: the grid it lays cards out in and
+// the fixed thumbnail floors it gives search results (min-width 240px), which
+// are exactly what the list layout has to override to fit 320px.
+const FEED_PAGE_CSS = `
+html,body{margin:0;background:#0f0f0f;color:#f1f1f1;font:14px/1.45 Roboto,Arial,sans-serif;}
+a{color:inherit;text-decoration:none;}
+ytd-app,ytd-page-manager,ytd-browse,ytd-search,ytd-rich-grid-renderer,ytd-rich-item-renderer,
+yt-lockup-view-model,yt-lockup-metadata-view-model,yt-thumbnail-view-model,
+ytd-two-column-search-results-renderer,ytd-section-list-renderer,ytd-item-section-renderer,
+ytd-video-renderer,ytd-thumbnail,ytm-shorts-lockup-view-model-v2,ytm-shorts-lockup-view-model{display:block;}
+ytd-browse,ytd-search{padding:24px 16px;box-sizing:border-box;}
+ytd-rich-grid-renderer+ytd-rich-grid-renderer{margin-top:32px;}
+#contents.ytd-rich-grid-renderer{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:40px 16px;}
+ytd-rich-item-renderer{min-width:0;}
+.ytLockupViewModelVertical{display:flex;flex-direction:column;gap:12px;}
+.ytLockupViewModelContentImage{display:block;position:relative;}
+yt-thumbnail-view-model{position:relative;aspect-ratio:16/9;border-radius:12px;background:#272727;}
+.ytThumbnailViewModelAspectRatio2By3{aspect-ratio:2/3;}
+:is(yt-thumbnail-view-model,ytd-thumbnail) .ytBadgeShapeText{position:absolute;right:8px;bottom:8px;padding:1px 4px;border-radius:4px;background:rgba(0,0,0,.8);font-size:12px;}
+.ytLockupMetadataViewModelHeadingReset{margin:0;font-size:16px;line-height:22px;}
+ytd-video-renderer{margin-top:16px;}
+ytd-video-renderer #dismissible{display:flex;gap:16px;}
+ytd-video-renderer ytd-thumbnail{position:relative;flex:1 1 0;min-width:240px;max-width:500px;aspect-ratio:16/9;border-radius:12px;background:#272727;}
+ytd-video-renderer #thumbnail{display:block;height:100%;}
+ytd-video-renderer .text-wrapper{flex:1 1 0;min-width:0;}
+ytd-video-renderer h3{margin:0;font-size:18px;line-height:26px;}
+`;
+
+function feedPageHtml(title, main) {
+    const scriptTags = ['chrome-stub.js', 'runtime-bootstrap.js', 'a11y-fixture-driver.js']
+        .map((src) => `<script src="${src}"></script>`)
+        .join('\n');
+    return `<!DOCTYPE html>
+<html lang="en" dark>
+<head>
+<meta charset="utf-8">
+<base href="/">
+<title>${title}</title>
+<style>${FEED_PAGE_CSS}</style>
+</head>
+<body>
+<ytd-app><div id="content"><ytd-page-manager id="page-manager">
+${main}
+</ytd-page-manager></div></ytd-app>
+${scriptTags}
+</body>
+</html>
+`;
+}
+
+function stageFeedPages(stageDir) {
+    const sections = feedFixtureSections();
+    const section = (name) => {
+        const html = sections.get(name);
+        if (!html) throw new Error(`feed fixture is missing the "${name}" section`);
+        return html;
+    };
+    const richItems = [
+        'lockup: channel videos grid',
+        'lockup: channel live tab, live now',
+        'lockup: channel live tab, upcoming',
+        'lockup: channel live tab, streamed',
+    ].map(section).join('\n');
+    const richGrid = (id, items) => `<ytd-rich-grid-renderer${id ? ` id="${id}"` : ''}>`
+        + `<div id="contents" class="style-scope ytd-rich-grid-renderer">\n${items}\n</div></ytd-rich-grid-renderer>`;
+    // Search has two captured cards; a third, re-titled copy of the first
+    // gives the one-per-row check two visible rows after the keyword hides one.
+    const searchVideo = section('search: video');
+    const searchCopy = searchVideo
+        .split('_jH2oTNRe7g').join('fixtureSr01')
+        .split('cozy autumn music').join('rainy day jazz');
+    const shortsItem = `<ytd-rich-item-renderer class="ytd-rich-grid-renderer"><div id="content" class="ytd-rich-item-renderer">${section('shorts: search shelf lockup')}</div></ytd-rich-item-renderer>`;
+    const pages = {
+        'feed-home.html': feedPageHtml('Home feed fixture',
+            `<ytd-browse page-subtype="home">${richGrid('', richItems)}</ytd-browse>`),
+        'feed-search.html': feedPageHtml('Search results fixture',
+            '<ytd-search page-subtype="search"><ytd-two-column-search-results-renderer><div id="primary">'
+            + '<ytd-section-list-renderer><div id="contents"><ytd-item-section-renderer><div id="contents">\n'
+            + [searchVideo, section('search: live'), searchCopy].join('\n')
+            + '\n</div></ytd-item-section-renderer></div></ytd-section-list-renderer></div>'
+            + '</ytd-two-column-search-results-renderer></ytd-search>'),
+        // The Shorts grid stands in for a channel's Shorts shelf: list mode
+        // must leave a grid of Shorts lockups alone.
+        'feed-channel-videos.html': feedPageHtml('Channel videos fixture',
+            `<ytd-browse page-subtype="channels">${richGrid('fixture-videos-grid', richItems)}`
+            + `${richGrid('fixture-shorts-grid', shortsItem)}</ytd-browse>`),
+    };
+    for (const surface of FEED_SURFACES) {
+        const html = pages[surface.page];
+        if (!html) throw new Error(`no staged page for ${surface.name}`);
+        if (!html.includes(surface.keyword)) {
+            throw new Error(`${surface.name}: keyword "${surface.keyword}" matches no card, so the filter check would prove nothing`);
+        }
+        fs.writeFileSync(path.join(stageDir, surface.page), html, 'utf8');
+    }
+    return Object.keys(pages);
 }
 
 // Worst-case string length, generated rather than hoped for: every English
@@ -322,9 +496,12 @@ async function startFixtureServer(stageDir) {
     };
     const server = http.createServer((request, response) => {
         const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
+        const feed = FEED_SURFACES.find((surface) => new URL(surface.httpPath, 'http://127.0.0.1').pathname === requestUrl.pathname);
         const relative = requestUrl.pathname === '/watch'
             ? 'fixture.html'
-            : decodeURIComponent(requestUrl.pathname).replace(/^\/+/, '');
+            : feed
+                ? feed.page
+                : decodeURIComponent(requestUrl.pathname).replace(/^\/+/, '');
         const target = path.resolve(root, relative || 'fixture.html');
         if (target !== root && !target.startsWith(`${root}${path.sep}`)) {
             response.writeHead(403).end('Forbidden');
@@ -947,7 +1124,7 @@ async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = '
         timeoutMs,
         `${surface.name} document load`
     );
-    if (surface.page === 'fixture.html') {
+    if (surface.page === 'fixture.html' || FEED_SURFACE_NAMES.has(surface.name)) {
         await waitFor(
             () => client.evaluate('Boolean(globalThis.__ytkitSmoke?.listenerCount() > 0 && globalThis.__ytkitA11y)'),
             timeoutMs,
@@ -1813,6 +1990,139 @@ async function auditSurface(client, stageDir, surface, timeoutMs, fixtureOrigin 
     return reports;
 }
 
+function feedLayoutExpression(surface) {
+    return `(() => {
+        const surface = ${JSON.stringify({
+        cards: surface.cards,
+        parts: surface.parts,
+        keyword: surface.keyword,
+        quickHide: surface.quickHide,
+        shortsGrid: surface.shortsGrid || '',
+    })};
+        const failures = [];
+        const viewport = document.documentElement.clientWidth;
+        const shown = (element) => {
+            if (!element?.isConnected) return false;
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && getComputedStyle(element).visibility !== 'hidden';
+        };
+        const box = (element) => {
+            const rect = element.getBoundingClientRect();
+            return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width };
+        };
+        const titleOf = (card) => (card.querySelector(surface.parts.title)?.textContent || '').trim();
+        const cards = Array.from(document.querySelectorAll(surface.cards));
+        const visible = cards.filter(shown);
+        const filtered = cards.filter((card) => titleOf(card).includes(surface.keyword));
+        if (filtered.some(shown)) {
+            // Name the hider's state so a failure says whether the card was
+            // never scanned, scanned and kept, or the feature never started.
+            const hider = globalThis.ytkit?.allFeatures?.find((feature) => feature?.id === 'hideVideosFromHome');
+            const card = filtered.find(shown);
+            failures.push('the card matching keyword "' + surface.keyword + '" still renders ('
+                + JSON.stringify({
+                    hiderInitialized: Boolean(hider?._initialized),
+                    classes: card.className,
+                    dataset: { ...card.dataset },
+                    hideButtons: document.querySelectorAll('.ytkit-video-hide-btn').length,
+                }) + ')');
+        }
+        const rows = visible.map((card) => {
+            const thumbnail = card.querySelector(surface.parts.thumbnail);
+            const metadata = card.querySelector(surface.parts.metadata);
+            const hide = card.querySelector('.ytkit-video-hide-btn');
+            return {
+                title: titleOf(card).slice(0, 40),
+                card: box(card),
+                thumbnail: shown(thumbnail) ? box(thumbnail) : null,
+                metadata: shown(metadata) ? box(metadata) : null,
+                hide: hide ? { shown: shown(hide), box: box(hide), insideThumbnail: Boolean(thumbnail?.contains(hide)) } : null,
+            };
+        });
+        if (rows.length < 2) failures.push('only ' + rows.length + ' card(s) visible, the row check needs two');
+        rows.sort((a, b) => a.card.top - b.card.top);
+        rows.forEach((row, index) => {
+            const name = '"' + row.title + '"';
+            if (index > 0 && row.card.top < rows[index - 1].card.bottom - 1) {
+                failures.push(name + ' shares a row with "' + rows[index - 1].title + '"');
+            }
+            if (row.card.right > viewport + 1 || row.card.left < -1) failures.push(name + ' card spills outside the viewport');
+            if (!row.thumbnail || !row.metadata) {
+                failures.push(name + ' is missing a rendered ' + (row.thumbnail ? 'metadata block' : 'thumbnail'));
+                return;
+            }
+            if (row.thumbnail.right > row.metadata.left + 1) {
+                failures.push(name + ' metadata is not to the right of the thumbnail ('
+                    + Math.round(row.thumbnail.right) + ' > ' + Math.round(row.metadata.left) + ')');
+            }
+            if (row.metadata.top >= row.thumbnail.bottom || row.thumbnail.top >= row.metadata.bottom) {
+                failures.push(name + ' metadata sits on a different line from the thumbnail');
+            }
+            if (row.metadata.right > viewport + 1) failures.push(name + ' metadata spills past the viewport');
+            if (surface.quickHide) {
+                if (!row.hide || !row.hide.shown || !row.hide.insideThumbnail) {
+                    failures.push(name + ' has no quick-hide X on its thumbnail');
+                } else if (row.hide.box.left < row.thumbnail.left - 1 || row.hide.box.right > row.thumbnail.right + 1
+                    || row.hide.box.top < row.thumbnail.top - 1 || row.hide.box.bottom > row.thumbnail.bottom + 1) {
+                    failures.push(name + ' quick-hide X sits outside the thumbnail');
+                }
+            } else if (row.hide) {
+                failures.push(name + ' shows a quick-hide X on a page where it cannot apply');
+            }
+        });
+        if (surface.shortsGrid) {
+            const shorts = document.querySelector(surface.shortsGrid);
+            const display = shorts ? getComputedStyle(shorts).display : 'missing';
+            if (display !== 'grid') failures.push('the Shorts grid became display:' + display + ' under list mode');
+        }
+        return { failures, viewport, cards: cards.length, visible: rows.length };
+    })()`;
+}
+
+async function auditFeedSurface(client, stageDir, surface, timeoutMs, fixtureOrigin) {
+    const prepared = {
+        ...surface,
+        prepare: `globalThis.__ytkitSmoke.writeSettings(${JSON.stringify({
+            listFeedLayout: true,
+            hideVideosKeywordFilter: surface.keyword,
+        })})`,
+        ready: 'true',
+        settleMs: 300,
+    };
+    const states = [];
+    const check = async (stateName) => {
+        client.context = `${surface.name}/${stateName} feed layout`;
+        // The layout mounts and the hider scans on their own schedules, so
+        // poll until the page settles and report the last failure set.
+        let last = null;
+        try {
+            await waitFor(async () => {
+                last = await client.evaluate(feedLayoutExpression(surface));
+                return last && last.failures.length === 0;
+            }, Math.min(timeoutMs, 15000), `${surface.name}/${stateName} feed layout`);
+        } catch (error) {
+            throw new Error(`${surface.name}/${stateName}: ${(last?.failures || [error.message]).join('; ')}`);
+        }
+        states.push({ state: stateName, visible: last.visible });
+        return last;
+    };
+    for (const mode of ['normal', 'reflow-320']) {
+        await navigateToSurface(client, stageDir, prepared, timeoutMs, 'dark', '', fixtureOrigin);
+        await configureRenderedState(client, prepared, 'dark', mode);
+        await check(`dark/${mode}`);
+        await captureSurface(client, prepared, `dark-${mode}`);
+    }
+    for (const locale of LOCALE_STATES) {
+        const label = localeLabel(locale);
+        await navigateToSurface(client, stageDir, prepared, timeoutMs, 'dark', locale, fixtureOrigin);
+        await configureRenderedState(client, prepared, 'dark', 'reflow-320');
+        await check(`${label}/reflow-320`);
+        await auditLocaleReflow(client, prepared, locale, `${label}/reflow-320`);
+        await captureSurface(client, prepared, `${label}-reflow-320`);
+    }
+    return states;
+}
+
 async function waitForRealExtensionTarget(port, targetId, timeoutMs) {
     return waitFor(async () => {
         const targets = await fetchJsonFromDevTools(port, '/json/list').catch(() => []);
@@ -2077,8 +2387,19 @@ async function runFixtureStates(options) {
                 + 'no obscuring/overflow failures'
             );
         }
+        const selectedFeeds = options.surfaces.length
+            ? FEED_SURFACES.filter((surface) => options.surfaces.includes(surface.name))
+            : FEED_SURFACES;
+        for (const surface of selectedFeeds) {
+            const states = await auditFeedSurface(client, stageDir, surface, options.timeoutMs, fixtureServer.origin);
+            console.log(
+                `[headless-a11y] ${surface.name}: ${states.length} state(s), list layout one card per row with `
+                + `the thumbnail left, keyword filter applied, quick-hide X ${surface.quickHide ? 'on every thumbnail' : 'absent by design'}, `
+                + 'no overflow at 320px'
+            );
+        }
         console.log(`[headless-a11y] Captures saved to ${OUT_DIR}`);
-        console.log('[headless-a11y] PASS — normal, 200% reflow, 320px reflow x ar/de/pt_BR/pseudo, themes, and forced colors');
+        console.log('[headless-a11y] PASS — normal, 200% reflow, 320px reflow x ar/de/pt_BR/pseudo, themes, forced colors, and the feed list layout');
     } finally {
         await shutdownChromiumProcess(browser, client);
         if (socket) socket.close();
@@ -2118,11 +2439,14 @@ module.exports = {
     collectFocusableExpression,
     configureRenderedState,
     createStage,
+    FEED_SURFACES,
+    feedFixtureSections,
     FOCUSABLE_SELECTOR,
     focusStateExpression,
     parseArgs,
     REAL_EXTENSION_SURFACES,
     runRealExtensionPages,
+    stageFeedPages,
     SURFACES,
     validateRealExtensionPageSnapshot,
 };

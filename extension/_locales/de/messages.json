@@ -3227,7 +3227,7 @@
     "message": "Gefällt-mir-zu-Aufrufe-Verhältnis"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Zeigt Videokarten auf Startseite, Abos und Suche als Zeilen mit Thumbnail links und Metadaten rechts. Standardmäßig aus und nicht mit „Videos pro Zeile“ kombinierbar."
+    "message": "Zeigt Videokarten auf Startseite, Abos, Suche und Kanälen als Zeilen mit Thumbnail links und Metadaten rechts. Auf der Abo-Seite hat der Ansichtsumschalter Vorrang, wenn er aktiv ist. Standardmäßig aus und nicht mit „Videos pro Zeile“ kombinierbar."
   },
   "feature_listFeedLayout_name": {
     "message": "Listen-Feed-Layout"

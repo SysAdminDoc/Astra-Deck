@@ -3241,7 +3241,7 @@
     "message": "Like-to-View Ratio"
   },
   "feature_listFeedLayout_desc": {
-    "message": "Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row."
+    "message": "Show Home, Subscriptions, Search and channel video cards as rows with thumbnails on the left and metadata on the right. On Subscriptions the View switcher takes over when it's on. Off by default and mutually exclusive with Videos Per Row."
   },
   "feature_listFeedLayout_name": {
     "message": "List Feed Layout"
