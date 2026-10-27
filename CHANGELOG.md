@@ -13,7 +13,6 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Fixed
 
 - The transcript's export buttons no longer show up when there's nothing to export. A failed or empty load used to leave Copy Text and the download buttons on screen. Blank caption lines are dropped before they reach the panel, and the export buttons check for lines themselves.
-
 - With the Diagnostic Error Log on, an error is now saved within a few seconds of happening, and right away when the page closes. It used to wait for the next time you changed a setting, so a reload could lose it. A burst of errors still keeps the log to its 500-entry cap and saves at most six times a minute. These saves write only the log, so they never carry along a setting you're halfway through changing. If the browser refuses one, Astra quietly stops trying for five minutes. There's no "settings could not be saved" toast, and the failure isn't added to the log itself. Private windows still keep the log in memory only.
 
 ### Documentation

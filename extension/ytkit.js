@@ -21078,6 +21078,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._loadController?.abort();
                 this._loadController = null;
                 this._loadGeneration += 1;
+                // A Retry press belongs to the load it started. A load that
+                // resumes after a collapse wasn't asked for, so it must not
+                // pull focus onto the panel when it settles.
+                this._focusRetryResult = false;
                 this._panel?.querySelector('.ytkit-transcript-body')?.setAttribute('aria-busy', 'false');
             },
 

@@ -14044,6 +14044,7 @@ const STORAGE_KEYS = Object.freeze({
 				this._loadController?.abort();
 				this._loadController = null;
 				this._loadGeneration += 1;
+				this._focusRetryResult = false;
 				this._panel?.querySelector('.ytkit-transcript-body')?.setAttribute('aria-busy', 'false');
 			},
 			async _loadTranscript() {

@@ -208,6 +208,34 @@ test('collapsing aborts the load, expanding restarts it, and the old response is
     assert.equal(view.exportBar().hidden, false);
 });
 
+test('collapsing during a retry drops its focus claim, so the resumed load does not steal focus', async () => {
+    const view = buildPanel();
+    view.calls[0].answer.resolve(failure);
+    await flush();
+    view.click(view.retryButton());
+    const toggle = view.q('.ytkit-transcript-toggle');
+    view.click(toggle);
+    assert.equal(view.calls[1].options.signal.aborted, true, 'collapsing stops the retry');
+    assert.equal(view.body().getAttribute('aria-busy'), 'false');
+    view.document.activeElement = toggle;
+
+    view.click(toggle);
+    assert.equal(view.calls.length, 3, 'expanding resumes the interrupted retry');
+    view.calls[2].answer.resolve(failure);
+    await flush();
+    assert.ok(view.retryButton(), 'the resumed load still offers Retry');
+    assert.ok(view.document.activeElement === toggle, 'focus stays where the viewer left it');
+});
+
+test('result states are announced through polite live regions', async () => {
+    const view = buildPanel();
+    assert.equal(view.body().getAttribute('aria-live'), 'polite');
+    assert.equal(view.q('.ytkit-transcript-meta').getAttribute('aria-live'), 'polite');
+    view.calls[0].answer.resolve(failure);
+    await flush();
+    assert.equal(view.body().getAttribute('aria-busy'), 'false', 'clearing busy lets the result be read');
+});
+
 test('collapsing after a failure keeps the failure, and expanding does not refetch on its own', async () => {
     const view = buildPanel();
     view.calls[0].answer.resolve(failure);
@@ -252,7 +280,12 @@ test('navigation and disable abort a retry in flight', async () => {
     second.calls[0].answer.resolve(failure);
     await flush();
     second.click(second.retryButton());
+    const secondBody = second.body();
     second.feature.destroy();
     assert.equal(second.calls[1].options.signal.aborted, true, 'disabling the feature aborts the retry');
     assert.ok(!second.feature._loadController);
+    assert.equal(secondBody.getAttribute('aria-busy'), 'false', 'the busy state does not outlive the panel');
+    second.calls[1].answer.resolve(success);
+    await flush();
+    assert.equal(secondBody.querySelectorAll('.ytkit-transcript-line').length, 0, 'the late answer lands nowhere after disable');
 });
