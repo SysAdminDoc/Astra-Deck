@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.101.1] (2026-10-27)
+
 ### Fixed
 
 - On YouTube's newer watch page, where comments open in a panel beside the video, Studio Comments, Comment Search and the Comment Filter now work inside that panel. They used to look only under the video, where that page hides the comments.
