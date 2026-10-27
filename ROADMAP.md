@@ -119,21 +119,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Report asynchronous feature initialization only after it settles
-  Why: rejected initialization is currently marked healthy and becomes an unhandled rejection.
-  Evidence: Verified VM of `initFeatureLifecycle` at `extension/ytkit.js:6545`; an async
-  rejection returned true, set `_initialized`, and yielded healthy status in
-  `extension/core/feature-health.js:230`. Separately, Verified source shows `start` at
-  `extension/core/feature-lifecycle.js:114` sets `record.started` without observing promises.
-  Touches: `extension/core/feature-lifecycle.js`, `feature-health.js`, lifecycle wrappers
-  and callers in `extension/ytkit.js`, lifecycle and health tests.
-  Acceptance: define starting/success/failure for sync and promise-returning initializers,
-  observe rejection, and bind completion to a generation. Rejecting or resolving old work
-  after destroy cannot reactivate a feature or overwrite a newer attempt. Clean owned
-  resources on failure. Audit callers that assume an immediate boolean return, and test
-  real wrapper behavior with deferred resolution/rejection and zero unhandled rejections.
-  Complexity: M
-
 - [ ] P1 — Give overlapping presets deterministic per-setting ownership
   Why: disabling Privacy can undo active Focus, and later Focus rollback resurrects stale
   values or discards an explicit edit. New visual presets must not inherit this behavior.
