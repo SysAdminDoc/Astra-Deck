@@ -720,3 +720,48 @@ test('anti-adblock status calls that resolve after destroy() leave no timer or c
         global.document = priorDocument;
     }
 });
+
+test('a second init() without destroy() does not stack intervals, listeners or observers', () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const active = new Map();
+    const fakeDocument = {
+        addEventListener: (type, fn) => active.set(fn, type),
+        removeEventListener: (type, fn) => active.delete(fn)
+    };
+    let liveObservers = 0;
+    class FakeObserver {
+        constructor() { this.on = false; }
+        observe() { if (!this.on) { this.on = true; liveObservers++; } }
+        disconnect() { if (this.on) { this.on = false; liveObservers--; } }
+    }
+    const intervals = new Set();
+    const realSet = global.setInterval;
+    const realClear = global.clearInterval;
+    const priorDocument = global.document;
+    const priorObserver = global.MutationObserver;
+    const feature = createSponsorBlockFeature({ getMoviePlayerElement: () => ({}) });
+    feature._checkAntiAdblock = () => null;
+    feature._refreshZeroAdStatus = async () => null;
+    try {
+        global.document = fakeDocument;
+        global.MutationObserver = FakeObserver;
+        global.setInterval = () => { const h = {}; intervals.add(h); return h; };
+        global.clearInterval = (h) => intervals.delete(h);
+        feature.init();
+        const baseline = { listeners: active.size, intervals: intervals.size, observers: liveObservers };
+        assert.ok(baseline.listeners >= 5 && baseline.intervals === 1 && baseline.observers === 1);
+        feature.init();
+        assert.equal(active.size, baseline.listeners, 'document listeners must not stack');
+        assert.equal(intervals.size, baseline.intervals, 'the 30 s interval must not stack');
+        assert.equal(liveObservers, baseline.observers, 'only one bar observer stays connected');
+        feature.destroy();
+        assert.equal(active.size, 0, 'destroy removes every listener');
+        assert.equal(intervals.size, 0);
+        assert.equal(liveObservers, 0);
+    } finally {
+        global.setInterval = realSet;
+        global.clearInterval = realClear;
+        global.document = priorDocument;
+        global.MutationObserver = priorObserver;
+    }
+});

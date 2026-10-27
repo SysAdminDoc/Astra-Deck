@@ -197,6 +197,7 @@
             // Bumped on destroy() so any in-flight _fetchSegments cannot
             // repopulate _segments/DOM after the feature was torn down.
             _generation: 0,
+            _initialized: false,
 
             _CATEGORY_MAP: {
                 sbCat_sponsor: 'sponsor',
@@ -956,6 +957,11 @@
 
             init() {
                 const self = this;
+                // A second init without destroy() would stack a second
+                // interval, a second set of document listeners (overwriting
+                // the handler refs destroy() removes) and a second observer.
+                if (this._initialized) this.destroy();
+                this._initialized = true;
                 this._styleEl = injectStyle(`
                     .ytkit-sb-segment { border-radius: 0; }
                     .ytkit-anti-adblock-recovery {
@@ -1151,6 +1157,7 @@
                 // cannot re-render segments onto the progress bar after the
                 // feature has been disabled.
                 this._generation = (this._generation + 1) | 0;
+                this._initialized = false;
                 clearInterval(this._antiAdblockTimer);
                 this._antiAdblockTimer = null;
                 clearTimeout(this._antiAdblockVerifyTimer);
