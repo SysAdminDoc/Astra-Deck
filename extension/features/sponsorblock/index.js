@@ -744,11 +744,16 @@
             },
 
             async _refreshZeroAdStatus() {
+                // destroy() bumps _generation; a status that lands afterwards
+                // must not arm the deadline timer or re-create the notice.
+                const gen = this._generation;
                 try {
                     const status = await getZeroAdStatus();
+                    if (gen !== this._generation) return this._zeroAdStatus;
                     if (!status?.ok) throw new Error(status?.error || 'Status unavailable');
                     this._zeroAdStatus = status;
                 } catch (error) {
+                    if (gen !== this._generation) return this._zeroAdStatus;
                     this._zeroAdStatus = {
                         ok: false,
                         enabled: true,
@@ -767,8 +772,10 @@
                 this._antiAdblockBusy = true;
                 this._antiAdblockActionError = '';
                 this._renderAntiAdblockNotice();
+                const gen = this._generation;
                 try {
                     const status = await pauseZeroAdRules();
+                    if (gen !== this._generation) return;
                     if (!status?.ok || !status.paused || !status.pauseUntil) {
                         throw new Error(status?.error || 'Astra ad blocking could not be paused.');
                     }
@@ -779,11 +786,12 @@
                     announceA11y(t('antiAdblockPausedUntilTpl', 'Astra ad blocking is paused until {time}.')
                         .replace('{time}', deadline));
                 } catch (error) {
+                    if (gen !== this._generation) return;
                     this._antiAdblockActionError = error?.message || 'Astra ad blocking could not be paused.';
                     DiagnosticLog?.record?.('sb-anti-adblock', `recovery failed: ${this._antiAdblockActionError}`);
                 } finally {
                     this._antiAdblockBusy = false;
-                    this._renderAntiAdblockNotice();
+                    if (gen === this._generation) this._renderAntiAdblockNotice();
                 }
             },
 
@@ -792,8 +800,10 @@
                 this._antiAdblockBusy = true;
                 this._antiAdblockActionError = '';
                 this._renderAntiAdblockNotice();
+                const gen = this._generation;
                 try {
                     const status = await resumeZeroAdRules();
+                    if (gen !== this._generation) return;
                     if (!status?.ok || status.enabled !== true) {
                         throw new Error(status?.error || 'Astra ad blocking could not be resumed.');
                     }
@@ -802,11 +812,12 @@
                     DiagnosticLog?.record?.('sb-anti-adblock', 'user resumed Astra ad rules');
                     announceA11y(t('antiAdblockResumed', 'Astra ad blocking resumed.'));
                 } catch (error) {
+                    if (gen !== this._generation) return;
                     this._antiAdblockActionError = error?.message || 'Astra ad blocking could not be resumed.';
                     DiagnosticLog?.record?.('sb-anti-adblock', `resume failed: ${this._antiAdblockActionError}`);
                 } finally {
                     this._antiAdblockBusy = false;
-                    this._renderAntiAdblockNotice();
+                    if (gen === this._generation) this._renderAntiAdblockNotice();
                 }
             },
 

@@ -656,3 +656,67 @@ test('per-channel profiles resolve the same canonical key the chip writes', () =
     assert.doesNotMatch(reader, /return handleLink\.getAttribute\('href'\)/,
         'the reader must not return a raw handle href');
 });
+
+// ── async anti-adblock status calls must respect destroy() ──
+// getZeroAdStatus / pauseZeroAdRules / resumeZeroAdRules resolve whenever the
+// background worker answers. A feature toggled off in between used to arm the
+// deadline timer and re-append the recovery card on a torn-down feature.
+function makeNoticeDocument() {
+    class Element {
+        constructor(tag) {
+            this.tagName = tag.toUpperCase();
+            this.children = [];
+            this.dataset = {};
+            this.isConnected = false;
+        }
+        appendChild(child) {
+            child.parentNode = this;
+            child.isConnected = this.isConnected;
+            this.children.push(child);
+            return child;
+        }
+        replaceChildren() { this.children = []; }
+        setAttribute() {}
+        addEventListener() {}
+        remove() {
+            this.isConnected = false;
+            if (this.parentNode) this.parentNode.children = this.parentNode.children.filter((c) => c !== this);
+        }
+    }
+    const body = new Element('body');
+    body.isConnected = true;
+    return { body, documentElement: body, createElement: (tag) => new Element(tag) };
+}
+
+test('anti-adblock status calls that resolve after destroy() leave no timer or card behind', async () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const pausedStatus = () => ({ ok: true, enabled: false, paused: true, pauseUntil: Date.now() + 15 * 60 * 1000 });
+    const gates = {};
+    const deferred = (name) => () => new Promise((resolve) => { gates[name] = resolve; });
+    const feature = createSponsorBlockFeature({
+        getZeroAdStatus: deferred('status'),
+        pauseZeroAdRules: deferred('pause'),
+        resumeZeroAdRules: deferred('resume')
+    });
+    const fakeDocument = makeNoticeDocument();
+    const priorDocument = global.document;
+    try {
+        global.document = fakeDocument;
+        for (const [name, call] of [
+            ['status', () => feature._refreshZeroAdStatus()],
+            ['pause', () => feature._pauseZeroAdRules()],
+            ['resume', () => feature._resumeZeroAdRules()]
+        ]) {
+            const pending = call();
+            feature.destroy();
+            gates[name](pausedStatus());
+            await pending;
+            assert.equal(feature._antiAdblockDeadlineTimer, null, `${name}: no deadline timer after destroy`);
+            assert.equal(fakeDocument.body.children.length, 0, `${name}: no recovery card after destroy`);
+            assert.equal(feature._antiAdblockBusy, false, `${name}: busy flag is released`);
+        }
+    } finally {
+        clearTimeout(feature._antiAdblockDeadlineTimer);
+        global.document = priorDocument;
+    }
+});
