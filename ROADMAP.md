@@ -119,22 +119,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Give overlapping presets deterministic per-setting ownership
-  Why: disabling Privacy can undo active Focus, and later Focus rollback resurrects stale
-  values or discards an explicit edit. New visual presets must not inherit this behavior.
-  Evidence: Verified real-method VM with state-commit and persistence dependencies stubbed,
-  using Privacy and Focus at
-  `extension/ytkit.js:39153` and `:39263`; `hasRelevantSettingsChange` at `:6603` misses
-  shared-key restoration. Reproduction and limits are in `RESEARCH.md` preset ownership.
-  Touches: preset methods and backup helpers in `extension/ytkit.js`, relevant-settings
-  dependencies, storage/import compatibility, preset and cross-tab tests.
-  Acceptance: define per-key recipe layers with explicit edits taking priority. From
-  Shorts removal and infinite-scroll blocking off, enable Privacy then Focus, explicitly
-  disable infinite-scroll blocking, and disable the presets in both orders. A remaining
-  recipe keeps its owned values; removing all restores baseline except explicit edits.
-  Reload, import and cross-tab echoes preserve that contract and existing setting keys.
-  Complexity: M
-
 - [ ] P1 — Isolate private-session history, feed consumption and credential requests
   Why: automatic records lack a private-context fence, and a spanning worker can use its
   own regular credentials for a private sender. End-to-end leakage is not yet reproduced.
