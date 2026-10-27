@@ -759,6 +759,26 @@ test('a lookup that answers after its card was recycled paints nothing on the ne
         waiting.shift()(branding(33));
         await late;
         assert.ok(!removed.img.classList.contains('da-replaced-thumb'), 'a card YouTube removed is never painted');
+
+        // YouTube swaps the link before Astra's reset pass retags the card, and
+        // a tag can change while the link is still the old one. Either alone stops it.
+        for (const [label, retarget] of [
+            ['link', (c) => { c.linkId = 'xyz789GHI01'; }],
+            ['tag', (c) => { c.card.dataset.daVideoId = 'xyz789GHI01'; }]
+        ]) {
+            const reused = lockupCard({ videoId: 'abc123DEF45' });
+            reused.linkId = 'abc123DEF45';
+            const base = reused.card.querySelector;
+            reused.card.querySelector = (selector) => (selector !== thumbSelectors && selector.includes('/watch')
+                ? { href: `https://www.youtube.com/watch?v=${reused.linkId}` }
+                : base(selector));
+            reused.card.dataset.daVideoId = 'abc123DEF45';
+            const pending = feature._applyCard(reused.card, 'abc123DEF45', feature._generation, feature._routeToken);
+            retarget(reused);
+            waiting.shift()(branding(44));
+            await pending;
+            assert.ok(!reused.img.classList.contains('da-replaced-thumb'), `a changed ${label} alone keeps A off the card`);
+        }
     });
 });
 
