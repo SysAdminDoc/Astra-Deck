@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "Größe der Theater-Split-Bereiche ändern"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "Breite der Seitenleiste"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "Seitenleiste breiter"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "Seitenleiste schmaler"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Zu den Abos"
   },

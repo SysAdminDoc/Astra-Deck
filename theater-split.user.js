@@ -1489,7 +1489,7 @@
             body.ts-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer :is(#count, yt-formatted-string.count-text) { font-size: 16px !important; }
         }
         @media (prefers-reduced-motion: reduce) {
-            body.ts-active :is(#ts-divider, #ts-divider::before, #ts-divider .ts-divider-pip, #ts-close, #ts-collapse-strip::after, .ts-replay-tab),
+            body.ts-active :is(#ts-divider, #ts-divider::before, #ts-divider .ts-divider-pip, #ts-close, .ts-width-btn, #ts-collapse-strip::after, .ts-replay-tab),
             body.ts-active #below.ytkit-split-scroll-surface :is(button, tp-yt-paper-button, a, #description, #placeholder-area, #action-menu, .yt-spec-button-shape-next, .ytSpecButtonShapeNextHost) {
                 transition: none !important;
                 transform: none !important;
@@ -1500,7 +1500,8 @@
             body.ts-active #ts-divider::before { background: CanvasText !important; }
             body.ts-active #ts-divider .ts-divider-pip { border-color: ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
             body.ts-active #ts-divider:is(:hover, :focus-visible) .ts-divider-pip { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
-            body.ts-active #ts-close { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+            body.ts-active :is(#ts-close, .ts-width-btn) { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+            body.ts-active .ts-width-btn:disabled { border-color: GrayText !important; color: GrayText !important; }
             body.ts-active #ts-replay-tabs { border-color: CanvasText !important; background: Canvas !important; }
             body.ts-active #ts-replay-tabs .ts-replay-tab { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
             body.ts-active #ts-replay-tabs .ts-replay-tab[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
@@ -1511,7 +1512,7 @@
                 color: ButtonText !important;
             }
             body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost)[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
-            body.ts-active :is(#ts-close, #ts-divider .ts-divider-pip):focus-visible,
+            body.ts-active :is(#ts-close, .ts-width-btn, #ts-divider .ts-divider-pip):focus-visible,
             body.ts-active #below.ytkit-split-scroll-surface :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost, .ytkit-local-dl-btn, .ytkit-trigger-btn, a, tp-yt-paper-button):focus-visible { outline: 2px solid Highlight !important; }
             body.ts-active #below.ytkit-split-scroll-surface { border-inline-start: 1px solid CanvasText !important; }
         }

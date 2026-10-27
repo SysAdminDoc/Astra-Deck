@@ -11,6 +11,11 @@
 
     const DIVIDER_WIDTH_PX = 20;
     const DIVIDER_DRAG_THRESHOLD_PX = 4;
+    // The video pane's share of the width, in percent, and how far one click
+    // on a width button moves it.
+    const DIVIDER_MIN_PCT = 25;
+    const DIVIDER_MAX_PCT = 85;
+    const DIVIDER_CLICK_STEP_PCT = 5;
 
     const SPLIT_POSITIONED_STYLE_PROPERTIES = Object.freeze([
         'position', 'top', 'right', 'width', 'max-width', 'height', 'margin',
@@ -367,6 +372,35 @@
                 closeBtn.onclick = () => this._collapseSplit(true);
                 left.appendChild(closeBtn);
 
+                // Click alternative to dragging the divider (WCAG 2.5.7). The
+                // arrows point the way the divider moves. Shown only while the
+                // split is open, by the html.ytkit-split-open stylesheet rule.
+                const widthGroup = document.createElement('div');
+                widthGroup.id = 'ytkit-split-width';
+                widthGroup.setAttribute('role', 'group');
+                widthGroup.setAttribute('aria-label', t('stickyVideoPanelWidthGroup', 'Side panel width'));
+                const widthButton = (step, label, points) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'ytkit-split-width-btn';
+                    btn.dataset.ytkitWidthStep = String(step);
+                    btn.title = label;
+                    btn.setAttribute('aria-label', label);
+                    const svg = document.createElementNS(svgNS, 'svg');
+                    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '13'); svg.setAttribute('height', '13');
+                    svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2.5');
+                    svg.setAttribute('aria-hidden', 'true');
+                    const line = document.createElementNS(svgNS, 'polyline');
+                    line.setAttribute('points', points);
+                    svg.appendChild(line);
+                    btn.appendChild(svg);
+                    btn.addEventListener('click', () => this._stepDividerRatio(step));
+                    widthGroup.appendChild(btn);
+                };
+                widthButton(-DIVIDER_CLICK_STEP_PCT, t('stickyVideoWiderPanel', 'Wider side panel'), '15 6 9 12 15 18');
+                widthButton(DIVIDER_CLICK_STEP_PCT, t('stickyVideoNarrowerPanel', 'Narrower side panel'), '9 6 15 12 9 18');
+                left.appendChild(widthGroup);
+
                 wrapper.appendChild(left);
                 wrapper.appendChild(divider);
                 wrapper.appendChild(right);
@@ -393,6 +427,29 @@
                     else delete pip.dataset.ytkitHint;
                 }
                 divider.toggleAttribute('aria-hidden', !visible);
+                // A width button at its bound would do nothing, so it says so.
+                const pct = Math.round(open ? leftPct : 100);
+                this._splitWrapper?.querySelectorAll?.('.ytkit-split-width-btn').forEach((btn) => {
+                    const step = Number(btn.dataset.ytkitWidthStep);
+                    btn.disabled = !open || (step < 0 ? pct <= DIVIDER_MIN_PCT : pct >= DIVIDER_MAX_PCT);
+                });
+            },
+
+            _stepDividerRatio(step) {
+                if (!this._isActive || this._dismissed || !this._isSplit) return false;
+                const wrapper = this._splitWrapper;
+                const left = wrapper?.querySelector('#ytkit-split-left');
+                const right = wrapper?.querySelector('#ytkit-split-right');
+                const divider = wrapper?.querySelector('#ytkit-split-divider');
+                if (!left || !right || !divider) return false;
+                const current = Number(divider.getAttribute('aria-valuenow')) || 68;
+                const next = Math.max(DIVIDER_MIN_PCT, Math.min(DIVIDER_MAX_PCT, current + step));
+                if (next === current) return false;
+                this._applyDividerRatio(left, right, next);
+                divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+                divider.style.width = `${DIVIDER_WIDTH_PX}px`;
+                this._triggerPlayerResize();
+                return true;
             },
 
             _toggleSplitFromDivider() {

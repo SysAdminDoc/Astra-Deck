@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "Изменить размер панелей разделённого режима кинотеатра"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "Ширина боковой панели"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "Расширить боковую панель"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "Сузить боковую панель"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Перейти к подпискам"
   },

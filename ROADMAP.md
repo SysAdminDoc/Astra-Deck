@@ -147,21 +147,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   runs with `stickyVideo` on, and closing the split puts the panel back in `#secondary`.
   Complexity: M
 
-- [ ] P2 — Add a click-only pointer alternative for Theater Split width changes
-  Why: pointer users must drag to resize; existing keyboard support alone does not meet
-  WCAG 2.5.7's alternative requirement.
-  Evidence: `extension/features/sticky-video/index.js:407-451` handles arrow keys and collapse,
-  while width changes by pointer require mouse/touch movement;
-  https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html.
-  Touches: compact split controls in `sticky-video-header/index.js`, divider controller in
-  `sticky-video/index.js`, existing ratio storage, 11 locales and split/a11y tests.
-  Acceptance: provide a contextual click-track range or narrower/wider buttons using
-  `_applyDividerRatio` and its 25%-85% bounds. Width changes with single clicks/taps, persists,
-  and updates the divider's accessible value. Dragging, click-to-collapse and reopening still
-  work. Verify dark/light, narrow panes and teardown without a new global hotkey or banner.
-  Do not treat the rail width alone as a target-size failure; its pseudo-element extends it.
-  Complexity: M
-
 - [ ] P2 — Keep the Watch Feed Add action reachable in Theater Split
   Why: the enabled native watch button is hidden with `#actions` while Split is open.
   Evidence: Verified live zero-geometry Add button in Split; disabling `stickyVideo` exposes

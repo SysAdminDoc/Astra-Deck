@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "تغيير حجم لوحتي تقسيم وضع المسرح"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "عرض اللوحة الجانبية"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "توسيع اللوحة الجانبية"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "تضييق اللوحة الجانبية"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "الانتقال إلى الاشتراكات"
   },

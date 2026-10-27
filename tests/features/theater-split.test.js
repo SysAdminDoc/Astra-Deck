@@ -210,6 +210,94 @@ test('Theater Split renders its divider and close action into the overlay it own
     }
 });
 
+test('Theater Split width buttons resize by single clicks inside the divider bounds', () => {
+    // WCAG 2.5.7: dragging the divider was the only pointer way to resize.
+    const { mod, styles } = loadModule();
+    const documentRef = fakeTreeDocument();
+    const player = documentRef.createElement('div');
+    const below = documentRef.createElement('div');
+    documentRef.body.append(player, below);
+    const writes = [];
+    const saved = {
+        document: globalThis.document,
+        window: globalThis.window,
+        ResizeObserver: globalThis.ResizeObserver,
+        requestAnimationFrame: globalThis.requestAnimationFrame
+    };
+    globalThis.document = documentRef;
+    globalThis.window = { innerWidth: 1440, addEventListener() {}, removeEventListener() {}, scrollTo() {} };
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+    globalThis.requestAnimationFrame = (callback) => { callback(); return 1; };
+    try {
+        const feature = mod.createStickyVideoFeature({ storageWrite: (key, value) => writes.push([key, value]) });
+        let resizes = 0;
+        feature._triggerPlayerResize = () => { resizes += 1; };
+        feature._getPlayer = () => player;
+        feature._getBelow = () => below;
+        feature._getChatEl = () => null;
+        feature._videoType = 'live';
+        feature._mountOverlay();
+        const overlay = feature._splitWrapper;
+        const divider = overlay.querySelector('#ytkit-split-divider');
+        const group = overlay.querySelector('#ytkit-split-width');
+        assert.ok(group, 'the width controls render into the overlay');
+        assert.equal(group.getAttribute('role'), 'group');
+        assert.equal(group.getAttribute('aria-label'), 'Side panel width');
+        const [wider, narrower] = group.querySelectorAll('.ytkit-split-width-btn');
+        assert.equal(wider.tagName, 'BUTTON');
+        assert.equal(wider.getAttribute('aria-label'), 'Wider side panel');
+        assert.equal(narrower.getAttribute('aria-label'), 'Narrower side panel');
+        const click = (btn) => btn.dispatchEvent({ type: 'click', detail: 1 });
+
+        feature._isSplit = true;
+        feature._setDividerPanelState(divider, true, 68, true);
+        assert.equal(wider.disabled, false);
+        assert.equal(narrower.disabled, false);
+        click(wider);
+        assert.equal(divider.getAttribute('aria-valuenow'), '63', 'one click widens the side panel by a step');
+        assert.deepEqual(writes.at(-1), ['ytkit_split_ratio', 63], 'the new width persists');
+        assert.equal(resizes, 1, 'the player is told to resize');
+        click(narrower);
+        click(narrower);
+        assert.equal(divider.getAttribute('aria-valuenow'), '73');
+
+        feature._setDividerPanelState(divider, true, 27, true);
+        click(wider);
+        assert.equal(divider.getAttribute('aria-valuenow'), '25', 'the step clamps to the 25% bound');
+        assert.equal(wider.disabled, true, 'a button at its bound is disabled');
+        const atBound = writes.length;
+        click(wider);
+        assert.equal(writes.length, atBound, 'pressing past the bound writes nothing');
+
+        feature._setDividerPanelState(divider, true, 83, true);
+        click(narrower);
+        assert.equal(divider.getAttribute('aria-valuenow'), '85', 'the step clamps to the 85% bound');
+        assert.equal(narrower.disabled, true);
+        assert.equal(wider.disabled, false);
+
+        feature._isSplit = false;
+        feature._setDividerPanelState(divider, false, 100, true);
+        assert.equal(wider.disabled, true, 'a collapsed split has no width to change');
+        const collapsed = writes.length;
+        click(narrower);
+        assert.equal(writes.length, collapsed);
+
+        const css = styles.buildSplitShellCss();
+        assert.match(css, /html\.ytkit-split-active #ytkit-split-width \{[^}]*display: none !important;/,
+            'the controls stay out of the way while the split is closed');
+        assert.match(css, /html\.ytkit-split-active\.ytkit-split-open #ytkit-split-width \{ display: flex !important; \}/);
+        assert.match(css, /\.ytkit-split-width-btn:focus-visible \{[^}]*outline: 2px solid/);
+
+        feature._unmount();
+        assert.equal(documentRef.contains(group), false, 'teardown takes the width controls with the overlay');
+    } finally {
+        globalThis.document = saved.document;
+        globalThis.window = saved.window;
+        globalThis.ResizeObserver = saved.ResizeObserver;
+        globalThis.requestAnimationFrame = saved.requestAnimationFrame;
+    }
+});
+
 test('Theater Split divider separates a click toggle from a drag resize', () => {
     const { mod } = loadModule();
     const documentRef = fakeTreeDocument();

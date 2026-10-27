@@ -274,6 +274,44 @@ ${ROOT} #ytkit-split-close:focus-visible {
     outline-offset: 2px !important;
 }
 
+${ROOT} #ytkit-split-width {
+    position: absolute !important;
+    top: 16px !important;
+    left: 60px !important;
+    z-index: 35 !important;
+    display: none !important;
+    gap: 6px !important;
+    pointer-events: auto !important;
+}
+${ROOT}.ytkit-split-open #ytkit-split-width { display: flex !important; }
+${ROOT} .ytkit-split-width-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: var(--ytkit-split-radius) !important;
+    background: var(--ytkit-split-scrim) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32) !important;
+    cursor: pointer !important;
+    transition: background-color 160ms var(--ytkit-split-ease), border-color 160ms var(--ytkit-split-ease), transform 160ms var(--ytkit-split-ease), opacity 200ms ease !important;
+}
+${ROOT} .ytkit-split-width-btn svg { width: 16px !important; height: 16px !important; }
+${ROOT} .ytkit-split-width-btn:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(24, 24, 28, 0.86) !important;
+    transform: translateY(-1px) !important;
+}
+${ROOT} .ytkit-split-width-btn:active:not(:disabled) { transform: translateY(0) scale(0.96) !important; }
+${ROOT} .ytkit-split-width-btn:disabled { opacity: 0.4 !important; cursor: default !important; }
+${ROOT} .ytkit-split-width-btn:focus-visible {
+    outline: 2px solid var(--ytkit-split-accent) !important;
+    outline-offset: 2px !important;
+}
+
 ${ROOT} #ytkit-split-collapse-strip {
     position: fixed !important;
     top: 0 !important;
@@ -1488,7 +1526,7 @@ ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-re
 }
 
 @media (prefers-reduced-motion: reduce) {
-    ${ROOT} :is(#ytkit-split-divider, #ytkit-split-divider::before, #ytkit-split-divider .ytkit-divider-pip, #ytkit-split-close, #ytkit-split-collapse-strip::after, .ytkit-split-replay-tab),
+    ${ROOT} :is(#ytkit-split-divider, #ytkit-split-divider::before, #ytkit-split-divider .ytkit-divider-pip, #ytkit-split-close, .ytkit-split-width-btn, #ytkit-split-collapse-strip::after, .ytkit-split-replay-tab),
     ${PANE} :is(button, tp-yt-paper-button, a, #description, #placeholder-area, #action-menu, ${BUTTON_CLASSES}) {
         transition: none !important;
         transform: none !important;
@@ -1500,7 +1538,8 @@ ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-re
     ${ROOT} #ytkit-split-divider::before { background: CanvasText !important; }
     ${ROOT} #ytkit-split-divider .ytkit-divider-pip { border-color: ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
     ${ROOT} #ytkit-split-divider:is(:hover, :focus-visible) .ytkit-divider-pip { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
-    ${ROOT} #ytkit-split-close { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+    ${ROOT} :is(#ytkit-split-close, .ytkit-split-width-btn) { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
+    ${ROOT} .ytkit-split-width-btn:disabled { border-color: GrayText !important; color: GrayText !important; }
     ${ROOT} #ytkit-split-replay-tabs { border-color: CanvasText !important; background: Canvas !important; }
     ${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab { border: 1px solid ButtonText !important; background: ButtonFace !important; color: ButtonText !important; }
     ${ROOT} #ytkit-split-replay-tabs .ytkit-split-replay-tab[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
@@ -1511,7 +1550,7 @@ ${PANE} :is(ytd-comment-replies-renderer, ytd-comments) ytd-continuation-item-re
         color: ButtonText !important;
     }
     ${PANE} ${BUTTON}[aria-pressed="true"] { border-color: Highlight !important; background: Highlight !important; color: HighlightText !important; }
-    ${ROOT} :is(#ytkit-split-close, #ytkit-split-divider .ytkit-divider-pip):focus-visible,
+    ${ROOT} :is(#ytkit-split-close, .ytkit-split-width-btn, #ytkit-split-divider .ytkit-divider-pip):focus-visible,
     ${PANE} :is(${BUTTON_CLASSES}, .ytkit-local-dl-btn, .ytkit-trigger-btn, a, tp-yt-paper-button):focus-visible { outline: 2px solid Highlight !important; }
     ${PANE} { border-inline-start: 1px solid CanvasText !important; }
 }

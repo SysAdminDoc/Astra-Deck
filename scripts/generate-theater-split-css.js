@@ -32,7 +32,9 @@ const DROPPED_SELECTORS = Object.freeze([
     /#player-container/, /#movie_player/, /\.html5-video-container/, /video\.html5-main-video/,
     /ytd-player > #container/, /:is\(#secondary, #below, #player-full-bleed-container/,
     /:is\(#ytkit-split-wrapper, #ytkit-split-left\)/,
-    /ytd-watch-flexy\.loading ytd-live-chat-frame#chat/
+    /ytd-watch-flexy\.loading ytd-live-chat-frame#chat/,
+    // The click-to-resize buttons are extension-only.
+    /#ytkit-split-width/, /^\s*html\.ytkit-split-active \.ytkit-split-width-btn/
 ]);
 
 const RENAMES = Object.freeze([
@@ -45,6 +47,7 @@ const RENAMES = Object.freeze([
     ['#ytkit-split-divider', '#ts-divider'],
     ['.ytkit-divider-pip', '.ts-divider-pip'],
     ['#ytkit-split-close', '#ts-close'],
+    ['.ytkit-split-width-btn', '.ts-width-btn'],
     ['#ytkit-split-collapse-strip', '#ts-collapse-strip'],
     ['#ytkit-split-replay-tabs', '#ts-replay-tabs'],
     ['.ytkit-split-replay-track', '.ts-replay-track'],

@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "调整影院模式分屏面板的大小"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "侧边面板宽度"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "加宽侧边面板"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "缩窄侧边面板"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "前往订阅"
   },

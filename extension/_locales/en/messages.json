@@ -6897,6 +6897,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "Resize Theater Split panels"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "Side panel width"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "Wider side panel"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "Narrower side panel"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Go to subscriptions"
   },

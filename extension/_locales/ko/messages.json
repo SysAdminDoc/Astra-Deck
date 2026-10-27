@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "시어터 분할 패널 크기 조절"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "사이드 패널 너비"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "사이드 패널 넓히기"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "사이드 패널 좁히기"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "구독으로 이동"
   },

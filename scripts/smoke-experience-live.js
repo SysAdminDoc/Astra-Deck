@@ -294,6 +294,31 @@ async function run(client, background) {
         }
         await theme(true);
     });
+    await check('width buttons resize the split with single clicks', async () => {
+        const WIDER = '#ytkit-split-width .ytkit-split-width-btn[data-ytkit-width-step="-5"]';
+        const NARROWER = '#ytkit-split-width .ytkit-split-width-btn[data-ytkit-width-step="5"]';
+        const stored = () => evaluate(background, "new Promise(resolve => chrome.storage.local.get('ytkit_split_ratio', r => resolve(r.ytkit_split_ratio)))");
+        const start = (await split()).ratio;
+        await click(WIDER, 400);
+        assert.equal((await split()).ratio, start - 5, 'one click widens the side panel');
+        assert.equal(Number(await stored()), start - 5, 'the width persists');
+        await click(NARROWER, 400); await click(NARROWER, 400);
+        const wider = (await split()).ratio;
+        assert.equal(wider, start + 5);
+        for (const dark of [true, false]) {
+            await theme(dark);
+            assert.equal(await read(`getComputedStyle(document.querySelector('${WIDER}')).display`), 'flex');
+            await capture(`theater-width-buttons-${dark ? 'dark' : 'light'}`);
+        }
+        await theme(true);
+        await click('#ytkit-split-divider', 500);
+        assert.equal(await read(OPEN), false, 'a divider click still collapses the comments');
+        assert.equal(await read("getComputedStyle(document.querySelector('#ytkit-split-width')).display"), 'none', 'no width buttons while collapsed');
+        await click('#ytkit-split-divider', 500);
+        await until(OPEN, 'divider click reopens the comments');
+        assert.equal((await split()).ratio, wider, 'reopening keeps the clicked width');
+        return { start, wider };
+    });
     await check('close action, watch navigation and teardown', async () => {
         await click('#ytkit-split-close'); assert.equal(await read(OPEN), false);
         await wheel(400,350,160); assert.equal(await read(OPEN), false);

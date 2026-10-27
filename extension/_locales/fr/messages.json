@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "Redimensionner les panneaux du Mode cinéma divisé"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "Largeur du panneau latéral"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "Élargir le panneau latéral"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "Rétrécir le panneau latéral"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Accéder aux abonnements"
   },

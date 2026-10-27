@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "シアター分割パネルのサイズを変更"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "サイドパネルの幅"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "サイドパネルを広くする"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "サイドパネルを狭くする"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "登録チャンネルに移動"
   },

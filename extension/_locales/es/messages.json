@@ -6852,6 +6852,15 @@
   "stickyVideoResizePanelsLabel": {
     "message": "Cambiar el tamaño de los paneles de Modo cine dividido"
   },
+  "stickyVideoPanelWidthGroup": {
+    "message": "Ancho del panel lateral"
+  },
+  "stickyVideoWiderPanel": {
+    "message": "Panel lateral más ancho"
+  },
+  "stickyVideoNarrowerPanel": {
+    "message": "Panel lateral más estrecho"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Ir a suscripciones"
   },
