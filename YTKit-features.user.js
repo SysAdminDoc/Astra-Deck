@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.100.0
+// @version      4.100.1
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -17652,14 +17652,23 @@ function buildSettingsPanel() {
 			const getChannelModeLabel = () => isChannelAllowlistMode()
 				? t('videoHiderAllowedChannelsTab', 'Allowed Channels')
 				: t('videoHiderBlockedChannelsTab', 'Blocked Channels');
+			const readVideoList = (method, storageKey) => {
+				if (typeof videoHiderFeature?.[method] === 'function') return videoHiderFeature[method]() || [];
+				const stored = storageRead(storageKey, []);
+				return Array.isArray(stored) ? stored : [];
+			};
+			const getHiddenVideoList = () => readVideoList('_getHiddenVideos', STORAGE_KEYS.hiddenVideos);
+			const getAllowedVideoList = () => readVideoList('_getAllowedVideos', STORAGE_KEYS.allowedVideos);
+			const canEditVideoLists = () => typeof videoHiderFeature?._setHiddenVideos === 'function'
+				&& typeof videoHiderFeature?._setAllowedVideos === 'function';
 			function getVideoCount() {
-				return videoHiderFeature?._getHiddenVideos()?.length || 0;
+				return getHiddenVideoList().length;
 			}
 			function getChannelCount() {
 				return getManagedChannels().length;
 			}
 			function getAllowedCount() {
-				return videoHiderFeature?._getAllowedVideos()?.length || 0;
+				return getAllowedVideoList().length;
 			}
 			function getKeywordStatus() {
 				return (appState.settings.hideVideosKeywordFilter || '').trim()
@@ -17990,7 +17999,7 @@ function buildSettingsPanel() {
 				tabContent.setAttribute('aria-labelledby', `ytkit-vh-tab-${tab}`);
 				updateVideoHiderMeta();
 				if (tab === 'videos') {
-					const videos = videoHiderFeature?._getHiddenVideos() || [];
+					const videos = getHiddenVideoList();
 					const createHiddenEntryForm = () => createVideoIdEntryForm({
 						id: 'ytkit-vh-add-hidden',
 						title: t('videoHiderAddHiddenVideoTitle', 'Add Hidden Video'),
@@ -18085,8 +18094,9 @@ function buildSettingsPanel() {
 								'videoHiderRestoreHiddenVideoAriaTpl',
 								'Restore hidden video {videoId} and add an allowed-video exception'
 							).replace('{videoId}', vid));
+							removeBtn.disabled = !canEditVideoLists();
 							removeBtn.onclick = () => {
-								videoHiderFeature._unhideVideo?.(vid);
+								videoHiderFeature?._unhideVideo?.(vid);
 								renderTabContent('videos');
 							};
 							const deleteBtn = document.createElement('button');
@@ -18097,10 +18107,11 @@ function buildSettingsPanel() {
 								'videoHiderRemoveHiddenVideoAriaTpl',
 								'Remove hidden video {videoId} from the hidden list without adding an exception'
 							).replace('{videoId}', vid));
+							deleteBtn.disabled = !canEditVideoLists();
 							deleteBtn.onclick = () => {
-								const removed = videoHiderFeature._removeHiddenVideos?.([vid]) || [];
-								videoHiderFeature._restoreRemovedVideoNodes?.(new Set([vid]));
-								videoHiderFeature._processAllVideos?.();
+								const removed = videoHiderFeature?._removeHiddenVideos?.([vid]) || [];
+								videoHiderFeature?._restoreRemovedVideoNodes?.(new Set([vid]));
+								videoHiderFeature?._processAllVideos?.();
 								renderTabContent('videos');
 								updateVideoHiderMeta();
 								if (removed.length === 0) {
@@ -18108,8 +18119,8 @@ function buildSettingsPanel() {
 									return;
 								}
 								showToast(t('videoHiderRemovedHiddenVideoToast', 'Video removed from hidden list'), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
-									videoHiderFeature._addHiddenVideos?.(removed);
-									videoHiderFeature._processAllVideos?.();
+									videoHiderFeature?._addHiddenVideos?.(removed);
+									videoHiderFeature?._processAllVideos?.();
 									renderTabContent('videos');
 									updateVideoHiderMeta();
 									showToast(t('videoHiderHiddenListRestored', 'Hidden list restored'), '#22c55e');
@@ -18134,6 +18145,7 @@ function buildSettingsPanel() {
 							'videoHiderRestoreAllTpl',
 							'Restore & Allow All Hidden Videos ({count})'
 						).replace('{count}', videos.length);
+						clearBtn.disabled = !canEditVideoLists();
 						clearBtn.onclick = () => {
 							const backup = [...videoHiderFeature._getHiddenVideos()];
 							const allowedAdded = videoHiderFeature._addAllowedVideos?.(backup) || [];
@@ -18161,6 +18173,7 @@ function buildSettingsPanel() {
 							'videoHiderClearHiddenListTpl',
 							'Clear Hidden List Only ({count})'
 						).replace('{count}', videos.length);
+						clearListBtn.disabled = !canEditVideoLists();
 						clearListBtn.onclick = () => {
 							const backup = [...videoHiderFeature._getHiddenVideos()];
 							videoHiderFeature._setHiddenVideos([]);
@@ -18183,18 +18196,19 @@ function buildSettingsPanel() {
 						const removePageBtn = document.createElement('button');
 						removePageBtn.type = 'button';
 						removePageBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
+						removePageBtn.disabled = typeof videoHiderFeature?._removeHiddenVideosOnPage !== 'function';
 						removePageBtn.textContent = t(
 							'videoHiderRemovePage',
 							'Remove Hidden Videos On This Page'
 						);
 						removePageBtn.onclick = () => {
-							videoHiderFeature._removeHiddenVideosOnPage?.();
+							videoHiderFeature?._removeHiddenVideosOnPage?.();
 							updateVideoHiderMeta();
 						};
 						tabContent.appendChild(removePageBtn);
 					}
 				} else if (tab === 'allowed') {
-					const allowed = videoHiderFeature?._getAllowedVideos() || [];
+					const allowed = getAllowedVideoList();
 					const createAllowedEntryForm = () => createVideoIdEntryForm({
 						id: 'ytkit-vh-add-allowed',
 						title: t('videoHiderAddAllowedVideoTitle', 'Add Allowed Video'),
@@ -18294,9 +18308,10 @@ function buildSettingsPanel() {
 								'videoHiderRemoveAllowedVideoAriaTpl',
 								'Remove allowed-video exception for {videoId}'
 							).replace('{videoId}', vid));
+							removeBtn.disabled = !canEditVideoLists();
 							removeBtn.onclick = () => {
-								videoHiderFeature._removeAllowedVideos?.([vid]);
-								videoHiderFeature._processAllVideos?.();
+								videoHiderFeature?._removeAllowedVideos?.([vid]);
+								videoHiderFeature?._processAllVideos?.();
 								renderTabContent('allowed');
 							};
 							const hideAgainBtn = document.createElement('button');
@@ -18307,9 +18322,10 @@ function buildSettingsPanel() {
 								'videoHiderHideAllowedVideoAriaTpl',
 								'Hide allowed video {videoId} again'
 							).replace('{videoId}', vid));
+							hideAgainBtn.disabled = !canEditVideoLists();
 							hideAgainBtn.onclick = () => {
-								videoHiderFeature._addHiddenVideos?.([vid]);
-								videoHiderFeature._processAllVideos?.();
+								videoHiderFeature?._addHiddenVideos?.([vid]);
+								videoHiderFeature?._processAllVideos?.();
 								renderTabContent('allowed');
 								updateVideoHiderMeta();
 							};
@@ -18332,6 +18348,7 @@ function buildSettingsPanel() {
 							'videoHiderClearAllowedTpl',
 							'Clear Allowed Videos ({count})'
 						).replace('{count}', allowed.length);
+						clearBtn.disabled = !canEditVideoLists();
 						clearBtn.onclick = () => {
 							const backup = [...videoHiderFeature._getAllowedVideos()];
 							videoHiderFeature._setAllowedVideos([]);
@@ -18423,8 +18440,8 @@ function buildSettingsPanel() {
 								: t('videoHiderUnblockChannelAriaTpl', 'Unblock channel {channelName}').replace('{channelName}', () => ch.name || ch.id));
 							removeBtn.onclick = () => {
 								removeManagedChannel(ch);
-								videoHiderFeature._restoreRemovedVideoNodes?.();
-								videoHiderFeature._processAllVideos();
+								videoHiderFeature?._restoreRemovedVideoNodes?.();
+								videoHiderFeature?._processAllVideos?.();
 								renderTabContent('channels');
 								updateVideoHiderMeta();
 							};
@@ -18500,7 +18517,7 @@ function buildSettingsPanel() {
 						appState.settings.hideVideosKeywordFilter = textarea.value;
 						settingsManager.save(appState.settings);
 						videoHiderFeature?._restoreRemovedVideoNodes?.();
-						videoHiderFeature?._processAllVideos();
+						videoHiderFeature?._processAllVideos?.();
 						updateVideoHiderMeta();
 					};
 					field.appendChild(textarea);
@@ -18788,7 +18805,7 @@ function buildSettingsPanel() {
 						durInput.value = appState.settings.hideVideosDurationFilter;
 						settingsManager.save(appState.settings);
 						videoHiderFeature?._restoreRemovedVideoNodes?.();
-						videoHiderFeature?._processAllVideos();
+						videoHiderFeature?._processAllVideos?.();
 						updateVideoHiderMeta();
 					};
 					const durSuffix = document.createElement('span');
@@ -18906,8 +18923,8 @@ function buildSettingsPanel() {
 					);
 					const statsGrid = document.createElement('div');
 					statsGrid.className = 'ytkit-vh-stat-grid';
-					const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
-					const allowedCount = videoHiderFeature?._getAllowedVideos()?.length || 0;
+					const videoCount = getVideoCount();
+					const allowedCount = getAllowedCount();
 					const channelCount = getChannelCount();
 					[{ label: t('videoHiderHiddenVideosTab', 'Hidden Videos'), value: videoCount },
 						{ label: t('videoHiderAllowedVideosTab', 'Allowed Videos'), value: allowedCount },
@@ -24453,9 +24470,16 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				if (gen !== this._generation || route !== this._routeToken) return;
 				await this._processWatchTitle(gen, route);
 			},
+			_cardStillShows(el, videoId, gen, route) {
+				return gen === this._generation
+					&& route === this._routeToken
+					&& el.isConnected !== false
+					&& el.dataset.daVideoId === videoId
+					&& this._cardVideoId(el) === videoId;
+			},
 			async _applyCard(el, videoId, gen, route) {
 				const branding = await this._fetchBranding(videoId);
-				if (!branding || gen !== this._generation || route !== this._routeToken) return;
+				if (!branding || !this._cardStillShows(el, videoId, gen, route)) return;
 				if (appState.settings.daReplaceTitles) {
 					const titleEl = el.querySelector(this._TITLE_SELECTORS);
 					if (titleEl) this._applyTitle(titleEl, branding);
@@ -24488,6 +24512,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 				titleEl.dataset.daProcessed = '1';
 				const branding = await this._fetchBranding(videoId);
 				if (!branding || gen !== this._generation || route !== this._routeToken) return;
+				if (getVideoId() !== videoId || titleEl.isConnected === false) return;
 				if (this._applyTitle(titleEl, branding, { announce: true })) this._syncDocumentTitle();
 			},
 			_syncDocumentTitle() {
@@ -24538,7 +24563,7 @@ __astraDeckRegistry["features/dearrow/index.js"] = function (globalThis, self, w
 					watcher.disconnect();
 					this._coverWatchers.delete(watcher);
 					delete img.dataset.daWaiting;
-					if (gen !== this._generation || route !== this._routeToken || el.dataset.daVideoId !== videoId) return;
+					if (!this._cardStillShows(el, videoId, gen, route)) return;
 					this._applyThumbnail(el, videoId, branding);
 				});
 				watcher.observe(img, { attributes: true, attributeFilter: ['src'] });

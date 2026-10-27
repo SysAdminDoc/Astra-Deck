@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.100.0
+// @version      4.100.1
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -742,7 +742,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.100.0';
+	const YTKIT_VERSION = '4.100.1';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -14340,8 +14340,11 @@ const STORAGE_KEYS = Object.freeze({
 			_lastPersist: 0,
 			_dirty: false,
 			_flushHandler: null,
+			_generation: 0,
+			_cancelReadyWait: null,
 			_scheduleRestore(delay = 2000) {
 				if (this._restoreTimer) clearTimeout(this._restoreTimer);
+				this._cancelReadyWait?.();
 				this._restoreTimer = setTimeout(() => {
 					this._restoreTimer = null;
 					void this._restore();
@@ -14402,6 +14405,7 @@ const STORAGE_KEYS = Object.freeze({
 				void this._save().catch(error => DebugManager.log('Resume', `Save failed: ${error.message}`));
 			},
 			async _restore() {
+				const generation = this._generation;
 				const vid = this._getVideoId();
 				if (!vid || !this._positions) return;
 				const saved = this._positions.get(vid);
@@ -14409,25 +14413,31 @@ const STORAGE_KEYS = Object.freeze({
 				const video = document.querySelector('video');
 				if (!video) return;
 				const waitForReady = () => new Promise(resolve => {
-					if (video.readyState >= 2) return resolve();
+					if (video.readyState >= 2) return resolve(true);
 					let timer = null;
-					const done = () => {
+					const finish = (ready) => {
 						if (timer) { clearTimeout(timer); timer = null; }
-						video.removeEventListener('loadeddata', done);
-						resolve();
+						video.removeEventListener('loadeddata', onLoaded);
+						if (this._cancelReadyWait === cancel) this._cancelReadyWait = null;
+						resolve(ready);
 					};
-					video.addEventListener('loadeddata', done, { once: true });
-					timer = setTimeout(done, 5000);
+					const onLoaded = () => finish(true);
+					const cancel = () => finish(false);
+					video.addEventListener('loadeddata', onLoaded, { once: true });
+					timer = setTimeout(onLoaded, 5000);
+					this._cancelReadyWait = cancel;
 				});
-				await waitForReady();
+				const ready = await waitForReady();
+				if (!ready || generation !== this._generation || this._getVideoId() !== vid) return;
 				if (Math.abs(video.currentTime - saved.time) > 5) {
 					video.currentTime = saved.time;
 					DebugManager.log('Resume', `Resumed at ${Math.floor(saved.time)}s`);
 				}
 			},
 			async init() {
+				const generation = ++this._generation;
 				await this._load();
-				if (!this._initialized) return;
+				if (!this._initialized || generation !== this._generation) return;
 				addNavigateRule('resumePlayback', () => {
 					this._scheduleRestore(2000);
 				});
@@ -14441,7 +14451,9 @@ const STORAGE_KEYS = Object.freeze({
 				this._scheduleRestore(2000);
 			},
 			destroy() {
+				this._generation++;
 				if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
+				this._cancelReadyWait?.();
 				if (this._flushHandler) {
 					window.removeEventListener('pagehide', this._flushHandler);
 					this._flushHandler = null;
