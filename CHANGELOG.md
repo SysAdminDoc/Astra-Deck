@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.100.4] (2026-10-26)
+
 ### Fixed
 
 - The known-breakage list can't be replayed any more. Its signed first line now carries a sequence number and an expiry date. Astra remembers the newest list it has accepted, even after its cached copy is cleared, and refuses an older one, a changed list reusing the same number, or one that's past its date. Getting the same list again no longer makes an old copy look new, and a cached copy from an older build without these dates is fetched again rather than trusted.
