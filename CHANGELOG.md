@@ -9,6 +9,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Fixed
 
 - Element Zapper's settings list no longer wipes your saved rules. With the feature off in that tab, the list showed "No rules yet", and picking a new element saved it over every rule you had. Edits now start from what's saved, so a rule added in another tab sticks around too.
+- Turning off the live chat reaction sender while it was still loading could leave its button in the chat with nothing to remove it. It's gone for good now.
+- The SponsorBlock ad-block recovery card could pop up right after you turned SponsorBlock off, if a status check was still on its way back. Late answers are ignored now.
+- Sticky chat kept its floating position and opacity on the chat frame after it stopped floating. It now puts the frame back the way YouTube had it.
+- A toast that showed up while the settings panel was open stayed on screen forever after you closed the panel. It times out normally now.
 
 ## [4.105.0] (2026-10-27)
 
