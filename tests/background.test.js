@@ -16,6 +16,8 @@ const {
 // the user-chosen HTTPS door is only as good as these rules.
 const remoteListScope = require('../extension/core/remote-list-scope');
 const cookieHandoff = require('../extension/core/cookie-handoff');
+const feedEnvelope = require('../extension/core/feature-disable-feed');
+const feedSigner = require('../scripts/sign-remote-feeds');
 
 const repoRoot = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
@@ -36,7 +38,8 @@ function loadBackground({
     initialSession = {},
     initialEnabledRulesets = ['astra_zero_ads'],
     apiNamespace = 'chrome',
-    setTimeoutImpl = setTimeout
+    setTimeoutImpl = setTimeout,
+    feedPublicKey = null
 } = {}) {
     let messageListener = null;
     let installedListener = null;
@@ -242,15 +245,24 @@ function loadBackground({
             describeCobaltInstanceUrl: remoteListScope.describeCobaltInstanceUrl,
             describeRemoteListUrl: remoteListScope.describeRemoteListUrl,
             remoteListOriginPattern: remoteListScope.remoteListOriginPattern,
-            cookieHandoff
+            cookieHandoff,
+            readFeatureDisableFeedEnvelope: feedEnvelope.readFeedEnvelope,
+            checkFeatureDisableFeedEnvelope: feedEnvelope.checkFeedEnvelope
         },
         setTimeout: setTimeoutImpl
     };
     context[apiNamespace] = chrome;
     context.globalThis = context;
 
+    // A test key in place of the shipped one, so a test can sign feeds at
+    // any sequence and expiry it needs.
+    const source = feedPublicKey
+        ? backgroundSource
+            .replace(`'${feedSigner.PUBLIC_KEY_JWK.x}'`, `'${feedPublicKey.x}'`)
+            .replace(`'${feedSigner.PUBLIC_KEY_JWK.y}'`, `'${feedPublicKey.y}'`)
+        : backgroundSource;
     vm.createContext(context);
-    vm.runInContext(backgroundSource, context, { filename: 'extension/background.js' });
+    vm.runInContext(source, context, { filename: 'extension/background.js' });
 
     return {
         chrome,
@@ -1991,9 +2003,10 @@ test('feature disable feed keeps a stale cache when a tampered refresh is refuse
         fetchImpl: signedFeedFetch('feature-disable-feed.csv',
             (part, value) => (part === 'payload' ? `${value}\nastraDeck,4.0.0,4.99.0,tampered` : value))
     });
-    // Old enough to be served-and-refreshed rather than used as-is.
+    // Old enough to be served-and-refreshed rather than used as-is, and inside
+    // its signed validity, which is what makes a cache entry usable at all.
     bg.getLocal()['ytkit-feature-disable-feed-v2'] = {
-        text: 'astraDeck,4.0.0,4.99.0,known-good',
+        text: envelopedFeed('astraDeck,4.0.0,4.99.0,known-good', { sequence: 1 }),
         cachedAt: Date.now() - (7 * 60 * 60 * 1000)
     };
 
@@ -2048,6 +2061,151 @@ test('a feed cached before signatures existed is not served after upgrade', asyn
         'the legacy entry must be purged once a verified feed replaces it');
     assert.ok(bg.getLocal()['ytkit-feature-disable-feed-v2'],
         'the verified feed becomes the new cache entry');
+});
+
+// --- Signed sequence and expiry ------------------------------------------
+//
+// The cache's receipt time used to be the only clock, so replaying an old
+// validly signed copy made it look new. These sign feeds with a throwaway key
+// at whatever sequence and expiry each case needs.
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+const FEED_CACHE = 'ytkit-feature-disable-feed-v2';
+const FEED_MARK = 'ytkit-feature-disable-feed-watermark';
+const testFeedKey = require('node:crypto').generateKeyPairSync('ec', { namedCurve: 'P-256' });
+const testFeedJwk = testFeedKey.publicKey.export({ format: 'jwk' });
+
+function envelopedFeed(body, { sequence, issuedAt = Date.now() - DAY, expiresAt = issuedAt + 60 * DAY }) {
+    return feedEnvelope.stampFeedEnvelope(`# test feed\nfeature,issue,broken-from,fixed-in\n${body}\n`,
+        { sequence, issuedAt, expiresAt });
+}
+
+function signTestFeed(text) {
+    const der = require('node:crypto').sign('sha256', Buffer.from(text, 'utf8'), testFeedKey.privateKey);
+    return feedSigner.derToRawSignature(der).toString('base64');
+}
+
+// Serves `current.text` signed with the test key; `current.offline` throws.
+function testFeedBackground(current) {
+    const bg = loadBackground({
+        feedPublicKey: testFeedJwk,
+        fetchImpl: async (url) => {
+            if (current.offline) throw new TypeError('Failed to fetch');
+            const href = String(url);
+            if (href === `${FEED_URL_BASE}feature-disable-feed.csv.sig`) return new Response(signTestFeed(current.text), { status: 200 });
+            if (href === `${FEED_URL_BASE}feature-disable-feed.csv`) return new Response(current.text, { status: 200 });
+            return new Response('', { status: 404 });
+        }
+    });
+    return { bg, ask: () => dispatchMessage(bg.messageListener, { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' }) };
+}
+
+test('a signed feed is accepted and records its sequence as the watermark', async () => {
+    const text = envelopedFeed('', { sequence: 3 });
+    const { bg, ask } = testFeedBackground({ text });
+    const response = await ask();
+    assert.equal(response.source, 'network');
+    assert.equal(response.sequence, 3);
+    assert.equal(bg.getLocal()[FEED_MARK].sequence, 3);
+    assert.match(bg.getLocal()[FEED_MARK].digest, /^[0-9a-f]{64}$/);
+});
+
+test('an older sequence is refused even after the cache entry is gone', async () => {
+    const current = { text: envelopedFeed('', { sequence: 5 }) };
+    const { bg, ask } = testFeedBackground(current);
+    assert.equal((await ask()).sequence, 5);
+
+    delete bg.getLocal()[FEED_CACHE];
+    current.text = envelopedFeed('returnDislike,412,4.80.0,', { sequence: 4 });
+    const response = await ask();
+    assert.equal(response.ok, false);
+    assert.equal(response.problem, 'rollback');
+    assert.equal(bg.getLocal()[FEED_CACHE], undefined, 'a rollback never becomes the cache');
+    assert.equal(bg.getLocal()[FEED_MARK].sequence, 5, 'the watermark survives the eviction');
+});
+
+test('changed bytes at the same sequence are refused', async () => {
+    const current = { text: envelopedFeed('', { sequence: 7 }) };
+    const { bg, ask } = testFeedBackground(current);
+    await ask();
+    delete bg.getLocal()[FEED_CACHE];
+    current.text = envelopedFeed('returnDislike,412,4.80.0,', { sequence: 7 });
+    assert.equal((await ask()).problem, 'sequence-reused');
+});
+
+test('receiving the same bytes again does not extend the signed expiry', async () => {
+    const text = envelopedFeed('', { sequence: 2 });
+    const signedExpiry = feedEnvelope.readFeedEnvelope(text).expiresAt;
+    const { bg, ask } = testFeedBackground({ text });
+    await ask();
+    bg.getLocal()[FEED_CACHE].cachedAt = Date.now() - 7 * HOUR;
+    const replayed = await ask();
+    assert.equal(replayed.source, 'stale');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const again = await ask();
+    assert.equal(again.source, 'cache', 'the same bytes refresh the polling clock');
+    assert.equal(again.expiresAt, signedExpiry, 'but the usable-until date is still the signed one');
+});
+
+test('an expired or future-dated feed is refused from the network', async () => {
+    const now = Date.now();
+    const expired = testFeedBackground({ text: envelopedFeed('', { sequence: 1, issuedAt: now - 70 * DAY, expiresAt: now - DAY }) });
+    assert.equal((await expired.ask()).problem, 'expired');
+
+    const future = testFeedBackground({ text: envelopedFeed('', { sequence: 1, issuedAt: now + 2 * DAY }) });
+    assert.equal((await future.ask()).problem, 'issued-in-future', 'two days ahead is past the clock-skew allowance');
+
+    const skewed = testFeedBackground({ text: envelopedFeed('', { sequence: 1, issuedAt: now + HOUR }) });
+    assert.equal((await skewed.ask()).ok, true, 'a client clock an hour behind still takes a fresh feed');
+});
+
+test('a feed with no signed envelope is refused even with a valid signature', async () => {
+    const { bg, ask } = testFeedBackground({ text: 'feature,issue,broken-from,fixed-in\n' });
+    assert.equal((await ask()).problem, 'missing-envelope');
+    assert.equal(bg.getLocal()[FEED_CACHE], undefined);
+});
+
+test('a cache entry past its signed expiry is not served, however recent its receipt', async () => {
+    const now = Date.now();
+    const current = { offline: true };
+    const { bg, ask } = testFeedBackground(current);
+    bg.getLocal()[FEED_CACHE] = {
+        text: envelopedFeed('', { sequence: 1, issuedAt: now - 61 * DAY, expiresAt: now - 60 * 1000 }),
+        cachedAt: now - HOUR
+    };
+    const response = await ask();
+    assert.equal(response.ok, false, 'an hour-old receipt cannot revive an expired copy');
+    assert.equal(response.source, 'unavailable');
+});
+
+test('a legacy cache entry without an envelope is refetched, not trusted for its receipt time', async () => {
+    const { bg, ask } = testFeedBackground({ text: envelopedFeed('', { sequence: 1 }) });
+    bg.getLocal()[FEED_CACHE] = { text: 'astraDeck,4.0.0,4.99.0,legacy', cachedAt: Date.now() };
+    const response = await ask();
+    assert.equal(response.source, 'network');
+    assert.doesNotMatch(response.text, /legacy/);
+});
+
+test('a cache entry below the watermark is not served', async () => {
+    const { bg, ask } = testFeedBackground({ offline: true });
+    bg.getLocal()[FEED_MARK] = { sequence: 9, digest: 'a'.repeat(64) };
+    bg.getLocal()[FEED_CACHE] = { text: envelopedFeed('', { sequence: 8 }), cachedAt: Date.now() };
+    assert.equal((await ask()).ok, false);
+});
+
+test('offline startup serves a usable signed cache and marks an old one stale', async () => {
+    const { bg, ask } = testFeedBackground({ offline: true });
+    const text = envelopedFeed('', { sequence: 4 });
+    bg.getLocal()[FEED_CACHE] = { text, cachedAt: Date.now() - HOUR };
+    assert.equal((await ask()).source, 'cache');
+
+    bg.getLocal()[FEED_CACHE] = { text, cachedAt: Date.now() - 3 * DAY };
+    const stale = await ask();
+    assert.equal(stale.source, 'stale');
+    assert.equal(stale.expiresAt, feedEnvelope.readFeedEnvelope(text).expiresAt, 'a stale answer says when the copy runs out');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(bg.getLocal()[FEED_CACHE].text, text, 'the failed refresh keeps the copy');
 });
 
 // --- Sender-origin policy (v4.88.3) -------------------------------------

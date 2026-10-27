@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Problema n. {issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "Impossibile aggiornare l'elenco degli avvisi. Si usa la copia controllata il {checked}, valida fino al {expires}."
+  },
   "settingsFooterSaved": {
     "message": "Salvato"
   },

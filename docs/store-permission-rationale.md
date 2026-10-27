@@ -211,6 +211,10 @@ and asserted by a hostile-row battery in `tests/feature-disable-feed.test.js`:
   is refused and the previous copy is kept. `selector-packs.json` is signed and
   verified the same way; its in-band `sha256:` digest travels inside the asset
   and therefore proves integrity, not origin.
+- It cannot be replayed. The signed first line carries a sequence number and
+  an expiry. The worker remembers the highest sequence it has accepted and
+  refuses an older one, changed bytes at the same sequence, or a copy past its
+  expiry, so an old signed list can't be served back to an install.
 
 Why it ships everywhere. The alternative to a disable feed is not "no remote
 influence", it is leaving a feature the maintainer *knows* is broken running

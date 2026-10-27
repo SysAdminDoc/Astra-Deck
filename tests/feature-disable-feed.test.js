@@ -293,3 +293,40 @@ test('a fetch that returns without awaiting cannot strand the in-flight flag', (
     assert.ok(assignAt > -1 && clearAt > assignAt,
         'the clear must be attached after the assignment');
 });
+
+// --- Signed envelope -----------------------------------------------------
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const ENVELOPE = { sequence: 4, issuedAt: Date.parse('2026-10-01T00:00:00Z'), expiresAt: Date.parse('2026-11-30T00:00:00Z') };
+
+test('a stamped envelope reads back exactly and leaves the body alone', () => {
+    const feed = loadFeed();
+    const body = '# comment\nfeature,issue,broken-from,fixed-in\nreturnDislike,412,4.80.0,\n';
+    const text = feed.stampFeedEnvelope(body, ENVELOPE);
+    assert.equal(text.split('\n')[0], '# astra-feed: sequence=4 issued=2026-10-01T00:00:00Z expires=2026-11-30T00:00:00Z');
+    assert.deepEqual(feed.readFeedEnvelope(text), ENVELOPE);
+    assert.equal(feed.stampFeedEnvelope(text, { ...ENVELOPE, sequence: 5 }).split('\n').length,
+        text.split('\n').length, 're-stamping replaces the line rather than adding a second one');
+    assert.equal(parse(text).disabled.size, 1, 'the envelope is a comment to the row parser');
+});
+
+test('an envelope that is not the first line, repeated, or out of bounds is not an envelope', () => {
+    const feed = loadFeed();
+    const line = feed.stampFeedEnvelope('', ENVELOPE).split('\n')[0];
+    assert.equal(feed.readFeedEnvelope(`# comment\n${line}\n`), null, 'only the first line counts');
+    assert.equal(feed.readFeedEnvelope(`${line}\n${line}\n`), null, 'a second envelope line is refused');
+    assert.equal(feed.readFeedEnvelope(line.replace('sequence=4', 'sequence=0')), null, 'sequence starts at 1');
+    assert.equal(feed.readFeedEnvelope(line.replace('2026-11-30', '2026-02-31')), null, 'a date that rolls over');
+    assert.equal(feed.readFeedEnvelope(line.replace('2026-11-30', '2026-09-30')), null, 'expiry before issue');
+    assert.equal(feed.readFeedEnvelope(line.replace('2026-11-30', '2027-01-30')), null, 'longer than 90 days');
+    assert.equal(feed.readFeedEnvelope('feature,issue,broken-from,fixed-in\n'), null);
+});
+
+test('envelope checks cover expiry and a bounded clock skew', () => {
+    const feed = loadFeed();
+    assert.equal(feed.checkFeedEnvelope(null, ENVELOPE.issuedAt), 'missing-envelope');
+    assert.equal(feed.checkFeedEnvelope(ENVELOPE, ENVELOPE.issuedAt + DAY_MS), null);
+    assert.equal(feed.checkFeedEnvelope(ENVELOPE, ENVELOPE.expiresAt), 'expired', 'the expiry instant is already expired');
+    assert.equal(feed.checkFeedEnvelope(ENVELOPE, ENVELOPE.issuedAt - DAY_MS + 1000), null, 'inside the skew allowance');
+    assert.equal(feed.checkFeedEnvelope(ENVELOPE, ENVELOPE.issuedAt - 2 * DAY_MS), 'issued-in-future');
+});

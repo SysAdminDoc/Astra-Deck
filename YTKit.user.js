@@ -476,7 +476,8 @@ const ASTRA_DECK_BUILD = {
 			"core/policy-profile.js",
 			"core/settings-sync.js",
 			"core/settings-controller.js",
-			"core/credential-vault.js"
+			"core/credential-vault.js",
+			"core/feature-disable-feed.js"
 		],
 		"liveChat": [
 			"core/browser-api.js",
@@ -2416,6 +2417,7 @@ const ASTRA_DECK_BUILD = {
 		"settingsFeatureClearAriaTpl": "Clear {featureName}",
 		"settingsFeatureKnownBroken": "Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.",
 		"settingsFeatureKnownBrokenIssueTpl": "Issue #{issue}",
+		"settingsFeatureFeedStaleTpl": "Couldn't refresh the notice list. Using the copy checked {checked}, which is good until {expires}.",
 		"settingsFooterSaved": "Saved",
 		"settingsGenericSettingFallback": "Setting",
 		"settingsGitHubTitle": "View on GitHub",

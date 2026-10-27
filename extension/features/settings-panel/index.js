@@ -86,6 +86,7 @@
             getFeatureHealthSnapshot = () => [],
             getFeatureName,
             getFeatureDisableNotice = () => null,
+            getFeatureDisableFeedStatus = () => null,
             getFocusableUiElements,
             handleExternalStorageChanges,
             handleFileExport,
@@ -3933,6 +3934,19 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
                 .replace('{issue}', String(disableNotice.issue));
             notice.appendChild(issueLink);
             info.appendChild(notice);
+        }
+        // The notice list itself, when the last refresh failed and Astra is
+        // using its older signed copy.
+        const feedStatus = f.id === 'featureDisableFeed' ? getFeatureDisableFeedStatus() : null;
+        if (feedStatus?.state === 'stale') {
+            const formatDate = (ms) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const stale = document.createElement('p');
+            stale.className = 'ytkit-feature-broken-note ytkit-feature-feed-stale';
+            stale.textContent = t(
+                'settingsFeatureFeedStaleTpl',
+                'Couldn\'t refresh the notice list. Using the copy checked {checked}, which is good until {expires}.'
+            ).replace('{checked}', formatDate(feedStatus.checkedAt)).replace('{expires}', formatDate(feedStatus.expiresAt));
+            info.appendChild(stale);
         }
 
         featureMain.appendChild(glyph);

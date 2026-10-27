@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Problem #{issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "Die Hinweisliste ließ sich nicht aktualisieren. Verwendet wird die am {checked} geprüfte Kopie, gültig bis {expires}."
+  },
   "settingsFooterSaved": {
     "message": "Gespeichert"
   },

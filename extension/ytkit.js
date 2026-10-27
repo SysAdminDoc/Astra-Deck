@@ -6219,6 +6219,11 @@ const STORAGE_KEYS = Object.freeze({
     // chose, and switching the feed off restores the feature with no migration
     // and no stored state to unwind.
     let _featureDisableNotices = new Map();
+    let _featureDisableFeedStatus = null;
+
+    function getFeatureDisableFeedStatus() {
+        return _featureDisableFeedStatus;
+    }
 
     function getFeatureDisableNotice(featureId) {
         if (!featureId) return null;
@@ -6261,6 +6266,7 @@ const STORAGE_KEYS = Object.freeze({
         const feedCore = globalThis.YTKitCore || {};
         if (typeof feedCore.parseFeatureDisableFeed !== 'function') return null;
         if (!appState.settings?.featureDisableFeed) {
+            _featureDisableFeedStatus = null;
             if (_featureDisableNotices.size) {
                 _featureDisableNotices = new Map();
                 applyExternalSettingsUpdate({ source: 'feature-disable-feed' });
@@ -6280,6 +6286,12 @@ const STORAGE_KEYS = Object.freeze({
         try {
             const response = await sendRuntimeMessage({ type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
             if (response?.ok && typeof response.text === 'string') text = response.text;
+            // A stale answer is still used, and the feed's own card says so:
+            // when it was last checked and when its signed copy runs out.
+            _featureDisableFeedStatus = response?.source === 'stale'
+                && Number.isFinite(response.cachedAt) && Number.isFinite(response.expiresAt)
+                ? { state: 'stale', checkedAt: response.cachedAt, expiresAt: response.expiresAt }
+                : null;
         } catch (_) {
             // reason: an unreachable feed is a no-op by design, never an error
         }
@@ -6900,6 +6912,7 @@ const STORAGE_KEYS = Object.freeze({
                 getPageModalOpen: () => _pageModalOpen,
                 getFeatureCrashCounts: () => _featureCrashCounts,
                 getFeatureDisableNotice,
+                getFeatureDisableFeedStatus,
                 persistCrashCounts: () => _persistCrashCounts()
             });
         } catch (error) {

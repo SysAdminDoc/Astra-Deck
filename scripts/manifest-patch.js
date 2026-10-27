@@ -22,7 +22,8 @@ const FIREFOX_BACKGROUND_DEPENDENCIES = Object.freeze([
     'core/policy-profile.js',
     'core/settings-sync.js',
     'core/settings-controller.js',
-    'core/credential-vault.js'
+    'core/credential-vault.js',
+    'core/feature-disable-feed.js'
 ]);
 const FIREFOX_SIDEBAR_ACTION = Object.freeze({
     default_title: '__MSG_extName__',

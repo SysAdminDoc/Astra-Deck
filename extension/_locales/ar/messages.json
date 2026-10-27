@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "المشكلة رقم {issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "تعذّر تحديث قائمة التنبيهات. يُستخدم الإصدار الذي تم التحقق منه في {checked}، وهو صالح حتى {expires}."
+  },
   "settingsFooterSaved": {
     "message": "تم الحفظ"
   },

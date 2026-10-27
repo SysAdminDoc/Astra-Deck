@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "이슈 #{issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "알림 목록을 새로 고칠 수 없습니다. {checked}에 확인한 사본을 사용 중이며 {expires}까지 유효합니다."
+  },
   "settingsFooterSaved": {
     "message": "저장됨"
   },

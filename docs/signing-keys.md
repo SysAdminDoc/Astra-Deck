@@ -456,6 +456,33 @@ npm run sign:feeds
 
 The `feed-signatures` gate fails until you do, and names the file.
 
+**Sequence and expiry (`feature-disable-feed.csv`).** A signature alone proves
+origin, not age, so an old signed copy could be replayed forever. The feed's
+first line is a signed envelope:
+
+```
+# astra-feed: sequence=2 issued=2026-10-27T01:03:36Z expires=2026-12-26T01:03:36Z
+```
+
+`npm run sign:feeds` writes it. Every signing raises the sequence by one and
+sets a 60-day expiry (the reader refuses anything over 90 days). Older builds
+read the line as a comment. The worker keeps the highest sequence it has
+accepted, with that body's SHA-256, in `ytkit-feature-disable-feed-watermark`.
+It refuses a lower sequence (rollback), different bytes at the same sequence,
+a feed past its expiry, one issued more than a day in the future, and one with
+no envelope. The watermark outlives the cache entry, so evicting the cache
+doesn't reopen a rollback.
+
+Receipt time still paces fetching (six hours fresh, then up to 30 days served
+while a refresh runs), but only inside the signed window. A cached copy past
+its `expires` is never served, however recently it arrived, and fetching the
+same bytes again doesn't move the expiry. When the panel is working from a
+stale copy, the Known-Breakage Notices card says so and shows both dates.
+
+Since every release re-signs, a normal release cadence keeps the feed valid.
+`sign:feeds --check` warns when the committed copy expires within 14 days and
+fails once it has expired. Re-sign and push the feed if releases stall.
+
 **Rotation.** Generate a new key, update the JWK in both files, re-sign both
 feeds, and ship all four changes in one release. Installs running the previous
 release will refuse the newly signed feeds until they update. That's the

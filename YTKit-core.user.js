@@ -15495,6 +15495,46 @@ __astraDeckRegistry["core/feature-disable-feed.js"] = function (globalThis, self
 		}
 		return { entries, disabled, rejected };
 	}
+	const FEED_ENVELOPE_PREFIX = '# astra-feed:';
+	const FEED_ENVELOPE_PATTERN = /^# astra-feed: sequence=([1-9]\d{0,14}) issued=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) expires=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)$/;
+	const FEED_MAX_VALIDITY_MS = 90 * 24 * 60 * 60 * 1000;
+	const FEED_DEFAULT_VALIDITY_MS = 60 * 24 * 60 * 60 * 1000;
+	const FEED_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
+	function parseUtcStamp(value) {
+		const ms = Date.parse(value);
+		if (!Number.isFinite(ms) || new Date(ms).toISOString().replace('.000Z', 'Z') !== value) return null;
+		return ms;
+	}
+	function readFeedEnvelope(text) {
+		if (typeof text !== 'string' || !text) return null;
+		const lines = text.split(/\r?\n/);
+		const match = FEED_ENVELOPE_PATTERN.exec(lines[0]);
+		if (!match) return null;
+		if (lines.slice(1).some((line) => line.trim().startsWith(FEED_ENVELOPE_PREFIX))) return null;
+		const sequence = Number(match[1]);
+		const issuedAt = parseUtcStamp(match[2]);
+		const expiresAt = parseUtcStamp(match[3]);
+		if (!Number.isSafeInteger(sequence) || issuedAt === null || expiresAt === null) return null;
+		if (expiresAt <= issuedAt || expiresAt - issuedAt > FEED_MAX_VALIDITY_MS) return null;
+		return { sequence, issuedAt, expiresAt };
+	}
+	function checkFeedEnvelope(envelope, now, skewMs = FEED_CLOCK_SKEW_MS) {
+		if (!envelope) return 'missing-envelope';
+		if (envelope.issuedAt > now + skewMs) return 'issued-in-future';
+		if (now >= envelope.expiresAt) return 'expired';
+		return null;
+	}
+	function formatFeedEnvelope({ sequence, issuedAt, expiresAt }) {
+		const stamp = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+		return `${FEED_ENVELOPE_PREFIX} sequence=${sequence} issued=${stamp(issuedAt)} expires=${stamp(expiresAt)}`;
+	}
+	function stampFeedEnvelope(text, envelope) {
+		const body = String(text || '');
+		const eol = body.includes('\r\n') ? '\r\n' : '\n';
+		const lines = body.split(/\r?\n/);
+		if (lines[0].startsWith(FEED_ENVELOPE_PREFIX)) lines.shift();
+		return [formatFeedEnvelope(envelope), ...lines].join(eol);
+	}
 	function classifyFeedCache(cachedAt, now, maxAgeMs = FEATURE_DISABLE_FEED_MAX_AGE_MS,
 		staleMs = FEATURE_DISABLE_FEED_STALE_MS) {
 		if (!Number.isFinite(cachedAt) || cachedAt <= 0) return 'expired';
@@ -15510,10 +15550,19 @@ __astraDeckRegistry["core/feature-disable-feed.js"] = function (globalThis, self
 	core.FEATURE_DISABLE_FEED_MAX_AGE_MS = FEATURE_DISABLE_FEED_MAX_AGE_MS;
 	core.FEATURE_DISABLE_FEED_STALE_MS = FEATURE_DISABLE_FEED_STALE_MS;
 	core.FEATURE_DISABLE_FEED_MAX_BYTES = MAX_FEED_BYTES;
+	core.readFeatureDisableFeedEnvelope = readFeedEnvelope;
+	core.checkFeatureDisableFeedEnvelope = checkFeedEnvelope;
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = {
 			parseFeatureDisableFeed,
 			classifyFeatureDisableFeedCache: classifyFeedCache,
+			readFeedEnvelope,
+			checkFeedEnvelope,
+			formatFeedEnvelope,
+			stampFeedEnvelope,
+			FEED_MAX_VALIDITY_MS,
+			FEED_DEFAULT_VALIDITY_MS,
+			FEED_CLOCK_SKEW_MS,
 			FEATURE_DISABLE_FEED_URL,
 			FEATURE_DISABLE_FEED_MAX_AGE_MS,
 			FEATURE_DISABLE_FEED_STALE_MS,
@@ -20344,7 +20393,8 @@ if (typeof importScripts === 'function') {
 			'core/policy-profile.js',
 			'core/settings-sync.js',
 			'core/settings-controller.js',
-			'core/credential-vault.js'
+			'core/credential-vault.js',
+			'core/feature-disable-feed.js'
 		].map(_coreScriptUrl)
 	);
 }
@@ -21189,8 +21239,22 @@ const FEATURE_DISABLE_FEED_LEGACY_CACHE_KEYS = Object.freeze(['ytkit-feature-dis
 const FEATURE_DISABLE_FEED_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const FEATURE_DISABLE_FEED_STALE_MS = 30 * 24 * 60 * 60 * 1000;
 const FEATURE_DISABLE_FEED_TIMEOUT_MS = 10000;
+const FEATURE_DISABLE_FEED_WATERMARK_KEY = 'ytkit-feature-disable-feed-watermark';
 let _featureDisableFeedInflight = null;
-function classifyFeatureDisableFeedCache(cachedAt, now) {
+function featureDisableFeedEnvelope(text) {
+	const read = globalThis.YTKitCore?.readFeatureDisableFeedEnvelope;
+	return typeof read === 'function' ? read(text) : null;
+}
+function featureDisableFeedEnvelopeProblem(envelope, now) {
+	const check = globalThis.YTKitCore?.checkFeatureDisableFeedEnvelope;
+	return typeof check === 'function' ? check(envelope, now) : 'missing-envelope';
+}
+function classifyFeatureDisableFeedCache(entry, now, watermark = null) {
+	if (!entry) return 'expired';
+	const envelope = featureDisableFeedEnvelope(entry.text);
+	if (featureDisableFeedEnvelopeProblem(envelope, now)) return 'expired';
+	if (watermark && envelope.sequence < watermark.sequence) return 'expired';
+	const cachedAt = entry.cachedAt;
 	if (!Number.isFinite(cachedAt) || cachedAt <= 0) return 'expired';
 	const age = now - cachedAt;
 	if (age < 0) return 'expired';
@@ -21209,6 +21273,29 @@ async function readFeatureDisableFeedCache() {
 		return null;
 	}
 }
+async function readFeatureDisableFeedWatermark() {
+	if (!ext.storage?.local?.get) return null;
+	try {
+		const stored = await callExtensionApi(ext.storage.local, 'get', FEATURE_DISABLE_FEED_WATERMARK_KEY);
+		const mark = stored?.[FEATURE_DISABLE_FEED_WATERMARK_KEY];
+		if (!mark || !Number.isSafeInteger(mark.sequence) || mark.sequence < 1) return null;
+		if (typeof mark.digest !== 'string' || !/^[0-9a-f]{64}$/.test(mark.digest)) return null;
+		return { sequence: mark.sequence, digest: mark.digest };
+	} catch (_) {
+		return null;
+	}
+}
+async function sha256Hex(text) {
+	const bytes = new TextEncoder().encode(text);
+	const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+	return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+function featureDisableFeedReplayProblem(envelope, digest, watermark) {
+	if (!watermark) return null;
+	if (envelope.sequence < watermark.sequence) return 'rollback';
+	if (envelope.sequence === watermark.sequence && digest !== watermark.digest) return 'sequence-reused';
+	return null;
+}
 async function purgeLegacyFeatureDisableFeedCache() {
 	if (!ext.storage?.local?.remove) return;
 	try {
@@ -21216,10 +21303,11 @@ async function purgeLegacyFeatureDisableFeedCache() {
 	} catch (_) {
 	}
 }
-async function writeFeatureDisableFeedCache(text) {
+async function writeFeatureDisableFeedCache(text, envelope, digest) {
 	if (!ext.storage?.local?.set) return;
 	try {
 		await callExtensionApi(ext.storage.local, 'set', {
+			[FEATURE_DISABLE_FEED_WATERMARK_KEY]: { sequence: envelope.sequence, digest },
 			[FEATURE_DISABLE_FEED_CACHE_KEY]: { text, cachedAt: Date.now() }
 		});
 	} catch (_) {
@@ -21234,7 +21322,7 @@ function fetchFeatureDisableFeed() {
 	}, FEATURE_DISABLE_FEED_TIMEOUT_MS);
 	const run = (async () => {
 		try {
-			if (!isUrlAllowed(FEATURE_DISABLE_FEED_URL)) return null;
+			if (!isUrlAllowed(FEATURE_DISABLE_FEED_URL)) return { text: null, problem: 'network' };
 			const response = await fetch(FEATURE_DISABLE_FEED_URL, {
 				method: 'GET',
 				headers: { Accept: 'text/csv,text/plain' },
@@ -21243,16 +21331,23 @@ function fetchFeatureDisableFeed() {
 				redirect: 'error',
 				signal: controller.signal
 			});
-			if (!response.ok) return null;
+			if (!response.ok) return { text: null, problem: 'network' };
 			const { text } = await readTextBounded(
 				response, MAX_FEATURE_DISABLE_FEED_BYTES, 'Feature disable feed', controller);
 			const signature = await fetchFeedSignature(FEATURE_DISABLE_FEED_URL);
-			if (!await verifyFeedSignature(text, signature)) return null;
-			await writeFeatureDisableFeedCache(text);
+			if (!await verifyFeedSignature(text, signature)) return { text: null, problem: 'signature' };
+			const envelope = featureDisableFeedEnvelope(text);
+			const envelopeProblem = featureDisableFeedEnvelopeProblem(envelope, Date.now());
+			if (envelopeProblem) return { text: null, problem: envelopeProblem };
+			const digest = await sha256Hex(text);
+			const replayProblem = featureDisableFeedReplayProblem(
+				envelope, digest, await readFeatureDisableFeedWatermark());
+			if (replayProblem) return { text: null, problem: replayProblem };
+			await writeFeatureDisableFeedCache(text, envelope, digest);
 			await purgeLegacyFeatureDisableFeedCache();
-			return text;
+			return { text, envelope, problem: null };
 		} catch (_) {
-			return null;
+			return { text: null, problem: 'network' };
 		} finally {
 			clearTimeout(timer);
 		}
@@ -21979,25 +22074,30 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 	}
 	if (msg.type === 'YTKIT_FETCH_FEATURE_DISABLE_FEED') {
 		(async () => {
-			const cached = await readFeatureDisableFeedCache();
-			const freshness = cached
-				? classifyFeatureDisableFeedCache(cached.cachedAt, Date.now())
-				: 'expired';
+			const [cached, watermark] = await Promise.all([
+				readFeatureDisableFeedCache(),
+				readFeatureDisableFeedWatermark()
+			]);
+			const freshness = classifyFeatureDisableFeedCache(cached, Date.now(), watermark);
+			const signed = (text) => {
+				const envelope = featureDisableFeedEnvelope(text);
+				return envelope ? { sequence: envelope.sequence, expiresAt: envelope.expiresAt } : {};
+			};
 			if (freshness === 'fresh') {
-				sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'cache' });
+				sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'cache', ...signed(cached.text) });
 				return;
 			}
 			if (freshness === 'stale') {
-				sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'stale' });
+				sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'stale', ...signed(cached.text) });
 				void fetchFeatureDisableFeed();
 				return;
 			}
-			const text = await fetchFeatureDisableFeed();
-			if (typeof text === 'string') {
-				sendResponse({ ok: true, text, cachedAt: Date.now(), source: 'network' });
+			const result = await fetchFeatureDisableFeed();
+			if (typeof result?.text === 'string') {
+				sendResponse({ ok: true, text: result.text, cachedAt: Date.now(), source: 'network', ...signed(result.text) });
 				return;
 			}
-			sendResponse({ ok: false, text: '', source: 'unavailable' });
+			sendResponse({ ok: false, text: '', source: 'unavailable', problem: result?.problem || 'network' });
 		})();
 		return true;
 	}

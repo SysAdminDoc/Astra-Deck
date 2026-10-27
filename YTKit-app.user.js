@@ -4524,6 +4524,10 @@ const STORAGE_KEYS = Object.freeze({
 		return !!settings[feature.id];
 	}
 	let _featureDisableNotices = new Map();
+	let _featureDisableFeedStatus = null;
+	function getFeatureDisableFeedStatus() {
+		return _featureDisableFeedStatus;
+	}
 	function getFeatureDisableNotice(featureId) {
 		if (!featureId) return null;
 		return _featureDisableNotices.get(featureId) || null;
@@ -4550,6 +4554,7 @@ const STORAGE_KEYS = Object.freeze({
 		const feedCore = globalThis.YTKitCore || {};
 		if (typeof feedCore.parseFeatureDisableFeed !== 'function') return null;
 		if (!appState.settings?.featureDisableFeed) {
+			_featureDisableFeedStatus = null;
 			if (_featureDisableNotices.size) {
 				_featureDisableNotices = new Map();
 				applyExternalSettingsUpdate({ source: 'feature-disable-feed' });
@@ -4560,6 +4565,10 @@ const STORAGE_KEYS = Object.freeze({
 		try {
 			const response = await sendRuntimeMessage({ type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
 			if (response?.ok && typeof response.text === 'string') text = response.text;
+			_featureDisableFeedStatus = response?.source === 'stale'
+				&& Number.isFinite(response.cachedAt) && Number.isFinite(response.expiresAt)
+				? { state: 'stale', checkedAt: response.cachedAt, expiresAt: response.expiresAt }
+				: null;
 		} catch (_) {
 		}
 		if (text === null) return null;
@@ -5036,6 +5045,7 @@ const STORAGE_KEYS = Object.freeze({
 				getPageModalOpen: () => _pageModalOpen,
 				getFeatureCrashCounts: () => _featureCrashCounts,
 				getFeatureDisableNotice,
+				getFeatureDisableFeedStatus,
 				persistCrashCounts: () => _persistCrashCounts()
 			});
 		} catch (error) {

@@ -1,3 +1,4 @@
+# astra-feed: sequence=2 issued=2026-10-27T01:03:36Z expires=2026-12-26T01:03:36Z
 # Astra Deck known-breakage feed.
 #
 # One row per feature the project has confirmed broken by a change on YouTube's
@@ -17,5 +18,9 @@
 #
 # Example (do not leave uncommented):
 #   returnDislike,412,4.80.0,4.84.0
+#
+# The first line is written by npm run sign:feeds, never by hand. It raises
+# the sequence and sets a 60-day expiry each time the feed is signed, and
+# installs refuse an older sequence or a copy past its expiry.
 #
 feature,issue,broken-from,fixed-in

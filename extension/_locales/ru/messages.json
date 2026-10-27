@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Задача №{issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "Не удалось обновить список уведомлений. Используется копия, проверенная {checked}, она действует до {expires}."
+  },
   "settingsFooterSaved": {
     "message": "Сохранено"
   },

@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Ticket n° {issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "Impossible d'actualiser la liste des avis. Astra utilise la copie vérifiée le {checked}, valable jusqu'au {expires}."
+  },
   "settingsFooterSaved": {
     "message": "Enregistré"
   },

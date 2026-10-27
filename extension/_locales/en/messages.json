@@ -5775,6 +5775,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Issue #{issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "Couldn't refresh the notice list. Using the copy checked {checked}, which is good until {expires}."
+  },
   "settingsFooterSaved": {
     "message": "Saved"
   },

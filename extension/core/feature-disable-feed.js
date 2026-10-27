@@ -242,6 +242,70 @@
         return { entries, disabled, rejected };
     }
 
+    // Signed freshness. The signature covers the whole body, and the body's
+    // first line says which feed this is and how long it stays good:
+    //
+    //   # astra-feed: sequence=7 issued=2026-10-26T18:00:00Z expires=2026-12-25T18:00:00Z
+    //
+    // Builds before v4.100.4 read it as a comment. The receipt time a client
+    // stamps on its cache says when it last checked, never how old the feed
+    // is, because replaying an old signed copy would reset that clock. The
+    // sequence goes up by one every time the feed is signed, so a client that
+    // remembers the highest one it has seen can refuse an older copy.
+    const FEED_ENVELOPE_PREFIX = '# astra-feed:';
+    const FEED_ENVELOPE_PATTERN = /^# astra-feed: sequence=([1-9]\d{0,14}) issued=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) expires=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)$/;
+    const FEED_MAX_VALIDITY_MS = 90 * 24 * 60 * 60 * 1000;               // 90 days
+    const FEED_DEFAULT_VALIDITY_MS = 60 * 24 * 60 * 60 * 1000;           // 60 days
+    // A client clock running a day behind still takes a feed signed today.
+    const FEED_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
+
+    function parseUtcStamp(value) {
+        const ms = Date.parse(value);
+        // Date.parse rolls 2026-02-31 over to March; a stamp that does not
+        // round-trip was not written by the signer.
+        if (!Number.isFinite(ms) || new Date(ms).toISOString().replace('.000Z', 'Z') !== value) return null;
+        return ms;
+    }
+
+    // Returns { sequence, issuedAt, expiresAt } or null. The envelope must be
+    // the first line and appear once, so there is never a question of which
+    // of two headers counts.
+    function readFeedEnvelope(text) {
+        if (typeof text !== 'string' || !text) return null;
+        const lines = text.split(/\r?\n/);
+        const match = FEED_ENVELOPE_PATTERN.exec(lines[0]);
+        if (!match) return null;
+        if (lines.slice(1).some((line) => line.trim().startsWith(FEED_ENVELOPE_PREFIX))) return null;
+        const sequence = Number(match[1]);
+        const issuedAt = parseUtcStamp(match[2]);
+        const expiresAt = parseUtcStamp(match[3]);
+        if (!Number.isSafeInteger(sequence) || issuedAt === null || expiresAt === null) return null;
+        if (expiresAt <= issuedAt || expiresAt - issuedAt > FEED_MAX_VALIDITY_MS) return null;
+        return { sequence, issuedAt, expiresAt };
+    }
+
+    // Why a signed envelope can't be used at `now`, or null when it can.
+    function checkFeedEnvelope(envelope, now, skewMs = FEED_CLOCK_SKEW_MS) {
+        if (!envelope) return 'missing-envelope';
+        if (envelope.issuedAt > now + skewMs) return 'issued-in-future';
+        if (now >= envelope.expiresAt) return 'expired';
+        return null;
+    }
+
+    function formatFeedEnvelope({ sequence, issuedAt, expiresAt }) {
+        const stamp = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+        return `${FEED_ENVELOPE_PREFIX} sequence=${sequence} issued=${stamp(issuedAt)} expires=${stamp(expiresAt)}`;
+    }
+
+    // Replaces the envelope line, or adds one above an unsigned body.
+    function stampFeedEnvelope(text, envelope) {
+        const body = String(text || '');
+        const eol = body.includes('\r\n') ? '\r\n' : '\n';
+        const lines = body.split(/\r?\n/);
+        if (lines[0].startsWith(FEED_ENVELOPE_PREFIX)) lines.shift();
+        return [formatFeedEnvelope(envelope), ...lines].join(eol);
+    }
+
     // Decides what to do with a cached feed body without fetching anything.
     // Split out from the fetch so the freshness policy is testable on its own
     // and so a caller with no network still gets the right answer.
@@ -265,11 +329,20 @@
     core.FEATURE_DISABLE_FEED_MAX_AGE_MS = FEATURE_DISABLE_FEED_MAX_AGE_MS;
     core.FEATURE_DISABLE_FEED_STALE_MS = FEATURE_DISABLE_FEED_STALE_MS;
     core.FEATURE_DISABLE_FEED_MAX_BYTES = MAX_FEED_BYTES;
+    core.readFeatureDisableFeedEnvelope = readFeedEnvelope;
+    core.checkFeatureDisableFeedEnvelope = checkFeedEnvelope;
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             parseFeatureDisableFeed,
             classifyFeatureDisableFeedCache: classifyFeedCache,
+            readFeedEnvelope,
+            checkFeedEnvelope,
+            formatFeedEnvelope,
+            stampFeedEnvelope,
+            FEED_MAX_VALIDITY_MS,
+            FEED_DEFAULT_VALIDITY_MS,
+            FEED_CLOCK_SKEW_MS,
             FEATURE_DISABLE_FEED_URL,
             FEATURE_DISABLE_FEED_MAX_AGE_MS,
             FEATURE_DISABLE_FEED_STALE_MS,

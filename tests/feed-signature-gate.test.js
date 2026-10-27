@@ -107,3 +107,37 @@ test('the signing script is registered as a check gate', () => {
     assert.equal(gate.script, 'sign-remote-feeds.js');
     assert.deepEqual(gate.args, ['--check']);
 });
+
+// The known-breakage feed carries a signed sequence and expiry. A release
+// re-signs it, so a committed copy close to expiry warns and an expired or
+// envelope-less one fails the gate.
+const envelopeFeed = signer.SIGNED_FEEDS.find((feed) => feed.envelope);
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+test('the next envelope raises the sequence and starts a fresh window', () => {
+    const now = Date.parse('2026-10-27T01:03:36.789Z');
+    const current = '# astra-feed: sequence=6 issued=2026-09-01T00:00:00Z expires=2026-10-31T00:00:00Z\nfeature,issue,broken-from,fixed-in\n';
+    const next = signer.nextEnvelope(current, now);
+    assert.equal(next.sequence, 7);
+    assert.equal(next.issuedAt, Date.parse('2026-10-27T01:03:36Z'), 'whole seconds, so it round-trips the stamp');
+    assert.equal(next.expiresAt - next.issuedAt, 60 * DAY_MS);
+    assert.equal(signer.nextEnvelope('feature,issue,broken-from,fixed-in\n', now).sequence, 1);
+});
+
+test('the gate fails an expired or envelope-less feed and warns two weeks out', () => {
+    assert.ok(envelopeFeed, 'the known-breakage feed is signed with an envelope');
+    const text = fs.readFileSync(path.join(repoRoot, envelopeFeed.file), 'utf8');
+    const { expiresAt } = require('../extension/core/feature-disable-feed.js').readFeedEnvelope(text);
+
+    const warnings = [];
+    assert.deepEqual(signer.checkAll(repoRoot, { now: expiresAt - 7 * DAY_MS, warnings }), []);
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /next release re-signs it/);
+
+    const expired = signer.checkAll(repoRoot, { now: expiresAt });
+    assert.equal(expired.length, 1);
+    assert.match(expired[0], /expired.*sign:feeds/);
+
+    assert.match(signer.checkEnvelope(envelopeFeed, 'feature,issue,broken-from,fixed-in\n', Date.now()).problem,
+        /no valid "# astra-feed:" first line/);
+});

@@ -112,7 +112,8 @@ if (typeof importScripts === 'function') {
             'core/policy-profile.js',
             'core/settings-sync.js',
             'core/settings-controller.js',
-            'core/credential-vault.js'
+            'core/credential-vault.js',
+            'core/feature-disable-feed.js'
         ].map(_coreScriptUrl)
     );
 }
@@ -1283,12 +1284,37 @@ const FEATURE_DISABLE_FEED_LEGACY_CACHE_KEYS = Object.freeze(['ytkit-feature-dis
 const FEATURE_DISABLE_FEED_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const FEATURE_DISABLE_FEED_STALE_MS = 30 * 24 * 60 * 60 * 1000;
 const FEATURE_DISABLE_FEED_TIMEOUT_MS = 10000;
+// The highest signed sequence this install has accepted, and the digest of
+// the body it came with. Its own key, so it outlives the cache entry: an
+// evicted or expired cache must not reopen the door to an older copy.
+const FEATURE_DISABLE_FEED_WATERMARK_KEY = 'ytkit-feature-disable-feed-watermark';
 
 // One in-flight fetch per worker lifetime. Ten tabs opening at once must not
 // become ten requests to the same file.
 let _featureDisableFeedInflight = null;
 
-function classifyFeatureDisableFeedCache(cachedAt, now) {
+function featureDisableFeedEnvelope(text) {
+    const read = globalThis.YTKitCore?.readFeatureDisableFeedEnvelope;
+    return typeof read === 'function' ? read(text) : null;
+}
+
+// Why a signed body can't be used at `now`, or null. Without the core module
+// nothing can read the envelope, so nothing is usable.
+function featureDisableFeedEnvelopeProblem(envelope, now) {
+    const check = globalThis.YTKitCore?.checkFeatureDisableFeedEnvelope;
+    return typeof check === 'function' ? check(envelope, now) : 'missing-envelope';
+}
+
+// Receipt time only paces the refetch. Whether the body may be used at all
+// comes from its signed envelope, which a replayed copy cannot move. An entry
+// from a build that cached unsigned-envelope bodies is a miss, whatever its
+// receipt time says.
+function classifyFeatureDisableFeedCache(entry, now, watermark = null) {
+    if (!entry) return 'expired';
+    const envelope = featureDisableFeedEnvelope(entry.text);
+    if (featureDisableFeedEnvelopeProblem(envelope, now)) return 'expired';
+    if (watermark && envelope.sequence < watermark.sequence) return 'expired';
+    const cachedAt = entry.cachedAt;
     if (!Number.isFinite(cachedAt) || cachedAt <= 0) return 'expired';
     const age = now - cachedAt;
     if (age < 0) return 'expired';
@@ -1310,6 +1336,37 @@ async function readFeatureDisableFeedCache() {
     }
 }
 
+async function readFeatureDisableFeedWatermark() {
+    if (!ext.storage?.local?.get) return null;
+    try {
+        const stored = await callExtensionApi(ext.storage.local, 'get', FEATURE_DISABLE_FEED_WATERMARK_KEY);
+        const mark = stored?.[FEATURE_DISABLE_FEED_WATERMARK_KEY];
+        if (!mark || !Number.isSafeInteger(mark.sequence) || mark.sequence < 1) return null;
+        if (typeof mark.digest !== 'string' || !/^[0-9a-f]{64}$/.test(mark.digest)) return null;
+        return { sequence: mark.sequence, digest: mark.digest };
+    } catch (_) {
+        // reason: only this worker writes the mark; unreadable storage means no mark yet
+        return null;
+    }
+}
+
+async function sha256Hex(text) {
+    const bytes = new TextEncoder().encode(text);
+    const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+// Decides whether a verified body may replace what this install has seen.
+// Older sequence: a rollback. Same sequence, different bytes: the signer
+// never does that, so something else did. Same sequence and bytes: accepted,
+// and its signed expiry is unchanged, so it extends nothing.
+function featureDisableFeedReplayProblem(envelope, digest, watermark) {
+    if (!watermark) return null;
+    if (envelope.sequence < watermark.sequence) return 'rollback';
+    if (envelope.sequence === watermark.sequence && digest !== watermark.digest) return 'sequence-reused';
+    return null;
+}
+
 // Removes cache entries written by builds that did not verify the feed. Best
 // effort: failing to clean up costs disk, never correctness, because nothing
 // reads the legacy key any more.
@@ -1322,10 +1379,13 @@ async function purgeLegacyFeatureDisableFeedCache() {
     }
 }
 
-async function writeFeatureDisableFeedCache(text) {
+// The mark and the entry go in one write, so a crash between two writes can't
+// leave a cache entry newer than the mark that guards it.
+async function writeFeatureDisableFeedCache(text, envelope, digest) {
     if (!ext.storage?.local?.set) return;
     try {
         await callExtensionApi(ext.storage.local, 'set', {
+            [FEATURE_DISABLE_FEED_WATERMARK_KEY]: { sequence: envelope.sequence, digest },
             [FEATURE_DISABLE_FEED_CACHE_KEY]: { text, cachedAt: Date.now() }
         });
     } catch (_) {
@@ -1351,7 +1411,7 @@ function fetchFeatureDisableFeed() {
     // be fetched again for the worker's lifetime.
     const run = (async () => {
         try {
-            if (!isUrlAllowed(FEATURE_DISABLE_FEED_URL)) return null;
+            if (!isUrlAllowed(FEATURE_DISABLE_FEED_URL)) return { text: null, problem: 'network' };
             const response = await fetch(FEATURE_DISABLE_FEED_URL, {
                 method: 'GET',
                 headers: { Accept: 'text/csv,text/plain' },
@@ -1360,19 +1420,28 @@ function fetchFeatureDisableFeed() {
                 redirect: 'error',
                 signal: controller.signal
             });
-            if (!response.ok) return null;
+            if (!response.ok) return { text: null, problem: 'network' };
             const { text } = await readTextBounded(
                 response, MAX_FEATURE_DISABLE_FEED_BYTES, 'Feature disable feed', controller);
             // Verified BEFORE the cache write, so an unsigned or tampered body
             // never becomes the last-known-good copy.
             const signature = await fetchFeedSignature(FEATURE_DISABLE_FEED_URL);
-            if (!await verifyFeedSignature(text, signature)) return null;
-            await writeFeatureDisableFeedCache(text);
+            if (!await verifyFeedSignature(text, signature)) return { text: null, problem: 'signature' };
+            // Then freshness and replay, both read from inside the signed
+            // bytes, and both before anything is written.
+            const envelope = featureDisableFeedEnvelope(text);
+            const envelopeProblem = featureDisableFeedEnvelopeProblem(envelope, Date.now());
+            if (envelopeProblem) return { text: null, problem: envelopeProblem };
+            const digest = await sha256Hex(text);
+            const replayProblem = featureDisableFeedReplayProblem(
+                envelope, digest, await readFeatureDisableFeedWatermark());
+            if (replayProblem) return { text: null, problem: replayProblem };
+            await writeFeatureDisableFeedCache(text, envelope, digest);
             await purgeLegacyFeatureDisableFeedCache();
-            return text;
+            return { text, envelope, problem: null };
         } catch (_) {
             // reason: a feed that cannot be fetched is a silent no-op by design
-            return null;
+            return { text: null, problem: 'network' };
         } finally {
             clearTimeout(timer);
         }
@@ -2349,30 +2418,37 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // costs no network at all. A stale-but-usable cache is returned
         // immediately and refreshed behind the response; the caller never
         // waits on the network for a list it already has.
+        // Every answer carries the signed expiry, and a stale one says so, so
+        // the panel can show that it's working from an older copy.
         (async () => {
-            const cached = await readFeatureDisableFeedCache();
-            const freshness = cached
-                ? classifyFeatureDisableFeedCache(cached.cachedAt, Date.now())
-                : 'expired';
+            const [cached, watermark] = await Promise.all([
+                readFeatureDisableFeedCache(),
+                readFeatureDisableFeedWatermark()
+            ]);
+            const freshness = classifyFeatureDisableFeedCache(cached, Date.now(), watermark);
+            const signed = (text) => {
+                const envelope = featureDisableFeedEnvelope(text);
+                return envelope ? { sequence: envelope.sequence, expiresAt: envelope.expiresAt } : {};
+            };
 
             if (freshness === 'fresh') {
-                sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'cache' });
+                sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'cache', ...signed(cached.text) });
                 return;
             }
             if (freshness === 'stale') {
-                sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'stale' });
+                sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'stale', ...signed(cached.text) });
                 void fetchFeatureDisableFeed();
                 return;
             }
-            const text = await fetchFeatureDisableFeed();
-            if (typeof text === 'string') {
-                sendResponse({ ok: true, text, cachedAt: Date.now(), source: 'network' });
+            const result = await fetchFeatureDisableFeed();
+            if (typeof result?.text === 'string') {
+                sendResponse({ ok: true, text: result.text, cachedAt: Date.now(), source: 'network', ...signed(result.text) });
                 return;
             }
-            // No usable cache and no network. The feed contributing nothing is
-            // the designed failure: features keep running exactly as the user
-            // configured them.
-            sendResponse({ ok: false, text: '', source: 'unavailable' });
+            // No usable cache and no usable feed. The feed contributing
+            // nothing is the designed failure: features keep running exactly
+            // as the user configured them.
+            sendResponse({ ok: false, text: '', source: 'unavailable', problem: result?.problem || 'network' });
         })();
         return true;
     }

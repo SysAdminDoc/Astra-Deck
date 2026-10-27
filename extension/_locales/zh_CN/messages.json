@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "问题 #{issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "无法刷新通知列表。正在使用 {checked} 检查过的副本，有效期至 {expires}。"
+  },
   "settingsFooterSaved": {
     "message": "已保存"
   },

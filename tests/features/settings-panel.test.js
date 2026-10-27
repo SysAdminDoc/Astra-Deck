@@ -649,7 +649,7 @@ test('Video Hider toggle rolls back the optimistic state after a rejected save',
 
 const { fakeNode, fakeDocument, fakeTreeDocument } = require('../helpers/monolith');
 
-function buildCardWith(notice, health = []) {
+function buildCardWith(notice, health = [], { feature = null, feedStatus = null } = {}) {
     const originalDocument = globalThis.document;
     globalThis.document = fakeDocument(() => []);
     globalThis.document.body = fakeNode({ tag: 'body' });
@@ -666,6 +666,7 @@ function buildCardWith(notice, health = []) {
             getFeatureName: (feature) => feature.name,
             getFeatureDescription: (feature) => feature.description,
             getFeatureDisableNotice: () => notice,
+            getFeatureDisableFeedStatus: () => feedStatus,
             getFeatureHealthSnapshot: () => health,
             formatPageLabel: (page) => page,
             normalizeSelectOptions: (options) => options,
@@ -673,7 +674,7 @@ function buildCardWith(notice, health = []) {
             injectStyle: () => ({ remove() {} })
         });
         return api.buildFeatureCard(
-            { id: 'returnDislike', name: 'Return Dislike', description: 'Show dislike counts.', icon: 'settings' },
+            feature || { id: 'returnDislike', name: 'Return Dislike', description: 'Show dislike counts.', icon: 'settings' },
             '#ff4e45'
         );
     } finally {
@@ -715,6 +716,20 @@ test('a feature with no notice renders no notice and no marker class', () => {
     const card = buildCardWith(null);
     assert.equal(card.classList.contains('ytkit-feature-known-broken'), false);
     assert.equal(findByClass(card, 'ytkit-feature-broken-note').length, 0);
+});
+
+test('the notice-list card says when it is working from an older signed copy', () => {
+    const feature = { id: 'featureDisableFeed', name: 'Known-breakage notices', description: 'Pause broken features.', icon: 'settings' };
+    const stale = { state: 'stale', checkedAt: Date.UTC(2026, 9, 20, 12), expiresAt: Date.UTC(2026, 11, 26, 12) };
+    const notes = findByClass(buildCardWith(null, [], { feature, feedStatus: stale }), 'ytkit-feature-feed-stale');
+    assert.equal(notes.length, 1, 'a stale copy is shown once on the card that controls the list');
+    assert.match(notes[0].textContent, /Couldn't refresh the notice list/);
+    assert.doesNotMatch(notes[0].textContent, /\{(checked|expires)\}/, 'both dates are filled in');
+
+    assert.equal(findByClass(buildCardWith(null, [], { feature }), 'ytkit-feature-feed-stale').length, 0,
+        'a fresh list shows nothing');
+    assert.equal(findByClass(buildCardWith(null, [], { feedStatus: stale }), 'ytkit-feature-feed-stale').length, 0,
+        'other cards never show the list state');
 });
 
 test('a degraded feature renders one accessible health badge in the canonical settings card', () => {

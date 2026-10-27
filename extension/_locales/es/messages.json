@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Incidencia n.º {issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "No se pudo actualizar la lista de avisos. Se usa la copia comprobada el {checked}, válida hasta el {expires}."
+  },
   "settingsFooterSaved": {
     "message": "Guardado"
   },

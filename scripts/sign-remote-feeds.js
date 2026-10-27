@@ -22,6 +22,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const feedEnvelope = require('../extension/core/feature-disable-feed.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 
@@ -34,12 +35,44 @@ const PUBLIC_KEY_JWK = Object.freeze({
     y: 'CBJ2lKr699c_TgmBPKEJV4QhoEmLlV4a3yfC0qnCuGQ'
 });
 
+// `envelope` feeds carry a signed sequence and expiry on their first line
+// (extension/core/feature-disable-feed.js). The selector asset has its own
+// version-based downgrade check and no envelope.
 const SIGNED_FEEDS = Object.freeze([
     Object.freeze({ file: 'selector-packs.json', label: 'selector asset' }),
-    Object.freeze({ file: 'feature-disable-feed.csv', label: 'feature disable feed' })
+    Object.freeze({ file: 'feature-disable-feed.csv', label: 'feature disable feed', envelope: true })
 ]);
 
 const SIGNATURE_SUFFIX = '.sig';
+
+// Warn this long before a committed feed's signed expiry. Every release
+// re-signs, so a warning means no release has happened in about 46 days.
+const EXPIRY_WARNING_MS = 14 * 24 * 60 * 60 * 1000;
+
+// Next envelope for a feed: one past the committed sequence, issued now.
+function nextEnvelope(text, now = Date.now(), validityMs = feedEnvelope.FEED_DEFAULT_VALIDITY_MS) {
+    const current = feedEnvelope.readFeedEnvelope(text);
+    const issuedAt = Math.floor(now / 1000) * 1000;
+    return {
+        sequence: (current?.sequence || 0) + 1,
+        issuedAt,
+        expiresAt: issuedAt + validityMs
+    };
+}
+
+// Problems and warnings for one envelope feed's committed bytes.
+function checkEnvelope(feed, text, now) {
+    const envelope = feedEnvelope.readFeedEnvelope(text);
+    if (!envelope) {
+        return { problem: `${feed.file} has no valid "# astra-feed:" first line — run npm run sign:feeds` };
+    }
+    const reason = feedEnvelope.checkFeedEnvelope(envelope, now, 0);
+    if (reason) return { problem: `${feed.file} envelope is ${reason} — run npm run sign:feeds` };
+    if (envelope.expiresAt - now < EXPIRY_WARNING_MS) {
+        return { warning: `${feed.file} expires ${new Date(envelope.expiresAt).toISOString()} — the next release re-signs it` };
+    }
+    return {};
+}
 
 function defaultPrivateKeyPath() {
     const base = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
@@ -125,7 +158,7 @@ function readSignature(sigPath) {
     return raw.length === 64 ? raw : null;
 }
 
-function checkAll(repoRoot = REPO_ROOT) {
+function checkAll(repoRoot = REPO_ROOT, { now = Date.now(), warnings = [] } = {}) {
     const problems = [];
     for (const feed of SIGNED_FEEDS) {
         const payloadPath = path.join(repoRoot, feed.file);
@@ -139,8 +172,15 @@ function checkAll(repoRoot = REPO_ROOT) {
             problems.push(`${feed.file}${SIGNATURE_SUFFIX} is missing or malformed — run npm run sign:feeds`);
             continue;
         }
-        if (!verifyPayload(fs.readFileSync(payloadPath), raw)) {
+        const payload = fs.readFileSync(payloadPath);
+        if (!verifyPayload(payload, raw)) {
             problems.push(`${feed.file}${SIGNATURE_SUFFIX} does not verify against the shipped public key — run npm run sign:feeds`);
+            continue;
+        }
+        if (feed.envelope) {
+            const { problem, warning } = checkEnvelope(feed, payload.toString('utf8'), now);
+            if (problem) problems.push(problem);
+            if (warning) warnings.push(warning);
         }
     }
     return problems;
@@ -162,7 +202,9 @@ function checkEmbeddedKeyMatches(repoRoot = REPO_ROOT) {
 
 function main(argv) {
     const check = argv.includes('--check');
-    const problems = [...checkEmbeddedKeyMatches(), ...(check ? checkAll() : [])];
+    const warnings = [];
+    const problems = [...checkEmbeddedKeyMatches(), ...(check ? checkAll(REPO_ROOT, { warnings }) : [])];
+    for (const warning of warnings) console.warn(`[sign-feeds] warning: ${warning}`);
 
     if (check) {
         if (problems.length) {
@@ -191,7 +233,14 @@ function main(argv) {
 
     for (const feed of SIGNED_FEEDS) {
         const payloadPath = path.join(REPO_ROOT, feed.file);
-        const payload = fs.readFileSync(payloadPath);
+        let payload = fs.readFileSync(payloadPath);
+        if (feed.envelope) {
+            const text = payload.toString('utf8');
+            const envelope = nextEnvelope(text);
+            payload = Buffer.from(feedEnvelope.stampFeedEnvelope(text, envelope), 'utf8');
+            fs.writeFileSync(payloadPath, payload);
+            console.log(`[sign-feeds] ${feed.file} sequence ${envelope.sequence}, expires ${new Date(envelope.expiresAt).toISOString()}`);
+        }
         const raw = signPayload(payload, privateKeyPem);
         if (!verifyPayload(payload, raw)) {
             console.error(`[sign-feeds] refusing to write a signature for ${feed.file} that does not verify`);
@@ -209,7 +258,10 @@ module.exports = {
     PUBLIC_KEY_JWK,
     SIGNED_FEEDS,
     SIGNATURE_SUFFIX,
+    EXPIRY_WARNING_MS,
     checkAll,
+    checkEnvelope,
+    nextEnvelope,
     checkEmbeddedKeyMatches,
     derToRawSignature,
     rawToDerSignature,

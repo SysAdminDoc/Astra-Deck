@@ -135,24 +135,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   half under Tampermonkey and Violentmonkey in a private window.
   Complexity: M
 
-- [ ] P2 — Authenticate repair-feed sequence and expiry rather than receipt time alone
-  Why: replaying a valid old signature currently refreshes the apparent age of the feed.
-  Evidence: Verified source at `extension/background.js:1194-1208` and `:1246-1330`;
-  https://theupdateframework.github.io/specification/latest/ describes authenticated freshness.
-  Selector downgrade protection already exists at `extension/core/selectors.js:642-651`.
-  Touches: data-only signed feed metadata, `scripts/sign-remote-feeds.js`, build validators,
-  `extension/background.js`, `extension/core/feature-disable-feed.js`, cache/replay tests.
-  Acceptance: sign a monotonic sequence, issued UTC time and bounded expiry in a CSV header
-  or envelope. Persist highest sequence and digest; reject older sequences, changed bytes at
-  the same sequence, and expired payloads. Receiving unchanged bytes must not extend signed
-  freshness. Invalidate/refetch legacy entries without signed sequence/expiry; never derive
-  their validity from `cachedAt`. Retain the highest-sequence watermark after cache expiry
-  or eviction. Test clock skew, rollback, same-sequence replay, offline startup and signed
-  expiry while receipt age is still under six hours. Preserve the six-hour refresh and explicit 30-day stale policy
-  only within the signed validity bound, with a visible stale state. No remote code or full
-  TUF framework is introduced.
-  Complexity: M
-
 - [ ] P2 — Persist a bounded diagnostic failure journal independently of settings edits
   Why: an error can disappear on reload before the next unrelated preference save.
   Evidence: Verified `record()` behavior and its persistence comment in

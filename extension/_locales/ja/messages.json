@@ -5741,6 +5741,9 @@
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "課題 #{issue}"
   },
+  "settingsFeatureFeedStaleTpl": {
+    "message": "通知リストを更新できませんでした。{checked} に確認したコピーを使用しています（{expires} まで有効）。"
+  },
   "settingsFooterSaved": {
     "message": "保存済み"
   },
