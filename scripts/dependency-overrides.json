@@ -29,11 +29,11 @@
     },
     {
       "package": "fast-uri",
-      "range": "^3.1.6",
-      "reason": "Four high advisories landed against fast-uri 3.0.0-3.1.5, all host-confusion or SSRF through URL normalisation. It reaches this tree only as web-ext -> addons-linter -> ajv, so nothing it parses is user input, but the pin costs nothing and npm reported a non-breaking fix. The 4.x line is a major bump ajv does not ask for.",
-      "answersAdvisory": "GHSA-f65p-4m7j-42xc",
-      "advisoryUrl": "https://github.com/advisories/GHSA-f65p-4m7j-42xc",
-      "lastCheckedOn": "2026-09-05",
+      "range": "^3.1.9",
+      "reason": "Eight advisories so far against fast-uri 3.x, all host confusion, scheme spoofing or path equivalence through URL normalisation; 3.1.9 fixes the four from October 2026. It reaches this tree only as web-ext -> addons-linter -> ajv, so nothing it parses is user input, but the pin costs nothing and npm reported a non-breaking fix. The 4.x line is a major bump ajv does not ask for.",
+      "answersAdvisory": "GHSA-wjr9-j795-jxcr",
+      "advisoryUrl": "https://github.com/advisories/GHSA-wjr9-j795-jxcr",
+      "lastCheckedOn": "2026-10-26",
       "recheckBecause": "Four separate normalisation bypasses shipped against the same parser inside one minor line, so 3.1.6 holding today is not evidence the class is closed."
     },
     {
@@ -57,6 +57,14 @@
       "reason": "Transitive development dependency through web-ext -> addons-linter -> css-tree. 1.2.2 bounds indexed source-map section offsets, which could otherwise stall the event loop.",
       "answersAdvisory": "source-map-js indexed section offset denial of service (>=1.0.0 <1.2.2)",
       "lastCheckedOn": "2026-10-06"
+    },
+    {
+      "package": "undici",
+      "range": "^7.30.1",
+      "reason": "Transitive development dependency through web-ext -> addons-linter -> cheerio. 7.30.1 stops an unhandled error on a response with too many content encodings from crashing the process.",
+      "answersAdvisory": "GHSA-xjj6-f33q-929c",
+      "advisoryUrl": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
+      "lastCheckedOn": "2026-10-26"
     }
   ]
 }

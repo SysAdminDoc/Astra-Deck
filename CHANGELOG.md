@@ -11,6 +11,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The known-breakage list can't be replayed any more. Its signed first line now carries a sequence number and an expiry date. Astra remembers the newest list it has accepted, even after its cached copy is cleared, and refuses an older one, a changed list reusing the same number, or one that's past its date. Getting the same list again no longer makes an old copy look new, and a cached copy from an older build without these dates is fetched again rather than trusted.
 - When the list can't be refreshed and Astra is using its older copy, the Known-Breakage Notices card in Settings says so and shows when that copy was checked and how long it's good for.
 
+### Security
+
+- Build tooling now pins undici 7.30.1 and fast-uri 3.1.9, which close five advisories in packages web-ext pulls in. Neither ships inside the extension or the userscript.
+
 ## [4.100.3] (2026-10-26)
 
 ### Fixed
