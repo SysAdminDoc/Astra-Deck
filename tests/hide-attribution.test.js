@@ -280,3 +280,20 @@ test('hide counts reset on the same route boundary the mutation budgets use', ()
     assert.match(body, /resetHideAttribution\?\.\(\)/,
         'per-navigation hide counts must reset where the route actually changes');
 });
+
+test('restoring a card takes its per-rule count down with the feature total', () => {
+    const core = loadHideAttribution();
+    core.resetHideAttribution();
+    const parent = createParent();
+    const doc = createDocument();
+    const first = attachCard(parent, doc);
+    const second = attachCard(parent, doc);
+    core.markCardHidden(first, { featureId: 'f', rule: 'r' });
+    core.markCardHidden(second, { featureId: 'f', rule: 'r' });
+    core.unmarkCardHidden(second, 'f');
+    core.markCardHidden(second, { featureId: 'f', rule: 'r' });
+    core.unmarkCardHidden(second, 'f');
+    const [entry] = core.getHideAttributionCounts();
+    assert.equal(entry.hidden, 1);
+    assert.equal(entry.rules.r, 1, 'the rule count must not drift above the cards still hidden');
+});

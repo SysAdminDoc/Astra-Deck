@@ -102,11 +102,15 @@
         const id = normalizeId(featureId);
         const owner = element.getAttribute(HIDDEN_BY_ATTR);
         if (!owner || (id && owner !== id)) return false;
+        const rule = element.getAttribute(HIDDEN_RULE_ATTR);
         element.removeAttribute(HIDDEN_BY_ATTR);
         element.removeAttribute(HIDDEN_RULE_ATTR);
         removeHiddenNote(element);
         const entry = counts.get(owner);
         if (entry && entry.hidden > 0) entry.hidden -= 1;
+        // Per-rule counts move with the feature total, or they drift upward
+        // every time a card is restored and hidden again.
+        if (entry && rule && entry.rules[rule] > 0) entry.rules[rule] -= 1;
         return true;
     }
 
