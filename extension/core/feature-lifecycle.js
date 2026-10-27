@@ -113,7 +113,9 @@
 
         function start(id, ctxExtra) {
             const record = getRecord(id);
-            if (record.started) return;
+            // A second start while the first is still settling answers with
+            // the same in-flight result rather than undefined.
+            if (record.started) return record.pending ? record.pendingResult : undefined;
             record.controller = new AbortController();
             record.startedAt = now();
             const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
@@ -127,9 +129,10 @@
                     // no-op. The returned promise resolves to whether it took.
                     const attempt = record.controller;
                     record.pending = true;
-                    return Promise.resolve(result).then(() => {
+                    record.pendingResult = Promise.resolve(result).then(() => {
                         if (record.controller !== attempt) return false;
                         record.pending = false;
+                        record.pendingResult = null;
                         record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
                         return true;
                     }, (e) => {
@@ -139,6 +142,7 @@
                         record.lastError = e;
                         return false;
                     });
+                    return record.pendingResult;
                 }
                 record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             } catch (e) {
@@ -190,6 +194,7 @@
             record.destroyMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             record.started = false;
             record.pending = false;
+            record.pendingResult = null;
             record.controller = null;
         }
 

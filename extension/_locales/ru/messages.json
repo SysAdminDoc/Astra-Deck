@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "Здесь не активно"
   },
+  "featureHealthStatusStarting": {
+    "message": "Запускается"
+  },
   "featureHealthTitle": {
     "message": "Состояние функций"
   },

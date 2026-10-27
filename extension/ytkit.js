@@ -6577,7 +6577,20 @@ const STORAGE_KEYS = Object.freeze({
         updateFeatureHealth(feature, 'starting', source);
         const current = () => feature._lifecycleGeneration === generation && feature._initialized;
         feature._initSettled = Promise.resolve(result).then(() => {
-            if (!current()) return { ok: false, error: null };
+            if (!current()) {
+                // Stopped while it was still starting: whatever the init
+                // attached after that destroy ran has nobody to remove it.
+                // Tear down once more, unless a newer init now owns the
+                // feature.
+                if (!feature._initialized) {
+                    try {
+                        feature.destroy?.();
+                    } catch (cleanupError) {
+                        DebugManager.log('Runtime', `Cleanup after a late init of "${feature.id}" failed: ${cleanupError?.message || cleanupError}`);
+                    }
+                }
+                return { ok: false, error: null };
+            }
             updateFeatureHealth(feature, 'initialized', source, null, elapsedSince());
             return { ok: true, error: null };
         }, (error) => {
@@ -6597,6 +6610,20 @@ const STORAGE_KEYS = Object.freeze({
             return { ok: false, error };
         });
         return true;
+    }
+
+    // Startup and navigation count crashes per feature. An async init only
+    // counts as a success or a crash once it settles, and a settle that went
+    // stale (stopped or restarted meanwhile) counts as neither.
+    function settleFeatureInitOutcome(feature, onSuccess, onCrash) {
+        if (!feature?._initSettled) {
+            onSuccess();
+            return Promise.resolve();
+        }
+        return feature._initSettled.then(({ ok, error }) => {
+            if (ok) onSuccess();
+            else if (error) onCrash(error);
+        });
     }
 
     function destroyFeatureLifecycle(feature, source = 'runtime') {
@@ -49701,9 +49728,7 @@ html:not([dark]) .ytkit-sb-channel-chip {
                 };
                 try {
                     initFeatureLifecycle(f, 'startup');
-                    // An async init only counts as a success or a crash once it settles.
-                    if (f._initSettled) f._initSettled.then(({ ok, error }) => { if (ok) clearCrashes(); else if (error) countCrash(error); });
-                    else clearCrashes();
+                    void settleFeatureInitOutcome(f, clearCrashes, countCrash);
                 } catch(err) {
                     countCrash(err);
                 }
@@ -49830,8 +49855,7 @@ html:not([dark]) .ytkit-sb-channel-chip {
                         };
                         try {
                             initFeatureLifecycle(f, 'navigation');
-                            if (f._initSettled) f._initSettled.then(({ ok, error }) => { if (ok) clearCrashes(); else if (error) countCrash(error); });
-                            else clearCrashes();
+                            void settleFeatureInitOutcome(f, clearCrashes, countCrash);
                         } catch (e) {
                             countCrash(e);
                         }

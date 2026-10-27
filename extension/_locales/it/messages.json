@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "Non attiva qui"
   },
+  "featureHealthStatusStarting": {
+    "message": "Avvio in corso"
+  },
   "featureHealthTitle": {
     "message": "Stato delle funzioni"
   },

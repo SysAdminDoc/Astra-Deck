@@ -1670,6 +1670,9 @@
   "featureHealthStatusIdle": {
     "message": "Not active here"
   },
+  "featureHealthStatusStarting": {
+    "message": "Starting"
+  },
   "featureHealthTitle": {
     "message": "Feature health"
   },

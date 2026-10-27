@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "ここでは非アクティブ"
   },
+  "featureHealthStatusStarting": {
+    "message": "起動中"
+  },
   "featureHealthTitle": {
     "message": "機能の状態"
   },

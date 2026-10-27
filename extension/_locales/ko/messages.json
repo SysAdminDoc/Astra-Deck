@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "여기서는 비활성"
   },
+  "featureHealthStatusStarting": {
+    "message": "시작하는 중"
+  },
   "featureHealthTitle": {
     "message": "기능 상태"
   },

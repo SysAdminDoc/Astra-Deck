@@ -3464,9 +3464,11 @@ function formatFeatureHealthAge(at, now) {
     return t('featureHealthAgeDaysTpl', '{count}d ago').replace('{count}', String(Math.round(ms / 86400000)));
 }
 
-function featureHealthStatusLabel(status) {
+function featureHealthStatusLabel(status, lifecycleStatus) {
     if (status === 'failed') return t('featureHealthStatusFailed', 'Failed');
     if (status === 'degraded') return t('featureHealthStatusDegraded', 'Degraded');
+    // An async init that hasn't settled yet is on its way, not missing.
+    if (status === 'idle' && lifecycleStatus === 'starting') return t('featureHealthStatusStarting', 'Starting');
     if (status === 'idle') return t('featureHealthStatusIdle', 'Not active here');
     return t('featureHealthStatusHealthy', 'Working');
 }
@@ -3499,7 +3501,7 @@ function renderFeatureHealthRows(report) {
         const badge = document.createElement('span');
         badge.className = 'fh-status';
         badge.dataset.status = row.status;
-        badge.textContent = featureHealthStatusLabel(row.status);
+        badge.textContent = featureHealthStatusLabel(row.status, row.lifecycleStatus);
 
         li.appendChild(name);
         li.appendChild(badge);

@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "在此处未启用"
   },
+  "featureHealthStatusStarting": {
+    "message": "正在启动"
+  },
   "featureHealthTitle": {
     "message": "功能健康状态"
   },

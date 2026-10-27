@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "Inativo aqui"
   },
+  "featureHealthStatusStarting": {
+    "message": "Iniciando"
+  },
   "featureHealthTitle": {
     "message": "Saúde dos recursos"
   },

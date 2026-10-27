@@ -1660,6 +1660,9 @@
   "featureHealthStatusIdle": {
     "message": "غير نشطة هنا"
   },
+  "featureHealthStatusStarting": {
+    "message": "قيد التشغيل"
+  },
   "featureHealthTitle": {
     "message": "حالة الميزات"
   },
