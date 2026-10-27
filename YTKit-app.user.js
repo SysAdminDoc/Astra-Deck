@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.105.0
+// @version      4.105.1
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -760,7 +760,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.105.0';
+	const YTKIT_VERSION = '4.105.1';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -2050,6 +2050,10 @@ const STORAGE_KEYS = Object.freeze({
 			clearTimeout(toast._removeTimer);
 			toast._removeTimer = null;
 		}
+		if (toast._panelWatch) {
+			toast._panelWatch.disconnect();
+			toast._panelWatch = null;
+		}
 		if (toast._closeWatcher) {
 			const watcher = toast._closeWatcher;
 			toast._closeWatcher = null;
@@ -2137,9 +2141,9 @@ const STORAGE_KEYS = Object.freeze({
 			...(options.action ? [options.action] : [])
 		].filter(Boolean).slice(0, 2);
 		const durationMs = Math.max(0, Number(options.duration ?? 2.5) * 1000);
-		const keepActionReachable = actions.length > 0
-			&& document.body?.classList.contains('ytkit-panel-open');
-		const persistent = options.persistent === true || keepActionReachable;
+		const isPersistent = () => options.persistent === true
+			|| (actions.length > 0 && !!document.body?.classList.contains('ytkit-panel-open'));
+		const persistent = isPersistent();
 		const toast = document.createElement('div');
 		toast.className = 'ytkit-global-toast';
 		toast.dataset.tone = tone;
@@ -2238,7 +2242,7 @@ const STORAGE_KEYS = Object.freeze({
 			remainingMs = Math.max(0, dismissAt - Date.now());
 		};
 		const resumeDismiss = () => {
-			if (!toast.isConnected || remainingMs <= 0 || persistent) return;
+			if (!toast.isConnected || remainingMs <= 0 || isPersistent()) return;
 			dismissAt = Date.now() + remainingMs;
 			toast._dismissTimer = setTimeout(() => dismissToast(toast), remainingMs);
 		};
@@ -2254,6 +2258,16 @@ const STORAGE_KEYS = Object.freeze({
 				dismissToast(toast);
 			}
 		});
+		if (persistent && options.persistent !== true && durationMs > 0
+			&& typeof MutationObserver === 'function') {
+			toast._panelWatch = new MutationObserver(() => {
+				if (isPersistent()) return;
+				toast._panelWatch.disconnect();
+				toast._panelWatch = null;
+				if (!toast.contains(document.activeElement)) resumeDismiss();
+			});
+			toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+		}
 		requestAnimationFrame(() => toast.classList.add('is-visible'));
 		if (!persistent && durationMs > 0) {
 			toast._dismissTimer = setTimeout(() => dismissToast(toast), durationMs);

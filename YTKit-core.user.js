@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.105.0
+// @version      4.105.1
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -1724,7 +1724,7 @@ __astraDeckRegistry["core/registry.js"] = function (globalThis, self, window, ch
 				throw new Error(`Feature "${id}" is already registered.`);
 			}
 			if (features.has(id) && registerOptions.replace) {
-				if (cleanups.has(id)) cleanups.delete(id);
+				runCleanups(id);
 			}
 			features.set(id, feature);
 			setHealth(id, {
@@ -1893,8 +1893,8 @@ __astraDeckRegistry["core/registry.js"] = function (globalThis, self, window, ch
 			const featureId = normalizeId(id);
 			if (!featureId || !features.has(featureId)) return false;
 			if (unregisterOptions.destroy) destroy(featureId);
+			runCleanups(featureId);
 			features.delete(featureId);
-			cleanups.delete(featureId);
 			setHealth(featureId, { status: 'unregistered', lastError: null });
 			return true;
 		}
@@ -4862,7 +4862,7 @@ __astraDeckRegistry["core/trusted-html.js"] = function (globalThis, self, window
 	const _URL_ATTRS = ['href', 'src', 'xlink:href', 'action', 'formaction', 'data'];
 	const _DANGEROUS_URL = /^\s*(?:javascript|data|vbscript):/i;
 	const _BLOCKED_TAGS = new Set([
-		'base', 'embed', 'iframe', 'link', 'meta', 'object', 'script', 'style'
+		'base', 'embed', 'iframe', 'link', 'meta', 'noscript', 'object', 'script', 'style', 'template'
 	]);
 	function _isDangerousUrl(value) {
 		return _DANGEROUS_URL.test(String(value || '').replace(/[\u0000-\u0020]+/g, ''));
@@ -6306,14 +6306,18 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 						provenance: transcript.provenance
 					};
 				} catch (error) {
+					if (error?.name === 'AbortError') {
+						return { success: false, cancelled: true, error: 'Cancelled' };
+					}
 					if (typeof console !== 'undefined') {
 						console.error('[YTKit TranscriptService] Error:', error);
 					}
 					showToast(t('transcriptDownloadFailed', 'Failed to download transcript'), '#ef4444');
+					const diagnostic = this.getDiagnostics();
 					return {
 						success: false,
 						error: error.message,
-						provenance: this.getDiagnostics()?.provenance
+						provenance: diagnostic?.videoId === videoId ? diagnostic.provenance : null
 					};
 				}
 			},
@@ -9874,6 +9878,16 @@ __astraDeckRegistry["core/settings-import-transaction.js"] = function (globalThi
 					if (checkpoint?.generation === generation) checkpoint = null;
 					return { ok: false, phase: 'apply', rolledBack: true, error };
 				};
+				if (generation !== operationGeneration) {
+					return {
+						ok: false,
+						phase: 'apply',
+						rolledBack: false,
+						superseded: true,
+						error,
+						canUndo: checkpoint !== null
+					};
+				}
 				let restored;
 				try {
 					restored = operation.restore(snapshot);
@@ -9943,7 +9957,7 @@ __astraDeckRegistry["core/storage-manager.js"] = function (globalThis, self, win
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
 	if (core.createStorageCache) return;
-const _installedUnloadHooks = new WeakSet();
+const _installedUnloadHooks = new WeakMap();
 const DEFAULT_ECHO_TTL_MS = 1500;
 	const DEFAULT_SAVE_DEBOUNCE_MS = 500;
 	function createStorageCache(options = {}) {
@@ -10052,20 +10066,29 @@ const DEFAULT_ECHO_TTL_MS = 1500;
 			},
 			_initUnloadFlush() {
 				if (typeof window === 'undefined' || typeof document === 'undefined') return;
-				if (_installedUnloadHooks.has(window)) return;
-				_installedUnloadHooks.add(window);
-				const self = this;
+				const entry = { manager: this, flushPendingStorageWrites };
+				const registered = _installedUnloadHooks.get(window);
+				if (registered) {
+					if (!registered.some((item) => item.manager === this)) registered.push(entry);
+					return;
+				}
+				const managers = [entry];
+				_installedUnloadHooks.set(window, managers);
 				window.addEventListener('beforeunload', () => {
-					if (self._saveTimeout) {
-						clearTimeout(self._saveTimeout);
-						self._saveTimeout = null;
+					for (const { manager: self, flushPendingStorageWrites: flushPending } of managers) {
+						if (self._saveTimeout) {
+							clearTimeout(self._saveTimeout);
+							self._saveTimeout = null;
+						}
+						if (self._dirty.size > 0) self._flush();
+						void flushPending();
 					}
-					if (self._dirty.size > 0) self._flush();
-					void flushPendingStorageWrites();
 				});
 				document.addEventListener('yt-navigate-start', () => {
-					if (self._dirty.size > 0) self._flush();
-					void flushPendingStorageWrites();
+					for (const { manager: self, flushPendingStorageWrites: flushPending } of managers) {
+						if (self._dirty.size > 0) self._flush();
+						void flushPending();
+					}
 				});
 			}
 		};
@@ -11926,6 +11949,7 @@ __astraDeckRegistry["core/navigation.js"] = function (globalThis, self, window, 
 		watchFlexyObservedNode = null;
 	}
 	function ensureWatchFlexyObserver() {
+		if (!isNavigateListenerAttached) return;
 		const watchFlexy = document.querySelector('ytd-watch-flexy');
 		if (!watchFlexy) {
 			if (watchFlexyObservedNode && !document.contains(watchFlexyObservedNode)) {
@@ -11974,6 +11998,7 @@ __astraDeckRegistry["core/navigation.js"] = function (globalThis, self, window, 
 		try {
 			document.startViewTransition(() => {
 				executed = true;
+				if (!isNavigateListenerAttached) return;
 				_executeNavigateRules();
 			});
 		} catch (_) {
@@ -12019,9 +12044,9 @@ __astraDeckRegistry["core/navigation.js"] = function (globalThis, self, window, 
 			window.addEventListener('popstate', debouncedRunNavigateRules);
 		}
 		document.addEventListener('yt-page-data-updated', debouncedRunNavigateRules);
+		isNavigateListenerAttached = true;
 		ensureWatchFlexyObserver();
 		runNavigateRules();
-		isNavigateListenerAttached = true;
 	}
 	function stopNavigateListener() {
 		if (!isNavigateListenerAttached) return;
@@ -12915,6 +12940,7 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 			return task.events.has('*') || task.events.has(reason);
 		}
 		function retry(task, reason, token) {
+			if (token !== routeToken || task.cancelled) return;
 			if (task.attempt >= task.maxAttempts) return;
 			task.attempt += 1;
 			const delay = nextDelay(task);
@@ -13065,7 +13091,11 @@ __astraDeckRegistry["core/player.js"] = function (globalThis, self, window, chro
 			win.addEventListener('yt-player-state-change', onPlayerStateChange);
 		}
 		function destroy() {
-			for (const task of tasks.values()) cancelTimer(task);
+			routeToken += 1;
+			for (const task of tasks.values()) {
+				task.cancelled = true;
+				cancelTimer(task);
+			}
 			tasks.clear();
 			if (!installed || !root?.removeEventListener || !win?.removeEventListener) return;
 			root.removeEventListener('loadstart', onMediaEvent, true);
@@ -17186,11 +17216,13 @@ __astraDeckRegistry["core/hide-attribution.js"] = function (globalThis, self, wi
 		const id = normalizeId(featureId);
 		const owner = element.getAttribute(HIDDEN_BY_ATTR);
 		if (!owner || (id && owner !== id)) return false;
+		const rule = element.getAttribute(HIDDEN_RULE_ATTR);
 		element.removeAttribute(HIDDEN_BY_ATTR);
 		element.removeAttribute(HIDDEN_RULE_ATTR);
 		removeHiddenNote(element);
 		const entry = counts.get(owner);
 		if (entry && entry.hidden > 0) entry.hidden -= 1;
+		if (entry && rule && entry.rules[rule] > 0) entry.rules[rule] -= 1;
 		return true;
 	}
 	function describeHiddenCard(element) {
@@ -18147,8 +18179,10 @@ __astraDeckRegistry["core/credential-vault.js"] = function (globalThis, self, wi
 					const store = transaction.objectStore(storeName);
 					let request;
 					try { request = operation(store); } catch (error) { reject(error); return; }
-					request.onsuccess = () => resolve(request.result);
+					let result;
+					request.onsuccess = () => { result = request.result; };
 					request.onerror = () => reject(request.error || new Error('Credential storage transaction failed.'));
+					transaction.oncomplete = () => resolve(result);
 					transaction.onabort = () => reject(transaction.error || new Error('Credential storage transaction aborted.'));
 				});
 			} finally {
@@ -18189,14 +18223,21 @@ __astraDeckRegistry["core/credential-vault.js"] = function (globalThis, self, wi
 			}
 			memorySession.delete(provider);
 		}
+		const generations = new Map();
+		function bumpGeneration(provider) {
+			generations.set(provider, (generations.get(provider) || 0) + 1);
+		}
 		async function get(provider) {
 			const normalized = normalizeProvider(provider);
 			if (!normalized || normalized === 'ollama') return '';
+			const generation = generations.get(normalized) || 0;
 			const sessionValue = await sessionGet(normalized);
 			if (sessionValue) return sessionValue;
 			const persisted = await persistentStore.get(normalized);
 			if (typeof persisted === 'string' && persisted) {
-				await sessionSet(normalized, persisted);
+				if ((generations.get(normalized) || 0) === generation) {
+					await sessionSet(normalized, persisted);
+				}
 				return persisted;
 			}
 			return '';
@@ -18208,19 +18249,29 @@ __astraDeckRegistry["core/credential-vault.js"] = function (globalThis, self, wi
 			if (!value || value.length > 4096 || /[\r\n\0]/.test(value)) {
 				throw new Error('Credential must be 1-4096 characters without control characters.');
 			}
-			if (setOptions.remember === true) {
-				await persistentStore.set(normalized, value);
-			} else {
-				await persistentStore.delete(normalized);
+			bumpGeneration(normalized);
+			try {
+				if (setOptions.remember === true) {
+					await persistentStore.set(normalized, value);
+				} else {
+					await persistentStore.delete(normalized);
+				}
+				await sessionSet(normalized, value);
+			} finally {
+				bumpGeneration(normalized);
 			}
-			await sessionSet(normalized, value);
 			return { provider: normalized, configured: true, remembered: setOptions.remember === true };
 		}
 		async function remove(provider) {
 			const normalized = normalizeProvider(provider);
 			if (!normalized || normalized === 'ollama') throw new Error('This provider has no stored credential.');
-			await persistentStore.delete(normalized);
-			await sessionDelete(normalized);
+			bumpGeneration(normalized);
+			try {
+				await persistentStore.delete(normalized);
+				await sessionDelete(normalized);
+			} finally {
+				bumpGeneration(normalized);
+			}
 			return { provider: normalized, configured: false, remembered: false };
 		}
 		async function status() {
@@ -19257,6 +19308,10 @@ __astraDeckRegistry["core/toast-dom.js"] = function (globalThis, self, window, c
 				clearTimeout(toast._removeTimer);
 				toast._removeTimer = null;
 			}
+			if (toast._panelWatch) {
+				toast._panelWatch.disconnect();
+				toast._panelWatch = null;
+			}
 			if (toast._closeWatcher) {
 				const watcher = toast._closeWatcher;
 				toast._closeWatcher = null;
@@ -19297,9 +19352,9 @@ __astraDeckRegistry["core/toast-dom.js"] = function (globalThis, self, window, c
 				...(options.action ? [options.action] : [])
 			].filter(Boolean).slice(0, 2);
 			const durationMs = Math.max(0, Number(options.duration ?? 2.5) * 1000);
-			const keepActionReachable = actions.length > 0
-				&& document.body?.classList.contains('ytkit-panel-open');
-			const persistent = options.persistent === true || keepActionReachable;
+			const isPersistent = () => options.persistent === true
+				|| (actions.length > 0 && !!document.body?.classList.contains('ytkit-panel-open'));
+			const persistent = isPersistent();
 			const toast = document.createElement('div');
 			toast.className = 'ytkit-global-toast';
 			toast.dataset.tone = tone;
@@ -19398,7 +19453,7 @@ __astraDeckRegistry["core/toast-dom.js"] = function (globalThis, self, window, c
 				remainingMs = Math.max(0, dismissAt - Date.now());
 			};
 			const resumeDismiss = () => {
-				if (!toast.isConnected || remainingMs <= 0 || persistent) return;
+				if (!toast.isConnected || remainingMs <= 0 || isPersistent()) return;
 				dismissAt = Date.now() + remainingMs;
 				toast._dismissTimer = setTimeout(() => dismissToast(toast), remainingMs);
 			};
@@ -19414,6 +19469,16 @@ __astraDeckRegistry["core/toast-dom.js"] = function (globalThis, self, window, c
 					dismissToast(toast);
 				}
 			});
+			if (persistent && options.persistent !== true && durationMs > 0
+				&& typeof MutationObserver === 'function') {
+				toast._panelWatch = new MutationObserver(() => {
+					if (isPersistent()) return;
+					toast._panelWatch.disconnect();
+					toast._panelWatch = null;
+					if (!toast.contains(document.activeElement)) resumeDismiss();
+				});
+				toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+			}
 			requestAnimationFrame(() => toast.classList.add('is-visible'));
 			if (!persistent && durationMs > 0) {
 				toast._dismissTimer = setTimeout(() => dismissToast(toast), durationMs);
@@ -20653,6 +20718,7 @@ __astraDeckRegistry["features/live-chat/index.js"] = function (globalThis, self,
 			let panel = null;
 			let timer = null;
 			let running = false;
+			let disposed = false;
 			let state = { selected: [], intervalMs: 600 };
 			let persistedExtras = {};
 			function clampInterval(value) {
@@ -20845,6 +20911,7 @@ __astraDeckRegistry["features/live-chat/index.js"] = function (globalThis, self,
 			}
 			async function init() {
 				await loadState();
+				if (disposed) return;
 				setStyle('reactionSpammer', REACTION_CSS, true);
 				launcher = doc.createElement('button');
 				launcher.id = 'ytkit-reaction-spammer-launcher';
@@ -20856,6 +20923,7 @@ __astraDeckRegistry["features/live-chat/index.js"] = function (globalThis, self,
 				doc.body?.append(launcher);
 			}
 			function destroy() {
+				disposed = true;
 				stop();
 				panel?.remove();
 				launcher?.remove();
@@ -20940,6 +21008,7 @@ __astraDeckRegistry["features/live-chat/index.js"] = function (globalThis, self,
 			if (started || destroyed || !isChatPath()) return false;
 			started = true;
 			await applySettings(await readSettings());
+			if (destroyed) return false;
 			observer = new win.MutationObserver(queueScan);
 			observer.observe(doc.documentElement, { childList: true, subtree: true });
 			storageListener = (changes, areaName) => {
@@ -24266,6 +24335,7 @@ void 0;
 			return task.events.has('*') || task.events.has(reason);
 		}
 		function retry(task, reason, token) {
+			if (token !== routeToken || task.cancelled) return;
 			if (task.attempt >= task.maxAttempts) return;
 			task.attempt += 1;
 			const delay = nextDelay(task);
@@ -24416,7 +24486,11 @@ void 0;
 			win.addEventListener('yt-player-state-change', onPlayerStateChange);
 		}
 		function destroy() {
-			for (const task of tasks.values()) cancelTimer(task);
+			routeToken += 1;
+			for (const task of tasks.values()) {
+				task.cancelled = true;
+				cancelTimer(task);
+			}
 			tasks.clear();
 			if (!installed || !root?.removeEventListener || !win?.removeEventListener) return;
 			root.removeEventListener('loadstart', onMediaEvent, true);

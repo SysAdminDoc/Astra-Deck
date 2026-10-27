@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.105.0
+// @version      4.105.1
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -3552,6 +3552,7 @@ __astraDeckRegistry["features/element-zapper/index.js"] = function (globalThis, 
 			group: 'Home / Subscriptions',
 			_rules: [],
 			_picker: null,
+			_active: false,
 			_describeRefusal(reason) {
 				const reasons = zapperCore().ELEMENT_ZAPPER_REFUSAL_REASONS || {};
 				switch (reason) {
@@ -3608,38 +3609,46 @@ __astraDeckRegistry["features/element-zapper/index.js"] = function (globalThis, 
 				}
 				return nodes.length;
 			},
+			_syncRules() {
+				this._rules = readRules();
+				return this._rules;
+			},
+			_reapply({ restore = false } = {}) {
+				if (!this._active) return;
+				if (restore) this._restoreAll();
+				this._apply();
+			},
 			getRules() {
-				return this._rules.map((rule) => ({ ...rule }));
+				return this._syncRules().map((rule) => ({ ...rule }));
 			},
 			addRule(rule) {
 				const core = zapperCore();
 				const clean = core.sanitizeZapperRule?.(rule);
 				if (!clean) return null;
-				if (this._rules.some((existing) => existing.selector === clean.selector)) return null;
+				const rules = this._syncRules();
+				if (rules.some((existing) => existing.selector === clean.selector)) return null;
 				const max = core.ELEMENT_ZAPPER_MAX_RULES || 200;
-				if (this._rules.length >= max) return null;
-				this._rules = writeRules([...this._rules, clean]);
-				this._apply();
+				if (rules.length >= max) return null;
+				this._rules = writeRules([...rules, clean]);
+				this._reapply();
 				return clean;
 			},
 			removeRule(selector) {
-				const before = this._rules.length;
-				this._rules = writeRules(this._rules.filter((rule) => rule.selector !== selector));
-				if (this._rules.length === before) return false;
-				this._restoreAll();
-				this._apply();
+				const rules = this._syncRules();
+				this._rules = writeRules(rules.filter((rule) => rule.selector !== selector));
+				if (this._rules.length === rules.length) return false;
+				this._reapply({ restore: true });
 				return true;
 			},
 			setRuleEnabled(selector, enabled) {
 				let touched = false;
-				this._rules = writeRules(this._rules.map((rule) => {
+				this._rules = writeRules(this._syncRules().map((rule) => {
 					if (rule.selector !== selector) return rule;
 					touched = true;
 					return { ...rule, enabled: enabled !== false };
 				}));
 				if (!touched) return false;
-				this._restoreAll();
-				this._apply();
+				this._reapply({ restore: true });
 				return true;
 			},
 			isPicking() {
@@ -3792,12 +3801,14 @@ __astraDeckRegistry["features/element-zapper/index.js"] = function (globalThis, 
 				return true;
 			},
 			init() {
-				this._rules = readRules();
+				this._active = true;
+				this._syncRules();
 				this._apply();
 				addMutationRule?.(this.id, () => this._apply());
 				addNavigateRule?.(this.id, () => this._apply());
 			},
 			destroy() {
+				this._active = false;
 				this.stopPicking();
 				removeMutationRule?.(this.id);
 				removeNavigateRule?.(this.id);
@@ -8312,6 +8323,7 @@ __astraDeckRegistry["features/sticky-chat/index.js"] = function (globalThis, sel
 			group: 'Live Chat',
 			icon: 'message-circle',
 			_styleEl: null,
+			_initialized: false,
 			_observer: null,
 			_frame: null,
 			_controls: null,
@@ -8459,6 +8471,9 @@ __astraDeckRegistry["features/sticky-chat/index.js"] = function (globalThis, sel
 				this._controls?.remove?.();
 				this._controls = null;
 				this._frame?.classList?.remove?.(FLOATING_CLASS);
+				for (const property of ['--ytkit-floating-chat-x', '--ytkit-floating-chat-y', '--ytkit-floating-chat-opacity']) {
+					this._frame?.style?.removeProperty?.(property);
+				}
 				this._frame = null;
 			},
 			_sync() {
@@ -8481,6 +8496,8 @@ __astraDeckRegistry["features/sticky-chat/index.js"] = function (globalThis, sel
 				}, delay);
 			},
 			init() {
+				if (this._initialized) this.destroy();
+				this._initialized = true;
 				const css = `ytd-live-chat-frame:not(.ytkit-floating-chat),#chat-container{position:sticky!important;top:8px!important;z-index:100!important}ytd-live-chat-frame.ytkit-floating-chat{position:fixed!important;inset:auto!important;left:var(--ytkit-floating-chat-x,calc(100vw - 444px))!important;top:var(--ytkit-floating-chat-y,24px)!important;width:min(420px,calc(100vw - 32px))!important;height:min(70vh,640px)!important;z-index:2147483000!important;opacity:var(--ytkit-floating-chat-opacity,0.9);border:1px solid var(--ytkit-overlay-border,rgba(255,255,255,0.2))!important;border-radius:12px!important;overflow:hidden!important;background:var(--ytkit-overlay-bg,#171b23)!important;box-shadow:0 22px 70px rgba(0,0,0,0.52)!important}ytd-live-chat-frame.ytkit-floating-chat > iframe{width:100%!important;height:100%!important}.ytkit-floating-chat-controls{position:absolute;top:8px;right:8px;z-index:5;display:flex;align-items:center;gap:8px;padding:5px 7px;border:1px solid var(--ytkit-overlay-border,rgba(255,255,255,0.2));border-radius:10px;color:var(--ytkit-overlay-text,#e8ecf4);background:var(--ytkit-overlay-bg-soft,rgba(23,27,35,0.96));box-shadow:0 8px 24px rgba(0,0,0,0.35)}.ytkit-floating-chat-drag{width:36px;min-height:36px;padding:0;border:0;border-radius:8px;color:inherit;background:transparent;cursor:move;touch-action:none}.ytkit-floating-chat-controls input[type="range"]{width:88px;min-height:36px;accent-color:var(--ytkit-accent,#a78bfa)}.ytkit-floating-chat-drag:hover{background:var(--ytkit-overlay-hover,rgba(255,255,255,0.1))}.ytkit-floating-chat-drag:focus-visible,.ytkit-floating-chat-controls input:focus-visible{outline:none;box-shadow:var(--ytkit-focus-ring,0 0 0 2px rgba(8,11,16,0.98),0 0 0 4px rgba(255,107,74,0.55))}@media (max-width:520px){ytd-live-chat-frame.ytkit-floating-chat{width:calc(100vw - 24px)!important;height:min(65vh,560px)!important}}@media (forced-colors:active){ytd-live-chat-frame.ytkit-floating-chat,.ytkit-floating-chat-controls{border:2px solid CanvasText!important}}@media (prefers-reduced-motion:reduce){ytd-live-chat-frame.ytkit-floating-chat{transition:none!important}}`;
 				this._styleEl = injectStyle(css, this.id, true);
 				this._fullscreenHandler = () => this._scheduleSync();
@@ -8495,6 +8512,7 @@ __astraDeckRegistry["features/sticky-chat/index.js"] = function (globalThis, sel
 				this._sync();
 			},
 			destroy() {
+				this._initialized = false;
 				if (this._syncTimer) { clearTimeoutFn(this._syncTimer); this._syncTimer = null; }
 				this._observer?.disconnect?.();
 				this._observer = null;
@@ -23966,6 +23984,7 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 			_antiAdblockActionError: '',
 			_zeroAdStatus: null,
 			_generation: 0,
+			_initialized: false,
 			_CATEGORY_MAP: {
 				sbCat_sponsor: 'sponsor',
 				sbCat_intro: 'intro',
@@ -24420,11 +24439,14 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				}, delay);
 			},
 			async _refreshZeroAdStatus() {
+				const gen = this._generation;
 				try {
 					const status = await getZeroAdStatus();
+					if (gen !== this._generation) return this._zeroAdStatus;
 					if (!status?.ok) throw new Error(status?.error || 'Status unavailable');
 					this._zeroAdStatus = status;
 				} catch (error) {
+					if (gen !== this._generation) return this._zeroAdStatus;
 					this._zeroAdStatus = {
 						ok: false,
 						enabled: true,
@@ -24442,8 +24464,10 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				this._antiAdblockBusy = true;
 				this._antiAdblockActionError = '';
 				this._renderAntiAdblockNotice();
+				const gen = this._generation;
 				try {
 					const status = await pauseZeroAdRules();
+					if (gen !== this._generation) return;
 					if (!status?.ok || !status.paused || !status.pauseUntil) {
 						throw new Error(status?.error || 'Astra ad blocking could not be paused.');
 					}
@@ -24454,11 +24478,12 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 					announceA11y(t('antiAdblockPausedUntilTpl', 'Astra ad blocking is paused until {time}.')
 						.replace('{time}', deadline));
 				} catch (error) {
+					if (gen !== this._generation) return;
 					this._antiAdblockActionError = error?.message || 'Astra ad blocking could not be paused.';
 					DiagnosticLog?.record?.('sb-anti-adblock', `recovery failed: ${this._antiAdblockActionError}`);
 				} finally {
 					this._antiAdblockBusy = false;
-					this._renderAntiAdblockNotice();
+					if (gen === this._generation) this._renderAntiAdblockNotice();
 				}
 			},
 			async _resumeZeroAdRules() {
@@ -24466,8 +24491,10 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				this._antiAdblockBusy = true;
 				this._antiAdblockActionError = '';
 				this._renderAntiAdblockNotice();
+				const gen = this._generation;
 				try {
 					const status = await resumeZeroAdRules();
+					if (gen !== this._generation) return;
 					if (!status?.ok || status.enabled !== true) {
 						throw new Error(status?.error || 'Astra ad blocking could not be resumed.');
 					}
@@ -24476,11 +24503,12 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 					DiagnosticLog?.record?.('sb-anti-adblock', 'user resumed Astra ad rules');
 					announceA11y(t('antiAdblockResumed', 'Astra ad blocking resumed.'));
 				} catch (error) {
+					if (gen !== this._generation) return;
 					this._antiAdblockActionError = error?.message || 'Astra ad blocking could not be resumed.';
 					DiagnosticLog?.record?.('sb-anti-adblock', `resume failed: ${this._antiAdblockActionError}`);
 				} finally {
 					this._antiAdblockBusy = false;
-					this._renderAntiAdblockNotice();
+					if (gen === this._generation) this._renderAntiAdblockNotice();
 				}
 			},
 			_renderAntiAdblockNotice() {
@@ -24606,6 +24634,8 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 			},
 			init() {
 				const self = this;
+				if (this._initialized) this.destroy();
+				this._initialized = true;
 				this._styleEl = injectStyle(`.ytkit-sb-segment{border-radius:0}.ytkit-anti-adblock-recovery{position:fixed!important;right:max(18px,env(safe-area-inset-right))!important;bottom:max(18px,env(safe-area-inset-bottom))!important;z-index:2147483646!important;box-sizing:border-box!important;width:min(390px,calc(100vw - 36px))!important;padding:18px!important;border:1px solid rgba(255,126,97,0.34)!important;border-radius:12px!important;background:rgba(17,20,27,0.96)!important;color:#f8fafc!important;box-shadow:0 24px 70px rgba(0,0,0,0.48),0 0 0 1px rgba(255,255,255,0.04) inset!important;font:400 13px/1.5 Roboto,Arial,sans-serif!important}.ytkit-anti-adblock-recovery[data-playback-state="blocked"]{border-color:rgba(255,90,90,0.56)!important}.ytkit-anti-adblock-title{display:block!important;margin:0 0 7px!important;color:#fff!important;font-size:15px!important;font-weight:700!important;letter-spacing:-0.01em!important}.ytkit-anti-adblock-summary,.ytkit-anti-adblock-evidence,.ytkit-anti-adblock-deadline,.ytkit-anti-adblock-hint,.ytkit-anti-adblock-error{margin:0!important}.ytkit-anti-adblock-summary{color:rgba(248,250,252,0.88)!important}.ytkit-anti-adblock-evidence{margin-top:10px!important;padding:8px 10px!important;border-radius:10px!important;background:rgba(255,255,255,0.06)!important;color:rgba(226,232,240,0.76)!important;font:500 11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace!important;overflow-wrap:anywhere!important}.ytkit-anti-adblock-deadline{margin-top:12px!important;color:#ffd2c7!important;font-weight:650!important}.ytkit-anti-adblock-hint{margin-top:3px!important;color:rgba(226,232,240,0.68)!important}.ytkit-anti-adblock-error{margin-top:10px!important;color:#fecaca!important}.ytkit-anti-adblock-actions{display:flex!important;margin-top:14px!important}.ytkit-anti-adblock-action{min-height:38px!important;padding:0 15px!important;border:1px solid rgba(255,255,255,0.12)!important;border-radius:10px!important;background:#ff684f!important;color:#fff!important;box-shadow:0 8px 22px rgba(255,80,56,0.24)!important;font:700 12px/1 Roboto,Arial,sans-serif!important;cursor:pointer!important;transition:transform 140ms ease,filter 140ms ease,box-shadow 140ms ease!important}.ytkit-anti-adblock-action:hover:not(:disabled){filter:brightness(1.08)!important;transform:translateY(-1px)!important;box-shadow:0 11px 26px rgba(255,80,56,0.3)!important}.ytkit-anti-adblock-action:focus-visible{outline:3px solid rgba(125,211,252,0.8)!important;outline-offset:3px!important}.ytkit-anti-adblock-action:disabled{cursor:wait!important;opacity:0.68!important}html:not([dark]) .ytkit-anti-adblock-recovery{border-color:rgba(194,65,12,0.24)!important;background:rgba(255,255,255,0.97)!important;color:#172033!important;box-shadow:0 24px 70px rgba(15,23,42,0.2),0 0 0 1px rgba(15,23,42,0.04) inset!important}html:not([dark]) .ytkit-anti-adblock-title{color:#111827!important}html:not([dark]) .ytkit-anti-adblock-summary{color:#334155!important}html:not([dark]) .ytkit-anti-adblock-evidence{background:rgba(15,23,42,0.055)!important;color:#475569!important}html:not([dark]) .ytkit-anti-adblock-deadline{color:#9a3412!important}html:not([dark]) .ytkit-anti-adblock-hint{color:#64748b!important}html:not([dark]) .ytkit-anti-adblock-error{color:#b91c1c!important}@media (max-width:520px){.ytkit-anti-adblock-recovery{right:12px!important;bottom:12px!important;width:calc(100vw - 24px)!important}}@media (prefers-reduced-motion:reduce){.ytkit-anti-adblock-action{transition:none!important}}`, this.id, true);
 				this._antiAdblockTimer = setInterval(() => self._checkAntiAdblock(), 30000);
 				this._checkAntiAdblock();
@@ -24676,6 +24706,7 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 			},
 			destroy() {
 				this._generation = (this._generation + 1) | 0;
+				this._initialized = false;
 				clearInterval(this._antiAdblockTimer);
 				this._antiAdblockTimer = null;
 				clearTimeout(this._antiAdblockVerifyTimer);
