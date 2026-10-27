@@ -11,6 +11,7 @@ const {
     chromiumArgs, connectCdp, createChromiumStage, evaluate, killProcessTree,
     removeDirWithRetries, reserveLoopbackPort, sleep, waitForBackgroundTarget, waitForDevTools
 } = require('./smoke-chromium-optional-hosts');
+const { DEFAULT_FLAGS } = require('../extension/core/classic-watch-layout.js');
 
 const ROOT = path.join(__dirname, '..');
 const WATCH = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
@@ -637,6 +638,81 @@ async function run(client, background) {
         assert.equal(heading.length, 1, 'one visible watch title');
         await settings({ daThumbSaturation: 100 });
         return { home, heading: heading[0] };
+    });
+    await check('comment features follow comments into the side-panel page', async () => {
+        // YouTube's 2026-10 side-panel watch page, forced the way the capture
+        // in tests/watch-side-panel-capture.test.js was: every flag Classic
+        // Watch Layout turns off, set true after each ytcfg.set.
+        const flags = DEFAULT_FLAGS.filter(flag => flag !== 'kevlar_watch_cinematics');
+        const { identifier } = await client.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+            const flags = ${JSON.stringify(flags)};
+            const force = store => { if (store && typeof store === 'object') for (const flag of flags) store[flag] = true; };
+            const wrap = cfg => {
+                if (!cfg || typeof cfg.set !== 'function' || cfg.__astraForced) return;
+                cfg.__astraForced = true;
+                const set = cfg.set;
+                cfg.set = function (...values) {
+                    const result = set.apply(this, values);
+                    try { force(cfg.get('EXPERIMENT_FLAGS')); force(cfg.data_ && cfg.data_.EXPERIMENT_FLAGS); force(window.yt && window.yt.config_ && window.yt.config_.EXPERIMENT_FLAGS); } catch (error) {}
+                    return result;
+                };
+            };
+            let current = window.ytcfg;
+            Object.defineProperty(window, 'ytcfg', { configurable: true, get: () => current, set: value => { current = value; wrap(value); } });
+            wrap(current);
+        })()` });
+        const PANEL = '[target-id="engagement-panel-comments-section"]';
+        const THREADS = `${PANEL} ytd-comments ytd-comment-thread-renderer`;
+        const KEYS = ['stickyVideo', 'restoreClassicWatchLayout', 'hideRelatedVideos', 'chatStyleComments', 'commentSearch', 'commentFilterManager', 'commentFilterRules'];
+        const before = await evaluate(background, "new Promise(resolve => chrome.storage.local.get('ytSuiteSettings', result => resolve(result.ytSuiteSettings || {})))");
+        const search = query => read(`(() => { const input = document.querySelector('${PANEL} .ytkit-comment-search-input'); input.value = ${JSON.stringify(query)}; input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+        try {
+            // Theater Split takes the whole page over, so it's off here; its
+            // pane mirrors #below and can't show the panel yet (ROADMAP).
+            await settings({ stickyVideo: false, restoreClassicWatchLayout: false, hideRelatedVideos: true, chatStyleComments: true, commentSearch: true, commentFilterManager: true, commentFilterRules: '' });
+            await navigate(WATCH);
+            await until("[...(document.querySelector('ytd-watch-flexy')?.attributes || [])].some(a => /split-scroll|using-fixed-panel|side-rail/.test(a.name))", 'the side-panel page');
+            await click('button[aria-label="Comments"]', 1000);
+            await until(`document.querySelector('${PANEL}')?.getAttribute('visibility') === 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED'`, 'the side rail opens the comments panel', 10000);
+            await until(`document.querySelectorAll('${THREADS}').length > 3`, 'comments in the panel', 30000);
+            await until(`!!document.querySelector('${PANEL} ytd-comments .ytkit-comment-search')`, 'Comment Search bar in the panel', 15000);
+            await until(`!!document.querySelector('${PANEL} ytd-comments [data-ytkit-chat]')`, 'Studio Comments takes the panel comments', 15000);
+            const state = await read(`(() => {
+                const panelRoot = document.querySelector('${PANEL} ytd-comments');
+                const classic = document.querySelector('ytd-comments#comments');
+                const box = document.querySelector('${PANEL}').getBoundingClientRect();
+                const words = (panelRoot.querySelector('ytd-comment-thread-renderer #content-text')?.textContent || '').toLowerCase().match(/[a-z]{5,}/g) || [];
+                return {
+                    threads: panelRoot.querySelectorAll('ytd-comment-thread-renderer').length,
+                    styled: panelRoot.querySelectorAll('[data-ytkit-chat]').length,
+                    rootRadius: getComputedStyle(panelRoot).borderTopLeftRadius,
+                    rootRules: [...document.querySelectorAll('style[id^="yt-suite-style-chatStyleComments"]')].flatMap(s => [...(s.sheet?.cssRules || [])]).filter(r => r.selectorText && panelRoot.matches(r.selectorText)).length,
+                    bars: document.querySelectorAll('.ytkit-comment-search').length,
+                    classicHidden: !classic || (classic.hasAttribute('hidden') && getComputedStyle(classic).display === 'none'),
+                    panelBox: [box.x, box.y, box.width, box.height].map(Math.round),
+                    onScreen: box.width > 0 && box.height > 0 && box.left >= -1 && box.right <= innerWidth + 1,
+                    word: words.sort((a, b) => b.length - a.length)[0] || ''
+                };
+            })()`);
+            assert.ok(state.rootRules > 0 && state.rootRadius !== '0px', `the Studio Comments card style reaches the panel root (${state.rootRules} rules, radius ${state.rootRadius})`);
+            assert.ok(state.styled > 0, 'Studio Comments marks the panel comments');
+            assert.equal(state.bars, 1, 'one search bar, in the panel');
+            assert.equal(state.classicHidden, true, 'the #comments YouTube hid under the video stays hidden');
+            assert.ok(state.word, 'the first panel comment has a word to filter on');
+            assert.ok(state.onScreen, `the comments panel is on screen with Hide Related Videos on (box ${state.panelBox.join(',')})`);
+            await search('zzqxjv no comment says this');
+            await until(`[...document.querySelectorAll('${THREADS}')].every(t => t.dataset.ytkitCommentSearchHidden === '1')`, 'Comment Search filters the panel threads', 5000);
+            await search('');
+            await until(`!document.querySelector('${PANEL} [data-ytkit-comment-search-hidden="1"]')`, 'Comment Search clears', 5000);
+            await settings({ commentFilterRules: state.word });
+            await until(`[...document.querySelectorAll('${THREADS}')].some(t => t.dataset.ytkitCommentFilterHidden === '1' && getComputedStyle(t).display === 'none')`, 'Comment Filter hides the matching panel thread', 10000);
+            const filtered = await read(`document.querySelectorAll('${PANEL} [data-ytkit-comment-filter-hidden="1"]').length`);
+            await capture('side-panel-comments');
+            return { ...state, filtered };
+        } finally {
+            await client.send('Page.removeScriptToEvaluateOnNewDocument', { identifier });
+            await settings(Object.fromEntries(KEYS.map(key => [key, before[key]])));
+        }
     });
 }
 

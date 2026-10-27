@@ -1331,47 +1331,29 @@ __astraDeckRegistry["core/styles.js"] = function (globalThis, self, window, chro
 			.map((chunk) => `${chunk}}`)
 			.join('');
 	}
-	function cleanupRetiredCommentUi(root = document) {
-		if (!root?.querySelectorAll) return;
-		[
-			'chatStyleComments',
-			'chatStyleComments-premium',
-			'chatStyleComments-premium-2',
-			'commentEnhancements',
-			'commentNavigator',
-			'autoExpandComments',
-			'hideCommentDislikeButton',
-			'hideCommentActionMenu',
-			'condenseComments',
-			'hideCommentTeaser',
-			'watchPageRestyle-comments'
-		].forEach((styleId) => {
-			root.querySelector(`#yt-suite-style-${styleId}`)?.remove();
-		});
-		root.querySelectorAll('.ytkit-comment-search, #ytkit-comment-nav, .ytkit-vote-badge, .ytkit-heat-indicator').forEach((el) => el.remove());
-		root.querySelectorAll('[data-ytkit-chat], [data-ytkit-pinned], [data-ytkit-heart], [data-ytkit-linked], [data-ytkit-enhanced], [data-ytkit-creator], [data-ytkit-comment-current]').forEach((el) => {
-			delete el.dataset.ytkitChat;
-			delete el.dataset.ytkitPinned;
-			delete el.dataset.ytkitHeart;
-			delete el.dataset.ytkitLinked;
-			delete el.dataset.ytkitEnhanced;
-			delete el.dataset.ytkitCreator;
-			delete el.dataset.ytkitCommentCurrent;
-		});
-		root.querySelectorAll('.ytkit-replying').forEach((el) => el.classList.remove('ytkit-replying'));
-		root.querySelectorAll('ytd-comment-thread-renderer').forEach((thread) => {
-			if (thread instanceof HTMLElement && thread.style.display === 'none' && thread.dataset.ytkitPinnedCommentHidden !== '1') {
-				thread.style.display = '';
-			}
-		});
+	const COMMENTS_PANEL_ROOT = '[target-id="engagement-panel-comments-section"] ytd-comments';
+	const COMMENTS_ROOT_TOKEN = /(?<![\w#-]|:is\()(?:ytd-comments)?(?:#comments)+(?![\w-])/g;
+	function scopeCommentsCss(css = '') {
+		if (!css) return css;
+		return css.replace(COMMENTS_ROOT_TOKEN, (token) => `:is(${token},${COMMENTS_PANEL_ROOT})`);
+	}
+	function findCommentsRoot(doc = document) {
+		const classic = doc?.querySelector?.('ytd-comments#comments') || null;
+		const panel = doc?.querySelector?.(COMMENTS_PANEL_ROOT) || null;
+		if (!panel || !classic) return classic || panel;
+		if (classic.querySelector('ytd-comment-thread-renderer')) return classic;
+		if (panel.querySelector('ytd-comment-thread-renderer') || classic.hasAttribute('hidden')) return panel;
+		return classic;
 	}
 	Object.assign(core, {
 		appendStyleSheet,
 		canScopeCss,
-		cleanupRetiredCommentUi,
+		COMMENTS_PANEL_ROOT,
 		createCssLifecycleSpec,
+		findCommentsRoot,
 		injectStyle,
 		clearCustomHighlight,
+		scopeCommentsCss,
 		scopeCss,
 		setCustomHighlight,
 		stripCommentRestyleCss,
@@ -1382,10 +1364,12 @@ __astraDeckRegistry["core/styles.js"] = function (globalThis, self, window, chro
 		module.exports = {
 			appendStyleSheet,
 			canScopeCss,
-			cleanupRetiredCommentUi,
+			COMMENTS_PANEL_ROOT,
 			createCssLifecycleSpec,
+			findCommentsRoot,
 			injectStyle,
 			clearCustomHighlight,
+			scopeCommentsCss,
 			scopeCss,
 			setCustomHighlight,
 			stripCommentRestyleCss,

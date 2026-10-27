@@ -194,8 +194,52 @@ test('hidePinnedComments defaults on and targets modern pinned comment markup', 
     assert.ok(!block.includes('addMutationRule(this.id, () => this._scheduleScan())'),
         'hidePinnedComments must not rescan every loaded thread after unrelated mutations');
     assert.ok(!coreStyles.includes("'hidePinnedComments'"), 'retired comment cleanup should not remove the active pinned comment style');
-    assert.ok(coreStyles.includes("thread.dataset.ytkitPinnedCommentHidden !== '1'"),
-        'retired comment cleanup should not unhide pinned comments marked by the active feature');
+    assert.ok(!/\.style\.display = ''/.test(coreStyles),
+        'no core sweep may unhide comment threads the active features hid');
+});
+
+test('no retired-comment sweep tears down comment features that are live again', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const retiredBlock = source.match(/const RETIRED_SETTING_KEYS = new Set\(\[([\s\S]*?)\]\);/)[1];
+    const retired = new Set([...retiredBlock.matchAll(/^\s*'([A-Za-z]+)',/gm)].map((m) => m[1]));
+    const live = new Set([
+        ...[...source.matchAll(/\bid: '([A-Za-z]+)',/g)].map((m) => m[1]),
+        ...[...source.matchAll(/cssFeature\('([A-Za-z]+)'/g)].map((m) => m[1])
+    ].filter((id) => !retired.has(id)));
+    const commentFeatures = ['chatStyleComments', 'commentEnhancements', 'commentNavigator', 'autoExpandComments',
+        'hideCommentDislikeButton', 'hideCommentActionMenu', 'condenseComments', 'hideCommentTeaser',
+        'commentSearch', 'commentFilterManager', 'watchPageRestyle'];
+    for (const id of commentFeatures) assert.ok(live.has(id), `${id} is a live feature`);
+
+    // Run any sweep core still exports over a page where every one of those
+    // features is on: its styles in place, a search bar, marked comments and
+    // a thread the comment filter hid.
+    const styles = require('../extension/core/styles.js');
+    const sweep = styles.cleanupRetiredCommentUi;
+    if (typeof sweep !== 'function') return;
+    const removed = [];
+    const node = (label, extra = {}) => ({ label, dataset: {}, style: {}, classList: { remove() {} }, remove() { removed.push(label); }, ...extra });
+    const thread = node('thread', { style: { display: 'none' }, dataset: { ytkitCommentFilterHidden: '1' } });
+    const root = {
+        querySelector: (selector) => {
+            const id = selector.replace('#yt-suite-style-', '');
+            return live.has(id.replace(/-.*$/, '')) ? node(`style ${id}`) : null;
+        },
+        querySelectorAll: (selector) => {
+            if (selector.includes('.ytkit-comment-search')) return [node('comment search bar')];
+            if (selector.includes('[data-ytkit-chat]')) return [node('comment', { dataset: { ytkitChat: '1', ytkitEnhanced: '1' } })];
+            if (selector === 'ytd-comment-thread-renderer') return [thread];
+            return [];
+        }
+    };
+    const hadElement = 'HTMLElement' in globalThis;
+    const previous = globalThis.HTMLElement;
+    globalThis.HTMLElement = Object;
+    try { sweep(root); } finally { if (hadElement) globalThis.HTMLElement = previous; else delete globalThis.HTMLElement; }
+    assert.deepEqual(removed, [], 'nothing a live feature put on the page is removed');
+    assert.equal(thread.style.display, 'none', 'the thread Comment Filter hid stays hidden');
 });
 
 test('commentSearch only restores threads it hid and respects pinned comment hiding', () => {

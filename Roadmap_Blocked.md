@@ -8,6 +8,22 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 > name those paths are implemented THERE, against that repo's tree; the paths
 > are kept verbatim because they still resolve inside the companion repo.
 
+## P2 — Needs a YouTube session enrolled in the side-panel test (2026-10-27)
+
+- [ ] P2 — Confirm the comment features on an enrolled (not forced) side-panel watch page
+  Why: comment features now follow comments into the side-panel page's engagement panel. The
+  live check proves it only with the experiment flags forced through a `ytcfg.set` trap
+  (`scripts/smoke-experience-live.js`, 'comment features follow comments into the side-panel
+  page': 20 panel threads styled, one search bar, the filter hides a matching thread, panel on
+  screen at x=980 with Hide Related Videos on). A real enrolled session may differ in layout or
+  in which flags ride along.
+  Acceptance: on an account YouTube put in the test, with Classic Watch Layout and Theater Split
+  off and Hide Related Videos on, the comments panel is on screen, styled by Studio Comments, and
+  Comment Search and the Comment Filter hide threads in it.
+  Blocked on: no available account or profile is enrolled in the side-panel experiment, and
+  enrollment is YouTube's call. Check again when a signed-in harness profile or Matt's browser
+  shows the side rail with a Comments button without forced flags.
+
 ## P1 — Needs Matt's call on which defaults flip (2026-10-26)
 
 - [ ] P1 — Use familiar fresh-install defaults and one opt-in visual starter choice, #52

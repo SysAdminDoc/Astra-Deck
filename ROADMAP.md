@@ -21,23 +21,22 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-- [ ] P2 — Apply the comment features to the comments panel on YouTube's side-panel watch page
-  Why: on the 2026-10 side-panel page YouTube hides `ytd-comments#comments` under the video and
-  renders comments in `ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]`
-  inside `#secondary`, in a `ytd-comments` with no `#comments` id. About 760 selectors are scoped
-  to `#comments` (429 in `ytkit.js`, 334 in `features/chat-style-comments/index.js`), so comment
-  filters, search, chat-style comments and Theater Split's comment pane miss that panel for anyone
-  in the test who leaves Classic Watch Layout off.
-  Evidence: `tests/fixtures/watch-side-panel-2026-10.json` (forced-flag capture, 20 of 20 threads
-  in the panel, 0 under `#comments`); `tests/watch-side-panel-capture.test.js`.
-  Touches: `extension/ytkit.js`, `extension/features/chat-style-comments/index.js`,
-  `core/selector-packs/comments.js`, Theater Split's comment source. One shared scope such as
-  `:is(ytd-comments#comments, [target-id="engagement-panel-comments-section"] ytd-comments)` keeps
-  specificity at the id level, so a mechanical swap is possible but has to be checked rule by rule.
-  Acceptance: the capture test gains a thread chain from the panel that the comment filter, comment
-  search and chat-style rules match; an enrolled (not forced) session shows the panel on screen with
-  Hide Related Videos on, which the forced capture could not (the panel renders off-canvas there).
-  Complexity: L
+- [ ] P2 — Show the side-panel page's comments panel in Theater Split's comment pane
+  Why: with Theater Split on (the default) the split takes the page over, hides `#secondary` and
+  mirrors `#below` into its pane. On the 2026-10 side-panel watch page the comments live in the
+  engagement panel inside `#secondary`, so the pane shows the hidden classic `#comments` and no
+  threads. The other comment features already follow the panel through `scopeCommentsCss` and
+  `findCommentsRoot` (core/styles.js); the scoped rules that also need `#below` still miss it on
+  purpose until the pane can host it.
+  Evidence: `scripts/smoke-experience-live.js` check 'comment features follow comments into the
+  side-panel page' has to turn `stickyVideo` off to see the panel at all.
+  Touches: Theater Split's comment source in `extension/ytkit.js` (`stickyVideo`),
+  `tests/watch-side-panel-capture.test.js`, the live check above.
+  Acceptance: with forced side-panel flags and Theater Split on, the split's comment pane shows
+  the panel threads (or the panel itself) on screen, Comment Search and the Comment Filter work in
+  it, and closing the split puts the panel back in `#secondary`; the live check runs with
+  `stickyVideo` on.
+  Complexity: M
 
 - [ ] P3 — List view for Home, search and channel grids
   Note (2026-10-13): `listFeedLayout` already covers Home, Subscriptions and search in

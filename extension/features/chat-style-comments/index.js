@@ -24,8 +24,8 @@
                         display: none !important;
                     }
 
-                    #comments ytd-comments#comments,
-                    ytd-comments#comments {
+                    #comments ytd-comments#comments:not([hidden]),
+                    ytd-comments#comments:not([hidden]) {
                         display: block !important;
                         visibility: visible !important;
                         margin-top: 10px !important;
@@ -1403,7 +1403,8 @@
         const node = target instanceof Element ? target : target?.parentElement;
         if (!node) return false;
 
-        const comment = node.closest('#comments ytd-comment-view-model, #comments ytd-comment-renderer');
+        const scope = globalThis.YTKitCore?.scopeCommentsCss || ((selector) => selector);
+        const comment = node.closest(scope('#comments ytd-comment-view-model, #comments ytd-comment-renderer'));
         if (!comment) return false;
 
         if (node.closest([

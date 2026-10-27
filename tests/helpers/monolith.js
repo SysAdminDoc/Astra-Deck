@@ -7,8 +7,22 @@
 // literal out and evaluate it against fake DOM fixtures.
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
-const { sources, userscriptBundles } = require('./source');
+const { sources, config, userscriptBundles } = require('./source');
+
+// Comment features find their root through core/styles.js, the same way
+// ytkit.js does when the core module loaded. Run that file in its own
+// context so requiring this helper never plants YTKitCore on the test
+// process.
+const commentsRoot = (() => {
+    const box = { module: { exports: {} } };
+    box.globalThis = box;
+    vm.runInNewContext(fs.readFileSync(path.join(config.extensionRoot, 'core', 'styles.js'), 'utf8'), box);
+    const { findCommentsRoot, scopeCommentsCss } = box.module.exports;
+    return Object.freeze({ findCommentsRoot, scopeCommentsCss });
+})();
 
 // A feature literal closes at the array indent and is followed by a comma or
 // the array end — never by `)`, which belongs to a factory-built neighbour.
@@ -344,6 +358,7 @@ function loadFeatureFromSource(source, id, extraGlobals = {}) {
         addScopedMutationRule() {},
         removeScopedMutationRule() {},
         injectStyle: () => fakeNode(),
+        ...commentsRoot,
         // v4.68.0: every feed-hiding feature stamps the shared hide marker.
         // The stub RECORDS rather than no-ops so a test can assert the feature
         // attributed the right cards to the right rule — a silent no-op here
@@ -560,6 +575,7 @@ function loadFallbackFeature(id, extraGlobals = {}) {
         addScopedMutationRule() {},
         removeScopedMutationRule() {},
         injectStyle: () => fakeNode(),
+        ...commentsRoot,
         ...extraGlobals
     };
     sandbox.globalThis = sandbox;
@@ -1149,5 +1165,6 @@ module.exports = {
     fakeNode,
     fakeDocument,
     fakeTreeDocument,
-    collectFakeTree
+    collectFakeTree,
+    commentsRoot
 };

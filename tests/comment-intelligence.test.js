@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
-const { loadFeature } = require('./helpers/monolith');
+const { loadFeature, commentsRoot } = require('./helpers/monolith');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const read = (...parts) => fs.readFileSync(path.join(REPO_ROOT, ...parts), 'utf8');
@@ -269,7 +269,8 @@ test('comment filter mutation rule is registered scoped and processes newly adde
         addNavigateRule: () => {},
         removeScopedMutationRule: () => {},
         removeNavigateRule: () => {},
-        isWatchPagePath: () => true
+        isWatchPagePath: () => true,
+        ...commentsRoot
     });
 
     manager._processThread = (thread) => { processed.push(thread); };

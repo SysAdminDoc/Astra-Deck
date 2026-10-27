@@ -45,7 +45,6 @@
         resetHideAttribution,
         syncHiddenNote,
         unmarkCardHidden,
-        cleanupRetiredCommentUi,
         configureNavigationRuntime,
         flushPendingStorageWrites,
         exportSelectorHealth: exportSelectorHealthReport,
@@ -136,6 +135,16 @@
             return output.join(' ');
         };
 
+    // Comment features reach the side-panel watch page's comments panel
+    // through these (core/styles.js). Without the core module they fall
+    // back to the classic #comments root only.
+    const scopeCommentsCss = typeof globalThis.YTKitCore?.scopeCommentsCss === 'function'
+        ? globalThis.YTKitCore.scopeCommentsCss
+        : (css) => css;
+    const findCommentsRoot = typeof globalThis.YTKitCore?.findCommentsRoot === 'function'
+        ? globalThis.YTKitCore.findCommentsRoot
+        : (doc = document) => doc.querySelector('ytd-comments#comments');
+
     // Literal settings search uses the platform escape when available and the
     // shared compatibility implementation on older hosts.
     const escapeRegExp = typeof globalThis.YTKitCore?.escapeRegExp === 'function'
@@ -167,7 +176,6 @@
         !addNavigateRule ||
         !addScopedMutationRule ||
         !appendStyleSheet ||
-        !cleanupRetiredCommentUi ||
         !configureNavigationRuntime ||
         !flushPendingStorageWrites ||
         !exportSelectorHealthReport ||
@@ -7097,7 +7105,6 @@ const STORAGE_KEYS = Object.freeze({
             }
         });
 
-        cleanupRetiredCommentUi();
         syncSettingsPanelControls();
         updateAllToggleStates();
         dispatchSettingsChanged({ keys: changedKeys, source });
@@ -9336,7 +9343,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const node = target instanceof Element ? target : target?.parentElement;
                 if (!node) return false;
 
-                const comment = node.closest('#comments ytd-comment-view-model, #comments ytd-comment-renderer');
+                const comment = node.closest(scopeCommentsCss('#comments ytd-comment-view-model, #comments ytd-comment-renderer'));
                 if (!comment) return false;
 
                 if (node.closest([
@@ -9372,7 +9379,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const css = (chatStyleFeatures && typeof chatStyleFeatures.buildCommentRestyleCss === 'function'
                     && chatStyleFeatures.buildCommentRestyleCss())
                     || `ytd-comments#comments{background:rgba(var(--ytkit-accent-rgb),0.03) !important;background-image:linear-gradient(180deg,rgba(var(--ytkit-accent-rgb),0.05) 0%,rgba(var(--ytkit-accent-rgb),0.01) 100%) !important;border-radius:12px !important;padding:4px 8px !important}ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:8px 4px 6px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(var(--ytkit-accent-rgb),0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:var(--ytkit-accent) !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:var(--ytkit-accent-light) !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:4px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(var(--ytkit-accent-rgb),0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:var(--ytkit-accent-light) !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar,ytd-comment-renderer ytd-comment-engagement-bar{position:absolute !important;top:6px !important;right:4px !important;margin:0 !important;padding:0 !important;z-index:2 !important;pointer-events:none !important}ytd-comment-view-model:hover ytd-comment-engagement-bar,ytd-comment-renderer:hover ytd-comment-engagement-bar{pointer-events:auto !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:static !important;align-items:center !important;gap:4px !important;margin:0 !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar,ytd-comment-renderer:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important;overflow:visible !important;border:none !important;outline:none !important;background:transparent !important}ytd-comment-engagement-bar #reply-dialog #unopened-dialog{display:none !important}ytd-comment-engagement-bar #reply-dialog:not(:has(ytd-commentbox:not([hidden]))){display:none !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}.ytkit-replying ytd-comment-engagement-bar{position:relative !important;top:auto !important;right:auto !important;pointer-events:auto !important;margin:4px 0 0 !important;width:100% !important;display:block !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(var(--ytkit-accent-rgb),0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(var(--ytkit-accent-rgb),0.3) !important;background:rgba(var(--ytkit-accent-rgb),0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(var(--ytkit-accent-rgb),0.12) !important;color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.35) !important;min-height:unset !important;background:rgba(var(--ytkit-accent-rgb),0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}ytd-commentbox #divider-line{display:none !important}ytd-commentbox #thumbnail-input-row{display:flex !important;align-items:flex-start !important;gap:10px !important;background:transparent !important;border:none !important;padding:0 !important;margin:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox #creation-box,ytd-commentbox #main{background:transparent !important;border:none !important;padding:0 !important;margin:0 !important;flex:1 !important;min-width:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox .underline,ytd-commentbox .unfocused-line,ytd-commentbox .focused-line{display:none !important}ytd-commentbox #contenteditable-textarea{display:block !important;font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(var(--ytkit-accent-rgb),0.15) !important;border-radius:8px !important;min-height:44px !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s,box-shadow 0.2s !important}ytd-commentbox #creation-box:not(.not-focused) #contenteditable-textarea,ytd-commentbox #contenteditable-textarea:focus-within{border-color:rgba(var(--ytkit-accent-rgb),0.4) !important;background:rgba(255,255,255,0.06) !important;box-shadow:0 0 0 2px rgba(var(--ytkit-accent-rgb),0.08) !important}ytd-commentbox #contenteditable-root{font-size:13px !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;border:none !important;background:transparent !important;padding:0 !important}ytd-commentbox #input-container,ytd-commentbox tp-yt-paper-input-container{background:transparent !important;border:none !important;padding:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox .input-wrapper{width:100% !important;box-sizing:border-box !important}ytd-commentbox #labelAndInputContainer{width:100% !important;box-sizing:border-box !important}ytd-commentbox .paper-input-input{width:100% !important;box-sizing:border-box !important}ytd-commentbox .floated-label-placeholder{display:none !important}ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;align-items:center !important}ytd-commentbox #footer #buttons{display:flex !important;align-items:center !important;gap:6px !important}ytd-commentbox #footer #buttons .yt-spec-button-shape-next{height:30px !important;font-size:12px !important;padding:0 16px !important;min-height:unset !important;border-radius:6px !important;transition:all 0.15s !important}ytd-commentbox #submit-button .yt-spec-button-shape-next--filled:not([disabled]){background:var(--ytkit-accent) !important;color:#000 !important}ytd-commentbox #submit-button .yt-spec-button-shape-next--filled:not([disabled]):hover{filter:brightness(1.15) !important}ytd-commentbox #cancel-button .yt-spec-button-shape-next{color:rgba(255,255,255,0.5) !important}ytd-commentbox #cancel-button .yt-spec-button-shape-next:hover{color:rgba(255,255,255,0.75) !important}ytd-commentbox #emoji-button .yt-spec-button-shape-next{color:rgba(255,255,255,0.3) !important;transition:color 0.15s !important}ytd-commentbox #emoji-button .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.7) !important}ytd-commentbox #author-thumbnail{flex-shrink:0 !important;width:28px !important;height:28px !important;margin:0 !important;padding:0 !important}ytd-commentbox #author-thumbnail img,ytd-commentbox #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}html:not([dark]) ytd-comment-view-model #content-text,html:not([dark]) ytd-comment-renderer #content-text{color:var(--yt-spec-text-primary,#0f0f0f) !important}html:not([dark]) ytd-comment-view-model .published-time-text,html:not([dark]) ytd-comment-renderer .published-time-text,html:not([dark]) ytd-comment-view-model .published-time-text a,html:not([dark]) ytd-comment-renderer .published-time-text a{color:var(--yt-spec-text-secondary,#606060) !important}html:not([dark]) ytd-comment-view-model,html:not([dark]) ytd-comment-renderer{border-bottom-color:rgba(0,0,0,0.08) !important}html:not([dark]) .ytkit-vote-badge{color:var(--yt-spec-text-secondary,#606060) !important}html:not([dark]) ytd-commentbox #contenteditable-textarea{background:rgba(0,0,0,0.03) !important}html:not([dark]) ytd-commentbox #contenteditable-root{color:var(--yt-spec-text-primary,#0f0f0f) !important}html:not([dark]) ytd-commentbox #cancel-button .yt-spec-button-shape-next{color:var(--yt-spec-text-secondary,#606060) !important}html:not([dark]) ytd-commentbox #cancel-button .yt-spec-button-shape-next:hover{color:var(--yt-spec-text-primary,#0f0f0f) !important}html:not([dark]) ytd-commentbox #emoji-button .yt-spec-button-shape-next{color:var(--yt-spec-text-secondary,#606060) !important}`;
-                this._styleElement = injectStyle(css, this.id, true);
+                this._styleElement = injectStyle(scopeCommentsCss(css), this.id, true);
                 const premiumCss = (chatStyleFeatures && typeof chatStyleFeatures.buildPremiumCommentsCss === 'function'
                     && chatStyleFeatures.buildPremiumCommentsCss())
                     || `
@@ -9380,8 +9387,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: none !important;
                     }
 
-                    #comments ytd-comments#comments,
-                    ytd-comments#comments {
+                    #comments ytd-comments#comments:not([hidden]),
+                    ytd-comments#comments:not([hidden]) {
                         display: block !important;
                         visibility: visible !important;
                         margin-top: 10px !important;
@@ -9504,7 +9511,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: inline-flex !important;
                     }
                 `;
-                this._premiumStyleElement = injectStyle(premiumCss, this.id + '-premium', true);
+                this._premiumStyleElement = injectStyle(scopeCommentsCss(premiumCss), this.id + '-premium', true);
                 const premiumInteractionCss = (chatStyleFeatures && typeof chatStyleFeatures.buildPremiumInteractionCss === 'function'
                     && chatStyleFeatures.buildPremiumInteractionCss({ tooltipZ: Z.TOAST + 2 }))
                     || `
@@ -10750,7 +10757,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     }
                 `;
-                this._premiumInteractionStyleElement = injectStyle(premiumInteractionCss + selectorSupportFallbackCss, this.id + '-premium-2', true);
+                this._premiumInteractionStyleElement = injectStyle(scopeCommentsCss(premiumInteractionCss + selectorSupportFallbackCss), this.id + '-premium-2', true);
 
                 const createRuntime = chatStyleFeatures && typeof chatStyleFeatures.createChatStyleCommentsRuntime === 'function'
                     && chatStyleFeatures.createChatStyleCommentsRuntime;
@@ -23438,8 +23445,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     /* Collapse sidebar if no YTKit panels are injected, unless it
                        holds the comments (YouTube's 2026-10 side-panel page) */
                     ytd-watch-flexy #secondary:not(:has(.ytkit-bookmarks-container, #ytkit-transcript-panel, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"][visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"])) { display: none !important; }
-                    /* Keep comments visible */
-                    #comments { display: block !important; }
+                    /* Keep comments visible, unless YouTube hid them under the
+                       video because they're in the side panel */
+                    #comments:not([hidden]) { display: block !important; }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
             },
@@ -25267,7 +25275,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
             _scheduleApply(delay = 140) {
-                if (this._applyTimer) clearTimeout(this._applyTimer);
+                // A pending run reads the latest query and threads when it
+                // fires. Restarting it on every ask starved it on pages that
+                // mutate nonstop, like the side-panel watch page.
+                if (this._applyTimer) return;
                 this._applyTimer = setTimeout(() => {
                     this._applyTimer = null;
                     this._applyFilter();
@@ -25277,7 +25288,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return new Intl.NumberFormat().format(Math.max(0, Math.floor(Number(value) || 0)));
             },
             _getThreads() {
-                const comments = document.querySelector('ytd-comments#comments');
+                const comments = findCommentsRoot(document);
                 return comments ? Array.from(comments.querySelectorAll('ytd-comment-thread-renderer')) : [];
             },
             _getDisplayQuery() {
@@ -25424,7 +25435,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _create() {
                 if (!isWatchPagePath()) return;
-                const comments = document.querySelector('ytd-comments#comments');
+                const comments = findCommentsRoot(document);
                 if (!comments) return;
                 if (comments.querySelector('.ytkit-comment-search')) return;
 
@@ -25562,7 +25573,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._styleEl?.remove();
-                this._styleEl = injectStyle(`
+                this._styleEl = injectStyle(scopeCommentsCss(`
                     #comments .ytkit-comment-search {
                         --ytkit-comment-search-surface: rgba(8, 11, 18, 0.94);
                         --ytkit-comment-search-surface-raised: rgba(255, 255, 255, 0.045);
@@ -25821,7 +25832,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             transition: none !important;
                         }
                     }
-                `, `${this.id}-ui`, true);
+                `), `${this.id}-ui`, true);
                 addNavigateRule('commentSearch', () => {
                     this._bar?.remove(); this._bar = null;
                     this._input = null;
@@ -25836,6 +25847,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 addMutationRule('commentSearch', () => {
                     if (!isWatchPagePath()) return;
+                    const root = findCommentsRoot(document);
+                    if (root && this._bar && !root.contains(this._bar)) {
+                        // The side-panel page can fill its panel after the
+                        // bar went into the hidden #comments; follow it.
+                        this._bar.remove();
+                        this._bar = null;
+                    }
                     if (!document.querySelector('.ytkit-comment-search') || !this._bar || !document.body.contains(this._bar)) {
                         this._create();
                         return;
@@ -27656,7 +27674,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _ensureNav() {
                 if (this._container || !isWatchPagePath()) return;
-                const comments = document.querySelector('ytd-comments#comments');
+                const comments = findCommentsRoot(document);
                 if (!comments) return;
 
                 const nav = document.createElement('aside');
@@ -34460,6 +34478,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _findCommentRoot() {
+                // The side-panel watch page keeps an empty, hidden
+                // #comments and fills the panel's root instead.
+                const active = findCommentsRoot(document);
+                if (active) return active;
                 for (const selector of this._selectorChain('root', ['ytd-comments#comments', 'ytd-comments', '#comments'])) {
                     try {
                         const root = document.querySelector(selector);
@@ -42991,10 +43013,6 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         });
         appState.currentPage = getCurrentPage();
         reportStoragePreloadFailure();
-        cleanupRetiredCommentUi();
-        if (shouldBuildPrimaryUI()) {
-            addNavigateRule('_retiredCommentCleanup', () => cleanupRetiredCommentUi());
-        }
         attachExtensionBridgeListeners();
         // Capture phase, so the copy is taken before YouTube's own handlers
         // get to the object. Registered after the settings line for the same

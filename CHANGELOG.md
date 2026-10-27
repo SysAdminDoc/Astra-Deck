@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- On YouTube's newer watch page, where comments open in a panel beside the video, Studio Comments, Comment Search and the Comment Filter now work inside that panel. They used to look only under the video, where that page hides the comments.
+- Studio Comments, Comment Enhancements, Comment Navigator and the comment hiding toggles lost their styling after every settings change or page change. An old cleanup for comment options that were retired long ago (and later brought back) kept tearing them down, and it also un-hid threads the Comment Filter or Comment Search had hidden. It's gone now.
+- Comment Search could stop filtering on pages that never sit still, because every page change pushed the search back again. It now runs a moment after you type whatever the page is doing.
+
 ## [4.101.0] (2026-10-27)
 
 ### Added
