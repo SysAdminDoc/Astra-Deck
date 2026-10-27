@@ -466,6 +466,7 @@ test('settings open with saved hidden lists when the Video Hider module is missi
     let stats = null;
     let rows = 0;
     let clearStates = [];
+    let rowStates = [];
     buildRealPanel([
         { id: 'hideVideosFromHome', name: 'Video Hider', group: 'Playlists', type: 'checkbox', init() {}, destroy() {} },
         { id: 'hideNotificationButton', name: 'Hide Notification Bell', group: 'Interface', type: 'checkbox' }
@@ -477,11 +478,16 @@ test('settings open with saved hidden lists when the Video Hider module is missi
             stats = [...doc.querySelectorAll('.ytkit-vh-summary-card__value')].map((node) => node.textContent);
             rows = doc.querySelectorAll('.ytkit-vh-card--video').length;
             clearStates = [...doc.querySelectorAll('.ytkit-vh-clear-btn')].map((node) => node.disabled === true);
+            const rowButtons = [...doc.querySelectorAll('.ytkit-vh-card--video .ytkit-vh-list-btn')]
+                .filter((node) => node.tagName === 'BUTTON');
+            rowStates = rowButtons.map((node) => node.disabled === true);
+            for (const button of rowButtons) assert.doesNotThrow(() => button.onclick?.(), 'a row action never throws');
         }
     });
     assert.deepEqual(stats?.slice(0, 2), ['2', '1'], 'counts come from storage, not a fabricated zero');
     assert.equal(rows, 2, 'the hidden list is listed from storage');
     assert.ok(clearStates.length > 0 && clearStates.every(Boolean), 'clear actions are off without the module');
+    assert.ok(rowStates.length >= 4 && rowStates.every(Boolean), 'each row\'s restore and remove are off too');
     assert.equal(JSON.stringify(storage), before, 'opening the pane writes nothing');
 });
 

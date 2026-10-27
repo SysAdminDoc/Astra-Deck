@@ -2077,8 +2077,9 @@ function buildSettingsPanel() {
                                 'videoHiderRestoreHiddenVideoAriaTpl',
                                 'Restore hidden video {videoId} and add an allowed-video exception'
                             ).replace('{videoId}', vid));
+                            removeBtn.disabled = !canEditVideoLists();
                             removeBtn.onclick = () => {
-                                videoHiderFeature._unhideVideo?.(vid);
+                                videoHiderFeature?._unhideVideo?.(vid);
                                 renderTabContent('videos');
                             };
                             const deleteBtn = document.createElement('button');
@@ -2089,10 +2090,11 @@ function buildSettingsPanel() {
                                 'videoHiderRemoveHiddenVideoAriaTpl',
                                 'Remove hidden video {videoId} from the hidden list without adding an exception'
                             ).replace('{videoId}', vid));
+                            deleteBtn.disabled = !canEditVideoLists();
                             deleteBtn.onclick = () => {
-                                const removed = videoHiderFeature._removeHiddenVideos?.([vid]) || [];
-                                videoHiderFeature._restoreRemovedVideoNodes?.(new Set([vid]));
-                                videoHiderFeature._processAllVideos?.();
+                                const removed = videoHiderFeature?._removeHiddenVideos?.([vid]) || [];
+                                videoHiderFeature?._restoreRemovedVideoNodes?.(new Set([vid]));
+                                videoHiderFeature?._processAllVideos?.();
                                 renderTabContent('videos');
                                 updateVideoHiderMeta();
                                 if (removed.length === 0) {
@@ -2104,8 +2106,8 @@ function buildSettingsPanel() {
                                 // no less destructive than the bulk ones, and it is the
                                 // easiest of the three to hit by accident.
                                 showToast(t('videoHiderRemovedHiddenVideoToast', 'Video removed from hidden list'), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
-                                    videoHiderFeature._addHiddenVideos?.(removed);
-                                    videoHiderFeature._processAllVideos?.();
+                                    videoHiderFeature?._addHiddenVideos?.(removed);
+                                    videoHiderFeature?._processAllVideos?.();
                                     renderTabContent('videos');
                                     updateVideoHiderMeta();
                                     showToast(t('videoHiderHiddenListRestored', 'Hidden list restored'), '#22c55e');
@@ -2293,9 +2295,10 @@ function buildSettingsPanel() {
                                 'videoHiderRemoveAllowedVideoAriaTpl',
                                 'Remove allowed-video exception for {videoId}'
                             ).replace('{videoId}', vid));
+                            removeBtn.disabled = !canEditVideoLists();
                             removeBtn.onclick = () => {
-                                videoHiderFeature._removeAllowedVideos?.([vid]);
-                                videoHiderFeature._processAllVideos?.();
+                                videoHiderFeature?._removeAllowedVideos?.([vid]);
+                                videoHiderFeature?._processAllVideos?.();
                                 renderTabContent('allowed');
                             };
                             const hideAgainBtn = document.createElement('button');
@@ -2306,9 +2309,10 @@ function buildSettingsPanel() {
                                 'videoHiderHideAllowedVideoAriaTpl',
                                 'Hide allowed video {videoId} again'
                             ).replace('{videoId}', vid));
+                            hideAgainBtn.disabled = !canEditVideoLists();
                             hideAgainBtn.onclick = () => {
-                                videoHiderFeature._addHiddenVideos?.([vid]);
-                                videoHiderFeature._processAllVideos?.();
+                                videoHiderFeature?._addHiddenVideos?.([vid]);
+                                videoHiderFeature?._processAllVideos?.();
                                 renderTabContent('allowed');
                                 updateVideoHiderMeta();
                             };
@@ -2426,8 +2430,8 @@ function buildSettingsPanel() {
                                 : t('videoHiderUnblockChannelAriaTpl', 'Unblock channel {channelName}').replace('{channelName}', () => ch.name || ch.id));
                             removeBtn.onclick = () => {
                                 removeManagedChannel(ch);
-                                videoHiderFeature._restoreRemovedVideoNodes?.();
-                                videoHiderFeature._processAllVideos();
+                                videoHiderFeature?._restoreRemovedVideoNodes?.();
+                                videoHiderFeature?._processAllVideos?.();
                                 renderTabContent('channels');
                                 updateVideoHiderMeta();
                             };
