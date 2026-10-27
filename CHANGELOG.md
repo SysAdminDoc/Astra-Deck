@@ -13,6 +13,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The SponsorBlock ad-block recovery card could pop up right after you turned SponsorBlock off, if a status check was still on its way back. Late answers are ignored now.
 - Sticky chat kept its floating position and opacity on the chat frame after it stopped floating. It now puts the frame back the way YouTube had it.
 - A toast that showed up while the settings panel was open stayed on screen forever after you closed the panel. It times out normally now.
+- Removing an AI provider key while it was being read could bring it right back, and a key save that failed because browser storage was full still looked like it worked. Removal sticks now, and a failed save shows as an error.
+- If an older settings import failed after a newer one had already finished, its rollback wiped out the newer import. A rollback that's been overtaken now leaves things alone.
+
+### Security
+
+- The HTML sanitizer now strips `noscript` and `template` elements too. Neither one reaches it from outside text today, but both are well known ways to sneak markup past a sanitizer.
 
 ## [4.105.0] (2026-10-27)
 
