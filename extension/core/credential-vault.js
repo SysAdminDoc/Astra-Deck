@@ -84,8 +84,12 @@
                     const store = transaction.objectStore(storeName);
                     let request;
                     try { request = operation(store); } catch (error) { reject(error); return; }
-                    request.onsuccess = () => resolve(request.result);
+                    // Resolve on commit, not on request success: a write can
+                    // still abort at commit time (quota) after onsuccess.
+                    let result;
+                    request.onsuccess = () => { result = request.result; };
                     request.onerror = () => reject(request.error || new Error('Credential storage transaction failed.'));
+                    transaction.oncomplete = () => resolve(result);
                     transaction.onabort = () => reject(transaction.error || new Error('Credential storage transaction aborted.'));
                 });
             } finally {
@@ -132,14 +136,26 @@
             memorySession.delete(provider);
         }
 
+        // Bumped when a set or remove starts and again when it finishes, so a
+        // get whose persistent read overlapped one knows its value is stale.
+        const generations = new Map();
+        function bumpGeneration(provider) {
+            generations.set(provider, (generations.get(provider) || 0) + 1);
+        }
+
         async function get(provider) {
             const normalized = normalizeProvider(provider);
             if (!normalized || normalized === 'ollama') return '';
+            const generation = generations.get(normalized) || 0;
             const sessionValue = await sessionGet(normalized);
             if (sessionValue) return sessionValue;
             const persisted = await persistentStore.get(normalized);
             if (typeof persisted === 'string' && persisted) {
-                await sessionSet(normalized, persisted);
+                // A remove or set that ran during the read owns the session
+                // slot now; caching this value would resurrect or clobber it.
+                if ((generations.get(normalized) || 0) === generation) {
+                    await sessionSet(normalized, persisted);
+                }
                 return persisted;
             }
             return '';
@@ -152,22 +168,32 @@
             if (!value || value.length > 4096 || /[\r\n\0]/.test(value)) {
                 throw new Error('Credential must be 1-4096 characters without control characters.');
             }
-            if (setOptions.remember === true) {
-                // Persistent write first: a failed remember operation must not
-                // delete or supersede the legacy durable copy during migration.
-                await persistentStore.set(normalized, value);
-            } else {
-                await persistentStore.delete(normalized);
+            bumpGeneration(normalized);
+            try {
+                if (setOptions.remember === true) {
+                    // Persistent write first: a failed remember operation must not
+                    // delete or supersede the legacy durable copy during migration.
+                    await persistentStore.set(normalized, value);
+                } else {
+                    await persistentStore.delete(normalized);
+                }
+                await sessionSet(normalized, value);
+            } finally {
+                bumpGeneration(normalized);
             }
-            await sessionSet(normalized, value);
             return { provider: normalized, configured: true, remembered: setOptions.remember === true };
         }
 
         async function remove(provider) {
             const normalized = normalizeProvider(provider);
             if (!normalized || normalized === 'ollama') throw new Error('This provider has no stored credential.');
-            await persistentStore.delete(normalized);
-            await sessionDelete(normalized);
+            bumpGeneration(normalized);
+            try {
+                await persistentStore.delete(normalized);
+                await sessionDelete(normalized);
+            } finally {
+                bumpGeneration(normalized);
+            }
             return { provider: normalized, configured: false, remembered: false };
         }
 
