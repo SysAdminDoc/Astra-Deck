@@ -272,14 +272,22 @@
                     };
 
                 } catch (error) {
+                    // Navigating away mid-download cancels it; that is the
+                    // user's choice, not a failure worth a red toast.
+                    if (error?.name === 'AbortError') {
+                        return { success: false, cancelled: true, error: 'Cancelled' };
+                    }
                     if (typeof console !== 'undefined') {
                         console.error('[YTKit TranscriptService] Error:', error);
                     }
                     showToast(t('transcriptDownloadFailed', 'Failed to download transcript'), '#ef4444');
+                    // The diagnostic slot is shared with off-page fetches, so
+                    // only report it when it describes this video.
+                    const diagnostic = this.getDiagnostics();
                     return {
                         success: false,
                         error: error.message,
-                        provenance: this.getDiagnostics()?.provenance
+                        provenance: diagnostic?.videoId === videoId ? diagnostic.provenance : null
                     };
                 }
             },

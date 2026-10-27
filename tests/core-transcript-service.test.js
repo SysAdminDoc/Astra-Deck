@@ -526,3 +526,51 @@ test('a failed refresh keeps its own reason in the error diagnostic', () => {
             `${reason} must still be recorded by the refresh path`);
     }
 });
+
+test('downloadTranscript exits quietly when navigation cancels the fetch', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    let currentVideoId = 'abcdefghijk';
+    const toasts = [];
+    const svc = createTranscriptService({
+        getVideoId: () => currentVideoId,
+        showToast: (msg) => toasts.push(msg)
+    });
+    svc._getCaptionTracks = async () => {
+        currentVideoId = 'zzzzzzzzzzz';
+        return {
+            videoId: 'abcdefghijk',
+            source: 'innertube-player',
+            tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk', languageCode: 'en' }]
+        };
+    };
+    const hadConsole = console.error;
+    console.error = () => {};
+    let result;
+    try {
+        result = await svc.downloadTranscript();
+    } finally {
+        console.error = hadConsole;
+    }
+    assert.equal(result.success, false);
+    assert.equal(result.cancelled, true);
+    assert.deepEqual(toasts, ['Fetching transcript…'],
+        'leaving the video is not a download failure and must not toast one');
+});
+
+test('downloadTranscript failure reports only its own video\'s provenance', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const svc = createTranscriptService({ getVideoId: () => 'abcdefghijk', showToast: () => {} });
+    // An off-page fetch for another video left the shared diagnostic behind.
+    svc._setTranscriptDiagnostic('otherpage01', 'ready', { source: 'innertube-player', fetchedAt: 1 });
+    svc.fetchTranscript = async () => { throw new Error('format failed'); };
+    const hadConsole = console.error;
+    console.error = () => {};
+    let result;
+    try {
+        result = await svc.downloadTranscript();
+    } finally {
+        console.error = hadConsole;
+    }
+    assert.equal(result.success, false);
+    assert.equal(result.provenance, null, 'another video\'s provenance must not be reported as this one\'s');
+});
