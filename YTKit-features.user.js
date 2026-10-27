@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.103.0
+// @version      4.104.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -18173,8 +18173,118 @@ function buildSettingsPanel() {
 			function getAllowedCount() {
 				return getAllowedVideoList().length;
 			}
+			const getImportedFilterRules = () => {
+				const stored = StorageManager.get(STORAGE_KEYS.importedFilterRules, []);
+				const sanitize = globalThis.YTKitCore?.persistedDomains?.sanitizeImportedFilterRules;
+				if (typeof sanitize === 'function') return sanitize(stored);
+				return Array.isArray(stored) ? stored : [];
+			};
+			const importedFilterRuleKey = rule => [rule.field, rule.kind, rule.pattern, rule.flags || ''].join('|');
+			async function saveImportedFilterRules(rules) {
+				const key = STORAGE_KEYS.importedFilterRules;
+				const previous = StorageManager.get(key, []);
+				const result = await StorageManager.setSync(key, rules);
+				if (result?.ok === false) {
+					StorageManager.syncFromExternal?.(key, previous);
+					StorageManager.consumeLocalEcho?.(key, rules);
+					if (activeTabId === 'keywords') renderTabContent('keywords');
+					showToast(t('videoHiderImportedRulesSaveFailed', 'That change wasn\'t saved. Try again.'), '#f59e0b', { duration: 4, tone: 'warning' });
+					return false;
+				}
+				videoHiderFeature?._restoreRemovedVideoNodes?.();
+				if (typeof handleExternalStorageChanges === 'function') {
+					handleExternalStorageChanges({ [key]: { newValue: rules } }, 'video-hider-imported-rules', { forceApplyLocal: true });
+				} else {
+					videoHiderFeature?._setImportedFilterRulesCache?.(rules);
+					videoHiderFeature?._processAllVideos?.();
+				}
+				if (activeTabId === 'keywords') renderTabContent('keywords');
+				else updateVideoHiderMeta();
+				return true;
+			}
+			function createImportedFilterRulesSection() {
+				const rules = getImportedFilterRules();
+				const section = createVideoHiderSection(
+					t('videoHiderImportedRulesTitle', 'Imported Title and Channel Rules'),
+					rules.length
+						? t('videoHiderImportedRulesCopy', 'Rules from a BlockTube or ChannelSieve import. Each one checks only the title or only the channel name.')
+						: t('videoHiderImportedRulesEmpty', 'Title and channel rules from a BlockTube or ChannelSieve import show up here.')
+				);
+				section.classList.add('ytkit-vh-imported-rules');
+				if (!rules.length) return section;
+				const list = document.createElement('div');
+				list.className = 'ytkit-vh-stack';
+				const sourceNames = { blocktube: 'BlockTube', channelsieve: 'ChannelSieve' };
+				rules.forEach(rule => {
+					const shown = rule.kind === 'regex' ? `/${rule.pattern}/${rule.flags || ''}` : rule.pattern;
+					const item = document.createElement('article');
+					item.className = 'ytkit-vh-card ytkit-vh-card--rule';
+					item.dataset.ruleField = rule.field;
+					item.dataset.ruleKind = rule.kind;
+					const info = document.createElement('div');
+					info.className = 'ytkit-vh-item-main';
+					const label = document.createElement('div');
+					label.className = 'ytkit-vh-item-label';
+					label.textContent = rule.field === 'channel'
+						? t('videoHiderImportedRuleChannelField', 'Channel rule')
+						: t('videoHiderImportedRuleTitleField', 'Title rule');
+					const pattern = document.createElement('div');
+					pattern.className = 'ytkit-vh-item-title';
+					pattern.setAttribute('translate', 'no');
+					pattern.textContent = shown;
+					const meta = document.createElement('div');
+					meta.className = 'ytkit-vh-item-meta';
+					meta.textContent = [
+						rule.kind === 'regex'
+							? t('videoHiderImportedRuleRegex', 'Regex')
+							: t('videoHiderImportedRuleKeyword', 'Keyword'),
+						sourceNames[rule.source] || sourceNames.blocktube
+					].join(' / ');
+					const actions = document.createElement('div');
+					actions.className = 'ytkit-vh-item-actions';
+					const removeBtn = document.createElement('button');
+					removeBtn.type = 'button';
+					removeBtn.className = 'ytkit-vh-list-btn';
+					removeBtn.textContent = t('videoHiderImportedRuleRemove', 'Remove');
+					removeBtn.setAttribute('aria-label', t('videoHiderImportedRuleRemoveAriaTpl', 'Remove rule {rule}').replace('{rule}', () => shown));
+					removeBtn.onclick = () => {
+						const target = importedFilterRuleKey(rule);
+						return saveImportedFilterRules(getImportedFilterRules().filter(entry => importedFilterRuleKey(entry) !== target));
+					};
+					info.appendChild(label);
+					info.appendChild(pattern);
+					info.appendChild(meta);
+					actions.appendChild(removeBtn);
+					info.appendChild(actions);
+					item.appendChild(info);
+					list.appendChild(item);
+				});
+				section.appendChild(list);
+				const clearBtn = document.createElement('button');
+				clearBtn.type = 'button';
+				clearBtn.className = 'ytkit-vh-clear-btn';
+				clearBtn.textContent = t('videoHiderImportedRulesClearTpl', 'Clear Imported Rules ({count})').replace('{count}', String(rules.length));
+				clearBtn.onclick = async () => {
+					const backup = getImportedFilterRules();
+					if (!backup.length || !await saveImportedFilterRules([])) return;
+					showToast(t('videoHiderImportedRulesClearedTpl', 'Cleared imported rules ({count})').replace('{count}', String(backup.length)), '#6b7280', {
+						duration: 5,
+						tone: 'neutral',
+						action: {
+							text: t('toastActionUndo', 'Undo'),
+							onClick: async () => {
+								if (await saveImportedFilterRules(backup)) {
+									showToast(t('videoHiderImportedRulesRestored', 'Imported rules restored'), '#22c55e');
+								}
+							}
+						}
+					});
+				};
+				section.appendChild(clearBtn);
+				return section;
+			}
 			function getKeywordStatus() {
-				return (appState.settings.hideVideosKeywordFilter || '').trim()
+				return (appState.settings.hideVideosKeywordFilter || '').trim() || getImportedFilterRules().length
 					? t('videoHiderKeywordStatusLive', 'Live')
 					: t('videoHiderKeywordStatusEmpty', 'Empty');
 			}
@@ -19035,6 +19145,7 @@ function buildSettingsPanel() {
 					});
 					container.appendChild(hintPills);
 					tabContent.appendChild(container);
+					tabContent.appendChild(createImportedFilterRulesSection());
 				} else if (tab === 'settings') {
 					const container = document.createElement('div');
 					container.className = 'ytkit-vh-settings';
