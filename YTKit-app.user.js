@@ -1144,6 +1144,18 @@ function clearBridgeAttribute(name) {
 	document.documentElement.removeAttribute(name);
 	return globalThis.YTKitCore?.getBridgeWriter?.()?.clear(name) ?? null;
 }
+const CLASSIC_WATCH_LAYOUT_ATTR = 'data-ytkit-classic-watch-layout';
+const classicWatchLayoutHolders = new Set();
+function holdClassicWatchLayout(owner) {
+	if (classicWatchLayoutHolders.has(owner)) return null;
+	classicWatchLayoutHolders.add(owner);
+	return publishBridgeAttribute(CLASSIC_WATCH_LAYOUT_ATTR, 'on');
+}
+function releaseClassicWatchLayout(owner) {
+	classicWatchLayoutHolders.delete(owner);
+	if (classicWatchLayoutHolders.size) return null;
+	return clearBridgeAttribute(CLASSIC_WATCH_LAYOUT_ATTR);
+}
 const STORAGE_KEYS = Object.freeze({
 	settings: 'ytSuiteSettings',
 	aiSummaries: 'ytkit-ai-summaries',
@@ -4585,6 +4597,17 @@ const STORAGE_KEYS = Object.freeze({
 		if (feature.dependsOn && !settings[feature.dependsOn]) return false;
 		return true;
 	}
+	let _theaterSplitLayoutHoldReady = false;
+	function syncTheaterSplitLayoutHold(settings = appState.settings || {}) {
+		if (!_theaterSplitLayoutHoldReady) return false;
+		const split = getFeatureById('stickyVideo');
+		const wanted = !!split
+			&& split._moduleUnavailable !== true
+			&& shouldFeatureBeActive(split, settings, PageTypes.WATCH);
+		if (wanted) holdClassicWatchLayout('stickyVideo');
+		else releaseClassicWatchLayout('stickyVideo');
+		return wanted;
+	}
 	let _featureDisableRefreshTimer = null;
 	function scheduleFeatureDisableRefresh() {
 		if (_featureDisableRefreshTimer) return;
@@ -5189,6 +5212,7 @@ const STORAGE_KEYS = Object.freeze({
 		StorageManager.syncFromExternal(STORAGE_KEYS.settings, resolvedSettings);
 		appState.settings = resolvedSettings;
 		appState.currentPage = getCurrentPage();
+		syncTheaterSplitLayoutHold(resolvedSettings);
 		liveFeatureList.forEach(feature => {
 			if (feature._arrayKey) return;
 			const shouldBeActive = shouldFeatureBeActive(feature);
@@ -7038,6 +7062,7 @@ const STORAGE_KEYS = Object.freeze({
 			t
 		}) || {
 			id: 'stickyVideo',
+			_moduleUnavailable: true,
 			name: t('feature_stickyVideo_name', 'Theater Split'),
 			description: t('feature_stickyVideo_desc', 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.'),
 			group: 'Watch Page',
@@ -14395,8 +14420,12 @@ const STORAGE_KEYS = Object.freeze({
 		}),
 		...(globalThis.YTKitFeatures?.classicWatchLayout?.createClassicWatchLayoutFeatures?.({
 			injectStyle,
-			publishBridgeAttribute,
-			clearBridgeAttribute,
+			publishBridgeAttribute: (name, value) => (name === CLASSIC_WATCH_LAYOUT_ATTR
+				? holdClassicWatchLayout('restoreClassicWatchLayout')
+				: publishBridgeAttribute(name, value)),
+			clearBridgeAttribute: (name) => (name === CLASSIC_WATCH_LAYOUT_ATTR
+				? releaseClassicWatchLayout('restoreClassicWatchLayout')
+				: clearBridgeAttribute(name)),
 			readSetting: (key) => appState.settings?.[key],
 			t
 		}) || [
@@ -31448,6 +31477,7 @@ const STORAGE_KEYS = Object.freeze({
 			console.warn(`[YTKit] Runtime failure in "${featureId}" (${count}/${MAX_FEATURE_CRASHES}):`, error);
 			if (count >= MAX_FEATURE_CRASHES) {
 				appState.settings[featureId] = false;
+				syncTheaterSplitLayoutHold();
 				void settingsManager.save(appState.settings);
 				console.warn(`[YTKit] Feature "${featureId}" auto-disabled after ${MAX_FEATURE_CRASHES} runtime failures`);
 			}
@@ -31458,6 +31488,8 @@ const STORAGE_KEYS = Object.freeze({
 			showToast(t('toastSafeMode', 'Safe mode: every feature is off. Run ytkit.unsafe() in the console to leave it.'), '#f97316', { duration: 10 });
 			globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.(() => false);
 		} else {
+			_theaterSplitLayoutHoldReady = true;
+			syncTheaterSplitLayoutHold();
 			const CRITICAL_IDS = new Set([
 				'uiStyleManager',
 			]);
@@ -31531,6 +31563,7 @@ const STORAGE_KEYS = Object.freeze({
 				pendingInitTiers -= 1;
 				if (pendingInitTiers > 0) return;
 				globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => {
+					if (classicWatchLayoutHolders.has(featureId)) return true;
 					const feature = getFeatureById(featureId);
 					return feature?._initialized === true && feature._moduleUnavailable !== true;
 				});

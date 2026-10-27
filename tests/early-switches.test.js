@@ -3,7 +3,8 @@
 // core/early-switches.js: the three page-world switches a hard load needs
 // before YouTube's inline data runs (Force DVR, Hide AI Chapters, Classic
 // Watch Layout), published from their own document_start entry instead of
-// waiting for ytkit.js at document_idle.
+// waiting for ytkit.js at document_idle. Theater Split shares the classic
+// layout switch and is on by default.
 //
 // The unit half drives the module with stub storage and a stub channel. The
 // end-to-end half builds both worlds over one fake <html>, in manifest
@@ -88,18 +89,20 @@ test('the plan takes only a stored true, flags first, in the order each feature 
         ['data-ytkit-hide-auto-chapters', 'on', 'hideAutoChapters'],
         ['data-ytkit-classic-watch-layout-flags', 'my_extra_flag', 'restoreClassicWatchLayout'],
         ['data-ytkit-classic-watch-layout', 'on', 'restoreClassicWatchLayout'],
+        ['data-ytkit-classic-watch-layout', 'on', 'stickyVideo'],
     ]);
     for (const value of [false, 1, 'true', 'on', null, undefined, {}]) {
-        assert.deepEqual(plain(early.planEarlySwitches({ forceDvr: value, hideAutoChapters: value, restoreClassicWatchLayout: value })), [],
+        const off = { forceDvr: value, hideAutoChapters: value, restoreClassicWatchLayout: value, stickyVideo: false };
+        assert.deepEqual(plain(early.planEarlySwitches(off)), [],
             `${JSON.stringify(value)} is not the user turning it on`);
     }
-    for (const settings of [null, undefined, 'x', [], 7]) assert.deepEqual(plain(early.planEarlySwitches(settings)), []);
+    for (const settings of [null, 'x', [], 7]) assert.deepEqual(plain(early.planEarlySwitches(settings)), []);
 });
 
 test('a flag list the settings field would refuse is left out, and the switch still goes', () => {
     const { early } = loadEarly({ pathname: '/' });
     for (const junk of ['<img src=x>', 'a;b', 'x'.repeat(4001), '   ', '', 7, null]) {
-        const plan = early.planEarlySwitches({ restoreClassicWatchLayout: true, watchLayoutFlagOverrides: junk });
+        const plan = early.planEarlySwitches({ restoreClassicWatchLayout: true, stickyVideo: false, watchLayoutFlagOverrides: junk });
         assert.deepEqual(plain(plan).map((entry) => entry.name), ['data-ytkit-classic-watch-layout'], String(JSON.stringify(junk)).slice(0, 40));
     }
     const plan = early.planEarlySwitches({ restoreClassicWatchLayout: true, watchLayoutFlagOverrides: '  one_flag\n-two_flag  ' });
@@ -135,7 +138,7 @@ test('on a watch page with the switches stored on, they publish as soon as stora
         'publish data-ytkit-classic-watch-layout=on',
     ]);
     assert.deepEqual(plain(run.early.published).map((entry) => entry.featureId),
-        ['forceDvr', 'hideAutoChapters', 'restoreClassicWatchLayout', 'restoreClassicWatchLayout']);
+        ['forceDvr', 'hideAutoChapters', 'restoreClassicWatchLayout', 'restoreClassicWatchLayout', 'stickyVideo']);
 });
 
 test('nothing is published off a watch page, in safe mode, after the runtime started, or with no token', async () => {
@@ -160,7 +163,7 @@ test('nothing is published off a watch page, in safe mode, after the runtime sta
     assert.equal(await noToken.ready, 0, 'with no token the page world reads nothing, so nothing is written');
     assert.deepEqual(noToken.writes, []);
 
-    const allOff = loadEarly({ stored: { ytSuiteSettings: { hideSidebar: true } } });
+    const allOff = loadEarly({ stored: { ytSuiteSettings: { hideSidebar: true, stickyVideo: false } } });
     assert.equal(await allOff.ready, 0);
     assert.deepEqual(allOff.writes, []);
 });
@@ -194,10 +197,10 @@ test('settle keeps what a started feature confirmed, clears the rest, and runs o
 });
 
 test('settle clears everything when the check throws or is missing', async () => {
-    const run = loadEarly({ stored: { ytSuiteSettings: { forceDvr: true } } });
+    const run = loadEarly({ stored: { ytSuiteSettings: { forceDvr: true, stickyVideo: false } } });
     await run.ready;
     assert.equal(run.early.settle(() => { throw new Error('boom'); }), 1);
-    const second = loadEarly({ stored: { ytSuiteSettings: { forceDvr: true } } });
+    const second = loadEarly({ stored: { ytSuiteSettings: { forceDvr: true, stickyVideo: false } } });
     await second.ready;
     assert.equal(second.early.settle(), 1);
 });
@@ -209,6 +212,44 @@ test('a settle before storage answers stops the late publish', async () => {
     answer({ ytSuiteSettings: ALL_ON });
     assert.equal(await run.ready, 0);
     assert.deepEqual(run.writes, []);
+});
+
+test('Theater Split holds the classic layout switch unless it is stored off', () => {
+    // It's on by default, so a missing key is the user leaving it on.
+    const { early } = loadEarly({ pathname: '/' });
+    for (const value of [true, undefined, null, 1, 'x']) {
+        assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: value })).map((entry) => [entry.name, entry.featureId]),
+            [['data-ytkit-classic-watch-layout', 'stickyVideo']], String(value));
+    }
+    assert.deepEqual(plain(early.planEarlySwitches({})).map((entry) => entry.featureId), ['stickyVideo']);
+    assert.deepEqual(plain(early.planEarlySwitches(undefined)).map((entry) => entry.featureId), ['stickyVideo'],
+        'a fresh install has nothing stored and every default on');
+    assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: false })), []);
+    assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: false, restoreClassicWatchLayout: true })).map((entry) => entry.featureId),
+        ['restoreClassicWatchLayout'], 'no flag list: Theater Split never brings the user\'s extra flags along');
+});
+
+test('a switch two features share is written once and owned by both', async () => {
+    const run = loadEarly({ stored: { ytSuiteSettings: { restoreClassicWatchLayout: true } } });
+    assert.equal(await run.ready, 1);
+    assert.deepEqual(names(run.writes), ['publish data-ytkit-classic-watch-layout=on']);
+    assert.deepEqual(plain(run.early.published).map((entry) => entry.featureId), ['restoreClassicWatchLayout', 'stickyVideo']);
+});
+
+test('settle keeps a shared switch while either owner started, and clears it once when neither did', async () => {
+    const stored = { ytSuiteSettings: { restoreClassicWatchLayout: true } };
+    for (const started of ['restoreClassicWatchLayout', 'stickyVideo']) {
+        const run = loadEarly({ stored });
+        await run.ready;
+        run.writes.length = 0;
+        assert.equal(run.early.settle((featureId) => featureId === started), 0, started);
+        assert.deepEqual(run.writes, [], `${started} keeps it`);
+    }
+    const neither = loadEarly({ stored });
+    await neither.ready;
+    neither.writes.length = 0;
+    assert.equal(neither.early.settle(() => false), 1);
+    assert.deepEqual(names(neither.writes), ['clear data-ytkit-classic-watch-layout']);
 });
 
 // ── both worlds over one page, in manifest order ────────────────────
@@ -372,7 +413,7 @@ test('on a hard load all three switches reach the page world before its inline d
 test('the same hard load with the switches off leaves every inline value as YouTube sent it', async () => {
     // Positive control: without the early switches nothing above happens, so
     // the test can tell the difference.
-    const { main, published } = await hardLoad({ ytSuiteSettings: {} });
+    const { main, published } = await hardLoad({ ytSuiteSettings: { stickyVideo: false } });
     assert.equal(published, 0);
     assert.equal(panelMentions(main.ytInitialData), 9);
     assert.equal(main.ytInitialPlayerResponse.videoDetails.isLiveDvrEnabled, false);
@@ -388,6 +429,18 @@ test('settling through the bridge withdraws a switch whose feature never started
     assert.equal(page.attributes.get('data-ytkit-classic-watch-layout-status'), 'off');
     assert.equal(main.ytcfg.get('EXPERIMENT_FLAGS').web_watch_split_scroll, true, 'YouTube gets its flags back');
     assert.equal(page.attributes.get('data-ytkit-hide-auto-chapters-status'), 'on;cleaned=1', 'the confirmed one stays');
+});
+
+test('a default hard load turns the side-panel flags off for Theater Split before ytcfg lands', async () => {
+    // Theater Split's pane is #below; the side-panel page empties it.
+    const { main, page, isolated, published } = await hardLoad({ ytSuiteSettings: {} });
+    assert.equal(published, 1);
+    const experimentFlags = main.ytcfg.get('EXPERIMENT_FLAGS');
+    for (const flag of DEFAULT_FLAGS) assert.equal(experimentFlags[flag], false, flag);
+    assert.equal(experimentFlags.my_extra_flag, true, 'only Classic Watch Layout brings the user\'s own list');
+    isolated.YTKitCore.earlyBridgeSwitches.settle((featureId) => featureId === 'stickyVideo');
+    assert.equal(page.attributes.get('data-ytkit-classic-watch-layout'), 'on', 'a started split keeps it');
+    assert.equal(main.ytcfg.get('EXPERIMENT_FLAGS').web_watch_split_scroll, false);
 });
 
 test('a page script writing the switches itself still gets nothing', async () => {
@@ -413,7 +466,7 @@ test('ytkit.js settles the early switches in safe mode and after both init tiers
         'a feature confirms its switch only when it started for real');
     // The stubs ytkit.js uses when a feature module fails to import start
     // without publishing anything, so they must not confirm a switch.
-    for (const id of ['restoreClassicWatchLayout', 'hideAutoChapters']) {
+    for (const id of ['restoreClassicWatchLayout', 'hideAutoChapters', 'stickyVideo']) {
         const at = ytkit.indexOf(`id: '${id}',`);
         assert.ok(at > -1, id);
         const stub = ytkit.slice(at, ytkit.indexOf('destroy() {}', at));
@@ -438,6 +491,8 @@ test('every switch the early pass knows is one its feature publishes', () => {
         forceDvr: read('extension/ytkit.js'),
         hideAutoChapters: read('extension/features/hide-auto-chapters/index.js'),
         restoreClassicWatchLayout: read('extension/features/classic-watch-layout/index.js'),
+        // Theater Split's hold goes through ytkit.js holdClassicWatchLayout.
+        stickyVideo: read('extension/ytkit.js'),
     };
     for (const entry of early.SWITCHES) {
         assert.ok(sources[entry.featureId].includes(`'${entry.attribute}'`), `${entry.featureId} publishes ${entry.attribute}`);

@@ -46,6 +46,15 @@
             attribute: 'data-ytkit-classic-watch-layout',
             flagsKey: 'watchLayoutFlagOverrides',
             flagsAttribute: 'data-ytkit-classic-watch-layout-flags'
+        }),
+        // Theater Split holds the same switch (ytkit.js
+        // syncTheaterSplitLayoutHold): its pane is #below, which the
+        // side-panel page empties. It's on by default, so only a stored
+        // false turns it off here.
+        Object.freeze({
+            featureId: 'stickyVideo',
+            attribute: 'data-ytkit-classic-watch-layout',
+            defaultOn: true
         })
     ]);
 
@@ -68,15 +77,20 @@
 
     /**
      * The {name, value, featureId} writes for a stored settings object, in
-     * publish order. Only a stored `true` counts: every one of these is off
-     * by default, and anything else is not the user turning it on.
+     * publish order. For a switch that's off by default only a stored `true`
+     * counts, since anything else is not the user turning it on. A default-on
+     * switch counts unless it's stored `false`.
      */
     function planEarlySwitches(settings) {
         var plan = [];
+        // Nothing stored yet (a fresh install) means every default, so the
+        // default-on switches still go.
+        if (settings === undefined) settings = {};
         if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return plan;
         for (var i = 0; i < SWITCHES.length; i += 1) {
             var entry = SWITCHES[i];
-            if (settings[entry.featureId] !== true) continue;
+            var on = entry.defaultOn ? settings[entry.featureId] !== false : settings[entry.featureId] === true;
+            if (!on) continue;
             if (entry.flagsAttribute) {
                 // The list goes first so the page world's first look at the
                 // switch already has it (same order as the feature's init).
@@ -96,31 +110,47 @@
         // No token means the page-world bridge reads nothing; a plain
         // attribute alone would only be something for settle() to undo.
         if (typeof core.getBridgeWriter !== 'function' || !core.getBridgeWriter()) return 0;
+        var written = {};
+        var count = 0;
         for (var i = 0; i < plan.length; i += 1) {
-            core.publishBridgeAttribute(plan[i].name, plan[i].value);
+            // A switch two features share goes out once; both own it.
+            var key = plan[i].name + '=' + plan[i].value;
+            if (!written[key]) {
+                core.publishBridgeAttribute(plan[i].name, plan[i].value);
+                count += 1;
+            }
+            written[key] = true;
             published.push({ name: plan[i].name, featureId: plan[i].featureId });
         }
-        return plan.length;
+        return count;
     }
 
     /**
      * Called by ytkit.js after its first init pass. A switch stays only when
-     * isActive(featureId) says its feature started; the feature has
-     * published the same value itself by then.
+     * isActive(featureId) says one of the features that published it started;
+     * that feature has published the same value itself by then.
      */
     function settle(isActive) {
         if (settled) return 0;
         settled = true;
-        var cleared = 0;
-        for (var i = 0; i < published.length; i += 1) {
+        var kept = {};
+        var i;
+        for (i = 0; i < published.length; i += 1) {
             var keep = false;
             try {
                 keep = typeof isActive === 'function' && isActive(published[i].featureId) === true;
             } catch (error) {
                 keep = false;
             }
-            if (keep || typeof core.clearBridgeAttribute !== 'function') continue;
-            core.clearBridgeAttribute(published[i].name);
+            if (keep) kept[published[i].name] = true;
+        }
+        var cleared = 0;
+        var done = {};
+        for (i = 0; i < published.length; i += 1) {
+            var name = published[i].name;
+            if (kept[name] || done[name] || typeof core.clearBridgeAttribute !== 'function') continue;
+            done[name] = true;
+            core.clearBridgeAttribute(name);
             cleared += 1;
         }
         published = [];

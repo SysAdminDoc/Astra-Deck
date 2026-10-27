@@ -1469,6 +1469,28 @@ function clearBridgeAttribute(name) {
     return globalThis.YTKitCore?.getBridgeWriter?.()?.clear(name) ?? null;
 }
 
+// Classic Watch Layout and Theater Split both need YouTube's side-panel
+// watch page off. Theater Split's pane is #below, and that page moves the
+// comments, the description and live chat out of it. They share the one
+// page-world switch, which stays on while either holds it, so turning one
+// off never pulls the layout out from under the other.
+const CLASSIC_WATCH_LAYOUT_ATTR = 'data-ytkit-classic-watch-layout';
+const classicWatchLayoutHolders = new Set();
+
+function holdClassicWatchLayout(owner) {
+    // Keyed on the holders, not the plain attribute: a page script can write
+    // that, and the sealed copy is what the page world reads.
+    if (classicWatchLayoutHolders.has(owner)) return null;
+    classicWatchLayoutHolders.add(owner);
+    return publishBridgeAttribute(CLASSIC_WATCH_LAYOUT_ATTR, 'on');
+}
+
+function releaseClassicWatchLayout(owner) {
+    classicWatchLayoutHolders.delete(owner);
+    if (classicWatchLayoutHolders.size) return null;
+    return clearBridgeAttribute(CLASSIC_WATCH_LAYOUT_ATTR);
+}
+
 const STORAGE_KEYS = Object.freeze({
     settings: 'ytSuiteSettings',
     aiSummaries: 'ytkit-ai-summaries',
@@ -6292,6 +6314,25 @@ const STORAGE_KEYS = Object.freeze({
         return true;
     }
 
+    // Theater Split holds the classic layout for as long as it's switched on,
+    // on every page, not just while its watch-page lifecycle runs: dropping
+    // the switch on Home would let the next watch page build the side-panel
+    // layout first. Off until boot is past its safe-mode check, so safe mode
+    // never holds.
+    let _theaterSplitLayoutHoldReady = false;
+    function syncTheaterSplitLayoutHold(settings = appState.settings || {}) {
+        // Before that the early switch (core/early-switches.js) owns the
+        // attribute, and safe mode's settle() clears it.
+        if (!_theaterSplitLayoutHoldReady) return false;
+        const split = getFeatureById('stickyVideo');
+        const wanted = !!split
+            && split._moduleUnavailable !== true
+            && shouldFeatureBeActive(split, settings, PageTypes.WATCH);
+        if (wanted) holdClassicWatchLayout('stickyVideo');
+        else releaseClassicWatchLayout('stickyVideo');
+        return wanted;
+    }
+
     // Always deferred, never called straight from a feature lifecycle hook.
     // The refresh ends in applyExternalSettingsUpdate, which is the same
     // reconciler that runs init/destroy, so a direct call from init() or
@@ -7084,6 +7125,9 @@ const STORAGE_KEYS = Object.freeze({
         StorageManager.syncFromExternal(STORAGE_KEYS.settings, resolvedSettings);
         appState.settings = resolvedSettings;
         appState.currentPage = getCurrentPage();
+        // Before the features: a Classic Watch Layout teardown below must
+        // find Theater Split's hold already in place, or the layout flips.
+        syncTheaterSplitLayoutHold(resolvedSettings);
 
         liveFeatureList.forEach(feature => {
             if (feature._arrayKey) return;
@@ -11675,6 +11719,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // divergent copy silently taking over is how a fix applied to one
             // file and not the other reaches users.
             id: 'stickyVideo',
+            // An inert split holds no classic layout and keeps no early switch.
+            _moduleUnavailable: true,
             name: t('feature_stickyVideo_name', 'Theater Split'),
             description: t('feature_stickyVideo_desc', 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.'),
             group: 'Watch Page',
@@ -21488,8 +21534,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }),
         ...(globalThis.YTKitFeatures?.classicWatchLayout?.createClassicWatchLayoutFeatures?.({
             injectStyle,
-            publishBridgeAttribute,
-            clearBridgeAttribute,
+            publishBridgeAttribute: (name, value) => (name === CLASSIC_WATCH_LAYOUT_ATTR
+                ? holdClassicWatchLayout('restoreClassicWatchLayout')
+                : publishBridgeAttribute(name, value)),
+            clearBridgeAttribute: (name) => (name === CLASSIC_WATCH_LAYOUT_ATTR
+                ? releaseClassicWatchLayout('restoreClassicWatchLayout')
+                : clearBridgeAttribute(name)),
             readSetting: (key) => appState.settings?.[key],
             t
         }) || [
@@ -49952,6 +50002,8 @@ html:not([dark]) .ytkit-sb-channel-chip {
             console.warn(`[YTKit] Runtime failure in "${featureId}" (${count}/${MAX_FEATURE_CRASHES}):`, error);
             if (count >= MAX_FEATURE_CRASHES) {
                 appState.settings[featureId] = false;
+                // A crashed Theater Split lets go of the classic layout now.
+                syncTheaterSplitLayoutHold();
                 void settingsManager.save(appState.settings);
                 console.warn(`[YTKit] Feature "${featureId}" auto-disabled after ${MAX_FEATURE_CRASHES} runtime failures`);
             }
@@ -49965,6 +50017,12 @@ html:not([dark]) .ytkit-sb-channel-chip {
             // at document_start; safe mode keeps none of them.
             globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.(() => false);
         } else {
+            // Before any feature starts or a settings apply can tear Classic
+            // Watch Layout down, so the switch the early pass published for
+            // Theater Split is never dropped in between.
+            _theaterSplitLayoutHoldReady = true;
+            syncTheaterSplitLayoutHold();
+
             // TIER 0: Critical — CSS-only, Theater Split.
             //         Must run synchronously before any page content paints.
             // TIER 1: Normal — all other non-watch-page-specific features.
@@ -50064,6 +50122,7 @@ html:not([dark]) .ytkit-sb-channel-chip {
                 pendingInitTiers -= 1;
                 if (pendingInitTiers > 0) return;
                 globalThis.YTKitCore?.earlyBridgeSwitches?.settle?.((featureId) => {
+                    if (classicWatchLayoutHolders.has(featureId)) return true;
                     const feature = getFeatureById(featureId);
                     return feature?._initialized === true && feature._moduleUnavailable !== true;
                 });

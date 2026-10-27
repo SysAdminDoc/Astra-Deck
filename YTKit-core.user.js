@@ -66,6 +66,11 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 			attribute: 'data-ytkit-classic-watch-layout',
 			flagsKey: 'watchLayoutFlagOverrides',
 			flagsAttribute: 'data-ytkit-classic-watch-layout-flags'
+		}),
+		Object.freeze({
+			featureId: 'stickyVideo',
+			attribute: 'data-ytkit-classic-watch-layout',
+			defaultOn: true
 		})
 	]);
 	function isWatchPath(pathname) {
@@ -81,10 +86,12 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 	}
 	function planEarlySwitches(settings) {
 		var plan = [];
+		if (settings === undefined) settings = {};
 		if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return plan;
 		for (var i = 0; i < SWITCHES.length; i += 1) {
 			var entry = SWITCHES[i];
-			if (settings[entry.featureId] !== true) continue;
+			var on = entry.defaultOn ? settings[entry.featureId] !== false : settings[entry.featureId] === true;
+			if (!on) continue;
 			if (entry.flagsAttribute) {
 				var text = normalizeFlagText(settings[entry.flagsKey]);
 				if (text) plan.push({ name: entry.flagsAttribute, value: text, featureId: entry.featureId });
@@ -98,25 +105,40 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 	function publish(plan) {
 		if (settled || !plan.length || typeof core.publishBridgeAttribute !== 'function') return 0;
 		if (typeof core.getBridgeWriter !== 'function' || !core.getBridgeWriter()) return 0;
+		var written = {};
+		var count = 0;
 		for (var i = 0; i < plan.length; i += 1) {
-			core.publishBridgeAttribute(plan[i].name, plan[i].value);
+			var key = plan[i].name + '=' + plan[i].value;
+			if (!written[key]) {
+				core.publishBridgeAttribute(plan[i].name, plan[i].value);
+				count += 1;
+			}
+			written[key] = true;
 			published.push({ name: plan[i].name, featureId: plan[i].featureId });
 		}
-		return plan.length;
+		return count;
 	}
 	function settle(isActive) {
 		if (settled) return 0;
 		settled = true;
-		var cleared = 0;
-		for (var i = 0; i < published.length; i += 1) {
+		var kept = {};
+		var i;
+		for (i = 0; i < published.length; i += 1) {
 			var keep = false;
 			try {
 				keep = typeof isActive === 'function' && isActive(published[i].featureId) === true;
 			} catch (error) {
 				keep = false;
 			}
-			if (keep || typeof core.clearBridgeAttribute !== 'function') continue;
-			core.clearBridgeAttribute(published[i].name);
+			if (keep) kept[published[i].name] = true;
+		}
+		var cleared = 0;
+		var done = {};
+		for (i = 0; i < published.length; i += 1) {
+			var name = published[i].name;
+			if (kept[name] || done[name] || typeof core.clearBridgeAttribute !== 'function') continue;
+			done[name] = true;
+			core.clearBridgeAttribute(name);
 			cleared += 1;
 		}
 		published = [];

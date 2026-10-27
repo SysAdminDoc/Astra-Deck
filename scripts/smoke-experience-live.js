@@ -639,10 +639,12 @@ async function run(client, background) {
         await settings({ daThumbSaturation: 100 });
         return { home, heading: heading[0] };
     });
-    await check('comment features follow comments into the side-panel page', async () => {
-        // YouTube's 2026-10 side-panel watch page, forced the way the capture
-        // in tests/watch-side-panel-capture.test.js was: every flag Classic
-        // Watch Layout turns off, set true after each ytcfg.set.
+    // YouTube's 2026-10 side-panel watch page, forced the way the capture in
+    // tests/watch-side-panel-capture.test.js was: every flag Classic Watch
+    // Layout turns off, set true after each ytcfg.set. Astra's own switch
+    // wraps ytcfg.set after this does, so it still gets the last word, the
+    // way it would on a session YouTube enrolled.
+    const forceSidePanelPage = async () => {
         const flags = DEFAULT_FLAGS.filter(flag => flag !== 'kevlar_watch_cinematics');
         const { identifier } = await client.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
             const flags = ${JSON.stringify(flags)};
@@ -661,14 +663,18 @@ async function run(client, background) {
             Object.defineProperty(window, 'ytcfg', { configurable: true, get: () => current, set: value => { current = value; wrap(value); } });
             wrap(current);
         })()` });
+        return identifier;
+    };
+    await check('comment features follow comments into the side-panel page', async () => {
+        const identifier = await forceSidePanelPage();
         const PANEL = '[target-id="engagement-panel-comments-section"]';
         const THREADS = `${PANEL} ytd-comments ytd-comment-thread-renderer`;
         const KEYS = ['stickyVideo', 'restoreClassicWatchLayout', 'hideRelatedVideos', 'chatStyleComments', 'commentSearch', 'commentFilterManager', 'commentFilterRules'];
         const before = await evaluate(background, "new Promise(resolve => chrome.storage.local.get('ytSuiteSettings', result => resolve(result.ytSuiteSettings || {})))");
         const search = query => read(`(() => { const input = document.querySelector('${PANEL} .ytkit-comment-search-input'); input.value = ${JSON.stringify(query)}; input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
         try {
-            // Theater Split takes the whole page over, so it's off here; its
-            // pane mirrors #below and can't show the panel yet (ROADMAP).
+            // Theater Split takes the whole page over and switches the
+            // side-panel layout off (next check), so it's off here.
             await settings({ stickyVideo: false, restoreClassicWatchLayout: false, hideRelatedVideos: true, chatStyleComments: true, commentSearch: true, commentFilterManager: true, commentFilterRules: '' });
             await navigate(WATCH);
             await until("[...(document.querySelector('ytd-watch-flexy')?.attributes || [])].some(a => /split-scroll|using-fixed-panel|side-rail/.test(a.name))", 'the side-panel page');
@@ -709,6 +715,59 @@ async function run(client, background) {
             const filtered = await read(`document.querySelectorAll('${PANEL} [data-ytkit-comment-filter-hidden="1"]').length`);
             await capture('side-panel-comments');
             return { ...state, filtered };
+        } finally {
+            await client.send('Page.removeScriptToEvaluateOnNewDocument', { identifier });
+            await settings(Object.fromEntries(KEYS.map(key => [key, before[key]])));
+        }
+    });
+    await check('Theater Split shows comments on the side-panel page', async () => {
+        // Theater Split's pane is #below, and the side-panel page moves the
+        // comments out of it, so Theater Split holds the classic layout on
+        // even with Classic Watch Layout off.
+        const identifier = await forceSidePanelPage();
+        const THREADS = '#below.ytkit-split-scroll-surface ytd-comments#comments ytd-comment-thread-renderer';
+        const KEYS = ['stickyVideo', 'restoreClassicWatchLayout', 'commentSearch', 'commentFilterManager', 'commentFilterRules'];
+        const before = await evaluate(background, "new Promise(resolve => chrome.storage.local.get('ytSuiteSettings', result => resolve(result.ytSuiteSettings || {})))");
+        try {
+            await settings({ stickyVideo: true, restoreClassicWatchLayout: false, commentSearch: true, commentFilterManager: true, commentFilterRules: '' });
+            await navigate(WATCH);
+            await until("document.documentElement.classList.contains('ytkit-split-active')", 'Theater Split mounts');
+            await openSplit();
+            await read("document.querySelector('#below')?.querySelector('ytd-comments#comments')?.scrollIntoView({ block: 'start' })");
+            await until(`document.querySelectorAll('${THREADS}').length > 3`, 'comments in the split pane', 30000);
+            await until("!!document.querySelector('#below ytd-comments#comments .ytkit-comment-search')", 'Comment Search bar in the pane', 15000);
+            const state = await read(`(() => {
+                const flexy = document.querySelector('ytd-watch-flexy');
+                // The first thread is often the pinned one, which Hide
+                // Pinned Comment takes out; measure the first one showing.
+                const all = [...document.querySelectorAll('${THREADS}')];
+                const thread = all.find(t => t.getClientRects().length) || all[0];
+                const box = thread.getBoundingClientRect();
+                const words = (thread.querySelector('#content-text')?.textContent || '').toLowerCase().match(/[a-z]{5,}/g) || [];
+                return {
+                    switchOn: document.documentElement.getAttribute('data-ytkit-classic-watch-layout') === 'on',
+                    sidePanelAttrs: [...(flexy?.attributes || [])].map(a => a.name).filter(name => /split-scroll|using-fixed-panel|fixed-panel-watch-next/.test(name)),
+                    threads: document.querySelectorAll('${THREADS}').length,
+                    panelThreads: document.querySelectorAll('[target-id="engagement-panel-comments-section"] ytd-comment-thread-renderer').length,
+                    threadBox: [box.x, box.y, box.width, box.height].map(Math.round),
+                    onScreen: box.width > 0 && box.height > 0 && box.left >= innerWidth / 3 && box.right <= innerWidth + 1 && box.top < innerHeight,
+                    word: words.sort((a, b) => b.length - a.length)[0] || ''
+                };
+            })()`);
+            assert.equal(state.switchOn, true, `Theater Split holds the classic layout switch (${JSON.stringify(state)})`);
+            assert.deepEqual(state.sidePanelAttrs, [], 'the watch page is back on the classic layout');
+            assert.equal(state.panelThreads, 0, 'no comments left in a side panel');
+            assert.ok(state.onScreen, `a comment thread is on screen in the split pane (box ${state.threadBox.join(',')})`);
+            assert.ok(state.word, 'the first pane comment has a word to filter on');
+            await settings({ commentFilterRules: state.word });
+            await until(`[...document.querySelectorAll('${THREADS}')].some(t => t.dataset.ytkitCommentFilterHidden === '1' && getComputedStyle(t).display === 'none')`, 'Comment Filter hides the matching pane thread', 10000);
+            await capture('side-panel-theater-split');
+            await settings({ stickyVideo: false });
+            await until("!document.documentElement.hasAttribute('data-ytkit-classic-watch-layout')", 'turning Theater Split off lets the switch go', 5000);
+            await settings({ stickyVideo: true, restoreClassicWatchLayout: true });
+            await settings({ stickyVideo: false });
+            assert.equal(await read("document.documentElement.getAttribute('data-ytkit-classic-watch-layout')"), 'on', 'Classic Watch Layout keeps the switch when Theater Split lets go');
+            return state;
         } finally {
             await client.send('Page.removeScriptToEvaluateOnNewDocument', { identifier });
             await settings(Object.fromEntries(KEYS.map(key => [key, before[key]])));

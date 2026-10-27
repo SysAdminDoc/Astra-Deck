@@ -21,23 +21,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-- [ ] P2 — Show the side-panel page's comments panel in Theater Split's comment pane
-  Why: with Theater Split on (the default) the split takes the page over, hides `#secondary` and
-  mirrors `#below` into its pane. On the 2026-10 side-panel watch page the comments live in the
-  engagement panel inside `#secondary`, so the pane shows the hidden classic `#comments` and no
-  threads. The other comment features already follow the panel through `scopeCommentsCss` and
-  `findCommentsRoot` (core/styles.js); the scoped rules that also need `#below` still miss it on
-  purpose until the pane can host it.
-  Evidence: `scripts/smoke-experience-live.js` check 'comment features follow comments into the
-  side-panel page' has to turn `stickyVideo` off to see the panel at all.
-  Touches: Theater Split's comment source in `extension/ytkit.js` (`stickyVideo`),
-  `tests/watch-side-panel-capture.test.js`, the live check above.
-  Acceptance: with forced side-panel flags and Theater Split on, the split's comment pane shows
-  the panel threads (or the panel itself) on screen, Comment Search and the Comment Filter work in
-  it, and closing the split puts the panel back in `#secondary`; the live check runs with
-  `stickyVideo` on.
-  Complexity: M
-
 - [ ] P3 — List view for Home, search and channel grids
   Note (2026-10-13): `listFeedLayout` already covers Home, Subscriptions and search in
   `extension/features/home-subs-css/index.js:329-434` with lifecycle handling at line 493.

@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Theater Split now shows comments on YouTube's newer watch page, where comments open in a panel beside the video. Its comment pane used to come up empty there. While Theater Split is on it keeps that page on the classic layout, so the comments, description and live chat stay under the video where the split can show them. With both on, turning one off no longer drops the layout the other one needs.
+
 ## [4.101.1] (2026-10-27)
 
 ### Fixed
