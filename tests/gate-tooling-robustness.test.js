@@ -69,7 +69,8 @@ test('sidebar.html and sidepanel.html use the same i18n keys for the same string
 
 test('the storage-manager unload guard spans factory invocations', () => {
     const src = read('extension', 'core', 'storage-manager.js');
-    const declaration = src.indexOf('const _installedUnloadHooks = new WeakSet();');
+    // A WeakMap since every manager on a window joins the one hook.
+    const declaration = src.indexOf('const _installedUnloadHooks = new WeakMap();');
     const factory = src.search(/function createStorageManager|createStorageManager\s*[=(]/);
     assert.ok(declaration > -1, 'the guard must exist');
     assert.ok(factory === -1 || declaration < factory,
