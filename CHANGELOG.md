@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Private windows no longer write to your regular profile. Watch progress, watch time, resume points, the Watch Feed, bookmarks, usage stats, the SponsorBlock, DeArrow, RYD and AI caches, and diagnostic entries made in a private window stay in that tab and are gone when you close it, so your normal history and backups don't change. Settings you change there still save, and Copy, Export and Download still work. A one-time notice says so. When Astra can't tell what kind of window it's in, it plays it safe the same way.
+- Background requests from a private tab never carry your regular account's cookies, and the authenticated download handoff now reads only the cookie store that belongs to the tab asking. If it can't work out which store that is, the handoff stops instead of guessing.
+- The userscript now reads the manager's private-window flag, so it follows the same rules.
+
 ## [4.100.2] (2026-10-26)
 
 ### Fixed

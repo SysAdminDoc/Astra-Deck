@@ -34,6 +34,52 @@
     let storagePersistentFailureReported = false;
     let onStoragePersistentFailure = null;
 
+    // Private windows. Viewing history, Watch Feed consumption, in-app saves
+    // and fetch caches written from a private (or unknown) context live only
+    // in this tab's cache and never reach chrome.storage, so regular storage
+    // and backups never change and closing the tab clears them. Reads still
+    // fall through to the regular values, which is what makes the private
+    // Watch Feed a copy. A key held here also ignores later storage echoes,
+    // or a regular tab's write would overwrite the private copy.
+    const privateMemoryKeys = new Set();
+    let privateMemoryNoticeSent = false;
+
+    function keepsInPrivateMemory(key) {
+        const state = typeof core.privateContextState === 'function' ? core.privateContextState() : 'unknown';
+        if (state === 'regular') return false;
+        const classify = core.persistedDomains?.isPrivateMemoryStorageKey;
+        // Without the registry nothing says which keys are history, so every
+        // write stays in memory: losing a private session's state beats
+        // leaking it.
+        return typeof classify === 'function' ? classify(key) === true : true;
+    }
+
+    function splitPrivateMemoryWrites(entries) {
+        const durable = Object.create(null);
+        let held = 0;
+        for (const key of Object.keys(entries)) {
+            if (keepsInPrivateMemory(key)) {
+                privateMemoryKeys.add(key);
+                held += 1;
+            } else {
+                durable[key] = entries[key];
+            }
+        }
+        if (held > 0 && !privateMemoryNoticeSent) {
+            privateMemoryNoticeSent = true;
+            try {
+                window.dispatchEvent(new CustomEvent('ytkit-private-memory-write'));
+            } catch (_) {
+                // reason: the notice is a courtesy; the fence already held
+            }
+        }
+        return durable;
+    }
+
+    function hasPrivateMemoryKeys() {
+        return privateMemoryKeys.size > 0;
+    }
+
     function setStoragePersistentFailureHandler(handler) {
         onStoragePersistentFailure = typeof handler === 'function' ? handler : null;
     }
@@ -419,7 +465,7 @@
 
     function storageWriteMany(entries, options = {}) {
         Object.assign(extensionStateCache, entries);
-        Object.assign(pendingStorageWrites, entries);
+        Object.assign(pendingStorageWrites, splitPrivateMemoryWrites(entries));
 
         if (options.immediate) {
             return flushPendingStorageWrites();
@@ -471,6 +517,7 @@
             try {
                 const normalizedChanges = {};
                 for (const [key, change] of Object.entries(changes)) {
+                    if (privateMemoryKeys.has(key)) continue;
                     if ('newValue' in change) {
                         extensionStateCache[key] = change.newValue;
                         preloadWindowDeletions.delete(key);
@@ -487,7 +534,7 @@
                         newValue: change.newValue
                     };
                 }
-                emitStorageUpdate(normalizedChanges);
+                if (Object.keys(normalizedChanges).length > 0) emitStorageUpdate(normalizedChanges);
             } catch (error) {
                 console.error('[YTKit] Storage listener error:', error);
             }
@@ -499,6 +546,7 @@
         createYouTubeStateManager,
         flushPendingStorageWrites,
         getStoragePreloadError,
+        hasPrivateMemoryKeys,
         installStorageChangeListener,
         installStorageFlushGuards,
         preloadExtensionState,

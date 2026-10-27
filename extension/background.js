@@ -597,8 +597,52 @@ function cookieHandoffSenderBinding(sender) {
         documentUrl: parsed.origin + parsed.pathname + parsed.search,
         cookieStoreId: typeof sender.tab.cookieStoreId === 'string'
             ? sender.tab.cookieStoreId.slice(0, 128)
-            : null
+            : null,
+        // true, false, or null when the browser didn't say. Part of the
+        // binding so a grant issued in one window type never serves the other.
+        incognito: typeof sender.tab.incognito === 'boolean' ? sender.tab.incognito : null
     };
+}
+
+// A request from a tab that isn't known to be a regular window. A private
+// tab, or one whose sender carries no boolean incognito flag, never gets the
+// profile's cookies attached to a background fetch. Senders without a tab
+// (the popup, the options page) keep the allowlist behavior.
+function senderMayBePrivate(sender) {
+    return !!sender?.tab && sender.tab.incognito !== false;
+}
+
+// Chromium's tabs carry no cookieStoreId, so the store has to come from the
+// tab itself: exactly one cookie store must list the bound tab, and when the
+// store reports its incognito flag it has to agree with the binding. Anything
+// else fails closed rather than reading the regular profile's cookies for a
+// private tab. Firefox tabs name their store directly and skip the lookup.
+async function resolveCookieHandoffStore(binding) {
+    if (binding.cookieStoreId) return { ok: true, storeId: binding.cookieStoreId };
+    if (typeof ext.cookies?.getAllCookieStores !== 'function') {
+        return binding.incognito === false
+            ? { ok: true, storeId: null }
+            : { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+    }
+    let stores;
+    try {
+        stores = await callExtensionApi(ext.cookies, 'getAllCookieStores');
+    } catch (_) {
+        return { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+    }
+    const matches = (Array.isArray(stores) ? stores : [])
+        .filter(store => Array.isArray(store?.tabIds) && store.tabIds.includes(binding.tabId));
+    if (matches.length !== 1 || typeof matches[0].id !== 'string') {
+        return { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+    }
+    const store = matches[0];
+    if (typeof store.incognito === 'boolean' && binding.incognito !== null && store.incognito !== binding.incognito) {
+        return { ok: false, code: 'COOKIE_STORE_MISMATCH' };
+    }
+    if (binding.incognito === null && store.incognito !== false) {
+        return { ok: false, code: 'COOKIE_STORE_UNRESOLVED' };
+    }
+    return { ok: true, storeId: store.id };
 }
 
 function sameCookieHandoffBinding(left, right) {
@@ -607,7 +651,8 @@ function sameCookieHandoffBinding(left, right) {
         && left.frameId === right.frameId
         && left.documentId === right.documentId
         && left.documentUrl === right.documentUrl
-        && left.cookieStoreId === right.cookieStoreId;
+        && left.cookieStoreId === right.cookieStoreId
+        && left.incognito === right.incognito;
 }
 
 function pruneCookieHandoffCapabilities(now = Date.now()) {
@@ -2441,7 +2486,10 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             // supplied credentials:'omit' downgrades an allowlisted request to
             // anonymous. Any other caller value is ignored — the bridge can
             // never upgrade a non-allowlisted origin to 'include'.
-            const sendsCredentials = shouldSendCredentials(url) && credentials !== 'omit';
+            // A tab that isn't known to be a regular window always goes
+            // anonymous, whatever the caller asked for.
+            const sendsCredentials = shouldSendCredentials(url) && credentials !== 'omit'
+                && !senderMayBePrivate(sender);
             const fetchOpts = {
                 method: normalizedMethod,
                 signal: controller.signal,
@@ -2648,9 +2696,16 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
-        const query = { domain: COOKIE_HANDOFF.QUERY_DOMAIN };
-        if (consumed.binding.cookieStoreId) query.storeId = consumed.binding.cookieStoreId;
-        callExtensionApi(ext.cookies, 'getAll', query).then((rawCookies) => {
+        resolveCookieHandoffStore(consumed.binding).then((resolved) => {
+            if (!resolved.ok) return { failure: resolved.code };
+            const query = { domain: COOKIE_HANDOFF.QUERY_DOMAIN };
+            if (resolved.storeId) query.storeId = resolved.storeId;
+            return callExtensionApi(ext.cookies, 'getAll', query);
+        }).then((rawCookies) => {
+            if (rawCookies?.failure) {
+                sendResponse(cookieHandoffFailure(rawCookies.failure));
+                return;
+            }
             const handoff = COOKIE_HANDOFF.sanitizeCookieHandoff(rawCookies);
             sendResponse({
                 ok: true,

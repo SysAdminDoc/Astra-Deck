@@ -119,38 +119,21 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Now (P1)
 
-- [ ] P1 — Isolate private-session history, feed consumption and credential requests
-  Why: automatic records lack a private-context fence, and a spanning worker can use its
-  own regular credentials for a private sender. End-to-end leakage is not yet reproduced.
-  Evidence: Verified missing guards in `extension/core/storage.js:387`,
-  `extension/core/persisted-domains.js:88-91`, `extension/ytkit.js:15810`, `:19088`, `:19097`,
-  `:21404`, `:23521`, and hardcoded false in `userscript/host.js:780`.
-  Transcript credential defaults are at `extension/core/transcript-service.js:692-723`
-  and `extension/background.js:2443-2448`. Browser/manager and cookie contracts are cited
-  in `RESEARCH.md` private-context and credential-isolation sections.
-  Touches: shared context helper near `extension/core/env.js`, `browser-api.js`, storage
-  domains, viewing features, Watch Feed, diagnostics, `userscript/host.js`,
-  `extension/core/transcript-service.js`, `cookie-handoff.js`, `extension/background.js`.
-  Acceptance: content uses native `extension.inIncognitoContext`; background trusts
-  `sender.tab.incognito`, never a caller flag; the manager adapter captures sandbox
-  `GM_info.isIncognito` and exposes the same contract. Unknown means automatic records
-  stay in memory and authenticated requests use anonymous fallback or fail closed, never
-  silently become regular-context requests. Preserve the userscript's existing lack of
-  authenticated cookie downloads. Private progress, resume, watch time, caches, diagnostic page IDs and
-  Watch Feed consumption never change regular storage or backups; use a private feed copy.
-  Keep explicit Copy/Export/Download available and label ephemeral in-app saves.
-  Force private transcript requests to omit regular-worker credentials. Preserve Firefox's
-  existing exact `cookieStoreId`; otherwise resolve `cookies.getAllCookieStores()` by
-  sender tab membership. Bind store/private state into one-use tab/document/URL capabilities
-  and fail closed on unresolved/mismatched stores, preserving partition/FPI constraints.
-  Isolated Chrome and Firefox tests with private access enabled prove normal storage stays
-  unchanged and private close clears ephemeral state. Seed distinct normal/private/container
-  sentinel cookies; inspect proxy/handoff output for absence of normal-store values and
-  assert transcript credentials are omitted. Handoff uses the exact store or fails closed.
-  Test manager parity separately.
-  Complexity: L
-
 ### Next (P2)
+
+- [ ] P2 — Prove the private-window fence in real Chrome and Firefox private windows
+  Why: the storage fence, anonymous private fetches and cookie-store binding are unit-tested
+  against mocks (`tests/private-context.test.js`, the private cases in `background.test.js`),
+  but no browser run has opened a private window with the extension allowed there yet.
+  Touches: a new `scripts/smoke-private-window.js` lane next to the existing smoke scripts.
+  Acceptance: Chrome for Testing with "Allow in Incognito" seeded in the profile, and
+  Firefox with private-browsing access granted, each play a video, add to Watch Feed and
+  bookmark in a private window; regular `chrome.storage.local` stays byte-identical, the
+  private tab still reads its own copy, and closing it clears the copy. Seed distinct
+  regular and private sentinel cookies and show the handoff returns only the private
+  store's, and that a private transcript fetch goes out without cookies. Repeat the storage
+  half under Tampermonkey and Violentmonkey in a private window.
+  Complexity: M
 
 - [ ] P2 — Resolve npm links and package identities in the release SBOM
   Why: the generated inventory reports nested paths and link stubs as required package names.

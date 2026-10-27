@@ -29,6 +29,7 @@ function loadBackground({
     permissionsContainsImpl,
     permissionsRequestImpl,
     cookiesGetAllImpl,
+    cookieStoresImpl,
     connectNativeImpl,
     nativeResponse,
     initialSettings = {},
@@ -166,7 +167,8 @@ function loadBackground({
             request: permissionsRequestImpl || ((_payload, callback) => callback(true))
         },
         cookies: {
-            getAll: cookiesGetAllImpl || (async () => [])
+            getAll: cookiesGetAllImpl || (async () => []),
+            ...(cookieStoresImpl ? { getAllCookieStores: cookieStoresImpl } : {})
         },
         storage: {
             local: {
@@ -275,7 +277,7 @@ function dispatchMessage(listener, message, sender = {
     // and adding one read as a regression rather than a missing field.
     origin: 'https://www.youtube.com',
     url: 'https://www.youtube.com/watch?v=abc12345678',
-    tab: { id: 9, windowId: 1, index: 0, url: 'https://www.youtube.com/watch?v=abc12345678' }
+    tab: { id: 9, windowId: 1, index: 0, incognito: false, url: 'https://www.youtube.com/watch?v=abc12345678' }
 }) {
     return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => reject(new Error('Timed out waiting for sendResponse')), 1000);
@@ -293,7 +295,7 @@ function dispatchMessage(listener, message, sender = {
     });
 }
 
-function youtubeSender({ tabId = 9, documentId = 'document-a', cookieStoreId } = {}) {
+function youtubeSender({ tabId = 9, documentId = 'document-a', cookieStoreId, incognito = false } = {}) {
     return {
         id: 'astra-test-extension',
         frameId: 0,
@@ -303,6 +305,7 @@ function youtubeSender({ tabId = 9, documentId = 'document-a', cookieStoreId } =
             id: tabId,
             windowId: 1,
             index: 0,
+            incognito,
             url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             ...(cookieStoreId ? { cookieStoreId } : {})
         }
@@ -1623,7 +1626,7 @@ const COBALT_SETTINGS = Object.freeze({
 });
 const COBALT_SENDER = Object.freeze({
     id: 'astra-test-extension',
-    tab: { id: 9, windowId: 1, index: 0, url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=private-context' }
+    tab: { id: 9, windowId: 1, index: 0, incognito: false, url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=private-context' }
 });
 
 test('self-hosted Cobalt requires the configured host grant before any POST', async () => {
@@ -2066,7 +2069,7 @@ function senderOn(url) {
         id: 'astra-test-extension',
         origin: new URL(url).origin,
         url,
-        tab: { id: 9, windowId: 1, index: 0, url }
+        tab: { id: 9, windowId: 1, index: 0, incognito: false, url }
     };
 }
 
@@ -2160,4 +2163,141 @@ test('a selector asset body that never finishes times out', async () => {
     const reply = await dispatchMessage(bgx.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' });
     assert.equal(reply.ok, false);
     assert.equal(reply.error, 'Selector asset fetch timed out.');
+});
+
+// Private windows. A tab that is private, or whose sender carries no boolean
+// incognito flag, never gets the profile's cookies on a background fetch, and
+// a cookie handoff reads only the store that holds the bound tab.
+async function capturedFetchCredentials(sender, details = {}) {
+    let captured = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            captured = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://www.youtube.com/api/test', ...details }
+    }, sender);
+    return captured?.credentials;
+}
+
+function tabSender(tab) {
+    return {
+        id: 'astra-test-extension',
+        origin: 'https://www.youtube.com',
+        url: 'https://www.youtube.com/watch?v=abc12345678',
+        tab: { id: 9, windowId: 1, index: 0, url: 'https://www.youtube.com/watch?v=abc12345678', ...tab }
+    };
+}
+
+test('EXT_FETCH from a private tab goes anonymous even when the caller asks for cookies', async () => {
+    assert.equal(await capturedFetchCredentials(tabSender({ incognito: true }), { credentials: 'include' }), 'omit');
+});
+
+test('EXT_FETCH from a tab with no incognito flag is treated as private', async () => {
+    assert.equal(await capturedFetchCredentials(tabSender({})), 'omit');
+    assert.equal(await capturedFetchCredentials(tabSender({ incognito: 'yes' })), 'omit');
+});
+
+test('EXT_FETCH from a regular tab still sends cookies to an allowlisted origin', async () => {
+    assert.equal(await capturedFetchCredentials(tabSender({ incognito: false })), 'include');
+});
+
+async function cookieHandoffWith({ sender, cookieStoresImpl }) {
+    const reads = [];
+    const { messageListener } = loadBackground({
+        nativeResponse: { ok: true, service: 'astra-downloader', api: 2, token: 'native-download-token' },
+        cookiesGetAllImpl: async (details) => {
+            reads.push(details);
+            return [];
+        },
+        cookieStoresImpl
+    });
+    const proof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+    const response = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: proof.cookieCapability.token,
+        protocolVersion: 1
+    }, sender);
+    return { response, reads };
+}
+
+test('a private tab cookie handoff reads only the private store that holds the tab', async () => {
+    const { response, reads } = await cookieHandoffWith({
+        sender: youtubeSender({ incognito: true }),
+        cookieStoresImpl: async () => [
+            { id: '0', incognito: false, tabIds: [3, 4] },
+            { id: '1', incognito: true, tabIds: [9] }
+        ]
+    });
+    assert.equal(response.ok, true);
+    assert.equal(reads.length, 1);
+    assert.equal(reads[0].storeId, '1', 'the regular profile store must never answer a private tab');
+});
+
+test('a cookie handoff fails closed when no single store holds the tab', async () => {
+    for (const stores of [
+        [{ id: '0', incognito: false, tabIds: [3] }],
+        [{ id: '0', incognito: false, tabIds: [9] }, { id: '1', incognito: true, tabIds: [9] }]
+    ]) {
+        const { response, reads } = await cookieHandoffWith({
+            sender: youtubeSender({ incognito: true }),
+            cookieStoresImpl: async () => stores
+        });
+        assert.equal(response.ok, false);
+        assert.equal(response.error.code, 'COOKIE_STORE_UNRESOLVED');
+        assert.equal(reads.length, 0, 'no cookie read happens before the store is known');
+    }
+});
+
+test('a cookie handoff refuses a store whose window type disagrees with the tab', async () => {
+    const { response, reads } = await cookieHandoffWith({
+        sender: youtubeSender({ incognito: true }),
+        cookieStoresImpl: async () => [{ id: '0', incognito: false, tabIds: [9] }]
+    });
+    assert.equal(response.error.code, 'COOKIE_STORE_MISMATCH');
+    assert.equal(reads.length, 0);
+});
+
+test('a private or unknown tab gets no cookies when the store lookup is unavailable', async () => {
+    const unknown = youtubeSender();
+    delete unknown.tab.incognito;
+    for (const sender of [youtubeSender({ incognito: true }), unknown]) {
+        const { response, reads } = await cookieHandoffWith({ sender });
+        assert.equal(response.error.code, 'COOKIE_STORE_UNRESOLVED');
+        assert.equal(reads.length, 0);
+    }
+    const regular = await cookieHandoffWith({ sender: youtubeSender({ incognito: false }) });
+    assert.equal(regular.response.ok, true, 'a regular tab keeps the default-store read');
+    assert.equal(regular.reads[0].storeId, undefined);
+});
+
+test('a Firefox container store id is used as-is', async () => {
+    const { response, reads } = await cookieHandoffWith({
+        sender: youtubeSender({ incognito: true, cookieStoreId: 'firefox-private' }),
+        cookieStoresImpl: async () => { throw new Error('must not be consulted'); }
+    });
+    assert.equal(response.ok, true);
+    assert.equal(reads[0].storeId, 'firefox-private');
+});
+
+test('a cookie grant issued in one window type does not serve the other', async () => {
+    const { messageListener } = loadBackground({
+        nativeResponse: { ok: true, service: 'astra-downloader', api: 2, token: 'native-download-token' }
+    });
+    const proof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, youtubeSender({ incognito: false }));
+    const response = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: proof.cookieCapability.token,
+        protocolVersion: 1
+    }, youtubeSender({ incognito: true }));
+    assert.equal(response.error.code, 'COOKIE_CAPABILITY_CONTEXT_MISMATCH');
 });

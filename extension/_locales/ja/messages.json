@@ -1663,6 +1663,12 @@
   "featureHealthStatusStarting": {
     "message": "起動中"
   },
+  "privateMemoryNotice": {
+    "message": "プライベートウィンドウ: ここでの再生位置、履歴、Watch Feed の変更、ブックマークはウィンドウを閉じるまでしか保持されません。コピー、エクスポート、ダウンロードは引き続き使えます。"
+  },
+  "privateMemoryUnknownNotice": {
+    "message": "Astra はこれがプライベートウィンドウかどうか判断できないため、再生位置、履歴、Watch Feed の変更、ブックマークはこのタブを閉じるまでしか保持されません。"
+  },
   "featureHealthTitle": {
     "message": "機能の状態"
   },

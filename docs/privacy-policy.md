@@ -29,6 +29,13 @@ This data stays local unless the user manually exports it, downloads a support
 bundle, or enables a feature that sends page/video context to a documented
 external service.
 
+In a private window, or anywhere Astra can't tell whether the window is
+private, watch progress, watch time, resume points, the Watch Feed, bookmarks,
+usage stats, the SponsorBlock/DeArrow/RYD/AI caches and diagnostic entries are
+kept in that tab's memory only. They never reach the regular profile's storage
+or its backups, and they're gone when the tab closes. Settings changes still
+save normally, and Copy, Export and Download keep working.
+
 ## Chrome Web Store Data Categories
 
 | Chrome category | Astra Deck use |
@@ -95,7 +102,11 @@ present.
 The background worker releases that set only after Astra Downloader identifies
 itself as native API 2 or newer over the browser-pinned native-messaging pipe.
 It issues a random, 20-second, one-use capability bound to the requesting
-top-level YouTube tab and document. A localized notice appears before the first
+top-level YouTube tab and document, and to that tab's window type. A private
+tab only ever reads the cookie store that holds it, and the handoff fails
+closed when that store can't be identified. Background requests from a private
+tab, or one that doesn't report its window type, never carry the regular
+profile's cookies. A localized notice appears before the first
 cookie-bearing companion request on an installation. Local diagnostics record
 only protocol version and counts/byte totals, never cookie names, values, or
 capabilities.

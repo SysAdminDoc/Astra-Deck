@@ -1663,6 +1663,12 @@
   "featureHealthStatusStarting": {
     "message": "Iniciando"
   },
+  "privateMemoryNotice": {
+    "message": "Ventana privada: el progreso, el historial, los cambios en Watch Feed y los marcadores que hagas aquí solo se guardan hasta que la cierres. Copiar, Exportar y Descargar siguen funcionando."
+  },
+  "privateMemoryUnknownNotice": {
+    "message": "Astra no puede saber si esta es una ventana privada, así que el progreso, el historial, los cambios en Watch Feed y los marcadores solo se guardan hasta que cierres esta pestaña."
+  },
   "featureHealthTitle": {
     "message": "Estado de las funciones"
   },

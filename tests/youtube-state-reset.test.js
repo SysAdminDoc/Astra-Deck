@@ -212,7 +212,9 @@ function loadStorageCoreWithContext(hasContext) {
         window: { addEventListener() {}, dispatchEvent() {} }
     };
     context.globalThis = context;
-    context.YTKitCore = { hasExtensionContext: () => hasContext };
+    // env.js always loads before storage.js in the runtime; this harness
+    // stands in for a regular tab, where every write is meant to persist.
+    context.YTKitCore = { hasExtensionContext: () => hasContext, privateContextState: () => 'regular' };
     vm.createContext(context);
     vm.runInContext(storageSource, context, { filename: 'extension/core/storage.js' });
     return context.YTKitCore;

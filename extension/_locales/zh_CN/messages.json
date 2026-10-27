@@ -1663,6 +1663,12 @@
   "featureHealthStatusStarting": {
     "message": "正在启动"
   },
+  "privateMemoryNotice": {
+    "message": "隐私窗口：在这里产生的观看进度、历史记录、Watch Feed 更改和书签只保留到关闭窗口为止。复制、导出和下载仍可使用。"
+  },
+  "privateMemoryUnknownNotice": {
+    "message": "Astra 无法判断这是否为隐私窗口，因此观看进度、历史记录、Watch Feed 更改和书签只保留到关闭此标签页为止。"
+  },
   "featureHealthTitle": {
     "message": "功能健康状态"
   },

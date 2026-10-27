@@ -32,8 +32,24 @@
         }
     }
 
+    // 'private', 'regular' or 'unknown'. Content code reads the browser's own
+    // extension.inIncognitoContext (the userscript adapter fills it from the
+    // manager's GM_info.isIncognito). Anything that isn't a boolean is
+    // unknown, and unknown is treated like private: automatic records stay in
+    // memory rather than risk landing in regular storage.
+    function privateContextState() {
+        try {
+            const flag = chrome.extension?.inIncognitoContext;
+            if (typeof flag === 'boolean') return flag ? 'private' : 'regular';
+        } catch (_) {
+            // reason: an invalidated context reads as unknown
+        }
+        return 'unknown';
+    }
+
     Object.assign(core, {
         hasExtensionContext,
+        privateContextState,
         isLiveChatFrame,
         isLiveChatPath,
         isTopLevelFrame,

@@ -53,6 +53,7 @@ const GUARDED = Object.freeze({
     background: Object.freeze({
         'runtime.connectNative': 'background.js checks ext.runtime?.connectNative first; the companion is reached over HTTP instead',
         'storage.sync': 'background.js reads ext.storage?.sync; with no sync area, settings sync stays off',
+        'cookies.getAllCookieStores': 'background.js checks typeof first; the userscript has no cookie handoff, and without the lookup only a regular tab reads the default store',
     }),
 });
 
@@ -95,7 +96,7 @@ function captureAdapters(mainSource, build, initialValues = {}, options = {}) {
         MutationObserver: class { observe() {} disconnect() {} },
         URL, TextEncoder, TextDecoder, AbortController, Blob, Response, Headers,
         addEventListener: noop, removeEventListener: noop, dispatchEvent: () => true,
-        GM_info: { scriptHandler: 'check-userscript-symbols', version: '0' },
+        GM_info: options.gmInfo || { scriptHandler: 'check-userscript-symbols', version: '0' },
         GM_getValue: (key, fallback) => (values.has(key) ? values.get(key) : fallback),
         GM_setValue: (key, value) => values.set(key, value), GM_deleteValue: (key) => values.delete(key),
         GM_listValues: () => [...values.keys()], GM_addValueChangeListener: () => 1, GM_addStyle: element,

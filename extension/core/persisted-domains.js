@@ -80,22 +80,22 @@
         { id: 'settings', location: 'extension-local', key: 'ytSuiteSettings', backup: 'include', strategy: 'merge-defaults-then-replace', credentialScrub: 'schema-and-sensitive-keys', migration: 'settings-schema' },
         { id: 'hiddenVideos', location: 'extension-local', key: 'ytkit-hidden-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list' },
         { id: 'allowedVideos', location: 'extension-local', key: 'ytkit-video-hider-allowed-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list' },
-        { id: 'markedWatchedVideos', location: 'extension-local', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
+        { id: 'markedWatchedVideos', location: 'extension-local', privateContext: 'memory', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
         { id: 'blockedChannels', location: 'extension-local', key: 'ytkit-blocked-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'blocked-channel-list' },
         { id: 'allowedChannels', location: 'extension-local', key: 'ytkit-allowed-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'allowed-channel-list' },
         { id: 'videoFilterListSubscription', location: 'extension-local', key: FILTER_LIST_SUBSCRIPTION_KEY, backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-filter-list-subscription-v2' },
-        { id: 'bookmarks', location: 'extension-local', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
-        { id: 'watchProgress', location: 'extension-local', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
-        { id: 'watchTime', location: 'extension-local', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
+        { id: 'bookmarks', location: 'extension-local', privateContext: 'memory', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
+        { id: 'watchProgress', location: 'extension-local', privateContext: 'memory', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
+        { id: 'watchTime', location: 'extension-local', privateContext: 'memory', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
         { id: 'channelSpeeds', location: 'extension-local', key: 'ytkit-channel-speeds', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'channel-speed-v1' },
-        { id: 'resumePositions', location: 'extension-local', key: 'ytkit_resume_positions', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'resume-position-v1' },
-        { id: 'playlistResume', location: 'extension-local', key: 'ytkit-playlist-resume', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'playlist-resume-v1' },
-        { id: 'persistentQueue', location: 'extension-local', key: 'ytkit-queue', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'queue-v1' },
+        { id: 'resumePositions', location: 'extension-local', privateContext: 'memory', key: 'ytkit_resume_positions', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'resume-position-v1' },
+        { id: 'playlistResume', location: 'extension-local', privateContext: 'memory', key: 'ytkit-playlist-resume', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'playlist-resume-v1' },
+        { id: 'persistentQueue', location: 'extension-local', privateContext: 'memory', key: 'ytkit-queue', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'queue-v1' },
         { id: 'reactionSpammerState', location: 'extension-local', key: 'ytkitReactionSpammerState', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'reaction-state-v1' },
-        { id: 'watchLaterRemovalLog', location: 'extension-local', key: 'ytkit-wl-removal-log', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
-        { id: 'recommendationScrubSessions', location: 'extension-local', key: 'ytkit-scrub-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
-        { id: 'subscriptionUnsubscribeSessions', location: 'extension-local', key: 'ytkit-subscription-unsubscribe-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
-        { id: 'usageStats', location: 'extension-local', key: 'ytkit_stats', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-object-v1' },
+        { id: 'watchLaterRemovalLog', location: 'extension-local', privateContext: 'memory', key: 'ytkit-wl-removal-log', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+        { id: 'recommendationScrubSessions', location: 'extension-local', privateContext: 'memory', key: 'ytkit-scrub-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+        { id: 'subscriptionUnsubscribeSessions', location: 'extension-local', privateContext: 'memory', key: 'ytkit-subscription-unsubscribe-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+        { id: 'usageStats', location: 'extension-local', privateContext: 'memory', key: 'ytkit_stats', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-object-v1' },
         { id: 'localeOverride', location: 'extension-local', key: '_localeOverride', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'locale-tag-v1' },
         { id: 'debugPreference', location: 'extension-local', key: 'ytkit_debug', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'boolean-v1' },
         { id: 'playerControlDismissals', location: 'extension-local-prefix', keyPrefix: 'ytkit_pc_', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'boolean-map-v1' },
@@ -108,16 +108,16 @@
         { id: 'powerPresetRecovery', location: 'extension-local', key: 'ytkit-preset-power-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
-        { id: 'aiSummaries', location: 'extension-local', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
-        { id: 'aiTranscriptQa', location: 'extension-local', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
+        { id: 'aiSummaries', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
+        { id: 'aiTranscriptQa', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
         { id: 'elementZapperRules', location: 'extension-local', key: 'ytkit-element-zapper-rules', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'element-zapper-rules-v1' },
 
         { id: 'credentialVault', location: 'extension-session-and-indexeddb', key: 'ytkit-credential-vault', backup: 'exclude', reason: 'Credentials are intentionally non-portable and write-only.', credentialScrub: 'entire-domain', migration: 'none' },
         { id: 'deArrowIdentity', location: 'extension-local', key: 'ytkit-da-user-id', backup: 'exclude', reason: 'Pseudonymous API identity must rotate with a new installation.', credentialScrub: 'entire-domain', migration: 'none' },
-        { id: 'deArrowCache', location: 'extension-local', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
-        { id: 'sponsorBlockCache', location: 'extension-local', key: 'sb_segments_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
-        { id: 'returnDislikeCache', location: 'extension-local', key: 'ytkit-ryd-cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
-        { id: 'aiLabelVerdicts', location: 'extension-local', key: 'ytkit-ai-label-verdicts', backup: 'exclude', reason: 'Rebuildable cache of YouTube\'s own AI labels.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'deArrowCache', location: 'extension-local', privateContext: 'memory', key: 'da_branding_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'sponsorBlockCache', location: 'extension-local', privateContext: 'memory', key: 'sb_segments_cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'returnDislikeCache', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ryd-cache', backup: 'exclude', reason: 'Rebuildable network cache.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'aiLabelVerdicts', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-label-verdicts', backup: 'exclude', reason: 'Rebuildable cache of YouTube\'s own AI labels.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'featureCrashCounts', location: 'extension-local', key: 'ytkit_crash_counts', backup: 'exclude', reason: 'Installation-specific diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'safeModeState', location: 'extension-local', key: 'ytkit_safe_mode', backup: 'exclude', reason: 'Installation-specific crash recovery state.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'diagnosticErrors', location: 'settings-nested', key: '_errors', backup: 'exclude', reason: 'Installation-specific diagnostics are scrubbed from settings.', credentialScrub: 'entire-domain', migration: 'none' },
@@ -137,6 +137,18 @@
         { id: 'playbackRecovery', location: 'youtube-session-storage', key: 'ytkit-playback-recovery', backup: 'exclude', reason: 'Short-lived tab recovery state expires after one minute.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'pageCrashGuard', location: 'youtube-local-storage', key: '_ytkit_crash_guard', backup: 'exclude', reason: 'Installation-specific crash-loop guard.', credentialScrub: 'not-applicable', migration: 'none' }
     ].map(Object.freeze));
+
+    // Records a private window must never write to regular storage: viewing
+    // history, the Watch Feed it consumes, in-app saves made there and caches
+    // of what it fetched. In a private or unknown context these stay in the
+    // tab's memory (core/storage.js). Shared preferences are not listed.
+    const PRIVATE_MEMORY_KEYS = new Set(DURABLE_DOMAIN_REGISTRY
+        .filter((entry) => entry.privateContext === 'memory' && entry.key)
+        .map((entry) => entry.key));
+
+    function isPrivateMemoryStorageKey(key) {
+        return PRIVATE_MEMORY_KEYS.has(String(key));
+    }
 
     const INCLUDED_DOMAINS = Object.freeze(DURABLE_DOMAIN_REGISTRY.filter((entry) => entry.backup === 'include'));
     const EXCLUDED_DOMAINS = Object.freeze(DURABLE_DOMAIN_REGISTRY.filter((entry) => entry.backup === 'exclude'));
@@ -1322,6 +1334,7 @@
         HIGHLIGHT_EXPORT_VERSION,
         HIGHLIGHT_EXPORT_KIND,
         DURABLE_DOMAIN_REGISTRY,
+        isPrivateMemoryStorageKey,
         INCLUDED_DOMAINS,
         EXCLUDED_DOMAINS,
         PAGE_DB,

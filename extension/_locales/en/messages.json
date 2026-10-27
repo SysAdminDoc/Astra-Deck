@@ -1673,6 +1673,12 @@
   "featureHealthStatusStarting": {
     "message": "Starting"
   },
+  "privateMemoryNotice": {
+    "message": "Private window: watch progress, history, Watch Feed changes and bookmarks you make here are kept only until you close it. Copy, Export and Download still work."
+  },
+  "privateMemoryUnknownNotice": {
+    "message": "Astra can't tell whether this is a private window, so watch progress, history, Watch Feed changes and bookmarks are kept only until you close this tab."
+  },
   "featureHealthTitle": {
     "message": "Feature health"
   },

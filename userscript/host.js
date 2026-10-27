@@ -58,6 +58,22 @@
         return 'unknown';
     }
 
+    // The manager's own private-window flag: true, false, or null when it
+    // doesn't report one. It fills chrome.extension.inIncognitoContext and the
+    // sender tab's incognito field so the shared code takes the same private
+    // path it does in the extension. null reads as unknown there, which keeps
+    // automatic records in memory and sends background fetches anonymously.
+    const INCOGNITO = (() => {
+        try {
+            if (typeof GM_info === 'object' && GM_info && typeof GM_info.isIncognito === 'boolean') {
+                return GM_info.isIncognito;
+            }
+        } catch (_) {
+            // reason: an unreadable GM_info is the same as no flag
+        }
+        return null;
+    })();
+
     function recordError(stage, error) {
         const message = String(error?.message || error || 'unknown error').slice(0, 400);
         hostState.errors.push({ stage, message, at: Date.now() });
@@ -777,7 +793,7 @@
             windowId: 1,
             active: true,
             highlighted: true,
-            incognito: false,
+            incognito: INCOGNITO,
             pinned: false,
             url: location.href,
             title: document.title || ''
@@ -1134,7 +1150,8 @@
         const api = {
             runtime: createRuntime(kind),
             storage: kind === 'background' ? storageApi : contentStorageApi,
-            i18n: i18nApi
+            i18n: i18nApi,
+            extension: { inIncognitoContext: INCOGNITO }
         };
         if (kind === 'background') {
             api.alarms = alarmsApi;

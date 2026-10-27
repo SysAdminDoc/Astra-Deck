@@ -1663,6 +1663,12 @@
   "featureHealthStatusStarting": {
     "message": "Avvio in corso"
   },
+  "privateMemoryNotice": {
+    "message": "Finestra privata: avanzamento, cronologia, modifiche al Watch Feed e segnalibri creati qui restano solo finché non la chiudi. Copia, Esporta e Scarica funzionano ancora."
+  },
+  "privateMemoryUnknownNotice": {
+    "message": "Astra non riesce a capire se questa è una finestra privata, quindi avanzamento, cronologia, modifiche al Watch Feed e segnalibri restano solo finché non chiudi questa scheda."
+  },
   "featureHealthTitle": {
     "message": "Stato delle funzioni"
   },

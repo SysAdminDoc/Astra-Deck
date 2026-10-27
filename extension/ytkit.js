@@ -690,6 +690,7 @@
                     }
                 },
                 getVersion: () => (typeof YTKIT_VERSION !== 'undefined' ? YTKIT_VERSION : 'unknown'),
+                keepInMemory: () => (globalThis.YTKitCore?.privateContextState?.() ?? 'unknown') !== 'regular',
                 cap: 500
             });
         }
@@ -7257,6 +7258,25 @@ const STORAGE_KEYS = Object.freeze({
         window.addEventListener('ytkit-storage-changed', (event) => {
             const detail = event.detail || {};
             handleExternalStorageChanges(detail.changes || {}, detail.source || 'storage');
+        });
+
+        // A private window keeps watch history, the Watch Feed and in-app
+        // saves in memory (core/storage.js). Say so the first time that
+        // happens in a private session. The page's own localStorage is
+        // private there too, so the mark goes away with the window.
+        window.addEventListener('ytkit-private-memory-write', () => {
+            const MARK = '_ytkit_private_memory_notice';
+            try {
+                if (localStorage.getItem(MARK)) return;
+                localStorage.setItem(MARK, '1');
+            } catch (_) {
+                // reason: blocked page storage still gets the notice once per tab
+            }
+            const known = globalThis.YTKitCore?.privateContextState?.() === 'private';
+            const message = known
+                ? t('privateMemoryNotice', 'Private window: watch progress, history, Watch Feed changes and bookmarks you make here are kept only until you close it. Copy, Export and Download still work.')
+                : t('privateMemoryUnknownNotice', 'Astra can\'t tell whether this is a private window, so watch progress, history, Watch Feed changes and bookmarks are kept only until you close this tab.');
+            showToast(message, '#6b7280', { duration: 8 });
         });
 
         if (chrome.runtime?.onMessage) {

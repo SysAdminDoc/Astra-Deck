@@ -42,6 +42,13 @@
         const cap = Number.isFinite(options.cap) && options.cap > 0
             ? Math.floor(options.cap)
             : DEFAULT_CAP;
+        // True in a private (or unknown) window. Entries there name the pages
+        // and videos it visited, so they stay in this tab's memory instead of
+        // riding the next settings save into regular storage.
+        const keepInMemory = typeof options.keepInMemory === 'function'
+            ? options.keepInMemory
+            : () => false;
+        const memoryEntries = [];
 
         const state = {
             enabled: false,
@@ -51,8 +58,9 @@
 
         function _resyncCounts() {
             const settings = getSettings();
-            const arr = settings && Array.isArray(settings._errors) ? settings._errors : null;
-            if (!arr) return;
+            const persisted = settings && Array.isArray(settings._errors) ? settings._errors : null;
+            if (!persisted && !memoryEntries.length) return;
+            const arr = (persisted || []).concat(memoryEntries);
             const next = Object.create(null);
             for (let i = 0; i < arr.length; i++) {
                 const ctx = arr[i] && typeof arr[i].ctx === 'string' ? arr[i].ctx : '';
@@ -70,7 +78,8 @@
             if (!state.enabled && !(settings && settings.diagnosticLog)) return;
             if (!settings) return;
             try {
-                const arr = settings._errors || [];
+                const inMemory = keepInMemory() === true;
+                const arr = inMemory ? memoryEntries : (settings._errors || []);
                 const ctxKey = String(ctx).slice(0, CTX_MAX_LEN);
                 // Resync BEFORE push so cross-session entries already in
                 // the persisted ring are counted exactly once. The
@@ -95,7 +104,7 @@
                         if (state.ctxCounts[dropCtx] <= 0) delete state.ctxCounts[dropCtx];
                     }
                 }
-                settings._errors = arr;
+                if (!inMemory) settings._errors = arr;
                 // Debounced save handled by settingsManager on next settings
                 // touch; we don't force a write here to avoid thrashing.
             } catch (e) {
@@ -114,13 +123,15 @@
 
         function get() {
             const settings = getSettings();
-            return settings && Array.isArray(settings._errors) ? settings._errors : [];
+            const persisted = settings && Array.isArray(settings._errors) ? settings._errors : [];
+            return memoryEntries.length ? persisted.concat(memoryEntries) : persisted;
         }
 
         function clear() {
             const settings = getSettings();
             if (!settings) return;
             settings._errors = [];
+            memoryEntries.length = 0;
             state.ctxCounts = Object.create(null);
             state.countsResynced = true;
             try { saveSettings(settings); } catch (_) {

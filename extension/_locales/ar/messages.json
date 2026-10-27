@@ -1663,6 +1663,12 @@
   "featureHealthStatusStarting": {
     "message": "قيد التشغيل"
   },
+  "privateMemoryNotice": {
+    "message": "نافذة خاصة: تقدم المشاهدة والسجل وتغييرات Watch Feed والإشارات المرجعية التي تنشئها هنا تبقى فقط حتى تغلقها. النسخ والتصدير والتنزيل ما زالت تعمل."
+  },
+  "privateMemoryUnknownNotice": {
+    "message": "لا يستطيع Astra معرفة ما إذا كانت هذه نافذة خاصة، لذا يبقى تقدم المشاهدة والسجل وتغييرات Watch Feed والإشارات المرجعية فقط حتى تغلق علامة التبويب هذه."
+  },
   "featureHealthTitle": {
     "message": "حالة الميزات"
   },
