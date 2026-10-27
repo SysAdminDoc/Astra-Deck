@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Element Zapper's settings list no longer wipes your saved rules. With the feature off in that tab, the list showed "No rules yet", and picking a new element saved it over every rule you had. Edits now start from what's saved, so a rule added in another tab sticks around too.
+
 ## [4.105.0] (2026-10-27)
 
 ### Added

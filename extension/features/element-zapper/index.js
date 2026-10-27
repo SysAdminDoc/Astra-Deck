@@ -146,6 +146,7 @@
             group: 'Home / Subscriptions',
             _rules: [],
             _picker: null,
+            _active: false,
 
             _describeRefusal(reason) {
                 const reasons = zapperCore().ELEMENT_ZAPPER_REFUSAL_REASONS || {};
@@ -211,43 +212,59 @@
 
             // ── Rules ───────────────────────────────────────────────────────
 
+            // The settings pane edits rules whether or not the feature runs in
+            // this tab, and another tab may have saved since init. Every edit
+            // starts from storage, or it writes a stale (or empty) list over
+            // the user's rules.
+            _syncRules() {
+                this._rules = readRules();
+                return this._rules;
+            },
+
+            // Page changes only while the feature runs; destroy has already
+            // restored the page and nothing would undo a later hide.
+            _reapply({ restore = false } = {}) {
+                if (!this._active) return;
+                if (restore) this._restoreAll();
+                this._apply();
+            },
+
             getRules() {
-                return this._rules.map((rule) => ({ ...rule }));
+                return this._syncRules().map((rule) => ({ ...rule }));
             },
 
             addRule(rule) {
                 const core = zapperCore();
                 const clean = core.sanitizeZapperRule?.(rule);
                 if (!clean) return null;
-                if (this._rules.some((existing) => existing.selector === clean.selector)) return null;
+                const rules = this._syncRules();
+                if (rules.some((existing) => existing.selector === clean.selector)) return null;
                 const max = core.ELEMENT_ZAPPER_MAX_RULES || 200;
-                if (this._rules.length >= max) return null;
-                this._rules = writeRules([...this._rules, clean]);
-                this._apply();
+                if (rules.length >= max) return null;
+                this._rules = writeRules([...rules, clean]);
+                this._reapply();
                 return clean;
             },
 
             removeRule(selector) {
-                const before = this._rules.length;
-                this._rules = writeRules(this._rules.filter((rule) => rule.selector !== selector));
-                if (this._rules.length === before) return false;
+                const rules = this._syncRules();
+                this._rules = writeRules(rules.filter((rule) => rule.selector !== selector));
+                if (this._rules.length === rules.length) return false;
                 // Un-hide first, then re-apply: a node matched by two rules
                 // must stay hidden when only one of them is deleted.
-                this._restoreAll();
-                this._apply();
+                this._reapply({ restore: true });
                 return true;
             },
 
             setRuleEnabled(selector, enabled) {
                 let touched = false;
-                this._rules = writeRules(this._rules.map((rule) => {
+                this._rules = writeRules(this._syncRules().map((rule) => {
                     if (rule.selector !== selector) return rule;
                     touched = true;
                     return { ...rule, enabled: enabled !== false };
                 }));
                 if (!touched) return false;
-                this._restoreAll();
-                this._apply();
+                this._reapply({ restore: true });
                 return true;
             },
 
@@ -434,13 +451,15 @@
             // ── Lifecycle ───────────────────────────────────────────────────
 
             init() {
-                this._rules = readRules();
+                this._active = true;
+                this._syncRules();
                 this._apply();
                 addMutationRule?.(this.id, () => this._apply());
                 addNavigateRule?.(this.id, () => this._apply());
             },
 
             destroy() {
+                this._active = false;
                 this.stopPicking();
                 removeMutationRule?.(this.id);
                 removeNavigateRule?.(this.id);

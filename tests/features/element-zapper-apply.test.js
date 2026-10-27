@@ -85,6 +85,7 @@ function build(matchesBySelector, storedRules = [], overrides = {}) {
     return {
         feature: instance.elementZapperFeature,
         readStored: () => stored,
+        writeStored: (value) => { stored = value; },
         mutationRules: rules,
         navigateRules: navigate
     };
@@ -215,6 +216,37 @@ test('an invalid stored rule is dropped at load rather than reaching the DOM', (
     feature.init();
     assert.equal(feature.getRules().length, 0);
     assert.equal(shelf.getAttribute('data-ytkit-zapped'), null);
+});
+
+test('the pane edits saved rules while the feature is off without wiping them or touching the page', () => {
+    // The settings pane is built whether or not the feature runs in this tab.
+    const shelf = node('ytd-merch-shelf-renderer');
+    const { feature, readStored } = build(
+        { 'ytd-merch-shelf-renderer': [shelf] },
+        [{ selector: 'ytd-rich-section-renderer' }, { selector: 'ytd-watch-flexy ytd-reel-shelf-renderer' }]
+    );
+    assert.equal(feature.getRules().length, 2, 'the pane lists saved rules before init ever ran');
+    assert.ok(feature.addRule({ selector: 'ytd-merch-shelf-renderer' }));
+    assert.deepEqual(readStored().map((rule) => rule.selector),
+        ['ytd-rich-section-renderer', 'ytd-watch-flexy ytd-reel-shelf-renderer', 'ytd-merch-shelf-renderer']);
+    assert.equal(shelf.getAttribute('data-ytkit-zapped'), null,
+        'nothing would ever un-hide a node hidden while the feature is off');
+
+    feature.init();
+    feature.destroy();
+    assert.ok(feature.addRule({ selector: 'ytd-watch-flexy ytd-merch-shelf-renderer' }));
+    assert.equal(shelf.getAttribute('data-ytkit-zapped'), null, 'destroy already restored the page');
+    assert.equal(readStored().length, 4);
+});
+
+test('a rule another tab saved survives this tab adding or removing one', () => {
+    const { feature, readStored, writeStored } = build({}, [{ selector: 'ytd-rich-section-renderer' }]);
+    feature.init();
+    // A second tab appends a rule after this one loaded.
+    writeStored([{ selector: 'ytd-rich-section-renderer' }, { selector: 'ytd-merch-shelf-renderer' }]);
+    assert.equal(feature.removeRule('ytd-rich-section-renderer'), true);
+    assert.deepEqual(readStored().map((rule) => rule.selector), ['ytd-merch-shelf-renderer'],
+        'the edit starts from what storage holds now, not the init snapshot');
 });
 
 test('lifecycle registers and removes both rule hooks', () => {
