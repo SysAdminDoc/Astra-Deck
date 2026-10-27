@@ -10,6 +10,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Opening YouTube in a private window no longer leaves a trace in your regular storage. Every page load stamps a small crash-loop guard, and a private window used to write that stamp to the same storage your normal windows use. It now stays in the private tab and goes away with it.
 
+### Added
+
+- `npm run smoke:private-window` opens real private windows in Chrome for Testing and Firefox, plays a video, adds it to Watch Feed and bookmarks it, then checks that regular storage didn't change by a single byte and that a fresh private window starts clean. It also seeds different sign-in cookies in the regular and private windows to show the downloader handoff only gets the private ones, and that a private transcript request goes out with no cookies at all. The storage half runs again under Violentmonkey and Tampermonkey (`--browser managers`).
+
 ## [4.101.2] (2026-10-27)
 
 ### Fixed

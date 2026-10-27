@@ -82,6 +82,7 @@
     "check:firefox": "node scripts/check-firefox-webext.js",
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:userscript-managers": "node scripts/smoke-userscript-managers.js",
+    "smoke:private-window": "node scripts/smoke-private-window.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "smoke:zero-ads:live": "node scripts/smoke-zero-ads-live.js",
     "smoke:main-bridge:live": "node scripts/smoke-main-bridge-live.js",

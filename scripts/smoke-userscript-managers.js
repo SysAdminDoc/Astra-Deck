@@ -691,6 +691,7 @@ module.exports = {
     buildIsolatedUserscript,
     downloadManager,
     fixtureHtml,
+    installUserscript,
     managerFixtureExpression,
     parseArgs,
     readManagerFixtures,

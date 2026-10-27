@@ -315,6 +315,9 @@ async function startFirefoxSession(options) {
             options.commandTimeoutMs || DEFAULT_COMMAND_TIMEOUT_MS
         );
         return {
+            // Classic WebDriver endpoints for what BiDi lacks: Marionette's
+            // chrome context and add-on installs with private browsing allowed.
+            baseUrl: `http://127.0.0.1:${port}/session/${sessionId}`,
             browserVersion: capabilities.browserVersion || '',
             client,
             geckodriver,

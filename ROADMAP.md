@@ -47,20 +47,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### Next (P2)
 
-- [ ] P2 — Prove the private-window fence in real Chrome and Firefox private windows
-  Why: the storage fence, anonymous private fetches and cookie-store binding are unit-tested
-  against mocks (`tests/private-context.test.js`, the private cases in `background.test.js`),
-  but no browser run has opened a private window with the extension allowed there yet.
-  Touches: a new `scripts/smoke-private-window.js` lane next to the existing smoke scripts.
-  Acceptance: Chrome for Testing with "Allow in Incognito" seeded in the profile, and
-  Firefox with private-browsing access granted, each play a video, add to Watch Feed and
-  bookmark in a private window; regular `chrome.storage.local` stays byte-identical, the
-  private tab still reads its own copy, and closing it clears the copy. Seed distinct
-  regular and private sentinel cookies and show the handoff returns only the private
-  store's, and that a private transcript fetch goes out without cookies. Repeat the storage
-  half under Tampermonkey and Violentmonkey in a private window.
-  Complexity: M
-
 - [ ] P2 — Import compatible BlockTube and ChannelSieve filter backups atomically
   Why: migration has a concrete export contract and documented failures in competing importers.
   Evidence: https://github.com/amitbl/blocktube/blob/master/src/ui/options.js,
