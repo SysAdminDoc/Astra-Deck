@@ -574,9 +574,18 @@
                 if (gen !== this._generation || route !== this._routeToken) return;
                 await this._processWatchTitle(gen, route);
             },
+            // YouTube recycles card renderers in place, so by the time a
+            // lookup answers, the card may show another video or be gone.
+            _cardStillShows(el, videoId, gen, route) {
+                return gen === this._generation
+                    && route === this._routeToken
+                    && el.isConnected !== false
+                    && el.dataset.daVideoId === videoId
+                    && this._cardVideoId(el) === videoId;
+            },
             async _applyCard(el, videoId, gen, route) {
                 const branding = await this._fetchBranding(videoId);
-                if (!branding || gen !== this._generation || route !== this._routeToken) return;
+                if (!branding || !this._cardStillShows(el, videoId, gen, route)) return;
                 if (appState.settings.daReplaceTitles) {
                     const titleEl = el.querySelector(this._TITLE_SELECTORS);
                     if (titleEl) this._applyTitle(titleEl, branding);
@@ -613,6 +622,7 @@
                 titleEl.dataset.daProcessed = '1';
                 const branding = await this._fetchBranding(videoId);
                 if (!branding || gen !== this._generation || route !== this._routeToken) return;
+                if (getVideoId() !== videoId || titleEl.isConnected === false) return;
                 if (this._applyTitle(titleEl, branding, { announce: true })) this._syncDocumentTitle();
             },
             // The tab title kept the clickbait the heading no longer shows.
@@ -673,7 +683,7 @@
                     watcher.disconnect();
                     this._coverWatchers.delete(watcher);
                     delete img.dataset.daWaiting;
-                    if (gen !== this._generation || route !== this._routeToken || el.dataset.daVideoId !== videoId) return;
+                    if (!this._cardStillShows(el, videoId, gen, route)) return;
                     this._applyThumbnail(el, videoId, branding);
                 });
                 watcher.observe(img, { attributes: true, attributeFilter: ['src'] });

@@ -715,6 +715,53 @@ test('lockup cards are walked once, from the outer host, and playlists and mixes
     assert.equal(mix.card.dataset.daVideoId, undefined);
 });
 
+test('a lookup that answers after its card was recycled paints nothing on the new video', async () => {
+    // YouTube reuses card renderers in place. A's branding used to land on the
+    // card after it had been reset and taken for B.
+    let shown = 'abc123DEF45';
+    const { card, img } = lockupCard({ videoId: 'unused' });
+    const originalQuery = card.querySelector;
+    const thumbSelectors = createDeArrowFeature()._CARD_THUMB_SELECTORS;
+    card.querySelector = (selector) => (selector !== thumbSelectors && selector.includes('/watch')
+        ? { href: `https://www.youtube.com/watch?v=${shown}` }
+        : originalQuery(selector));
+    const cover = img.src;
+    const waiting = [];
+    const feature = createDeArrowFeature({
+        appState: { settings: surfaceSettings() },
+        isWatchPagePath: () => false
+    });
+    feature._fetchBranding = () => new Promise((resolve) => waiting.push(resolve));
+    const branding = (stamp) => ({ titles: [], thumbnails: [{ timestamp: stamp, votes: 1 }] });
+    await withGlobals({
+        document: pageDocument({ surface: 'home', renderers: [card] }),
+        location: { origin: 'https://www.youtube.com', pathname: '/' }
+    }, async () => {
+        const pass = feature._processPage();
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(waiting.length, 1, 'A is being looked up');
+        shown = 'xyz789GHI01';
+        card.dataset.daVideoId = shown;
+        waiting.shift()(branding(11));
+        await pass;
+        assert.equal(img.src, cover, 'A\'s thumbnail never lands on the card now showing B');
+        assert.ok(!img.classList.contains('da-replaced-thumb'), 'the card is not marked replaced');
+
+        const forB = feature._applyCard(card, shown, feature._generation, feature._routeToken);
+        waiting.shift()(branding(22));
+        await forB;
+        assert.match(img.src, /videoID=xyz789GHI01&time=22/, 'B still gets its own thumbnail');
+
+        const removed = lockupCard({ videoId: 'abc123DEF45' });
+        removed.card.dataset.daVideoId = 'abc123DEF45';
+        const late = feature._applyCard(removed.card, 'abc123DEF45', feature._generation, feature._routeToken);
+        removed.card.isConnected = false;
+        waiting.shift()(branding(33));
+        await late;
+        assert.ok(!removed.img.classList.contains('da-replaced-thumb'), 'a card YouTube removed is never painted');
+    });
+});
+
 test('cards are looked up in parallel lanes, not one at a time', async () => {
     const cards = Array.from({ length: 9 }, (_, i) => lockupCard({ videoId: `abc123DEF0${i}` }).card);
     const waiting = [];
@@ -790,7 +837,9 @@ test('an off-screen cover waits for its image instead of reprocessing the card',
         disconnect() { this.connected = false; }
     }
     const page = { querySelectorAll: () => [], title: '' };
-    await withGlobals({ MutationObserver: FakeMutationObserver, document: page }, () => {
+    // The cover watcher rechecks the card's link, which resolves against location.
+    const location = { origin: 'https://www.youtube.com', pathname: '/' };
+    await withGlobals({ MutationObserver: FakeMutationObserver, document: page, location }, () => {
         const feature = createDeArrowFeature({ appState: { settings: surfaceSettings({ daThumbFallback: 'end' }) } });
         const id = 'abc123DEF45';
         const lazy = lockupCard({ videoId: id, cover: '' });
