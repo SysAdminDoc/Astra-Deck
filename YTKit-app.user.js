@@ -30157,16 +30157,13 @@ const STORAGE_KEYS = Object.freeze({
 		const featureId = typeof featureOrId === 'string' ? featureOrId : featureOrId?.id;
 		return !!featureId && RETIRED_COMMENT_FEATURE_IDS.has(featureId);
 	}
+	let artifactPolicy = null;
 	function isFeatureAllowedByArtifact(feature) {
 		const policyFactory = globalThis.YTKitCore?.createPolicyProfile;
-		const findEntry = globalThis.YTKitCore?.findSettingEntry;
-		if (typeof policyFactory !== 'function' || typeof findEntry !== 'function') return true;
-		const entry = findEntry(getFeatureSettingKey(feature));
-		if (!entry) return true;
+		if (typeof policyFactory !== 'function') return true;
 		try {
-			const policy = policyFactory();
-			const effective = policy.resolveEffectiveProfile(appState.settings || {});
-			return policy.isEntryAllowedInProfile(entry, effective);
+			artifactPolicy = artifactPolicy || policyFactory();
+			return artifactPolicy.isKeyInArtifact(getFeatureSettingKey(feature));
 		} catch (_) {
 			return true;
 		}

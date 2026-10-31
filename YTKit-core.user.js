@@ -8388,25 +8388,25 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 	root.YTKitCore.persistedDomains = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
 	'use strict';
-	if (!globalThis.YTKitCore?.describeRemoteListUrl
-		&& typeof module !== 'undefined' && module.exports
-		&& typeof require === 'function') {
+	if (typeof module !== 'undefined' && module.exports
+		&& typeof require === 'function'
+		&& !globalThis.YTKitCore?.describeRemoteListUrl) {
 		try {
 			require('./remote-list-scope');
 		} catch (_) {
 		}
 	}
-	if (!globalThis.YTKitCore?.sanitizeZapperRules
-		&& typeof module !== 'undefined' && module.exports
-		&& typeof require === 'function') {
+	if (typeof module !== 'undefined' && module.exports
+		&& typeof require === 'function'
+		&& !globalThis.YTKitCore?.sanitizeZapperRules) {
 		try {
 			require('./element-zapper');
 		} catch (_) {
 		}
 	}
-	if (!globalThis.YTKitCore?.hasUnsafeRegexQuantifiers
-		&& typeof module !== 'undefined' && module.exports
-		&& typeof require === 'function') {
+	if (typeof module !== 'undefined' && module.exports
+		&& typeof require === 'function'
+		&& !globalThis.YTKitCore?.hasUnsafeRegexQuantifiers) {
 		try {
 			require('./regex-safety');
 		} catch (_) {
@@ -14309,6 +14309,10 @@ __astraDeckRegistry["core/policy-profile.js"] = function (globalThis, self, wind
 		function isKeyAllowedInProfile(key, effective) {
 			return isEntryAllowedInProfile(findEntry(key), effective);
 		}
+		function isKeyInArtifact(key) {
+			const entry = findEntry(key);
+			return !entry || isEntryAllowedInProfile(entry, 'github-full');
+		}
 		function filterSettingsForProfile(settings = {}, effective) {
 			const eff = normalizeEffectiveProfile(effective, settings);
 			const out = {};
@@ -14583,6 +14587,7 @@ __astraDeckRegistry["core/policy-profile.js"] = function (globalThis, self, wind
 			resolveEffectiveProfile,
 			isEntryAllowedInProfile,
 			isKeyAllowedInProfile,
+			isKeyInArtifact,
 			filterSettingsForProfile,
 			shouldScrubKey,
 			isSettingValueValid,
