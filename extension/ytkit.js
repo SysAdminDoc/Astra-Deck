@@ -23689,17 +23689,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _upgradeAll() {
-                const thumbnails = document.querySelectorAll('ytd-thumbnail img[src*="i.ytimg.com"], ytd-playlist-thumbnail img[src*="i.ytimg.com"]');
+                const thumbnails = document.querySelectorAll('ytd-thumbnail img[src*="i.ytimg.com"], ytd-playlist-thumbnail img[src*="i.ytimg.com"], yt-thumbnail-view-model img[src*="i.ytimg.com"]');
                 thumbnails.forEach(img => {
                     const src = img.src;
                     if (!src) return;
+                    // A row that fell back stays on its own thumbnail. A recycled
+                    // <img> holding another video's src gets its own try.
+                    if (img.dataset.ytkitHdTried === src) return;
                     // Replace hqdefault/mqdefault/sddefault with maxresdefault
                     if (src.includes('hqdefault') || src.includes('mqdefault') || src.includes('sddefault') || src.includes('default.jpg')) {
                         const upgraded = src.replace(/(hqdefault|mqdefault|sddefault|default)\.jpg/, 'maxresdefault.jpg');
                         if (upgraded !== src) {
+                            img.dataset.ytkitHdTried = src;
+                            const settle = () => { img.onerror = null; img.onload = null; };
+                            const fallBack = () => { settle(); img.src = src; };
+                            img.onerror = fallBack;
+                            // A video with no maxres answers 404 with a 120x90 gray
+                            // placeholder as the body, and that fires load, not error.
+                            img.onload = () => { if (img.naturalWidth <= 120) fallBack(); else settle(); };
                             img.src = upgraded;
-                            // Fallback if maxres doesn't exist
-                            img.onerror = () => { img.src = src; img.onerror = null; };
                         }
                     }
                 });
@@ -23711,7 +23719,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // actually added, not on every unrelated mutation tick.
                 addScopedMutationRule(
                     'thumbnailQualityUpgrade',
-                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer',
+                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer, yt-lockup-view-model',
                     () => this._scheduleUpgrade(800)
                 );
                 this._scheduleUpgrade(1500);

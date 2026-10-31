@@ -16305,15 +16305,20 @@ const STORAGE_KEYS = Object.freeze({
 				}, delay);
 			},
 			_upgradeAll() {
-				const thumbnails = document.querySelectorAll('ytd-thumbnail img[src*="i.ytimg.com"], ytd-playlist-thumbnail img[src*="i.ytimg.com"]');
+				const thumbnails = document.querySelectorAll('ytd-thumbnail img[src*="i.ytimg.com"], ytd-playlist-thumbnail img[src*="i.ytimg.com"], yt-thumbnail-view-model img[src*="i.ytimg.com"]');
 				thumbnails.forEach(img => {
 					const src = img.src;
 					if (!src) return;
+					if (img.dataset.ytkitHdTried === src) return;
 					if (src.includes('hqdefault') || src.includes('mqdefault') || src.includes('sddefault') || src.includes('default.jpg')) {
 						const upgraded = src.replace(/(hqdefault|mqdefault|sddefault|default)\.jpg/, 'maxresdefault.jpg');
 						if (upgraded !== src) {
+							img.dataset.ytkitHdTried = src;
+							const settle = () => { img.onerror = null; img.onload = null; };
+							const fallBack = () => { settle(); img.src = src; };
+							img.onerror = fallBack;
+							img.onload = () => { if (img.naturalWidth <= 120) fallBack(); else settle(); };
 							img.src = upgraded;
-							img.onerror = () => { img.src = src; img.onerror = null; };
 						}
 					}
 				});
@@ -16322,7 +16327,7 @@ const STORAGE_KEYS = Object.freeze({
 				addNavigateRule('thumbnailQualityUpgrade', () => this._scheduleUpgrade(1500));
 				addScopedMutationRule(
 					'thumbnailQualityUpgrade',
-					'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer',
+					'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer, yt-lockup-view-model',
 					() => this._scheduleUpgrade(800)
 				);
 				this._scheduleUpgrade(1500);
