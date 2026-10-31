@@ -102,12 +102,58 @@ export const FOUNDATION_MODULES = Object.freeze(
         "features/download-ui/index.js"
     ]
 );
-// Imported CONCURRENTLY. These are classic IIFE modules that all attach to one
-// globalThis.YTKitCore namespace, so the browser evaluates them in completion
-// order rather than list order -- which is safe only because no module calls a
-// sibling at evaluation time. tests/runtime-graph-order.test.js enforces that
-// property by loading the whole graph in reverse and comparing the namespace.
-// (core/lifecycle-route-bridge.js used to break it: it self-installed on load
+// What a sibling reads while it evaluates: the settings schema, the selector
+// packs core/selectors.js freezes into its map, and the few helpers below. These
+// settle first. Reading one of them too early never throws. The reader quietly
+// keeps a null schema or a surface short, and a tab can run that way for the
+// whole session. tests/runtime-graph-order.test.js fails when a module reads a
+// sibling that isn't listed here.
+export const LOADED_FIRST = Object.freeze(
+    [
+        "core/styles.js",
+        "core/selector-packs/appShell.js",
+        "core/selector-packs/nav.js",
+        "core/selector-packs/search.js",
+        "core/selector-packs/searchResults.js",
+        "core/selector-packs/subscriptions.js",
+        "core/selector-packs/leftNav.js",
+        "core/selector-packs/feed.js",
+        "core/selector-packs/feedCard.js",
+        "core/selector-packs/feedExperimentChips.js",
+        "core/selector-packs/feedPlayables.js",
+        "core/selector-packs/feedPrompt.js",
+        "core/selector-packs/feedSponsored.js",
+        "core/selector-packs/thumbnail.js",
+        "core/selector-packs/shortsShelf.js",
+        "core/selector-packs/watch.js",
+        "core/selector-packs/relatedSidebar.js",
+        "core/selector-packs/player.js",
+        "core/selector-packs/mainVideo.js",
+        "core/selector-packs/playerChrome.js",
+        "core/selector-packs/playerSettings.js",
+        "core/selector-packs/sidebar.js",
+        "core/selector-packs/modals.js",
+        "core/selector-packs/comments.js",
+        "core/selector-packs/commentComposer.js",
+        "core/selector-packs/engagementPanels.js",
+        "core/selector-packs/transcriptPanel.js",
+        "core/selector-packs/settingsOverlay.js",
+        "core/selector-packs/profile.js",
+        "core/selector-packs/notifications.js",
+        "core/selector-packs/media.js",
+        "core/selector-packs/liveChatFrame.js",
+        "core/selector-packs/liveChat.js",
+        "core/selector-packs/liveChatPlaceholder.js",
+        "core/page.js",
+        "core/settings-schema.js",
+        "core/companion-ports.js"
+    ]
+);
+// Each tier is imported CONCURRENTLY. These are classic IIFE modules that all
+// attach to one globalThis.YTKitCore namespace, so the browser evaluates a tier
+// in completion order rather than list order -- which is safe only because
+// nothing in a tier reads a sibling from its own tier at evaluation time.
+// (core/lifecycle-route-bridge.js used to break that: it self-installed on load
 // and silently no-opped when its dependencies had not registered yet. The
 // bootstrap installs it explicitly after this resolves.)
 //
@@ -161,4 +207,8 @@ const importFoundationModule = async (modulePath) => {
     failure.module = modulePath;
     throw failure;
 };
-await Promise.all(FOUNDATION_MODULES.map(importFoundationModule));
+const loadedFirst = new Set(LOADED_FIRST);
+await Promise.all(LOADED_FIRST.map(importFoundationModule));
+await Promise.all(
+    FOUNDATION_MODULES.filter((modulePath) => !loadedFirst.has(modulePath)).map(importFoundationModule)
+);

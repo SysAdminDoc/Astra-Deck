@@ -47,7 +47,8 @@
     // v4.31.0 → v4.37.0 selector-pack file split. All 28 surfaces now
     // live in extension/core/selector-packs/<surface>.js and register
     // themselves into globalThis.YTKitCore.SurfacePackRegistry before
-    // this file runs (manifest content_scripts ordering enforces it).
+    // this file runs (the loader's first tier in the tab, list order in
+    // the userscript host).
     // INLINE_SURFACES remains as the override hook — any future
     // diagnostic / temporary surface can be declared here without
     // having to add a pack file. Packs win when both define a surface

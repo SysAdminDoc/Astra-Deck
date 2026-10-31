@@ -83,13 +83,15 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
         'the static module graph loader must be exposed for the dynamic import URL');
     // The loader imports the 75-module foundation graph CONCURRENTLY so V8 can
     // compile it off-thread; the sequential `await import()` loop it replaced
-    // cost ~48 ms of a ~140 ms parse+init. This is safe only while no module
-    // calls a sibling at evaluation time — tests/runtime-graph-order.test.js
-    // holds that property by loading the graph in reverse.
-    // The per-module wrapper only adds error naming and one retry; the graph is
-    // still one Promise.all over every module, each import going through getURL.
-    assert.match(loaderSource, /await Promise\.all\(FOUNDATION_MODULES\.map\(importFoundationModule\)\)/,
-        'the core loader must import the foundation graph concurrently');
+    // cost ~48 ms of a ~140 ms parse+init. This is safe only while nothing in a
+    // tier reads a sibling from its own tier at evaluation time, which
+    // tests/runtime-graph-order.test.js holds.
+    // The per-module wrapper only adds error naming and one retry; each of the
+    // two tiers is one Promise.all, each import going through getURL.
+    assert.match(loaderSource, /await Promise\.all\(LOADED_FIRST\.map\(importFoundationModule\)\)/,
+        'the core loader must import the first tier concurrently');
+    assert.match(loaderSource, /await Promise\.all\(\s*FOUNDATION_MODULES\.filter\([^\n]*\)\.map\(importFoundationModule\)\s*\)/,
+        'the core loader must import the rest of the foundation graph concurrently');
     assert.match(loaderSource, /const url = getURL\(modulePath\);[\s\S]*?return await import\(url\);/,
         'every foundation import must go through runtime.getURL');
     assert.doesNotMatch(loaderSource, /for \(const modulePath of FOUNDATION_MODULES\)/,

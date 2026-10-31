@@ -9,9 +9,9 @@
     // Browser surfaces load core/remote-list-scope.js ahead of this module via
     // the manifest. Direct Node consumers (tests, build tooling) get it here so
     // the filter-list URL rules cannot silently differ between the two.
-    if (!globalThis.YTKitCore?.describeRemoteListUrl
-        && typeof module !== 'undefined' && module.exports
-        && typeof require === 'function') {
+    if (typeof module !== 'undefined' && module.exports
+        && typeof require === 'function'
+        && !globalThis.YTKitCore?.describeRemoteListUrl) {
         try {
             require('./remote-list-scope');
         } catch (_) {
@@ -20,9 +20,9 @@
         }
     }
 
-    if (!globalThis.YTKitCore?.sanitizeZapperRules
-        && typeof module !== 'undefined' && module.exports
-        && typeof require === 'function') {
+    if (typeof module !== 'undefined' && module.exports
+        && typeof require === 'function'
+        && !globalThis.YTKitCore?.sanitizeZapperRules) {
         try {
             require('./element-zapper');
         } catch (_) {
@@ -33,9 +33,9 @@
         }
     }
 
-    if (!globalThis.YTKitCore?.hasUnsafeRegexQuantifiers
-        && typeof module !== 'undefined' && module.exports
-        && typeof require === 'function') {
+    if (typeof module !== 'undefined' && module.exports
+        && typeof require === 'function'
+        && !globalThis.YTKitCore?.hasUnsafeRegexQuantifiers) {
         try {
             require('./regex-safety');
         } catch (_) {

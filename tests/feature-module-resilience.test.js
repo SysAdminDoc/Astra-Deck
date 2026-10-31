@@ -182,9 +182,11 @@ test('the FOUNDATION tier still fails closed', async () => {
         'the monolith must not run without its foundation');
 
     const loader = fs.readFileSync(path.join(repoRoot, 'extension/runtime-core-loader.mjs'), 'utf8');
-    assert.match(loader, /await Promise\.all\(FOUNDATION_MODULES\.map/,
+    assert.match(loader, /await Promise\.all\(LOADED_FIRST\.map/,
+        'the modules read at evaluation must remain all-or-nothing');
+    assert.match(loader, /await Promise\.all\(\s*FOUNDATION_MODULES\.filter/,
         'foundation modules must remain all-or-nothing');
-    assert.doesNotMatch(loader, /Promise\.allSettled\(FOUNDATION_MODULES/,
+    assert.doesNotMatch(loader, /Promise\.allSettled\((?:FOUNDATION_MODULES|LOADED_FIRST)/,
         'softening the foundation tier would let a missing guard module through');
 });
 
@@ -210,5 +212,6 @@ test('the generated file matches the generator', () => {
     // this only has to catch the distinguishing intent surviving in both.
     assert.match(generated, /allSettled, NOT all/);
     assert.match(generator, /allSettled, NOT all/);
-    assert.match(generator, /await Promise\.all\(FOUNDATION_MODULES\.map/);
+    assert.match(generator, /await Promise\.all\(LOADED_FIRST\.map/);
+    assert.match(generator, /await Promise\.all\(\s*FOUNDATION_MODULES\.filter/);
 });

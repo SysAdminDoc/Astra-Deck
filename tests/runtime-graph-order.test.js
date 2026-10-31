@@ -1,16 +1,16 @@
 'use strict';
 
-// The foundation graph is 75 classic IIFE modules that all attach to one
+// The foundation graph is classic IIFE modules that all attach to one
 // globalThis.YTKitCore namespace, loaded by extension/runtime-core-loader.mjs.
-// The loader imports them concurrently, so the browser evaluates them in
-// completion order rather than declaration order. That is only safe while no
-// module CALLS another module's export at evaluation time — every module must
-// merely register its own functions and defer all cross-module calls to
-// runtime.
+// The loader imports them concurrently in two tiers, so the browser evaluates a
+// tier in completion order rather than declaration order. That is only safe
+// while no module reads a sibling from its own tier at evaluation time. What
+// siblings do read goes in the first tier (READ_AT_EVALUATION in the generator).
 //
-// These tests are the guard on that property. If someone adds a module that
-// invokes a sibling at evaluation time, loading the graph in a different order
-// produces a different namespace (or throws), and this fails.
+// These tests are the guard on that property. A too-early read usually doesn't
+// throw: the reader keeps a null or a short list and carries on, and the set of
+// namespace keys comes out the same. So the tests record each read that happens
+// before its export exists, and also check the values such a read captures.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -29,6 +29,23 @@ function foundationModules() {
     );
     assert.ok(match, 'the core loader must publish its foundation catalogue');
     return JSON.parse(match[1]);
+}
+
+function loadedFirstModules() {
+    const match = loaderSource.match(
+        /export const LOADED_FIRST = Object\.freeze\(\s*(\[[\s\S]*?\])\s*\);/
+    );
+    assert.ok(match, 'the core loader must publish its first tier');
+    return JSON.parse(match[1]);
+}
+
+// The two tiers the loader awaits in turn, each flipped or not. A pair of modules
+// lands in both relative orders across the two calls, so one call of each covers
+// every way a tier's concurrent imports can finish.
+function tieredOrder(reversed) {
+    const first = loadedFirstModules();
+    const rest = foundationModules().filter((modulePath) => !first.includes(modulePath));
+    return reversed ? [...[...first].reverse(), ...[...rest].reverse()] : [...first, ...rest];
 }
 
 // Enough of a browser for module top-level code to register itself. Anything a
@@ -86,6 +103,108 @@ function loadGraph(order) {
     }
     return context;
 }
+
+// Runs the modules in `order` and lists each read of a sibling's export that came
+// before the export existed. The YTKitCore namespace and the graph's other globals
+// (found with a plain forward load) are watched, since modules publish both.
+function earlyReads(order, readSource = (modulePath) => fs.readFileSync(path.join(extensionDir, modulePath), 'utf8')) {
+    const baseline = new Set(Object.keys(makeContext()));
+    const graphGlobals = Object.keys(loadGraph(foundationModules()))
+        .filter((name) => !baseline.has(name) && name !== 'YTKitCore');
+
+    const context = makeContext();
+    let current = '';
+    const reads = [];
+    const writers = new Map();
+    const noteWrite = (name) => {
+        if (!writers.has(name)) writers.set(name, current);
+    };
+    const core = new Proxy({}, {
+        get(target, key) {
+            if (typeof key === 'string' && !(key in target)) reads.push([current, `YTKitCore.${key}`]);
+            return target[key];
+        },
+        has(target, key) {
+            if (typeof key === 'string' && !(key in target)) reads.push([current, `YTKitCore.${key}`]);
+            return key in target;
+        },
+        set(target, key, value) {
+            if (typeof key === 'string') noteWrite(`YTKitCore.${key}`);
+            target[key] = value;
+            return true;
+        },
+        defineProperty(target, key, descriptor) {
+            if (typeof key === 'string') noteWrite(`YTKitCore.${key}`);
+            return Reflect.defineProperty(target, key, descriptor);
+        },
+    });
+    Object.defineProperty(context, 'YTKitCore', { value: core, writable: true, configurable: true });
+    for (const name of graphGlobals) {
+        let value;
+        let written = false;
+        Object.defineProperty(context, name, {
+            configurable: true,
+            get() {
+                if (!written) reads.push([current, name]);
+                return value;
+            },
+            set(next) {
+                noteWrite(name);
+                written = true;
+                value = next;
+            },
+        });
+    }
+
+    for (const modulePath of order) {
+        current = modulePath;
+        vm.runInContext(`(() => {\n${readSource(modulePath)}\n})();`, context, { filename: modulePath });
+    }
+    const found = new Set();
+    for (const [reader, name] of reads) {
+        const writer = writers.get(name);
+        if (writer && writer !== reader) found.add(`${reader} reads ${name} from ${writer}`);
+    }
+    return [...found].sort();
+}
+
+test('no foundation module reads a sibling before the loader has settled it', () => {
+    assert.deepEqual(earlyReads(tieredOrder(false)), [],
+        'add what the module reads to READ_AT_EVALUATION in scripts/generate-runtime-bootstrap.js');
+    assert.deepEqual(earlyReads(tieredOrder(true)), [],
+        'add what the module reads to READ_AT_EVALUATION in scripts/generate-runtime-bootstrap.js');
+});
+
+test('the early-read check sees what a single concurrent tier would race on', () => {
+    // Positive control: these are the reads the first tier exists for. Without it
+    // the policy keeps a null schema and the selector map can lose a surface.
+    const flat = earlyReads([...foundationModules()].reverse()).join('\n');
+    assert.match(flat, /core\/policy-profile\.js reads __YTKIT_SETTINGS_SCHEMA__/);
+    assert.match(flat, /core\/selectors\.js reads YTKitCore\.SurfacePackRegistry/);
+    assert.match(flat, /features\/download-ui\/index\.js reads YTKitCore\.companionPorts/);
+});
+
+for (const [label, reversed] of [['in list order', false], ['with each tier reversed', true]]) {
+    test(`modules capture the real schema and every selector pack ${label}`, () => {
+        const context = loadGraph(tieredOrder(reversed));
+        const core = context.YTKitCore;
+        assert.equal(core.createPolicyProfile().isKeyAllowedInProfile('hideRelatedVideos', 'store-safe'), true,
+            'the policy must find the schema it captured at evaluation');
+        assert.equal(Object.keys(core.SurfaceSelectorMap).length, core.SurfacePackRegistry.size,
+            'the frozen selector map must hold a surface for every pack');
+    });
+}
+
+test('a read before the export exists is reported, and one after it is not', () => {
+    const sources = {
+        reader: 'const captured = globalThis.YTKitCore.fixtureExport;',
+        writer: 'globalThis.YTKitCore.fixtureExport = 1;',
+    };
+    const readSource = (name) => sources[name];
+    assert.deepEqual(earlyReads(['reader', 'writer'], readSource),
+        ['reader reads YTKitCore.fixtureExport from writer']);
+    assert.deepEqual(earlyReads(['writer', 'reader'], readSource), []);
+});
 
 test('every foundation module registers without calling a sibling at evaluation time', () => {
     const modules = foundationModules();
