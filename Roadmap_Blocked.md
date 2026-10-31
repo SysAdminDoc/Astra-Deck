@@ -156,14 +156,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Research-driven, externally gated (2026-08-19)
 
-- [ ] P3 — Re-derive the like-rate tone bands against post-2026-08-24 view counts
-  Why: the bands (`>=8` excellent, `>=4` strong, `>=2` steady) were calibrated against YouTube's pre-2026-08-24 view metric. From that date a view is counted at the first frame with no minimum watch time, so every denominator inflates and real like rates fall as a group — the badge grades conservatively until the bands are re-derived. The code half of this shipped 2026-08-20: the bands are an explicit frozen constant carrying the calibration note, a test pins them so a guessed edit fails, and the badge reports the raw counts it divided so the verdict stays auditable.
-  Evidence: `extension/ytkit.js` `likeViewRatio._TONE_BANDS`; `tests/features/like-view-ratio.test.js`; RESEARCH.md 2026-08-20 §Security (TechCrunch 2026-08-17).
-  Touches: `extension/ytkit.js` (`likeViewRatio._TONE_BANDS`), `tests/features/like-view-ratio.test.js`
-  Acceptance: a sample of real watch pages gathered on or after 2026-08-24 establishes the new like-rate distribution; the bands are moved to match it in one commit that also updates the pinned test and the calibration comment; the same videos are spot-checked either side of the change so the shift is measured rather than assumed.
-  Complexity: S
-  Blocker: needs live post-2026-08-24 watch-page data, which does not exist yet (the metric changes four days after this item was written) and requires a browser session this repository's local-only passes deliberately exclude. Re-calibrating by guess is explicitly worse than grading conservatively, so the numbers must not move until the data exists.
-
 - [ ] P2 — Get upstream's permission for DeArrow before any store submission
   Why: the API docs open with "The DeArrow API is free to use for all non browser-extensions", and Astra is a browser extension. The data is CC BY-NC-SA 4.0 "unless you have explicit permission" (Astra already attributes it). The store-safe profile ships the feature, so a store listing would put that on the record.
   Confirmed 2026-10-12: there is no license key to send. Read calls (`GET /api/branding`, `GET dearrow-thumb.ajay.app/api/v1/getThumbnail`) take no key and answer anonymously. The official extension sends its key once, to `GET /api/verifyToken?licenseKey=`, and gates itself client side; /payment says "Other than intially checking your license key, no requests to DeArrow servers contain your license key." So a license-key setting would do nothing on the wire, and the old "wire contract" blocker is gone.

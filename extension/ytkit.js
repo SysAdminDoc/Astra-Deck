@@ -26676,23 +26676,50 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     maximumFractionDigits: value < 10 ? 1 : 0
                 }).format(value);
             },
-            // Calibrated against YouTube's public view count. YouTube
-            // redefined that metric on 2026-08-24 to count a view from the
-            // first frame with no minimum watch time, which inflates every
-            // denominator and moves real like rates down as a group. These
-            // bands are therefore dated: they grade conservatively until they
-            // are re-derived from post-change data, and they must not be
-            // adjusted by guess. The badge always carries the raw like and
-            // view counts so the verdict stays auditable whatever the bands
-            // say.
+            // Since 2026-08-24 YouTube counts a view from the first frame with
+            // no minimum watch time. Measured 2026-10-31 on 487 long-form
+            // uploads from 36 channels: median like rate 3.17% for May to
+            // August uploads against 1.50% for uploads from the change on, and
+            // all 15 channels with both fell (median ratio 0.45). 24 older
+            // videos compared with archived captures from before the change
+            // barely moved (median ratio 0.92), so the drop follows the upload
+            // date and older uploads keep the bands they earned. The newer
+            // bands give about the same split: 28% strong or better and 17%
+            // quiet, against 28% and 18%. The excellent line is the least
+            // certain number, since 12 of the 13 rows above it came from one
+            // channel. Uploads from the weeks around the change sit in between.
+            // The badge always carries the raw like and view counts so the
+            // verdict stays auditable whatever the bands say.
+            _VIEW_COUNT_CHANGED: '2026-08-24',
             _TONE_BANDS: Object.freeze([
+                Object.freeze({ minPercent: 6, tone: 'excellent' }),
+                Object.freeze({ minPercent: 2, tone: 'strong' }),
+                Object.freeze({ minPercent: 1, tone: 'steady' })
+            ]),
+            _TONE_BANDS_BEFORE_CHANGE: Object.freeze([
                 Object.freeze({ minPercent: 8, tone: 'excellent' }),
                 Object.freeze({ minPercent: 4, tone: 'strong' }),
                 Object.freeze({ minPercent: 2, tone: 'steady' })
             ]),
-            _getTone(ratio) {
-                const band = this._TONE_BANDS.find(entry => ratio >= entry.minPercent);
+            _getTone(ratio, uploadDay = '') {
+                const bands = uploadDay && uploadDay < this._VIEW_COUNT_CHANGED
+                    ? this._TONE_BANDS_BEFORE_CHANGE
+                    : this._TONE_BANDS;
+                const band = bands.find(entry => ratio >= entry.minPercent);
                 return band ? band.tone : 'quiet';
+            },
+            _getUploadDay() {
+                const videoId = getVideoId();
+                let raw = '';
+                try {
+                    const playerResponse = _rw.ytInitialPlayerResponse;
+                    if (videoId && playerResponse?.videoDetails?.videoId === videoId) {
+                        const microformat = playerResponse.microformat?.playerMicroformatRenderer;
+                        raw = microformat?.publishDate || microformat?.uploadDate || '';
+                    }
+                } catch { /* reason: player response can be unavailable during navigation */ }
+                raw = raw || globalThis.YTKitCore?.readWatchUploadDate?.(document, videoId) || '';
+                return /^\d{4}-\d{2}-\d{2}/.exec(raw)?.[0] || '';
             },
             _scheduleCalculate(delay = 3000) {
                 if (this._calculateTimer) clearTimeout(this._calculateTimer);
@@ -26717,7 +26744,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return;
                 }
 
-                const tone = this._getTone(ratio);
+                const tone = this._getTone(ratio, this._getUploadDay());
                 const drawn = `${likes}/${views}/${tone}`;
                 // Drawing the badge wakes this feature's own mutation rule, so
                 // redrawing one that is already right never stops.

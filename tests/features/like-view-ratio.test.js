@@ -1,16 +1,15 @@
 'use strict';
 
 // The like-rate badge divides a like count by a view count and then grades the
-// result. The grade is the fragile half: its bands were calibrated against
-// YouTube's public view count, and YouTube redefined that metric on 2026-08-24
-// to count a view from the first frame with no minimum watch time. Every
-// denominator inflates, so real like rates move down as a group and the same
-// video grades lower than it used to.
+// result. The grade is the fragile half: YouTube redefined its public view count
+// on 2026-08-24 to count a view from the first frame with no minimum watch time.
+// Uploads from then on read about half the like rate of earlier ones, and the
+// earlier ones didn't move, so there are two sets of bands chosen by upload date.
 //
 // These tests pin the two things that keep that honest: the bands are explicit
-// and unchanged (so a guessed recalibration cannot land quietly), and the badge
-// always carries the raw counts it divided, so a reader can audit the verdict
-// no matter how the bands are tuned.
+// (so a guessed recalibration cannot land quietly), and the badge always carries
+// the raw counts it divided, so a reader can audit the verdict no matter how the
+// bands are tuned.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -29,36 +28,87 @@ function stripComments(text) {
 
 test('like-rate tone bands are explicit, ordered, and frozen', () => {
     const feature = loadFeature('likeViewRatio');
-    const bands = feature._TONE_BANDS;
-
-    assert.ok(Array.isArray(bands), 'the bands should be a declared list, not inline magic numbers');
-    assert.ok(Object.isFrozen(bands), 'the band list should be frozen');
-    bands.forEach(band => assert.ok(Object.isFrozen(band), 'each band should be frozen'));
-
-    // Pinned deliberately. A recalibration is legitimate only against real
-    // post-2026-08-24 data, and changing these numbers should fail here first.
-    // Array.from rebuilds in this realm: `bands.map` would return a vm-realm
-    // Array, and deepStrictEqual compares prototypes before contents.
-    assert.deepEqual(
-        Array.from(bands, band => [band.minPercent, band.tone]),
-        [[8, 'excellent'], [4, 'strong'], [2, 'steady']],
-        'the calibrated bands should not drift without re-derivation');
-
-    const descending = bands.every((band, i) =>
-        i === 0 || bands[i - 1].minPercent > band.minPercent);
-    assert.ok(descending, 'bands must descend so the first match is the highest earned tone');
+    // Pinned deliberately. A recalibration is legitimate only against real data,
+    // and changing these numbers should fail here first. Array.from rebuilds in
+    // this realm: `bands.map` would return a vm-realm Array, and deepStrictEqual
+    // compares prototypes before contents.
+    for (const [bands, expected] of [
+        [feature._TONE_BANDS, [[6, 'excellent'], [2, 'strong'], [1, 'steady']]],
+        [feature._TONE_BANDS_BEFORE_CHANGE, [[8, 'excellent'], [4, 'strong'], [2, 'steady']]]
+    ]) {
+        assert.ok(Array.isArray(bands), 'the bands should be a declared list, not inline magic numbers');
+        assert.ok(Object.isFrozen(bands), 'the band list should be frozen');
+        bands.forEach(band => assert.ok(Object.isFrozen(band), 'each band should be frozen'));
+        assert.deepEqual(
+            Array.from(bands, band => [band.minPercent, band.tone]),
+            expected,
+            'the calibrated bands should not drift without re-derivation');
+        const descending = bands.every((band, i) =>
+            i === 0 || bands[i - 1].minPercent > band.minPercent);
+        assert.ok(descending, 'bands must descend so the first match is the highest earned tone');
+    }
+    assert.equal(feature._VIEW_COUNT_CHANGED, '2026-08-24');
 });
 
 test('_getTone grades on the band boundaries and floors at quiet', () => {
     const feature = loadFeature('likeViewRatio');
 
-    assert.equal(feature._getTone(12), 'excellent');
-    assert.equal(feature._getTone(8), 'excellent', 'the boundary belongs to the band it opens');
-    assert.equal(feature._getTone(7.99), 'strong');
-    assert.equal(feature._getTone(4), 'strong');
-    assert.equal(feature._getTone(2), 'steady');
-    assert.equal(feature._getTone(1.99), 'quiet');
-    assert.equal(feature._getTone(0), 'quiet', 'a zero ratio must still resolve to a tone');
+    assert.equal(feature._getTone(12, '2026-10-01'), 'excellent');
+    assert.equal(feature._getTone(6, '2026-10-01'), 'excellent', 'the boundary belongs to the band it opens');
+    assert.equal(feature._getTone(5.99, '2026-10-01'), 'strong');
+    assert.equal(feature._getTone(2, '2026-10-01'), 'strong');
+    assert.equal(feature._getTone(1, '2026-10-01'), 'steady');
+    assert.equal(feature._getTone(0.99, '2026-10-01'), 'quiet');
+    assert.equal(feature._getTone(0, '2026-10-01'), 'quiet', 'a zero ratio must still resolve to a tone');
+
+    assert.equal(feature._getTone(8, '2026-06-01'), 'excellent');
+    assert.equal(feature._getTone(7.99, '2026-06-01'), 'strong');
+    assert.equal(feature._getTone(4, '2026-06-01'), 'strong');
+    assert.equal(feature._getTone(2, '2026-06-01'), 'steady');
+    assert.equal(feature._getTone(1.99, '2026-06-01'), 'quiet');
+});
+
+test('the upload date picks the bands, and an unknown date reads as current', () => {
+    const feature = loadFeature('likeViewRatio');
+
+    assert.equal(feature._getTone(1.2, '2026-10-24'), 'steady', 'measured live: a 1.2% video from October');
+    assert.equal(feature._getTone(2.1, '2026-06-20'), 'steady', 'measured live: a 2.1% video from June');
+    assert.equal(feature._getTone(2.1, '2026-08-23'), 'steady', 'the last day under the old count');
+    assert.equal(feature._getTone(2.1, '2026-08-24'), 'strong', 'the first day under the new one');
+    assert.equal(feature._getTone(2.1), 'strong', 'no date means the current bands');
+    assert.equal(feature._getTone(2.1, ''), 'strong');
+});
+
+function uploadDayFrom(response, blocks = [], videoId = 'thisVideo') {
+    const vm = require('node:vm');
+    const context = { Intl };
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'core', 'date-time.js'), 'utf8'), context);
+    return loadFeature('likeViewRatio', {
+        document: fakeTreeDocument((selector) => (selector.includes('ld+json')
+            ? blocks.map(block => ({ textContent: JSON.stringify(block) }))
+            : null)),
+        _rw: { ytInitialPlayerResponse: response },
+        getVideoId: () => videoId,
+        YTKitCore: context.YTKitCore
+    })._getUploadDay();
+}
+
+test('the upload day comes from this video, never another', () => {
+    const response = (videoId, publishDate) => ({
+        videoDetails: { videoId },
+        microformat: { playerMicroformatRenderer: { publishDate } }
+    });
+    const block = { '@type': 'VideoObject', uploadDate: '2026-10-24T09:00:00-07:00', embedUrl: 'https://www.youtube.com/embed/thisVideo' };
+
+    assert.equal(uploadDayFrom(response('thisVideo', '2026-06-20T06:00:00-07:00')), '2026-06-20',
+        'the time and zone are dropped, the uploader day stays');
+    assert.equal(uploadDayFrom(response('anotherVideo', '2026-06-20T06:00:00-07:00')), '',
+        'a response for another video does not count');
+    assert.equal(uploadDayFrom(null, [block]), '2026-10-24', 'after in-app navigation the page block answers');
+    assert.equal(uploadDayFrom(null, []), '', 'nothing known');
+    assert.equal(uploadDayFrom(response('thisVideo', 'June 20')), '', 'only a real date counts');
 });
 
 test('an inflated view denominator only ever grades down, never up', () => {
@@ -71,8 +121,10 @@ test('an inflated view denominator only ever grades down, never up', () => {
     const after = (likes / 150000) * 100;
     const order = ['quiet', 'steady', 'strong', 'excellent'];
 
-    assert.ok(order.indexOf(feature._getTone(after)) <= order.indexOf(feature._getTone(before)),
-        'a larger denominator must not produce a better tone');
+    for (const day of ['2026-06-01', '2026-10-01']) {
+        assert.ok(order.indexOf(feature._getTone(after, day)) <= order.indexOf(feature._getTone(before, day)),
+            'a larger denominator must not produce a better tone');
+    }
 });
 
 test('the rendered badge reports the counts it divided and replaces itself in place', () => {
@@ -98,7 +150,7 @@ test('the rendered badge reports the counts it divided and replaces itself in pl
     assert.equal(row.children.length, 2, 'recalculation replaces the prior badge');
     const badge = row.children[1];
     assert.equal(badge.className, 'ytkit-lv-ratio');
-    assert.equal(badge.dataset.state, 'strong');
+    assert.equal(badge.dataset.state, 'excellent', 'with no upload date the current bands grade it');
     assert.equal(badge.children[0].textContent, '6.0%');
     assert.equal(badge.children[1].textContent, 'Like Rate');
     assert.equal(badge.title, '90,000 likes from 1,500,000 views');
@@ -144,6 +196,7 @@ test('recalculating an unchanged badge leaves it alone', () => {
 
     feature._calculate();
     const first = row.children[1];
+    assert.equal(first.dataset.state, 'excellent');
     let writes = 0;
     const realAppend = row.appendChild.bind(row);
     row.appendChild = (node) => { writes += 1; return realAppend(node); };

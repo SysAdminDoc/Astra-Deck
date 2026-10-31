@@ -18677,14 +18677,36 @@ const STORAGE_KEYS = Object.freeze({
 					maximumFractionDigits: value < 10 ? 1 : 0
 				}).format(value);
 			},
+			_VIEW_COUNT_CHANGED: '2026-08-24',
 			_TONE_BANDS: Object.freeze([
+				Object.freeze({ minPercent: 6, tone: 'excellent' }),
+				Object.freeze({ minPercent: 2, tone: 'strong' }),
+				Object.freeze({ minPercent: 1, tone: 'steady' })
+			]),
+			_TONE_BANDS_BEFORE_CHANGE: Object.freeze([
 				Object.freeze({ minPercent: 8, tone: 'excellent' }),
 				Object.freeze({ minPercent: 4, tone: 'strong' }),
 				Object.freeze({ minPercent: 2, tone: 'steady' })
 			]),
-			_getTone(ratio) {
-				const band = this._TONE_BANDS.find(entry => ratio >= entry.minPercent);
+			_getTone(ratio, uploadDay = '') {
+				const bands = uploadDay && uploadDay < this._VIEW_COUNT_CHANGED
+					? this._TONE_BANDS_BEFORE_CHANGE
+					: this._TONE_BANDS;
+				const band = bands.find(entry => ratio >= entry.minPercent);
 				return band ? band.tone : 'quiet';
+			},
+			_getUploadDay() {
+				const videoId = getVideoId();
+				let raw = '';
+				try {
+					const playerResponse = _rw.ytInitialPlayerResponse;
+					if (videoId && playerResponse?.videoDetails?.videoId === videoId) {
+						const microformat = playerResponse.microformat?.playerMicroformatRenderer;
+						raw = microformat?.publishDate || microformat?.uploadDate || '';
+					}
+				} catch {   }
+				raw = raw || globalThis.YTKitCore?.readWatchUploadDate?.(document, videoId) || '';
+				return /^\d{4}-\d{2}-\d{2}/.exec(raw)?.[0] || '';
 			},
 			_scheduleCalculate(delay = 3000) {
 				if (this._calculateTimer) clearTimeout(this._calculateTimer);
@@ -18706,7 +18728,7 @@ const STORAGE_KEYS = Object.freeze({
 					this._el = null;
 					return;
 				}
-				const tone = this._getTone(ratio);
+				const tone = this._getTone(ratio, this._getUploadDay());
 				const drawn = `${likes}/${views}/${tone}`;
 				if (this._el?.isConnected && this._el.parentElement === viewEl.parentElement && this._drawn === drawn) return;
 				this._el?.remove();
