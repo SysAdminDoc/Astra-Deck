@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.106.0] (2026-10-31)
+
 ### Changed
 
 - A new install now looks like YouTube. The left sidebar, avatars, rounded corners, related videos, the description and YouTube's own home and watch layouts all stay put, and the clean-up stays on (Shorts, AI panels, merch, paid overlays and the rest). The square styling, denser grids, watch page restyle, Player Dock and Theater Split are all opt-in now.
