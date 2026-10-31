@@ -185,4 +185,9 @@ module.exports = [
             globals: sharedBrowserGlobals,
         },
     },
+    {
+        // ESM: stock multimatch is a module, and web-ext imports it as one.
+        files: ['scripts/npm-stubs/multimatch/index.js'],
+        languageOptions: { sourceType: 'module' },
+    },
 ];
