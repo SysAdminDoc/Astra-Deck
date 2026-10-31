@@ -243,13 +243,48 @@ ${settingsLiteral}
         }
     };
 
+    // A module fetch can reject before anything evaluates (Firefox 157, first
+    // page after a temporary install: a value-less rejection, or "error loading
+    // dynamically imported module"). Retry only that, with a growing pause and a
+    // cache-busting query, and name the module when it still fails. A real Error
+    // thrown by module code is never retried, so nothing executes twice.
+    const FETCH_FAILURE = /dynamically imported module|importing a module script failed/i;
+    const RETRY_PAUSES_MS = [0, 60, 250, 800];
+    const importRuntimeModule = async (modulePath) => {
+        const url = getURL(modulePath);
+        let reason;
+        try {
+            return await import(url);
+        } catch (error) {
+            reason = error;
+        }
+        for (let attempt = 1; attempt < RETRY_PAUSES_MS.length; attempt += 1) {
+            const valueless = !(reason instanceof Error) && !reason?.message;
+            const fetchFailed = reason instanceof TypeError && FETCH_FAILURE.test(String(reason.message || ''));
+            if (!valueless && !fetchFailed) break;
+            if (RETRY_PAUSES_MS[attempt]) await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSES_MS[attempt]));
+            try {
+                return await import(url + '?retry=' + attempt);
+            } catch (error) {
+                reason = error;
+            }
+        }
+        const failure = new Error(
+            'module failed to load: ' + modulePath + ' - '
+            + (reason?.message || String(reason ?? 'the import rejected without a value')),
+            { cause: reason }
+        );
+        failure.module = modulePath;
+        throw failure;
+    };
+
     const loadRuntime = async () => {
         const firstFeatureIndex = RUNTIME_MODULES.findIndex((modulePath) => modulePath.startsWith('features/'));
         const optionalFeatureModules = firstFeatureIndex === -1
             ? []
             : RUNTIME_MODULES.slice(firstFeatureIndex, -1);
         const settingsPromise = readRuntimeSettings();
-        await timeStage('coreLoaderMs', () => import(getURL('${LOADER_MODULE}')));
+        await timeStage('coreLoaderMs', () => importRuntimeModule('${LOADER_MODULE}'));
         // The route bridge is installed here, not by the module itself: it is
         // the one foundation module with cross-module dependencies at install
         // time, and self-installing on load both forced the whole graph to load
@@ -278,7 +313,7 @@ ${settingsLiteral}
         // install or one unfetchable file should cost that feature, not the
         // whole runtime.
         const featureResults = await timeStage('featureModulesMs', () => Promise.allSettled(
-            deferredFeatureModules.map((modulePath) => import(getURL(modulePath)))
+            deferredFeatureModules.map((modulePath) => importRuntimeModule(modulePath))
         ));
         const failedFeatureModules = [];
         featureResults.forEach((result, index) => {
@@ -300,7 +335,7 @@ ${settingsLiteral}
         // feature array. It must execute only after every selected peeled
         // module has registered its factory; otherwise a descriptor stub wins
         // and the feature remains inert for the lifetime of the tab.
-        await timeStage('monolithMs', () => import(getURL('ytkit.js')));
+        await timeStage('monolithMs', () => importRuntimeModule('ytkit.js'));
         globalThis.dispatchEvent?.(new CustomEvent('ytkit-runtime-ready'));
     };
 
@@ -413,7 +448,37 @@ ${loadedFirstLiteral}
 // otherwise fail this import too. Chrome, Firefox and Safari word it as
 // below, and nothing has evaluated when they do.
 const FETCH_FAILURE = /dynamically imported module|importing a module script failed/i;
+// Firefox 157 rejects a share of the ~75 simultaneous moz-extension fetches on
+// the first page after a temporary install, and the single retry fired into the
+// same burst and failed too. So on Firefox keep a bounded number of imports in
+// flight. Chromium has no such failure, and the same cap cost it about half
+// again on startup (real pages, 820 ms to 1260 ms, 2026-10-31), so it stays
+// fully parallel. A failed fetch retries with a growing pause on both.
+const MAX_IN_FLIGHT = String(getURL('')).startsWith('moz-extension:') ? 8 : Infinity;
+const RETRY_PAUSES_MS = [0, 60, 250, 800];
+let inFlight = 0;
+const waiting = [];
+const takeSlot = () => {
+    if (inFlight < MAX_IN_FLIGHT) {
+        inFlight += 1;
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => waiting.push(resolve));
+};
+const freeSlot = () => {
+    const next = waiting.shift();
+    if (next) next();
+    else inFlight -= 1;
+};
 const importFoundationModule = async (modulePath) => {
+    await takeSlot();
+    try {
+        return await importWithRetries(modulePath);
+    } finally {
+        freeSlot();
+    }
+};
+const importWithRetries = async (modulePath) => {
     const url = getURL(modulePath);
     let reason;
     try {
@@ -421,11 +486,13 @@ const importFoundationModule = async (modulePath) => {
     } catch (error) {
         reason = error;
     }
-    const valueless = !(reason instanceof Error) && !reason?.message;
-    const fetchFailed = reason instanceof TypeError && FETCH_FAILURE.test(String(reason.message || ''));
-    if (valueless || fetchFailed) {
+    for (let attempt = 1; attempt < RETRY_PAUSES_MS.length; attempt += 1) {
+        const valueless = !(reason instanceof Error) && !reason?.message;
+        const fetchFailed = reason instanceof TypeError && FETCH_FAILURE.test(String(reason.message || ''));
+        if (!valueless && !fetchFailed) break;
+        if (RETRY_PAUSES_MS[attempt]) await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSES_MS[attempt]));
         try {
-            return await import(url + '?retry=1');
+            return await import(url + '?retry=' + attempt);
         } catch (error) {
             reason = error;
         }

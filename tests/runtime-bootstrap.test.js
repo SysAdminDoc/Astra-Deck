@@ -41,7 +41,7 @@ test('normal YouTube pages inject a thin generated bootstrap and defer the runti
     assert.deepEqual(entry.js, ['runtime-bootstrap.js']);
     assert.ok(fs.statSync(bootstrapPath).size <= 150 * 1024,
         'the always-on isolated script must remain below the 150 KB budget');
-    assert.match(bootstrapSource, /import\(getURL\(modulePath\)\)/,
+    assert.match(bootstrapSource, /importRuntimeModule\(modulePath\)/,
         'the bootstrap must dynamically import extension modules');
     assert.match(bootstrapSource, /Promise\.resolve\(\)\.then\(run\)/,
         'the runtime graph must be scheduled asynchronously after the bootstrap turn');
@@ -108,11 +108,11 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
     assert.match(loaderSource, /features\/download-ui\/index\.js/);
     assert.doesNotMatch(loaderSource, /import '\.\/ytkit\.js';/,
         'the core loader must not construct the monolith before deferred feature factories register');
-    assert.match(bootstrapSource, /await timeStage\('monolithMs', \(\) => import\(getURL\('ytkit\.js'\)\)\)/,
+    assert.match(bootstrapSource, /await timeStage\('monolithMs', \(\) => importRuntimeModule\('ytkit\.js'\)\)/,
         'the bootstrap must construct the monolith after deferred feature imports');
     assert.match(
         bootstrapSource,
-        /await timeStage\('featureModulesMs'[\s\S]*?await timeStage\('monolithMs', \(\) => import\(getURL\('ytkit\.js'\)\)\)/,
+        /await timeStage\('featureModulesMs'[\s\S]*?await timeStage\('monolithMs', \(\) => importRuntimeModule\('ytkit\.js'\)\)/,
         'the monolith import must follow the complete deferred feature-module barrier'
     );
     // Stage attribution exists so a future startup regression can be pinned to
@@ -246,25 +246,66 @@ async function runLoaderAgainst(badBody) {
     }
 }
 
-test('a foundation module that rejects with no value is retried once, then reported by name', async () => {
+// Every module here waits a moment before it finishes, so the peak counts what
+// the loader really has in flight at once.
+async function peakImportsInFlight(extensionBaseUrl) {
+    const os = require('node:os');
+    const { pathToFileURL } = require('node:url');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-loader-'));
+    const stamp = `${Date.now()}${Math.random().toString(16).slice(2)}`;
+    const previous = globalThis.chrome;
+    try {
+        fs.writeFileSync(path.join(dir, 'slow.mjs'), `
+            globalThis.__loaderLive += 1;
+            globalThis.__loaderPeak = Math.max(globalThis.__loaderPeak, globalThis.__loaderLive);
+            await new Promise((resolve) => setTimeout(resolve, 5));
+            globalThis.__loaderLive -= 1;
+        `);
+        fs.writeFileSync(path.join(dir, 'loader.mjs'), loaderSource);
+        globalThis.__loaderLive = 0;
+        globalThis.__loaderPeak = 0;
+        globalThis.chrome = {
+            runtime: {
+                getURL: (modulePath) => (modulePath === ''
+                    ? extensionBaseUrl
+                    : `${pathToFileURL(path.join(dir, 'slow.mjs')).href}?m=${encodeURIComponent(modulePath)}&t=${stamp}`)
+            }
+        };
+        await import(`${pathToFileURL(path.join(dir, 'loader.mjs')).href}?t=${stamp}`);
+        return globalThis.__loaderPeak;
+    } finally {
+        if (previous === undefined) delete globalThis.chrome; else globalThis.chrome = previous;
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+}
+
+test('only Firefox gets the import cap', async () => {
+    const firefox = await peakImportsInFlight('moz-extension://id/');
+    assert.ok(firefox > 1 && firefox <= 8, `Firefox stays bounded and still runs in parallel, peak ${firefox}`);
+    // The cap cost Chromium about half again on startup and fixes nothing there.
+    const chromium = await peakImportsInFlight('chrome-extension://id/');
+    assert.ok(chromium > 8, `Chromium stays fully parallel, peak ${chromium}`);
+});
+
+test('a foundation module that rejects with no value is retried three times, then reported by name', async () => {
     const error = await runLoaderAgainst('throw undefined;');
     assert.ok(error instanceof Error, 'the loader rethrows an Error, never the bare value');
     assert.equal(error.module, 'core/storage.js');
     assert.match(error.message, /core\/storage\.js/);
     assert.doesNotMatch(error.message, /undefined/);
-    assert.equal(globalThis.__loaderBadRuns, 2, 'one retry, no more');
+    assert.equal(globalThis.__loaderBadRuns, 4, 'one try plus three paced retries, no more');
 });
 
 // The bad module throws the browser's fetch-failure TypeError itself, which
 // is the only way to make Node report one; in a browser it means the fetch
 // failed and nothing ran, so the one retry is what makes the second fetch.
-test('a foundation module whose fetch failed is retried once, then reported by name', async () => {
+test('a foundation module whose fetch failed is retried three times, then reported by name', async () => {
     const error = await runLoaderAgainst(
         "throw new TypeError('Failed to fetch dynamically imported module: chrome-extension://x/core/storage.js');");
     assert.ok(error instanceof Error);
     assert.equal(error.module, 'core/storage.js');
     assert.match(error.message, /core\/storage\.js - Failed to fetch dynamically imported module/);
-    assert.equal(globalThis.__loaderBadRuns, 2, 'one retry, no more');
+    assert.equal(globalThis.__loaderBadRuns, 4, 'one try plus three paced retries, no more');
 });
 
 test('a TypeError from module code is not mistaken for a fetch failure', async () => {
