@@ -156,14 +156,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Research-driven, externally gated (2026-08-19)
 
-- [ ] P3 — Verify the Document PiP pop-out on Firefox 151+ and advertise it honestly
-  Why: Firefox 151 shipped the Document Picture-in-Picture API, which until now made `popOutPlayer` Chromium-only. If the existing capability probe lights up on Firefox the feature reaches the second browser for free; if it does not, the capability matrix should say so rather than imply parity.
-  Evidence: RESEARCH.md 2026-08-20 §Sources (MDN Document PiP, Firefox 151); `extension/core/capability-probe.js` already probes `documentPictureInPicture`.
-  Touches: `extension/core/capability-probe.js`, capability matrix, README feature tables, userscript classification
-  Acceptance: a live Firefox 151+ session confirms whether `documentPictureInPicture` is exposed to the extension's context on YouTube; the capability matrix and README reflect the verified answer; the userscript classification for popOutPlayer is re-derived rather than assumed.
-  Complexity: S
-  Blocker: needs a live Firefox 151+ browser session. Whether a spec is implemented is not the question — whether it is reachable from an extension content script on youtube.com is, and that cannot be answered by reading MDN or the source. Advertising Firefox support for a pop-out player that turns out to be unreachable is worse than the current honest Chromium-only claim, so the matrix must not move until someone has actually opened the window.
-
 - [ ] P3 — Re-derive the like-rate tone bands against post-2026-08-24 view counts
   Why: the bands (`>=8` excellent, `>=4` strong, `>=2` steady) were calibrated against YouTube's pre-2026-08-24 view metric. From that date a view is counted at the first frame with no minimum watch time, so every denominator inflates and real like rates fall as a group — the badge grades conservatively until the bands are re-derived. The code half of this shipped 2026-08-20: the bands are an explicit frozen constant carrying the calibration note, a test pins them so a guessed edit fails, and the badge reports the raw counts it divided so the verdict stays auditable.
   Evidence: `extension/ytkit.js` `likeViewRatio._TONE_BANDS`; `tests/features/like-view-ratio.test.js`; RESEARCH.md 2026-08-20 §Security (TechCrunch 2026-08-17).
@@ -358,23 +350,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Userscript Structural Drift (Browser-Gated)
 
-- [ ] P2 — Verify the ported userscript settings/install-assist methods in Tampermonkey
-  Why: NARROWED 2026-08-06. This item previously predicted that regenerating the
-  bundle *would* break Import. That has already happened and shipped: the bundle
-  was resynced, and `YTKit.user.js` now calls five methods it does not define
-  (`importAllSettingsDetailed`, `undoLastSettingsImport`,
-  `importYouTubeTakeoutWatchHistory`, `runInstallAssist`, `copyInstallCommand`) —
-  each appearing exactly once, at the call site. The **porting work is programmatic
-  and is now tracked in `ROADMAP.md` as "P0 — Port the five monolith methods the
-  bundled settings panel calls but the userscript does not define"**; do not do it
-  from here. What remains blocked is only the confirmation half.
-  Where: YTKit.user.js, extension/features/settings-panel/index.js, sync-userscript.js
-  Acceptance: after the P0 lands, a real Tampermonkey (or Violentmonkey) session
-  drives Import, import-Undo, Takeout import, companion install-assist and
-  copy-install-command and each returns a result rather than throwing.
-  Blocker: Requires a running browser with a userscript manager installed. The
-  static half is covered by the P0's symbol-resolution gate; only the in-browser
-  behavioural confirmation needs the vehicle.
+- [ ] P2 — Drive Takeout import and install assist in Tampermonkey. Retested 2026-10-31 on Tampermonkey 5.5.0: panel Import and Undo work on the real userscript (`Imported 19 settings updated, 1 blocked channel.`, then `Import undone.`), and that run found the older-backup refusal fixed in `745764d9`. Still not driven: the Takeout history import (the file chooser never opened from a scripted click, it needs a real gesture on the history-import button), `runInstallAssist` and `copyInstallCommand`.
 
 - [ ] P1 — MAIN-world audio graph reconnect needs browser verification
   Why: The WeakMap-cached source node fix (shipped in v4.46.29) is architecturally
@@ -533,21 +509,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P3 — Needs a browser run (2026-10-09)
 
-- [ ] P3 — Userscript: confirm a blocked channel hides in the watch sidebar
-  Why: the 2026-10-05 research pass said the userscript had no MAIN-world bridge, so
-  sidebar cards would name no channel there. That premise was wrong: the host runs
-  `core/bridge-token.js` and then injects the page-world bundle (bridge channel,
-  `core/feed-prefilter.js`, `ytkit-main.js`) with `GM_addElement`, and the ISOLATED
-  runtime loads `parseLockupChannels`. `tests/lockup-channel-tags.test.js` runs the
-  tagger from the shipped `YTKit-core.user.js` bundle and sees the tag land once the
-  hider publishes `data-ytkit-lockup-channels-on`.
-  Blocker: the acceptance is a live run under a real manager (Tampermonkey or
-  Violentmonkey), which needs the owner's word. A manager without `GM_addElement`
-  runs the ISOLATED runtime alone and has no page-world features at all, sidebar
-  tags included.
-  Acceptance: WHEN the userscript runs and a blocked channel's video is in the watch
-  sidebar, THEN it SHALL hide.
-
 - [ ] P3 — Follow-ups from the 2026-10-09 drain review
   Why: a read-only review raised these as plausible but unconfirmed. Each needs a live
   page to settle.
@@ -602,36 +563,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: the pseudo lane renders pseudo-locale copy and passes, and a test fails if
   the lane quietly renders real copy.
 
-- [ ] P3 — Headless Firefox 156 hangs at WebDriver session creation
-  Why: on 2026-10-07 the system Firefox had auto-updated to 156.0.1. Every
-  `startFirefoxSession` call (geckodriver 0.37.1, headless, with or without
-  `--allow-system-access`, on 9222 or a free `--websocket-port`) printed "WebDriver BiDi
-  listening" and then timed out at `POST /session`. Each left a firefox.exe that
-  `taskkill /PID /T /F` reports as gone while CIM still lists it, still holding its BiDi
-  port and locking its `astra-firefox-webdriver-*` profile. The heatmap check passed in
-  Firefox 155 earlier the same drain. Blocks `npm run smoke:firefox`.
-  Where: `scripts/firefox-webdriver.js` (`startFirefoxSession`),
-  `scripts/smoke-firefox-webext.js`.
-  Blocker: a Firefox run.
-  Acceptance: `npm run smoke:firefox` passes on the installed Firefox, with any
-  geckodriver or Firefox pin it needs written in the repo CLAUDE.md, and no firefox.exe
-  left behind.
-
-- [ ] P3 — Confirm the Firefox first-load module failure is gone
-  Why: the runtime loader names the failing module and retries once when a load
-  rejects with no value, aimed at the "Runtime module load failed undefined" line seen
-  2026-09-29 on the first YouTube load after a temporary install. The race hasn't been
-  reproduced since, so the retry guards the symptom and isn't a confirmed fix. On
-  2026-10-09 `scripts/smoke-firefox-webext.js` learned to read the extension's console:
-  it sets `devtools.console.stdout.content`, keeps `[YTKit]` lines from geckodriver's
-  output (`captureLine` in `scripts/firefox-webdriver.js`), proves the pipe with a page
-  probe line, and fails the first load on a module failure
-  (`tests/firefox-console-capture.test.js`). Whether geckodriver forwards Firefox's
-  stdout at `--log error` is unconfirmed; the probe fails closed if it doesn't.
-  Blocker: a Firefox run, and the Firefox 156 session hang above blocks it today.
-  Acceptance: a fresh temporary install's first YouTube load logs no module failure in
-  the captured console, with the probe line seen.
-
 - [ ] P3 — Open the awesome-userscripts pull request
   Why: users browse awesome-scripts/awesome-userscripts for scripts, and Astra isn't
   on it (checked 2026-10-09: no Astra, YTKit or SysAdminDoc entry). README now names
@@ -650,6 +581,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   (https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js) /
   `📖 Readme` (#userscript-tampermonkey--violentmonkey) / `🐛 Report bug` (issues).
   Acceptance: a pull request following that CONTRIBUTING.md is open.
+Retested 2026-10-31: the manager smoke passes on Tampermonkey 5.5.0 and Violentmonkey 2.47.0 after fixing its stale avatar assertion. Violentmonkey does not enforce SRI. Opening the pull request is an outward GitHub write, so it waits for Matt's word.
 
 - [ ] P3 — Submit Astra Deck to Lissy93/awesome-privacy's Browser Extensions section
   Why: that list (9,942 stars, pushed 2026-10-10) carries SponsorBlock and DeArrow side by
@@ -674,17 +606,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: not seen on desktop web as of 2026-10-05, and a capture needs a live session.
   Acceptance: once a series surface shows on desktop web, capture it. Each of the three
   settings either covers it, with a fixture test, or gets the selector it needs.
-
-- [ ] P3 — Confirm Tampermonkey 5.5.1 refuses a library whose `#sha256=` doesn't match
-  Why: Tampermonkey 5.5.1 (2026-10-01) lists "Corrected SRI enforce mode for `@require`".
-  Astra's pins shipped in 4.97.0 under 5.5.0, and the CHANGELOG promises Tampermonkey
-  refuses a changed file. Violentmonkey ignores the hashes (CHANGELOG 4.97.0).
-  Evidence: https://www.tampermonkey.net/changelog.php
-  Blocker: a manager run (`npm run smoke:userscript-managers` runs in Firefox, which hangs
-  at session creation on 156, above).
-  Acceptance: WHEN a loader with one wrong hash is installed in Tampermonkey 5.5.1, THEN
-  that library SHALL not run and the manager SHALL report the mismatch; WHEN the hashes are
-  right, THEN the manager smoke SHALL pass unchanged.
 
 - [ ] P3 — Check Astra's scripted clicks after YouTube began rejecting synthetic Skip clicks
   Why: Remove YouTube Suggestions 4.3.84 (2026-10-08) says YouTube no longer honors scripted
