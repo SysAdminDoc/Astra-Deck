@@ -499,25 +499,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P3 — Needs a browser run (2026-10-09)
 
-- [ ] P3 — Follow-ups from the 2026-10-09 drain review
-  Why: a read-only review raised these as plausible but unconfirmed. Each needs a live
-  page to settle.
-  - Upcoming wording: with bare "premiere" gone, a French or German premiere card with
-    no "À venir"/"Bevorstehend" badge no longer reads as upcoming in Video Hider, and
-    pt_BR has only "programado para" (`core/text-metrics.js` `UPCOMING_CARD_PATTERN`).
-    The Arabic badge's real wording is unpinned too (قادم and قادمة both match now).
-  - Still Watching: if YouTube reopens the same closed prompt, the `yt-popup-opened`
-    handler may run before layout, the on-screen gate refuses it, and the observer
-    (child-list only) never retries. Separately, the player's Play button is still
-    tried before the prompt's own confirm button, and the confirm button isn't looked
-    up inside the gated dialog (`autoDismissStillWatching` in `extension/ytkit.js`).
-  - Audio track: a track list that fills in after `canplay` (paused or autoplay-off
-    loads) gets no retry until a later `playing` or player-state event
-    (`core/audio-track.js` `apply`).
-  Blocker: each needs live YouTube in headless Chromium.
-  Acceptance: each case reproduced live and either fixed with a fixture test or shown
-  not to happen, with the result written here.
-
 - [ ] P3 — Surfaces the 2026-09-28 polish pass didn't reach
   Why: that pass covered the Command Deck, popup, side panel, download panel, Video
   Hider, transcript states, comment search, toasts and the Theater Split captures.
