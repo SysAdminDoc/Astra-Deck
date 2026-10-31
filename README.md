@@ -1474,10 +1474,10 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 |-----|----------|
 | [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work, existing plans plus research-driven additions. |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
-| [INSTALL.md](INSTALL.md) | How to install on Chrome, Edge, Firefox, or as a userscript |
+| [INSTALL.md](INSTALL.md) | How to install on Chrome, Edge, Firefox, or as a userscript, and how to move over from BlockTube, Iridium or Enhancer |
 | [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |
-| [SECURITY.md](SECURITY.md) | Supported versions and private vulnerability reporting policy |
+| [SECURITY.md](SECURITY.md) | Supported versions, what you can check about a release yourself, and private vulnerability reporting |
 | [docs/architecture.md](docs/architecture.md) | Trust boundaries, data flow, where things live, conventions a new contributor needs |
 | [docs/cws-submission-checklist.md](docs/cws-submission-checklist.md) | Chrome Web Store submission preflight (manifest, privacy policy, screenshots) |
 | [docs/store-permission-rationale.md](docs/store-permission-rationale.md) | Copy-paste store-review permission, host, and single-purpose rationale |

@@ -69,6 +69,76 @@ temporarily (it stays until you restart Firefox):
 - **Load unpacked:** download the new ZIP, unzip over the same folder, then click
   the refresh icon on the card in `chrome://extensions`.
 
+## Coming from another extension
+
+Turn the old extension off once you've moved over. Two extensions changing the same player controls will get in each other's way.
+
+### BlockTube
+
+Your filters come across directly:
+
+1. On BlockTube's options page, click **Export** and save the `.json` file.
+2. In the Astra Deck popup, click **Import** and pick that file. It can be up to 8 MB.
+
+The rules go into **Video Hider** and your settings stay as they were. Astra Deck saves an undo point first, and nothing already in your lists gets pushed out. ChannelSieve backups import the same way.
+
+| In BlockTube | After the import |
+| --- | --- |
+| Channel IDs | Blocked channels |
+| Video IDs | Hidden videos (regex lines in this list can't move) |
+| Video titles and channel names | Keyword or regex rules, listed under imported rules in Video Hider |
+| Comment rules | Left behind, so add them by hand in **Comment Filter** |
+| Duration range | Left behind, and Video Hider has its own duration filter |
+| JavaScript filter | Left behind, and never run or stored |
+
+When it finishes you'll see how many filters were added, already there, invalid, not supported or over the limit.
+
+### Iridium
+
+Iridium's repository is archived, and its README says it's no longer actively maintained. Its settings don't import, so turn on what you used by hand:
+
+| In Iridium | In Astra Deck |
+| --- | --- |
+| Ad options | The extension's built-in rules block ad requests, with nothing to turn on. The userscript doesn't have them. |
+| Default quality | **Always Best Quality** or **Per-Context Quality** |
+| Default speed | **Persistent Playback Speed** or **Per-Channel Speed Memory** |
+| Scroll for volume | **Volume Wheel** |
+| Loudness off | **Keep Volume At Full** |
+| Ambient mode off | **Disable Ambient Mode** (already on) |
+| Shorts on the home, search, subscription and watch pages | **Remove Shorts** and **Redirect Shorts** (both already on) |
+| End screen and info cards | **Hide End Screen Cards** and **Hide Info Cards** |
+| Creator merch | **Hide Merch Shelf** (already on) |
+| Autoplay and channel trailers | **Prevent Autoplay** and **Disable Autoplay Next Video** |
+| Default channel tab | **Channels → Videos Tab** |
+| Logo goes to subscriptions | **Logo Click → Subscriptions** |
+| Full titles | **Show Full Video Titles** (already on) |
+| Reverse playlist | **Reverse Playlist Button** |
+| Always visible player | **Mini Player Bar** |
+| Focus mode | **Focused Mode** |
+| Screenshots | **Video Screenshot** |
+| Thumbnails | **Download Thumbnail Button** |
+| Channel blacklist | **Video Hider** |
+
+### Enhancer for YouTube
+
+Enhancer's settings don't import either. These are the closest matches:
+
+| In Enhancer | In Astra Deck |
+| --- | --- |
+| Playback speed | **Persistent Playback Speed**, **Fine Speed Control** and **Speed Preset Buttons** |
+| Default quality | **Always Best Quality** or **Per-Context Quality** |
+| Volume and volume booster | **Volume Boost** and **Volume Wheel** |
+| Codecs and formats | **Codec Selector** or **Force H.264 Codec** |
+| Autoplay | **Prevent Autoplay** and **Disable Autoplay Next Video** |
+| Mini player and pop-up player | **Mini Player Bar** and **Pop-Out Player** |
+| Loop | **Video Loop Button** and **A-B Loop** |
+| Screenshots | **Video Screenshot** |
+| Cinema mode and larger player | **Focused Mode** and **Auto Theater Mode** |
+| Custom themes | **Color Theme** and **Accent Color** |
+| Custom CSS | **Custom CSS**, in the GitHub-full build only |
+
+Enhancer's keyboard shortcuts, custom script and brightness or contrast video filters have no match here. The closest filter is **Blue Light Filter**, which adds a warm tint.
+
 ## Removing
 
 - Extension: open `chrome://extensions` and click **Remove**.

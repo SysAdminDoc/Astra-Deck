@@ -17,6 +17,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Two one-click looks in a new Starting look section under Theme. Astra Look turns on everything a new install used to start with, and Classic YouTube gives an older profile the new defaults without hunting through 18 switches. Turning either one off puts back what you had. The welcome screen offers Astra Look too.
 - A Corners section under Theme that pulls UI style, Square Avatars and Square Search Bar together.
+- INSTALL.md now has a guide for moving over from BlockTube, Iridium or Enhancer for YouTube, with each one's settings matched to the Astra Deck setting that does the same job.
+- SECURITY.md now lists what you can check about a release yourself and what you can't, including that releases aren't signed yet.
 
 ### Fixed
 

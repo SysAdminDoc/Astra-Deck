@@ -12,6 +12,18 @@
 Astra Deck is self-distributed and has no store listing yet, so "latest
 release" means the newest tag on this repository rather than a store version.
 
+## What You Can Check Yourself
+
+Releases are built on one machine with no CI. Here's what you can confirm today and what you can't.
+
+- **Whether a download is intact.** Release builds carry `release-manifest.json` and `SHA256SUMS` covering every artifact. The steps are in [Verifying a download](README.md#verifying-a-download).
+- **Who built it.** You can't prove that yet. No release signing key is published, so `SHA256SUMS.sig` is absent, and the release path doesn't produce a build attestation. Treat releases as unsigned and prefer the source tree until `allowed-signers` carries a key.
+- **What went into the build.** Release builds also carry a CycloneDX SBOM for the npm build and packaging tooling. The extension itself bundles no npm packages.
+- **What changed and when.** Every commit is public and `CHANGELOG.md` records each change. The userscripts are generated from the extension source, so `node sync-userscript.js` followed by `node scripts/check-userscript-drift.js` shows whether the committed files match it.
+- **What each build can reach.** Store-safe builds keep the authenticated companion handoff but drop AI, Ollama and user-selected remote origins. GitHub-full keeps those behind runtime prompts, with Cobalt limited to an authorized self-hosted instance.
+- **What leaves in a settings export.** Exports strip API keys, tokens and other secrets.
+- **What can change without a release.** `selector-packs.json` and `feature-disable-feed.csv` load at runtime, and both are signed (see High-Priority Classes below). The breakage feed can only pause a shipped feature. A Video Hider list you subscribe to also refreshes on its own, and only if you added one.
+
 ## Report a Vulnerability
 
 Use GitHub private vulnerability reporting from the repository Security tab for

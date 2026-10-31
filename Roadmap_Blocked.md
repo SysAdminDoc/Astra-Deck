@@ -24,8 +24,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   enrollment is YouTube's call. Check again when a signed-in harness profile or Matt's browser
   shows the side rail with a Comments button without forced flags.
 
-## P1 — Premise disproven, needs a product decision (2026-08-27)
-
 ## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14, again 2026-09-28 and 2026-09-29)
 
 - [ ] P0: Make release currency a blocking gate and promote the current release
@@ -338,22 +336,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: Upload-only. GitHub exposes no REST endpoint for the social-preview
   image, so it cannot be set from `gh api` — it needs a maintainer with the
   Settings page open. Everything else in that roadmap item is done.
-
-## P2 — Documentation
-
-- [ ] P2 — Competitor migration documentation
-  Why: Iridium (1,300 GitHub stars) was archived Jan 2026 with orphaned users seeking alternatives. Enhancer for YouTube abandoned Firefox (510K users) in Aug 2025. Landing pages with settings-import guides would capture these users at zero feature development cost.
-  Touches: `docs/migration-from-iridium.md`, `docs/migration-from-enhancer.md`, README.md
-  Acceptance: Each migration doc maps the competitor's top features to Astra Deck equivalents with install instructions.
-  Complexity: S
-  Blocker: Requires creating new markdown documentation files. Maintainer-authored content for migration guides.
-
-- [ ] P2 — Supply chain transparency documentation
-  Why: Post-ShadyPanda (4.3M users compromised Dec 2025), Astra Deck's open-source audit trail and SBOM/attestation pipeline are differentiators not documented for end users.
-  Touches: `docs/supply-chain-transparency.md`, README.md
-  Acceptance: Page documents audit trail, SBOM, attestation, credential scrub, profile-split permissions, and release integrity verification.
-  Complexity: S
-  Blocker: Requires creating new markdown documentation files. Maintainer-authored trust documentation.
 
 ## P3 — Blocked on External API Stability
 
