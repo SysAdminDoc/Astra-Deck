@@ -18,6 +18,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Two one-click looks in a new Starting look section under Theme. Astra Look turns on everything a new install used to start with, and Classic YouTube gives an older profile the new defaults without hunting through 18 switches. Turning either one off puts back what you had. The welcome screen offers Astra Look too.
 - A Corners section under Theme that pulls UI style, Square Avatars and Square Search Bar together.
 
+### Fixed
+
+- Rebuilding the locale files no longer overwrites translations that were proofed by hand. It had been undoing 83 of them across 10 languages, some back to English, and a new check now fails if a rebuild would change a shipped string.
+
 ## [4.105.1] (2026-10-27)
 
 ### Fixed

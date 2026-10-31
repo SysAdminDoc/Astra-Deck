@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const {
     buildUiCopyBaseline,
     checkToastLiterals,
@@ -318,4 +319,35 @@ test('every key picked by a t(cond ? a : b) call exists in the English catalogue
         }
     }
     assert.deepEqual(missing, []);
+});
+
+test('a rerun of the locale generator leaves every committed string alone', () => {
+    const repoRoot = path.join(__dirname, '..');
+    const result = spawnSync(process.execPath, ['scripts/generate-locales.js', '--check'], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        windowsHide: true
+    });
+    assert.equal(result.status, 0, result.stderr);
+});
+
+test('every proofed locale string still translates the English it was proofed against', () => {
+    const repoRoot = path.join(__dirname, '..');
+    const generator = fs.readFileSync(path.join(repoRoot, 'scripts', 'generate-locales.js'), 'utf8');
+    const start = generator.indexOf('const PROOFED_KEY_TRANSLATIONS = ');
+    assert.ok(start > -1, 'the proofed table must stay in the generator');
+    const end = generator.indexOf('\n};', start);
+    // The table is a plain literal: no calls, no references.
+    const table = Function(`return ${generator.slice(start + 'const PROOFED_KEY_TRANSLATIONS = '.length, end + 2)}`)();
+    const en = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+    let entries = 0;
+    for (const [locale, rows] of Object.entries(table)) {
+        const catalogue = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', '_locales', locale, 'messages.json'), 'utf8'));
+        for (const [key, row] of Object.entries(rows)) {
+            entries += 1;
+            assert.equal(en[key]?.message, row.en, `${locale}:${key} was proofed against older English; proof it again or drop the entry`);
+            assert.equal(catalogue[key]?.message, row.message, `${locale}:${key} must ship its proofed string`);
+        }
+    }
+    assert.ok(entries > 0, 'an empty table means the scan read nothing');
 });

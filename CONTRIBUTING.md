@@ -168,6 +168,10 @@ demand, not on every commit:
   technical formats (MP4, M4A, VP9, AV1, H.264, TrustedTypes, ETA)
   are intentionally preserved as English.
   - Run: `node scripts/generate-locales.js`
+  - Gate: `node scripts/generate-locales.js --check` writes nothing and fails
+    if a rerun would change a committed string. A string proofed straight in a
+    locale file goes in `PROOFED_KEY_TRANSLATIONS` too, along with the English
+    it translates, so the entry stops applying when that wording changes.
   - When to run: after adding new EN strings to
     `_locales/en/messages.json` (extend the translation tables first,
     then re-run); reviewers should treat the generated locales as

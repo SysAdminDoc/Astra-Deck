@@ -10620,6 +10620,119 @@ for (const [locale, messages] of Object.entries(LOOK_DEFAULTS_TRANSLATIONS)) {
 
 
 
+// Strings proofed straight in a locale file, by key because the same English
+// can need different words in two places. The tables above outrank an existing
+// string, so a rerun used to overwrite these, sometimes with English. Each entry
+// names the English it translates and stops applying when that wording changes.
+const PROOFED_KEY_TRANSLATIONS = {
+  ar: {
+    settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "تطابق واحد ({count})" }
+  },
+  de: {
+    dlProgressEtaPrefix: { en: "ETA", message: "Restzeit" },
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Legt einen warmen Farbton über das Bild, um den Blaulichtanteil zu verringern. Die Intensität ist einstellbar." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Verhindert, dass das nächste Video automatisch startet, wenn das aktuelle zu Ende ist" },
+    settingsSectionTiming: { en: "Timing", message: "Zeitsteuerung" },
+    spCategory_watch_player: { en: "Video Player", message: "Video-Player" }
+  },
+  es: {
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Aplica un tinte cálido para reducir la emisión de luz azul. La intensidad es configurable." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Evita que el siguiente video se reproduzca automáticamente cuando termina el actual" },
+    spCategory_watch_player: { en: "Video Player", message: "Reproductor de vídeo" },
+    stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Cambiar el tamaño de los paneles de Modo cine dividido" }
+  },
+  fr: {
+    dlProgressEtaPrefix: { en: "ETA", message: "Temps restant" },
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Applique une teinte chaude pour réduire l'émission de lumière bleue. Intensité réglable." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Empêche la lecture automatique de la vidéo suivante lorsque la vidéo en cours se termine" },
+    qtGroup_Focus: { en: "Focus", message: "Concentration" },
+    settingsSectionSurfaces: { en: "Surfaces", message: "Zones" },
+    stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Redimensionner les panneaux du Mode cinéma divisé" },
+    welcomePresetFocusTitle: { en: "Focus", message: "Concentration" }
+  },
+  it: {
+    dlProgressEtaPrefix: { en: "ETA", message: "Tempo rimasto" },
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Applica una tonalità calda per ridurre l'emissione di luce blu. Intensità configurabile." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Impedisce che il video successivo parta in automatico quando finisce quello attuale" },
+    qtGroup_Focus: { en: "Focus", message: "Concentrazione" },
+    settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "{count} risultato" },
+    settingsSearchSectionMatchesTplOther: { en: "{count} matches", message: "{count} risultati" },
+    spCategory_watch_player: { en: "Video Player", message: "Player video" },
+    stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Ridimensiona i pannelli della Modalità cinema divisa" },
+    welcomePresetFocusTitle: { en: "Focus", message: "Concentrazione" }
+  },
+  ja: {
+    dlProgressEtaPrefix: { en: "ETA", message: "残り時間" },
+    feature_autoTheaterMode_desc: { en: "Automatically enter theater (wide) mode when opening a video", message: "動画を開いたときに、自動的にシアターモード(ワイド表示)にします" },
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "暖色系の色合いを重ねて、ブルーライトの放出を抑えます。強さは調整できます。" },
+    feature_cleanShareUrls_desc: { en: "Strip tracking params (si, pp, feature) from copied/shared YouTube links", message: "コピーまたは共有した YouTube リンクから、トラッキング用パラメータ(si、pp、feature)を取り除きます" },
+    feature_commentSearch_desc: { en: "Adds a search bar above comments to filter and find specific comments", message: "コメント欄の上に検索バーを追加し、特定のコメントを絞り込んで探せるようにします" },
+    feature_debugMode_desc: { en: "Enable verbose diagnostic logging to the console", message: "詳細な診断ログをコンソールに出力します" },
+    feature_digitalWellbeing_desc: { en: "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.", message: "再生時間が N 分たつごとに休憩を知らせ、1 日の視聴時間の上限も設定できます(任意)。タイマーは SPA 内の移動をまたいで保持されます。" },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "現在の動画が終わっても、次の動画が自動で再生されないようにします" },
+    feature_disableInfiniteScroll_desc: { en: "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages", message: "ホーム、検索、登録チャンネルのページで、無限スクロールを「もっと読み込む」ボタンに置き換えます" },
+    feature_hideRelatedVideos_desc: { en: "Remove the related videos panel on watch pages", message: "視聴ページの関連動画パネルを非表示にします" },
+    feature_miniPlayerBar_desc: { en: "Shows a floating mini-player bar at the bottom when you scroll past the video", message: "動画より下にスクロールしたとき、画面下部にフローティングのミニプレーヤーバーを表示します" },
+    feature_persistentSpeed_desc: { en: "Remember your preferred playback speed globally and auto-apply it to every video", message: "好みの再生速度をグローバルに記憶し、すべての動画に自動で適用します" },
+    feature_removeAllShorts_desc: { en: "Hide all Shorts videos from feeds and recommendations", message: "フィードとおすすめから、すべての Shorts 動画を非表示にします" },
+    feature_transcriptViewer_desc: { en: "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)", message: "サイドバーにクリックできる文字起こしパネルを追加し、タイムスタンプでの移動とエクスポート(txt/srt/クリップボード/LLM プロンプト)に対応します" },
+    resultsCountTpl: { en: "{count} {controls}", message: "{count} 件の{controls}" },
+    settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "{count} 件一致" },
+    settingsSearchSectionMatchesTplOther: { en: "{count} matches", message: "{count} 件一致" },
+    videoHiderKeywordsPlaceholder: { en: "reaction, unboxing, prank, shorts…", message: "リアクション、開封、ドッキリ、shorts…" }
+  },
+  ko: {
+    dlProgressEtaPrefix: { en: "ETA", message: "예상" },
+    feature_autoTheaterMode_desc: { en: "Automatically enter theater (wide) mode when opening a video", message: "동영상을 열 때 자동으로 시어터 모드(와이드 화면)로 전환합니다" },
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "따뜻한 색조를 입혀 블루라이트 방출을 줄여요. 강도를 조절할 수 있어요." },
+    feature_cleanShareUrls_desc: { en: "Strip tracking params (si, pp, feature) from copied/shared YouTube links", message: "복사하거나 공유한 YouTube 링크에서 추적 매개변수(si, pp, feature)를 제거합니다" },
+    feature_commentSearch_desc: { en: "Adds a search bar above comments to filter and find specific comments", message: "댓글 위에 검색창을 추가해 원하는 댓글을 걸러 내고 찾을 수 있습니다" },
+    feature_debugMode_desc: { en: "Enable verbose diagnostic logging to the console", message: "콘솔에 자세한 진단 로그를 출력합니다" },
+    feature_digitalWellbeing_desc: { en: "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.", message: "재생 시간이 N분 지날 때마다 휴식 알림을 보내고, 선택적으로 하루 시청 시간 한도를 설정할 수 있어요. 타이머는 SPA 이동 중에도 유지됩니다." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "현재 동영상이 끝나도 다음 동영상이 자동으로 재생되지 않게 합니다" },
+    feature_disableInfiniteScroll_desc: { en: "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages", message: "홈, 검색, 구독 페이지에서 무한 스크롤을 “더보기” 버튼으로 바꿉니다" },
+    feature_hideRelatedVideos_desc: { en: "Remove the related videos panel on watch pages", message: "시청 페이지에서 관련 동영상 패널을 제거합니다" },
+    feature_miniPlayerBar_desc: { en: "Shows a floating mini-player bar at the bottom when you scroll past the video", message: "동영상을 지나 스크롤하면 화면 하단에 떠 있는 미니 플레이어 바를 표시합니다" },
+    feature_persistentSpeed_desc: { en: "Remember your preferred playback speed globally and auto-apply it to every video", message: "선호하는 재생 속도를 전체 동영상에 대해 기억하고 모든 동영상에 자동으로 적용합니다" },
+    feature_removeAllShorts_desc: { en: "Hide all Shorts videos from feeds and recommendations", message: "피드와 추천에서 모든 Shorts 동영상을 숨깁니다" },
+    feature_transcriptViewer_desc: { en: "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)", message: "사이드바에 클릭할 수 있는 스크립트 패널을 추가하고, 타임스탬프 이동과 내보내기(txt/srt/클립보드/LLM 프롬프트)를 지원합니다" },
+    videoHiderKeywordsPlaceholder: { en: "reaction, unboxing, prank, shorts…", message: "리액션, 언박싱, 몰래카메라, 쇼츠…" }
+  },
+  pt_BR: {
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Aplica um tom quente para reduzir a emissão de luz azul. A intensidade é configurável." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Impede que o próximo vídeo seja reproduzido automaticamente quando o atual termina" },
+    stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Redimensionar painéis da Divisão em Modo Cinema" }
+  },
+  ru: {
+    dlProgressEtaPrefix: { en: "ETA", message: "Осталось" },
+    feature_autoTheaterMode_desc: { en: "Automatically enter theater (wide) mode when opening a video", message: "Автоматически включает режим кинотеатра (широкий режим) при открытии видео" },
+    feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Накладывает тёплый оттенок, чтобы уменьшить излучение синего света. Интенсивность настраивается." },
+    feature_cleanShareUrls_desc: { en: "Strip tracking params (si, pp, feature) from copied/shared YouTube links", message: "Удаляет параметры отслеживания (si, pp, feature) из скопированных и общих ссылок YouTube" },
+    feature_commentSearch_desc: { en: "Adds a search bar above comments to filter and find specific comments", message: "Добавляет над комментариями строку поиска для фильтрации и поиска нужных комментариев" },
+    feature_debugMode_desc: { en: "Enable verbose diagnostic logging to the console", message: "Включает подробный диагностический вывод в консоль" },
+    feature_digitalWellbeing_desc: { en: "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.", message: "Напоминания о перерывах через каждые N минут воспроизведения и дополнительный дневной лимит времени просмотра. Таймеры сохраняются при переходах внутри SPA." },
+    feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Не позволяет следующему видео запускаться автоматически, когда текущее заканчивается" },
+    feature_disableInfiniteScroll_desc: { en: "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages", message: "Заменяет бесконечную прокрутку кнопкой «Загрузить ещё» на главной, в поиске и на страницах подписок" },
+    feature_hideRelatedVideos_desc: { en: "Remove the related videos panel on watch pages", message: "Убирает панель похожих видео на страницах просмотра" },
+    feature_miniPlayerBar_desc: { en: "Shows a floating mini-player bar at the bottom when you scroll past the video", message: "Показывает плавающую панель мини-плеера внизу, когда вы прокручиваете страницу ниже видео" },
+    feature_persistentSpeed_desc: { en: "Remember your preferred playback speed globally and auto-apply it to every video", message: "Запоминает выбранную скорость воспроизведения для всех видео и автоматически применяет её к каждому ролику" },
+    feature_removeAllShorts_desc: { en: "Hide all Shorts videos from feeds and recommendations", message: "Скрывает все видео Shorts в лентах и рекомендациях" },
+    feature_transcriptViewer_desc: { en: "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)", message: "Добавляет в боковую панель интерактивную расшифровку с переходом по меткам времени и экспортом (txt/srt/буфер обмена/запрос для LLM)" },
+    settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "Совпадений: {count}" },
+    settingsSearchSectionMatchesTplOther: { en: "{count} matches", message: "Совпадений: {count}" },
+    spCategory_watch_player: { en: "Video Player", message: "Видеоплеер" },
+    stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Изменить размер панелей разделённого режима кинотеатра" }
+  },
+  zh_CN: {
+    settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "{count} 个匹配" },
+    settingsSearchSectionMatchesTplOther: { en: "{count} matches", message: "{count} 个匹配" },
+    videoHiderKeywordsPlaceholder: { en: "reaction, unboxing, prank, shorts…", message: "反应视频、开箱、整蛊、shorts…" }
+  }
+};
+
+const CHECK_ONLY = process.argv.includes('--check');
+const driftedKeys = [];
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {
@@ -10630,10 +10743,10 @@ function readExistingLocale(locale) {
     }
 }
 
-// Generate locale files. For every key in en/messages.json, preserve an
-// existing translated/proofed locale message first. Explicit translation-table
-// entries fill keys that are missing or still equal to EN, then English is the
-// final fallback for brand-new strings.
+// Generate locale files. For every key in en/messages.json a proofed string for
+// the current English wins, then a table entry for the current English, then an
+// existing translation, then English as the final fallback for brand-new strings.
+// --check writes nothing and fails if a real run would change any message.
 for (const locale of Object.keys(T)) {
     const out = {};
     const existingLocale = readExistingLocale(locale);
@@ -10654,23 +10767,42 @@ for (const locale of Object.keys(T)) {
         // over an existing locale string — the existing string may be a correct
         // translation of a PREVIOUS EN wording that is now stale. Proofed
         // overrides still win via the translationMap merge above.
-        const outMsg = hasMappedTranslation
+        const proofed = PROOFED_KEY_TRANSLATIONS[locale]?.[key];
+        const mappedMsg = hasMappedTranslation
             ? translationMap[enMsg]
             : (hasExistingTranslation ? existingMsg : (existingMsg || enMsg));
+        const outMsg = proofed?.en === enMsg ? proofed.message : mappedMsg;
         const missingTerms = missingProtectedTerms(enMsg, outMsg);
         if (missingTerms.length) {
             throw new Error(`${locale}:${key} translation must preserve do-not-translate term(s): ${missingTerms.join(', ')}`);
         }
         if (hasExistingTranslation) preservedCount += 1;
         else if (hasMappedTranslation) mappedCount += 1;
+        if (outMsg !== existingLocale[key]?.message) driftedKeys.push(`${locale}:${key}`);
+        // An unchanged string keeps its entry as it is, so a rerun doesn't copy
+        // English descriptions onto catalogues that never carried them.
+        if (outMsg === existingLocale[key]?.message) {
+            out[key] = existingLocale[key];
+            continue;
+        }
         const obj = { message: outMsg };
         if (entry.description) obj.description = entry.description;
         out[key] = obj;
     }
+    if (CHECK_ONLY) continue;
     const dir = path.join(ROOT, 'extension', '_locales', locale);
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, 'messages.json');
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n');
     const translatedCount = mappedCount + preservedCount;
     console.log(`${locale}: wrote ${Object.keys(out).length} keys (${translatedCount} translated/preserved, ${Object.keys(out).length - translatedCount} fall through to English; ${DO_NOT_TRANSLATE_TERMS.length} protected terms checked)`);
+}
+
+if (CHECK_ONLY) {
+    if (driftedKeys.length) {
+        console.error(`[generate-locales] FAIL a rerun would change ${driftedKeys.length} string(s): ${driftedKeys.slice(0, 20).join(', ')}`);
+        console.error('[generate-locales] Add a proofed locale edit to PROOFED_KEY_TRANSLATIONS, or run the generator for a new string.');
+        process.exit(1);
+    }
+    console.log('[generate-locales] OK: a rerun leaves every catalogue as committed');
 }
