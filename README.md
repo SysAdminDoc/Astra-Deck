@@ -1341,6 +1341,7 @@ npm run check:zero-ads                    # Validate the static rule contract an
 npm run smoke:zero-ads:live               # Cold-load desktop YouTube and verify blocked requests + collapsed shells
 npm run smoke:main-bridge:live            # Check on live YouTube that page-context features get their settings and a page can't forge them
 npm run smoke:a11y                        # Check real extension pages plus controlled locale and accessibility states
+npm run visual:popup                      # Compare the real popup against saved baselines in Chromium and Firefox, light and dark
 npm run smoke:live-chat                   # Open a current YouTube live-chat frame and verify Astra attached
 npm run smoke:firefox                     # Prove Firefox DNR, shell collapse, search, and SPA player behavior
 npm run smoke:userscript-managers         # Install and exercise YTKit in real Tampermonkey + Violentmonkey builds
