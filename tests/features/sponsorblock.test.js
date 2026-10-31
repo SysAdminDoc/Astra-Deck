@@ -792,9 +792,11 @@ function withKeepFixture(segments, run) {
         const video = { paused: false, currentTime: 0, duration: 100, playbackRate: 1 };
         const announced = [];
         let videoId = 'first';
+        const playerClasses = new Set();
         const feature = createSponsorBlockFeature({
             appState: { settings: { sbCat_sponsor: true, sbCat_intro: true, sbCat_poi_highlight: true } },
             getMainVideoElement: () => video,
+            getMoviePlayerElement: () => ({ classList: { contains: (name) => playerClasses.has(name) } }),
             getPlayerProgressBar: () => ({ appendChild() {} }),
             getVideoId: () => videoId,
             announceA11y: (message) => announced.push(message)
@@ -816,6 +818,7 @@ function withKeepFixture(segments, run) {
             video,
             announced,
             press,
+            playerClasses,
             timeAfterCheck,
             leaveFor(id) { videoId = id; }
         });
@@ -902,6 +905,51 @@ test('segments without a UUID are told apart by their times', () => {
         press(250);
         assert.equal(timeAfterCheck(25), 25);
         assert.equal(timeAfterCheck(55), 60);
+    });
+});
+
+// A real 183 second pre-roll, with this video's own segments loaded: the first 45
+// seconds of the ad got "skipped" and the markers were painted 6000 px off the bar.
+for (const adClass of ['ad-showing', 'ad-interrupting']) {
+    test(`during an ad (${adClass}) nothing is measured against the video's segments`, () => {
+        withKeepFixture(SPONSOR_AND_INTRO(), ({ feature, playerClasses, video, timeAfterCheck }) => {
+            playerClasses.add(adClass);
+            assert.equal(timeAfterCheck(25), 25, 'the ad keeps playing where it is');
+            feature._renderBarSegments();
+            assert.equal(feature._barSegments.length, 0, 'the markers wait for the real duration');
+
+            const delays = [];
+            const realSetTimeout = global.setTimeout;
+            const realClearTimeout = global.clearTimeout;
+            global.setTimeout = (fn, delay) => { delays.push(delay); return {}; };
+            global.clearTimeout = () => {};
+            try {
+                video.currentTime = 25;
+                feature._scheduleNextSkip();
+                assert.deepEqual(delays, [1000], 'it looks again rather than skip or give up');
+            } finally {
+                global.setTimeout = realSetTimeout;
+                global.clearTimeout = realClearTimeout;
+            }
+            feature._clearSchedule();
+
+            playerClasses.delete(adClass);
+            feature._renderBarSegments();
+            assert.equal(feature._barSegments.length, 2, 'the markers paint once the ad is over');
+            assert.equal(timeAfterCheck(25), 30, 'and skipping is back');
+        });
+    });
+}
+
+test('a mid-roll takes the markers off the bar and watches for the video coming back', () => {
+    withKeepFixture(SPONSOR_AND_INTRO(), ({ feature, playerClasses }) => {
+        let armed = 0;
+        feature._armBarObserver = () => { armed += 1; };
+        assert.equal(feature._barSegments.length, 2);
+        playerClasses.add('ad-showing');
+        feature._renderBarSegments();
+        assert.equal(feature._barSegments.length, 0);
+        assert.equal(armed, 1, 'nothing else repaints them if the ad class outlasts durationchange');
     });
 });
 

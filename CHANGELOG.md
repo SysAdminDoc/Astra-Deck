@@ -14,6 +14,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
 
+### Fixed
+
+- SponsorBlock no longer treats a playing ad as the video. On a real 183 second pre-roll it was jumping around inside the ad using the video's segments and drawing the markers far off the bar. It now waits for the ad to finish.
+
 ## [4.106.0] (2026-10-31)
 
 ### Changed

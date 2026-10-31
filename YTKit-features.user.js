@@ -24360,8 +24360,12 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 					this._disarmBarObserver();
 				}
 			},
+			_isAdPlaying() {
+				const classes = getMoviePlayerElement()?.classList;
+				return !!classes && (classes.contains('ad-showing') || classes.contains('ad-interrupting'));
+			},
 			_checkSkip() {
-				if (!this._segments.length) return;
+				if (!this._segments.length || this._isAdPlaying()) return;
 				const video = getMainVideoElement();
 				if (!video || video.paused) return;
 				const currentTime = video.currentTime;
@@ -24438,6 +24442,10 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				this._clearSchedule();
 				const video = getMainVideoElement();
 				if (!video || video.paused || !this._segments.length) return;
+				if (this._isAdPlaying()) {
+					this._skipTimer = setTimeout(() => this._scheduleNextSkip(), 1000);
+					return;
+				}
 				const currentTime = video.currentTime;
 				const rate = video.playbackRate || 1;
 				const enabledCats = this._getEnabledCategories();
@@ -24469,6 +24477,10 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 			},
 			_renderBarSegments() {
 				this._clearBarSegments();
+				if (this._isAdPlaying()) {
+					this._armBarObserver();
+					return;
+				}
 				const video = getMainVideoElement();
 				const progressBar = getPlayerProgressBar();
 				if (!video || !progressBar || !video.duration) return;

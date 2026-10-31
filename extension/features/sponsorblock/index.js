@@ -521,8 +521,16 @@
                 }
             },
 
+            // An ad plays in the same video element, so its clock and duration
+            // aren't the video's: a segment would seek around inside the ad, and
+            // the markers would be painted against the ad's length.
+            _isAdPlaying() {
+                const classes = getMoviePlayerElement()?.classList;
+                return !!classes && (classes.contains('ad-showing') || classes.contains('ad-interrupting'));
+            },
+
             _checkSkip() {
-                if (!this._segments.length) return;
+                if (!this._segments.length || this._isAdPlaying()) return;
                 const video = getMainVideoElement();
                 if (!video || video.paused) return;
                 const currentTime = video.currentTime;
@@ -633,6 +641,12 @@
                 this._clearSchedule();
                 const video = getMainVideoElement();
                 if (!video || video.paused || !this._segments.length) return;
+                if (this._isAdPlaying()) {
+                    // The player can drop the ad class after the video's own
+                    // playing event, so there's nothing to wait for but time.
+                    this._skipTimer = setTimeout(() => this._scheduleNextSkip(), 1000);
+                    return;
+                }
                 const currentTime = video.currentTime;
                 const rate = video.playbackRate || 1;
                 const enabledCats = this._getEnabledCategories();
@@ -674,6 +688,12 @@
 
             _renderBarSegments() {
                 this._clearBarSegments();
+                if (this._isAdPlaying()) {
+                    // durationchange can beat the ad class coming off, and the
+                    // observer is what paints them after that.
+                    this._armBarObserver();
+                    return;
+                }
                 const video = getMainVideoElement();
                 const progressBar = getPlayerProgressBar();
                 if (!video || !progressBar || !video.duration) return;
