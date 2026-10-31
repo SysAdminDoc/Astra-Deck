@@ -381,6 +381,8 @@ test('userscript-manager smoke fails when the signed-in account avatar is hidden
     const passing = () => ({
         contract: CONTRACT,
         ready: true,
+        nativeUi: true,
+        channelAvatarNative: { display: 'inline', visibility: 'visible', opacity: '1', width: 40, height: 40, loaded: true },
         initial: { ...collapsed },
         reinserted: { ...collapsed },
         accountAvatar: { display: 'inline', visibility: 'visible', opacity: '1', width: 32, height: 32, loaded: true },
@@ -402,7 +404,10 @@ test('userscript-manager smoke fails when the signed-in account avatar is hidden
     }
     const unguarded = passing();
     unguarded.channelAvatar.display = 'inline';
-    assert.throws(() => assertManagerFixture(manager, unguarded, true), /default channel avatar hide did not apply/);
+    assert.throws(() => assertManagerFixture(manager, unguarded, true), /channel avatar hide did not apply with native UI off/);
+    const hiddenByDefault = passing();
+    hiddenByDefault.nativeUi = false;
+    assert.throws(() => assertManagerFixture(manager, hiddenByDefault, true), /native-UI default did not leave the channel avatar visible/);
 });
 
 test('release preparation gates the Chromium, live-chat, Firefox, and real-manager desktop contracts', () => {

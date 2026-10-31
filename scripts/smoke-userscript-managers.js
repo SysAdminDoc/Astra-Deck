@@ -412,7 +412,17 @@ function managerFixtureExpression() {
             return { display: style.display, visibility: style.visibility, opacity: style.opacity,
                 width: rect.width, height: rect.height, loaded: node.complete === true && node.naturalWidth > 0 };
         };
+        // New installs start on YouTube's own look (restoreNativeYouTubeUi on), so
+        // the default avatar hide is off. Snapshot that default first, then drop
+        // the class the way opting into the Astra look does, so the hide rule and
+        // the signed-in account exemption are still exercised.
+        const root = document.documentElement;
+        const nativeUi = root.classList.contains('ytkit-restore-native-ui');
+        const channelAvatarNative = snapshot('#channel-avatar');
+        root.classList.remove('ytkit-restore-native-ui');
         return {
+            nativeUi,
+            channelAvatarNative,
             contract: document.documentElement.getAttribute('data-ytkit-userscript-ad-contract') || '',
             ready: document.documentElement.getAttribute('data-astra-manager-fixture-ready') === '1',
             initial: snapshot('#masthead-ad'),
@@ -446,9 +456,13 @@ function assertManagerFixture(manager, state, parserRequestObserved) {
         || !(account.width > 0 && account.height > 0) || !(Number(account.opacity) > 0)) {
         failures.push(`signed-in account avatar is not visible: ${JSON.stringify(account)}`);
     }
-    // Without the default avatar hide in force, a visible account avatar proves nothing.
+    // The default is YouTube's own look: native UI on, channel avatar left alone.
+    if (!state.nativeUi || !state.channelAvatarNative || state.channelAvatarNative.display === 'none') {
+        failures.push(`new-install native-UI default did not leave the channel avatar visible: ${JSON.stringify({ nativeUi: state.nativeUi, avatar: state.channelAvatarNative })}`);
+    }
+    // Without the avatar hide in force (native UI off), a visible account avatar proves nothing.
     if (!state.channelAvatar || state.channelAvatar.display !== 'none') {
-        failures.push(`default channel avatar hide did not apply: ${JSON.stringify(state.channelAvatar)}`);
+        failures.push(`channel avatar hide did not apply with native UI off: ${JSON.stringify(state.channelAvatar)}`);
     }
     if (!state.masthead || !state.search || !state.player || !state.video) {
         failures.push('fixture masthead/search/player workflow was damaged');
