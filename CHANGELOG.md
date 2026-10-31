@@ -24,6 +24,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - SponsorBlock no longer treats a playing ad as the video. On a real 183 second pre-roll it was jumping around inside the ad using the video's segments and drawing the markers far off the bar. It now waits for the ad to finish.
 - Auto-Dismiss "Still Watching?" now answers the prompt through its own button. It used to press the player's Play first, which restarted the video and left the prompt sitting on top of it. If the answer doesn't restart the video, Astra Deck plays it.
 - Video Hider's upcoming filter and Hide Planned Livestreams now catch scheduled streams in Russian and Arabic, where neither YouTube's date line nor its badge matched and the cards stayed up. They also know the real French date line and the German and Brazilian Portuguese badges now.
+- Popup: the language picker was stuck with a dark background in the light theme, which made its text nearly unreadable. It follows the theme now. The AI provider fields in the same panel were also reading a color that didn't exist, so they showed no background at all.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)

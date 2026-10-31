@@ -1423,19 +1423,14 @@ async function auditTextContrast(client, surface, stateName) {
         const failures = [];
         const seen = new Set();
         let checked = 0;
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-        for (let text = walker.nextNode(); text; text = walker.nextNode()) {
-            if (!text.nodeValue.trim()) continue;
-            const el = text.parentElement;
-            if (!el || seen.has(el) || ['SCRIPT', 'STYLE', 'OPTION'].includes(el.tagName)) continue;
-            seen.add(el);
+        const check = (el) => {
             const style = getComputedStyle(el);
-            if (style.visibility === 'hidden' || style.display === 'none') continue;
+            if (style.visibility === 'hidden' || style.display === 'none') return;
             const rect = el.getBoundingClientRect();
-            if (rect.width < 1 || rect.height < 1) continue;
-            if (el.closest('[disabled], [aria-disabled="true"], [inert]')) continue;
+            if (rect.width < 1 || rect.height < 1) return;
+            if (el.closest('[disabled], [aria-disabled="true"], [inert]')) return;
             const fg0 = parse(style.color);
-            if (!fg0) continue;
+            if (!fg0) return;
             const candidates = backdrops(el);
             let opacity = 1;
             for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
@@ -1459,7 +1454,19 @@ async function auditTextContrast(client, surface, stateName) {
                     + ' bg=rgb(' + [bg.r, bg.g, bg.b].map(Math.round) + ')';
                 if (!failures.includes(detail)) failures.push(detail);
             }
+        };
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+            if (!text.nodeValue.trim()) continue;
+            const el = text.parentElement;
+            if (!el || seen.has(el) || ['SCRIPT', 'STYLE', 'OPTION'].includes(el.tagName)) continue;
+            seen.add(el);
+            check(el);
         }
+        // A select shows its chosen option in the select's own colours, so no
+        // text node above ever measured it. The light theme's language picker
+        // sat dark on dark for months because of that.
+        document.querySelectorAll('select').forEach(check);
         return { checked, failures };
     })()`);
     await client.evaluate(`(() => {
@@ -2447,6 +2454,7 @@ module.exports = {
     REAL_EXTENSION_SURFACES,
     runRealExtensionPages,
     stageFeedPages,
+    startFixtureServer,
     SURFACES,
     validateRealExtensionPageSnapshot,
 };

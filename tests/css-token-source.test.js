@@ -145,6 +145,39 @@ test('no page stylesheet paints a colour the palette does not own', () => {
     }
 });
 
+test('every token a page stylesheet reads is declared somewhere', () => {
+    // An undeclared token with no fallback makes the whole declaration invalid,
+    // so the property falls back to nothing and no error appears anywhere.
+    // --surface-sunken sat behind the AI credential fields that way.
+    const declaredIn = (file) => [...fs.readFileSync(path.join(ROOT, file), 'utf8').matchAll(/(--[A-Za-z0-9-]+)\s*:/g)]
+        .map((match) => match[1]);
+    const setFromScript = (file) => [...fs.readFileSync(path.join(ROOT, file), 'utf8').matchAll(/setProperty\('(--[A-Za-z0-9-]+)'/g)]
+        .map((match) => match[1]);
+    const shared = declaredIn('surface-system.css');
+    for (const { css } of PAGES) {
+        const script = css.replace('.css', '.js');
+        const declared = new Set([...shared, ...declaredIn(css), ...setFromScript(script)]);
+        const source = fs.readFileSync(path.join(ROOT, css), 'utf8');
+        const missing = [...source.matchAll(/var\(\s*(--[A-Za-z0-9-]+)\s*\)/g)]
+            .map((match) => match[1])
+            .filter((name) => !declared.has(name));
+        assert.deepEqual([...new Set(missing)], [], `${css} reads tokens nothing declares`);
+    }
+});
+
+test('the language picker takes its background from the theme', () => {
+    // It had two fixed dark values, so the light theme drew dark text on dark gray.
+    const css = fs.readFileSync(path.join(ROOT, 'popup.css'), 'utf8');
+    for (const selector of ['#languageSelect {', '#languageSelect:hover {']) {
+        const start = css.indexOf(selector);
+        assert.ok(start >= 0, `${selector} should exist`);
+        const rule = css.slice(start, css.indexOf('}', start));
+        const background = /background-color:\s*([^;]+);/.exec(rule);
+        assert.ok(background, `${selector} should set a background`);
+        assert.match(background[1], /^var\(--/, `${selector} paints ${background[1]}`);
+    }
+});
+
 test('every var() fallback arm names the value its token actually carries', () => {
     // A stale fallback is a lie that only shows up if the token ever goes
     // missing, which is exactly when nobody is looking. Five of these said

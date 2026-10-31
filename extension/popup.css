@@ -2386,7 +2386,7 @@ body {
   min-height: 36px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--surface-sunken);
+  background: var(--surface-inset);
   color: var(--text-primary);
 }
 
@@ -2801,7 +2801,7 @@ button:focus-visible {
   padding: 0 28px 0 10px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border-subtle);
-  background-color: rgba(8, 11, 16, 0.74);
+  background-color: var(--surface-inset);
   /* Crisp inline-SVG chevron — renders sharp at any DPI, unlike the
      two diagonal gradients used previously which softened on hi-DPI
      popups. Stroke color matches --text-muted at ~75% opacity. */
@@ -2827,7 +2827,7 @@ button:focus-visible {
 
 #languageSelect:hover {
   border-color: var(--accent-border);
-  background-color: rgba(12, 16, 22, 0.84);
+  background-color: var(--surface-hover);
 }
 
 #languageSelect:focus-visible {
