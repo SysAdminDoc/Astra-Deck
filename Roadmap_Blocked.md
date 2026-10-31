@@ -386,16 +386,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: Requires loading the extension in Chrome/Edge with audio features
   enabled and navigating between videos to verify audio continuity.
 
-## P1 — Documentation Publication Constraint (2026-07-14)
-
-- [ ] P3 — Filmot deleted-video title restore (GitHub-full)
-  Why: Restoring titles of deleted/private playlist entries is uniquely valuable for old playlists; external API so GitHub-full only.
-  Evidence: Filmot Title Restorer (Jopik1, 4.5k).
-  Touches: playlist rendering path, data-flow registration, external-api-health.
-  Acceptance: On playlists, [Deleted video] rows optionally resolve via Filmot with cache + rate budget; store-safe artifacts strip the host grant automatically.
-  Complexity: M
-  Blocker: Repository research names the userscript but contains no verified Filmot host, request/response schema, public API terms, or fallback contract. This development pass forbids fresh research, so implementing an endpoint would be speculative.
-
 ## P1 — Premise disproven, needs a product decision (2026-09-05)
 
 - [ ] P1 — Retire the inert panel stylesheets from `ytkit.js`

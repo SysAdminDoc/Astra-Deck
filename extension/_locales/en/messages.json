@@ -9,7 +9,7 @@
     "message": "Credential could not be deleted."
   },
   "aiCredentialDeleted": {
-    "message": "AI credential deleted. This can't be undone, so re-enter the key to use AI features again."
+    "message": "Credential deleted. This can't be undone, so re-enter the key to use it again."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Paste your API key"
@@ -39,7 +39,7 @@
     "message": "Credential could not be saved."
   },
   "aiCredentialSaved": {
-    "message": "AI credential saved without exposing its value."
+    "message": "Credential saved without exposing its value."
   },
   "aiCredentialStatusError": {
     "message": "Credential status unavailable."
@@ -57,7 +57,7 @@
     "message": "Status unavailable"
   },
   "aiCredentialTitle": {
-    "message": "AI provider credential"
+    "message": "Provider credential"
   },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)"
@@ -10330,5 +10330,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "Ignored"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "Restore Deleted Video Titles",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Title restored from Filmot. Click to open its page for this video.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "Look this video up on Filmot",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

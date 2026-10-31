@@ -24,8 +24,9 @@ test('project facts are collected from the shipped source surfaces', () => {
     // Views on Their Own Line one (494). Retiring DeArrow Voting leaves 493,
     // and Covers Without a Submission makes it 494. Sort by Length makes it 495.
     // The ten DeArrow options ported from upstream make it 505, and the
-    // Anti-Translate channel exception list 506, and the two look presets 508.
-    assert.equal(facts.schemaEntries, 508);
+    // Anti-Translate channel exception list 506, the two look presets 508,
+    // and Restore Deleted Video Titles 509.
+    assert.equal(facts.schemaEntries, 509);
     assert.equal(facts.schemaCategories, 18);
     // The runtime graph includes the semantic zero-ad fallback beside the
     // selector-backed document-start shell layer. core/feed-prefilter.js is
@@ -34,20 +35,21 @@ test('project facts are collected from the shipped source surfaces', () => {
     // so does Classic Watch Layout. Hide AI Chapters adds one module (125, 33),
     // and so does Sort by Length (126, 34). Anti-Translate adds its module and
     // the original-title lookup in core/ (128, 35), and the look presets one
-    // module (129, 36).
-    assert.equal(facts.runtimeModules, 129);
-    assert.equal(facts.featureModules.length, 36);
+    // module (129, 36), and Restore Deleted Video Titles one (130, 37).
+    assert.equal(facts.runtimeModules, 130);
+    assert.equal(facts.featureModules.length, 37);
     // The Made With AI pair adds two (305), Classic Watch Layout two more (307),
     // Hide AI Chapters one (308). Retiring DeArrow Voting leaves 307, and
     // Sort by Length makes it 308, the channel exception list 309, and the two
-    // look presets 311.
-    assert.equal(facts.featureIds.length, 311);
+    // look presets 311, and Restore Deleted Video Titles 312.
+    assert.equal(facts.featureIds.length, 312);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
     assert.deepEqual(facts.buildProfiles, ['store-safe', 'chromium-store', 'github-full']);
-    // 6 since the user-configured filter-list origin pattern is github-full only.
-    assert.equal(facts.fullOnlyOrigins.length, 6);
+    // 6 since the user-configured filter-list origin pattern is github-full only,
+    // 7 with Filmot's API.
+    assert.equal(facts.fullOnlyOrigins.length, 7);
     assert.equal(facts.colorThemes.length, 7);
     assert.deepEqual(facts.themeControls, ['oledTheme', 'denseMode', 'tokenThemeBridge']);
     assert.match(facts.compatibility.music, /YouTube Music excluded/);
@@ -60,7 +62,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`508` entries', '`507` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`509` entries', '`508` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

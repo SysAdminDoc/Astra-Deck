@@ -9,7 +9,7 @@
     "message": "자격 증명을 삭제하지 못했습니다."
   },
   "aiCredentialDeleted": {
-    "message": "AI 자격 증명을 삭제했습니다. 이 작업은 취소할 수 없습니다. AI 기능을 사용하려면 키를 다시 입력하세요."
+    "message": "자격 증명을 삭제했습니다. 이 작업은 되돌릴 수 없으므로 다시 사용하려면 키를 다시 입력하세요."
   },
   "aiCredentialInputPlaceholder": {
     "message": "API 키를 붙여넣으세요"
@@ -39,7 +39,7 @@
     "message": "자격 증명을 저장하지 못했습니다."
   },
   "aiCredentialSaved": {
-    "message": "값을 노출하지 않고 AI 자격 증명을 저장했습니다."
+    "message": "값을 노출하지 않고 자격 증명을 저장했습니다."
   },
   "aiCredentialStatusError": {
     "message": "자격 증명 상태를 확인할 수 없습니다."
@@ -57,7 +57,7 @@
     "message": "상태를 확인할 수 없음"
   },
   "aiCredentialTitle": {
-    "message": "AI 제공자 자격 증명"
+    "message": "제공업체 자격 증명"
   },
   "aiSummaryButtonTitle": {
     "message": "AI 요약 (Astra Deck 툴바 팝업 또는 유저스크립트 관리자 메뉴에서 제공업체 키를 설정하세요)"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "무시됨"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "삭제된 동영상 제목 복원",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "재생목록 메뉴에서 '사용할 수 없는 동영상 표시'를 켜면 삭제되었거나 비공개인 동영상의 제목을 복원합니다. 도구 모음 팝업에서 설정한 본인의 API 키로 해당 동영상 ID를 Filmot에 보냅니다. 키가 없으면 각 행에 Filmot의 해당 동영상 페이지 링크가 표시됩니다.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Filmot에서 제목을 복원했습니다. 클릭하면 Filmot의 이 동영상 페이지가 열립니다.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "Filmot에서 이 동영상 찾아보기",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "키를 저장했지만 Astra Deck의 Filmot 접근을 허용해야 Filmot 조회가 실행됩니다.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

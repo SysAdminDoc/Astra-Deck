@@ -7686,6 +7686,110 @@ const SEGMENT_KEEP_COPY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SEGMENT_KEEP_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const FILMOT_COPY_TRANSLATIONS = {
+  de: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "Schlüssel gespeichert, aber Filmot-Abfragen laufen erst, wenn du Astra Deck den Zugriff auf Filmot erlaubst.",
+    "Restore Deleted Video Titles": "Titel gelöschter Videos wiederherstellen",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "Stellt die Titel gelöschter und privater Videos in einer Playlist wieder her, nachdem du im Menü der Playlist „Nicht verfügbare Videos anzeigen“ aktiviert hast. Die IDs dieser Videos werden mit deinem eigenen API-Schlüssel, den du im Symbolleisten-Popup einträgst, an Filmot gesendet. Ohne Schlüssel verlinkt jede Zeile auf die Filmot-Seite des Videos.",
+    "Title restored from Filmot. Click to open its page for this video.": "Titel von Filmot wiederhergestellt. Klicke, um die Filmot-Seite des Videos zu öffnen.",
+    "Look this video up on Filmot": "Dieses Video auf Filmot nachschlagen",
+    "Provider credential": "Anbieter-Zugangsdaten",
+    "Credential saved without exposing its value.": "Zugangsdaten gespeichert, ohne ihren Wert offenzulegen.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "Zugangsdaten gelöscht. Das lässt sich nicht rückgängig machen. Gib den Schlüssel erneut ein, um ihn wieder zu verwenden."
+  },
+  es: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "Clave guardada, pero las búsquedas en Filmot no funcionarán hasta que permitas que Astra Deck acceda a Filmot.",
+    "Restore Deleted Video Titles": "Restaurar títulos de videos eliminados",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "Recupera los títulos de los videos eliminados y privados de una lista después de activar Mostrar videos no disponibles en el menú de la lista. Envía los ID de esos videos a Filmot con tu propia clave de API, que se configura en la ventana de la barra de herramientas. Sin clave, cada fila enlaza a la página de ese video en Filmot.",
+    "Title restored from Filmot. Click to open its page for this video.": "Título recuperado de Filmot. Haz clic para abrir su página de este video.",
+    "Look this video up on Filmot": "Buscar este video en Filmot",
+    "Provider credential": "Credencial del proveedor",
+    "Credential saved without exposing its value.": "Credencial guardada sin exponer su valor.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "Credencial eliminada. Esto no se puede deshacer, así que vuelve a introducir la clave para usarla de nuevo."
+  },
+  fr: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "Clé enregistrée, mais les recherches Filmot ne fonctionneront pas tant que vous n'aurez pas autorisé Astra Deck à accéder à Filmot.",
+    "Restore Deleted Video Titles": "Restaurer les titres des vidéos supprimées",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "Rétablit les titres des vidéos supprimées et privées d'une playlist, une fois l'option Afficher les vidéos non disponibles activée dans le menu de la playlist. Les ID de ces vidéos sont envoyés à Filmot avec votre propre clé d'API, à définir dans la fenêtre de la barre d'outils. Sans clé, chaque ligne renvoie vers la page de la vidéo sur Filmot.",
+    "Title restored from Filmot. Click to open its page for this video.": "Titre rétabli depuis Filmot. Cliquez pour ouvrir sa page pour cette vidéo.",
+    "Look this video up on Filmot": "Chercher cette vidéo sur Filmot",
+    "Provider credential": "Identifiant du fournisseur",
+    "Credential saved without exposing its value.": "Identifiant enregistré sans exposer sa valeur.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "Identifiant supprimé. Cette action est irréversible : saisissez de nouveau la clé pour la réutiliser."
+  },
+  it: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "Chiave salvata, ma le ricerche su Filmot non funzioneranno finché non consenti ad Astra Deck di accedere a Filmot.",
+    "Restore Deleted Video Titles": "Ripristina i titoli dei video eliminati",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "Ripristina i titoli dei video eliminati e privati di una playlist, dopo aver attivato Mostra video non disponibili nel menu della playlist. Invia gli ID di quei video a Filmot con la tua chiave API, da impostare nel popup della barra degli strumenti. Senza chiave, ogni riga rimanda alla pagina di Filmot di quel video.",
+    "Title restored from Filmot. Click to open its page for this video.": "Titolo ripristinato da Filmot. Fai clic per aprire la sua pagina di questo video.",
+    "Look this video up on Filmot": "Cerca questo video su Filmot",
+    "Provider credential": "Credenziale del fornitore",
+    "Credential saved without exposing its value.": "Credenziale salvata senza esporne il valore.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "Credenziale eliminata. L'operazione non può essere annullata, quindi reinserisci la chiave per usarla di nuovo."
+  },
+  pt_BR: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "Chave salva, mas as buscas no Filmot só funcionam depois que você permitir o acesso do Astra Deck ao Filmot.",
+    "Restore Deleted Video Titles": "Restaurar títulos de vídeos excluídos",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "Recupera os títulos de vídeos excluídos e privados de uma playlist depois que você ativa Mostrar vídeos indisponíveis no menu da playlist. Envia os IDs desses vídeos ao Filmot com sua própria chave de API, definida no pop-up da barra de ferramentas. Sem chave, cada linha leva à página do vídeo no Filmot.",
+    "Title restored from Filmot. Click to open its page for this video.": "Título recuperado do Filmot. Clique para abrir a página dele para este vídeo.",
+    "Look this video up on Filmot": "Procurar este vídeo no Filmot",
+    "Provider credential": "Credencial do provedor",
+    "Credential saved without exposing its value.": "Credencial salva sem expor o valor.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "Credencial excluída. Isso não pode ser desfeito, então digite a chave novamente para voltar a usá-la."
+  },
+  ru: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "Ключ сохранён, но поиск в Filmot не заработает, пока вы не разрешите Astra Deck доступ к Filmot.",
+    "Restore Deleted Video Titles": "Восстанавливать названия удалённых видео",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "Возвращает названия удалённых и закрытых видео в плейлисте после того, как вы включите «Показать недоступные видео» в меню плейлиста. Идентификаторы этих видео отправляются в Filmot с вашим собственным ключом API, который задаётся во всплывающем окне на панели инструментов. Без ключа каждая строка ведёт на страницу видео в Filmot.",
+    "Title restored from Filmot. Click to open its page for this video.": "Название восстановлено из Filmot. Нажмите, чтобы открыть страницу этого видео на Filmot.",
+    "Look this video up on Filmot": "Найти это видео на Filmot",
+    "Provider credential": "Учётные данные поставщика",
+    "Credential saved without exposing its value.": "Учётные данные сохранены, их значение не раскрыто.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "Учётные данные удалены. Это нельзя отменить, поэтому для повторного использования введите ключ снова."
+  },
+  ja: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "キーを保存しましたが、Astra Deck に Filmot へのアクセスを許可するまで Filmot の検索は実行できません。",
+    "Restore Deleted Video Titles": "削除された動画のタイトルを復元",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "プレイリストのメニューで「再生できない動画を表示」をオンにすると、削除済みや非公開の動画のタイトルを復元します。ツールバーのポップアップで設定した自分の API キーを使い、それらの動画 ID を Filmot に送信します。キーがない場合は、各行に Filmot のその動画のページへのリンクを表示します。",
+    "Title restored from Filmot. Click to open its page for this video.": "Filmot からタイトルを復元しました。クリックすると Filmot のこの動画のページを開きます。",
+    "Look this video up on Filmot": "この動画を Filmot で調べる",
+    "Provider credential": "プロバイダーの資格情報",
+    "Credential saved without exposing its value.": "値を公開せずに資格情報を保存しました。",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "資格情報を削除しました。この操作は取り消せません。もう一度使うにはキーを再入力してください。"
+  },
+  ko: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "키를 저장했지만 Astra Deck의 Filmot 접근을 허용해야 Filmot 조회가 실행됩니다.",
+    "Restore Deleted Video Titles": "삭제된 동영상 제목 복원",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "재생목록 메뉴에서 '사용할 수 없는 동영상 표시'를 켜면 삭제되었거나 비공개인 동영상의 제목을 복원합니다. 도구 모음 팝업에서 설정한 본인의 API 키로 해당 동영상 ID를 Filmot에 보냅니다. 키가 없으면 각 행에 Filmot의 해당 동영상 페이지 링크가 표시됩니다.",
+    "Title restored from Filmot. Click to open its page for this video.": "Filmot에서 제목을 복원했습니다. 클릭하면 Filmot의 이 동영상 페이지가 열립니다.",
+    "Look this video up on Filmot": "Filmot에서 이 동영상 찾아보기",
+    "Provider credential": "제공업체 자격 증명",
+    "Credential saved without exposing its value.": "값을 노출하지 않고 자격 증명을 저장했습니다.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "자격 증명을 삭제했습니다. 이 작업은 되돌릴 수 없으므로 다시 사용하려면 키를 다시 입력하세요."
+  },
+  ar: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "تم حفظ المفتاح، لكن عمليات البحث في Filmot لن تعمل حتى تسمح لـ Astra Deck بالوصول إلى Filmot.",
+    "Restore Deleted Video Titles": "استعادة عناوين الفيديوهات المحذوفة",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "يعيد عناوين الفيديوهات المحذوفة والخاصة في قائمة التشغيل بعد تفعيل إظهار الفيديوهات غير المتاحة من قائمة خيارات قائمة التشغيل. يرسل معرّفات تلك الفيديوهات إلى Filmot باستخدام مفتاح API الخاص بك، الذي تضبطه في النافذة المنبثقة بشريط الأدوات. من دون مفتاح، يربط كل صف بصفحة الفيديو على Filmot.",
+    "Title restored from Filmot. Click to open its page for this video.": "تمت استعادة العنوان من Filmot. انقر لفتح صفحة هذا الفيديو على Filmot.",
+    "Look this video up on Filmot": "ابحث عن هذا الفيديو على Filmot",
+    "Provider credential": "بيانات اعتماد المزوّد",
+    "Credential saved without exposing its value.": "تم حفظ بيانات الاعتماد دون كشف قيمتها.",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "تم حذف بيانات الاعتماد. لا يمكن التراجع عن ذلك، لذا أعد إدخال المفتاح لاستخدامه مرة أخرى."
+  },
+  zh_CN: {
+    "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot.": "密钥已保存，但在你允许 Astra Deck 访问 Filmot 之前，无法进行 Filmot 查询。",
+    "Restore Deleted Video Titles": "恢复已删除视频的标题",
+    "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.": "在播放列表菜单中打开“显示不可用的视频”后，恢复列表中已删除和私享视频的标题。会使用你在工具栏弹出窗口中设置的 API 密钥，将这些视频 ID 发送给 Filmot。没有密钥时，每一行会链接到 Filmot 上该视频的页面。",
+    "Title restored from Filmot. Click to open its page for this video.": "标题已从 Filmot 恢复。点击可打开 Filmot 上该视频的页面。",
+    "Look this video up on Filmot": "在 Filmot 上查找此视频",
+    "Provider credential": "服务商凭据",
+    "Credential saved without exposing its value.": "凭据已保存，未暴露其内容。",
+    "Credential deleted. This can't be undone, so re-enter the key to use it again.": "凭据已删除。此操作无法撤销，如需再次使用，请重新输入相应的密钥。"
+  }
+};
+for (const [locale, messages] of Object.entries(FILMOT_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const COMMENT_TRANSLATE_TRANSLATIONS = {
   de: {
     'Translate': 'Übersetzen',

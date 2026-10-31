@@ -2089,6 +2089,12 @@ function sendRuntimeMessage(message) {
     return callExtensionApi(ext?.runtime, 'sendMessage', message);
 }
 
+// The Filmot host is a GitHub-full entry in the data-flow catalogue, whatever
+// profile the toggles are on. Store builds don't declare it, so this comes back empty.
+function getFilmotHostOrigins() {
+    return getDeclaredOptionalHostsForSetting('filmotTitleRestore', { profile: 'github-full' });
+}
+
 function setAiCredentialBusy(busy) {
     for (const control of [aiCredentialProvider, aiCredentialInput, aiCredentialRemember, aiCredentialSave, aiCredentialDelete]) {
         if (control) control.disabled = !!busy;
@@ -2116,13 +2122,23 @@ async function refreshAiCredentialManager() {
     const effective = policy
         ? policy.resolveEffectiveProfile(popupState.settings || {})
         : 'store-safe';
-    aiCredentialSection.hidden = effective !== 'github-full';
+    // Filmot titles work without the full profile, so that feature's key box
+    // shows wherever the feature is on and this build has its host.
+    const filmotOnly = effective !== 'github-full'
+        && popupState.settings?.filmotTitleRestore === true
+        && getFilmotHostOrigins().length > 0;
+    aiCredentialSection.hidden = effective !== 'github-full' && !filmotOnly;
     if (aiCredentialSection.hidden) return;
     if (aiCredentialProvider && !aiCredentialProvider.dataset.initialized
         && ['openai', 'anthropic', 'gemini'].includes(popupState.settings?.aiSummaryProvider)) {
         aiCredentialProvider.value = popupState.settings.aiSummaryProvider;
         aiCredentialProvider.dataset.initialized = 'true';
     }
+    for (const option of aiCredentialProvider?.options || []) {
+        option.hidden = filmotOnly && option.value !== 'filmot';
+        option.disabled = option.hidden;
+    }
+    if (filmotOnly && aiCredentialProvider) aiCredentialProvider.value = 'filmot';
     try {
         const response = await sendRuntimeMessage({ type: 'YTKIT_AI_CREDENTIAL_STATUS' });
         if (!response?.ok) throw new Error(response?.error?.message || t('aiCredentialStatusError', 'Credential status unavailable.'));
@@ -2145,6 +2161,12 @@ async function saveAiCredential() {
     }
     setAiCredentialBusy(true);
     try {
+        // A Filmot key is no use without its host, and this click is the
+        // gesture the prompt needs. Both start now because Firefox can close
+        // the popup over the prompt, which must not lose the key.
+        const hostGrant = provider === 'filmot'
+            ? requestOptionalHostOrigins(getFilmotHostOrigins()).catch((error) => error)
+            : null;
         const response = await sendRuntimeMessage({
             type: 'YTKIT_AI_CREDENTIAL_SET',
             provider,
@@ -2154,7 +2176,12 @@ async function saveAiCredential() {
         if (!response?.ok) throw new Error(response?.error?.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'));
         aiCredentialInput.value = '';
         aiCredentialRemember.checked = false;
-        showStatus(t('aiCredentialSaved', 'AI credential saved without exposing its value.'), 'success', 3200);
+        const grantFailure = await hostGrant;
+        if (grantFailure instanceof Error) {
+            logFailure('ai-credential-host', grantFailure);
+            showStatus(t('filmotHostNeeded', "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot."), 'error', 4200);
+        }
+        else showStatus(t('aiCredentialSaved', 'Credential saved without exposing its value.'), 'success', 3200);
         await refreshAiCredentialManager();
     } catch (error) {
         showStatus(failureText('ai-credential-save', error, 'aiCredentialSaveFailed', 'Credential could not be saved.'), 'error', 4200);
@@ -2177,7 +2204,7 @@ async function deleteAiCredential() {
         // in this surface restores on undo; the one that cannot must say so
         // rather than reading like the reversible ones.
         showStatus(
-            t('aiCredentialDeleted', 'AI credential deleted. This can\'t be undone, so re-enter the key to use AI features again.'),
+            t('aiCredentialDeleted', 'Credential deleted. This can\'t be undone, so re-enter the key to use it again.'),
             'success',
             5200
         );

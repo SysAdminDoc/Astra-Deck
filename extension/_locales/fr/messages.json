@@ -9,7 +9,7 @@
     "message": "Impossible de supprimer l'identifiant."
   },
   "aiCredentialDeleted": {
-    "message": "Identifiant IA supprimé. Cette action est irréversible — saisissez à nouveau la clé pour réutiliser les fonctions IA."
+    "message": "Identifiant supprimé. Cette action est irréversible : saisissez de nouveau la clé pour la réutiliser."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Collez votre clé d’API"
@@ -39,7 +39,7 @@
     "message": "Impossible d'enregistrer l'identifiant."
   },
   "aiCredentialSaved": {
-    "message": "Identifiant IA enregistré sans exposer sa valeur."
+    "message": "Identifiant enregistré sans exposer sa valeur."
   },
   "aiCredentialStatusError": {
     "message": "Statut de l'identifiant indisponible."
@@ -57,7 +57,7 @@
     "message": "Statut indisponible"
   },
   "aiCredentialTitle": {
-    "message": "Identifiant du fournisseur d'IA"
+    "message": "Identifiant du fournisseur"
   },
   "aiSummaryButtonTitle": {
     "message": "Résumé par IA (définissez la clé du fournisseur dans la fenêtre de la barre d’outils Astra Deck ou dans le menu du gestionnaire de userscripts)"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "Ignoré"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "Restaurer les titres des vidéos supprimées",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "Rétablit les titres des vidéos supprimées et privées d'une playlist, une fois l'option Afficher les vidéos non disponibles activée dans le menu de la playlist. Les ID de ces vidéos sont envoyés à Filmot avec votre propre clé d'API, à définir dans la fenêtre de la barre d'outils. Sans clé, chaque ligne renvoie vers la page de la vidéo sur Filmot.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Titre rétabli depuis Filmot. Cliquez pour ouvrir sa page pour cette vidéo.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "Chercher cette vidéo sur Filmot",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "Clé enregistrée, mais les recherches Filmot ne fonctionneront pas tant que vous n'aurez pas autorisé Astra Deck à accéder à Filmot.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

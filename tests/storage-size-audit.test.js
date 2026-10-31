@@ -156,7 +156,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // The ten DeArrow options ported from upstream add 224.
     // Anti-Translate's empty channel exception list adds 36.
     // The opt-in look (#52) flips 18 defaults and adds two presets: +66 bytes.
-    assert.equal(assessment.totalBytes, 186971);
+    // Restore Deleted Video Titles adds 27 for its toggle, off by default.
+    assert.equal(assessment.totalBytes, 186998);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

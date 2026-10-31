@@ -260,7 +260,7 @@
     <section class="ai-credential-manager" id="ai-credential-manager" aria-labelledby="ai-credential-title" hidden>
       <header class="ai-credential-head">
         <div>
-          <strong class="ai-credential-title" id="ai-credential-title" data-i18n="aiCredentialTitle">AI provider credential</strong>
+          <strong class="ai-credential-title" id="ai-credential-title" data-i18n="aiCredentialTitle">Provider credential</strong>
           <p class="ai-credential-note" data-i18n="aiCredentialNote">The stored value is never shown or included in settings exports.</p>
         </div>
         <span class="ai-credential-status" id="ai-credential-status" role="status" aria-live="polite" data-i18n="aiCredentialStatusNotConfigured">Not configured</span>
@@ -274,6 +274,8 @@
           <option value="anthropic">Anthropic</option>
           <!-- i18n-static: AI provider brand name -->
           <option value="gemini">Gemini</option>
+          <!-- i18n-static: service brand name -->
+          <option value="filmot">Filmot</option>
         </select>
         <label for="ai-credential-input" data-i18n="aiCredentialNewLabel">New credential</label>
         <input id="ai-credential-input" name="ai-credential-input" type="password"

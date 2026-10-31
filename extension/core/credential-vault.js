@@ -32,11 +32,29 @@
             credentialPrefix: ''
         })
     });
+    // Holds a key the same way, but it's not an AI provider: the summary path
+    // validates its endpoint against PROVIDER_POLICIES alone and can't reach this.
+    const SERVICE_POLICIES = Object.freeze({
+        filmot: Object.freeze({
+            origin: 'https://apiv1.filmot.com',
+            defaultEndpoint: 'https://apiv1.filmot.com/api/v1/getvideos',
+            credentialHeader: 'X-API-Key',
+            credentialPrefix: ''
+        })
+    });
+    const STORED_POLICIES = Object.freeze({ ...PROVIDER_POLICIES, ...SERVICE_POLICIES });
     const SENSITIVE_QUERY_KEYS = /^(?:key|api[-_]?key|token|access[-_]?token|client[-_]?secret|credential|auth|authorization)$/i;
 
     function normalizeProvider(provider) {
         const normalized = String(provider || '').trim().toLowerCase();
         return Object.prototype.hasOwnProperty.call(PROVIDER_POLICIES, normalized)
+            ? normalized
+            : null;
+    }
+
+    function normalizeStoredProvider(provider) {
+        const normalized = String(provider || '').trim().toLowerCase();
+        return Object.prototype.hasOwnProperty.call(STORED_POLICIES, normalized)
             ? normalized
             : null;
     }
@@ -144,7 +162,7 @@
         }
 
         async function get(provider) {
-            const normalized = normalizeProvider(provider);
+            const normalized = normalizeStoredProvider(provider);
             if (!normalized || normalized === 'ollama') return '';
             const generation = generations.get(normalized) || 0;
             const sessionValue = await sessionGet(normalized);
@@ -162,7 +180,7 @@
         }
 
         async function set(provider, credential, setOptions = {}) {
-            const normalized = normalizeProvider(provider);
+            const normalized = normalizeStoredProvider(provider);
             if (!normalized || normalized === 'ollama') throw new Error('This provider does not accept a stored credential.');
             const value = String(credential || '').trim();
             if (!value || value.length > 4096 || /[\r\n\0]/.test(value)) {
@@ -185,7 +203,7 @@
         }
 
         async function remove(provider) {
-            const normalized = normalizeProvider(provider);
+            const normalized = normalizeStoredProvider(provider);
             if (!normalized || normalized === 'ollama') throw new Error('This provider has no stored credential.');
             bumpGeneration(normalized);
             try {
@@ -199,7 +217,7 @@
 
         async function status() {
             const providers = {};
-            for (const provider of Object.keys(PROVIDER_POLICIES)) {
+            for (const provider of Object.keys(STORED_POLICIES)) {
                 if (provider === 'ollama') {
                     providers[provider] = { configured: true, remembered: false, credentialRequired: false };
                     continue;
@@ -241,6 +259,7 @@
 
     Object.assign(core, {
         AI_PROVIDER_POLICIES: PROVIDER_POLICIES,
+        SERVICE_CREDENTIAL_POLICIES: SERVICE_POLICIES,
         createCredentialVault,
         createIndexedDbCredentialStore,
         normalizeAiProvider: normalizeProvider,
@@ -250,6 +269,7 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             PROVIDER_POLICIES,
+            SERVICE_POLICIES,
             createCredentialVault,
             createIndexedDbCredentialStore,
             normalizeProvider,

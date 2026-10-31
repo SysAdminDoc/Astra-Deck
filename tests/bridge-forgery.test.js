@@ -472,7 +472,11 @@ test('every bridge input is read through the channel, not off the document', () 
     // the feed prefilter, Force DVR and the photosensitive guard kept reading
     // page-writable inputs after the channel existed.
     const anyReads = [...mainSource.matchAll(/\.getAttribute\(([^)]+)\)/g)].map((m) => m[1].trim());
-    assert.deepEqual(anyReads.filter((arg) => arg !== 'STATUS_ATTR' && arg !== 'REASON_ATTR'), [],
+    // The two aria states are on YouTube's own settings menu, read to drive that same
+    // menu (Stable Volume). They aren't bridge inputs: a page that forges them can only
+    // click its own menu item.
+    const ownMenuState = new Set(['STATUS_ATTR', 'REASON_ATTR', "'aria-expanded'", "'aria-checked'"]);
+    assert.deepEqual(anyReads.filter((arg) => !ownMenuState.has(arg)), [],
         'every attribute the bridge reads back is one of its own outputs');
 
     // The OUTPUT attributes are the deliberate exception: a bridge that

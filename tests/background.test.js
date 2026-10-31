@@ -9,7 +9,8 @@ const { webcrypto } = require('node:crypto');
 const { createSettingsMutationController } = require('../extension/core/settings-controller');
 const {
     createCredentialVault,
-    validateProviderEndpoint
+    validateProviderEndpoint,
+    SERVICE_POLICIES
 } = require('../extension/core/credential-vault');
 // background.js pulls this in through importScripts in the browser. The vm
 // context has no importScripts, so hand it the real module rather than a stub:
@@ -241,6 +242,7 @@ function loadBackground({
             createSettingsMutationController,
             createCredentialVault: (options) => createCredentialVault({ ...options, persistentStore }),
             validateAiProviderEndpoint: validateProviderEndpoint,
+            SERVICE_CREDENTIAL_POLICIES: SERVICE_POLICIES,
             REMOTE_LIST_HOST_PATTERN: remoteListScope.REMOTE_LIST_HOST_PATTERN,
             COBALT_PUBLIC_INSTANCE_HOST: remoteListScope.COBALT_PUBLIC_INSTANCE_HOST,
             describeCobaltInstanceUrl: remoteListScope.describeCobaltInstanceUrl,
@@ -2539,4 +2541,141 @@ test('a cookie grant issued in one window type does not serve the other', async 
         protocolVersion: 1
     }, youtubeSender({ incognito: true }));
     assert.equal(response.error.code, 'COOKIE_CAPABILITY_CONTEXT_MISMATCH');
+});
+
+// ── Filmot title lookups ─────────────────────────────────────────────────
+
+const FILMOT_HOST = 'https://apiv1.filmot.com/*';
+const FILMOT_KEY = 'filmot-user-key-0123456789';
+const DEAD_A = 'aaaaaaaaaaa';
+const DEAD_B = 'bbbbbbbbbbb';
+
+function filmotBackground(fetchImpl, { key = FILMOT_KEY, optionalHostPermissions = [FILMOT_HOST], granted = true } = {}) {
+    const background = loadBackground({
+        optionalHostPermissions,
+        permissionsContainsImpl: async () => granted,
+        fetchImpl
+    });
+    if (key) background.persistentCredentials.set('filmot', key);
+    return background;
+}
+
+function filmotJson(body, status = 200) {
+    return new Response(typeof body === 'string' ? body : JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json' }
+    });
+}
+
+test('a Filmot lookup puts the key in the header and only IDs in the URL', async () => {
+    const calls = [];
+    const { messageListener } = filmotBackground(async (url, options) => {
+        calls.push({ url: String(url), options });
+        return filmotJson([
+            { id: DEAD_A, title: 'Old upload', channelname: 'Chan', uploaddate: '2013-01-02', duration: 60 },
+            { id: 'zzzzzzzzzzz', title: 'Not asked for' }
+        ]);
+    });
+
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A, DEAD_B] });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, `https://apiv1.filmot.com/api/v1/getvideos?id=${DEAD_A}%2C${DEAD_B}`);
+    assert.equal(calls[0].options.headers['X-API-Key'], FILMOT_KEY);
+    assert.equal(calls[0].options.credentials, 'omit');
+    assert.equal(calls[0].options.redirect, 'manual');
+    assert.equal(response.ok, true);
+    assert.deepEqual([...response.videos].map((video) => ({ ...video })), [
+        { id: DEAD_A, title: 'Old upload', channel: 'Chan', date: '2013-01-02' }
+    ], 'fields map across and an ID nobody asked about is dropped');
+    assert.equal(JSON.stringify(response).includes(FILMOT_KEY), false);
+});
+
+test('a Filmot lookup refuses anything that is not a list of video IDs, before any request', async () => {
+    const tooMany = Array.from({ length: 201 }, (_, i) => String(i).padStart(11, 'x'));
+    // A fresh worker per case: the per-tab spacing would otherwise answer the second one.
+    for (const ids of [undefined, [], 'aaaaaaaaaaa', ['../../etc/passw'], [DEAD_A, 'a&id=b'], [DEAD_A, 7], tooMany]) {
+        let calls = 0;
+        const { messageListener } = filmotBackground(async () => { calls += 1; return filmotJson([]); });
+        const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids });
+        assert.equal(response.error?.code, 'FILMOT_BAD_REQUEST', `refused: ${JSON.stringify(ids)?.slice(0, 40)}`);
+        assert.equal(calls, 0);
+    }
+});
+
+test('a full batch of 200 distinct IDs is a legal Filmot lookup, and repeats count once', async () => {
+    const ids = Array.from({ length: 200 }, (_, i) => String(i).padStart(11, 'x'));
+    let calledUrl = '';
+    const { messageListener } = filmotBackground(async (url) => { calledUrl = String(url); return filmotJson([]); });
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [...ids, ids[0]] });
+    assert.equal(response.ok, true);
+    assert.equal(new URL(calledUrl).searchParams.get('id').split(',').length, 200);
+});
+
+test('a Filmot lookup with no key reports it without calling out', async () => {
+    let calls = 0;
+    const { messageListener } = filmotBackground(async () => { calls += 1; return filmotJson([]); }, { key: '' });
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+    assert.equal(response.ok, false);
+    assert.equal(response.error.code, 'CREDENTIAL_MISSING');
+    assert.equal(calls, 0);
+});
+
+test('a build that does not declare the Filmot host never calls out, even with a key', async () => {
+    let calls = 0;
+    const { messageListener } = filmotBackground(async () => { calls += 1; return filmotJson([]); }, { optionalHostPermissions: [] });
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+    assert.equal(response.error.code, 'FILMOT_NOT_GRANTED');
+    assert.equal(calls, 0);
+});
+
+test('a Filmot lookup waits for the runtime host grant', async () => {
+    let calls = 0;
+    const { messageListener } = filmotBackground(async () => { calls += 1; return filmotJson([]); }, { granted: false });
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+    assert.equal(response.ok, false);
+    assert.equal(calls, 0);
+});
+
+test('Filmot refusing the key is told apart from Filmot being out of credits', async () => {
+    for (const status of [401, 403]) {
+        const { messageListener } = filmotBackground(async () => filmotJson({ detail: 'no' }, status));
+        const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+        assert.equal(response.error.code, 'FILMOT_REJECTED_KEY', `status ${status}`);
+        assert.equal(response.error.status, status);
+    }
+    for (const status of [429, 503]) {
+        const { messageListener } = filmotBackground(async () => filmotJson({ detail: 'later' }, status));
+        const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+        assert.equal(response.error.code, 'FILMOT_FAILED', `status ${status}`);
+        assert.equal(response.error.status, status);
+    }
+});
+
+test('a Filmot response that echoes the key never crosses back to the page', async () => {
+    const { messageListener } = filmotBackground(async () => filmotJson([{ id: DEAD_A, title: `leak ${FILMOT_KEY}` }]));
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+    assert.equal(response.ok, false);
+    assert.equal(JSON.stringify(response).includes(FILMOT_KEY), false);
+});
+
+test('a Filmot response that is not the expected list is an error, not a set of blank titles', async () => {
+    for (const body of ['<html>busy</html>', '{"detail":"oops"}']) {
+        const { messageListener } = filmotBackground(async () => filmotJson(body));
+        const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A] });
+        assert.equal(response.ok, false, body);
+    }
+});
+
+test('Filmot fields of the wrong type or length do not reach the page', async () => {
+    const { messageListener } = filmotBackground(async () => filmotJson([
+        { id: DEAD_A, title: { evil: true }, channelname: 42, uploaddate: null },
+        { id: DEAD_B, title: 'x'.repeat(5000), channelname: 'Chan' }
+    ]));
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_FILMOT_LOOKUP', ids: [DEAD_A, DEAD_B] });
+    assert.equal(response.ok, true);
+    const byId = new Map(response.videos.map((video) => [video.id, video]));
+    assert.equal(byId.get(DEAD_A)?.title || '', '');
+    assert.equal(byId.get(DEAD_A)?.channel || '', '');
+    assert.ok((byId.get(DEAD_B)?.title || '').length <= 500);
 });

@@ -48,6 +48,7 @@
 // @connect      api.openai.com
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
+// @connect      apiv1.filmot.com
 // @connect      *
 // @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@90705cb263e9a426d454f644c22cd8edf048ee9b/YTKit-core.user.js#sha256=f94f21f33b936128124ffd95c9b37a9e0d3993e29f879aea3e31227711c32483
 // @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@90705cb263e9a426d454f644c22cd8edf048ee9b/YTKit-features.user.js#sha256=508f037a00fce738c3202ca1da6086cfb0409662056ba3ddcbf0eee440267799
@@ -133,6 +134,7 @@ const ASTRA_DECK_BUILD = {
 			"https://api.openai.com/*",
 			"https://api.anthropic.com/*",
 			"https://generativelanguage.googleapis.com/*",
+			"https://apiv1.filmot.com/*",
 			"https://*/*"
 		],
 		"minimum_chrome_version": "120",
@@ -173,6 +175,7 @@ const ASTRA_DECK_BUILD = {
 		"https://api.openai.com/*",
 		"https://api.anthropic.com/*",
 		"https://generativelanguage.googleapis.com/*",
+		"https://apiv1.filmot.com/*",
 		"https://*/*"
 	],
 	"featureSettings": {
@@ -331,7 +334,8 @@ const ASTRA_DECK_BUILD = {
 		"features/video-insights/index.js",
 		"features/return-dislike/index.js",
 		"features/sponsorblock/index.js",
-		"features/dearrow/index.js"
+		"features/dearrow/index.js",
+		"features/filmot-title-restore/index.js"
 	],
 	"modules": {
 		"bridgeToken": "core/bridge-token.js",
@@ -469,7 +473,8 @@ const ASTRA_DECK_BUILD = {
 			"features/video-insights/index.js",
 			"features/return-dislike/index.js",
 			"features/sponsorblock/index.js",
-			"features/dearrow/index.js"
+			"features/dearrow/index.js",
+			"features/filmot-title-restore/index.js"
 		],
 		"app": "ytkit.js",
 		"background": "background.js",
@@ -519,7 +524,7 @@ const ASTRA_DECK_BUILD = {
 		"advancedFiltersHint": "Use risk:, category:, scope:, or profile:. Spaces combine filters; commas match alternatives.",
 		"advancedFiltersTitle": "Advanced filters",
 		"aiCredentialDeleteFailed": "Credential could not be deleted.",
-		"aiCredentialDeleted": "AI credential deleted. This can't be undone, so re-enter the key to use AI features again.",
+		"aiCredentialDeleted": "Credential deleted. This can't be undone, so re-enter the key to use it again.",
 		"aiCredentialInputPlaceholder": "Paste your API key",
 		"aiCredentialInputRequired": "Enter a credential to save.",
 		"aiCredentialNewLabel": "New credential",
@@ -529,13 +534,13 @@ const ASTRA_DECK_BUILD = {
 		"aiCredentialReplaceBtn": "Replace credential",
 		"aiCredentialSaveBtn": "Save credential",
 		"aiCredentialSaveFailed": "Credential could not be saved.",
-		"aiCredentialSaved": "AI credential saved without exposing its value.",
+		"aiCredentialSaved": "Credential saved without exposing its value.",
 		"aiCredentialStatusError": "Credential status unavailable.",
 		"aiCredentialStatusNotConfigured": "Not configured",
 		"aiCredentialStatusRemembered": "Configured · remembered",
 		"aiCredentialStatusSession": "Configured · this session",
 		"aiCredentialStatusUnavailable": "Status unavailable",
-		"aiCredentialTitle": "AI provider credential",
+		"aiCredentialTitle": "Provider credential",
 		"aiSummaryButtonTitle": "AI Summary (set the provider key in the Astra Deck toolbar popup, or the userscript manager menu)",
 		"aiSummaryByoFallbackNotice": "Using your configured BYO-key provider instead.",
 		"aiSummaryCalling": "Calling AI provider…",
@@ -3905,7 +3910,12 @@ const ASTRA_DECK_BUILD = {
 		"feature_daCasualDescriptive_desc": "Votes in the descriptive category that keep an original title in casual mode. 0 ignores the category.",
 		"feature_daCasualOther_name": "Casual Votes: Other",
 		"feature_daCasualOther_desc": "Votes in the other category that keep an original title in casual mode. 0 ignores the category.",
-		"deArrowCasualIgnored": "Ignored"
+		"deArrowCasualIgnored": "Ignored",
+		"feature_filmotTitleRestore_name": "Restore Deleted Video Titles",
+		"feature_filmotTitleRestore_desc": "Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video.",
+		"filmotRestoredTooltip": "Title restored from Filmot. Click to open its page for this video.",
+		"filmotLookupLink": "Look this video up on Filmot",
+		"filmotHostNeeded": "Key saved, but Filmot lookups can't run until you allow Astra Deck to reach Filmot."
 	}
 };
 

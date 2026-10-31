@@ -9,7 +9,7 @@
     "message": "Não foi possível excluir a credencial."
   },
   "aiCredentialDeleted": {
-    "message": "Credencial de IA excluída. Isso não pode ser desfeito — insira a chave novamente para usar os recursos de IA."
+    "message": "Credencial excluída. Isso não pode ser desfeito, então digite a chave novamente para voltar a usá-la."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Cole sua chave de API"
@@ -39,7 +39,7 @@
     "message": "Não foi possível salvar a credencial."
   },
   "aiCredentialSaved": {
-    "message": "Credencial de IA salva sem expor seu valor."
+    "message": "Credencial salva sem expor o valor."
   },
   "aiCredentialStatusError": {
     "message": "Status da credencial indisponível."
@@ -57,7 +57,7 @@
     "message": "Status indisponível"
   },
   "aiCredentialTitle": {
-    "message": "Credencial do provedor de IA"
+    "message": "Credencial do provedor"
   },
   "aiSummaryButtonTitle": {
     "message": "Resumo por IA (defina a chave do provedor no pop-up da barra de ferramentas do Astra Deck ou no menu do gerenciador de userscripts)"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "Ignorado"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "Restaurar títulos de vídeos excluídos",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "Recupera os títulos de vídeos excluídos e privados de uma playlist depois que você ativa Mostrar vídeos indisponíveis no menu da playlist. Envia os IDs desses vídeos ao Filmot com sua própria chave de API, definida no pop-up da barra de ferramentas. Sem chave, cada linha leva à página do vídeo no Filmot.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Título recuperado do Filmot. Clique para abrir a página dele para este vídeo.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "Procurar este vídeo no Filmot",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "Chave salva, mas as buscas no Filmot só funcionam depois que você permitir o acesso do Astra Deck ao Filmot.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

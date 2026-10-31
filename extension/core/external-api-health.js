@@ -30,6 +30,15 @@
             privacy: 'video ID sent only in the GitHub-full profile',
             localFallback: 'use metadata already present in the page'
         },
+        filmot: {
+            // i18n-static: stable provider diagnostic identity
+            label: 'Filmot',
+            origin: 'https://apiv1.filmot.com',
+            feature: 'filmotTitleRestore',
+            defaultCacheTtlMs: 30 * 24 * 60 * 60 * 1000,
+            privacy: 'IDs of unavailable playlist videos, sent only with your own key',
+            localFallback: 'each unavailable row links to Filmot instead'
+        },
         returnDislike: {
             label: 'Return YouTube Dislike',
             origin: 'https://returnyoutubedislikeapi.com',

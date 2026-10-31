@@ -9,7 +9,7 @@
     "message": "无法删除凭据。"
   },
   "aiCredentialDeleted": {
-    "message": "已删除 AI 凭据。此操作无法撤销 — 请重新输入密钥才能继续使用 AI 功能。"
+    "message": "凭据已删除。此操作无法撤销，如需再次使用，请重新输入相应的密钥。"
   },
   "aiCredentialInputPlaceholder": {
     "message": "粘贴你的 API 密钥"
@@ -39,7 +39,7 @@
     "message": "无法保存凭据。"
   },
   "aiCredentialSaved": {
-    "message": "已保存 AI 凭据，且未暴露其值。"
+    "message": "凭据已保存，未暴露其内容。"
   },
   "aiCredentialStatusError": {
     "message": "凭据状态不可用。"
@@ -57,7 +57,7 @@
     "message": "状态不可用"
   },
   "aiCredentialTitle": {
-    "message": "AI 提供商凭据"
+    "message": "服务商凭据"
   },
   "aiSummaryButtonTitle": {
     "message": "AI 摘要（在 Astra Deck 工具栏弹窗或用户脚本管理器菜单中设置提供商密钥）"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "已忽略"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "恢复已删除视频的标题",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "在播放列表菜单中打开“显示不可用的视频”后，恢复列表中已删除和私享视频的标题。会使用你在工具栏弹出窗口中设置的 API 密钥，将这些视频 ID 发送给 Filmot。没有密钥时，每一行会链接到 Filmot 上该视频的页面。",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "标题已从 Filmot 恢复。点击可打开 Filmot 上该视频的页面。",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "在 Filmot 上查找此视频",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "密钥已保存，但在你允许 Astra Deck 访问 Filmot 之前，无法进行 Filmot 查询。",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

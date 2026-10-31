@@ -30,7 +30,8 @@ test('settings reference covers every user-facing schema entry with audited purp
     // 500 with the ten DeArrow options ported from upstream.
     // 501 with Anti-Translate's Keep Translated Titles For.
     // 503 with the Astra Look and Classic YouTube presets.
-    assert.equal(entries.length, 503);
+    // 504 with Restore Deleted Video Titles.
+    assert.equal(entries.length, 504);
     assert.deepEqual(entries.map((entry) => entry.key), expectedKeys);
     for (const entry of entries) {
         assert.ok(entry.title.length >= 2, `${entry.key} needs a readable title`);

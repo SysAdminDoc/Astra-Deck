@@ -175,6 +175,7 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 | `https://api.openai.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to OpenAI only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://api.anthropic.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Anthropic only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://generativelanguage.googleapis.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Gemini only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
+| `https://apiv1.filmot.com/*` | Runtime-optional, GitHub-full only. Sends the IDs of unavailable videos on a playlist page to Filmot with the user's own API key, after the user turns on Restore Deleted Video Titles and adds that key. With no key, the feature only links to Filmot's page and sends nothing. |
 | `https://*/*` | Runtime-optional, GitHub-full only, and never granted as a whole. It lets the browser prompt for **one** user-typed host for either a Video Hider filter list or an authorized self-hosted Cobalt instance; Astra Deck requests `https://<that host>/*` and the worker refuses an origin the user did not grant. Filter-list traffic is anonymous GET-only and capped at 1 MiB. A strict versioned parser rejects unknown or malformed fields and strips publisher predicate code before persistence. Successful content is recorded as a SHA-256-addressed last-known-good payload with ETag/Last-Modified validators; stale use is visible, user-disableable, and controllable with daily, weekly, or manual checks. Cobalt uses a separate fixed POST contract: the destination comes from validated settings, only the canonical YouTube watch URL is sent, credentials are omitted, redirects are refused, timeout is 15 s, and the JSON response is capped at 512 KiB. Origins must be root HTTPS URLs without credentials, query strings, fragments, IP literals, private/reserved addresses, or internal-only names. `api.cobalt.tools` is explicitly rejected because Astra Deck has no authorization to use that public service. This capability and its `https://*` CSP lane are stripped from store-safe artifacts. |
 | `http://127.0.0.1:11434/*` | Talks to the user's local Ollama runtime for offline AI summaries; no remote host is contacted. |
 
@@ -249,12 +250,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 132 | `true` on every entry |
-| `store-safe` | firefox | A | 132 | omitted |
-| `chromium-store` | chromium | B | 131 | `true` on every entry |
-| `chromium-store` | firefox | B | 131 | omitted |
-| `github-full` | chromium | A | 132 | `true` on every entry |
-| `github-full` | firefox | A | 132 | omitted |
+| `store-safe` | chromium | A | 133 | `true` on every entry |
+| `store-safe` | firefox | A | 133 | omitted |
+| `chromium-store` | chromium | B | 132 | `true` on every entry |
+| `chromium-store` | firefox | B | 132 | omitted |
+| `github-full` | chromium | A | 133 | `true` on every entry |
+| `github-full` | firefox | A | 133 | omitted |
 
 #### Resource set A
 
@@ -409,6 +410,7 @@ Entry 2 resource paths:
 - `features/return-dislike/index.js`
 - `features/sponsorblock/index.js`
 - `features/dearrow/index.js`
+- `features/filmot-title-restore/index.js`
 - `features/download-ui/index.js`
 - `ytkit.js`
 
@@ -565,6 +567,7 @@ Entry 2 resource paths:
 - `features/return-dislike/index.js`
 - `features/sponsorblock/index.js`
 - `features/dearrow/index.js`
+- `features/filmot-title-restore/index.js`
 - `ytkit.js`
 
 <!-- END GENERATED REVIEWER RESOURCE INVENTORY -->

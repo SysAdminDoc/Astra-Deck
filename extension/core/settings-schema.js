@@ -879,6 +879,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "subStyleTextShadow", category: "subtitles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── research-ai ───
+    Object.freeze({ key: "filmotTitleRestore", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.107.0" }),
     Object.freeze({ key: "aiVideoSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     // aiSummaryArtifactsData retired in v4.49.7 — summary artifacts live in
     // the top-level ytkit-ai-summaries storage key, not the settings bag.

@@ -9,7 +9,7 @@
     "message": "Не удалось удалить учётные данные."
   },
   "aiCredentialDeleted": {
-    "message": "Учетные данные ИИ удалены. Это действие нельзя отменить — введите ключ заново, чтобы снова пользоваться функциями ИИ."
+    "message": "Учётные данные удалены. Это нельзя отменить, поэтому для повторного использования введите ключ снова."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Вставьте свой ключ API"
@@ -39,7 +39,7 @@
     "message": "Не удалось сохранить учётные данные."
   },
   "aiCredentialSaved": {
-    "message": "Учётные данные ИИ сохранены без раскрытия значения."
+    "message": "Учётные данные сохранены, их значение не раскрыто."
   },
   "aiCredentialStatusError": {
     "message": "Статус учётных данных недоступен."
@@ -57,7 +57,7 @@
     "message": "Статус недоступен"
   },
   "aiCredentialTitle": {
-    "message": "Учётные данные провайдера ИИ"
+    "message": "Учётные данные поставщика"
   },
   "aiSummaryButtonTitle": {
     "message": "AI-резюме (укажите ключ провайдера во всплывающем окне Astra Deck на панели инструментов или в меню менеджера скриптов)"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "Не учитывается"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "Восстанавливать названия удалённых видео",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "Возвращает названия удалённых и закрытых видео в плейлисте после того, как вы включите «Показать недоступные видео» в меню плейлиста. Идентификаторы этих видео отправляются в Filmot с вашим собственным ключом API, который задаётся во всплывающем окне на панели инструментов. Без ключа каждая строка ведёт на страницу видео в Filmot.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Название восстановлено из Filmot. Нажмите, чтобы открыть страницу этого видео на Filmot.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "Найти это видео на Filmot",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "Ключ сохранён, но поиск в Filmot не заработает, пока вы не разрешите Astra Deck доступ к Filmot.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

@@ -65,6 +65,15 @@ async function rejects(promise) {
     return null;
 }
 
+function validateProviderErrorFor(provider) {
+    try {
+        validateProviderEndpoint(provider, 'https://apiv1.filmot.com/api/v1/getvideos');
+        return null;
+    } catch (error) {
+        return error;
+    }
+}
+
 // ── the credential never appears in ordinary settings ───────────────────────
 
 test('ordinary settings and imports cannot carry an AI credential', () => {
@@ -131,6 +140,19 @@ test('a status query reports that a credential exists without handing it over', 
     assert.equal(JSON.stringify(status).includes(CREDENTIAL), false,
         'status crosses to the popup; a credential in it is a credential in the popup');
     assert.equal(await api.get('openai'), CREDENTIAL, 'the worker itself still reads the real value');
+});
+
+test('the Filmot key shares the vault but is no AI provider', async () => {
+    const { api } = vault();
+    await api.set('filmot', CREDENTIAL, { remember: true });
+    assert.equal(await api.get('filmot'), CREDENTIAL);
+    const status = await api.status();
+    assert.equal(status.filmot.configured, true);
+    assert.equal(JSON.stringify(status).includes(CREDENTIAL), false);
+
+    assert.equal(normalizeProvider('filmot'), null, 'AI summary requests can not pick it');
+    assert.ok(!Object.hasOwn(PROVIDER_POLICIES, 'filmot'));
+    assert.ok(validateProviderErrorFor('filmot'), 'and no summary endpoint validates against it');
 });
 
 test('a session-only credential is never written to durable storage', async () => {

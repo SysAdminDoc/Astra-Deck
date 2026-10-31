@@ -9,7 +9,7 @@
     "message": "تعذّر حذف بيانات الاعتماد."
   },
   "aiCredentialDeleted": {
-    "message": "تم حذف بيانات اعتماد الذكاء الاصطناعي. لا يمكن التراجع عن هذا الإجراء — أعد إدخال المفتاح لاستخدام ميزات الذكاء الاصطناعي مرة أخرى."
+    "message": "تم حذف بيانات الاعتماد. لا يمكن التراجع عن ذلك، لذا أعد إدخال المفتاح لاستخدامه مرة أخرى."
   },
   "aiCredentialInputPlaceholder": {
     "message": "الصق مفتاح API الخاص بك"
@@ -39,7 +39,7 @@
     "message": "تعذّر حفظ بيانات الاعتماد."
   },
   "aiCredentialSaved": {
-    "message": "تم حفظ بيانات اعتماد الذكاء الاصطناعي دون كشف قيمتها."
+    "message": "تم حفظ بيانات الاعتماد دون كشف قيمتها."
   },
   "aiCredentialStatusError": {
     "message": "حالة بيانات الاعتماد غير متاحة."
@@ -57,7 +57,7 @@
     "message": "الحالة غير متاحة"
   },
   "aiCredentialTitle": {
-    "message": "بيانات اعتماد مزوّد الذكاء الاصطناعي"
+    "message": "بيانات اعتماد المزوّد"
   },
   "aiSummaryButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (عيّن مفتاح المزوّد من نافذة شريط أدوات Astra Deck أو من قائمة مدير السكربتات)"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "متجاهَل"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "استعادة عناوين الفيديوهات المحذوفة",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "يعيد عناوين الفيديوهات المحذوفة والخاصة في قائمة التشغيل بعد تفعيل إظهار الفيديوهات غير المتاحة من قائمة خيارات قائمة التشغيل. يرسل معرّفات تلك الفيديوهات إلى Filmot باستخدام مفتاح API الخاص بك، الذي تضبطه في النافذة المنبثقة بشريط الأدوات. من دون مفتاح، يربط كل صف بصفحة الفيديو على Filmot.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "تمت استعادة العنوان من Filmot. انقر لفتح صفحة هذا الفيديو على Filmot.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "ابحث عن هذا الفيديو على Filmot",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "تم حفظ المفتاح، لكن عمليات البحث في Filmot لن تعمل حتى تسمح لـ Astra Deck بالوصول إلى Filmot.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

@@ -242,6 +242,16 @@
             riskBand: 'api'
         }),
         Object.freeze({
+            origin: 'https://apiv1.filmot.com',
+            purpose: 'BYO-key Filmot lookups: the IDs of deleted or private videos in a playlist you revealed.',
+            requiredByFeatures: ['filmotTitleRestore'],
+            credentialsPolicy: 'byo-key',
+            profile: 'github-full',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
+            riskBand: 'api'
+        }),
+        Object.freeze({
             origin: 'http://127.0.0.1:11434',
             purpose: 'Local Ollama runtime for offline AI summaries and transcript Q&A.',
             requiredByFeatures: ['aiVideoSummary', 'localAiTranscriptQa'],

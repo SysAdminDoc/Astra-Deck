@@ -3047,6 +3047,7 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
         'https://api.openai.com',
         'https://api.anthropic.com',
         'https://generativelanguage.googleapis.com',
+        'https://apiv1.filmot.com',
         'https://*',
         'http://127.0.0.1:9751',
         'http://127.0.0.1:11434',
@@ -3140,6 +3141,12 @@ test('build-extension emits distinct store-safe, chromium-store, and github-full
         assert.ok(fullOptionalHosts.includes(optional),
             'github-full AI provider access must remain runtime-optional: ' + optional);
     }
+    assert.ok(!fullHosts.includes('https://apiv1.filmot.com/*'),
+        'github-full Filmot access must not be install-time granted');
+    assert.ok(fullOptionalHosts.includes('https://apiv1.filmot.com/*'),
+        'github-full Filmot access must remain runtime-optional');
+    assert.ok(!storeOptionalHosts.includes('https://apiv1.filmot.com/*'),
+        'store builds must not declare a Filmot host at all');
 
     for (const fullOnly of ['http://127.0.0.1:11434/*']) {
         assert.ok(!storeHosts.includes(fullOnly),
@@ -5959,11 +5966,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // DeArrow Voting is retired (493). Covers Without a Submission adds one (494).
     // Sort by Length makes it 495, and the ten DeArrow options ported from
     // upstream make it 505. Anti-Translate's Keep Translated Titles For
-    // makes it 506, and the Astra Look and Classic YouTube presets 508.
+    // makes it 506, the Astra Look and Classic YouTube presets 508, and
+    // Restore Deleted Video Titles 509.
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 508,
-        'SETTINGS_SCHEMA must cover all 508 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 509,
+        'SETTINGS_SCHEMA must cover all 509 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

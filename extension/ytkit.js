@@ -4820,6 +4820,7 @@ const STORAGE_KEYS = Object.freeze({
             bypassPlaylistMode: false,
             musicVideoSpeedLock: false,
             playlistQuickRemove: false,
+            filmotTitleRestore: false,
             watchLaterCleanup: false,
             watchLaterWorkbench: false,
             transcriptAiHandoff: false,
@@ -33317,6 +33318,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._navRule = null;
             }
         },
+        (globalThis.YTKitFeatures?.filmotTitleRestore?.createFilmotTitleRestoreFeature?.({
+            DiagnosticLog,
+            ExternalApiHealth,
+            addNavigateRule,
+            removeNavigateRule,
+            addScopedMutationRule,
+            removeScopedMutationRule,
+            injectStyle,
+            storageReadJSON,
+            storageWriteJSON,
+            // The userscript has no vault to hold a key, so it stays on links.
+            sendRuntimeMessage: hasExtensionContext() ? sendRuntimeMessage : null,
+            readPlaylistPageRow,
+            rowSelector: PLAYLIST_PAGE_ROW_SELECTOR,
+            PageTypes,
+            t
+        }) || {
+            id: 'filmotTitleRestore',
+            name: t('feature_filmotTitleRestore_name', 'Restore Deleted Video Titles'),
+            description: t('feature_filmotTitleRestore_desc', 'Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist\'s menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot\'s page for that video.'),
+            group: 'Playlists',
+            icon: 'history',
+            pages: [PageTypes.PLAYLIST],
+            init() { DebugManager.log('FilmotTitleRestore', 'Feature module unavailable'); },
+            destroy() {}
+        }),
         {
             id: 'watchLaterCleanup',
             name: 'Watch Later Cleanup Button',

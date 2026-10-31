@@ -9,7 +9,7 @@
     "message": "資格情報を削除できませんでした。"
   },
   "aiCredentialDeleted": {
-    "message": "AI 資格情報を削除しました。この操作は取り消せません。AI 機能を使うにはキーを再入力してください。"
+    "message": "資格情報を削除しました。この操作は取り消せません。もう一度使うにはキーを再入力してください。"
   },
   "aiCredentialInputPlaceholder": {
     "message": "API キーを貼り付け"
@@ -39,7 +39,7 @@
     "message": "資格情報を保存できませんでした。"
   },
   "aiCredentialSaved": {
-    "message": "値を公開せずに AI 資格情報を保存しました。"
+    "message": "値を公開せずに資格情報を保存しました。"
   },
   "aiCredentialStatusError": {
     "message": "資格情報の状態を取得できません。"
@@ -57,7 +57,7 @@
     "message": "状態を取得できません"
   },
   "aiCredentialTitle": {
-    "message": "AI プロバイダーの資格情報"
+    "message": "プロバイダーの資格情報"
   },
   "aiSummaryButtonTitle": {
     "message": "AI 要約（プロバイダーキーは Astra Deck のツールバーポップアップ、またはユーザースクリプトマネージャーのメニューで設定します）"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "無視"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "削除された動画のタイトルを復元",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "プレイリストのメニューで「再生できない動画を表示」をオンにすると、削除済みや非公開の動画のタイトルを復元します。ツールバーのポップアップで設定した自分の API キーを使い、それらの動画 ID を Filmot に送信します。キーがない場合は、各行に Filmot のその動画のページへのリンクを表示します。",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Filmot からタイトルを復元しました。クリックすると Filmot のこの動画のページを開きます。",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "この動画を Filmot で調べる",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "キーを保存しましたが、Astra Deck に Filmot へのアクセスを許可するまで Filmot の検索は実行できません。",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

@@ -511,6 +511,87 @@ async function performAiSummaryRequest(details) {
     }
 }
 
+// One lookup costs the user one Filmot credit, whatever the ID count up to 200.
+const FILMOT_MAX_IDS = 200;
+const FILMOT_VIDEO_ID = /^[\w-]{11}$/;
+const MAX_FILMOT_RESPONSE_BYTES = 2 * 1024 * 1024;
+const FILMOT_TIMEOUT_MS = 20000;
+const MAX_FILMOT_TEXT_LENGTH = 500;
+
+function filmotError(code, message, status) {
+    const error = new Error(message);
+    error.code = code;
+    if (status) error.status = status;
+    return error;
+}
+
+function filmotField(value) {
+    return typeof value === 'string' ? value.slice(0, MAX_FILMOT_TEXT_LENGTH) : '';
+}
+
+async function performFilmotLookup(details) {
+    if (!_credentialVault) throw new Error('Credential vault is unavailable.');
+    const policy = globalThis.YTKitCore?.SERVICE_CREDENTIAL_POLICIES?.filmot;
+    if (!policy) throw new Error('Filmot policy is unavailable.');
+    const ids = Array.isArray(details?.ids) ? [...new Set(details.ids)] : [];
+    if (!ids.length || ids.length > FILMOT_MAX_IDS || !ids.every((id) => typeof id === 'string' && FILMOT_VIDEO_ID.test(id))) {
+        throw filmotError('FILMOT_BAD_REQUEST', 'Filmot lookups take 1-200 video IDs.');
+    }
+    const url = new URL(policy.defaultEndpoint);
+    url.searchParams.set('id', ids.join(','));
+    // Store builds don't declare this host. No declared grant, no lookup.
+    if (!getRuntimeOptionalHostPermissionsForUrl(url.toString()).length) {
+        throw filmotError('FILMOT_NOT_GRANTED', 'This build does not include Filmot.');
+    }
+    const credential = await _credentialVault.get('filmot');
+    if (!credential) throw filmotError('CREDENTIAL_MISSING', 'No Filmot key is configured in the toolbar popup.');
+    try {
+        await requireRuntimeOptionalHostGrant(url.toString());
+    } catch (error) {
+        throw filmotError('FILMOT_NOT_GRANTED', error?.message || 'Filmot host access was not granted.');
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FILMOT_TIMEOUT_MS);
+    try {
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: { [policy.credentialHeader]: credential },
+            credentials: 'omit',
+            redirect: 'manual',
+            signal: controller.signal
+        });
+        if (response.type === 'opaqueredirect') throw filmotError('FILMOT_FAILED', 'Credentialed Filmot redirects are blocked.');
+        if (response.status === 401 || response.status === 403) {
+            throw filmotError('FILMOT_REJECTED_KEY', `Filmot refused this key (HTTP ${response.status}).`, response.status);
+        }
+        if (!response.ok) throw filmotError('FILMOT_FAILED', `Filmot answered HTTP ${response.status}.`, response.status);
+        const { text } = await readTextBounded(response, MAX_FILMOT_RESPONSE_BYTES, 'Filmot response', controller);
+        if (text.includes(credential)) throw filmotError('FILMOT_FAILED', 'Filmot response contained credential material and was blocked.');
+        let data;
+        try { data = JSON.parse(text); } catch (_) {
+            // reason: surface a stable invalid-response error without logging provider output
+            throw filmotError('FILMOT_FAILED', 'Filmot returned invalid JSON.');
+        }
+        if (!Array.isArray(data)) throw filmotError('FILMOT_FAILED', 'Filmot returned an unexpected shape.');
+        const asked = new Set(ids);
+        const videos = data
+            .filter((video) => asked.has(video?.id))
+            .map((video) => ({
+                id: video.id,
+                title: filmotField(video.title),
+                channel: filmotField(video.channelname),
+                date: filmotField(video.uploaddate)
+            }));
+        return { ok: true, videos };
+    } catch (error) {
+        if (error?.name === 'AbortError') throw filmotError('FILMOT_FAILED', 'Filmot lookup timed out.');
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 // v3.20.3: explicit cookie-jar wire contract. The narrowed authenticated
 // handoff also normalizes in core/cookie-handoff.js; this final mapper keeps
 // the service-worker response and userscript fallback wire-compatible.
@@ -1059,6 +1140,7 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://api.openai.com',
     'https://api.anthropic.com',
     'https://generativelanguage.googleapis.com',
+    'https://apiv1.filmot.com',
     'https://www.reddit.com',
     'https://old.reddit.com',
     // Fixed, data-only selector updates from the project-owned repository.
@@ -2336,6 +2418,28 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 error: {
                     code: error?.code || 'AI_REQUEST_FAILED',
                     message: error?.message || 'AI request failed.'
+                }
+            });
+        });
+        return true;
+    }
+
+    if (msg.type === 'YTKIT_FILMOT_LOOKUP') {
+        (async () => {
+            await _credentialMigrationReady;
+            const release = acquireAiRequestSlot(sender);
+            try {
+                sendResponse(await performFilmotLookup(msg));
+            } finally {
+                release();
+            }
+        })().catch((error) => {
+            sendResponse({
+                ok: false,
+                error: {
+                    code: error?.code || 'FILMOT_FAILED',
+                    message: error?.message || 'Filmot lookup failed.',
+                    status: error?.status || 0
                 }
             });
         });

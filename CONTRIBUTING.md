@@ -10,10 +10,10 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 | Release | `v4.106.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `508` entries across `18` categories |
-| Runtime graph | `129` modules, including `36` peeled feature modules and `311` declared feature IDs |
+| Settings schema | `509` entries across `18` categories |
+| Runtime graph | `130` modules, including `37` peeled feature modules and `312` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
-| Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
+| Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 7 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
 | Compatibility modes | Desktop YouTube extension; YouTube Music excluded; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
 <!-- END GENERATED PROJECT FACTS -->

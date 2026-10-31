@@ -59,10 +59,10 @@ The searchable Command Deck covers playback, themes, comments, feed cleanup, dow
 | Release | `v4.106.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `508` entries across `18` categories |
-| Runtime graph | `129` modules, including `36` peeled feature modules and `311` declared feature IDs |
+| Settings schema | `509` entries across `18` categories |
+| Runtime graph | `130` modules, including `37` peeled feature modules and `312` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
-| Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
+| Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 7 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
 | Compatibility modes | Desktop YouTube extension; YouTube Music excluded; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
 <!-- END GENERATED PROJECT FACTS -->
@@ -481,7 +481,7 @@ The toolbar popup keeps common toggles, backups, diagnostics, and language selec
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **503 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **504 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -961,7 +961,7 @@ This generated knowledgebase documents all **503 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>SponsorBlock, DeArrow, and enrichment</strong>: 47 settings</summary>
+<summary><strong>SponsorBlock, DeArrow, and enrichment</strong>: 48 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -1012,6 +1012,7 @@ This generated knowledgebase documents all **503 user-facing settings** in the c
 | <a id="setting-deArrowChannelOverrides"></a><strong>DeArrow channel overrides</strong><br><code>deArrowChannelOverrides</code> | Stores per-channel DeArrow modes so a channel can use replacements, originals, or disable processing. | Default: Empty object | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-deArrowChannelOverridesPanel"></a><strong>DeArrow Per-Channel Overrides</strong><br><code>deArrowChannelOverridesPanel</code> | Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-dearrowPeekButton"></a><strong>DeArrow Peek Button</strong><br><code>dearrowPeekButton</code> | Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-filmotTitleRestore"></a><strong>Restore Deleted Video Titles</strong><br><code>filmotTitleRestore</code> | Puts titles back on deleted and private videos in a playlist, after you turn on Show unavailable videos in the playlist's menu. Sends those video IDs to Filmot using your own API key, set in the toolbar popup. Without a key, each row links to Filmot's page for that video. | Default: Off | Extension + userscript<br>GitHub-full only<br>Feeds<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.107.0</code> |
 
 </details>
 

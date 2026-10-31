@@ -48,12 +48,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 132 | `true` on every entry |
-| `store-safe` | firefox | A | 132 | omitted |
-| `chromium-store` | chromium | B | 131 | `true` on every entry |
-| `chromium-store` | firefox | B | 131 | omitted |
-| `github-full` | chromium | A | 132 | `true` on every entry |
-| `github-full` | firefox | A | 132 | omitted |
+| `store-safe` | chromium | A | 133 | `true` on every entry |
+| `store-safe` | firefox | A | 133 | omitted |
+| `chromium-store` | chromium | B | 132 | `true` on every entry |
+| `chromium-store` | firefox | B | 132 | omitted |
+| `github-full` | chromium | A | 133 | `true` on every entry |
+| `github-full` | firefox | A | 133 | omitted |
 
 #### Resource set A
 
@@ -208,6 +208,7 @@ Entry 2 resource paths:
 - `features/return-dislike/index.js`
 - `features/sponsorblock/index.js`
 - `features/dearrow/index.js`
+- `features/filmot-title-restore/index.js`
 - `features/download-ui/index.js`
 - `ytkit.js`
 
@@ -364,6 +365,7 @@ Entry 2 resource paths:
 - `features/return-dislike/index.js`
 - `features/sponsorblock/index.js`
 - `features/dearrow/index.js`
+- `features/filmot-title-restore/index.js`
 - `ytkit.js`
 
 <!-- END GENERATED REVIEWER RESOURCE INVENTORY -->
@@ -467,6 +469,7 @@ grants. Submit the `chromium-store` package to Chrome Web Store or Edge; use
 | `host_permissions: raw.githubusercontent.com` | Every profile. Anonymous, signed, data-only repair files from the project's own repository: the known-breakage list (checked at most every six hours while Known-Breakage Notices is on, which is the default) and the selector packs (when the user runs a selector refresh, or about once a day while selector auto-refresh is on, which is off by default). No cookies, page data or settings are sent. |
 | `optional_host_permissions: sponsor.ajay.app / i.ytimg.com / returnyoutubedislikeapi.com / reddit.com` | SponsorBlock/DeArrow, thumbnail upgrade/download, estimated Return YouTube Dislike counts, and Reddit discussion panel calls. Requested from the popup when the user enables a matching feature, or through the Grant access banner when an already-enabled feature such as default-on SponsorBlock needs the runtime grant; the background proxy checks the current grant before fetching. No cookies are sent. |
 | `optional_host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary and transcript-translation fallback; the selected provider is requested at the user gesture, while Chrome's built-in AI lane uses no host permission or key. |
+| `optional_host_permissions: apiv1.filmot.com` | GitHub-full only. Restore Deleted Video Titles looks up unavailable playlist videos with the user's own Filmot API key. Absent from the store builds. |
 | `optional_host_permissions: https://*/*` | GitHub-full only and never requested as a whole. Supports one exact user-selected Video Hider list or authorized self-hosted Cobalt origin; the public Cobalt service is rejected. |
 | `host_permissions: 127.0.0.1:9751-9851` | `store-safe` and `github-full`; absent from `chromium-store`. Astra Downloader local probe and explicit download handoff across six fallback ports. |
 | `host_permissions: 127.0.0.1:11434` | GitHub-full only. Optional local Ollama for AI summary. |

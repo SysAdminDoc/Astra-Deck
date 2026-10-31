@@ -601,6 +601,7 @@
   "subStyleBgColor": "#000000",
   "subStyleBottomOffset": 10,
   "subStyleTextShadow": true,
+  "filmotTitleRestore": false,
   "aiVideoSummary": false,
   "aiSummaryEndpoint": "https://api.openai.com/v1/chat/completions",
   "aiSummaryModel": "gpt-4o-mini",

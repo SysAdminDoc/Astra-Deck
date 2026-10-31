@@ -9,7 +9,7 @@
     "message": "Anmeldedaten konnten nicht gelöscht werden."
   },
   "aiCredentialDeleted": {
-    "message": "KI-Anmeldedaten gelöscht. Das lässt sich nicht rückgängig machen – geben Sie den Schlüssel erneut ein, um KI-Funktionen wieder zu nutzen."
+    "message": "Zugangsdaten gelöscht. Das lässt sich nicht rückgängig machen. Gib den Schlüssel erneut ein, um ihn wieder zu verwenden."
   },
   "aiCredentialInputPlaceholder": {
     "message": "API-Schlüssel einfügen"
@@ -39,7 +39,7 @@
     "message": "Anmeldedaten konnten nicht gespeichert werden."
   },
   "aiCredentialSaved": {
-    "message": "KI-Anmeldedaten gespeichert, ohne den Wert offenzulegen."
+    "message": "Zugangsdaten gespeichert, ohne ihren Wert offenzulegen."
   },
   "aiCredentialStatusError": {
     "message": "Status der Anmeldedaten nicht verfügbar."
@@ -57,7 +57,7 @@
     "message": "Status nicht verfügbar"
   },
   "aiCredentialTitle": {
-    "message": "KI-Anbieter-Anmeldedaten"
+    "message": "Anbieter-Zugangsdaten"
   },
   "aiSummaryButtonTitle": {
     "message": "AI-Zusammenfassung (den Anbieterschlüssel im Astra Deck-Toolbar-Popup oder im Menü des Userscript-Managers festlegen)"
@@ -10208,5 +10208,25 @@
   },
   "deArrowCasualIgnored": {
     "message": "Ignoriert"
+  },
+  "feature_filmotTitleRestore_name": {
+    "message": "Titel gelöschter Videos wiederherstellen",
+    "description": "Name of the setting that restores titles of deleted playlist videos through Filmot."
+  },
+  "feature_filmotTitleRestore_desc": {
+    "message": "Stellt die Titel gelöschter und privater Videos in einer Playlist wieder her, nachdem du im Menü der Playlist „Nicht verfügbare Videos anzeigen“ aktiviert hast. Die IDs dieser Videos werden mit deinem eigenen API-Schlüssel, den du im Symbolleisten-Popup einträgst, an Filmot gesendet. Ohne Schlüssel verlinkt jede Zeile auf die Filmot-Seite des Videos.",
+    "description": "Description of the setting. Filmot is a brand name. Show unavailable videos is YouTube's own menu item."
+  },
+  "filmotRestoredTooltip": {
+    "message": "Titel von Filmot wiederhergestellt. Klicke, um die Filmot-Seite des Videos zu öffnen.",
+    "description": "Tooltip on a playlist row whose title came from Filmot."
+  },
+  "filmotLookupLink": {
+    "message": "Dieses Video auf Filmot nachschlagen",
+    "description": "Link shown on an unavailable playlist row when no title could be restored."
+  },
+  "filmotHostNeeded": {
+    "message": "Schlüssel gespeichert, aber Filmot-Abfragen laufen erst, wenn du Astra Deck den Zugriff auf Filmot erlaubst.",
+    "description": "Shown in the toolbar popup when a Filmot key was saved and the browser prompt for its site was refused."
   }
 }

@@ -174,6 +174,7 @@
         "features/return-dislike/index.js",
         "features/sponsorblock/index.js",
         "features/dearrow/index.js",
+        "features/filmot-title-restore/index.js",
         "features/download-ui/index.js",
         "ytkit.js"
     ]
