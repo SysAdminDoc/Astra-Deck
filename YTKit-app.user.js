@@ -3502,9 +3502,15 @@ const STORAGE_KEYS = Object.freeze({
 			if (!policy || typeof policy.validateSettingsSnapshot !== 'function') {
 				return this._sanitize(settings);
 			}
-			const validation = policy.validateSettingsSnapshot(settings);
+			const importable = { ...settings };
+			delete importable._settingsVersion;
+			const validation = policy.validateSettingsSnapshot(importable, { dropUnknown: true });
 			if (!validation.ok) {
 				throw new Error(this._formatSettingsValidationError('Settings import rejected', validation));
+			}
+			this._importSkippedKeys = validation.skippedKeys || [];
+			if (this._importSkippedKeys.length) {
+				console.warn('[Astra Deck] settings import skipped unknown keys:', this._importSkippedKeys.join(', '));
 			}
 			return this._sanitize(validation.settings);
 		},
@@ -3542,11 +3548,12 @@ const STORAGE_KEYS = Object.freeze({
 		},
 		_prepareImportedSettings(settings, options = {}) {
 			const migrated = this._sanitize(this._migrate(this._sanitize(settings), 'profile-import', options));
+			this._importSkippedKeys = [];
 			const validated = this._validateSettingsForBackupImport(migrated);
 			return this._normalizeProfileModel(this._sanitize({
 				...this.defaults,
 				...validated,
-				_settingsVersion: this.SETTINGS_VERSION
+				_settingsVersion: Math.max(this._normalizeVersion(migrated._settingsVersion), this.SETTINGS_VERSION)
 			}));
 		},
 		_sanitize(settings = {}) {
@@ -4050,7 +4057,7 @@ const STORAGE_KEYS = Object.freeze({
 					bookmarkVideos: bookmarkSummary.imported,
 					aiSummaries: aiSummarySummary.imported,
 					importedFilterRules: importedFilterRules?.length || 0,
-					skipped: hiddenSummary.skipped + allowedSummary.skipped + markedWatchedSummary.skipped + blockedSummary.skipped + allowedChannelSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
+					skipped: this._importSkippedKeys.length + hiddenSummary.skipped + allowedSummary.skipped + markedWatchedSummary.skipped + blockedSummary.skipped + allowedChannelSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
 					duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + markedWatchedSummary.duplicates + blockedSummary.duplicates + allowedChannelSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
 				};
 				const restore = (snapshot) => {

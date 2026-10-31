@@ -238,6 +238,73 @@ test('pinned v1 full-profile fixture migrates without dropping catalogued settin
     assert.deepEqual(secondImport, result, 'v1 full-profile migrated settings should be idempotent on re-import');
 });
 
+// The tests above run without a policy, so they never reach the schema check the
+// real import goes through. _migrate stamps _settingsVersion on a backup older
+// than the running schema, before that check, and the stamp isn't a schema key.
+// So every older backup was refused with 'unknown setting "_settingsVersion"' in
+// the panel and the userscript (seen live on both, 2026-10-31). A current backup
+// returns from _migrate unstamped and passed, and the popup removes the stamp.
+test('a backup imports through the real schema check', () => {
+    require('../extension/core/policy-profile');
+    const { manager } = createSettingsManagerFromSource(ytkitSource);
+    const policy = globalThis.YTKitCore.createPolicyProfile();
+    manager._policyProfile = policy;
+    const backup = policy.buildExportSnapshot({ ...defaultSettings, hideAskAi: true }, { schemaOnly: true }).settings;
+    assert.equal(Object.hasOwn(backup, '_settingsVersion'), false, 'a backup carries no stamp of its own');
+
+    const imported = manager._prepareImportedSettings(backup, { backupSchemaVersion: settingsMeta.settingsVersion });
+    assert.equal(imported._settingsVersion, settingsMeta.settingsVersion);
+    assert.equal(imported.hideAskAi, true);
+
+    assert.deepEqual(manager._importSkippedKeys, [], 'the stamp is not a skipped setting');
+
+    const stamped = manager._prepareImportedSettings({ ...backup, _settingsVersion: 3 }, { backupSchemaVersion: 3 });
+    assert.equal(stamped._settingsVersion, settingsMeta.settingsVersion, 'an older stamp in the file is replaced');
+    assert.equal(stamped.hideAskAi, true);
+    assert.deepEqual(manager._importSkippedKeys, [], 'nor is a stamp _migrate added');
+
+    const newer =manager._prepareImportedSettings({ ...backup, _settingsVersion: 99 }, { backupSchemaVersion: 99 });
+    assert.equal(newer._settingsVersion, 99, 'a newer stamp stays so migrations do not re-arm');
+
+    // A setting this build doesn't have, from an older or a newer backup, can't cost
+    // the user the rest of the file. The popup's import already worked this way.
+    const warn = console.warn;
+    const warned = [];
+    console.warn = (...args) => warned.push(args.join(' '));
+    try {
+        const partial = manager._prepareImportedSettings({ ...backup, settingFromAnotherBuild: 1 }, { backupSchemaVersion: settingsMeta.settingsVersion });
+        assert.equal(partial.hideAskAi, true);
+        assert.equal(Object.hasOwn(partial, 'settingFromAnotherBuild'), false);
+        assert.deepEqual([...manager._importSkippedKeys], ['settingFromAnotherBuild']);
+        assert.match(warned.join('\n'), /settingFromAnotherBuild/);
+    } finally {
+        console.warn = warn;
+    }
+
+    manager._prepareImportedSettings(backup, { backupSchemaVersion: settingsMeta.settingsVersion });
+    assert.deepEqual(manager._importSkippedKeys, [], 'the next import starts its list again');
+
+    // A known key with a bad value still refuses the whole file.
+    assert.throws(() => manager._prepareImportedSettings({ ...backup, hideAskAi: 'yes' }, { backupSchemaVersion: settingsMeta.settingsVersion }),
+        /hideAskAi/);
+    assert.throws(() => manager._prepareImportedSettings({ ...backup, subStyleColor: 'url(x)' }, { backupSchemaVersion: settingsMeta.settingsVersion }),
+        /subStyleColor/);
+});
+
+test('an import with no policy loaded still leaves a list for the summary to count', () => {
+    const { manager } = createSettingsManagerFromSource(ytkitSource);
+    manager._getPolicyProfile = () => null;
+    manager._importSkippedKeys = ['left over from the last import'];
+    manager._prepareImportedSettings({ hideAskAi: true }, { backupSchemaVersion: settingsMeta.settingsVersion });
+    assert.deepEqual(manager._importSkippedKeys, []);
+});
+
+test('the import summary counts settings it had to skip', () => {
+    const body = ytkitSource.slice(ytkitSource.indexOf('async importAllSettingsDetailed(jsonString)'));
+    assert.match(body.slice(0, body.indexOf('const restore = (snapshot)')),
+        /skipped: this\._importSkippedKeys\.length \+ hiddenSummary\.skipped/);
+});
+
 test('_migrate preserves a future schema stamp instead of lowering it (no migration re-arm on downgrade)', () => {
     const { manager } = createSettingsManagerFromSource(ytkitSource);
     const future = manager.SETTINGS_VERSION + 5;

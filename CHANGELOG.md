@@ -16,6 +16,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
 
 ### Fixed
+- **Restoring an older settings backup** from the settings panel works again, in the extension and the userscript. A backup made before the last settings change was refused with `unknown setting "_settingsVersion"`, because the check ran after the import had stamped its own internal version onto the file. A backup holding a setting this build doesn't have was refused too. Now those settings are left out and counted in the summary, the way the popup's import already did it. A known setting with a bad value still refuses the file.
 - **Channel Landing Tab** now works on every URL a channel has. Opening a channel at `/channel/UC...`, `/c/...`, `/user/...` or a handle in different capitals used to land on Videos no matter which tab you'd picked, since YouTube's tab list only names the channel's handle.
 
 - Playlist pages: YouTube can now draw a playlist's rows and header in a newer layout, and Show Playlist Duration, Quick Remove, Remove Watched and the Watch Later Workbench found nothing on it. They read both layouts now, and the duration shows up in the header you can actually see.
