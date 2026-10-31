@@ -16462,25 +16462,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // click dispatched while any other overlay is open reads to
                 // YouTube as a click outside it.
                 if (!this._isYouTherePrompt()) return;
-                // The player's own controls, but only while they are actually
-                // rendered — see _isOnScreen.
-                const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
-                if (playerBtn && this._isOnScreen(playerBtn) && isSafeToAutoClick(playerBtn)) {
-                    playerBtn.click();
-                    DebugManager.log('StillWatching', 'Auto-dismissed prompt');
-                } else {
-                    const btn = this._findOnScreen('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
+                // The prompt's own button, inside the prompt the gate just
+                // accepted. Pressing the player's Play button first restarted
+                // the video and left the prompt open on top of it.
+                const prompt = this._findOnScreen('ytmusic-you-there-renderer')
+                    || this._findOnScreen('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
+                const promptBtn = prompt?.querySelector('#confirm-button, #button') || null;
+                if (promptBtn && this._isOnScreen(promptBtn)) {
                     // Never auto-answer a verification/consent surface, and
                     // never click while one is open elsewhere on the page.
-                    if (btn && isSafeToAutoClick(btn)) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                    if (!isSafeToAutoClick(promptBtn)) return;
+                    promptBtn.click();
+                } else {
+                    // The player's own controls, but only while they are
+                    // actually rendered — see _isOnScreen.
+                    const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
+                    if (!playerBtn || !this._isOnScreen(playerBtn) || !isSafeToAutoClick(playerBtn)) return;
+                    playerBtn.click();
                 }
-                const video = getMainVideoElement();
-                if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
-                    video.play().catch(() => {});
-                }
+                DebugManager.log('StillWatching', 'Auto-dismissed prompt');
+                // If answering it didn't restart playback, do that too.
+                clearTimeout(this._resumeTimer);
+                this._resumeTimer = setTimeout(() => {
+                    const video = getMainVideoElement();
+                    if (video && video.paused && !video.ended) video.play().catch(() => {});
+                }, 400);
             },
 
             _debounceTimer: null,
+            _resumeTimer: null,
             init() {
                 this._observer = new MutationObserver(() => {
                     clearTimeout(this._debounceTimer);
@@ -16501,6 +16511,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 clearTimeout(this._debounceTimer);
+                clearTimeout(this._resumeTimer);
                 this._observer?.disconnect(); this._observer = null;
                 if (this._popupHandler) {
                     document.removeEventListener('yt-popup-opened', this._popupHandler);
@@ -21656,7 +21667,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 // CSS dims HFR quality entries in the settings menu.
-                // YouTube deprecated setPlaybackQualityRange (no-op since ~2023).
+                // setPlaybackQualityRange picks a height, not a frame rate.
                 // True FPS filtering requires MAIN world format interception — fragile.
                 // For reliable FPS reduction, use Force H.264 which caps at 1080p30.
                 const css = `

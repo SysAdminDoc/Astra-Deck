@@ -22,6 +22,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Playlist pages: YouTube can now draw a playlist's rows and header in a newer layout, and Show Playlist Duration, Quick Remove, Remove Watched and the Watch Later Workbench found nothing on it. They read both layouts now, and the duration shows up in the header you can actually see.
 - HD Thumbnails skipped the newer thumbnail element, which is most of what YouTube draws today. It covers those now, and a video with no HD image keeps its normal thumbnail. YouTube answers those with a gray placeholder that the old fallback didn't notice.
 - SponsorBlock no longer treats a playing ad as the video. On a real 183 second pre-roll it was jumping around inside the ad using the video's segments and drawing the markers far off the bar. It now waits for the ad to finish.
+- Auto-Dismiss "Still Watching?" now answers the prompt through its own button. It used to press the player's Play first, which restarted the video and left the prompt sitting on top of it. If the answer doesn't restart the video, Astra Deck plays it.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)

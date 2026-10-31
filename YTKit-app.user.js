@@ -10020,20 +10020,26 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_dismiss() {
 				if (!this._isYouTherePrompt()) return;
-				const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
-				if (playerBtn && this._isOnScreen(playerBtn) && isSafeToAutoClick(playerBtn)) {
-					playerBtn.click();
-					DebugManager.log('StillWatching', 'Auto-dismissed prompt');
+				const prompt = this._findOnScreen('ytmusic-you-there-renderer')
+					|| this._findOnScreen('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
+				const promptBtn = prompt?.querySelector('#confirm-button, #button') || null;
+				if (promptBtn && this._isOnScreen(promptBtn)) {
+					if (!isSafeToAutoClick(promptBtn)) return;
+					promptBtn.click();
 				} else {
-					const btn = this._findOnScreen('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
-					if (btn && isSafeToAutoClick(btn)) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+					const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
+					if (!playerBtn || !this._isOnScreen(playerBtn) || !isSafeToAutoClick(playerBtn)) return;
+					playerBtn.click();
 				}
-				const video = getMainVideoElement();
-				if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
-					video.play().catch(() => {});
-				}
+				DebugManager.log('StillWatching', 'Auto-dismissed prompt');
+				clearTimeout(this._resumeTimer);
+				this._resumeTimer = setTimeout(() => {
+					const video = getMainVideoElement();
+					if (video && video.paused && !video.ended) video.play().catch(() => {});
+				}, 400);
 			},
 			_debounceTimer: null,
+			_resumeTimer: null,
 			init() {
 				this._observer = new MutationObserver(() => {
 					clearTimeout(this._debounceTimer);
@@ -10052,6 +10058,7 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			destroy() {
 				clearTimeout(this._debounceTimer);
+				clearTimeout(this._resumeTimer);
 				this._observer?.disconnect(); this._observer = null;
 				if (this._popupHandler) {
 					document.removeEventListener('yt-popup-opened', this._popupHandler);

@@ -352,16 +352,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 - [ ] P2 — Drive Takeout import and install assist in Tampermonkey. Retested 2026-10-31 on Tampermonkey 5.5.0: panel Import and Undo work on the real userscript (`Imported 19 settings updated, 1 blocked channel.`, then `Import undone.`), and that run found the older-backup refusal fixed in `745764d9`. Still not driven: the Takeout history import (the file chooser never opened from a scripted click, it needs a real gesture on the history-import button), `runInstallAssist` and `copyInstallCommand`.
 
-- [ ] P1 — MAIN-world audio graph reconnect needs browser verification
-  Why: The WeakMap-cached source node fix (shipped in v4.46.29) is architecturally
-  correct but needs verification that YouTube's persistent <video> element + SPA
-  navigation actually triggers the reconnect path and that audio passthrough
-  works correctly with the gain-bypass idle mode. Verify with any audio feature
-  (volume boost, mono-to-stereo, normalization) across two video navigations.
-  Where: extension/ytkit-main.js (~395-512)
-  Blocker: Requires loading the extension in Chrome/Edge with audio features
-  enabled and navigating between videos to verify audio continuity.
-
 ## P1 — Premise disproven, needs a product decision (2026-09-05)
 
 - [ ] P1 — Retire the inert panel stylesheets from `ytkit.js`
@@ -606,14 +596,3 @@ Retested 2026-10-31: the manager smoke passes on Tampermonkey 5.5.0 and Violentm
   Blocker: not seen on desktop web as of 2026-10-05, and a capture needs a live session.
   Acceptance: once a series surface shows on desktop web, capture it. Each of the three
   settings either covers it, with a fixture test, or gets the selector it needs.
-
-- [ ] P3 — Check Astra's scripted clicks after YouTube began rejecting synthetic Skip clicks
-  Why: Remove YouTube Suggestions 4.3.84 (2026-10-08) says YouTube no longer honors scripted
-  clicks on the ad Skip button. Astra's quality forcing drives `.ytp-settings-button` and the
-  quality submenu by click (`extension/ytkit.js` ~13782), and Auto-Dismiss "Still Watching?"
-  presses the prompt's button. If the rejection reaches those controls, both fail quietly.
-  Evidence: https://github.com/lawrencehook/remove-youtube-suggestions/releases/tag/v4.3.84
-  Blocker: live YouTube in headless Chromium.
-  Acceptance: on a live watch page, Force Quality lands the chosen resolution and a Still
-  Watching prompt is dismissed; if either fails, the fix moves to ROADMAP.md with the
-  finding.

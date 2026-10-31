@@ -26,7 +26,6 @@ const { loadFeature, fakeNode, fakeTreeDocument } = require('../helpers/monolith
 const { readUserscriptBuild } = require('../helpers/source');
 
 const PLAYER_CONTROL_SELECTOR = '.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]';
-const CONFIRM_SELECTOR = 'ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button';
 const DIALOG_SELECTOR = 'yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer';
 
 /** A node the browser would lay out: it reports a client rect. */
@@ -49,7 +48,7 @@ function offScreen(node) {
  * a box. `staleCopy` puts such a closed prompt ahead of the open one in
  * document order, which is where an earlier prompt sits.
  */
-function scenario({ dialogText = null, hasCancelButton = false, playerControl = null, video = null, dialogOpen = true, staleCopy = false } = {}) {
+function scenario({ dialogText = null, hasCancelButton = false, playerControl = null, video = null, dialogOpen = true, staleCopy = false, promptButton = true, safeToClick = true, musicPrompt = null, extraGlobals = {} } = {}) {
     const place = dialogOpen ? onScreen : offScreen;
     const confirmButton = place(fakeNode({ tag: 'button', attributes: { id: 'confirm-button' } }));
     const cancelButton = place(fakeNode({ tag: 'button', attributes: { id: 'cancel-button' } }));
@@ -57,19 +56,20 @@ function scenario({ dialogText = null, hasCancelButton = false, playerControl = 
         ? null
         : place(fakeNode({ tag: 'yt-confirm-dialog-renderer', text: dialogText }));
     if (dialog) {
-        dialog.querySelector = (selector) => (hasCancelButton && selector.includes('cancel') ? cancelButton : null);
+        dialog.querySelector = (selector) => {
+            if (selector.includes('cancel')) return hasCancelButton ? cancelButton : null;
+            return promptButton && selector.includes('#confirm-button') ? confirmButton : null;
+        };
     }
     const staleButton = offScreen(fakeNode({ tag: 'button', attributes: { id: 'confirm-button' } }));
     const staleDialog = offScreen(fakeNode({ tag: 'yt-confirm-dialog-renderer', text: 'Video paused. Continue watching?' }));
-    staleDialog.querySelector = () => null;
+    staleDialog.querySelector = (selector) => (selector.includes('#confirm-button') ? staleButton : null);
     const withStale = (stale, current) => (staleCopy ? [stale, current].filter(Boolean) : current);
 
     const documentRef = fakeTreeDocument((selector) => {
-        if (selector === 'ytmusic-you-there-renderer') return null;
+        if (selector === 'ytmusic-you-there-renderer') return musicPrompt;
         if (selector === DIALOG_SELECTOR) return withStale(staleDialog, dialog);
         if (selector === PLAYER_CONTROL_SELECTOR) return playerControl;
-        if (selector === CONFIRM_SELECTOR) return withStale(staleButton, dialog ? confirmButton : null);
-        if (selector.includes('ytp-pause-overlay')) return null;
         if (selector === 'ytd-popup-container') return null;
         return null;
     });
@@ -77,8 +77,12 @@ function scenario({ dialogText = null, hasCancelButton = false, playerControl = 
     const feature = loadFeature('autoDismissStillWatching', {
         document: documentRef,
         findComplianceDialog: () => null,
-        isSafeToAutoClick: () => true,
-        getMainVideoElement: () => video
+        isSafeToAutoClick: () => safeToClick,
+        getMainVideoElement: () => video,
+        // A resume timer must not outlive the test that armed it.
+        setTimeout: () => 0,
+        clearTimeout: () => {},
+        ...extraGlobals
     });
 
     return { feature, confirmButton, cancelButton, playerControl, dialog, staleButton };
@@ -237,22 +241,151 @@ test('an off-screen player control is never the thing that gets clicked', () => 
     assert.equal(confirmButton.clicked, 1, 'the dialog control answers instead');
 });
 
-test('a visible player control is preferred when the prompt is up', () => {
-    const video = onScreen(fakeNode({ tag: 'video' }));
-    video.paused = true;
-    video.ended = false;
-    const play = onScreen(fakeNode({
-        tag: 'button',
-        attributes: { class: 'ytp-play-button', 'data-title-no-tooltip': 'Play' }
-    }));
+test('the prompt is answered through its own button even with Play on screen', () => {
+    // Live on 2026-10-31: pressing Play restarted the video and left the prompt
+    // open over it. YouTube's real dialog closes from a scripted click on its
+    // confirm button.
+    const play = playButton();
     const { feature, confirmButton } = scenario({
         dialogText: 'Video paused. Continue watching?',
         playerControl: play,
-        video
+        video: pausedOnScreenVideo()
+    });
+    feature._dismiss();
+    assert.equal(confirmButton.clicked, 1);
+    assert.equal(play.clicked, 0);
+});
+
+test('a prompt with no button of its own falls back to Play', () => {
+    const play = playButton();
+    const { feature, confirmButton } = scenario({
+        dialogText: 'Video paused. Continue watching?',
+        playerControl: play,
+        promptButton: false,
+        video: pausedOnScreenVideo()
     });
     feature._dismiss();
     assert.equal(play.clicked, 1);
     assert.equal(confirmButton.clicked, 0);
+});
+
+test('a prompt with no button and a Play with no box gets no click and no resume', () => {
+    const play = offScreen(playButton());
+    const video = playableVideo();
+    const { feature, timers } = withTimers({
+        dialogText: 'Video paused. Continue watching?',
+        playerControl: play,
+        promptButton: false,
+        video
+    });
+    feature._dismiss();
+    assert.equal(play.clicked, 0);
+    assert.equal(timers.length, 0);
+});
+
+test('a confirm button with no box is not pressed, and Play answers instead', () => {
+    const play = playButton();
+    const { feature, confirmButton } = scenario({
+        dialogText: 'Video paused. Continue watching?',
+        playerControl: play,
+        video: pausedOnScreenVideo()
+    });
+    offScreen(confirmButton);
+    feature._dismiss();
+    assert.equal(confirmButton.clicked, 0);
+    assert.equal(play.clicked, 1);
+});
+
+function withTimers(options) {
+    const timers = [];
+    const run = scenario({
+        ...options,
+        extraGlobals: {
+            setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
+            clearTimeout: (id) => { if (timers[id - 1]) timers[id - 1].fn = () => {}; }
+        }
+    });
+    return { ...run, timers };
+}
+
+function playableVideo() {
+    const video = pausedOnScreenVideo();
+    video.playCalls = 0;
+    video.play = () => { video.playCalls += 1; return Promise.resolve(); };
+    return video;
+}
+
+test('a video the answer did not restart gets played', () => {
+    const video = playableVideo();
+    const { feature, timers } = withTimers({ dialogText: 'Video paused. Continue watching?', video });
+    feature._dismiss();
+    assert.equal(video.playCalls, 0, 'YouTube gets the first chance to restart it');
+    assert.equal(timers.length, 1);
+    timers[0].fn();
+    assert.equal(video.playCalls, 1);
+});
+
+test('a video the answer did restart, or one that has ended, is left alone', () => {
+    const playing = playableVideo();
+    const first = withTimers({ dialogText: 'Video paused. Continue watching?', video: playing });
+    first.feature._dismiss();
+    playing.paused = false;
+    first.timers[0].fn();
+    assert.equal(playing.playCalls, 0);
+
+    const ended = playableVideo();
+    const second = withTimers({ dialogText: 'Video paused. Continue watching?', video: ended });
+    second.feature._dismiss();
+    ended.ended = true;
+    second.timers[0].fn();
+    assert.equal(ended.playCalls, 0);
+});
+
+test('turning the feature off drops a pending resume', () => {
+    const video = playableVideo();
+    const { feature, timers } = withTimers({ dialogText: 'Video paused. Continue watching?', video });
+    feature._dismiss();
+    feature.destroy();
+    timers[0].fn();
+    assert.equal(video.playCalls, 0);
+});
+
+test('with a verification surface open nothing gets clicked or resumed', () => {
+    const play = playButton();
+    const video = playableVideo();
+    const { feature, confirmButton, timers } = withTimers({
+        dialogText: 'Video paused. Continue watching?',
+        playerControl: play,
+        safeToClick: false,
+        video
+    });
+    feature._dismiss();
+    assert.equal(confirmButton.clicked, 0);
+    assert.equal(play.clicked, 0);
+    assert.equal(timers.length, 0);
+    assert.equal(video.playCalls, 0);
+
+    const noButton = withTimers({
+        dialogText: 'Video paused. Continue watching?',
+        playerControl: playButton(),
+        promptButton: false,
+        safeToClick: false,
+        video: playableVideo()
+    });
+    noButton.feature._dismiss();
+    assert.equal(noButton.playerControl.clicked, 0);
+    assert.equal(noButton.timers.length, 0);
+});
+
+test('the YouTube Music prompt is answered through its own button', () => {
+    const button = onScreen(fakeNode({ tag: 'button', attributes: { id: 'button' } }));
+    const music = onScreen(fakeNode({ tag: 'ytmusic-you-there-renderer' }));
+    music.querySelector = (selector) => (selector.split(',').map((part) => part.trim()).includes('#button') ? button : null);
+    const play = playButton();
+    const { feature } = scenario({ musicPrompt: music, playerControl: play, video: pausedOnScreenVideo() });
+    feature._dismiss();
+    assert.equal(button.clicked, 1);
+    assert.equal(play.clicked, 0);
 });
 
 test('the userscript runs this same feature rather than a copy of its own', () => {
