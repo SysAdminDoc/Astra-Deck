@@ -514,26 +514,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: each surface captured in light and dark (default, hover, focus,
   disabled, empty, error), with findings fixed or logged.
 
-- [ ] P3 — Popup pseudo-locale lane of the headless a11y smoke fails
-  Why: `node scripts/smoke-headless-a11y.js --fixture-states --surface popup` fails its
-  pseudo lane with "popup/pseudo: pseudo-locale copy did not render". It failed on main
-  before the 2026-10-06 light-theme change too, so the lane has been red unseen (the
-  smoke isn't part of `npm run check`).
-  Reading notes (2026-10-09, no run): the lane was added in f259c85e on 2026-08-19 and
-  passed then. The pseudo stage sets `PSEUDO_LOCALE='es'` and checks for the `⟦` marker
-  (~1786); `smoke-settings-overlay.js`'s stub seeds `_localeOverride` from `?locale`
-  and resolves `getURL` as `new URL(p, document.baseURI)`; popup `initI18n` fetches
-  `_locales/<locale>/messages.json`; Chromium launches with
-  `--allow-file-access-from-files` (~2021). No code cause found. Leading hypothesis:
-  newer Chromium refuses `fetch()` on `file://` even with that flag, so the catalogue
-  never loads and the popup renders English. Likely fix: serve the popup and side panel
-  from the smoke's fixture HTTP origin (`httpPath`) instead of `file://`.
-  Where: `scripts/smoke-headless-a11y.js`, `scripts/generate-pseudolocale.js`,
-  `extension/popup.js` locale selection.
-  Blocker: confirming the hypothesis takes a smoke run.
-  Acceptance: the pseudo lane renders pseudo-locale copy and passes, and a test fails if
-  the lane quietly renders real copy.
-
 - [ ] P3 — Open the awesome-userscripts pull request
   Why: users browse awesome-scripts/awesome-userscripts for scripts, and Astra isn't
   on it (checked 2026-10-09: no Astra, YTKit or SysAdminDoc entry). README now names
