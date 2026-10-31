@@ -24,6 +24,10 @@ No new runtime branch was added in this pass. The retained paths were already
 paying for themselves and now have explicit policy coverage. The four deferred
 paths stay absent from startup code and the Firefox manifest.
 
+## Local Network Access, measured 2026-10-31
+
+On Chromium 156 the service worker's fetch to the companion on `127.0.0.1` got a 200 with no prompt, while a page on `https://example.com` was blocked with the same request. The `host_permissions` exemption holds, so there's no native-messaging fallback for download commands: the companion's native host still serves only ping and get-token. Build that fallback if a real user ever hits an LNA failure. The popup can't fetch loopback itself (its CSP doesn't allow it), which is why those calls go through the background.
+
 ## Primary references
 
 - [Chrome `runtime.getContexts`](https://developer.chrome.com/docs/extensions/reference/api/runtime#method-getContexts)

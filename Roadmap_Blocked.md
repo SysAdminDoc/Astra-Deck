@@ -24,6 +24,21 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   enrollment is YouTube's call. Check again when a signed-in harness profile or Matt's browser
   shows the side rail with a Comments button without forced flags.
 
+## P2 — Needs a signed-in YouTube session (2026-10-31)
+
+- [ ] P2 — Check the owner-only playlist features on a signed-in playlist page
+  Why: Quick Remove, Remove Watched and the Watch Later Workbench now read YouTube's lockup playlist
+  rows. Proven 2026-10-31 signed out: the rows, the duration pill, and the row menu opening inside
+  `ytd-popup-container tp-yt-iron-dropdown`. What a signed-out page can't show: the header buttons
+  `_isOwnedPlaylist` looks for on the new header (`button[aria-label*="Edit"]`, `[aria-label*="Remove videos"]`),
+  the "Remove from" item in the `yt-list-item-view-model` menu, the Watch Later page itself and the
+  watched-progress overlay on its rows.
+  Acceptance: on a playlist the account owns, and on Watch Later, Quick Remove removes one row, Remove
+  Watched removes only rows past its threshold, and the Workbench scan lists real titles and progress.
+  If the menu text match (`/remove from/i`, English only on the new menu) can be replaced by a structural
+  hook visible once signed in, replace it.
+  Blocked on: a signed-in session. Checked 2026-10-31: the harness profile `.auth/` has zero cookies.
+
 ## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14, again 2026-09-28 and 2026-09-29)
 
 - [ ] P0: Make release currency a blocking gate and promote the current release
@@ -237,14 +252,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   `astra-deck-store-safe-firefox-v*.xpi` and `updates.json`, then verify an
   installed signed copy discovers and applies a later release.
 
-- [ ] P1 — Native-messaging download-command transport as a Chrome-LNA fallback
-  Why: Chrome 142 (Oct 2025) enforces Local Network Access, which can gate/block the extension's `127.0.0.1` fetch to the companion; the token path already rides native messaging but the *download command* path is HTTP-only, so downloads can fail while auth still works. Native messaging is the LNA-immune bridge (browserpass/KeePassXC/1Password pattern).
-  Evidence: RESEARCH.md 2026-07-27 §Security/Reliability + Open Questions; `astra_downloader/astra_downloader.py` (`handle_native_bootstrap_request` serves only ping/get-token); https://developer.chrome.com/blog/local-network-access
-  Touches: `astra_downloader/astra_downloader.py` (native host message loop → accept download/status/queue verbs), extension `MediaDLManager` (detect localhost-fetch blocked → fall back to native transport), native-host manifest.
-  Acceptance: with the extension's `127.0.0.1` fetch blocked/denied by LNA, a download can still be initiated and its status polled over the native-messaging channel; when direct fetch works, behavior is unchanged.
-  Complexity: L
-  Blocker: Requires a live Chrome 142+ browser to reproduce LNA blocking and verify the native-transport fallback end-to-end — same live-browser dependency as the existing "Validate Chrome LNA exemption" item. Implement + verify together once a test browser is available.
-
 ## P3 — Browser-Gated Verification (2026-07-15 audit)
 
 - [ ] P3 — Live-chat English-only structural fallbacks need browser-gated verification
@@ -291,14 +298,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Requires manual AMO developer dashboard interaction (screenshots, listing copy, human review submission). Cannot be automated.
 
-- [ ] P1 — Companion release EXE + SHA256 sidecar + clean-machine verification
-  Why: The updater/setup flow requires both `AstraDownloader.exe` and `AstraDownloader.exe.sha256` on the latest GitHub release. The current latest release ships extension/userscript artifacts only, so users cannot complete the one-click companion setup path.
-  Evidence: README "Astra Downloader Companion Setup" section; the companion repo owns its build and release staging; `gh release view --json assets` on the latest release lists no companion assets.
-  Touches: the companion repo's build + GitHub Release assets (SysAdminDoc/AstraDownloader)
-  Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
-  Complexity: M
-  Blocker: Requires maintainer GitHub authentication to upload the sidecar (`gh auth status` reports the SysAdminDoc token is invalid in this environment) plus manual clean Windows verification that the EXE runs standalone.
-
 ## P3 — Discovery (2026-08-06)
 
 - [ ] P3 — Set the repository social-preview image
@@ -321,16 +320,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: When Writer API is available, a "Draft" button appears in YouTube's comment composer; responses generated on-device; feature off by default.
   Complexity: M
   Blocker: Chrome Writer/Rewriter APIs are in Developer Trial as of June 2026, not yet stable. Implementing against an unstable API surface creates maintenance burden.
-
-## P1 — Browser-Gated
-
-- [ ] P1 — Validate Chrome Local Network Access exemption for companion communication
-  Why: Chrome 142+ gates content-script-to-localhost fetch behind a user permission prompt. Chrome 147+ extends this to WebSocket. The extension communicates with the companion via `fetch()` to `http://127.0.0.1:9751` (and 5 fallback ports). The manifest has explicit `host_permissions` for these origins, which should exempt the extension from the prompt — but this has never been verified on Chrome 147+. If the exemption doesn't hold, companion communication silently breaks for users on Chrome 147+.
-  Evidence: Chrome What's New in Extensions (Local Network Access, Chrome 142/146/147); manifest.json `host_permissions` includes `http://127.0.0.1:9751/*` through `9851/*`.
-  Touches: Manual testing on Chrome 147+. If exemption fails: `extension/manifest.json` (add `optional_host_permissions`), `extension/core/optional-host-permissions.js`, `extension/ytkit.js` (MediaDLManager.check flow).
-  Acceptance: Companion health check and download flow work on Chrome 147+ without user-visible permission prompt. If prompt is needed, document the flow and surface a diagnostic message.
-  Complexity: S (if exempted) / M (if not)
-  Blocker: Requires loading the extension in Chrome 147+ and verifying companion communication with a running Astra Downloader instance. Cannot be tested without a live Chrome 147+ browser.
 
 ## P2 — Browser-Gated
 
@@ -369,14 +358,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Userscript Structural Drift (Browser-Gated)
 
-- [ ] P2 — Establish one canonical implementation per extracted extension feature
-  Why: The extension-only download UI is canonical as of commit `0ee9e49`, but every remaining extracted module is shared with the generated userscript; deleting those fallbacks before the stale userscript bundle is repaired would break a shipped vehicle.
-  Evidence: `extension/manifest.json`, `extension/ytkit.js`, `extension/features/*`, `scripts/sync-userscript.js`, `scripts/check-userscript-drift.js`.
-  Touches: feature registry/composition, extracted modules, monolith fallback blocks, userscript bundle generation, behavioral boundary tests.
-  Acceptance: each migrated shared feature has one source implementation consumed by extension and userscript; explicit exclusions remain tested; duplicate fallback code is deleted; manifest/generated-bundle drift and lifecycle parity fail CI; migration proceeds in reviewable feature-sized batches.
-  Complexity: XL
-  Blocker: All remaining extracted modules are bundled into the userscript. Resolve the stale userscript settings/import contract below and verify the regenerated bundle in a Tampermonkey browser session before removing any remaining shared fallback.
-
 - [ ] P2 — Verify the ported userscript settings/install-assist methods in Tampermonkey
   Why: NARROWED 2026-08-06. This item previously predicted that regenerating the
   bundle *would* break Import. That has already happened and shipped: the bundle
@@ -394,18 +375,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: Requires a running browser with a userscript manager installed. The
   static half is covered by the P0's symbol-resolution gate; only the in-browser
   behavioural confirmation needs the vehicle.
-
-- [ ] P2 — Side-panel optional-host grant needs a live permission-prompt check
-  Why: the gating itself ships. `requestOptionalHostsForToggle` in
-  `extension/sidepanel.js` asks for the host before an API-backed toggle
-  (SponsorBlock, DeArrow) is written, and the toggle handler only saves when the
-  grant succeeds. What hasn't been seen is `chrome.permissions.request()`
-  resolving from the side panel's gesture and the toggle then landing.
-  Where: extension/sidepanel.js (`requestOptionalHostsForToggle` and its call in the toggle handler)
-  Blocker: headless Chromium loads the extension fine (the optional-hosts smoke
-  harness does), but Chrome's host permission prompt is native browser UI that
-  automation can't answer. Someone has to
-  click Allow once in a real Chrome window.
 
 - [ ] P1 — MAIN-world audio graph reconnect needs browser verification
   Why: The WeakMap-cached source node fix (shipped in v4.46.29) is architecturally
@@ -530,6 +499,9 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
     `docs/platform-api-adoption.md`.
   - Recording a NEGATIVE result matters as much as a positive one here: an
     untested negative is how the next audio change breaks this silently.
+  - Tried 2026-10-31: GSMTC `RequestAsync` through Windows PowerShell 5.1 plus Chromium 156 on a
+    hidden desktop never exposes a session even without the audio graph, so that route says
+    nothing either way. It still needs a person at an interactive desktop pressing the key.
 
 ## P2 — No verifiable fixture (2026-09-05)
 
@@ -569,11 +541,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
     second is a judgement call, not a coding one: every negative branch is
     testable today, and only the branch that actually draws a frame is not.
 
-## P3 — Needs a browser run, which waits for the owner's word (2026-10-09)
-
-Standing rule since 2026-10-07: no builds, test runs, smokes or browser launches
-without the owner asking. Each item below has its code side done or has none, and
-what's left is a live run.
+## P3 — Needs a browser run (2026-10-09)
 
 - [ ] P3 — Userscript: confirm a blocked channel hides in the watch sidebar
   Why: the 2026-10-05 research pass said the userscript had no MAIN-world bridge, so
