@@ -174,10 +174,9 @@ test('the video surface is hidden without detaching the media element', () => {
 
 // ── the same invariant, one feature over ───────────────────────────────
 // disableLoudnessNormalization shipped a name and description promising it
-// stopped YouTube's loudness normalization. It never could: the gain runs in a
-// Web Audio node neither world can reach, and the "MAIN-world bridge" its
-// comment pointed at was never built. All it does is stop the volume slider
-// drifting below 100%.
+// stopped YouTube's loudness normalization. It turns Stable Volume off and stops
+// the slider drifting, and on a real page a loud video still played at 75% with
+// Stable Volume off (56% with it on), so the copy has to keep saying so.
 test('the volume feature describes what it does, not what its name implied', () => {
     const start = sources.ytkit.indexOf("id: 'disableLoudnessNormalization'");
     const block = sources.ytkit.slice(start, start + 3200);
@@ -186,13 +185,12 @@ test('the volume feature describes what it does, not what its name implied', () 
         'the old name promised a capability the player does not expose');
     assert.match(block, /feature_disableLoudnessNormalization_name/,
         'the copy must be localizable like every other feature');
-    assert.match(block, /does NOT disable/,
+    assert.match(block, /Turn off YouTube.s Stable Volume/);
+    assert.match(block, /YouTube still turns down loud videos/,
         'the description must state the limitation rather than bury it in "best effort"');
 
-    // The bridge attribute has no consumer anywhere; the comment must say so
-    // instead of implying one is coming.
+    // The switch and the thing reading it must be the same attribute.
     const mainWorld = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');
-    assert.ok(!mainWorld.includes('ytkitDisableLoudness'),
-        'if a MAIN-world consumer is ever added, this comment and copy must be revisited');
-    assert.match(block, /There is NO\s*\n\s*\/\/ MAIN-world consumer/);
+    assert.match(mainWorld, /var ATTR = 'data-ytkit-stable-volume'/);
+    assert.match(block, /publishBridgeAttribute\('data-ytkit-stable-volume', 'off'\)/);
 });

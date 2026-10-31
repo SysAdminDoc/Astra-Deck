@@ -2531,7 +2531,7 @@
     "message": "Disable Infinite Scroll"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization, which runs in a Web Audio node an extension can’t reach, so quiet videos stay quiet. Only the volume slider stops drifting."
+    "message": "Turn off YouTube’s Stable Volume and stop the volume slider drifting below 100%. YouTube still turns down loud videos."
   },
   "feature_disableLoudnessNormalization_name": {
     "message": "Keep Volume At Full"

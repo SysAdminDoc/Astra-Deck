@@ -2033,6 +2033,80 @@
 })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature 6.4: Stable Volume off for Keep Volume At Full
+    // ──────────────────────────────────────────────────────────────────
+    // The player's own switch, as read on a live page: getDrcUserPreference
+    // is 1 with Stable Volume on and anything else is off, so `true` reads
+    // as off and a restore has to write 1. The player keeps the value in
+    // localStorage across pages. If those methods go away the gear menu item
+    // still does the job. Its class is the same in every locale and its label
+    // isn't, so it's never matched by text.
+(function() {
+    'use strict';
+    if (typeof document === 'undefined') return;
+
+    var ATTR = 'data-ytkit-stable-volume';
+    var RESTORE_KEY = 'ytkit-stable-volume-restore';
+    var menuTried = false;
+
+    // Only what this feature switched off gets switched back on, including
+    // when the feature was turned off with no player on screen.
+    function readRestore() {
+        try { return localStorage.getItem(RESTORE_KEY) === '1'; } catch (e) { return false; }
+    }
+    function writeRestore(value) {
+        try {
+            if (value) localStorage.setItem(RESTORE_KEY, '1');
+            else localStorage.removeItem(RESTORE_KEY);
+        } catch (e) { /* reason: storage refused, so a later restore just doesn't happen */ }
+    }
+
+    function driveMenu(player) {
+        if (menuTried) return;
+        var button = player.querySelector('.ytp-settings-button');
+        var menu = player.querySelector('.ytp-settings-menu');
+        if (!button || !menu || button.getAttribute('aria-expanded') === 'true') return;
+        menuTried = true;
+        menu.style.visibility = 'hidden';
+        button.click();
+        setTimeout(function() {
+            var item = menu.querySelector('.ytp-drc-menu-item');
+            if (item && item.getAttribute('aria-checked') === 'true') item.click();
+            button.click();
+            menu.style.visibility = '';
+        }, 0);
+    }
+
+    function apply() {
+        var player = document.getElementById('movie_player');
+        if (!player) return;
+        var wantOff = _bridgeGet(ATTR) === 'off';
+        if (typeof player.getDrcUserPreference !== 'function' || typeof player.setDrcUserPreference !== 'function') {
+            if (wantOff) driveMenu(player);
+            return;
+        }
+        var on = player.getDrcUserPreference() === 1;
+        if (wantOff) {
+            if (on) {
+                writeRestore(true);
+                player.setDrcUserPreference(0);
+            }
+            return;
+        }
+        if (readRestore()) {
+            writeRestore(false);
+            if (!on) player.setDrcUserPreference(1);
+        }
+    }
+
+    _obsRegister([ATTR], apply);
+
+    document.addEventListener('loadstart', function(e) {
+        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) apply();
+    }, true);
+})();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 6.5: live-edge state for Live Latency Catch-up
     // ──────────────────────────────────────────────────────────────────
     // The isolated feature can't call the player's methods, and the <video>

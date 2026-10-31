@@ -36078,10 +36078,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'disableLoudnessNormalization',
             name: t('feature_disableLoudnessNormalization_name', 'Keep Volume At Full'),
-            description: t('feature_disableLoudnessNormalization_desc', 'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization, which runs in a Web Audio node an extension can’t reach, so quiet videos stay quiet. Only the volume slider stops drifting.'),
+            description: t('feature_disableLoudnessNormalization_desc', 'Turn off YouTube’s Stable Volume and stop the volume slider drifting below 100%. YouTube still turns down loud videos.'),
             group: 'Video Player',
             icon: 'volume-x',
-            pages: [PageTypes.WATCH],
+            // No page list: leaving a watch page must not count as turning this
+            // off, or the miniplayer would get Stable Volume back.
             _navRule: null,
             _videoListener: null,
             _video: null,
@@ -36116,15 +36117,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     };
                     video.addEventListener('volumechange', this._videoListener);
                 }
-                // Published for styling and diagnostics only. There is NO
-                // MAIN-world consumer: the gainNode that performs the actual
-                // normalization is not reachable from either world through any
-                // API YouTube exposes, so nothing here can switch it off. The
-                // earlier comment promised a bridge that was never built, which
-                // is what let the feature keep its overclaiming name.
-                document.documentElement.dataset.ytkitDisableLoudness = '1';
             },
             init() {
+                // The MAIN world turns YouTube's Stable Volume off (ytkit-main.js,
+                // Feature 6.4). That leaves YouTube's turning down of loud videos
+                // alone, and the clamp above still runs if the switch is gone.
+                publishBridgeAttribute('data-ytkit-stable-volume', 'off');
                 this._navRule = () => { setTimeout(() => this._apply(), 800); };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
@@ -36133,7 +36131,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this.id);
                 this._navRule = null;
                 this._detachVideo();
-                delete document.documentElement.dataset.ytkitDisableLoudness;
+                clearBridgeAttribute('data-ytkit-stable-volume');
             }
         },
         // ═══════════════════════════════════════════════════════════════════

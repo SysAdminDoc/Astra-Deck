@@ -2517,7 +2517,7 @@
     "message": "Limiter défilement"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Empêche YouTube de rabaisser le volume du lecteur sous 100 %. Cela ne désactive PAS la normalisation sonore : elle s’exécute dans un nœud Web Audio qu’une extension ne peut pas atteindre, donc les vidéos discrètes le restent ; seul le curseur de volume cesse de dériver."
+    "message": "Désactive le Volume stable de YouTube et empêche le curseur de volume de descendre sous 100 %. YouTube continue de baisser le son des vidéos fortes."
   },
   "feature_disableLoudnessNormalization_name": {
     "message": "Garder le volume au maximum"

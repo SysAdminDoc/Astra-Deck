@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
+
 ## [4.106.0] (2026-10-31)
 
 ### Changed

@@ -4104,12 +4104,12 @@ test('perChannelIntroOutro stores offsets keyed by channel ID and skips bidirect
         'must fast-forward past the intro window');
 });
 
-test('disableLoudnessNormalization flips the html data attribute for the MAIN-world bridge', () => {
+test('disableLoudnessNormalization asks the MAIN world to turn Stable Volume off', () => {
     const start = ytkitSource.indexOf("id: 'disableLoudnessNormalization'");
     assert.ok(start > -1, 'disableLoudnessNormalization must exist');
     const block = ytkitSource.slice(start, start + 5600);
-    assert.match(block, /documentElement\.dataset\.ytkitDisableLoudness\s*=\s*'1'/,
-        'must set data-ytkit-disable-loudness for future MAIN-world bridge');
+    assert.match(block, /publishBridgeAttribute\('data-ytkit-stable-volume', 'off'\)/,
+        'the switch must go through the sealed bridge');
     assert.match(block, /if \(this\._video !== video\)/,
         'the volume clamp must rebind when YouTube swaps the <video> element');
     // Anchor on the method definition, not the bare token — prose in the
@@ -4117,8 +4117,10 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
     const destroyIdx = block.search(/\n\s+destroy\(\) \{/);
     assert.ok(destroyIdx > -1, 'destroy() must be defined inside the pinned window');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
-    assert.match(destroyBlock, /delete document\.documentElement\.dataset\.ytkitDisableLoudness/,
-        'destroy() must clear the html data attribute');
+    assert.match(destroyBlock, /clearBridgeAttribute\('data-ytkit-stable-volume'\)/,
+        'destroy() must give Stable Volume back');
+    assert.doesNotMatch(block.slice(0, destroyIdx), /pages: \[/,
+        'leaving a watch page must not count as turning the feature off');
 });
 
 // ── v3.27.0 P1: Downloads & local media library invariants ──

@@ -2517,7 +2517,7 @@
     "message": "Limitar desplazamiento"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Evita que YouTube baje el volumen del reproductor por debajo del 100 %. Esto NO desactiva la normalización de sonoridad: se ejecuta en un nodo de Web Audio al que una extensión no puede llegar, así que los vídeos silenciosos siguen siéndolo; solo deja de moverse el control de volumen."
+    "message": "Desactiva el Volumen estable de YouTube y evita que el control de volumen baje del 100 %. YouTube sigue bajando el volumen de los vídeos muy altos."
   },
   "feature_disableLoudnessNormalization_name": {
     "message": "Mantener el volumen al máximo"

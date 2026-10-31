@@ -2517,7 +2517,7 @@
     "message": "Limita scorrimento"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Impedisce a YouTube di riportare il volume del player sotto il 100%. NON disattiva la normalizzazione del volume: gira in un nodo Web Audio irraggiungibile da un’estensione, quindi i video silenziosi restano tali; smette solo di muoversi il cursore del volume."
+    "message": "Disattiva il Volume stabile di YouTube e impedisce al cursore del volume di scendere sotto il 100%. YouTube continua ad abbassare i video molto forti."
   },
   "feature_disableLoudnessNormalization_name": {
     "message": "Mantieni il volume al massimo"

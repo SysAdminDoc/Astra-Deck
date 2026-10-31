@@ -2517,7 +2517,7 @@
     "message": "스크롤 제한"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "YouTube가 플레이어 볼륨을 100% 아래로 되돌리지 못하게 합니다. 음량 정규화가 꺼지는 것은 아닙니다. 확장 프로그램이 접근할 수 없는 Web Audio 노드에서 실행되므로 소리가 작은 영상은 그대로이며, 볼륨 슬라이더만 움직이지 않게 됩니다."
+    "message": "YouTube의 안정적인 볼륨을 끄고 볼륨 슬라이더가 100% 아래로 내려가지 않게 합니다. 소리가 큰 영상은 YouTube가 계속 줄입니다."
   },
   "feature_disableLoudnessNormalization_name": {
     "message": "볼륨을 최대로 유지"
