@@ -37,12 +37,7 @@ const earlierIsolatedScripts = manifest.content_scripts
 const NOT_IN_ISOLATED = Object.freeze({
     // The extension's MAIN-world bridge patches the page; ytkit.js builds the
     // inline twin only when there is no extension context (the userscript).
-    createResourceUnlockBridge: 'userscript-only, behind !hasExtensionContext()',
-    // isFeatureAllowedByArtifact has never found it, so the page shows and
-    // runs GitHub-full-only features the popup hides. Making it work would
-    // hide 17 of them, AI Summary and Custom CSS among them, from everyone on
-    // the default profile: an owner decision, logged in Roadmap_Blocked.md.
-    findSettingEntry: 'dead profile filter, owner decision pending'
+    createResourceUnlockBridge: 'userscript-only, behind !hasExtensionContext()'
 });
 
 // A read, not a write: `YTKitCore.x = ...` is how a feature module publishes.

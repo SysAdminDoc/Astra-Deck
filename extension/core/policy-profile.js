@@ -145,6 +145,14 @@
             return isEntryAllowedInProfile(findEntry(key), effective);
         }
 
+        // What this build offers, whichever profile the popup is set to. The
+        // tab's feature list reads this. A key the schema doesn't know isn't
+        // the artifact's to refuse.
+        function isKeyInArtifact(key) {
+            const entry = findEntry(key);
+            return !entry || isEntryAllowedInProfile(entry, 'github-full');
+        }
+
         // Filter a {key: value} settings bag to the keys allowed under the
         // current profile. Used by the popup's visible-toggle list and by
         // the export scrubber when generating a store-safe snapshot.
@@ -531,6 +539,7 @@
             resolveEffectiveProfile,
             isEntryAllowedInProfile,
             isKeyAllowedInProfile,
+            isKeyInArtifact,
             filterSettingsForProfile,
             shouldScrubKey,
             isSettingValueValid,

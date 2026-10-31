@@ -21,6 +21,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Fixed
 
 - A selector surface could go missing on a random page load. The tab loads its core modules at the same time, so the selector map was sometimes built before its last pack had arrived, and the settings policy never saw the settings list at all. Modules that others read while loading now finish first.
+- Store-safe and download-free builds no longer show or run features they don't ship, such as Custom CSS. GitHub builds and the userscript keep the whole list whichever profile the popup is set to.
 - Rebuilding the locale files no longer overwrites translations that were proofed by hand. It had been undoing 83 of them across 10 languages, some back to English, and a new check now fails if a rebuild would change a shipped string.
 - The development dependency audit is clean again. `minimatch` moves to 11, and `deepmerge` and `multimatch` run as small patched copies in `scripts/npm-stubs`, since `deepmerge` has no fixed release yet and stock `multimatch` 8 would have emptied web-ext's ignore list on Windows. None of this ships in the extension.
 

@@ -40489,16 +40489,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         return !!featureId && RETIRED_COMMENT_FEATURE_IDS.has(featureId);
     }
 
+    // The build decides what the tab offers. A store-safe or download-free
+    // artifact leaves out what it doesn't ship and every other build keeps the
+    // whole list: the popup's profile scopes the popup, AI credentials and
+    // Cobalt, and never takes a feature off the page.
+    let artifactPolicy = null;
     function isFeatureAllowedByArtifact(feature) {
         const policyFactory = globalThis.YTKitCore?.createPolicyProfile;
-        const findEntry = globalThis.YTKitCore?.findSettingEntry;
-        if (typeof policyFactory !== 'function' || typeof findEntry !== 'function') return true;
-        const entry = findEntry(getFeatureSettingKey(feature));
-        if (!entry) return true;
+        if (typeof policyFactory !== 'function') return true;
         try {
-            const policy = policyFactory();
-            const effective = policy.resolveEffectiveProfile(appState.settings || {});
-            return policy.isEntryAllowedInProfile(entry, effective);
+            artifactPolicy = artifactPolicy || policyFactory();
+            return artifactPolicy.isKeyInArtifact(getFeatureSettingKey(feature));
         } catch (_) {
             // reason: a missing or malformed manifest must fail open for the
             // userscript and legacy test harnesses, never suppressing all UI.
