@@ -4026,7 +4026,7 @@
     "message": "SponsorBlock 备用主机"
   },
   "feature_sponsorBlock_desc": {
-    "message": "使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据，自动跳过赞助、片头、片尾及其他非正片片段"
+    "message": "使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据，自动跳过赞助、片头、片尾及其他非正片片段。点击进度条上的片段即可观看该片段。"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} 个匹配项"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "正在播放此片段：{category}。在离开此视频之前不会跳过。",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "题外话"

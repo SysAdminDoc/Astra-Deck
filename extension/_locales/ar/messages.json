@@ -4026,7 +4026,7 @@
     "message": "مضيف SponsorBlock الاحتياطي"
   },
   "feature_sponsorBlock_desc": {
-    "message": "يتخطى تلقائيًا المقاطع الدعائية والمقدمات والنهايات والأجزاء الأخرى غير الأساسية باستخدام بيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0"
+    "message": "يتخطى تلقائيًا المقاطع الدعائية والمقدمات والنهايات والأجزاء الأخرى غير الأساسية باستخدام بيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0. انقر على مقطع في شريط التقدم لمشاهدته."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} متطابق"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "جارٍ تشغيل هذا المقطع: {category}. لن يتم تخطيه حتى تغادر هذا الفيديو.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "حشو خارج الموضوع"

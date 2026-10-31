@@ -4026,7 +4026,7 @@
     "message": "Резервный хост SponsorBlock"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Автоматически пропускает спонсорские сегменты, вступления, концовки и другие части вне основного содержания по данным SponsorBlock под лицензией CC BY-NC-SA 4.0"
+    "message": "Автоматически пропускает спонсорские сегменты, вступления, концовки и другие части вне основного содержания по данным SponsorBlock под лицензией CC BY-NC-SA 4.0. Нажмите на сегмент на шкале воспроизведения, чтобы посмотреть его."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "Совпадений: {count}"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "Воспроизводится этот сегмент: {category}. Он не будет пропущен, пока вы не покинете это видео.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "отступление"

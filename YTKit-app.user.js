@@ -20570,7 +20570,7 @@ const STORAGE_KEYS = Object.freeze({
 		}) || {
 			id: 'sponsorBlock',
 			name: t('feature_sponsorBlock_name', 'SponsorBlock'),
-			description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0'),
+			description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.'),
 			group: 'Content',
 			icon: 'skip-forward',
 			isParent: true,
@@ -26631,10 +26631,9 @@ const STORAGE_KEYS = Object.freeze({
 		{
 			id: 'disableLoudnessNormalization',
 			name: t('feature_disableLoudnessNormalization_name', 'Keep Volume At Full'),
-			description: t('feature_disableLoudnessNormalization_desc', 'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization, which runs in a Web Audio node an extension can’t reach, so quiet videos stay quiet. Only the volume slider stops drifting.'),
+			description: t('feature_disableLoudnessNormalization_desc', 'Turn off YouTube’s Stable Volume and stop the volume slider drifting below 100%. YouTube still turns down loud videos.'),
 			group: 'Video Player',
 			icon: 'volume-x',
-			pages: [PageTypes.WATCH],
 			_navRule: null,
 			_videoListener: null,
 			_video: null,
@@ -26657,9 +26656,9 @@ const STORAGE_KEYS = Object.freeze({
 					};
 					video.addEventListener('volumechange', this._videoListener);
 				}
-				document.documentElement.dataset.ytkitDisableLoudness = '1';
 			},
 			init() {
+				publishBridgeAttribute('data-ytkit-stable-volume', 'off');
 				this._navRule = () => { setTimeout(() => this._apply(), 800); };
 				addNavigateRule(this.id, this._navRule);
 				this._navRule();
@@ -26668,7 +26667,7 @@ const STORAGE_KEYS = Object.freeze({
 				removeNavigateRule(this.id);
 				this._navRule = null;
 				this._detachVideo();
-				delete document.documentElement.dataset.ytkitDisableLoudness;
+				clearBridgeAttribute('data-ytkit-stable-volume');
 			}
 		},
 		{

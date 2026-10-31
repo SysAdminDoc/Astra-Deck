@@ -4026,7 +4026,7 @@
     "message": "SponsorBlock 대체 호스트"
   },
   "feature_sponsorBlock_desc": {
-    "message": "CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터를 사용해 스폰서 구간, 인트로, 아웃트로 및 기타 비콘텐츠 구간을 자동으로 건너뜁니다"
+    "message": "CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터를 사용해 스폰서 구간, 인트로, 아웃트로 및 기타 비콘텐츠 구간을 자동으로 건너뜁니다. 진행 표시줄에서 구간을 클릭하면 해당 구간을 시청할 수 있습니다."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count}개 일치"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "이 구간을 재생합니다: {category}. 이 동영상을 나갈 때까지 건너뛰지 않습니다.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "잡담"

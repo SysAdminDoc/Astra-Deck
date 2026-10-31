@@ -765,3 +765,159 @@ test('a second init() without destroy() does not stack intervals, listeners or o
         global.MutationObserver = priorObserver;
     }
 });
+
+// A click on a segment in the progress bar means "show me this one". The fake bar
+// is 1000 px wide, so a marker at 20% starts at x = 200. Real clicks on a real bar
+// were checked live: pointerup lands before the seek, and the marker doesn't get in
+// the way of it because it stays pointer-events:none.
+function withKeepFixture(segments, run) {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const priorDocument = global.document;
+    global.document = {
+        addEventListener() {},
+        removeEventListener() {},
+        createElement: () => ({
+            style: {},
+            dataset: {},
+            remove() {},
+            getBoundingClientRect() {
+                const css = this.style.cssText;
+                const left = parseFloat(/left:([\d.]+)%/.exec(css)[1]) * 10;
+                const percent = /width:([\d.]+)%/.exec(css);
+                return { left, right: left + (percent ? parseFloat(percent[1]) * 10 : 3) };
+            }
+        })
+    };
+    try {
+        const video = { paused: false, currentTime: 0, duration: 100, playbackRate: 1 };
+        const announced = [];
+        let videoId = 'first';
+        const feature = createSponsorBlockFeature({
+            appState: { settings: { sbCat_sponsor: true, sbCat_intro: true, sbCat_poi_highlight: true } },
+            getMainVideoElement: () => video,
+            getPlayerProgressBar: () => ({ appendChild() {} }),
+            getVideoId: () => videoId,
+            announceA11y: (message) => announced.push(message)
+        });
+        feature._segments = segments;
+        feature._renderBarSegments();
+        const press = (x, { button = 0, onBar = true, toX = x } = {}) => {
+            feature._onBarPointerDown({ button, clientX: x, target: { closest: () => (onBar ? {} : null) } });
+            feature._onBarPointerUp({ clientX: toX });
+        };
+        const timeAfterCheck = (time) => {
+            video.currentTime = time;
+            feature._checkSkip();
+            feature._clearSchedule();
+            return video.currentTime;
+        };
+        return run({
+            feature,
+            video,
+            announced,
+            press,
+            timeAfterCheck,
+            leaveFor(id) { videoId = id; }
+        });
+    } finally {
+        global.document = priorDocument;
+    }
+}
+
+const SPONSOR_AND_INTRO = () => [
+    { segment: [20, 30], category: 'sponsor', UUID: 'sponsor-uuid' },
+    { segment: [50, 60], category: 'intro', UUID: 'intro-uuid' }
+];
+
+test('clicking a segment on the progress bar plays it, and only that one', () => {
+    withKeepFixture(SPONSOR_AND_INTRO(), ({ feature, announced, press, timeAfterCheck }) => {
+        assert.equal(timeAfterCheck(25), 30, 'skipped before the click');
+        press(250);
+        assert.equal(timeAfterCheck(25), 25, 'stays in the segment that was clicked');
+        assert.equal(timeAfterCheck(55), 60, 'the other segment still skips');
+        assert.equal(announced.filter((message) => /Playing this sponsor segment/.test(message)).length, 1);
+        assert.match(feature._barSegments[0].style.cssText, /opacity:0\.3/, 'the clicked marker dims');
+        assert.match(feature._barSegments[1].style.cssText, /opacity:0\.7/);
+        for (const bar of feature._barSegments) {
+            assert.match(bar.style.cssText, /pointer-events:none/, 'markers must not take clicks away from the seek');
+        }
+        press(250);
+        assert.equal(announced.filter((message) => /Playing this/.test(message)).length, 1, 'said once');
+    });
+});
+
+test('a kept segment no longer schedules an immediate skip', () => {
+    withKeepFixture(SPONSOR_AND_INTRO(), ({ feature, video, press }) => {
+        const delays = [];
+        const realSetTimeout = global.setTimeout;
+        const realClearTimeout = global.clearTimeout;
+        global.setTimeout = (fn, delay) => { delays.push(delay); return {}; };
+        global.clearTimeout = () => {};
+        try {
+            video.currentTime = 25;
+            feature._scheduleNextSkip();
+            assert.ok(delays[0] < 500, 'inside a segment the skip is due now');
+            press(250);
+            feature._scheduleNextSkip();
+            assert.ok(delays[1] >= 2000, 'after the click the next thing due is the intro, 25 s away');
+        } finally {
+            global.setTimeout = realSetTimeout;
+            global.clearTimeout = realClearTimeout;
+        }
+    });
+});
+
+test('a drag, another button or a press off the bar leaves the skip alone', () => {
+    withKeepFixture(SPONSOR_AND_INTRO(), ({ announced, press, timeAfterCheck }) => {
+        press(100, { toX: 250 });
+        assert.equal(timeAfterCheck(25), 30, 'a drag ending on the segment was aiming elsewhere');
+        press(250, { button: 2 });
+        assert.equal(timeAfterCheck(25), 30, 'a right click opens the player menu');
+        press(250, { onBar: false });
+        assert.equal(timeAfterCheck(25), 30, 'a press elsewhere on the page');
+        assert.equal(announced.filter((message) => /Playing this/.test(message)).length, 0);
+        press(248, { toX: 251 });
+        assert.equal(timeAfterCheck(25), 25, 'a hand that moved a few pixels still clicked');
+    });
+});
+
+test('a click on a gap or on a highlight marker keeps nothing', () => {
+    const segments = [
+        { segment: [20, 30], category: 'sponsor', UUID: 'sponsor-uuid' },
+        { segment: [70, 70], category: 'poi_highlight', actionType: 'poi', UUID: 'highlight-uuid' }
+    ];
+    withKeepFixture(segments, ({ feature, press }) => {
+        press(400);
+        press(701);
+        assert.equal(feature._keptSegments.size, 0);
+    });
+});
+
+test('segments without a UUID are told apart by their times', () => {
+    const segments = [
+        { segment: [20, 30], category: 'sponsor' },
+        { segment: [50, 60], category: 'sponsor' }
+    ];
+    withKeepFixture(segments, ({ press, timeAfterCheck }) => {
+        press(250);
+        assert.equal(timeAfterCheck(25), 25);
+        assert.equal(timeAfterCheck(55), 60);
+    });
+});
+
+test('leaving the video or turning the feature off forgets what was kept', async () => {
+    await withKeepFixture(SPONSOR_AND_INTRO(), async ({ feature, press, leaveFor }) => {
+        press(250);
+        assert.equal(feature._keptSegments.size, 1);
+        feature._fetchSegments = async () => [];
+        leaveFor('second');
+        await feature._loadForVideo();
+        assert.equal(feature._keptSegments.size, 0, 'a new video starts clean');
+    });
+    withKeepFixture(SPONSOR_AND_INTRO(), ({ feature, press }) => {
+        press(250);
+        feature._flushCachePersist = () => {};
+        feature.destroy();
+        assert.equal(feature._keptSegments.size, 0);
+    });
+});

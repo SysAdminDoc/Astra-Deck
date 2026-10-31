@@ -27604,6 +27604,62 @@ void 0;
 })();
 (function() {
 	'use strict';
+	if (typeof document === 'undefined') return;
+	var ATTR = 'data-ytkit-stable-volume';
+	var RESTORE_KEY = 'ytkit-stable-volume-restore';
+	var menuTried = false;
+	function readRestore() {
+		try { return localStorage.getItem(RESTORE_KEY) === '1'; } catch (e) { return false; }
+	}
+	function writeRestore(value) {
+		try {
+			if (value) localStorage.setItem(RESTORE_KEY, '1');
+			else localStorage.removeItem(RESTORE_KEY);
+		} catch (e) {   }
+	}
+	function driveMenu(player) {
+		if (menuTried) return;
+		var button = player.querySelector('.ytp-settings-button');
+		var menu = player.querySelector('.ytp-settings-menu');
+		if (!button || !menu || button.getAttribute('aria-expanded') === 'true') return;
+		menuTried = true;
+		menu.style.visibility = 'hidden';
+		button.click();
+		setTimeout(function() {
+			var item = menu.querySelector('.ytp-drc-menu-item');
+			if (item && item.getAttribute('aria-checked') === 'true') item.click();
+			button.click();
+			menu.style.visibility = '';
+		}, 0);
+	}
+	function apply() {
+		var player = document.getElementById('movie_player');
+		if (!player) return;
+		var wantOff = _bridgeGet(ATTR) === 'off';
+		if (typeof player.getDrcUserPreference !== 'function' || typeof player.setDrcUserPreference !== 'function') {
+			if (wantOff) driveMenu(player);
+			return;
+		}
+		var on = player.getDrcUserPreference() === 1;
+		if (wantOff) {
+			if (on) {
+				writeRestore(true);
+				player.setDrcUserPreference(0);
+			}
+			return;
+		}
+		if (readRestore()) {
+			writeRestore(false);
+			if (!on) player.setDrcUserPreference(1);
+		}
+	}
+	_obsRegister([ATTR], apply);
+	document.addEventListener('loadstart', function(e) {
+		if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) apply();
+	}, true);
+})();
+(function() {
+	'use strict';
 	if (typeof document === 'undefined' || !document.documentElement) return;
 	var core = globalThis.YTKitCore;
 	var readState = core && core.readLiveEdgeState;

@@ -4026,7 +4026,7 @@
     "message": "SponsorBlock-Ausweichhost"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Überspringt automatisch gesponserte Segmente, Intros, Outros und andere Nicht-Inhalte mit SponsorBlock-Daten unter CC BY-NC-SA 4.0"
+    "message": "Überspringt automatisch gesponserte Segmente, Intros, Outros und andere Nicht-Inhalte mit SponsorBlock-Daten unter CC BY-NC-SA 4.0. Klicke auf einen Abschnitt in der Fortschrittsleiste, um ihn stattdessen anzusehen."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} Treffer"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "Dieser Abschnitt wird abgespielt: {category}. Er wird nicht übersprungen, bis du dieses Video verlässt.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "Abschweifung"

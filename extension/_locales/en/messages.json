@@ -4040,7 +4040,7 @@
     "message": "SponsorBlock Fallback Host"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0"
+    "message": "Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5459,6 +5459,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} matching"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "Playing this {category} segment. It won't be skipped until you leave this video.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "filler tangent",

@@ -4026,7 +4026,7 @@
     "message": "SponsorBlock 予備ホスト"
   },
   "feature_sponsorBlock_desc": {
-    "message": "CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データを使い、スポンサー区間、イントロ、アウトロなど本編以外の区間を自動的にスキップします"
+    "message": "CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データを使い、スポンサー区間、イントロ、アウトロなど本編以外の区間を自動的にスキップします。プログレスバー上の区間をクリックすると、その区間を再生できます。"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} 件が一致"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "この区間を再生しています: {category}。この動画を離れるまでスキップされません。",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "本題から外れた部分"

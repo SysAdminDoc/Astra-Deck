@@ -24062,7 +24062,7 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 		return {
 			id: 'sponsorBlock',
 			name: t('feature_sponsorBlock_name', 'SponsorBlock'),
-			description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0'),
+			description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.'),
 			group: 'Content',
 			icon: 'skip-forward',
 			isParent: true,
@@ -24073,6 +24073,9 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 			_navRuleId: 'sponsorBlockNav',
 			_styleEl: null,
 			_barSegments: [],
+			_barSegmentOf: new WeakMap(),
+			_keptSegments: new Set(),
+			_barPointerDownX: null,
 			_barObserver: null,
 			_reloadTimer: null,
 			_antiAdblockTimer: null,
@@ -24344,6 +24347,7 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				if (!videoId || videoId === this._videoId) return;
 				this._videoId = videoId;
 				this._segments = [];
+				this._keptSegments.clear();
 				this._clearBarSegments();
 				const gen = this._generation;
 				const fetched = await this._fetchSegments(videoId);
@@ -24365,30 +24369,70 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				for (const seg of this._segments) {
 					if (!enabledCats.includes(seg.category)) continue;
 					if (seg.category === 'poi_highlight') continue;
+					if (this._isKeptSegment(seg)) continue;
 					const [start, end] = seg.segment;
 					if (currentTime >= start && currentTime < end - 0.3) {
 						video.currentTime = end;
 						DebugManager.log('SponsorBlock', `Skipped ${seg.category}: ${start.toFixed(1)}s -> ${end.toFixed(1)}s`);
 						try {
-							const labels = {
-								sponsor: () => t('sbSkipCategory_sponsor', 'sponsor'),
-								selfpromo: () => t('sbSkipCategory_selfpromo', 'self promotion'),
-								interaction: () => t('sbSkipCategory_interaction', 'interaction reminder'),
-								intro: () => t('sbSkipCategory_intro', 'intro'),
-								outro: () => t('sbSkipCategory_outro', 'outro'),
-								preview: () => t('sbSkipCategory_preview', 'preview or recap'),
-								music_offtopic: () => t('sbSkipCategory_music_offtopic', 'non-music section'),
-								filler: () => t('sbSkipCategory_filler', 'filler tangent'),
-							};
-							const label = labels[seg.category]?.() || seg.category.replace(/_/g, ' ');
 							announceA11y(t('sbSkippedAnnounceTpl', 'Skipped {category} segment.')
-								.replace('{category}', () => label));
+								.replace('{category}', () => this._skipCategoryLabel(seg.category)));
 						} catch (_) {
 						}
 						this._scheduleNextSkip();
 						return;
 					}
 				}
+			},
+			_skipCategoryLabel(category) {
+				const labels = {
+					sponsor: () => t('sbSkipCategory_sponsor', 'sponsor'),
+					selfpromo: () => t('sbSkipCategory_selfpromo', 'self promotion'),
+					interaction: () => t('sbSkipCategory_interaction', 'interaction reminder'),
+					intro: () => t('sbSkipCategory_intro', 'intro'),
+					outro: () => t('sbSkipCategory_outro', 'outro'),
+					preview: () => t('sbSkipCategory_preview', 'preview or recap'),
+					music_offtopic: () => t('sbSkipCategory_music_offtopic', 'non-music section'),
+					filler: () => t('sbSkipCategory_filler', 'filler tangent'),
+				};
+				return labels[category]?.() || category.replace(/_/g, ' ');
+			},
+			_segmentKey(seg) {
+				return seg.UUID || `${seg.category}:${seg.segment[0]}:${seg.segment[1]}`;
+			},
+			_isKeptSegment(seg) {
+				return this._keptSegments.has(this._segmentKey(seg));
+			},
+			_keepSegment(seg) {
+				if (this._isKeptSegment(seg)) return;
+				this._keptSegments.add(this._segmentKey(seg));
+				this._renderBarSegments();
+				try {
+					announceA11y(t('sbSegmentKeptAnnounceTpl', 'Playing this {category} segment. It won\'t be skipped until you leave this video.')
+						.replace('{category}', () => this._skipCategoryLabel(seg.category)));
+				} catch (_) {
+				}
+			},
+			_segmentAtClientX(clientX) {
+				for (const bar of this._barSegments) {
+					const seg = this._barSegmentOf.get(bar);
+					if (!seg || this._isPointSegment(seg)) continue;
+					const rect = bar.getBoundingClientRect();
+					if (clientX >= rect.left && clientX <= rect.right) return seg;
+				}
+				return null;
+			},
+			_onBarPointerDown(event) {
+				const onBar = event.button === 0
+					&& event.target?.closest?.('.ytp-progress-bar-container, .ytp-progress-bar');
+				this._barPointerDownX = onBar ? event.clientX : null;
+			},
+			_onBarPointerUp(event) {
+				const downX = this._barPointerDownX;
+				this._barPointerDownX = null;
+				if (downX === null || Math.abs(event.clientX - downX) > 4) return;
+				const seg = this._segmentAtClientX(event.clientX);
+				if (seg) this._keepSegment(seg);
 			},
 			_scheduleNextSkip() {
 				this._clearSchedule();
@@ -24401,6 +24445,7 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				for (const seg of this._segments) {
 					if (!enabledCats.includes(seg.category)) continue;
 					if (seg.category === 'poi_highlight') continue;
+					if (this._isKeptSegment(seg)) continue;
 					const [start, end] = seg.segment;
 					if (currentTime >= start && currentTime < end - 0.3) {
 						minDelay = 0;
@@ -24438,7 +24483,8 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 					const bar = document.createElement('div');
 					bar.className = isPoint ? 'ytkit-sb-segment ytkit-sb-point' : 'ytkit-sb-segment';
 					const sizing = isPoint ? 'width:3px;min-width:3px;transform:translateX(-1px);' : `width:${width}%;`;
-					bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;${sizing}background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:0.7;pointer-events:none;z-index:35;`;
+					bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;${sizing}background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:${this._isKeptSegment(seg) ? 0.3 : 0.7};pointer-events:none;z-index:35;`;
+					this._barSegmentOf.set(bar, seg);
 					const label = seg.category.replace(/_/g, ' ');
 					if (seg._ytkitCacheSource === 'stale') {
 						bar.dataset.ytkitCacheSource = 'stale';
@@ -24764,6 +24810,10 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				document.addEventListener('waiting', this._antiAdblockStateHandler, true);
 				document.addEventListener('stalled', this._antiAdblockStateHandler, true);
 				document.addEventListener('error', this._antiAdblockStateHandler, true);
+				this._barPointerDownHandler = (event) => self._onBarPointerDown(event);
+				this._barPointerUpHandler = (event) => self._onBarPointerUp(event);
+				document.addEventListener('pointerdown', this._barPointerDownHandler, true);
+				document.addEventListener('pointerup', this._barPointerUpHandler, true);
 				const reloadSegments = () => {
 					self._videoId = null;
 					self._segments = [];
@@ -24831,6 +24881,8 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 					document.removeEventListener('stalled', this._antiAdblockStateHandler, true);
 					document.removeEventListener('error', this._antiAdblockStateHandler, true);
 				}
+				if (this._barPointerDownHandler) document.removeEventListener('pointerdown', this._barPointerDownHandler, true);
+				if (this._barPointerUpHandler) document.removeEventListener('pointerup', this._barPointerUpHandler, true);
 				if (this._durationHandler) document.removeEventListener('durationchange', this._durationHandler, true);
 				removeNavigateRule(this._navRuleId);
 				this._disarmBarObserver();
@@ -24845,6 +24897,8 @@ __astraDeckRegistry["features/sponsorblock/index.js"] = function (globalThis, se
 				this._styleEl?.remove();
 				this._cache = null;
 				this._segments = [];
+				this._keptSegments.clear();
+				this._barPointerDownX = null;
 				this._videoId = null;
 			}
 		};

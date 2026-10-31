@@ -4026,7 +4026,7 @@
     "message": "Host alternativo do SponsorBlock"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Pula automaticamente segmentos patrocinados, introduções, encerramentos e outras partes sem conteúdo usando dados do SponsorBlock sob a licença CC BY-NC-SA 4.0"
+    "message": "Pula automaticamente segmentos patrocinados, introduções, encerramentos e outras partes sem conteúdo usando dados do SponsorBlock sob a licença CC BY-NC-SA 4.0. Clique em um segmento na barra de progresso para assistir a ele."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} correspondentes"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "Reproduzindo este segmento: {category}. Ele não será pulado até você sair deste vídeo.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "enrolação"

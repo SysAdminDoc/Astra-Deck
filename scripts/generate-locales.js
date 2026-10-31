@@ -7642,6 +7642,50 @@ const LOUDNESS_COPY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(LOUDNESS_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const SEGMENT_KEEP_COPY_TRANSLATIONS = {
+  de: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'Überspringt automatisch gesponserte Segmente, Intros, Outros und andere Nicht-Inhalte mit SponsorBlock-Daten unter CC BY-NC-SA 4.0. Klicke auf einen Abschnitt in der Fortschrittsleiste, um ihn stattdessen anzusehen.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'Dieser Abschnitt wird abgespielt: {category}. Er wird nicht übersprungen, bis du dieses Video verlässt.'
+  },
+  es: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'Omite automáticamente segmentos patrocinados, introducciones, cierres y otras partes ajenas al contenido mediante datos de SponsorBlock con licencia CC BY-NC-SA 4.0. Haz clic en un segmento de la barra de progreso para verlo.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'Reproduciendo este segmento: {category}. No se omitirá hasta que salgas de este video.'
+  },
+  fr: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'Ignore automatiquement les segments sponsorisés, intros, outros et autres passages hors contenu grâce aux données SponsorBlock sous licence CC BY-NC-SA 4.0. Cliquez sur un segment dans la barre de progression pour le regarder.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'Lecture de ce segment : {category}. Il ne sera pas ignoré tant que vous resterez sur cette vidéo.'
+  },
+  it: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'Salta automaticamente segmenti sponsorizzati, intro, outro e altre sezioni non di contenuto usando dati SponsorBlock con licenza CC BY-NC-SA 4.0. Fai clic su un segmento nella barra di avanzamento per guardarlo.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'Riproduzione di questo segmento: {category}. Non verrà saltato finché non lasci questo video.'
+  },
+  'pt_BR': {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'Pula automaticamente segmentos patrocinados, introduções, encerramentos e outras partes sem conteúdo usando dados do SponsorBlock sob a licença CC BY-NC-SA 4.0. Clique em um segmento na barra de progresso para assistir a ele.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'Reproduzindo este segmento: {category}. Ele não será pulado até você sair deste vídeo.'
+  },
+  ru: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'Автоматически пропускает спонсорские сегменты, вступления, концовки и другие части вне основного содержания по данным SponsorBlock под лицензией CC BY-NC-SA 4.0. Нажмите на сегмент на шкале воспроизведения, чтобы посмотреть его.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'Воспроизводится этот сегмент: {category}. Он не будет пропущен, пока вы не покинете это видео.'
+  },
+  ja: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データを使い、スポンサー区間、イントロ、アウトロなど本編以外の区間を自動的にスキップします。プログレスバー上の区間をクリックすると、その区間を再生できます。',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'この区間を再生しています: {category}。この動画を離れるまでスキップされません。'
+  },
+  ko: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터를 사용해 스폰서 구간, 인트로, 아웃트로 및 기타 비콘텐츠 구간을 자동으로 건너뜁니다. 진행 표시줄에서 구간을 클릭하면 해당 구간을 시청할 수 있습니다.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': '이 구간을 재생합니다: {category}. 이 동영상을 나갈 때까지 건너뛰지 않습니다.'
+  },
+  'zh_CN': {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': '使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据，自动跳过赞助、片头、片尾及其他非正片片段。点击进度条上的片段即可观看该片段。',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': '正在播放此片段：{category}。在离开此视频之前不会跳过。'
+  },
+  ar: {
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.': 'يتخطى تلقائيًا المقاطع الدعائية والمقدمات والنهايات والأجزاء الأخرى غير الأساسية باستخدام بيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0. انقر على مقطع في شريط التقدم لمشاهدته.',
+    'Playing this {category} segment. It won\'t be skipped until you leave this video.': 'جارٍ تشغيل هذا المقطع: {category}. لن يتم تخطيه حتى تغادر هذا الفيديو.'
+  }
+};
+for (const [locale, messages] of Object.entries(SEGMENT_KEEP_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const COMMENT_TRANSLATE_TRANSLATIONS = {
   de: {
     'Translate': 'Übersetzen',

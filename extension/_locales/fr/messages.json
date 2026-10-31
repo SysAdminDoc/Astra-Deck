@@ -4026,7 +4026,7 @@
     "message": "Hôte de secours SponsorBlock"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Ignore automatiquement les segments sponsorisés, intros, outros et autres passages hors contenu grâce aux données SponsorBlock sous licence CC BY-NC-SA 4.0"
+    "message": "Ignore automatiquement les segments sponsorisés, intros, outros et autres passages hors contenu grâce aux données SponsorBlock sous licence CC BY-NC-SA 4.0. Cliquez sur un segment dans la barre de progression pour le regarder."
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -5440,6 +5440,10 @@
   },
   "resultsVisibleTpl": {
     "message": "{count} correspondances"
+  },
+  "sbSegmentKeptAnnounceTpl": {
+    "message": "Lecture de ce segment : {category}. Il ne sera pas ignoré tant que vous resterez sur cette vidéo.",
+    "description": "Screen-reader announcement after someone clicks a SponsorBlock segment on the progress bar so it plays; {category} is one of the sbSkipCategory_ names"
   },
   "sbSkipCategory_filler": {
     "message": "digression"

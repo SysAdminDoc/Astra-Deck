@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- SponsorBlock: click a segment on the progress bar to watch it. Its marker dims and it won't get skipped again until you leave the video. Dragging across the bar still skips as before, and there's still no toast over the video.
+
 ### Changed
 
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.

@@ -29070,7 +29070,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // tree reads it to nest the per-category toggles under this row.
             id: 'sponsorBlock',
             name: t('feature_sponsorBlock_name', 'SponsorBlock'),
-            description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0'),
+            description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0. Click a segment on the progress bar to watch it instead.'),
             group: 'Content',
             icon: 'skip-forward',
             isParent: true,
