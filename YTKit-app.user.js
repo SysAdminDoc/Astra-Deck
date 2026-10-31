@@ -1079,11 +1079,10 @@ return response;
 			try {
 				_rw.navigatedChannelTabs = {
 					path: location.pathname,
-					base: channelBaseFromTabs(response),
 					suffixes: listChannelTabSuffixes(response)
 				};
 			} catch (_) {
-				_rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
+				_rw.navigatedChannelTabs = { path: location.pathname, suffixes: [] };
 			}
 		}
 		if (!wantsCurve) return;
@@ -1128,11 +1127,11 @@ return response;
 	function channelHasTab(suffix, channelBase) {
 		if (!channelBase) return false;
 		const navigated = _rw.navigatedChannelTabs;
-		const navigatedHere = navigated?.path === location.pathname;
-		if (navigatedHere && navigated.base === channelBase) return navigated.suffixes.includes(suffix);
+		if (navigated?.path === location.pathname) return navigated.suffixes.includes(suffix);
 		const data = _rw.ytInitialData;
+		if (location.pathname === HARD_LOAD_PATH) return listChannelTabSuffixes(data).includes(suffix);
 		if (channelBaseFromTabs(data) === channelBase) return listChannelTabSuffixes(data).includes(suffix);
-		return location.pathname !== HARD_LOAD_PATH && !navigatedHere ? null : false;
+		return null;
 	}
 	const BRAND = Object.freeze({
 		name: 'Astra Deck',

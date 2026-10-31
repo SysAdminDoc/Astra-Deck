@@ -1288,7 +1288,7 @@ return response;
         // captureNavigatedPageData below.
         navigatedPageData: null,
         // The channel tab list that same navigation carried, as
-        // { path, base, suffixes }. ytInitialData above still describes the
+        // { path, suffixes }. ytInitialData above still describes the
         // page the document was loaded on.
         navigatedChannelTabs: null
     };
@@ -1353,12 +1353,11 @@ return response;
             try {
                 _rw.navigatedChannelTabs = {
                     path: location.pathname,
-                    base: channelBaseFromTabs(response),
                     suffixes: listChannelTabSuffixes(response)
                 };
             } catch (_) {
                 // reason: an unreadable tab list is answered as "no such tab"
-                _rw.navigatedChannelTabs = { path: location.pathname, base: '', suffixes: [] };
+                _rw.navigatedChannelTabs = { path: location.pathname, suffixes: [] };
             }
         }
         if (!wantsCurve) return;
@@ -1434,14 +1433,19 @@ return response;
     function channelHasTab(suffix, channelBase) {
         if (!channelBase) return false;
         const navigated = _rw.navigatedChannelTabs;
-        const navigatedHere = navigated?.path === location.pathname;
-        if (navigatedHere && navigated.base === channelBase) return navigated.suffixes.includes(suffix);
+        // Both of these were written for this very path, so they're about this
+        // channel whichever of its URLs that path is. Their tab URLs use the
+        // handle, and /channel/UC..., /c/, /user/ or a differently capitalised
+        // handle never equal it (live 2026-10-31).
+        if (navigated?.path === location.pathname) return navigated.suffixes.includes(suffix);
         const data = _rw.ytInitialData;
-        // The payload has to be about the channel being asked about. Without
-        // this, a soft navigation from channel A to channel B answered with A's
-        // tab list, which is how B could be sent to a tab it does not have.
+        if (location.pathname === HARD_LOAD_PATH) return listChannelTabSuffixes(data).includes(suffix);
+        // Otherwise the payload has to be about the channel being asked about.
+        // Without this, a soft navigation from channel A to channel B answered
+        // with A's tab list, which is how B could be sent to a tab it does not
+        // have.
         if (channelBaseFromTabs(data) === channelBase) return listChannelTabSuffixes(data).includes(suffix);
-        return location.pathname !== HARD_LOAD_PATH && !navigatedHere ? null : false;
+        return null;
     }
 
 

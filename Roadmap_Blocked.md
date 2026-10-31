@@ -548,23 +548,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: WHEN the userscript runs and a blocked channel's video is in the watch
   sidebar, THEN it SHALL hide.
 
-- [ ] P3 — Live-check the channel landing tab after an in-app move
-  Why: 2026-10-09 shipped the fix code-only. The rule waits for the tab list
-  `yt-navigate-finish` brings (`_rw.navigatedChannelTabs`), reads the document's load
-  path from the Navigation Timing entry (`HARD_LOAD_PATH`), and lands on Videos after
-  3 s if nothing arrives (ytkit.js booted after the move). The first attempt passed
-  unit tests and failed live. Also check the URL forms a 2026-10-09 review flagged:
-  `channelHasTab` compares the channel base as an exact string, so `/channel/UC…`,
-  `/c/`, `/user/`, a differently capitalised handle or a percent-encoded one never
-  equals the payload's `/@Handle` and lands on Videos even when the tab exists.
-  Where: `extension/ytkit.js` (`documentLoadPath`, `captureNavigatedPageData`,
-  `channelHasTab`, `redirectToVideosTab`), `tests/channel-landing-tab.test.js`.
-  Blocker: headless Chromium with the staged extension on live YouTube.
-  Acceptance: WHEN Channel Landing Tab is Live and the user clicks `/@NASA` from search
-  results, THEN the page SHALL end on `/@NASA/streams`; WHEN the click lands before
-  ytkit.js boots, THEN it SHALL end on `/@NASA/videos` within about 3 s; and a
-  `/channel/UC…` link to a channel with a Live tab SHALL end on its Live tab.
-
 - [ ] P3 — Follow-ups from the 2026-10-09 drain review
   Why: a read-only review raised these as plausible but unconfirmed. Each needs a live
   page to settle.

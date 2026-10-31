@@ -16,6 +16,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
 
 ### Fixed
+- **Channel Landing Tab** now works on every URL a channel has. Opening a channel at `/channel/UC...`, `/c/...`, `/user/...` or a handle in different capitals used to land on Videos no matter which tab you'd picked, since YouTube's tab list only names the channel's handle.
 
 - Playlist pages: YouTube can now draw a playlist's rows and header in a newer layout, and Show Playlist Duration, Quick Remove, Remove Watched and the Watch Later Workbench found nothing on it. They read both layouts now, and the duration shows up in the header you can actually see.
 - HD Thumbnails skipped the newer thumbnail element, which is most of what YouTube draws today. It covers those now, and a video with no HD image keeps its normal thumbnail. YouTube answers those with a gray placeholder that the old fallback didn't notice.

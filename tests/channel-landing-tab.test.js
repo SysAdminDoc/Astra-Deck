@@ -125,10 +125,12 @@ test('a channel is only sent to a tab the payload actually lists', () => {
     // Not offered by the setting, and not in the reported list either.
     assert.equal(channelHasTab('/featured', '/@YouTube'), false);
     assert.equal(channelHasTab('/membership', '/@YouTube'), false, 'a tab this channel does not carry');
-    // A payload about someone else answers no, however complete it is.
-    assert.equal(channelHasTab('/streams', '/@SomeoneElse'), false,
-        'a stale payload from another channel must not decide for this one');
     assert.equal(channelHasTab('/streams', ''), false, 'no channel means no answer');
+
+    // After an in-app move to someone else, that payload has no answer.
+    const moved = api({}, initialData, { location: { pathname: '/@SomeoneElse' }, hardLoadPath: '/@YouTube' });
+    assert.equal(moved.channelHasTab('/streams', '/@SomeoneElse'), null,
+        'a stale payload from another channel must not decide for this one');
 });
 
 test('an unreadable payload reports no tabs, so the redirect stays on Videos', () => {
@@ -227,7 +229,7 @@ function driveFeature({ tab = 'videos', tabs = null, startPath = '/@YouTube', pa
     /** yt-navigate-finish brings this page's tab list (null: none), then the rules rerun. */
     const arrive = (suffixes) => {
         const here = location.pathname;
-        rw.navigatedChannelTabs = { path: here, base: suffixes ? here : '', suffixes: suffixes || [] };
+        rw.navigatedChannelTabs = { path: here, suffixes: suffixes || [] };
         rules.get('channelRedirectorNav')();
         return location.pathname;
     };
@@ -340,15 +342,66 @@ test('a watch page cannot answer for a channel, and does not pretend to', () => 
 test('a payload left over from another channel does not decide for this one', () => {
     // We have soft-navigated to Beta. The document still holds Alpha's payload,
     // and Alpha has a Live tab.
-    const { landedOn } = driveFeature({
+    const { landedOn, elapse } = driveFeature({
         tab: 'streams',
         tabs: ['/videos', '/streams'],
         startPath: '/@Beta',
-        payloadChannel: '/@Alpha'
+        payloadChannel: '/@Alpha',
+        hardLoadPath: '/@Alpha'
     });
 
-    assert.equal(landedOn, '/@Beta/videos',
+    assert.equal(landedOn, '/@Beta', 'nothing is decided from Alpha\'s list');
+    assert.equal(elapse(), '/@Beta/videos',
         'Beta must not be sent to a tab only Alpha was known to have');
+});
+
+// The tab URLs in a channel's payload use its handle, whichever URL it was opened
+// on, so comparing the two as strings sent every other form to Videos (live on
+// NASA, 2026-10-31).
+for (const startPath of ['/channel/UCLA_DiR1FfKNvjuUpBHmylQ', '/@nasa', '/user/NASAtelevision', '/c/NASA']) {
+    test(`a hard load of ${startPath} reads the tab list its own payload carries`, () => {
+        const { landedOn } = driveFeature({
+            tab: 'streams',
+            tabs: ['/videos', '/streams'],
+            startPath,
+            payloadChannel: '/@NASA'
+        });
+        assert.equal(landedOn, `${startPath}/streams`);
+    });
+
+    test(`a hard load of ${startPath} falls back to Videos when that list has no such tab`, () => {
+        const { landedOn } = driveFeature({
+            tab: 'streams',
+            tabs: ['/videos'],
+            startPath,
+            payloadChannel: '/@NASA'
+        });
+        assert.equal(landedOn, `${startPath}/videos`);
+    });
+
+    test(`an in-app move onto ${startPath} reads the tab list its navigation brought`, () => {
+        const { arrive } = driveFeature({
+            tab: 'streams',
+            tabs: ['/videos'],
+            startPath,
+            payloadChannel: '/results',
+            hardLoadPath: '/results'
+        });
+        assert.equal(arrive(['/videos', '/streams']), `${startPath}/streams`);
+    });
+}
+
+test('an in-app move back to the channel the document was loaded on still reads its payload', () => {
+    // Loaded on /@NASA/videos, then its Home tab was clicked: the page data for
+    // that move hasn't arrived, and the document's payload is about this channel.
+    const { landedOn } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos', '/streams'],
+        startPath: '/@NASA',
+        payloadChannel: '/@NASA',
+        hardLoadPath: '/@NASA/videos'
+    });
+    assert.equal(landedOn, '/@NASA/streams');
 });
 
 test('a fresh payload for this channel is still trusted', () => {
@@ -408,6 +461,25 @@ test('an in-app visit from another channel is answered by its own list, not the 
     assert.equal(landedOn, '/@Beta');
     assert.equal(arrive(['/videos', '/shorts']), '/@Beta/videos',
         'Beta must not be sent to a tab only Alpha was known to have');
+});
+
+test('the last channel\'s tab list does not answer for the next one', () => {
+    // The URL moves about half a second before yt-navigate-finish replaces the
+    // list, and Alpha's list is still there in that gap.
+    const { arrive, rules, location, timers } = driveFeature({
+        tab: 'streams',
+        tabs: ['/videos'],
+        startPath: '/@Alpha',
+        payloadChannel: '/results',
+        hardLoadPath: '/results'
+    });
+    assert.equal(arrive(['/videos', '/streams']), '/@Alpha/streams');
+
+    location.href = 'https://www.youtube.com/@Beta';
+    rules.get('channelRedirectorNav')();
+    assert.equal(location.pathname, '/@Beta', 'still waiting for Beta\'s own list');
+    assert.equal(timers.size, 1);
+    assert.equal(arrive(['/videos']), '/@Beta/videos');
 });
 
 test('an in-app visit whose navigation brings no tab list falls back to Videos', () => {
@@ -489,7 +561,7 @@ test('the load path comes from the navigation entry, not the URL at boot', () =>
 function tabCapture(settings, pathname) {
     return loadDeclarations(
         ['_rw', 'captureNavigatedPageData', 'CHANNEL_HOME_PATH_RE', 'channelLandingTabSuffix',
-            'CHANNEL_TAB_SUFFIXES', 'channelBaseFromTabs', 'listChannelTabSuffixes'],
+            'CHANNEL_TAB_SUFFIXES', 'listChannelTabSuffixes'],
         {
             appState: { settings },
             document: { querySelectorAll: () => [] },
@@ -512,14 +584,18 @@ test('an in-app visit to a channel Home tab keeps that channel\'s tab list', () 
     captureNavigatedPageData(channelFinish('/@NASA'));
     assert.deepEqual(JSON.parse(JSON.stringify(_rw.navigatedChannelTabs)), {
         path: '/@NASA',
-        base: '/@NASA',
         suffixes: ['/videos', '/shorts', '/streams', '/podcasts', '/playlists', '/posts']
     });
 
     const broken = tabCapture(on, '/@NASA');
     broken.captureNavigatedPageData({ get detail() { throw new Error('page-made getter'); } });
-    assert.deepEqual(JSON.parse(JSON.stringify(broken._rw.navigatedChannelTabs)), { path: '/@NASA', base: '', suffixes: [] },
+    assert.deepEqual(JSON.parse(JSON.stringify(broken._rw.navigatedChannelTabs)), { path: '/@NASA', suffixes: [] },
         'a detail that throws still answers for this path, so the rule settles instead of waiting');
+
+    const thrower = tabCapture(on, '/@NASA');
+    thrower.captureNavigatedPageData({ detail: { response: { response: { get contents() { throw new Error('page-made getter'); } } } } });
+    assert.deepEqual(JSON.parse(JSON.stringify(thrower._rw.navigatedChannelTabs)), { path: '/@NASA', suffixes: [] },
+        'a tab list that throws answers the same way');
 
     // Heatmap features on too, and a curve that won't serialize: the tab list
     // still lands, and `detail` (a copy per read in Chromium) is read once.
