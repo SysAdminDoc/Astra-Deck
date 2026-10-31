@@ -8,6 +8,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+require('../../extension/core/date-time.js');
+
 const PART_PATH = '../../extension/features/sticky-video-header/index.js';
 
 function loadPart() {
@@ -72,8 +74,12 @@ test('the header part loads on its own and hands out fresh methods', () => {
 // navigation. A date or view count read from it would label the new video with
 // the old one's numbers, so both readers check the response's video id.
 test('upload date and view count come from the current video, never a stale response', () => {
-    const meta = { getAttribute: (name) => (name === 'content' ? '2025-05-06' : null) };
-    withDocument({ querySelector: (selector) => (selector.includes('datePublished') ? meta : null) }, () => {
+    const stamped = { textContent: JSON.stringify({ '@type': 'VideoObject', uploadDate: '2025-05-06', embedUrl: 'https://www.youtube.com/embed/current' }) };
+    const tabsFirstVideo = { getAttribute: (name) => (name === 'content' ? '2019-09-09' : null) };
+    withDocument({
+        querySelector: (selector) => (selector.includes('datePublished') ? tabsFirstVideo : null),
+        querySelectorAll: (selector) => (selector.includes('ld+json') ? [stamped] : [])
+    }, () => {
         const current = header({
             getVideoId: () => 'current',
             _rw: { ytInitialPlayerResponse: playerResponse('current', {
@@ -90,7 +96,7 @@ test('upload date and view count come from the current video, never a stale resp
             }) }
         }, { _getSplitFallbackViewCountText: () => 'from the page' });
         assert.equal(stale._getSplitPublishDate().toISOString().slice(0, 10), '2025-05-06',
-            'a response for another video falls through to the page meta tag');
+            'a response for another video falls through to the page tag naming this one');
         assert.equal(stale._getSplitViewCountText(), 'from the page');
     });
 });

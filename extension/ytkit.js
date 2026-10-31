@@ -17176,8 +17176,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 } catch { /* reason: player response metadata can be unavailable during navigation */ }
 
-                const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
-                const value = meta?.getAttribute('content');
+                const value = globalThis.YTKitCore?.readWatchUploadDate?.(document, currentVideoId);
                 return globalThis.YTKitCore?.parseYouTubeDate?.(value) ? value : null;
             },
 
@@ -22726,10 +22725,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 } catch { /* reason: player response date unavailable; fallback to metadata/text */ }
 
-                const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
-                const metaValue = meta?.getAttribute('content');
-                if (metaValue) {
-                    const parsed = new Date(metaValue);
+                const pageValue = globalThis.YTKitCore?.readWatchUploadDate?.(document, currentVideoId);
+                if (pageValue) {
+                    const parsed = new Date(pageValue);
                     if (!Number.isNaN(parsed.getTime())) return parsed;
                 }
 

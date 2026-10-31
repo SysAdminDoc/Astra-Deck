@@ -102,3 +102,50 @@ test('date-time core loads before ytkit and is bundled for userscript parity', (
     assert.equal(modules.app, 'ytkit.js', 'ytkit.js runs after the foundation group in the userscript');
     assert.ok(userscriptBundles('core/date-time.js'), 'the userscript ships the date-time core');
 });
+
+// Live on 2026-10-31: after an in-app navigation the microdata tags and the first
+// JSON-LD block kept the tab's first video, and only the second block moved on.
+function watchDocument({ blocks = [], metaDate = '', metaUrl = '' } = {}) {
+    const link = { getAttribute: (name) => (name === 'href' ? metaUrl : null) };
+    const meta = {
+        getAttribute: (name) => (name === 'content' ? metaDate : null),
+        parentElement: { querySelector: (selector) => (selector.includes('itemprop="url"') && metaUrl ? link : null) }
+    };
+    return {
+        querySelector: (selector) => (selector.includes('datePublished') && metaDate ? meta : null),
+        querySelectorAll: (selector) => (selector.includes('ld+json')
+            ? blocks.map((block) => ({ textContent: typeof block === 'string' ? block : JSON.stringify(block) }))
+            : [])
+    };
+}
+
+test('a watch page date only counts when its tag names this video', () => {
+    const { readWatchUploadDate } = loadCore();
+    const first = { '@type': 'VideoObject', uploadDate: '2026-06-20T06:00:00-07:00' };
+    const moved = { '@type': 'VideoObject', uploadDate: '2026-10-24T09:00:00-07:00', embedUrl: 'https://www.youtube.com/embed/secondVideo' };
+
+    assert.equal(readWatchUploadDate(watchDocument({ blocks: [first, moved] }), 'secondVideo'), moved.uploadDate,
+        'the block that names the video wins over one that names nothing');
+    assert.equal(readWatchUploadDate(watchDocument({ blocks: [first, moved] }), 'thirdVideo'), '',
+        'a block for another video is not this video');
+    assert.equal(readWatchUploadDate(watchDocument({ blocks: [first] }), 'secondVideo'), '',
+        'a block that names no video proves nothing');
+
+    const staleMeta = { metaDate: '2026-06-20', metaUrl: 'https://www.youtube.com/watch?v=firstVideo' };
+    assert.equal(readWatchUploadDate(watchDocument(staleMeta), 'secondVideo'), '',
+        'microdata left by the tab first video is refused');
+    assert.equal(readWatchUploadDate(watchDocument(staleMeta), 'firstVideo'), '2026-06-20',
+        'microdata naming this video is fine');
+    assert.equal(readWatchUploadDate(watchDocument({ metaDate: '2026-06-20' }), 'secondVideo'), '',
+        'microdata with no url proves nothing');
+});
+
+test('a watch page date read survives odd blocks and no video id', () => {
+    const { readWatchUploadDate } = loadCore();
+    const good = { '@type': 'VideoObject', uploadDate: '2026-10-24', url: 'https://www.youtube.com/watch?v=abc' };
+    const page = { '@type': 'WebPage', uploadDate: '2020-01-01', url: 'https://www.youtube.com/watch?v=abc' };
+    assert.equal(readWatchUploadDate(watchDocument({ blocks: ['{ half written', page, good] }), 'abc'), '2026-10-24',
+        'a broken block and a block of another type are skipped');
+    assert.equal(readWatchUploadDate(watchDocument({ blocks: [good] }), ''), '', 'no id, no date');
+    assert.equal(readWatchUploadDate(null, 'abc'), '', 'no document, no date');
+});

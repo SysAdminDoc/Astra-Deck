@@ -6376,10 +6376,9 @@ __astraDeckRegistry["features/sticky-video-header/index.js"] = function (globalT
 						}
 					}
 				} catch {   }
-				const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
-				const metaValue = meta?.getAttribute('content');
-				if (metaValue) {
-					const parsed = new Date(metaValue);
+				const pageValue = globalThis.YTKitCore?.readWatchUploadDate?.(document, currentVideoId);
+				if (pageValue) {
+					const parsed = new Date(pageValue);
 					if (!Number.isNaN(parsed.getTime())) return parsed;
 				}
 				return this._extractSplitFallbackDate(anchorEl?.textContent || '');

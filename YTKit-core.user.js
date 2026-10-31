@@ -11434,6 +11434,24 @@ __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, c
 			: { dateStyle: options.dateStyle || 'long' };
 		return new Intl.DateTimeFormat(options.locale, formatOptions).format(date);
 	}
+	function readWatchUploadDate(documentRef, videoId) {
+		const id = String(videoId || '');
+		if (!id) return '';
+		for (const script of documentRef?.querySelectorAll?.('script[type="application/ld+json"]') || []) {
+			let data = null;
+			try {
+				data = JSON.parse(script.textContent || '');
+			} catch {   }
+			if (data?.['@type'] === 'VideoObject' && data.uploadDate
+				&& String(data.embedUrl || data.url || '').includes(id)) {
+				return String(data.uploadDate);
+			}
+		}
+		const meta = documentRef?.querySelector?.('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
+		const value = meta?.getAttribute?.('content');
+		const named = meta?.parentElement?.querySelector?.('link[itemprop="url"]')?.getAttribute?.('href');
+		return value && String(named || '').includes(id) ? value : '';
+	}
 	function subtractCalendarUnits(date, amount, unit) {
 		const result = new Date(date.getTime());
 		const originalDay = result.getDate();
@@ -11585,7 +11603,8 @@ __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, c
 		formatRelativeTimestamp,
 		hasExplicitTime,
 		parseRelativeYouTubeAge,
-		parseYouTubeDate
+		parseYouTubeDate,
+		readWatchUploadDate
 	});
 })();
 };

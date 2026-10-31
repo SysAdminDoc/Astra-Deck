@@ -10647,8 +10647,7 @@ const STORAGE_KEYS = Object.freeze({
 						if (globalThis.YTKitCore?.parseYouTubeDate?.(raw)) return raw;
 					}
 				} catch {   }
-				const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
-				const value = meta?.getAttribute('content');
+				const value = globalThis.YTKitCore?.readWatchUploadDate?.(document, currentVideoId);
 				return globalThis.YTKitCore?.parseYouTubeDate?.(value) ? value : null;
 			},
 			_getDateAnchor() {
@@ -15453,10 +15452,9 @@ const STORAGE_KEYS = Object.freeze({
 						}
 					}
 				} catch {   }
-				const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
-				const metaValue = meta?.getAttribute('content');
-				if (metaValue) {
-					const parsed = new Date(metaValue);
+				const pageValue = globalThis.YTKitCore?.readWatchUploadDate?.(document, currentVideoId);
+				if (pageValue) {
+					const parsed = new Date(pageValue);
 					if (!Number.isNaN(parsed.getTime())) return parsed;
 				}
 				return this._extractFallbackDate(anchorEl?.textContent || '');
