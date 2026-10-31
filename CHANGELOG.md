@@ -28,6 +28,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Video Hider's upcoming filter and Hide Planned Livestreams now catch scheduled streams in Russian and Arabic, where neither YouTube's date line nor its badge matched and the cards stayed up. They also know the real French date line and the German and Brazilian Portuguese badges now.
 - Popup: the language picker was stuck with a dark background in the light theme, which made its text nearly unreadable. It follows the theme now. The AI provider fields in the same panel were also reading a color that didn't exist, so they showed no background at all.
 - Precise View Counts, Video Age Display and the Theater Split header no longer show the date of the first video you opened on every video you click to after it. YouTube leaves that first video's tags on the page, so a date now only counts when its tag names the video on screen.
+- Like Rate now shows up when Video Age Display is on too. The two badges kept rebuilding themselves and each other, which kept the like badge from ever drawing. Neither one touches the page now unless its numbers changed.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)

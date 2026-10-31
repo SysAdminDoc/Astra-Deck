@@ -112,6 +112,81 @@ test('the rendered badge reports the counts it divided and replaces itself in pl
     assert.deepEqual(row.children, [view]);
 });
 
+// Drawing a badge is a page mutation, so the feature's own rule woke it again and
+// it redrew forever. Next to Video Age Display, which looped faster, every redraw
+// restarted this timer and the like badge never appeared at all (live, 2026-10-31).
+function badgeWithRules(viewText, likeLabel) {
+    const view = fakeNode({ tag: 'span', text: viewText });
+    const row = fakeNode({ tag: 'div', children: [view] });
+    const like = fakeNode({ tag: 'button', attributes: { 'aria-label': likeLabel } });
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector.startsWith('#info-container')) return [view];
+        if (selector.startsWith('like-button-view-model')) return like;
+        return null;
+    });
+    const timers = [];
+    const rules = {};
+    const feature = loadFeature('likeViewRatio', {
+        document: documentRef,
+        isWatchPagePath: () => true,
+        setTimeout: (fn, delay) => { const timer = { fn, delay, cleared: false }; timers.push(timer); return timer; },
+        clearTimeout: (timer) => { if (timer) timer.cleared = true; },
+        addMutationRule: (id, fn) => { rules.mutation = fn; },
+        addNavigateRule: () => {},
+        removeMutationRule: () => {},
+        removeNavigateRule: () => {}
+    });
+    return { feature, row, view, like, timers, rules };
+}
+
+test('recalculating an unchanged badge leaves it alone', () => {
+    const { feature, row, view, like } = badgeWithRules('1.5M views', '90,000 likes');
+
+    feature._calculate();
+    const first = row.children[1];
+    let writes = 0;
+    const realAppend = row.appendChild.bind(row);
+    row.appendChild = (node) => { writes += 1; return realAppend(node); };
+    feature._calculate();
+    assert.equal(writes, 0, 'an unchanged badge must not touch the page');
+    assert.ok(row.children[1] === first, 'the same badge stays in place');
+
+    like.setAttribute('aria-label', '120,000 likes');
+    feature._calculate();
+    assert.equal(writes, 1, 'new numbers redraw it');
+    assert.equal(row.children[1].children[0].textContent, '8.0%');
+    assert.equal(row.children.length, 2, 'the old badge is gone');
+
+    first.isConnected = true;
+    row.children[1].remove();
+    feature._calculate();
+    assert.equal(writes, 2, 'a badge YouTube threw away is drawn again');
+
+    view.textContent = 'no count here';
+    feature._calculate();
+    assert.equal(row.children.length, 1, 'with nothing to divide the badge leaves');
+    feature.destroy();
+});
+
+test('a busy page cannot keep putting the badge off', () => {
+    const { feature, timers, rules } = badgeWithRules('1.5M views', '90,000 likes');
+    feature.init();
+    timers.splice(0).forEach((timer) => { if (!timer.cleared) timer.fn(); });
+
+    rules.mutation();
+    assert.equal(timers.length, 1, 'the first mutation books one calculation');
+    const booked = timers[0];
+    rules.mutation();
+    rules.mutation();
+    assert.equal(timers.length, 1, 'later mutations leave it booked');
+    assert.equal(booked.cleared, false, 'and never restart it');
+
+    booked.fn();
+    rules.mutation();
+    assert.equal(timers.length, 2, 'once it ran the next mutation books another');
+    feature.destroy();
+});
+
 test('the shared parser sizes the shapes the watch page actually renders', () => {
     const core = {};
     const vm = require('node:vm');

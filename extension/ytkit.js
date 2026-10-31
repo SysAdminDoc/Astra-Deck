@@ -22794,16 +22794,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 const { label, tone } = this._formatRelativeAge(publishDate);
+                const exactDate = this._formatExactDate(publishDate);
+                const title = tone === 'future'
+                    ? t('channelAgeScheduledForTpl', 'Scheduled for {date}').replace('{date}', exactDate)
+                    : t('channelAgePublishedOnTpl', 'Published on {date}').replace('{date}', exactDate);
+                // Drawing the badge wakes this feature's own mutation rule, so
+                // redrawing one that is already right never stops.
+                if (this._el?.isConnected && this._el.parentElement === dateEl.parentElement
+                    && this._el.textContent === label && this._el.title === title) return;
                 this._el?.remove();
                 const badge = document.createElement('span');
                 badge.className = 'ytkit-age-badge';
                 badge.dataset.state = tone;
                 badge.textContent = label;
                 badge.setAttribute('translate', 'no');
-                const exactDate = this._formatExactDate(publishDate);
-                badge.title = tone === 'future'
-                    ? t('channelAgeScheduledForTpl', 'Scheduled for {date}').replace('{date}', exactDate)
-                    : t('channelAgePublishedOnTpl', 'Published on {date}').replace('{date}', exactDate);
+                badge.title = title;
                 badge.setAttribute('aria-label', badge.title);
                 dateEl.parentElement?.appendChild(badge);
                 this._el = badge;
@@ -22815,7 +22820,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCalculate(2500);
                 });
                 addMutationRule('channelAgeDisplay', () => {
-                    if (isWatchPagePath()) this._scheduleCalculate(400);
+                    // Restarting a pending timer here lets a busy page put the work off forever.
+                    if (isWatchPagePath() && !this._calculateTimer) this._scheduleCalculate(400);
                 });
                 this._scheduleCalculate(2500);
             },
@@ -26698,24 +26704,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _calculate() {
                 if (!isWatchPagePath()) return;
-                this._el?.remove();
-                this._el = null;
 
                 const viewEl = this._getViewElement();
-                if (!viewEl) return;
-                const views = this._extractLargestCount(viewEl.textContent || viewEl.getAttribute('aria-label') || '');
-                if (!views) return;
+                const views = viewEl
+                    ? this._extractLargestCount(viewEl.textContent || viewEl.getAttribute('aria-label') || '')
+                    : 0;
+                const likes = views ? this._getLikeCount(this._getLikeButton()) : 0;
+                const ratio = views ? (likes / views) * 100 : 0;
+                if (!Number.isFinite(ratio) || ratio <= 0) {
+                    this._el?.remove();
+                    this._el = null;
+                    return;
+                }
 
-                const likeBtn = this._getLikeButton();
-                const likes = this._getLikeCount(likeBtn);
-                if (!likes) return;
-
-                const ratio = (likes / views) * 100;
-                if (!Number.isFinite(ratio) || ratio <= 0) return;
+                const tone = this._getTone(ratio);
+                const drawn = `${likes}/${views}/${tone}`;
+                // Drawing the badge wakes this feature's own mutation rule, so
+                // redrawing one that is already right never stops.
+                if (this._el?.isConnected && this._el.parentElement === viewEl.parentElement && this._drawn === drawn) return;
+                this._el?.remove();
+                this._el = null;
+                this._drawn = drawn;
 
                 const badge = document.createElement('span');
                 badge.className = 'ytkit-lv-ratio';
-                badge.dataset.state = this._getTone(ratio);
+                badge.dataset.state = tone;
                 badge.setAttribute('translate', 'no');
                 const ratioValue = this._formatRatio(ratio);
                 const likesText = this._formatCount(likes);
@@ -26750,7 +26763,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCalculate(3000);
                 });
                 addMutationRule('likeViewRatio', () => {
-                    if (isWatchPagePath()) this._scheduleCalculate(500);
+                    // Restarting a pending timer here lets a busy page put the work off forever.
+                    if (isWatchPagePath() && !this._calculateTimer) this._scheduleCalculate(500);
                 });
                 this._scheduleCalculate(3000);
             },

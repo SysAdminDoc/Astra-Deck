@@ -154,3 +154,65 @@ test('the age badge never shows the age of the first video in the tab', () => {
         'nothing names this video and the page text has no date, so no badge');
     assert.equal(afterInAppNavigation('channelAgeDisplay', [secondVideoBlock])._getPublishDate(noDateText).toISOString().slice(0, 10), '2026-10-24');
 });
+
+// The age badge redrew itself 18 times in 12 s on an idle watch page, because each
+// redraw woke its own mutation rule, and that kept the like badge from ever drawing.
+function ageBadgeWithRules(blocks) {
+    const anchor = fakeNode({ tag: 'span', text: 'Oct 24, 2026' });
+    const row = fakeNode({ tag: 'div', children: [anchor] });
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector.includes('ld+json')) return blocks.map((block) => ({ textContent: JSON.stringify(block) }));
+        if (selector.includes('#info-strings')) return [anchor];
+        return null;
+    });
+    const timers = [];
+    const rules = {};
+    const feature = loadFeature('channelAgeDisplay', {
+        document: documentRef,
+        _rw: { ytInitialPlayerResponse: null },
+        getVideoId: () => 'secondVideo',
+        isWatchPagePath: () => true,
+        YTKitCore: loadDateCore(),
+        setTimeout: (fn, delay) => { const timer = { fn, delay, cleared: false }; timers.push(timer); return timer; },
+        clearTimeout: (timer) => { if (timer) timer.cleared = true; },
+        addMutationRule: (id, fn) => { rules.mutation = fn; },
+        addNavigateRule: () => {},
+        removeMutationRule: () => {},
+        removeNavigateRule: () => {}
+    });
+    return { feature, row, timers, rules };
+}
+
+test('recalculating an unchanged age badge leaves it alone', () => {
+    const blocks = [secondVideoBlock];
+    const { feature, row } = ageBadgeWithRules(blocks);
+
+    feature._calculate();
+    assert.equal(row.children.length, 2);
+    const first = row.children[1];
+    assert.equal(first.className, 'ytkit-age-badge');
+    feature._calculate();
+    assert.ok(row.children[1] === first, 'an unchanged badge stays in place');
+
+    blocks[0] = { ...secondVideoBlock, uploadDate: '2020-02-03T09:00:00-07:00' };
+    feature._calculate();
+    assert.ok(row.children[1] !== first, 'a different date redraws it');
+    assert.equal(row.children.length, 2, 'the old badge is gone');
+
+    row.children[1].remove();
+    feature._calculate();
+    assert.equal(row.children.length, 2, 'a badge YouTube threw away is drawn again');
+    feature.destroy();
+});
+
+test('a busy page cannot keep putting the age badge off', () => {
+    const { feature, timers, rules } = ageBadgeWithRules([secondVideoBlock]);
+    feature.init();
+    timers.splice(0).forEach((timer) => { if (!timer.cleared) timer.fn(); });
+
+    rules.mutation();
+    rules.mutation();
+    assert.equal(timers.length, 1, 'mutations share one booked calculation');
+    assert.equal(timers[0].cleared, false, 'and never restart it');
+    feature.destroy();
+});
