@@ -244,7 +244,7 @@
     // in" phrase needs its number and the Arabic badge word must stand alone,
     // because channel names like "Life Starts In Kitchen" and "الجيل القادم"
     // carry them. The readers also leave the byline out (below).
-    const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in \d+|waiting for|live in \d+|próximamente|programad[ao] para|establecer recordatorio|comienza en \d+|à venir|programmé pour|prévue? pour|définir un rappel|commence dans \d+|in programma|programmat[oa] per|imposta promemoria|inizia tra \d+|bevorstehend|geplant für|erinnerung festlegen|beginnt in \d+)\b|запланир|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약됨|알림 설정|\d+\s*(?:초|분|시간|일)\s*후 시작|即将|预定|设置提醒|开始于|(?<![؀-ۿ])قادمة?(?![؀-ۿ])|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
+    const UPCOMING_CARD_PATTERN = new RegExp(foldCardText(String.raw`(?:\b(?:upcoming|scheduled for|premieres|set reminder|starts in \d+|waiting for|live in \d+|próximamente|programad[ao] para|em breve|establecer recordatorio|comienza en \d+|à venir|programmé pour|planifié pour|prévue? pour|définir un rappel|commence dans \d+|in programma|programmat[oa] per|imposta promemoria|inizia tra \d+|bevorstehend|anstehend|geplant für|erinnerung festlegen|beginnt in \d+)\b|запланир|планируемая дата|(?<![а-я])скоро(?![а-я])|состоится|напомнить|начнётся через|近日公開|配信予定|公開予定|リマインダー|開始まで|예정|예약됨|알림 설정|\d+\s*(?:초|분|시간|일)\s*후 시작|即将|预定|设置提醒|开始于|(?<![؀-ۿ])قادمة?(?![؀-ۿ])|الفيديوهات القادمة|سيتم بثه مباشرة|مجدول|تعيين تذكير|يبدأ خلال)`), 'i');
 
     function isUpcomingCardText(text) {
         return UPCOMING_CARD_PATTERN.test(foldCardText(text));

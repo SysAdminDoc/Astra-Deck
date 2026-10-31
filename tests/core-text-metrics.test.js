@@ -275,6 +275,39 @@ test('isUpcomingCardText reads upcoming wording in every shipped language', () =
     }
 });
 
+// Read live on 2026-10-31 in each shipped language, off the same upcoming stream
+// in both card layouts (the Live hub's video renderer and a channel's lockups).
+// The row is what the card says about its date, the badge sits on the thumbnail.
+// Russian and Arabic matched neither, so those cards read as ordinary videos.
+const LIVE_UPCOMING_WORDING = {
+    en: ['Scheduled for 11/3/26, 11:00 PM', 'Upcoming'],
+    de: ['Geplant für: 03.11.26, 23:00', 'Anstehend'],
+    es: ['Programado para el 3/11/26, 23:00', 'Próximamente'],
+    fr: ['Planifié pour le 03/11/2026 23:00', 'À venir'],
+    it: ['Programmato per il giorno 03/11/26, 23:00', 'In programma'],
+    pt_BR: ['Programado para 03/11/2026, 23:00', 'Em breve'],
+    ru: ['Планируемая дата публикации: 03.11.2026, 23:00', 'Скоро'],
+    ja: ['2026/11/03 23:00 に公開予定', '配信予定'],
+    ko: ['예정일: 26. 11. 3. 23:00', '예정'],
+    ar: ['سيتم بثّه مباشرةً في 3/11/2026، 23:00', 'الفيديوهات القادمة'],
+    zh_CN: ['预定发布时间：2026/11/3 23:00', '即将开始']
+};
+
+test('isUpcomingCardText reads the row and the badge YouTube really shows in every language', () => {
+    const { isUpcomingCardText } = loadCore();
+    for (const [locale, [row, badge]] of Object.entries(LIVE_UPCOMING_WORDING)) {
+        assert.equal(isUpcomingCardText(row), true, `${locale} row: ${row}`);
+        assert.equal(isUpcomingCardText(badge), true, `${locale} badge: ${badge}`);
+    }
+});
+
+test('the badge words added for Russian and German need the whole word', () => {
+    const { isUpcomingCardText } = loadCore();
+    for (const text of ['Скорость 1.5x', 'скоростной', 'Анскоро', 'Anstehende Termine', 'Em brevet', 'قناة الأيام القادمة']) {
+        assert.equal(isUpcomingCardText(text), false, text);
+    }
+});
+
 // A match hides the card, and the rows include the channel byline.
 test('isUpcomingCardText never reads a finished premiere or a channel name as upcoming', () => {
     const { isUpcomingCardText } = loadCore();
