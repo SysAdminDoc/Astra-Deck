@@ -26,67 +26,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P1 — Premise disproven, needs a product decision (2026-08-27)
 
-- [ ] P2 — Decide whether the YouTube tab honors the Store-safe / GitHub-full profile
-  Why: `isFeatureAllowedByArtifact` in `extension/ytkit.js` (~39623) reads
-  `globalThis.YTKitCore?.findSettingEntry`, which no module in the tab defines
-  (the schema publishes it only on `__YTKIT_SETTINGS_SCHEMA__`), so it has
-  returned true since `92cd08ac` (2026-08-11). The tab shows and runs all 17
-  `profile: "github-full"` settings while the popup hides them. With default
-  settings `resolveEffectiveProfile` says `store-safe` even in the GitHub-full
-  build, so making the lookup work would hide AI Summary, Custom CSS, Auto
-  Download on Visit, the Cobalt fallback, VLC/mpv handoff, the alternative
-  frontend, Video Insights, Age Restriction Bypass and Reaction Spammer from
-  everyone who hasn't switched the Full profile on, and stop them running.
-  Found by verification agent #5 on 2026-10-06.
-  Where: `extension/ytkit.js` `isFeatureAllowedByArtifact`,
-  `extension/core/policy-profile.js` `resolveEffectiveProfile`,
-  `tests/isolated-runtime-core.test.js` (`NOT_IN_ISOLATED.findSettingEntry`).
-  Acceptance: either the tab reads the schema's `findSettingEntry` and a
-  default-profile user sees exactly the popup's list (with a CHANGELOG line
-  saying where the hidden features went), or the dead filter is removed and
-  the popup stops hiding them; the exemption in the test goes either way.
-  Complexity: S once decided
-  Blocker: owner decision. Turning the filter on takes features away from
-  people using them today; removing it drops the profile split in the tab.
-
-- [ ] P1 — Give settings operations a live region
-  Why: save, import, export, and sync produce no announcement, and the toast peel is explicitly blocked on this primitive.
-  Evidence: zero `aria-live`/`role="status"` in `extension/core/settings-controller.js`, `settings-sync.js`, `settings-import-transaction.js`, and `features/subscription-groups/index.js`; `extension/core/toast.js:13-17` names the missing "live-region overlay primitive" as the reason the toast DOM layer stayed in the monolith.
-  Touches: `extension/core/toast.js`, `extension/core/toast-dom.js`, `extension/core/settings-controller.js`, `extension/core/settings-sync.js`, `extension/core/settings-import-transaction.js`, `extension/ytkit.js`.
-  Acceptance: one shared polite live region announces settings save, import, export, and sync outcomes in the overlay and the popup; `scripts/audit-overlays-a11y.js` asserts its presence; the toast DOM layer moves out of `ytkit.js` behind the same primitive.
-  Complexity: M
-  Blocker: the item's premise does not hold, so it cannot be implemented as
-  written. Measured 2026-08-27: both surfaces already have a polite live
-  region, and the named operations already reach one.
-
-  - The overlay's `#ytkit-panel-status` is created with `role="status"` and
-    `aria-live="polite"` (`extension/ytkit.js:42257-42261`) and is written by
-    22 `setPanelStatus` call sites, including category reset and its undo
-    (`:41789`, `:41798`), export (`:42966`), and import with its undo
-    (`:43001`-`:43052`).
-  - The popup's `#status` carries `aria-live="polite"`
-    (`extension/popup.html:452`) and is written by 102 `showStatus` call sites.
-  - Subscription-groups announces through 50 toast calls, and
-    `core/toast-dom.js:122-123` sets `role` and `aria-live` on every toast.
-  - The four modules the item cites as having "zero live regions" —
-    `settings-controller.js`, `settings-sync.js`,
-    `settings-import-transaction.js`, `subscription-groups` — are logic that
-    also runs in the service worker and under Node. They correctly own no DOM;
-    the UI layer announces their results.
-  - An instant-apply toggle is announced by its own `aria-checked` transition,
-    which is the standard behaviour. A second announcement would be noise.
-
-  What did ship from it: `scripts/audit-overlays-a11y.js` now pins both live
-  regions and the fact that settings outcomes route through them, so removing
-  either attribute fails the gate instead of silently ending announcements
-  (proved by mutation).
-
-  The decision this needs from a human: whether to consolidate the two
-  per-surface regions into one shared primitive anyway. That would be a
-  refactor with no user-visible gain, and adding a third region while two
-  already work would make readers compete. Retire the item or restate what it
-  should deliver.
-
 ## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14, again 2026-09-28 and 2026-09-29)
 
 - [ ] P0: Make release currency a blocking gate and promote the current release
@@ -220,7 +159,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: needs live post-2026-08-24 watch-page data, which does not exist yet (the metric changes four days after this item was written) and requires a browser session this repository's local-only passes deliberately exclude. Re-calibrating by guess is explicitly worse than grading conservatively, so the numbers must not move until the data exists.
 
-
 - [ ] P2 — Get upstream's permission for DeArrow before any store submission
   Why: the API docs open with "The DeArrow API is free to use for all non browser-extensions", and Astra is a browser extension. The data is CC BY-NC-SA 4.0 "unless you have explicit permission" (Astra already attributes it). The store-safe profile ships the feature, so a store listing would put that on the record.
   Confirmed 2026-10-12: there is no license key to send. Read calls (`GET /api/branding`, `GET dearrow-thumb.ajay.app/api/v1/getThumbnail`) take no key and answer anonymously. The official extension sends its key once, to `GET /api/verifyToken?licenseKey=`, and gates itself client side; /payment says "Other than intially checking your license key, no requests to DeArrow servers contain your license key." So a license-key setting would do nothing on the wire, and the old "wire contract" blocker is gone.
@@ -229,7 +167,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Load note for the ask: since v4.99.0 the default cover for an unsubmitted video is `getThumbnail?videoID=&redirectUrl=` with no `time`, which only reads the cache (no render is queued; a miss answers 307 to YouTube's own still). Submitted frames still send `time`, as before.
   Blocker: asking upstream and deciding what to do with the answer is the maintainer's call, the same family as the SponsorBlock-submission item.
-
 
 - [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
   Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.
@@ -302,14 +239,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   `astra-deck-store-safe-firefox-v*.xpi` and `updates.json`, then verify an
   installed signed copy discovers and applies a later release.
 
-- [ ] P3 — aria2c external-downloader option
-  Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
-  Evidence: `astra_downloader/test_astra_downloader.py` (`Aria2cExternalDownloaderBanTests`); `CHANGELOG.md` (CVE-2026-50574 external-downloader ban).
-  Touches: `astra_downloader/download.py`, provisioning, `config.py`, `health.py`.
-  Acceptance: reconsider only after an upstream design demonstrably removes the manifest-download arbitrary-code-execution condition and the repository can replace its source-level ban with a verified safe contract.
-  Complexity: L
-  Blocker: As of 2026-07-29, the companion deliberately rejects all aria2c and `--external-downloader` integration because CVE-2026-50574 allowed arbitrary code execution through manifest downloads. Implementing this roadmap item would remove an explicit, test-pinned security boundary.
-
 - [ ] P1 — Native-messaging download-command transport as a Chrome-LNA fallback
   Why: Chrome 142 (Oct 2025) enforces Local Network Access, which can gate/block the extension's `127.0.0.1` fetch to the companion; the token path already rides native messaging but the *download command* path is HTTP-only, so downloads can fail while auth still works. Native messaging is the LNA-immune bridge (browserpass/KeePassXC/1Password pattern).
   Evidence: RESEARCH.md 2026-07-27 §Security/Reliability + Open Questions; `astra_downloader/astra_downloader.py` (`handle_native_bootstrap_request` serves only ping/get-token); https://developer.chrome.com/blog/local-network-access
@@ -317,14 +246,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: with the extension's `127.0.0.1` fetch blocked/denied by LNA, a download can still be initiated and its status polled over the native-messaging channel; when direct fetch works, behavior is unchanged.
   Complexity: L
   Blocker: Requires a live Chrome 142+ browser to reproduce LNA blocking and verify the native-transport fallback end-to-end — same live-browser dependency as the existing "Validate Chrome LNA exemption" item. Implement + verify together once a test browser is available.
-
-## P2 — External-binary integration + live verification (2026-07-21)
-
-- [ ] P2 — Auto-provision the bgutil PO-token provider (single-binary) the way Deno is provisioned
-  Why: Deno is already auto-provisioned but the PO-token provider is left to the user, so token-gated downloads and bot-check bypass are not available out of the box.
-  Evidence: https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs; `astra_downloader/astra_downloader.py` (Deno provisioning pattern), `astra_downloader/health.py` `PoTokenProviderProbe` (probes `/ping` on port 4416 for a `version` field).
-  Where: `astra_downloader/astra_downloader.py` (provisioning + SetupWorker), `astra_downloader/health.py`, config/GUI readiness, checksum verification.
-  Blocker: Requires the external project's exact Windows-x64 release-asset name and checksum-manifest contract (needs a live GitHub-releases fetch), plus a persistent sidecar-process lifecycle (launch on setup, stop on exit, port/health management) that cannot be verified end-to-end without downloading and running the real binary in this environment. Shipping a binary-downloader against guessed asset names/launch flags would be unverifiable. Lower urgency now that the 2026-07-21 token-exempt client fallback (`youtube:player_client=tv,android_vr,web`) already keeps downloads working when no provider is running — this item is an optimization (restore the web+PO-token path), not a fix for total failure.
 
 ## P3 — Browser-Gated Verification (2026-07-15 audit)
 
@@ -346,18 +267,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2/P3 — Product Decisions (2026-07-12 audit)
 
-- [ ] P2 — Bound companion playlist downloads
-  Why: `is_playlist_url` adds `--yes-playlist` with no `--playlist-end`/`--max-downloads`, so one accepted `/download` can spawn an unbounded multi-hundred-item job that holds a MAX_CONCURRENT slot and fills the confined output root; the stall watchdog never fires because an active playlist keeps producing output. Rate limiting caps request count, not per-request work.
-  Where: `astra_downloader/astra_downloader.py` (`is_playlist_url` ~2764; invocation ~3266/3317).
-  Complexity: M
-  Blocker: Product decision — choose a sane default cap (for example `MaxPlaylistItems`, with 0 meaning unlimited). Silently capping could surprise users who intentionally download full playlists, so the default and GUI/config surface require maintainer judgment.
-
-- [ ] P3 — Native-host token handshake assumes a single message
-  Why: `NATIVE_MSG_GET_TOKEN` responds on the first `port.onMessage` and disconnects; a native host that sends a hello/handshake frame before the token reply would consume the single response slot and the real token frame would never be read.
-  Where: `extension/background.js` (~947-961).
-  Complexity: S
-  Blocker: Protocol decision — confirm the native host never sends a pre-token frame. If it can, the client must ignore non-terminal frames until a token/terminal-error arrives or the timeout fires.
-
 - [ ] P3 — SponsorBlock segment submission and voting
   Why: Astra reads the SponsorBlock commons (`skipSegments` GET only) with no path to contribute, and reviewers of competing tools repeatedly ask for a local correction path when a segment is wrong. DeArrow casual mode is shipped as a UI precedent; DeArrow Voting was retired in v4.98.0 because its write path never worked (see the item below).
   Evidence: `extension/features/sponsorblock/index.js:242-306` (read-only); `casualMode` precedent in `extension/features/dearrow/index.js`; https://github.com/ajayyy/SponsorBlock/issues.
@@ -365,32 +274,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: off by default and GitHub-full only; a locally generated private user ID is stored in a backup-excluded, scrub-covered domain; voting works before submission is enabled; every write is rate-budgeted and surfaces failures through `external-api-health`.
   Complexity: L
   Blocker: Requires maintainer product/liability judgment on whether Astra should carry submission at all, versus voting only or neither. The choice changes the identity, durable-storage, and outbound-write design and cannot be inferred from the repository.
-
-- [ ] P2 — DeArrow Voting posts to a nonexistent API route with the wrong payload shape — every vote fails
-  Category: correctness
-  Status (2026-10-10): the toggle is retired for v4.98.0. `deArrowVoting` is in `RETIRED_SHIPPED_IDS` and both runtime strip lists, so a stored value drops on load, and the feature code, strings and tests are gone. `features/dearrow` still writes `data-ytkit-dearrow-uuid` on replaced titles. A rebuild ships under a new feature id on the contract below, once a live vote can be verified.
-  Where: was extension/ytkit.js:37861-37877 (deArrowVoting._vote), removed in the retirement commit
-  Problem: Votes go to `POST https://sponsor.ajay.app/api/branding/vote/${type}` with body {UUID, userID}. SponsorBlockServer exposes no /api/branding/vote/<n> route; branding votes are `POST /api/branding` with {videoID, userID, title|thumbnail, downvote}; the {UUID, userID, type} shape belongs to the segment endpoint /api/voteOnSponsorTime. Every vote 404s, so both vote buttons always show "DeArrow vote failed." The v4.51.0 audit fixed the attribute wiring that makes these buttons appear — nothing verifies the vote round-trip.
-  Evidence: The only other DeArrow API use is GET /api/branding?videoID= (features/dearrow/index.js:167, ytkit.js:31172); no test covers the vote endpoint (grep branding/vote tests/ → nothing).
-  Fix: POST /api/branding with videoID + the existing title/thumbnail evidence + `downvote: type === 0` per the DeArrow API docs (or remove the vote buttons if submission is out of scope — align with the Roadmap_Blocked SponsorBlock-submission product decision). Add a fetch-fake test pinning URL + payload shape.
-  Acceptance: Vote requests hit /api/branding with the documented shape (test-pinned); a live vote returns 200 when verified against the real API.
-  Confidence: Likely (endpoint knowledge verified against SponsorBlockServer docs; not network-verified from here)
-  Effort: S
-  Blocker: Fixing this means sending an outbound WRITE to DeArrow's public crowdsourced
-  database (sponsor.ajay.app), and the correct payload cannot be confirmed without
-  actually submitting to that production commons — a wrong shape would publish garbage
-  titles into a community dataset. The repository only ever calls `GET /api/branding`,
-  so there is no in-repo evidence of the write contract. It also needs the same
-  maintainer product/liability judgment as "P3 — SponsorBlock segment submission and
-  voting" above: whether Astra should carry outbound contributions at all.
-  Unblock by: (a) deciding whether voting stays, then (b) confirming the branding-vote
-  contract against DeArrow's API docs and a test submission on a throwaway userID —
-  the expected shape is `POST /api/branding` with
-  `{videoID, userID, service, title: {title, original}, downvote: type === 0}`, NOT the
-  current `/api/branding/vote/<n>` with `{UUID, userID}` (that UUID shape belongs to the
-  segment endpoint `/api/voteOnSponsorTime`). Until then every vote 404s and both
-  buttons always show "DeArrow vote failed", so the feature is inert, not merely
-  degraded — dropping the buttons is an equally acceptable resolution.
 
 ## P1 — Trust / Reliability / Distribution
 
@@ -526,37 +409,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: Toast CSS is duplicated in both the monolith and toast-dom.js (userscript parity). The headless Chromium harness (`scripts/smoke-chromium-optional-hosts.js`) can load the extension, so the open part is an older engine without `@starting-style` (Chromium before 117, Firefox before 129) pinned for that harness to show toasts and panels still appear there.
 
-- [ ] P2 — Exclusive Accordion for settings categories
-  Why: `<details name="settings">` would create accordion behavior for settings categories.
-  Touches: `extension/ytkit.js` (settings panel DOM construction)
-  Acceptance: Settings categories use `<details name="ytkit-settings">`.
-  Complexity: S
-  Blocker: The settings panel uses a sidebar-tab navigation model, not vertical collapsible sections. Adopting `<details name>` would require restructuring the panel's DOM architecture. Requires live browser verification of the new layout.
-
-## P1 — Security Product Decisions (2026-07-08 audit)
-
-- [ ] P1 — Companion `/health` echoes the auth token to any co-installed
-  extension by default
-  Why: `LegacyHealthTokenEcho` defaults on and `is_extension_origin` accepts any
-  `chrome-extension://` / `moz-extension://` origin (no ID allowlist), and CORS
-  reflects that origin — so any other installed extension can spoof the
-  `X-MDL-Client: MediaDL` header, read the reflected `token`, and drive
-  `/download`. Default the echo off once the native-messaging bootstrap is the
-  confirmed primary path for existing users, or gate on a configured extension-ID
-  allowlist. (Impact bounded: YouTube-only URL gate, output-dir confinement.)
-  Where: astra_downloader/astra_downloader.py (~3661-3810)
-  Blocker: Product decision — changing the default breaks any non-native-messaging
-  client that relies on the HTTP token echo. Needs confirmation that the
-  native-messaging bootstrap is the primary path before defaulting off.
-
-- [ ] P3 — Unauthenticated `/health` leaks recent log lines (local paths / errors)
-  Why: `recentErrors` (last 20 log messages, absolute paths and error text) is
-  in the fully-unauthenticated `/health` payload. Gate behind auth or redact.
-  Where: astra_downloader/astra_downloader.py (~3791)
-  Blocker: Product decision — gating /health output behind auth changes the API
-  surface used by extension diagnostics panels. Needs design decision on what
-  to expose vs gate.
-
 ## P2 — Userscript Structural Drift (Browser-Gated)
 
 - [ ] P2 — Establish one canonical implementation per extracted extension feature
@@ -617,38 +469,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Repository research names the userscript but contains no verified Filmot host, request/response schema, public API terms, or fallback contract. This development pass forbids fresh research, so implementing an endpoint would be speculative.
 
-## Audit scope records (not implementable work)
-
-These two entries are the honest scope records the 2026-08-05 and
-2026-08-06 audit passes left behind: they say which surfaces were NOT
-examined, so the next audit starts where the last one stopped. They are
-kept verbatim.
-
-Blocker: Not implementation work. Closing them means scheduling and
-running an audit pass over the listed surfaces, which is a research /
-planning activity rather than a roadmap item a coding agent can drain.
-Every actionable finding those passes produced has been implemented and
-deleted from ROADMAP.md; what remains here is the coverage ledger.
-
-- [ ] P3 — Unaudited — needs a pass
-  Category: docs
-  Where: repo-wide
-  Problem: This pass concentrated on the companion (Python, Qt GUI, HTTP routes) and the extension/userscript code paths that consume companion state. The following were not audited and should not be assumed clean: `extension/ytkit.js` feature internals beyond the download surface (~35k lines); the settings-panel, subscription-groups, video-hider, sponsorblock, dearrow and live-chat feature modules; `extension/popup.js` and `sidepanel.js` interaction flows; the MV3 background service-worker lifecycle; `build-extension.js` and the release/SBOM scripts; the extension's own theming across YouTube light/dark (its `audit:contrast` and `audit:a11y` gates pass, which is evidence but not a substitute for driving the surfaces); and Firefox-specific behaviour. The companion's own dark-only palette was checked for text contrast and passes (`muted`/`fieldHint` #8d97a4 → 6.57:1, `toolbarMeta` #aab2bd → 9.09:1 on the #0a0d12 window; disabled-state colours are below 4.5:1 but are WCAG-exempt), so no contrast finding is logged for it.
-  Evidence: Scope of this pass, recorded honestly so the next audit starts where this one stopped.
-  Fix: Schedule a pass per area, driving the extension surfaces in a real browser rather than reading them.
-  Acceptance: Each listed area has either findings or an explicit "audited, clean" note with the method used.
-  Confidence: Verified
-  Effort: L
-
-- [ ] P3 — Unaudited residue from this pass
-  Category: docs
-  Where: repo-wide
-  Problem: Honest scope record. Not line-audited this pass: ~1,800 lines of pure-CSS template literals in ytkit.js (watchPageRestyle interior detail, chat-style premium layers, popup/dropdown theming — surveyed structurally only); the settings-panel module's full 3.4k lines (repeatedly audited before; skimmed); sticky-video's full 5k lines (lifecycle spot-checked); download-ui's full 2.9k lines (spot-checked); Firefox-specific runtime behavior beyond the manifest-patch/static gates; live-browser verification of every finding marked Needs-repro (the blocked "Live-browser behavioral audit" item covers the vehicle). The companion (AstraDownloader repo) is out of scope here by design.
-  Fix: Fold the CSS-literal interiors into the light-theme lane work above; keep the rest on the existing blocked live-browser item.
-  Acceptance: Next audit starts from this record.
-  Confidence: Verified
-  Effort: S
-
 ## Browser-gated — 2026-08-06
 
 - [ ] P3 — Drive YouTube's native "Stable Volume" toggle
@@ -681,20 +501,6 @@ deleted from ROADMAP.md; what remains here is the coverage ledger.
   Acceptance: A fixture test drives the menu path on a non-English UI; the clamp still applies when the menu item is absent.
   Confidence: Verified (mechanism); menu shape needs a live check
   Effort: S
-
-## Roadmap cleanup — 2026-08-10 — ROADMAP.md
-
-**Blocked on:** The source roadmap marked this work as parked, optional, or dependent on external input.
-
-Blocked items moved from the actionable roadmap:
-
-- `Roadmap_Blocked.md` "P1 — Companion release EXE + SHA256 sidecar + clean-machine verification" is **half-unblocked as of 2026-08-02**: its stated blocker includes "maintainer GitHub authentication ... `gh auth status` reports the SysAdminDoc token is invalid", but `gh auth status` now reports a valid `SysAdminDoc` token with `repo` scope. Only the clean-Windows-machine verification half remains blocked, and the asset itself now ships from `SysAdminDoc/AstraDownloader`. Rewrite the blocker accordingly.
-
-
-- `Roadmap_Blocked.md` "P2 — Competitor migration documentation" is **better supported now, not stale**: Iridium was archived 2026-01-31 (last real commit 2024-09-18) and its users are being routed to Enhancer, Unhook and Zenith — none of which is OSS-and-maintained, so there is no OSS successor. BlockTube is stalled (last push 2026-02-07, 484 open issues). A BlockTube migration guide plus an Iridium-successor note is the highest-yield addition to that item. No separate roadmap entry — extend the blocked one.
-
-
-- `Roadmap_Blocked.md` "P3 — Chrome Writer/Rewriter API" is correctly blocked (still Developer Trial), but it should **not** be read as covering Chrome's built-in AI generally: Translator, Language Detector, Summarizer and the Prompt API have been **stable in extensions since Chrome 138**. That lane is unblocked and is tracked separately below.
 
 ## P1 — Premise disproven, needs a product decision (2026-09-05)
 
