@@ -242,7 +242,25 @@ async function waitForWebDriver(port, timeoutMs = DEFAULT_STARTUP_TIMEOUT_MS) {
     throw new Error(`Timed out waiting for geckodriver${lastError ? `: ${lastError.message}` : ''}`);
 }
 
+// Firefox 156/157 sometimes never answers POST /session (BiDi "listening", then
+// silence), about one start in three on this machine. The failed attempt is torn
+// down whole (geckodriver, Firefox, profile), so a fresh start is safe.
+const SESSION_START_HANG = /aborted due to timeout|Timed out waiting for geckodriver|timed out/i;
 async function startFirefoxSession(options) {
+    const attempts = Math.max(1, Number(options.startAttempts) || 3);
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+            return await startFirefoxSessionOnce(options);
+        } catch (error) {
+            lastError = error;
+            if (!SESSION_START_HANG.test(String(error.message || '').slice(0, 120))) throw error;
+        }
+    }
+    throw lastError;
+}
+
+async function startFirefoxSessionOnce(options) {
     const geckodriver = resolveGeckodriverExecutable(options.geckodriver || '');
     const port = await reserveLoopbackPort();
     const profileRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-firefox-webdriver-'));
