@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const { checkChainText } = require('./helpers/check-chain');
 
 const repoRoot = path.join(__dirname, '..');
@@ -96,4 +97,34 @@ test('the development audit includes devDependencies whatever npm omits', () => 
     assert.ok(shared.length >= 4, 'each launch shape must build its argv from AUDIT_ARGS');
     assert.equal((source.match(/'audit', '--json'/g) || []).length, 1,
         'the argument list is written once, in AUDIT_ARGS, and no launch carries its own');
+});
+
+test('the deepmerge stand-in keeps a parsed __proto__ key off the merged object', () => {
+    const deepmerge = require('../scripts/npm-stubs/deepmerge');
+    const poisoned = JSON.parse('{"__proto__":{"polluted":true},"safe":{"a":1}}');
+    for (const merged of [deepmerge(poisoned, {}), deepmerge({}, poisoned), deepmerge(Object.create(null), poisoned)]) {
+        assert.ok(Object.getPrototypeOf(merged) === Object.prototype, 'the prototype must not be replaced');
+        assert.equal(merged.polluted, undefined);
+        assert.deepEqual(merged.safe, { a: 1 });
+    }
+    assert.equal(Object.prototype.polluted, undefined);
+
+    // Everything else merges as 4.3.1 did, including the arrayMerge addons-linter passes.
+    assert.deepEqual(deepmerge({ a: [1], b: { c: 1 } }, { a: [2], b: { d: 2 } }), { a: [1, 2], b: { c: 1, d: 2 } });
+    assert.deepEqual(deepmerge({ a: [1, 2] }, { a: [2, 3] }, {
+        arrayMerge: (target, source) => [...new Set([...target, ...source])]
+    }), { a: [1, 2, 3] });
+    assert.deepEqual(deepmerge.all([{ a: 1 }, { b: 2 }, { a: 3 }]), { a: 3, b: 2 });
+});
+
+test("web-ext's real file filter still refuses what it should, whatever the platform's separators", async () => {
+    // Not in web-ext's exports map, so it's loaded by path.
+    const { FileFilter } = await import(pathToFileURL(path.join(repoRoot, 'node_modules', 'web-ext', 'lib', 'util', 'file-filter.js')).href);
+    const filter = new FileFilter({ sourceDir: path.join(__dirname, 'no-such-source') });
+    for (const refused of ['node_modules/a.js', 'node_modules', '.git/config', '.env', 'out.zip', 'build.xpi', 'src/deep/.hidden']) {
+        assert.equal(filter.wantFile(refused), false, `${refused} must stay out of a lint or a package`);
+    }
+    for (const wanted of ['manifest.json', 'src/a.js', 'fonts/My Font.woff2', 'a[1].js']) {
+        assert.equal(filter.wantFile(wanted), true, `${wanted} must stay in`);
+    }
 });

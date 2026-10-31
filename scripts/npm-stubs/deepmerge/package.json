@@ -1,0 +1,8 @@
+{
+  "name": "deepmerge",
+  "version": "4.3.1-astra-patched",
+  "description": "deepmerge 4.3.1 with GHSA-gcqx-w48m-w2h4 closed, until a patched release exists.",
+  "private": true,
+  "license": "MIT",
+  "main": "index.js"
+}

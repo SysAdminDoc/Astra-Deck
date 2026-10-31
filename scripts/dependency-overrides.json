@@ -65,6 +65,33 @@
       "answersAdvisory": "GHSA-xjj6-f33q-929c",
       "advisoryUrl": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
       "lastCheckedOn": "2026-10-26"
+    },
+    {
+      "package": "deepmerge",
+      "range": "file:./scripts/npm-stubs/deepmerge",
+      "reason": "addons-linter merges its own bundled WebExtension schemas through deepmerge, so no outside input reaches it here, but the advisory covers every 4.2.0 to 4.3.1 release and no fixed one exists. The stand-in is 4.3.1 with the write of an own __proto__ key removed.",
+      "answersAdvisory": "GHSA-gcqx-w48m-w2h4",
+      "advisoryUrl": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+      "lastCheckedOn": "2026-10-31",
+      "recheckBecause": "Drop the stand-in as soon as deepmerge publishes a fixed release that addons-linter can take."
+    },
+    {
+      "package": "minimatch",
+      "range": "^11.0.3",
+      "reason": "A glob with repeated **/.. grows its pattern set without bound at optimizationLevel 2 and up, and every release below 11.0.1 is affected. Globs here come from this repository and from web-ext, so it is reachable only through development tooling. eslint 10 and the eslint 9 inside addons-linter read only the Minimatch class and the named exports, which 11 keeps.",
+      "answersAdvisory": "GHSA-g3hv-75wg-m249",
+      "advisoryUrl": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+      "lastCheckedOn": "2026-10-31",
+      "recheckBecause": "Drop the pin once eslint and addons-linter both declare a fixed minimatch range themselves."
+    },
+    {
+      "package": "multimatch",
+      "range": "file:./scripts/npm-stubs/multimatch",
+      "reason": "web-ext pins multimatch 6.0.0, which default-imports minimatch, and minimatch 11 has no default export. Stock multimatch 8 loads, but it leaves minimatch reading the backslashes in web-ext's resolved Windows patterns as escapes, so the ignore list matched nothing on Windows and web-ext would have linted and packaged node_modules and .git. The stand-in is multimatch 8 with windowsPathsNoEscape on by default on Windows, which gave the same answer as 6.0.0 for every path tried.",
+      "answersAdvisory": "GHSA-g3hv-75wg-m249",
+      "advisoryUrl": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+      "lastCheckedOn": "2026-10-31",
+      "recheckBecause": "Drop the stand-in with the minimatch pin, once web-ext moves past multimatch 6 and passes Windows patterns correctly itself."
     }
   ]
 }
