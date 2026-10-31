@@ -2594,6 +2594,34 @@ const STORAGE_KEYS = Object.freeze({
 			|| player.classList.contains('ad-interrupting')
 		);
 	}
+	const PLAYLIST_PAGE = 'ytd-browse[page-subtype="playlist"]';
+	const PLAYLIST_PAGE_ROW_SELECTOR = `ytd-playlist-video-renderer, ${PLAYLIST_PAGE} yt-lockup-view-model`;
+	const PLAYLIST_ROW_MENU_BUTTON_SELECTOR = '#menu yt-icon-button button, #menu button[aria-label*="Action menu"], .ytLockupMetadataViewModelMenuButton button';
+	const PLAYLIST_MENU_ITEM_SELECTOR = 'ytd-menu-service-item-renderer, tp-yt-paper-item, yt-list-item-view-model';
+	function firstRenderedIn(selector) {
+		return [...document.querySelectorAll(selector)].find((el) => el.getClientRects?.().length) || null;
+	}
+	function findPlaylistPageActionsHost() {
+		return firstRenderedIn(
+			'ytd-playlist-header-renderer .metadata-action-bar, '
+			+ 'ytd-playlist-header-renderer #top-level-buttons-computed, '
+			+ `${PLAYLIST_PAGE} yt-page-header-renderer yt-flexible-actions-view-model`
+		);
+	}
+	function readPlaylistPageRow(row) {
+		const titleLink = row.querySelector('a#video-title, a.ytLockupMetadataViewModelTitle');
+		const anyLink = titleLink || row.querySelector('a[href*="/watch"]');
+		const watched = row.querySelector('#progress, .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment');
+		const watchedRaw = watched?.style?.width || watched?.getAttribute?.('aria-valuenow') || '0';
+		return {
+			videoId: getVideoId(anyLink?.href || '') || '',
+			titleLink,
+			title: titleLink?.textContent?.trim() || '',
+			channel: row.querySelector('ytd-channel-name a, ytd-channel-name #text, yt-content-metadata-view-model a[href^="/@"], yt-content-metadata-view-model a[href^="/channel/"]')?.textContent?.trim() || '',
+			durationText: row.querySelector('ytd-thumbnail-overlay-time-status-renderer, .badge-shape-wiz__text, .ytBadgeShapeText')?.textContent?.trim() || '',
+			watchedPct: Math.max(0, Math.min(100, parseFloat(watchedRaw) || 0))
+		};
+	}
 	function unregisterPersistentButton(id) {
 		const config = persistentButtons.get(id);
 		if (config) {
@@ -10321,7 +10349,7 @@ const STORAGE_KEYS = Object.freeze({
 				return formatDuration(secs, { style: 'narrow', includeSeconds: false });
 			},
 			_calculate() {
-				const items = document.querySelectorAll('ytd-playlist-panel-video-renderer .ytd-thumbnail-overlay-time-status-renderer, ytd-playlist-video-renderer .ytd-thumbnail-overlay-time-status-renderer');
+				const items = document.querySelectorAll(`ytd-playlist-panel-video-renderer .ytd-thumbnail-overlay-time-status-renderer, ytd-playlist-video-renderer .ytd-thumbnail-overlay-time-status-renderer, ${PLAYLIST_PAGE} yt-lockup-view-model .ytBadgeShapeText`);
 				if (items.length === 0) return;
 				let totalSecs = 0;
 				items.forEach(el => {
@@ -10331,8 +10359,8 @@ const STORAGE_KEYS = Object.freeze({
 					else if (parts.length === 2) totalSecs += parts[0] * 60 + parts[1];
 				});
 				if (totalSecs === 0) return;
-				const header = document.querySelector('#header-description ytd-playlist-panel-renderer, .metadata-stats, ytd-playlist-header-renderer .metadata-action-bar, ytd-playlist-sidebar-primary-info-renderer .stats, #stats.ytd-playlist-sidebar-primary-info-renderer');
-				const target = header || document.querySelector('ytd-playlist-panel-renderer #publisher-container, ytd-playlist-panel-renderer #playlist-action-menu');
+				const target = firstRenderedIn(`#header-description ytd-playlist-panel-renderer, .metadata-stats, ytd-playlist-header-renderer .metadata-action-bar, ytd-playlist-sidebar-primary-info-renderer .stats, #stats.ytd-playlist-sidebar-primary-info-renderer, ${PLAYLIST_PAGE} yt-page-header-renderer yt-content-metadata-view-model`)
+					|| firstRenderedIn('ytd-playlist-panel-renderer #publisher-container, ytd-playlist-panel-renderer #playlist-action-menu');
 				if (!target || target.querySelector('.ytkit-playlist-duration')) return;
 				const badge = document.createElement('span');
 				badge.className = 'ytkit-playlist-duration';
@@ -24136,13 +24164,16 @@ const STORAGE_KEYS = Object.freeze({
 			_isOwnedPlaylist() {
 				return !!document.querySelector(
 					'ytd-playlist-header-renderer ytd-button-renderer[aria-label*="Edit"], ' +
-					'ytd-playlist-header-renderer yt-button-shape button[aria-label*="Remove videos"]'
+					'ytd-playlist-header-renderer yt-button-shape button[aria-label*="Remove videos"], ' +
+					`${PLAYLIST_PAGE} yt-page-header-renderer button[aria-label*="Edit"], ` +
+					`${PLAYLIST_PAGE} yt-page-header-renderer button[aria-label*="Remove videos"]`
 				);
 			},
 			_attachOverlays() {
 				if (!this._isOwnedPlaylist()) return;
-				const items = document.querySelectorAll('ytd-playlist-video-renderer:not([data-ytkit-qr])');
+				const items = document.querySelectorAll(PLAYLIST_PAGE_ROW_SELECTOR);
 				items.forEach((item) => {
+					if (item.dataset.ytkitQr) return;
 					item.dataset.ytkitQr = '1';
 					const btn = document.createElement('button');
 					btn.className = 'ytkit-playlist-qr';
@@ -24152,15 +24183,11 @@ const STORAGE_KEYS = Object.freeze({
 					btn.addEventListener('click', (e) => {
 						e.preventDefault();
 						e.stopPropagation();
-						const menuBtn = item.querySelector(
-							'#menu yt-icon-button button, ' +
-							'#menu button[aria-label*="Action menu"]'
-						);
+						const menuBtn = item.querySelector(PLAYLIST_ROW_MENU_BUTTON_SELECTOR);
 						menuBtn?.click();
 						setTimeout(() => {
-							const removeItem = [...document.querySelectorAll(
-								'ytd-menu-service-item-renderer, tp-yt-paper-item'
-							)].find(n => /remove from/i.test(n.textContent || ''));
+							const removeItem = [...document.querySelectorAll(PLAYLIST_MENU_ITEM_SELECTOR)]
+								.find(n => /remove from/i.test(n.textContent || ''));
 							removeItem?.click();
 						}, 60);
 					});
@@ -24169,18 +24196,18 @@ const STORAGE_KEYS = Object.freeze({
 				});
 			},
 			init() {
-				const css = `.ytkit-playlist-qr{position:absolute;top:6px;right:6px;z-index:20;width:22px;height:22px;border-radius:6px;background:rgba(239,68,68,0.9);color:#fff;border:0;cursor:pointer;font:700 13px/1 system-ui;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}ytd-playlist-video-renderer:hover .ytkit-playlist-qr{opacity:1}.ytkit-playlist-qr:focus-visible{opacity:1;outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px}.ytkit-playlist-qr:hover{background:#dc2626}`;
+				const css = `.ytkit-playlist-qr{position:absolute;top:6px;right:6px;z-index:20;width:22px;height:22px;border-radius:6px;background:rgba(239,68,68,0.9);color:#fff;border:0;cursor:pointer;font:700 13px/1 system-ui;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}ytd-playlist-video-renderer:hover .ytkit-playlist-qr,yt-lockup-view-model:hover .ytkit-playlist-qr{opacity:1}.ytkit-playlist-qr:focus-visible{opacity:1;outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px}.ytkit-playlist-qr:hover{background:#dc2626}`;
 				this._styleEl = injectStyle(css, this.id, true);
 				this._navRule = () => setTimeout(() => this._attachOverlays(), 1500);
 				addNavigateRule('playlistQuickRemove', this._navRule);
 				this._navRule();
-				addScopedMutationRule?.('playlistQuickRemove', 'ytd-playlist-video-renderer', () => this._attachOverlays());
+				addScopedMutationRule?.('playlistQuickRemove', PLAYLIST_PAGE_ROW_SELECTOR, () => this._attachOverlays());
 			},
 			destroy() {
 				removeNavigateRule('playlistQuickRemove');
 				removeScopedMutationRule?.('playlistQuickRemove');
 				document.querySelectorAll('.ytkit-playlist-qr').forEach(b => b.remove());
-				document.querySelectorAll('ytd-playlist-video-renderer[data-ytkit-qr]')
+				document.querySelectorAll('[data-ytkit-qr]')
 					.forEach(el => { delete el.dataset.ytkitQr; });
 				this._styleEl?.remove(); this._styleEl = null;
 				this._navRule = null;
@@ -24204,10 +24231,7 @@ const STORAGE_KEYS = Object.freeze({
 			_injectButton() {
 				if (!this._isWatchLater()) return;
 				if (document.getElementById('ytkit-wl-cleanup')) return;
-				const host = document.querySelector(
-					'ytd-playlist-header-renderer .metadata-action-bar, ' +
-					'ytd-playlist-header-renderer #top-level-buttons-computed'
-				);
+				const host = findPlaylistPageActionsHost();
 				if (!host) return;
 				const btn = document.createElement('button');
 				btn.id = 'ytkit-wl-cleanup';
@@ -24224,12 +24248,8 @@ const STORAGE_KEYS = Object.freeze({
 				btn.textContent = t('watchLaterScanning', 'Scanning…');
 				const THRESHOLD = 0.9;
 				const targets = [];
-				document.querySelectorAll('ytd-playlist-video-renderer').forEach((row) => {
-					const fill = row.querySelector('#progress');
-					if (!fill) return;
-					const raw = fill.style.width || '';
-					const pct = parseFloat(raw) / 100;
-					if (Number.isFinite(pct) && pct >= THRESHOLD) targets.push(row);
+				document.querySelectorAll(PLAYLIST_PAGE_ROW_SELECTOR).forEach((row) => {
+					if (readPlaylistPageRow(row).watchedPct / 100 >= THRESHOLD) targets.push(row);
 				});
 				if (!targets.length) {
 					btn.textContent = t('watchLaterNothingToRemove', 'Nothing to remove');
@@ -24242,11 +24262,11 @@ const STORAGE_KEYS = Object.freeze({
 						.replace('{current}', String(i + 1))
 						.replace('{total}', String(targets.length));
 					const row = targets[i];
-					const menuBtn = row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
+					const menuBtn = row.querySelector(PLAYLIST_ROW_MENU_BUTTON_SELECTOR);
 					if (!menuBtn) continue;
 					menuBtn.click();
 					await new Promise(r => setTimeout(r, 120));
-					const items = [...document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item')];
+					const items = [...document.querySelectorAll(PLAYLIST_MENU_ITEM_SELECTOR)];
 					const removeItem = items.find(n => {
 						const host = n.matches?.('ytd-menu-service-item-renderer') ? n : n.closest?.('ytd-menu-service-item-renderer');
 						const actions = host?.data?.serviceEndpoint?.playlistEditEndpoint?.actions;
@@ -24336,6 +24356,8 @@ const STORAGE_KEYS = Object.freeze({
 					'meta[itemprop="datePublished"], time[datetime], #metadata-line span, ' +
 					'ytd-video-meta-block #metadata-line span'
 				) || [])];
+				const lockupAges = [...(row?.querySelectorAll?.('yt-content-metadata-view-model [aria-label]') || [])]
+					.map(node => node.getAttribute('aria-label'));
 				const attributeValue = row?.getAttribute?.('data-published-at')
 					|| row?.getAttribute?.('data-upload-date')
 					|| row?.dataset?.publishedAt
@@ -24346,6 +24368,7 @@ const STORAGE_KEYS = Object.freeze({
 				const candidates = [
 					attributeValue,
 					this._textFromData(dataValue),
+					...lockupAges,
 					...nodes.flatMap(node => [
 						node?.getAttribute?.('content'),
 						node?.getAttribute?.('datetime'),
@@ -24446,16 +24469,8 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			_scanRows() {
 				const rows = [];
-				document.querySelectorAll('ytd-playlist-video-renderer').forEach((row) => {
-					const link = row.querySelector('a#video-title');
-					const href = link?.href || '';
-					const videoId = getVideoId(href) || '';
-					const title = link?.textContent?.trim() || '';
-					const channel = row.querySelector('ytd-channel-name a, ytd-channel-name #text')?.textContent?.trim() || '';
-					const durationText = row.querySelector('ytd-thumbnail-overlay-time-status-renderer, .badge-shape-wiz__text')?.textContent?.trim() || '';
-					const fill = row.querySelector('#progress');
-					const watchedRaw = fill?.style?.width || fill?.getAttribute?.('aria-valuenow') || '0';
-					const watchedPct = Math.max(0, Math.min(100, parseFloat(watchedRaw) || 0));
+				document.querySelectorAll(PLAYLIST_PAGE_ROW_SELECTOR).forEach((row) => {
+					const { videoId, title, channel, durationText, watchedPct } = readPlaylistPageRow(row);
 					const publishedValue = this._publishedValue(row);
 					const publishedAt = this._parsePublishedAt(publishedValue) || this._ageCacheFor(videoId)?.publishedAt || null;
 					const ageDays = publishedAt
@@ -24820,7 +24835,7 @@ const STORAGE_KEYS = Object.freeze({
 				return restored;
 			},
 			async _removeRow(entry) {
-				const menuBtn = entry.row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
+				const menuBtn = entry.row.querySelector(PLAYLIST_ROW_MENU_BUTTON_SELECTOR);
 				if (!menuBtn) return false;
 				if (this._openDropdown()) {
 					document.body.click();
@@ -24828,12 +24843,12 @@ const STORAGE_KEYS = Object.freeze({
 				}
 				menuBtn.click();
 				const opened = await this._waitFor(
-					() => this._openDropdown()?.querySelector('ytd-menu-service-item-renderer, tp-yt-paper-item'),
+					() => this._openDropdown()?.querySelector(PLAYLIST_MENU_ITEM_SELECTOR),
 					1500
 				);
 				if (!opened) { document.body.click(); return false; }
 				const dropdown = this._openDropdown();
-				const items = [...(dropdown?.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item') || [])];
+				const items = [...(dropdown?.querySelectorAll(PLAYLIST_MENU_ITEM_SELECTOR) || [])];
 				const owned = items.find(n => this._menuItemOwnership(n, entry.videoId) === true);
 				const structural = owned || items.find(n => {
 					const host = n.matches?.('ytd-menu-service-item-renderer') ? n : n.closest?.('ytd-menu-service-item-renderer');
@@ -25022,10 +25037,7 @@ const STORAGE_KEYS = Object.freeze({
 			_injectButton() {
 				if (!this._isWatchLater()) return;
 				if (document.getElementById('ytkit-wl-workbench')) return;
-				const host = document.querySelector(
-					'ytd-playlist-header-renderer .metadata-action-bar, ' +
-					'ytd-playlist-header-renderer #top-level-buttons-computed'
-				);
+				const host = findPlaylistPageActionsHost();
 				if (!host) return;
 				const btn = document.createElement('button');
 				btn.id = 'ytkit-wl-workbench';
@@ -28378,7 +28390,7 @@ const STORAGE_KEYS = Object.freeze({
 				return this._currentVideoTitle(videoId) || videoId;
 			},
 			_contextFromVideoLink(link) {
-				if (link?.closest?.('ytd-playlist-panel-video-renderer, ytd-playlist-video-renderer')) return 'playlist';
+				if (link?.closest?.(`ytd-playlist-panel-video-renderer, ${PLAYLIST_PAGE_ROW_SELECTOR}`)) return 'playlist';
 				if (link?.closest?.('ytd-rich-grid-renderer, ytd-browse, ytd-grid-renderer')) return 'channel';
 				if (link?.closest?.('ytd-compact-video-renderer')) return 'related';
 				return isWatchPagePath() ? 'watch' : 'visible';
