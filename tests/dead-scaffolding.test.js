@@ -130,12 +130,13 @@ test('.sp-storage-card is gone, and nothing builds one', () => {
 
 // ── (c) the claim that did not survive verification ───────────────────────
 
-test('the Theme section still matches its two foundation features', () => {
+test('the Theme section still places its two foundation features', () => {
     // The audit called uiStyleManager/colorThemeManager dead regex alternates,
     // on the grounds that they are "element ids, not schema keys". But the
     // regex is tested against feature.id, not a schema key, and both are live
     // feature ids in group Theme. Deleting them would have moved both features
-    // out of Foundation into the catch-all Surfaces section.
+    // out of Foundation into the catch-all Surfaces section. uiStyleManager
+    // moved to Corners with the avatar and search bar shapes (#52).
     //
     // Run the table's own regex against the real ids rather than reading the
     // alternation out of the source: the section a feature lands in is the
@@ -146,9 +147,11 @@ test('the Theme section still matches its two foundation features', () => {
     const foundation = theme.find((section) => section.fallback === 'Foundation');
     assert.ok(foundation, 'the Theme > Foundation section must still exist');
 
-    for (const id of ['uiStyleManager', 'colorThemeManager']) {
-        assert.equal(foundation.match.test(id), true,
-            `${id} must land in Foundation: it is a live feature id`);
+    const corners = theme.find((section) => section.fallback === 'Corners');
+    assert.ok(corners, 'the Theme > Corners section must still exist');
+    for (const [id, section] of [['uiStyleManager', corners], ['colorThemeManager', foundation]]) {
+        assert.equal(section.match.test(id), true,
+            `${id} must land in ${section.fallback}: it is a live feature id`);
         assert.match(monolith, new RegExp(`id: '${id}',[\\s\\S]{0,200}?group: 'Theme'`),
             `${id} must still be a Theme feature, or the alternate really is dead`);
     }

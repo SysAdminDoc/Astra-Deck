@@ -176,6 +176,43 @@ test('sync version comparison rejects foreign schema versions and orders newest 
     assert.equal(sync.compareSyncVersions(current, current), 0);
 });
 
+test('a snapshot written before the defaults moved is never applied, and gets replaced (#52)', async () => {
+    // A v1 payload lists a key under resetSettings because it sat at the default
+    // of that day. Read today, that would quietly flip hideSidebar and friends.
+    const localSettings = { syncSettings: true, hideSidebar: true, squareAvatars: true };
+    const info = sync.buildSyncPayload({ syncSettings: true }, {}, settingsOptions);
+    const oldPayload = JSON.stringify({ ...info.payload, schemaVersion: 1, resetSettings: ['hideSidebar', 'squareAvatars'] });
+    const account = makeStorage({
+        [sync.SYNC_META_KEY]: {
+            schemaVersion: 1,
+            updatedAt: Date.now() + 60000,
+            sequence: 50,
+            deviceId: 'old-device',
+            chunkCount: 1,
+            payloadBytes: oldPayload.length,
+            checksum: digest(oldPayload)
+        },
+        [`${sync.SYNC_CHUNK_PREFIX}0`]: oldPayload
+    }, 'sync');
+    const local = makeStorage({ ytSuiteSettings: localSettings });
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        ...settingsOptions,
+        callApi: (target, method, ...args) => target[method](...args)
+    });
+    controller.installListeners();
+
+    const started = await controller.initialize();
+    assert.equal(started.ok, true);
+    const stored = local.snapshot().ytSuiteSettings;
+    assert.equal(stored.hideSidebar, true);
+    assert.equal(stored.squareAvatars, true);
+    assert.equal(readRemotePayload(account).meta.schemaVersion, sync.SYNC_SCHEMA_VERSION,
+        'the account now holds a snapshot this version can read');
+    assert.equal(sync.compareSyncVersions({ ...readRemotePayload(account).meta, schemaVersion: 1 }, readRemotePayload(account).meta), -1);
+});
+
 test('settings sync uploads blocklist-only changes, applies newer remote state, and offers Undo', async () => {
     const baseSettings = {
         syncSettings: true,

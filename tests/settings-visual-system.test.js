@@ -164,7 +164,9 @@ test('every shell and subtitle setting renders a real settings card', () => {
     for (const match of shell.matchAll(/\bid:\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
     for (const match of shell.matchAll(/cssFeature\(\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
     for (const match of shell.matchAll(/\bsettingKey:\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
-    assert.equal(visualSettingKeys.length, 62);
+    const lookPresets = fs.readFileSync(path.join(repoRoot, 'extension', 'features', 'look-presets', 'index.js'), 'utf8');
+    for (const match of lookPresets.matchAll(/\bid:\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
+    assert.equal(visualSettingKeys.length, 64);
     assert.deepEqual(visualSettingKeys.filter((key) => !featureIds.has(key)), []);
     assert.match(settingsPanel, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
     assertUserscriptRunsSettingsPanel();

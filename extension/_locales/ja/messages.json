@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "{count} 本の動画を非表示にしました"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "角を四角に、左サイドバーなし、より密なグリッド、再設計された視聴ページ、Player Dock、Theater Split。オフにすると以前の値に戻ります。"
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "YouTube 本来のレイアウトです。角丸、サイドバー、アバター、関連動画、説明を表示し、Astra のクリーンアップは有効のままです。オフにすると以前の値に戻ります。"
+  },
+  "feature_presetClassicLook_name": {
+    "message": "クラシック YouTube"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look をオフにしました。以前の値に戻しました。",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look を適用しました。オフにすると元に戻ります。",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "クラシック YouTube の外観をオフにしました。以前の値に戻しました。",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "クラシック YouTube の外観を適用しました。オフにすると元に戻ります。",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "角"
+  },
+  "settingsSectionStartingLook": {
+    "message": "初期の外観"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "{count} 本の動画を非表示にしました。残りは読み込まれ次第非表示にします。"
   },
@@ -3719,10 +3753,10 @@
     "message": "文字起こし検索パネル"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Astra Deck がデフォルトで非表示にするチャンネル/コメントのアバターやホームフィード棚を表示。"
+    "message": "チャンネルとコメントのアバター、ホームフィードの棚を残します。オフにすると、それらがないすっきりしたページになります。"
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "ネイティブ YouTube UI を復元"
+    "message": "アバターとフィードの棚を表示"
   },
   "feature_resumePlayback_desc": {
     "message": "前回の視聴停止位置を記憶し、自動的にその地点から再開"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "ウェルカムカードを閉じる"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "角を四角に、サイドバーなし、より密なグリッド、再設計された視聴ページ、Theater Split。"
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "YouTube をどのように使いますか？ プリセットを選ぶか、スキップして手動で設定してください。"

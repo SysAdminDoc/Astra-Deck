@@ -4,7 +4,8 @@
 // before YouTube's inline data runs (Force DVR, Hide AI Chapters, Classic
 // Watch Layout), published from their own document_start entry instead of
 // waiting for ytkit.js at document_idle. Theater Split shares the classic
-// layout switch and is on by default.
+// layout switch. The same entry puts the class on <html> that keeps early.css
+// from hiding avatars and home feed shelves.
 //
 // The unit half drives the module with stub storage and a stub channel. The
 // end-to-end half builds both worlds over one fake <html>, in manifest
@@ -53,6 +54,7 @@ function loadEarly({ stored = {}, pathname = '/watch', search = '', channel = tr
     runtimeStarted = false, storage } = {}) {
     const writes = [];
     const reads = [];
+    const classes = [];
     const core = {};
     if (channel) {
         core.publishBridgeAttribute = (name, value) => writes.push(['publish', name, value]);
@@ -62,6 +64,7 @@ function loadEarly({ stored = {}, pathname = '/watch', search = '', channel = tr
     const context = {
         YTKitCore: core,
         location: { pathname, search },
+        document: { documentElement: { classList: { add: (name) => classes.push(name) } } },
         chrome: {
             runtime: {},
             storage: {
@@ -76,14 +79,14 @@ function loadEarly({ stored = {}, pathname = '/watch', search = '', channel = tr
     vm.createContext(context);
     vm.runInContext(earlySource, context, { filename: EARLY });
     const early = context.YTKitCore.earlyBridgeSwitches;
-    return { early, writes, reads, ready: early.ready };
+    return { early, writes, reads, classes, ready: early.ready };
 }
 
 const names = (writes) => writes.map(([kind, name, value]) => (value === undefined ? `${kind} ${name}` : `${kind} ${name}=${value}`));
 
 test('the plan takes only a stored true, flags first, in the order each feature publishes', () => {
     const { early } = loadEarly({ pathname: '/' });
-    const plan = early.planEarlySwitches(ALL_ON);
+    const plan = early.planEarlySwitches({ ...ALL_ON, stickyVideo: true });
     assert.deepEqual(plain(plan).map((entry) => [entry.name, entry.value, entry.featureId]), [
         ['data-ytkit-force-dvr', 'on', 'forceDvr'],
         ['data-ytkit-hide-auto-chapters', 'on', 'hideAutoChapters'],
@@ -96,7 +99,7 @@ test('the plan takes only a stored true, flags first, in the order each feature 
         assert.deepEqual(plain(early.planEarlySwitches(off)), [],
             `${JSON.stringify(value)} is not the user turning it on`);
     }
-    for (const settings of [null, 'x', [], 7]) assert.deepEqual(plain(early.planEarlySwitches(settings)), []);
+    for (const settings of [undefined, null, 'x', [], 7]) assert.deepEqual(plain(early.planEarlySwitches(settings)), []);
 });
 
 test('a flag list the settings field would refuse is left out, and the switch still goes', () => {
@@ -128,7 +131,7 @@ test('a hard load of a /live/<id> link publishes the switches like /watch does',
 });
 
 test('on a watch page with the switches stored on, they publish as soon as storage answers', async () => {
-    const run = loadEarly({ stored: { ytSuiteSettings: ALL_ON } });
+    const run = loadEarly({ stored: { ytSuiteSettings: { ...ALL_ON, stickyVideo: true } } });
     assert.equal(await run.ready, 4);
     assert.deepEqual(run.reads, [['ytSuiteSettings', 'ytkit_safe_mode']]);
     assert.deepEqual(names(run.writes), [
@@ -145,11 +148,11 @@ test('nothing is published off a watch page, in safe mode, after the runtime sta
     const stored = { ytSuiteSettings: ALL_ON };
     const offPage = loadEarly({ stored, pathname: '/results' });
     assert.equal(await offPage.ready, 0);
-    assert.deepEqual(offPage.reads, [], 'storage is not even read off a watch page');
+    assert.deepEqual(offPage.writes, []);
 
     const safeUrl = loadEarly({ stored, search: '?v=x&ytkit=safe' });
     assert.equal(await safeUrl.ready, 0);
-    assert.deepEqual(safeUrl.reads, []);
+    assert.deepEqual(safeUrl.writes, []);
 
     const safeStored = loadEarly({ stored: { ...stored, ytkit_safe_mode: true } });
     assert.equal(await safeStored.ready, 0);
@@ -214,30 +217,82 @@ test('a settle before storage answers stops the late publish', async () => {
     assert.deepEqual(run.writes, []);
 });
 
-test('Theater Split holds the classic layout switch unless it is stored off', () => {
-    // It's on by default, so a missing key is the user leaving it on.
+test('Theater Split holds the classic layout switch only when it is stored on', () => {
+    // It's off by default now (#52), so a fresh install leaves YouTube's flags alone.
     const { early } = loadEarly({ pathname: '/' });
-    for (const value of [true, undefined, null, 1, 'x']) {
-        assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: value })).map((entry) => [entry.name, entry.featureId]),
-            [['data-ytkit-classic-watch-layout', 'stickyVideo']], String(value));
+    assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: true })).map((entry) => [entry.name, entry.featureId]),
+        [['data-ytkit-classic-watch-layout', 'stickyVideo']]);
+    for (const value of [undefined, null, false, 1, 'x']) {
+        assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: value })), [], String(value));
     }
-    assert.deepEqual(plain(early.planEarlySwitches({})).map((entry) => entry.featureId), ['stickyVideo']);
-    assert.deepEqual(plain(early.planEarlySwitches(undefined)).map((entry) => entry.featureId), ['stickyVideo'],
-        'a fresh install has nothing stored and every default on');
-    assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: false })), []);
+    assert.deepEqual(plain(early.planEarlySwitches({})), []);
+    assert.deepEqual(plain(early.planEarlySwitches(undefined)), [], 'a fresh install has nothing stored');
+    assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: true, restoreClassicWatchLayout: false })).map((entry) => entry.featureId),
+        ['stickyVideo'], 'no flag list: Theater Split never brings the user\'s extra flags along');
     assert.deepEqual(plain(early.planEarlySwitches({ stickyVideo: false, restoreClassicWatchLayout: true })).map((entry) => entry.featureId),
-        ['restoreClassicWatchLayout'], 'no flag list: Theater Split never brings the user\'s extra flags along');
+        ['restoreClassicWatchLayout']);
+});
+
+test('avatars and shelves stay unless the profile turned them off or predates the new default', () => {
+    const { early } = loadEarly({ pathname: '/' });
+    assert.equal(early.wantsNativeUi(undefined), true, 'nothing stored: a fresh install');
+    assert.equal(early.wantsNativeUi({}), true, 'a bag the popup wrote before any page loaded');
+    assert.equal(early.wantsNativeUi({ _settingsVersion: 12 }), true, 'a profile on the current default');
+    for (const version of [1, 5, 11]) {
+        assert.equal(early.wantsNativeUi({ _settingsVersion: version }), false, `a sparse v${version} bag had them off`);
+        assert.equal(early.wantsNativeUi({ _settingsVersion: version, restoreNativeYouTubeUi: true }), true, 'a stored choice wins');
+    }
+    assert.equal(early.wantsNativeUi({ restoreNativeYouTubeUi: false }), false);
+    assert.equal(early.wantsNativeUi({ _settingsVersion: 12, restoreNativeYouTubeUi: false }), false);
+    for (const junk of [null, 'x', [], 7]) assert.equal(early.wantsNativeUi(junk), false, JSON.stringify(junk));
+});
+
+test('the class that keeps avatars and shelves goes on from document_start on every page', async () => {
+    const fresh = loadEarly({ stored: {}, pathname: '/' });
+    assert.equal(await fresh.ready, 0);
+    assert.deepEqual(fresh.classes, ['ytkit-restore-native-ui'], 'the home page on a fresh install');
+    assert.deepEqual(fresh.reads, [['ytSuiteSettings', 'ytkit_safe_mode']]);
+
+    const watch = loadEarly({ stored: {} });
+    await watch.ready;
+    assert.deepEqual(watch.classes, ['ytkit-restore-native-ui'], 'a watch page, which publishes no switch here');
+    assert.deepEqual(watch.writes, []);
+
+    const safeUrl = loadEarly({ stored: {}, pathname: '/', search: '?ytkit=safe' });
+    await safeUrl.ready;
+    assert.deepEqual(safeUrl.classes, ['ytkit-restore-native-ui'], 'safe mode still shows YouTube as YouTube');
+
+    const safeStored = loadEarly({ stored: { ytkit_safe_mode: true } });
+    await safeStored.ready;
+    assert.deepEqual(safeStored.classes, ['ytkit-restore-native-ui']);
+
+    const optedOut = loadEarly({ stored: { ytSuiteSettings: { restoreNativeYouTubeUi: false } }, pathname: '/' });
+    await optedOut.ready;
+    assert.deepEqual(optedOut.classes, [], 'the setting turned off keeps the sparser page');
+
+    const migrated = loadEarly({ stored: { ytSuiteSettings: { _settingsVersion: 11 } }, pathname: '/' });
+    await migrated.ready;
+    assert.deepEqual(migrated.classes, [], 'an upgraded profile that never touched it keeps its page');
+});
+
+test('a storage failure leaves the class to the feature and never throws', async () => {
+    const throwing = loadEarly({ pathname: '/', storage: { get() { throw new Error('context invalidated'); } } });
+    assert.equal(await throwing.ready, 0);
+    assert.deepEqual(throwing.classes, []);
+    const rejecting = loadEarly({ pathname: '/', storage: { get: () => Promise.reject(new Error('quota')) } });
+    assert.equal(await rejecting.ready, 0);
+    assert.deepEqual(rejecting.classes, []);
 });
 
 test('a switch two features share is written once and owned by both', async () => {
-    const run = loadEarly({ stored: { ytSuiteSettings: { restoreClassicWatchLayout: true } } });
+    const run = loadEarly({ stored: { ytSuiteSettings: { restoreClassicWatchLayout: true, stickyVideo: true } } });
     assert.equal(await run.ready, 1);
     assert.deepEqual(names(run.writes), ['publish data-ytkit-classic-watch-layout=on']);
     assert.deepEqual(plain(run.early.published).map((entry) => entry.featureId), ['restoreClassicWatchLayout', 'stickyVideo']);
 });
 
 test('settle keeps a shared switch while either owner started, and clears it once when neither did', async () => {
-    const stored = { ytSuiteSettings: { restoreClassicWatchLayout: true } };
+    const stored = { ytSuiteSettings: { restoreClassicWatchLayout: true, stickyVideo: true } };
     for (const started of ['restoreClassicWatchLayout', 'stickyVideo']) {
         const run = loadEarly({ stored });
         await run.ready;
@@ -431,9 +486,19 @@ test('settling through the bridge withdraws a switch whose feature never started
     assert.equal(page.attributes.get('data-ytkit-hide-auto-chapters-status'), 'on;cleaned=1', 'the confirmed one stays');
 });
 
-test('a default hard load turns the side-panel flags off for Theater Split before ytcfg lands', async () => {
+test('a default hard load leaves YouTube\'s layout flags alone', async () => {
+    // Theater Split is off on a fresh install, so nothing here holds the
+    // side-panel flags back (#52).
+    for (const stored of [{}, { ytSuiteSettings: {} }]) {
+        const { main, published } = await hardLoad(stored);
+        assert.equal(published, 0);
+        assert.equal(main.ytcfg.get('EXPERIMENT_FLAGS').web_watch_split_scroll, true);
+    }
+});
+
+test('with Theater Split on, a hard load turns the side-panel flags off before ytcfg lands', async () => {
     // Theater Split's pane is #below; the side-panel page empties it.
-    const { main, page, isolated, published } = await hardLoad({ ytSuiteSettings: {} });
+    const { main, page, isolated, published } = await hardLoad({ ytSuiteSettings: { stickyVideo: true } });
     assert.equal(published, 1);
     const experimentFlags = main.ytcfg.get('EXPERIMENT_FLAGS');
     for (const flag of DEFAULT_FLAGS) assert.equal(experimentFlags[flag], false, flag);

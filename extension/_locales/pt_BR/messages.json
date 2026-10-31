@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "{count} vídeos ocultados"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "Cantos quadrados, sem barra lateral esquerda, grades mais densas, página de reprodução redesenhada, Player Dock e Theater Split. Desative para restaurar os valores anteriores."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "O layout do próprio YouTube: cantos arredondados, barra lateral, avatares, vídeos relacionados e descrição, com a limpeza do Astra ainda ativa. Desative para restaurar os valores anteriores."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "YouTube clássico"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look desativado. Valores anteriores restaurados.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look aplicado. Desative para restaurar.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "Visual do YouTube clássico desativado. Valores anteriores restaurados.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "Visual do YouTube clássico aplicado. Desative para restaurar.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "Cantos"
+  },
+  "settingsSectionStartingLook": {
+    "message": "Visual inicial"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "{count} vídeos ocultados. O restante será ocultado conforme carregar."
   },
@@ -3719,10 +3753,10 @@
     "message": "Painel de Pesquisa de Transcrições"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Mostrar os avatares de canal/comentário e as prateleiras do feed inicial que o Astra Deck oculta por padrão."
+    "message": "Mantém avatares de canais e comentários e as seções do feed inicial. Desative para uma página mais enxuta sem eles."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restaurar Interface Nativa do YouTube"
+    "message": "Mostrar avatares e seções do feed"
   },
   "feature_resumePlayback_desc": {
     "message": "Lembrar onde você parou de assistir e retomar automaticamente daquele ponto"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "Dispensar cartão de boas-vindas"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "Cantos quadrados, sem barra lateral, grades mais densas, página de reprodução redesenhada e Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "Como você vai usar o YouTube? Escolha uma predefinição ou pule para configurar manualmente."

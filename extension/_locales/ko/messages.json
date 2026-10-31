@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "동영상 {count}개를 숨겼습니다"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "각진 모서리, 왼쪽 사이드바 없음, 더 촘촘한 그리드, 새로 디자인한 시청 페이지, Player Dock, Theater Split. 끄면 이전 값으로 돌아갑니다."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "YouTube 본래의 레이아웃입니다. 둥근 모서리, 사이드바, 아바타, 관련 동영상과 설명을 표시하며 Astra의 정리 기능은 계속 켜져 있습니다. 끄면 이전 값으로 돌아갑니다."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "클래식 YouTube"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look을 껐습니다. 이전 값을 복원했습니다.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look을 적용했습니다. 끄면 되돌아갑니다.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "클래식 YouTube 모양을 껐습니다. 이전 값을 복원했습니다.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "클래식 YouTube 모양을 적용했습니다. 끄면 되돌아갑니다.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "모서리"
+  },
+  "settingsSectionStartingLook": {
+    "message": "시작 모양"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "동영상 {count}개를 숨겼습니다. 나머지는 로드되는 대로 숨깁니다."
   },
@@ -3719,10 +3753,10 @@
     "message": "대본 검색 패널"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Astra Deck이 기본으로 숨기는 채널/댓글 아바타 및 홈 피드 선반을 다시 표시합니다."
+    "message": "채널과 댓글 아바타, 홈 피드 섹션을 유지합니다. 끄면 더 간결한 페이지가 됩니다."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "YouTube 기본 UI 복원"
+    "message": "아바타와 피드 섹션 표시"
   },
   "feature_resumePlayback_desc": {
     "message": "시청을 멈춘 위치를 기억하고 해당 지점에서 자동으로 재개"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "환영 카드 닫기"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "각진 모서리, 사이드바 없음, 더 촘촘한 그리드, 새로 디자인한 시청 페이지, Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "YouTube를 어떻게 사용하시나요? 프리셋을 선택하거나 건너뛰고 직접 설정하세요."

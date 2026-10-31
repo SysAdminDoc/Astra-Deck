@@ -667,7 +667,7 @@ test('external settings updates and profile loads preserve a newer settings stam
 
     const loadStart = ytkitSource.indexOf('// Shallow-merge snapshot over defaults');
     assert.ok(loadStart > -1, 'profile load merge must exist');
-    const loadBlock = ytkitSource.slice(loadStart, loadStart + 1200);
+    const loadBlock = ytkitSource.slice(loadStart, loadStart + 1600);
     assert.match(loadBlock, /Math\.max\(snapshotVersion,\s*currentVersion,\s*settingsManager\.SETTINGS_VERSION\)/,
         'profile load must keep the highest known stamp instead of forcing the running version');
 });

@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "{count} videos ocultados"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "Esquinas cuadradas, sin barra lateral izquierda, cuadrículas más densas, una página de reproducción rediseñada, Player Dock y Theater Split. Desactívalo para restaurar los valores anteriores."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "El diseño propio de YouTube: esquinas redondeadas, barra lateral, avatares, vídeos relacionados y descripción, con la limpieza de Astra activa. Desactívalo para restaurar los valores anteriores."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "YouTube clásico"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look desactivado. Valores anteriores restaurados.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look aplicado. Desactívalo para restaurar.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "Aspecto de YouTube clásico desactivado. Valores anteriores restaurados.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "Aspecto de YouTube clásico aplicado. Desactívalo para restaurar.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "Esquinas"
+  },
+  "settingsSectionStartingLook": {
+    "message": "Aspecto inicial"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "Se ocultaron {count} videos. El resto se ocultará a medida que cargue."
   },
@@ -3719,10 +3753,10 @@
     "message": "Panel de búsqueda de transcripciones"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Mostrar los avatares de canal/comentarios y estantes del feed de inicio que Astra Deck oculta por defecto."
+    "message": "Mantiene los avatares de canales y comentarios y las secciones del feed de inicio. Desactívalo para una página más sobria sin ellos."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restaurar interfaz nativa de YouTube"
+    "message": "Mostrar avatares y secciones del feed"
   },
   "feature_resumePlayback_desc": {
     "message": "Recordar dónde dejaste de ver y reanudar automáticamente desde ese punto"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "Descartar la tarjeta de bienvenida"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "Esquinas cuadradas, sin barra lateral, cuadrículas más densas, una página de reproducción rediseñada y Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "¿Cómo vas a usar YouTube? Elige un preajuste u omítelo para configurar a mano."

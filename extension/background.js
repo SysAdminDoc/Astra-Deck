@@ -998,8 +998,32 @@ async function _handleFirstInstall(details) {
     return true;
 }
 
+// Schema v12 moved the look defaults (#52). The first page load migrates a stored
+// profile, but the popup and side panel read the bag before that and would merge
+// a key it doesn't hold with the new default, showing a switch as off while the
+// page still renders it on. Filling those keys at update time closes the gap. It
+// leaves the stamp alone, so the page's migration still runs and finds nothing
+// left to do. A bag with no stamp has never loaded a tab and stays a fresh one.
+async function _seedLookDefaultsOnUpdate(details) {
+    if (details?.reason !== 'update') return false;
+    const schema = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+    if (!schema?.seedLegacyLookDefaults) return false;
+    const stored = await callExtensionApi(ext.storage.local, 'get', SETTINGS_STORAGE_KEY);
+    const settings = stored?.[SETTINGS_STORAGE_KEY];
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return false;
+    const version = Number(settings._settingsVersion);
+    if (!Number.isInteger(version) || version < 1 || version >= schema.LOOK_DEFAULTS_SCHEMA_VERSION) return false;
+    const seeded = schema.seedLegacyLookDefaults({ ...settings });
+    if (Object.keys(seeded).length === Object.keys(settings).length) return false;
+    await callExtensionApi(ext.storage.local, 'set', { [SETTINGS_STORAGE_KEY]: seeded });
+    return true;
+}
+
 if (ext.runtime?.onInstalled?.addListener) {
     ext.runtime.onInstalled.addListener((details) => {
+        void _seedLookDefaultsOnUpdate(details).catch(() => {
+            void _recordSwLifecycle('look-defaults-seed-failed');
+        });
         void _handleFirstInstall(details).catch((error) => {
             void error;
             void _recordSwLifecycle('first-run-stage-failed');

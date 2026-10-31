@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "{count} Videos ausgeblendet"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "Eckige Kanten, keine linke Seitenleiste, dichtere Raster, eine neu gestaltete Wiedergabeseite, der Player Dock und Theater Split. Zum Wiederherstellen ausschalten."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "Das eigene Layout von YouTube: runde Ecken, Seitenleiste, Avatare, ähnliche Videos und Beschreibung, während die Bereinigung von Astra aktiv bleibt. Zum Wiederherstellen ausschalten."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "Klassisches YouTube"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look aus. Vorherige Werte wiederhergestellt.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look aktiv. Zum Zurücksetzen ausschalten.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "Klassisches YouTube-Layout aus. Vorherige Werte wiederhergestellt.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "Klassisches YouTube-Layout aktiv. Zum Zurücksetzen ausschalten.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "Ecken"
+  },
+  "settingsSectionStartingLook": {
+    "message": "Startaussehen"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "{count} Videos ausgeblendet. Der Rest wird beim Laden ausgeblendet."
   },
@@ -3719,10 +3753,10 @@
     "message": "Transkript-Suchpanel"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Die Kanal-/Kommentar-Avatare und Startseiten-Regale anzeigen, die Astra Deck standardmäßig ausblendet."
+    "message": "Behält Kanal- und Kommentar-Avatare sowie die Bereiche im Startseiten-Feed. Ausschalten für eine schlichtere Seite ohne sie."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Native YouTube-Oberfläche wiederherstellen"
+    "message": "Avatare und Feed-Bereiche anzeigen"
   },
   "feature_resumePlayback_desc": {
     "message": "Merkt sich, wo die Wiedergabe gestoppt wurde, und setzt automatisch an dieser Stelle fort"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "Willkommenskarte schließen"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "Eckige Kanten, keine Seitenleiste, dichtere Raster, eine neu gestaltete Wiedergabeseite und Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "Wie nutzen Sie YouTube? Wählen Sie eine Voreinstellung oder überspringen Sie dies, um manuell zu konfigurieren."

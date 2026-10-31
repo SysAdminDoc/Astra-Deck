@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "{count} vidéos masquées"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "Coins carrés, pas de barre latérale gauche, grilles plus denses, page de lecture repensée, Player Dock et Theater Split. Désactivez pour restaurer les valeurs précédentes."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "La mise en page de YouTube : coins arrondis, barre latérale, avatars, vidéos associées et description, avec le nettoyage d'Astra toujours actif. Désactivez pour restaurer les valeurs précédentes."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "YouTube classique"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look désactivé. Valeurs précédentes restaurées.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look appliqué. Désactivez-le pour restaurer.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "Apparence YouTube classique désactivée. Valeurs précédentes restaurées.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "Apparence YouTube classique appliquée. Désactivez-la pour restaurer.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "Coins"
+  },
+  "settingsSectionStartingLook": {
+    "message": "Apparence de départ"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "{count} vidéos masquées. Les suivantes seront masquées au fil du chargement."
   },
@@ -3719,10 +3753,10 @@
     "message": "Panneau de recherche de transcription"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Afficher les avatars de chaîne/commentaire et les étagères du flux d'accueil qu'Astra Deck masque par défaut."
+    "message": "Garde les avatars des chaînes et des commentaires ainsi que les rayons du fil d'accueil. Désactivez pour une page plus épurée sans eux."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restaurer l'interface native YouTube"
+    "message": "Afficher les avatars et les rayons du fil"
   },
   "feature_resumePlayback_desc": {
     "message": "Mémoriser où vous vous êtes arrêté et reprendre automatiquement la lecture à ce point"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "Fermer la carte de bienvenue"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "Coins carrés, pas de barre latérale, grilles plus denses, page de lecture repensée et Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "Comment utiliserez-vous YouTube ? Choisissez un préréglage ou passez pour configurer manuellement."

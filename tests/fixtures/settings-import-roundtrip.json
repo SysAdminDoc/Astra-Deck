@@ -1,5 +1,5 @@
 {
-  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 11.",
+  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 12.",
   "profiles": [
     {
       "schemaVersion": 1,
@@ -189,6 +189,23 @@
         "safeUnknownKey": "custom-v10"
       },
       "absent": ["deArrowVoting"]
+    },
+    {
+      "schemaVersion": 11,
+      "settings": {
+        "_settingsVersion": 11,
+        "hideSidebar": false,
+        "safeUnknownKey": "custom-v11"
+      },
+      "expected": {
+        "hideSidebar": false,
+        "squareAvatars": true,
+        "uiStyle": "square",
+        "stickyVideo": true,
+        "restoreNativeYouTubeUi": false,
+        "safeUnknownKey": "custom-v11"
+      },
+      "absent": []
     }
   ]
 }

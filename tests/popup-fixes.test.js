@@ -540,13 +540,16 @@ test('isQuickToggleOn resolves the real schema: audit-named default-on quick tog
     const schema = require('../extension/core/settings-schema');
     const makeResolver = extractQuickToggleResolver();
     const isQuickToggleOn = makeResolver({ __YTKIT_SETTINGS_SCHEMA__: schema });
-    for (const key of ['removeAllShorts', 'hideRelatedVideos', 'sponsorBlock', 'cleanShareUrls']) {
+    for (const key of ['removeAllShorts', 'sponsorBlock', 'cleanShareUrls']) {
         const entry = schema.findSettingEntry(key);
         assert.ok(entry, `schema must declare ${key}`);
         assert.equal(entry.defaultValue, true, `${key} must be default-on in the schema`);
         assert.equal(isQuickToggleOn({}, key), true,
             `fresh-install popup must render ${key} as enabled`);
     }
+    // Part of the opt-in look since #52, so a fresh popup shows it off.
+    assert.equal(schema.findSettingEntry('hideRelatedVideos').defaultValue, false);
+    assert.equal(isQuickToggleOn({}, 'hideRelatedVideos'), false);
 });
 
 test('render, updateSummary, and the click handler all resolve through isQuickToggleOn', () => {

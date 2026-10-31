@@ -461,7 +461,7 @@ const RETIRED_SETTING_KEYS = new Set([
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate
 // enforces parity across all three sources; bump in lockstep.
-const SETTINGS_VERSION_FALLBACK = 11;
+const SETTINGS_VERSION_FALLBACK = 12;
 const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     2(settings) {
         return settings;
@@ -519,6 +519,11 @@ const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
             settings.downloadCobaltFallback = false;
         }
         return settings;
+    },
+    // Mirrors ytkit.js _migrations[12]. An import always keeps the look it was
+    // exported with (#52), including a backup with no version at all.
+    12(settings) {
+        return globalThis.__YTKIT_SETTINGS_SCHEMA__?.seedLegacyLookDefaults?.(settings) || settings;
     },
 });
 

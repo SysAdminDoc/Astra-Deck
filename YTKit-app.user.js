@@ -2781,27 +2781,27 @@ const STORAGE_KEYS = Object.freeze({
 		defaults: {
 			hideCreateButton: true,
 			hideVoiceSearch: true,
-			logoToSubscriptions: true,
-			widenSearchBar: true,
-			squareSearchBar: true,
-			squareAvatars: true,
-			subscriptionsGrid: true,
+			logoToSubscriptions: false,
+			widenSearchBar: false,
+			squareSearchBar: false,
+			squareAvatars: false,
+			subscriptionsGrid: false,
 			subscriptionViewControls: false,
 			subscriptionViewMode: 'grid',
 			subscriptionOrderMode: 'native',
-			homepageGridAlign: true,
-			styledFilterChips: true,
-			hideSidebar: true,
-			uiStyle: 'square',
+			homepageGridAlign: false,
+			styledFilterChips: false,
+			hideSidebar: false,
+			uiStyle: 'rounded',
 			noAmbientMode: true,
-			compactLayout: true,
+			compactLayout: false,
 			thinScrollbar: true,
-			watchPageRestyle: true,
+			watchPageRestyle: false,
 			chatStyleComments: false,
 			removeAllShorts: true,
 			redirectShorts: true,
 			disablePlayOnHover: true,
-			fullWidthSubscriptions: true,
+			fullWidthSubscriptions: false,
 			hideSubscriptionOptions: true,
 			hidePaidContentOverlay: true,
 			redirectToVideosTab: true,
@@ -2810,13 +2810,13 @@ const STORAGE_KEYS = Object.freeze({
 			hideMembersOnly: true,
 			hideNewsHome: true,
 			hidePlaylistsHome: true,
-			hideRelatedVideos: true,
-			expandVideoWidth: true,
-			floatingLogoOnWatch: true,
-			hideDescriptionRow: true,
+			hideRelatedVideos: false,
+			expandVideoWidth: false,
+			floatingLogoOnWatch: false,
+			hideDescriptionRow: false,
 			hideVideoEndContent: true,
 			hideJumpAheadButton: true,
-			stickyVideo: true,
+			stickyVideo: false,
 			cleanShareUrls: true,
 			videosPerRow: 0,
 			listFeedLayout: false,
@@ -3243,6 +3243,8 @@ const STORAGE_KEYS = Object.freeze({
 			presetResearcher: false,
 			presetPowerUser: false,
 			presetFocus: false,
+			presetAstraLook: false,
+			presetClassicLook: false,
 			oledTheme: false,
 			denseMode: false,
 			rectangularizeYouTube: false,
@@ -3326,10 +3328,10 @@ const STORAGE_KEYS = Object.freeze({
 			preferDescriptiveAudio: false,
 			notifyAutoDubbedAudio: false,
 			sleepTimer: false,
-			restoreNativeYouTubeUi: false,
+			restoreNativeYouTubeUi: true,
 			cleanUiPreset: false,
 		},
-		SETTINGS_VERSION: 11,
+		SETTINGS_VERSION: 12,
 		_migrations: {
 			2: (s) => {
 				return s;
@@ -3391,6 +3393,10 @@ const STORAGE_KEYS = Object.freeze({
 				s.fullTitles = true;
 				return s;
 			},
+			12: (s, { freshProfile = false } = {}) => {
+				if (freshProfile) return s;
+				return globalThis.__YTKIT_SETTINGS_SCHEMA__?.seedLegacyLookDefaults?.(s) || s;
+			},
 		},
 		_normalizeVersion(value) {
 			const version = Number(value);
@@ -3419,6 +3425,8 @@ const STORAGE_KEYS = Object.freeze({
 				: options.backupSchemaVersion;
 			let version = this._normalizeVersion(versionSeed);
 			const startingVersion = version;
+			const freshProfile = source === 'load'
+				&& (savedSettings._settingsVersion === undefined || savedSettings._settingsVersion === null);
 			if (version > this.SETTINGS_VERSION) {
 				this._recordMigrationStep(
 					savedSettings,
@@ -3431,7 +3439,7 @@ const STORAGE_KEYS = Object.freeze({
 			while (version < this.SETTINGS_VERSION) {
 				version++;
 				if (this._migrations[version]) {
-					savedSettings = this._migrations[version](savedSettings);
+					savedSettings = this._migrations[version](savedSettings, { freshProfile });
 					DebugManager.log('Settings', `Applied migration v${version}`);
 				}
 				this._recordMigrationStep(
@@ -6213,13 +6221,13 @@ const STORAGE_KEYS = Object.freeze({
 			icon: 'square',
 			type: 'select',
 			options: {
-				'rounded': 'Rounded',
-				'square': 'Square (Default)'
+				'rounded': 'Rounded (Default)',
+				'square': 'Square'
 			},
 			settingKey: 'uiStyle',
 			_styleElement: null,
 			init() {
-				const style = appState.settings.uiStyle || 'square';
+				const style = appState.settings.uiStyle || 'rounded';
 				if (style === 'square') {
 					const css = `*:not(.ytp-spinner-circle):not(.ytp-spinner-dot):not(.ytp-ce-covering-overlay):not(.ytp-scrubber-button):not(.html5-scrubber-button):not(svg):not(circle):not(path):not(use){border-radius:0!important}`;
 					this._styleElement = injectStyle(css, this.id, true);
@@ -18230,8 +18238,8 @@ const STORAGE_KEYS = Object.freeze({
 		},
 		{
 			id: 'restoreNativeYouTubeUi',
-			name: 'Restore Native YouTube UI',
-			description: 'Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default. Toggles the early.css opt-out class so YouTube renders its own styling.',
+			name: 'Show Avatars and Feed Shelves',
+			description: 'Keep channel and comment avatars and the home feed shelves. Turn this off for a sparser page without them.',
 			group: 'Theme',
 			icon: 'eye',
 			init() {
@@ -20965,7 +20973,12 @@ const STORAGE_KEYS = Object.freeze({
 					if (typeof showToast === 'function') showToast(t('settingsProfileNotFoundTpl', 'Profile not found: {name}').replace('{name}', () => name), '#ef4444');
 					return false;
 				}
-				const merged = { ...settingsManager.defaults, ...profiles[name] };
+				const merged = {
+					...settingsManager.defaults,
+					...(settingsManager._normalizeVersion(profiles[name]?._settingsVersion) < 12
+						? (globalThis.__YTKIT_SETTINGS_SCHEMA__?.seedLegacyLookDefaults?.({ ...profiles[name] }) || profiles[name])
+						: profiles[name])
+				};
 				merged._profiles = profiles;
 				merged._activeProfile = name;
 				const snapshotVersion = settingsManager._normalizeVersion(profiles[name]?._settingsVersion);
@@ -21065,7 +21078,7 @@ const STORAGE_KEYS = Object.freeze({
 				console.log('%c[YTKit Debug] Debug mode disabled', 'color: #6b7280;');
 			}
 		},
-		cssFeature('squareSearchBar', 'Square Search Bar', 'Remove rounded corners from the search bar', 'Home / Subscriptions', 'search',
+		cssFeature('squareSearchBar', 'Square Search Bar', 'Remove rounded corners from the search bar', 'Theme', 'search',
 			'ytd-searchbox #container.ytd-searchbox, ytd-searchbox #container.ytd-searchbox input#search, #search-icon-legacy { border-radius: 0 !important; }'),
 		cssFeature('squareAvatars', 'Square Avatars', 'Make channel avatars square instead of round', 'Theme', 'user',
 			'yt-img-shadow, #avatar-link, #author-thumbnail, ytd-channel-avatar-editor img, yt-img-shadow img, .yt-spec-avatar-shape--circle { border-radius: 0 !important; }'),
@@ -29772,6 +29785,18 @@ const STORAGE_KEYS = Object.freeze({
 			init() { if (this._readBackup()) return; this._apply(); },
 			destroy() { if (this._readBackup()) this._restore(); }
 		},
+		...(globalThis.YTKitFeatures?.lookPresets?.createLookPresetFeatures?.({
+			storageReadJSON,
+			storageWriteJSON,
+			buildPresetRecipeUpdate,
+			buildPresetRestoreUpdate,
+			commitPresetSettings,
+			showToast,
+			t,
+			logFailure: (message) => DebugManager.log('LookPreset', message),
+			astraRecipe: globalThis.__YTKIT_SETTINGS_SCHEMA__?.LEGACY_LOOK_DEFAULTS,
+			classicRecipe: globalThis.__YTKIT_SETTINGS_SCHEMA__?.CURRENT_LOOK_DEFAULTS
+		}) || []),
 		{
 			id: 'oledTheme',
 			name: 'OLED Theme',

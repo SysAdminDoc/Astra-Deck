@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "Скрыто видео: {count}"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "Квадратные углы, без левой боковой панели, более плотные сетки, переработанная страница просмотра, Player Dock и Theater Split. Выключите, чтобы восстановить прежние значения."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "Собственный макет YouTube: скруглённые углы, боковая панель, аватары, похожие видео и описание, а очистка Astra остаётся включённой. Выключите, чтобы восстановить прежние значения."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "Классический YouTube"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look выключен. Прежние значения восстановлены.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look применён. Выключите, чтобы восстановить.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "Классический вид YouTube выключен. Прежние значения восстановлены.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "Классический вид YouTube применён. Выключите, чтобы восстановить.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "Углы"
+  },
+  "settingsSectionStartingLook": {
+    "message": "Начальный вид"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "Скрыто видео: {count}. Остальные будут скрыты по мере загрузки."
   },
@@ -3719,10 +3753,10 @@
     "message": "Панель поиска по транскриптам"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Показать аватары каналов/комментариев и полки главной ленты, которые Astra Deck скрывает по умолчанию."
+    "message": "Оставляет аватары каналов и комментариев и разделы главной ленты. Выключите, чтобы страница стала проще."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Восстановить стандартный интерфейс YouTube"
+    "message": "Показывать аватары и разделы ленты"
   },
   "feature_resumePlayback_desc": {
     "message": "Запоминать место остановки и автоматически продолжать просмотр с этой точки"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "Закрыть приветственную карточку"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "Квадратные углы, без боковой панели, более плотные сетки, переработанная страница просмотра и Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "Как вы используете YouTube? Выберите предустановку или пропустите, чтобы настроить вручную."

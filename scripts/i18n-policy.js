@@ -27,8 +27,9 @@ const REVIEWED_EXACT_MESSAGES = Object.freeze([
     // placeholder ratchet up for a translation that is already correct.
     'Serif',
     'Monospace',
-    // Product feature name, same in every catalogue (cf. 'Theater Split').
+    // Product feature names, same in every catalogue (cf. 'Theater Split').
     'Video Hider',
+    'Astra Look',
     // Example URL in the filter-list field placeholder. Translating a URL
     // would make the field demonstrate an address that does not exist.
     'https://example.com/astra-deck-rules.json',

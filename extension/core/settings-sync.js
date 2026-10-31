@@ -26,7 +26,11 @@
 
     const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
     const SYNC_SETTING_KEY = 'syncSettings';
-    const SYNC_SCHEMA_VERSION = 1;
+    // v2 (#52): a payload names the settings sitting at their default in
+    // resetSettings, and schema v12 moved the look defaults. Reading a v1 payload
+    // would turn "square corners, the old default" into "rounded, the new one"
+    // on every device, so a v1 account snapshot is left unread and replaced.
+    const SYNC_SCHEMA_VERSION = 2;
     const SYNC_META_KEY = 'ytkit-settings-sync-meta';
     const SYNC_CHUNK_PREFIX = 'ytkit-settings-sync-chunk-';
     const SYNC_UNDO_KEY = 'ytkit-settings-sync-undo';

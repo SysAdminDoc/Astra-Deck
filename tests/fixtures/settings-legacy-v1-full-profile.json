@@ -435,6 +435,7 @@
     "hideQualityPopup": true
   },
   "expectedOverrides": {
+    "restoreNativeYouTubeUi": false,
     "reactionSpammer": false,
     "_reactionSpammerAck": false,
     "hideAskAi": false,
@@ -584,7 +585,9 @@
     "daCasualDescriptive",
     "daCasualOther",
     "daCasualFormat",
-    "daCasualOriginalThumb"
+    "daCasualOriginalThumb",
+    "presetAstraLook",
+    "presetClassicLook"
   ],
   "expectedAbsent": [
     "preferredQuality",

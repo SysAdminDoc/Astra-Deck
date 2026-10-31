@@ -17,7 +17,7 @@ Confidence labels distinguish evidence. **Verified source** means inspected impl
 | 5 | Observe asynchronous lifecycle initialization | 4/5, M | Now, P1. Rejected initialization is currently reported healthy. |
 | 6 | Give overlapping presets deterministic ownership | 4/5, M | Now, P1. Existing recipes restore stale settings. |
 | 7 | Isolate private-session records and credentials | 5/5, L | Now, P1. A larger trust boundary precedes further persistence work. |
-| 8 | Use gentle defaults and one visual starter choice, #52 | 5/5, M | Now, P1. Depends on factory activation, settings recovery, and preset ownership. |
+| 8 | Use gentle defaults and one visual starter choice, #52 | 5/5, M | Done in v4.106.0. New installs start on YouTube's own look, and Astra Look and Classic YouTube are the two starter choices. |
 | 9 | Authenticate repair-feed freshness | 4/5, M | Next, P2. Signatures already protect integrity, but not replay freshness. |
 
 All nine fit the existing architecture and require no new runtime dependency. They are reliability or usability parity, rather than a speculative expansion. Risks are concentrated in startup cost, saved-preference compatibility, preset layering, private cookie partitions, and offline cache migration. The remaining Next items address documented migration demand, specific missing controls, packaging accuracy, and failure recovery. Details and observable acceptance criteria are in `ROADMAP.md`.

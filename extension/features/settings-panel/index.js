@@ -557,7 +557,9 @@ function getActiveSettingsProfileLabel() {
             ['presetFocus', 'Focus'],
             ['presetPowerUser', 'Power User'],
             ['presetResearcher', 'Researcher'],
-            ['presetPrivacy', 'Privacy']
+            ['presetPrivacy', 'Privacy'],
+            ['presetAstraLook', 'Astra Look'],
+            ['presetClassicLook', 'Classic YouTube']
         ];
         const active = presets.find(([key]) => !!appState.settings?.[key]);
         return active ? active[1] : 'Custom';

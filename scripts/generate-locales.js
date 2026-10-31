@@ -10449,6 +10449,169 @@ const VISUAL_SETTING_CONTROL_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(VISUAL_SETTING_CONTROL_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// The fresh-install look change (#52): the two look presets, the panel sections
+// that hold them, and the avatar setting's new name now that it starts on.
+// "Astra Look", "Player Dock" and "Theater Split" stay English as feature names.
+const LOOK_DEFAULTS_ENGLISH = Object.freeze([
+  'Square corners, no left sidebar, denser grids, a restyled watch page, the Player Dock, and Theater Split. Toggle off to restore prior values.',
+  "YouTube's own layout: rounded corners, the sidebar, avatars, related videos and the description, with Astra's clean-up still on. Toggle off to restore prior values.",
+  'Classic YouTube',
+  'Astra Look off. Previous values restored.',
+  'Astra Look applied. Toggle off to restore.',
+  'Classic YouTube look off. Previous values restored.',
+  'Classic YouTube look applied. Toggle off to restore.',
+  'Corners',
+  'Starting look',
+  'Square corners, no sidebar, denser grids, a restyled watch page, and Theater Split.',
+  'Show Avatars and Feed Shelves',
+  'Keep channel and comment avatars and the home feed shelves. Turn this off for a sparser page without them.'
+]);
+const LOOK_DEFAULTS_TRANSLATIONS = {
+  ar: [
+    'زوايا مربعة، بلا شريط جانبي أيسر، شبكات أكثر كثافة، صفحة مشاهدة معاد تصميمها، وPlayer Dock، وTheater Split. أوقفه لاستعادة القيم السابقة.',
+    'تخطيط YouTube الأصلي: زوايا مستديرة، والشريط الجانبي، والصور الرمزية، والفيديوهات ذات الصلة، والوصف، مع إبقاء تنظيف Astra مفعّلًا. أوقفه لاستعادة القيم السابقة.',
+    'YouTube الكلاسيكي',
+    'تم إيقاف Astra Look. تمت استعادة القيم السابقة.',
+    'تم تطبيق Astra Look. أوقفه للاستعادة.',
+    'تم إيقاف مظهر YouTube الكلاسيكي. تمت استعادة القيم السابقة.',
+    'تم تطبيق مظهر YouTube الكلاسيكي. أوقفه للاستعادة.',
+    'الزوايا',
+    'المظهر الأولي',
+    'زوايا مربعة، بلا شريط جانبي، شبكات أكثر كثافة، صفحة مشاهدة معاد تصميمها، وTheater Split.',
+    'إظهار الصور الرمزية ورفوف الخلاصة',
+    'إبقاء الصور الرمزية للقنوات والتعليقات ورفوف الخلاصة الرئيسية. أوقفه للحصول على صفحة أبسط بدونها.'
+  ],
+  zh_CN: [
+    '方形边角、无左侧边栏、更紧凑的网格、重新设计的观看页面、Player Dock 和 Theater Split。关闭即可恢复之前的值。',
+    'YouTube 原本的布局:圆角、侧边栏、头像、相关视频和简介,同时保留 Astra 的清理功能。关闭即可恢复之前的值。',
+    '经典 YouTube',
+    'Astra Look 已关闭。已恢复之前的值。',
+    '已应用 Astra Look。关闭即可还原。',
+    '经典 YouTube 外观已关闭。已恢复之前的值。',
+    '已应用经典 YouTube 外观。关闭即可还原。',
+    '边角',
+    '初始外观',
+    '方形边角、无侧边栏、更紧凑的网格、重新设计的观看页面和 Theater Split。',
+    '显示头像和信息流栏目',
+    '保留频道和评论头像以及首页信息流栏目。关闭后页面会更简洁。'
+  ],
+  de: [
+    'Eckige Kanten, keine linke Seitenleiste, dichtere Raster, eine neu gestaltete Wiedergabeseite, der Player Dock und Theater Split. Zum Wiederherstellen ausschalten.',
+    'Das eigene Layout von YouTube: runde Ecken, Seitenleiste, Avatare, ähnliche Videos und Beschreibung, während die Bereinigung von Astra aktiv bleibt. Zum Wiederherstellen ausschalten.',
+    'Klassisches YouTube',
+    'Astra Look aus. Vorherige Werte wiederhergestellt.',
+    'Astra Look aktiv. Zum Zurücksetzen ausschalten.',
+    'Klassisches YouTube-Layout aus. Vorherige Werte wiederhergestellt.',
+    'Klassisches YouTube-Layout aktiv. Zum Zurücksetzen ausschalten.',
+    'Ecken',
+    'Startaussehen',
+    'Eckige Kanten, keine Seitenleiste, dichtere Raster, eine neu gestaltete Wiedergabeseite und Theater Split.',
+    'Avatare und Feed-Bereiche anzeigen',
+    'Behält Kanal- und Kommentar-Avatare sowie die Bereiche im Startseiten-Feed. Ausschalten für eine schlichtere Seite ohne sie.'
+  ],
+  es: [
+    'Esquinas cuadradas, sin barra lateral izquierda, cuadrículas más densas, una página de reproducción rediseñada, Player Dock y Theater Split. Desactívalo para restaurar los valores anteriores.',
+    'El diseño propio de YouTube: esquinas redondeadas, barra lateral, avatares, vídeos relacionados y descripción, con la limpieza de Astra activa. Desactívalo para restaurar los valores anteriores.',
+    'YouTube clásico',
+    'Astra Look desactivado. Valores anteriores restaurados.',
+    'Astra Look aplicado. Desactívalo para restaurar.',
+    'Aspecto de YouTube clásico desactivado. Valores anteriores restaurados.',
+    'Aspecto de YouTube clásico aplicado. Desactívalo para restaurar.',
+    'Esquinas',
+    'Aspecto inicial',
+    'Esquinas cuadradas, sin barra lateral, cuadrículas más densas, una página de reproducción rediseñada y Theater Split.',
+    'Mostrar avatares y secciones del feed',
+    'Mantiene los avatares de canales y comentarios y las secciones del feed de inicio. Desactívalo para una página más sobria sin ellos.'
+  ],
+  fr: [
+    'Coins carrés, pas de barre latérale gauche, grilles plus denses, page de lecture repensée, Player Dock et Theater Split. Désactivez pour restaurer les valeurs précédentes.',
+    "La mise en page de YouTube : coins arrondis, barre latérale, avatars, vidéos associées et description, avec le nettoyage d'Astra toujours actif. Désactivez pour restaurer les valeurs précédentes.",
+    'YouTube classique',
+    'Astra Look désactivé. Valeurs précédentes restaurées.',
+    'Astra Look appliqué. Désactivez-le pour restaurer.',
+    'Apparence YouTube classique désactivée. Valeurs précédentes restaurées.',
+    'Apparence YouTube classique appliquée. Désactivez-la pour restaurer.',
+    'Coins',
+    'Apparence de départ',
+    'Coins carrés, pas de barre latérale, grilles plus denses, page de lecture repensée et Theater Split.',
+    'Afficher les avatars et les rayons du fil',
+    "Garde les avatars des chaînes et des commentaires ainsi que les rayons du fil d'accueil. Désactivez pour une page plus épurée sans eux."
+  ],
+  it: [
+    'Angoli squadrati, nessuna barra laterale sinistra, griglie più dense, pagina di riproduzione ridisegnata, Player Dock e Theater Split. Disattiva per ripristinare i valori precedenti.',
+    'Il layout di YouTube: angoli arrotondati, barra laterale, avatar, video correlati e descrizione, con la pulizia di Astra sempre attiva. Disattiva per ripristinare i valori precedenti.',
+    'YouTube classico',
+    'Astra Look disattivato. Valori precedenti ripristinati.',
+    'Astra Look applicato. Disattivalo per ripristinare.',
+    'Aspetto YouTube classico disattivato. Valori precedenti ripristinati.',
+    'Aspetto YouTube classico applicato. Disattivalo per ripristinare.',
+    'Angoli',
+    'Aspetto iniziale',
+    'Angoli squadrati, nessuna barra laterale, griglie più dense, pagina di riproduzione ridisegnata e Theater Split.',
+    'Mostra avatar e sezioni del feed',
+    'Mantiene gli avatar di canali e commenti e le sezioni del feed iniziale. Disattiva per una pagina più essenziale senza di loro.'
+  ],
+  pt_BR: [
+    'Cantos quadrados, sem barra lateral esquerda, grades mais densas, página de reprodução redesenhada, Player Dock e Theater Split. Desative para restaurar os valores anteriores.',
+    'O layout do próprio YouTube: cantos arredondados, barra lateral, avatares, vídeos relacionados e descrição, com a limpeza do Astra ainda ativa. Desative para restaurar os valores anteriores.',
+    'YouTube clássico',
+    'Astra Look desativado. Valores anteriores restaurados.',
+    'Astra Look aplicado. Desative para restaurar.',
+    'Visual do YouTube clássico desativado. Valores anteriores restaurados.',
+    'Visual do YouTube clássico aplicado. Desative para restaurar.',
+    'Cantos',
+    'Visual inicial',
+    'Cantos quadrados, sem barra lateral, grades mais densas, página de reprodução redesenhada e Theater Split.',
+    'Mostrar avatares e seções do feed',
+    'Mantém avatares de canais e comentários e as seções do feed inicial. Desative para uma página mais enxuta sem eles.'
+  ],
+  ru: [
+    'Квадратные углы, без левой боковой панели, более плотные сетки, переработанная страница просмотра, Player Dock и Theater Split. Выключите, чтобы восстановить прежние значения.',
+    'Собственный макет YouTube: скруглённые углы, боковая панель, аватары, похожие видео и описание, а очистка Astra остаётся включённой. Выключите, чтобы восстановить прежние значения.',
+    'Классический YouTube',
+    'Astra Look выключен. Прежние значения восстановлены.',
+    'Astra Look применён. Выключите, чтобы восстановить.',
+    'Классический вид YouTube выключен. Прежние значения восстановлены.',
+    'Классический вид YouTube применён. Выключите, чтобы восстановить.',
+    'Углы',
+    'Начальный вид',
+    'Квадратные углы, без боковой панели, более плотные сетки, переработанная страница просмотра и Theater Split.',
+    'Показывать аватары и разделы ленты',
+    'Оставляет аватары каналов и комментариев и разделы главной ленты. Выключите, чтобы страница стала проще.'
+  ],
+  ja: [
+    '角を四角に、左サイドバーなし、より密なグリッド、再設計された視聴ページ、Player Dock、Theater Split。オフにすると以前の値に戻ります。',
+    'YouTube 本来のレイアウトです。角丸、サイドバー、アバター、関連動画、説明を表示し、Astra のクリーンアップは有効のままです。オフにすると以前の値に戻ります。',
+    'クラシック YouTube',
+    'Astra Look をオフにしました。以前の値に戻しました。',
+    'Astra Look を適用しました。オフにすると元に戻ります。',
+    'クラシック YouTube の外観をオフにしました。以前の値に戻しました。',
+    'クラシック YouTube の外観を適用しました。オフにすると元に戻ります。',
+    '角',
+    '初期の外観',
+    '角を四角に、サイドバーなし、より密なグリッド、再設計された視聴ページ、Theater Split。',
+    'アバターとフィードの棚を表示',
+    'チャンネルとコメントのアバター、ホームフィードの棚を残します。オフにすると、それらがないすっきりしたページになります。'
+  ],
+  ko: [
+    '각진 모서리, 왼쪽 사이드바 없음, 더 촘촘한 그리드, 새로 디자인한 시청 페이지, Player Dock, Theater Split. 끄면 이전 값으로 돌아갑니다.',
+    'YouTube 본래의 레이아웃입니다. 둥근 모서리, 사이드바, 아바타, 관련 동영상과 설명을 표시하며 Astra의 정리 기능은 계속 켜져 있습니다. 끄면 이전 값으로 돌아갑니다.',
+    '클래식 YouTube',
+    'Astra Look을 껐습니다. 이전 값을 복원했습니다.',
+    'Astra Look을 적용했습니다. 끄면 되돌아갑니다.',
+    '클래식 YouTube 모양을 껐습니다. 이전 값을 복원했습니다.',
+    '클래식 YouTube 모양을 적용했습니다. 끄면 되돌아갑니다.',
+    '모서리',
+    '시작 모양',
+    '각진 모서리, 사이드바 없음, 더 촘촘한 그리드, 새로 디자인한 시청 페이지, Theater Split.',
+    '아바타와 피드 섹션 표시',
+    '채널과 댓글 아바타, 홈 피드 섹션을 유지합니다. 끄면 더 간결한 페이지가 됩니다.'
+  ]
+};
+for (const [locale, messages] of Object.entries(LOOK_DEFAULTS_TRANSLATIONS)) {
+  LOOK_DEFAULTS_ENGLISH.forEach((english, index) => { T[locale][english] = messages[index]; });
+}
+
 
 
 

@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "已隐藏 {count} 个视频"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "方形边角、无左侧边栏、更紧凑的网格、重新设计的观看页面、Player Dock 和 Theater Split。关闭即可恢复之前的值。"
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "YouTube 原本的布局:圆角、侧边栏、头像、相关视频和简介,同时保留 Astra 的清理功能。关闭即可恢复之前的值。"
+  },
+  "feature_presetClassicLook_name": {
+    "message": "经典 YouTube"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look 已关闭。已恢复之前的值。",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "已应用 Astra Look。关闭即可还原。",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "经典 YouTube 外观已关闭。已恢复之前的值。",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "已应用经典 YouTube 外观。关闭即可还原。",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "边角"
+  },
+  "settingsSectionStartingLook": {
+    "message": "初始外观"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "已隐藏 {count} 个视频。其余视频将在加载时隐藏。"
   },
@@ -3719,10 +3753,10 @@
     "message": "字幕搜索面板"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "显示 Astra Deck 默认隐藏的频道/评论头像和首页信息流架。"
+    "message": "保留频道和评论头像以及首页信息流栏目。关闭后页面会更简洁。"
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "恢复原生 YouTube 界面"
+    "message": "显示头像和信息流栏目"
   },
   "feature_resumePlayback_desc": {
     "message": "记住上次停止观看的位置并自动从该处恢复播放"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "关闭欢迎卡片"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "方形边角、无侧边栏、更紧凑的网格、重新设计的观看页面和 Theater Split。"
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "你打算怎样使用 YouTube？选择一个预设，或跳过并手动配置。"

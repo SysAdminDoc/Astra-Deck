@@ -39,7 +39,8 @@ function loadBackground({
     initialEnabledRulesets = ['astra_zero_ads'],
     apiNamespace = 'chrome',
     setTimeoutImpl = setTimeout,
-    feedPublicKey = null
+    feedPublicKey = null,
+    settingsSchema = null
 } = {}) {
     let messageListener = null;
     let installedListener = null;
@@ -253,6 +254,7 @@ function loadBackground({
     };
     context[apiNamespace] = chrome;
     context.globalThis = context;
+    if (settingsSchema) context.__YTKIT_SETTINGS_SCHEMA__ = settingsSchema;
 
     // A test key in place of the shipped one, so a test can sign feeds at
     // any sequence and expiry it needs.
@@ -1407,6 +1409,43 @@ test('reinstalling over an onboarded profile does not onboard the user again', a
     assert.equal(bg.getLocal().ytkit_first_run_pending, undefined,
         'an existing sentinel must suppress onboarding');
     assert.equal(bg.badgeCalls.length, 0, 'and must leave the action unbadged');
+});
+
+// ── Schema v12: an update keeps the look the profile had (#52) ──
+
+test('an extension update fills the old look into a stored profile, so the popup reads what the page renders', async () => {
+    const schema = require('../extension/core/settings-schema.js');
+    const bg = loadBackground({
+        settingsSchema: schema,
+        initialSettings: { _settingsVersion: 11, hideSidebar: false, presetPrivacy: true }
+    });
+    bg.installedListener({ reason: 'update' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const settings = bg.getSettings();
+    assert.equal(settings.hideSidebar, false, 'an explicit choice stays');
+    assert.equal(settings.presetPrivacy, true, 'unrelated keys stay');
+    assert.equal(settings.squareAvatars, true, 'a key the bag only inherited keeps the old default');
+    assert.equal(settings.uiStyle, 'square');
+    assert.equal(settings.restoreNativeYouTubeUi, false);
+    assert.equal(settings._settingsVersion, 11, 'the stamp is the page migration\'s to move');
+});
+
+test('the update seed leaves everything that is not an upgrading profile alone', async () => {
+    const schema = require('../extension/core/settings-schema.js');
+    const cases = [
+        ['update', { githubFullProfile: false }, 'no stamp: the bag has never loaded a tab'],
+        ['update', { _settingsVersion: 12 }, 'already on the current schema'],
+        ['update', { _settingsVersion: 0 }, 'not a real stamp'],
+        ['install', { _settingsVersion: 11 }, 'an install is not an upgrade'],
+        ['chrome_update', { _settingsVersion: 11 }, 'the browser updated, not the extension']
+    ];
+    for (const [reason, initialSettings, why] of cases) {
+        const bg = loadBackground({ settingsSchema: schema, initialSettings });
+        bg.installedListener({ reason });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        assert.deepEqual({ ...bg.getSettings() }, initialSettings, why);
+    }
 });
 
 test('the onboarding sentinel key names match between background and popup', () => {

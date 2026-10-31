@@ -128,6 +128,8 @@
         { id: 'researcherPresetRecovery', location: 'extension-local', key: 'ytkit-preset-researcher-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'powerPresetRecovery', location: 'extension-local', key: 'ytkit-preset-power-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
+        { id: 'astraLookPresetRecovery', location: 'extension-local', key: 'ytkit-preset-astra-look-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
+        { id: 'classicLookPresetRecovery', location: 'extension-local', key: 'ytkit-preset-classic-look-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
         { id: 'aiSummaries', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
         { id: 'aiTranscriptQa', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },

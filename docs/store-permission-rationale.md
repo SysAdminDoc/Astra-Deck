@@ -249,12 +249,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 131 | `true` on every entry |
-| `store-safe` | firefox | A | 131 | omitted |
-| `chromium-store` | chromium | B | 130 | `true` on every entry |
-| `chromium-store` | firefox | B | 130 | omitted |
-| `github-full` | chromium | A | 131 | `true` on every entry |
-| `github-full` | firefox | A | 131 | omitted |
+| `store-safe` | chromium | A | 132 | `true` on every entry |
+| `store-safe` | firefox | A | 132 | omitted |
+| `chromium-store` | chromium | B | 131 | `true` on every entry |
+| `chromium-store` | firefox | B | 131 | omitted |
+| `github-full` | chromium | A | 132 | `true` on every entry |
+| `github-full` | firefox | A | 132 | omitted |
 
 #### Resource set A
 
@@ -390,6 +390,7 @@ Entry 2 resource paths:
 - `features/sticky-video-header/index.js`
 - `features/sticky-video/index.js`
 - `features/sticky-chat/index.js`
+- `features/look-presets/index.js`
 - `features/classic-watch-layout/index.js`
 - `features/hide-auto-chapters/index.js`
 - `features/channel-length-sort/index.js`
@@ -545,6 +546,7 @@ Entry 2 resource paths:
 - `features/sticky-video-header/index.js`
 - `features/sticky-video/index.js`
 - `features/sticky-chat/index.js`
+- `features/look-presets/index.js`
 - `features/classic-watch-layout/index.js`
 - `features/hide-auto-chapters/index.js`
 - `features/channel-length-sort/index.js`

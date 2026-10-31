@@ -3592,11 +3592,11 @@ test('reactionSpammer defaults to false in both ytkit.js source and the generate
     );
 });
 
-test('SETTINGS_VERSION is 11 and migrations preserve safe AI and Cobalt defaults', () => {
+test('SETTINGS_VERSION is 12 and migrations preserve safe AI and Cobalt defaults', () => {
     assert.match(
         ytkitSource,
-        /SETTINGS_VERSION:\s*11,/,
-        'ytkit.js settingsManager must declare SETTINGS_VERSION: 11',
+        /SETTINGS_VERSION:\s*12,/,
+        'ytkit.js settingsManager must declare SETTINGS_VERSION: 12',
     );
     // The v7 migration must reset reactionSpammer to false and reset the
     // ack flag so the warning toast re-fires on the next opt-in.
@@ -5957,11 +5957,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // DeArrow Voting is retired (493). Covers Without a Submission adds one (494).
     // Sort by Length makes it 495, and the ten DeArrow options ported from
     // upstream make it 505. Anti-Translate's Keep Translated Titles For
-    // makes it 506.
+    // makes it 506, and the Astra Look and Classic YouTube presets 508.
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 506,
-        'SETTINGS_SCHEMA must cover all 506 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 508,
+        'SETTINGS_SCHEMA must cover all 508 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

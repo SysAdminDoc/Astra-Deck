@@ -69,10 +69,12 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 		}),
 		Object.freeze({
 			featureId: 'stickyVideo',
-			attribute: 'data-ytkit-classic-watch-layout',
-			defaultOn: true
+			attribute: 'data-ytkit-classic-watch-layout'
 		})
 	]);
+	var NATIVE_UI_CLASS = 'ytkit-restore-native-ui';
+	var NATIVE_UI_KEY = 'restoreNativeYouTubeUi';
+	var NATIVE_UI_DEFAULT_SINCE = 12;
 	function isWatchPath(pathname) {
 		var path = String(pathname || '');
 		return path === '/watch' || /^\/live\/[A-Za-z0-9_-]{11}\/?$/.test(path);
@@ -86,12 +88,10 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 	}
 	function planEarlySwitches(settings) {
 		var plan = [];
-		if (settings === undefined) settings = {};
 		if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return plan;
 		for (var i = 0; i < SWITCHES.length; i += 1) {
 			var entry = SWITCHES[i];
-			var on = entry.defaultOn ? settings[entry.featureId] !== false : settings[entry.featureId] === true;
-			if (!on) continue;
+			if (settings[entry.featureId] !== true) continue;
 			if (entry.flagsAttribute) {
 				var text = normalizeFlagText(settings[entry.flagsKey]);
 				if (text) plan.push({ name: entry.flagsAttribute, value: text, featureId: entry.featureId });
@@ -99,6 +99,14 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 			plan.push({ name: entry.attribute, value: 'on', featureId: entry.featureId });
 		}
 		return plan;
+	}
+	function wantsNativeUi(settings) {
+		if (settings === undefined) return true;
+		if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return false;
+		var stored = settings[NATIVE_UI_KEY];
+		if (typeof stored === 'boolean') return stored;
+		var version = Number(settings._settingsVersion);
+		return !(version >= 1 && version < NATIVE_UI_DEFAULT_SINCE);
 	}
 	var published = [];
 	var settled = false;
@@ -153,9 +161,6 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 	function start(options) {
 		var opts = options || {};
 		var location = opts.location || root.location;
-		if (!location || !isWatchPath(location.pathname) || isSafeModeUrl(location.search)) {
-			return Promise.resolve(0);
-		}
 		var api = opts.api || root.chrome || root.browser;
 		var storage = api && api.storage && api.storage.local;
 		if (!storage || typeof storage.get !== 'function') return Promise.resolve(0);
@@ -165,7 +170,15 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 		} catch (error) {
 			return Promise.resolve(0);
 		}
-		return Promise.all([read, loadChannel(api)]).then(function (results) {
+		var nativeUi = read.then(function (stored) {
+			var html = root.document && root.document.documentElement;
+			if (html && wantsNativeUi((stored || {})[SETTINGS_KEY])) html.classList.add(NATIVE_UI_CLASS);
+		}).catch(function () {
+		});
+		if (!location || !isWatchPath(location.pathname) || isSafeModeUrl(location.search)) {
+			return nativeUi.then(function () { return 0; });
+		}
+		return Promise.all([read, loadChannel(api), nativeUi]).then(function (results) {
 			if (settled || root.__ytkitRuntimeBootstrap) return 0;
 			var stored = results[0] || {};
 			if (stored[SAFE_MODE_KEY] === true) return 0;
@@ -178,6 +191,7 @@ __astraDeckRegistry["core/early-switches.js"] = function (globalThis, self, wind
 	core.earlyBridgeSwitches = {
 		SWITCHES: SWITCHES,
 		planEarlySwitches: planEarlySwitches,
+		wantsNativeUi: wantsNativeUi,
 		isWatchPath: isWatchPath,
 		settle: settle,
 		start: start,
@@ -1522,12 +1536,14 @@ __astraDeckRegistry["core/settings-visual-system.js"] = function (globalThis, se
 		],
 		'Home / Subscriptions': [
 			{ labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|viewsOnSeparateLine|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
-			{ labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge|squareSearchBar)$/ },
+			{ labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge)$/ },
 			{ labelKey: 'settingsSectionNavigation', fallback: 'Navigation', match: /^(hiddenGuideElementsManager|hideSidebar|quickLinkMenu|rssFeedLink|redirectHomeToSubs|redirectToVideosTab)$/ },
 			{ labelKey: 'settingsSectionDiscovery', fallback: 'Discovery', match: /.*/ }
 		],
 		Theme: [
-			{ labelKey: 'settingsSectionFoundation', fallback: 'Foundation', match: /^(uiFontFamily|uiStyleManager|colorThemeManager|uiFontSize|themeAccentColor)$/ },
+			{ labelKey: 'settingsSectionStartingLook', fallback: 'Starting look', match: /^(presetClassicLook|presetAstraLook|restoreNativeYouTubeUi)$/ },
+			{ labelKey: 'settingsSectionShape', fallback: 'Corners', match: /^(uiStyleManager|squareAvatars|squareSearchBar)$/ },
+			{ labelKey: 'settingsSectionFoundation', fallback: 'Foundation', match: /^(uiFontFamily|colorThemeManager|uiFontSize|themeAccentColor)$/ },
 			{ labelKey: 'settingsSectionDensity', fallback: 'Density', match: /^(styledFilterChips|compactLayout|thinScrollbar|cleanUiPreset)$/ },
 			{ labelKey: 'settingsSectionCustomCss', fallback: 'Custom CSS', match: /^customCssInjection$/ },
 			{ labelKey: 'settingsSectionSurfaces', fallback: 'Surfaces', match: /.*/ }
@@ -8473,6 +8489,8 @@ __astraDeckRegistry["core/persisted-domains.js"] = function (globalThis, self, w
 		{ id: 'researcherPresetRecovery', location: 'extension-local', key: 'ytkit-preset-researcher-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
 		{ id: 'powerPresetRecovery', location: 'extension-local', key: 'ytkit-preset-power-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
 		{ id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
+		{ id: 'astraLookPresetRecovery', location: 'extension-local', key: 'ytkit-preset-astra-look-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
+		{ id: 'classicLookPresetRecovery', location: 'extension-local', key: 'ytkit-preset-classic-look-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
 		{ id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
 		{ id: 'aiSummaries', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
 		{ id: 'aiTranscriptQa', location: 'extension-local', privateContext: 'memory', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
@@ -13212,27 +13230,27 @@ const CAPABILITIES = Object.freeze([
 const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "hideCreateButton", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideVoiceSearch", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "logoToSubscriptions", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "widenSearchBar", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "squareSearchBar", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "squareAvatars", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "subscriptionsGrid", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "logoToSubscriptions", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "widenSearchBar", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "squareSearchBar", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "squareAvatars", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "subscriptionsGrid", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "subscriptionViewControls", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
 	Object.freeze({ key: "subscriptionViewMode", category: "subscriptions", type: "string", defaultValue: "grid", enum: Object.freeze(["grid","list","compact"]), risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: false, since: "4.49.0" }),
 	Object.freeze({ key: "subscriptionOrderMode", category: "subscriptions", type: "string", defaultValue: "native", enum: Object.freeze(["native","newest-loaded"]), risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: false, since: "4.49.0" }),
-	Object.freeze({ key: "homepageGridAlign", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "styledFilterChips", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "hideSidebar", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "uiStyle", category: "shell", type: "string", defaultValue: "square", enum: Object.freeze(["square","rounded"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "homepageGridAlign", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "styledFilterChips", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "hideSidebar", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "uiStyle", category: "shell", type: "string", defaultValue: "rounded", enum: Object.freeze(["square","rounded"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "noAmbientMode", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "compactLayout", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "compactLayout", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "thinScrollbar", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "watchPageRestyle", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "watchPageRestyle", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "chatStyleComments", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "removeAllShorts", category: "shorts", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "redirectShorts", category: "shorts", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "disablePlayOnHover", category: "shorts", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "fullWidthSubscriptions", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "fullWidthSubscriptions", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideSubscriptionOptions", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hidePaidContentOverlay", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "redirectToVideosTab", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -13241,13 +13259,13 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "hideMembersOnly", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideNewsHome", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hidePlaylistsHome", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "hideRelatedVideos", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "expandVideoWidth", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "floatingLogoOnWatch", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "hideDescriptionRow", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "hideRelatedVideos", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "expandVideoWidth", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "floatingLogoOnWatch", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "hideDescriptionRow", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideVideoEndContent", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "hideJumpAheadButton", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "stickyVideo", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+	Object.freeze({ key: "stickyVideo", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "cleanShareUrls", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, min: 0, max: 8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "listFeedLayout", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
@@ -13631,6 +13649,8 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "presetResearcher", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "presetPowerUser", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "presetFocus", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
+	Object.freeze({ key: "presetAstraLook", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.106.0" }),
+	Object.freeze({ key: "presetClassicLook", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.106.0" }),
 	Object.freeze({ key: "oledTheme", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "denseMode", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "rectangularizeYouTube", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -13701,7 +13721,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 	Object.freeze({ key: "preferDescriptiveAudio", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.50.8" }),
 	Object.freeze({ key: "notifyAutoDubbedAudio", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 	Object.freeze({ key: "sleepTimer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-	Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
+	Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
 	Object.freeze({ key: "cleanUiPreset", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.3" }),
 	Object.freeze({ key: "hiddenGuideElementsManager", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
 	Object.freeze({ key: "hiddenGuideElements", category: "nav", type: "array", defaultValue: [], knownValues: Object.freeze(["home","subscriptions","history","playlists","yourVideos","watchLater","likedVideos","trending","music","movies","live","gaming","news","sports","learning","premium","studio","settings","reportHistory","help","footer"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.49.0" }),
@@ -13950,6 +13970,37 @@ function humanizeSettingKey(rawKey) {
 	for (const [pattern, name] of HUMANISE_BRAND_NAMES) label = label.replace(pattern, name);
 	return label;
 }
+const LOOK_DEFAULTS_SCHEMA_VERSION = 12;
+const LEGACY_LOOK_DEFAULTS = Object.freeze({
+	logoToSubscriptions: true,
+	widenSearchBar: true,
+	squareSearchBar: true,
+	squareAvatars: true,
+	subscriptionsGrid: true,
+	homepageGridAlign: true,
+	styledFilterChips: true,
+	hideSidebar: true,
+	uiStyle: "square",
+	compactLayout: true,
+	watchPageRestyle: true,
+	fullWidthSubscriptions: true,
+	hideRelatedVideos: true,
+	expandVideoWidth: true,
+	floatingLogoOnWatch: true,
+	hideDescriptionRow: true,
+	stickyVideo: true,
+	restoreNativeYouTubeUi: false
+});
+const CURRENT_LOOK_DEFAULTS = Object.freeze(Object.fromEntries(
+	Object.keys(LEGACY_LOOK_DEFAULTS).map((key) => [key, findSettingEntry(key)?.defaultValue])
+));
+function seedLegacyLookDefaults(settings) {
+	if (!settings || typeof settings !== "object" || Array.isArray(settings)) return settings;
+	for (const [key, value] of Object.entries(LEGACY_LOOK_DEFAULTS)) {
+		if (settings[key] === undefined) settings[key] = value;
+	}
+	return settings;
+}
 if (typeof module !== "undefined" && module.exports) {
 	module.exports = {
 		SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
@@ -13960,7 +14011,8 @@ if (typeof module !== "undefined" && module.exports) {
 		isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
 		humanizeSettingKey, resolveSettingKey, applySettingAliases,
 		isRetiredShippedId,
-		SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts
+		SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts,
+		LOOK_DEFAULTS_SCHEMA_VERSION, LEGACY_LOOK_DEFAULTS, CURRENT_LOOK_DEFAULTS, seedLegacyLookDefaults
 	};
 }
 if (typeof globalThis !== "undefined") {
@@ -13973,7 +14025,8 @@ if (typeof globalThis !== "undefined") {
 		isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
 		humanizeSettingKey, resolveSettingKey, applySettingAliases,
 		isRetiredShippedId,
-		SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts
+		SETTING_CONFLICTS, settingConflictOffValue, isSettingConflictOn, resolveSettingConflicts,
+		LOOK_DEFAULTS_SCHEMA_VERSION, LEGACY_LOOK_DEFAULTS, CURRENT_LOOK_DEFAULTS, seedLegacyLookDefaults
 	};
 }
 };
@@ -19538,7 +19591,7 @@ __astraDeckRegistry["core/settings-sync.js"] = function (globalThis, self, windo
 		})());
 	const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 	const SYNC_SETTING_KEY = 'syncSettings';
-	const SYNC_SCHEMA_VERSION = 1;
+	const SYNC_SCHEMA_VERSION = 2;
 	const SYNC_META_KEY = 'ytkit-settings-sync-meta';
 	const SYNC_CHUNK_PREFIX = 'ytkit-settings-sync-chunk-';
 	const SYNC_UNDO_KEY = 'ytkit-settings-sync-undo';
@@ -21801,8 +21854,25 @@ async function _handleFirstInstall(details) {
 	}
 	return true;
 }
+async function _seedLookDefaultsOnUpdate(details) {
+	if (details?.reason !== 'update') return false;
+	const schema = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+	if (!schema?.seedLegacyLookDefaults) return false;
+	const stored = await callExtensionApi(ext.storage.local, 'get', SETTINGS_STORAGE_KEY);
+	const settings = stored?.[SETTINGS_STORAGE_KEY];
+	if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return false;
+	const version = Number(settings._settingsVersion);
+	if (!Number.isInteger(version) || version < 1 || version >= schema.LOOK_DEFAULTS_SCHEMA_VERSION) return false;
+	const seeded = schema.seedLegacyLookDefaults({ ...settings });
+	if (Object.keys(seeded).length === Object.keys(settings).length) return false;
+	await callExtensionApi(ext.storage.local, 'set', { [SETTINGS_STORAGE_KEY]: seeded });
+	return true;
+}
 if (ext.runtime?.onInstalled?.addListener) {
 	ext.runtime.onInstalled.addListener((details) => {
+		void _seedLookDefaultsOnUpdate(details).catch(() => {
+			void _recordSwLifecycle('look-defaults-seed-failed');
+		});
 		void _handleFirstInstall(details).catch((error) => {
 			void error;
 			void _recordSwLifecycle('first-run-stage-failed');

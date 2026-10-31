@@ -129,12 +129,14 @@
         ],
         'Home / Subscriptions': [
             { labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|viewsOnSeparateLine|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
-            { labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge|squareSearchBar)$/ },
+            { labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge)$/ },
             { labelKey: 'settingsSectionNavigation', fallback: 'Navigation', match: /^(hiddenGuideElementsManager|hideSidebar|quickLinkMenu|rssFeedLink|redirectHomeToSubs|redirectToVideosTab)$/ },
             { labelKey: 'settingsSectionDiscovery', fallback: 'Discovery', match: /.*/ }
         ],
         Theme: [
-            { labelKey: 'settingsSectionFoundation', fallback: 'Foundation', match: /^(uiFontFamily|uiStyleManager|colorThemeManager|uiFontSize|themeAccentColor)$/ },
+            { labelKey: 'settingsSectionStartingLook', fallback: 'Starting look', match: /^(presetClassicLook|presetAstraLook|restoreNativeYouTubeUi)$/ },
+            { labelKey: 'settingsSectionShape', fallback: 'Corners', match: /^(uiStyleManager|squareAvatars|squareSearchBar)$/ },
+            { labelKey: 'settingsSectionFoundation', fallback: 'Foundation', match: /^(uiFontFamily|colorThemeManager|uiFontSize|themeAccentColor)$/ },
             { labelKey: 'settingsSectionDensity', fallback: 'Density', match: /^(styledFilterChips|compactLayout|thinScrollbar|cleanUiPreset)$/ },
             { labelKey: 'settingsSectionCustomCss', fallback: 'Custom CSS', match: /^customCssInjection$/ },
             { labelKey: 'settingsSectionSurfaces', fallback: 'Surfaces', match: /.*/ }

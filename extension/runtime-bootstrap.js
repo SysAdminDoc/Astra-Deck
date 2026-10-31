@@ -155,6 +155,7 @@
         "features/sticky-video-header/index.js",
         "features/sticky-video/index.js",
         "features/sticky-chat/index.js",
+        "features/look-presets/index.js",
         "features/classic-watch-layout/index.js",
         "features/hide-auto-chapters/index.js",
         "features/channel-length-sort/index.js",

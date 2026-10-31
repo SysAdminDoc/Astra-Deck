@@ -40,10 +40,11 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // allowlist entry for another 81 bytes in the profile snapshot.
     // Retiring Buffer / Preload drops its toggle, target and their two
     // allowlist entries: -126 bytes.
-    assert.equal(assessment.totalBytes, 7039);
+    // The opt-in look (#52) flips 18 defaults and adds two presets: +15 bytes.
+    assert.equal(assessment.totalBytes, 7054);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 7039);
+    assert.equal(assessment.largestItem.bytes, 7054);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -154,7 +155,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Sort by Length adds 25 for its toggle, on by default.
     // The ten DeArrow options ported from upstream add 224.
     // Anti-Translate's empty channel exception list adds 36.
-    assert.equal(assessment.totalBytes, 186905);
+    // The opt-in look (#52) flips 18 defaults and adds two presets: +66 bytes.
+    assert.equal(assessment.totalBytes, 186971);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

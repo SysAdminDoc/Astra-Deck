@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-10-27",
+  "recordedAt": "2026-10-31",
   "reason": "Accepted actionToasts inline: it is a setting showToast reads at call time, with no behavior a module could hold.",
   "inlineOnlyFeatureIdCount": 278,
-  "featureModuleCount": 35,
+  "featureModuleCount": 36,
   "inlineOnlyFeatureIds": [
     "abLoop",
     "actionToasts",

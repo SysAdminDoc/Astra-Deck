@@ -49,14 +49,22 @@
         }),
         // Theater Split holds the same switch (ytkit.js
         // syncTheaterSplitLayoutHold): its pane is #below, which the
-        // side-panel page empties. It's on by default, so only a stored
-        // false turns it off here.
+        // side-panel page empties.
         Object.freeze({
             featureId: 'stickyVideo',
-            attribute: 'data-ytkit-classic-watch-layout',
-            defaultOn: true
+            attribute: 'data-ytkit-classic-watch-layout'
         })
     ]);
+
+    // early.css hides avatars and home feed shelves until this class is on
+    // <html>. restoreNativeYouTubeUi adds it at document_idle, which on its own
+    // would leave them hidden for the first moments of every page now that the
+    // setting is on by default (#52), so it goes on here as soon as storage
+    // answers. A stored profile from before schema v12 that doesn't hold the key
+    // had it off.
+    var NATIVE_UI_CLASS = 'ytkit-restore-native-ui';
+    var NATIVE_UI_KEY = 'restoreNativeYouTubeUi';
+    var NATIVE_UI_DEFAULT_SINCE = 12;
 
     // Only a watch page carries the inline data these features act on. This
     // matches core/page.js, which decides whether the features start at all:
@@ -77,20 +85,15 @@
 
     /**
      * The {name, value, featureId} writes for a stored settings object, in
-     * publish order. For a switch that's off by default only a stored `true`
-     * counts, since anything else is not the user turning it on. A default-on
-     * switch counts unless it's stored `false`.
+     * publish order. Every switch is off by default, so only a stored `true`
+     * counts: anything else is not the user turning it on.
      */
     function planEarlySwitches(settings) {
         var plan = [];
-        // Nothing stored yet (a fresh install) means every default, so the
-        // default-on switches still go.
-        if (settings === undefined) settings = {};
         if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return plan;
         for (var i = 0; i < SWITCHES.length; i += 1) {
             var entry = SWITCHES[i];
-            var on = entry.defaultOn ? settings[entry.featureId] !== false : settings[entry.featureId] === true;
-            if (!on) continue;
+            if (settings[entry.featureId] !== true) continue;
             if (entry.flagsAttribute) {
                 // The list goes first so the page world's first look at the
                 // switch already has it (same order as the feature's init).
@@ -100,6 +103,16 @@
             plan.push({ name: entry.attribute, value: 'on', featureId: entry.featureId });
         }
         return plan;
+    }
+
+    function wantsNativeUi(settings) {
+        // Nothing stored yet is a fresh install: every default applies.
+        if (settings === undefined) return true;
+        if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return false;
+        var stored = settings[NATIVE_UI_KEY];
+        if (typeof stored === 'boolean') return stored;
+        var version = Number(settings._settingsVersion);
+        return !(version >= 1 && version < NATIVE_UI_DEFAULT_SINCE);
     }
 
     var published = [];
@@ -168,9 +181,6 @@
     function start(options) {
         var opts = options || {};
         var location = opts.location || root.location;
-        if (!location || !isWatchPath(location.pathname) || isSafeModeUrl(location.search)) {
-            return Promise.resolve(0);
-        }
         var api = opts.api || root.chrome || root.browser;
         var storage = api && api.storage && api.storage.local;
         if (!storage || typeof storage.get !== 'function') return Promise.resolve(0);
@@ -180,7 +190,18 @@
         } catch (error) {
             return Promise.resolve(0);
         }
-        return Promise.all([read, loadChannel(api)]).then(function (results) {
+        // Every page gets this one, and safe mode too: the class only turns
+        // hides off, so it can't be what safe mode is there to rule out.
+        var nativeUi = read.then(function (stored) {
+            var html = root.document && root.document.documentElement;
+            if (html && wantsNativeUi((stored || {})[SETTINGS_KEY])) html.classList.add(NATIVE_UI_CLASS);
+        }).catch(function () {
+            // reason: restoreNativeYouTubeUi still adds the class at document_idle
+        });
+        if (!location || !isWatchPath(location.pathname) || isSafeModeUrl(location.search)) {
+            return nativeUi.then(function () { return 0; });
+        }
+        return Promise.all([read, loadChannel(api), nativeUi]).then(function (results) {
             // Once the runtime has started it owns every switch; publishing
             // from here could only race it.
             if (settled || root.__ytkitRuntimeBootstrap) return 0;
@@ -199,6 +220,7 @@
     core.earlyBridgeSwitches = {
         SWITCHES: SWITCHES,
         planEarlySwitches: planEarlySwitches,
+        wantsNativeUi: wantsNativeUi,
         isWatchPath: isWatchPath,
         settle: settle,
         start: start,

@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "تم إخفاء {count} فيديو"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "زوايا مربعة، بلا شريط جانبي أيسر، شبكات أكثر كثافة، صفحة مشاهدة معاد تصميمها، وPlayer Dock، وTheater Split. أوقفه لاستعادة القيم السابقة."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "تخطيط YouTube الأصلي: زوايا مستديرة، والشريط الجانبي، والصور الرمزية، والفيديوهات ذات الصلة، والوصف، مع إبقاء تنظيف Astra مفعّلًا. أوقفه لاستعادة القيم السابقة."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "YouTube الكلاسيكي"
+  },
+  "presetAstraLookOff": {
+    "message": "تم إيقاف Astra Look. تمت استعادة القيم السابقة.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "تم تطبيق Astra Look. أوقفه للاستعادة.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "تم إيقاف مظهر YouTube الكلاسيكي. تمت استعادة القيم السابقة.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "تم تطبيق مظهر YouTube الكلاسيكي. أوقفه للاستعادة.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "الزوايا"
+  },
+  "settingsSectionStartingLook": {
+    "message": "المظهر الأولي"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "تم إخفاء {count} من الفيديوهات. سيتم إخفاء الباقي أثناء تحميله."
   },
@@ -3719,10 +3753,10 @@
     "message": "لوحة البحث في النصوص"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "إظهار الصور الرمزية للقناة/التعليقات وأرفف خلاصة الرئيسية التي يخفيها Astra Deck افتراضياً."
+    "message": "إبقاء الصور الرمزية للقنوات والتعليقات ورفوف الخلاصة الرئيسية. أوقفه للحصول على صفحة أبسط بدونها."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "استعادة واجهة YouTube الأصلية"
+    "message": "إظهار الصور الرمزية ورفوف الخلاصة"
   },
   "feature_resumePlayback_desc": {
     "message": "تذكّر أين توقفت عن المشاهدة واستئناف التشغيل تلقائياً من تلك النقطة"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "إغلاق بطاقة الترحيب"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "زوايا مربعة، بلا شريط جانبي، شبكات أكثر كثافة، صفحة مشاهدة معاد تصميمها، وTheater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "كيف ستستخدم YouTube؟ اختر إعداداً مسبقاً أو تخطَّ للضبط يدوياً."

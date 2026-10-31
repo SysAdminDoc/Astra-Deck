@@ -318,6 +318,40 @@
   "bulkHiddenTpl": {
     "message": "{count} video nascosti"
   },
+  "feature_presetAstraLook_desc": {
+    "message": "Angoli squadrati, nessuna barra laterale sinistra, griglie più dense, pagina di riproduzione ridisegnata, Player Dock e Theater Split. Disattiva per ripristinare i valori precedenti."
+  },
+  "feature_presetAstraLook_name": {
+    "message": "Astra Look"
+  },
+  "feature_presetClassicLook_desc": {
+    "message": "Il layout di YouTube: angoli arrotondati, barra laterale, avatar, video correlati e descrizione, con la pulizia di Astra sempre attiva. Disattiva per ripristinare i valori precedenti."
+  },
+  "feature_presetClassicLook_name": {
+    "message": "YouTube classico"
+  },
+  "presetAstraLookOff": {
+    "message": "Astra Look disattivato. Valori precedenti ripristinati.",
+    "description": "Toast when the Astra Look preset is disabled"
+  },
+  "presetAstraLookOn": {
+    "message": "Astra Look applicato. Disattivalo per ripristinare.",
+    "description": "Toast when the Astra Look preset is enabled"
+  },
+  "presetClassicLookOff": {
+    "message": "Aspetto YouTube classico disattivato. Valori precedenti ripristinati.",
+    "description": "Toast when the Classic YouTube preset is disabled"
+  },
+  "presetClassicLookOn": {
+    "message": "Aspetto YouTube classico applicato. Disattivalo per ripristinare.",
+    "description": "Toast when the Classic YouTube preset is enabled"
+  },
+  "settingsSectionShape": {
+    "message": "Angoli"
+  },
+  "settingsSectionStartingLook": {
+    "message": "Aspetto iniziale"
+  },
   "videoHiderHideAllSweepingTpl": {
     "message": "{count} video nascosti. Gli altri verranno nascosti man mano che si caricano."
   },
@@ -3719,10 +3753,10 @@
     "message": "Pannello ricerca trascrizioni"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Mostra gli avatar canale/commenti e le sezioni del feed home che Astra Deck nasconde per impostazione predefinita."
+    "message": "Mantiene gli avatar di canali e commenti e le sezioni del feed iniziale. Disattiva per una pagina più essenziale senza di loro."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Ripristina interfaccia nativa YouTube"
+    "message": "Mostra avatar e sezioni del feed"
   },
   "feature_resumePlayback_desc": {
     "message": "Ricorda dove hai interrotto la visione e riprendi automaticamente da quel punto"
@@ -9014,6 +9048,12 @@
   },
   "welcomeDismissAria": {
     "message": "Chiudi la scheda di benvenuto"
+  },
+  "welcomePresetAstraLookDesc": {
+    "message": "Angoli squadrati, nessuna barra laterale, griglie più dense, pagina di riproduzione ridisegnata e Theater Split."
+  },
+  "welcomePresetAstraLookTitle": {
+    "message": "Astra Look"
   },
   "welcomePresetBody": {
     "message": "Come userai YouTube? Scegli un preset o salta per configurare a mano."

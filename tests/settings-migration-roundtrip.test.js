@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
 require('../extension/core/remote-list-scope');
+require('../extension/core/settings-schema');
 
 const repoRoot = path.join(__dirname, '..');
 const ytkitSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
@@ -70,10 +71,10 @@ function createSettingsManagerFromSource(source) {
 
 test('settings import fixtures round-trip every prior schema version into the current schema', () => {
     const currentVersion = settingsMeta.settingsVersion;
-    assert.equal(currentVersion, 11, 'fixture suite is pinned to the current v11 schema');
+    assert.equal(currentVersion, 12, 'fixture suite is pinned to the current v12 schema');
     assert.deepEqual(
         fixture.profiles.map((profile) => profile.schemaVersion),
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
         'fixtures must cover every prior SETTINGS_VERSION'
     );
 

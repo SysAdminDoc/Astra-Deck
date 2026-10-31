@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- A new install now looks like YouTube. The left sidebar, avatars, rounded corners, related videos, the description and YouTube's own home and watch layouts all stay put, and the clean-up stays on (Shorts, AI panels, merch, paid overlays and the rest). The square styling, denser grids, watch page restyle, Player Dock and Theater Split are all opt-in now.
+- If you already use Astra Deck, nothing moves. Your profile keeps the look it had, including settings you never touched, and importing an older backup keeps the look it was exported with.
+- Restore Native YouTube UI is now called Show Avatars and Feed Shelves, since that's what it does. It's on by default, and your existing choice carries over.
+- Settings sync moved to a new snapshot format, because a synced "use the default" means something different now that the defaults changed. A device on an older version won't pick up changes from an updated one until it updates too.
+
+### Added
+
+- Two one-click looks in a new Starting look section under Theme. Astra Look turns on everything a new install used to start with, and Classic YouTube gives an older profile the new defaults without hunting through 18 switches. Turning either one off puts back what you had. The welcome screen offers Astra Look too.
+- A Corners section under Theme that pulls UI style, Square Avatars and Square Search Bar together.
+
 ## [4.105.1] (2026-10-27)
 
 ### Fixed
