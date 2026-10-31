@@ -324,14 +324,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Observability / Developer Experience
 
-- [ ] P2 — Visual regression testing for popup
-  Why: The popup is the primary user-facing control surface. CSS changes, i18n string length variations, and Chrome version differences can cause visual regressions that unit tests cannot catch.
-  Evidence: No visual regression tests in the codebase; popup has been through multiple redesigns (v3.11, v3.19, v4.x).
-  Touches: New `tests/visual/` directory, Puppeteer screenshot comparison, local visual test command
-  Acceptance: Local visual tests capture popup screenshots in Chrome and Firefox; a baseline is committed; regressions fail the local check with a diff image.
-  Complexity: M
-  Blocker: Requires headless Chrome/Firefox with Puppeteer installed to capture baseline screenshots. Browser binaries not available in this environment.
-
 ## P2 — Browser-Gated (CSS Adoption)
 
 - [ ] P2 — Customizable `<select>` adoption for settings panel

@@ -93,6 +93,8 @@
     "smoke:light-surfaces": "node scripts/probe-light-surfaces.js",
     "smoke:theme-controls": "node scripts/probe-theme-control-regressions.js",
     "smoke:a11y": "node scripts/smoke-headless-a11y.js",
+    "visual:popup": "node scripts/visual-popup.js",
+    "visual:popup:update": "node scripts/visual-popup.js --update",
     "smoke:transcript-index": "node scripts/smoke-transcript-index.js",
     "smoke:mv3-lifecycle": "node scripts/smoke-mv3-worker-lifecycle.js",
     "bench:startup": "node scripts/bench-startup.js",
@@ -120,6 +122,8 @@
     "deepmerge": "file:./scripts/npm-stubs/deepmerge",
     "eslint": "^10.12.0",
     "multimatch": "file:./scripts/npm-stubs/multimatch",
+    "pixelmatch": "8.0.0",
+    "pngjs": "7.0.0",
     "web-ext": "10.7.0",
     "ws": "8.22.0"
   },

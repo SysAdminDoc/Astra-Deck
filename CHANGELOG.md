@@ -11,6 +11,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Restore Deleted Video Titles, off by default and only in the GitHub builds. Turn on Show unavailable videos in a playlist's menu and each deleted or private row gets its old title, channel and upload date from [Filmot](https://filmot.com), using your own API key saved in the toolbar popup. Without a key, the row links to Filmot's page for that video, and no video IDs get sent anywhere. The userscript always uses the link.
 - SponsorBlock: click a segment on the progress bar to watch it. Its marker dims and it won't get skipped again until you leave the video. Dragging across the bar still skips as before, and there's still no toast over the video.
 
+- Development: `npm run visual:popup` screenshots the whole popup in Chromium and Firefox (dark, light, German and Arabic) and fails when the picture changes, with a diff image. `npm run visual:popup:update` writes new baselines.
+
 ### Changed
 
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
