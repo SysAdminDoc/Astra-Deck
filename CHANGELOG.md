@@ -19,10 +19,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Firefox: the first page after installing could fail to load one of the extension's modules and leave Astra Deck dead until a reload. Firefox now loads them a few at a time and retries a failed fetch with a growing pause. Chrome keeps loading them all at once, since the same limit made its startup about half again slower. A failed feature module now also gets those retries before it's reported by name.
 - **Restoring an older settings backup** from the settings panel works again, in the extension and the userscript. A backup made before the last settings change was refused with `unknown setting "_settingsVersion"`, because the check ran after the import had stamped its own internal version onto the file. A backup holding a setting this build doesn't have was refused too. Now those settings are left out and counted in the summary, the way the popup's import already did it. A known setting with a bad value still refuses the file.
 - **Channel Landing Tab** now works on every URL a channel has. Opening a channel at `/channel/UC...`, `/c/...`, `/user/...` or a handle in different capitals used to land on Videos no matter which tab you'd picked, since YouTube's tab list only names the channel's handle.
-
 - Playlist pages: YouTube can now draw a playlist's rows and header in a newer layout, and Show Playlist Duration, Quick Remove, Remove Watched and the Watch Later Workbench found nothing on it. They read both layouts now, and the duration shows up in the header you can actually see.
 - HD Thumbnails skipped the newer thumbnail element, which is most of what YouTube draws today. It covers those now, and a video with no HD image keeps its normal thumbnail. YouTube answers those with a gray placeholder that the old fallback didn't notice.
 - SponsorBlock no longer treats a playing ad as the video. On a real 183 second pre-roll it was jumping around inside the ad using the video's segments and drawing the markers far off the bar. It now waits for the ad to finish.
+- Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)
 

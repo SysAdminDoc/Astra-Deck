@@ -157,8 +157,14 @@ test('a library without a newer feature module or the early switches still boots
 test('a library without a module the host boots on stops at the library check', () => {
     const run = captureAdapters(mainSource, build, {}, { omit: [build.modules.app] });
     assert.equal(run.state.phase, 'failed');
-    assert.match(run.state.errors.map((entry) => entry.message).join('\n'), /did not load \(missing ytkit\.js\)/);
+    const message = run.state.errors.map((entry) => entry.message).join('\n');
+    assert.match(message, /did not load \(missing ytkit\.js\)/);
     assert.equal(run.captured.content, undefined);
+    // Where to look has to be where the libraries come from. It kept naming
+    // raw GitHub for a while after they moved to jsDelivr.
+    const hosts = new Set([...mainSource.matchAll(/^\/\/ @require\s+https:\/\/([^/]+)\//gm)].map((match) => match[1]));
+    assert.deepEqual([...hosts], ['cdn.jsdelivr.net']);
+    assert.ok(message.includes('check that cdn.jsdelivr.net is reachable'), message);
 });
 
 // The manifest runs core/early-switches.js at document_start after the MAIN

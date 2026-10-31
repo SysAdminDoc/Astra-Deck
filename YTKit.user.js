@@ -4044,7 +4044,7 @@ const ASTRA_DECK_BUILD = {
         hostState.phase = 'failed';
         recordError('library check', new Error('The Astra Deck libraries did not load (missing '
             + missingModules.slice(0, 3).join(', ') + (missingModules.length > 3 ? ', ...' : '')
-            + '). Reinstall the userscript or check that raw.githubusercontent.com is reachable.'));
+            + '). Reinstall the userscript or check that cdn.jsdelivr.net is reachable.'));
         return;
     }
 
