@@ -336,7 +336,7 @@ const IN_PAGE_CHECKS = `(() => {
     const liveBadge = panel.querySelector('.ytkit-header-live');
     const sidebarFooter = panel.querySelector('.ytkit-sidebar > .ytkit-sidebar-footer');
     const footerActions = panel.querySelectorAll('.ytkit-footer-actions > button');
-    const historyImport = panel.querySelector('.ytkit-insights #ytkit-import-history');
+    const historyImport = panel.querySelector('.ytkit-footer-actions #ytkit-import-history');
     const insightsRail = panel.querySelector('.ytkit-insights');
     const footerStatus = panel.querySelector('.ytkit-panel-status');
     const selectChrome = panel.querySelector('.ytkit-select-shell-chrome');
@@ -344,8 +344,9 @@ const IN_PAGE_CHECKS = `(() => {
     if (!headerSearch) failures.push('command search is not mounted in the header');
     if (!liveBadge || getComputedStyle(liveBadge).display === 'none') failures.push('live connection badge is not visible');
     if (!sidebarFooter) failures.push('version and project tools are not mounted in the sidebar footer');
-    if (footerActions.length !== 4) failures.push('footer action parity expected 4 buttons, found ' + footerActions.length);
-    if (!historyImport) failures.push('history import action is not mounted in the insights rail');
+    if (footerActions.length !== 5) failures.push('footer action parity expected 5 buttons, found ' + footerActions.length);
+    if (!historyImport) failures.push('history import action is not mounted in the footer');
+    else if (!historyImport.getBoundingClientRect().width) failures.push('history import action has no size, so nobody can press it');
     if (obsoleteVersionBadge) failures.push('obsolete version notification badge is visible');
     if (insightsRail && getComputedStyle(insightsRail).display !== 'none') {
         failures.push('redundant desktop insights rail is visible');

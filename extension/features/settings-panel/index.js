@@ -3707,16 +3707,6 @@ function buildSettingsPanel() {
             backupCard.appendChild(makeStatusRow(t('settingsInsightsLastSave', 'Last save'), t('settingsInsightsSavedLocally', 'Saved locally'), 'ok', 'ytkit-insight-saved-state'));
             backupCard.appendChild(makeStatusRow(t('settingsInsightsRuleEngine', 'Rule engine'), t('commonReady', 'Ready'), 'ok'));
             backupCard.appendChild(makeStatusRow(t('settingsInsightsRecovery', 'Recovery'), t('settingsInsightsUndoToasts', 'Undo toasts'), 'info'));
-            const historyImportAction = createPanelActionButton({
-                id: 'ytkit-import-history',
-                label: t('settingsImportHistoryLabel', 'Import History'),
-                icon: 'upload',
-                variant: 'secondary',
-                ariaLabel: t('settingsImportHistoryAriaLabel', 'Import YouTube Takeout watch history')
-            });
-            historyImportAction.id = 'ytkit-import-history';
-            historyImportAction.classList.add('ytkit-rail-action');
-            backupCard.appendChild(historyImportAction);
             backupSection.appendChild(backupCard);
             rail.appendChild(backupSection);
 
@@ -3855,6 +3845,15 @@ function buildSettingsPanel() {
             variant: 'secondary',
             ariaLabel: t('settingsImportAriaTpl', 'Import {brand} settings').replace('{brand}', () => BRAND.name)
         }));
+        const historyImportAction = createPanelActionButton({
+            id: 'ytkit-import-history',
+            label: t('settingsImportHistoryLabel', 'Import History'),
+            icon: 'upload',
+            variant: 'secondary',
+            ariaLabel: t('settingsImportHistoryAriaLabel', 'Import YouTube Takeout watch history')
+        });
+        historyImportAction.title = t('settingsImportHistoryAriaLabel', 'Import YouTube Takeout watch history');
+        footerActions.appendChild(historyImportAction);
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-reset-active-section',
             label: t('commonReset', 'Reset'),

@@ -509,6 +509,33 @@ test('the Digital Wellbeing shortcut opens the page its card is on', () => {
     assert.ok(state.readout && state.readout !== 'Video Player', `the readout follows the page, read ${state.readout}`);
 });
 
+test('Import History sits beside the other file actions, not in the rail the stylesheet hides', () => {
+    buildRealPanel([], {}, {
+        act: (doc) => {
+            const parentsOf = (node) => {
+                const classes = [];
+                for (let at = node?.parentElement; at; at = at.parentElement) classes.push(at.className);
+                return classes;
+            };
+            const history = doc.getElementById('ytkit-import-history');
+            assert.ok(history, 'the button is built');
+            assert.ok(parentsOf(history).some((name) => /ytkit-footer-actions/.test(name)), 'it sits in the footer');
+
+            const footer = [...history.parentElement.children].map((node) => node.id);
+            assert.equal(footer.indexOf('ytkit-import-history'), footer.indexOf('ytkit-import') + 1, 'right after Import');
+            assert.equal(history.getAttribute('title'), 'Import YouTube Takeout watch history', 'hovering says what history means');
+        }
+    });
+    // The rail is display: none, so whatever a person has to press can't live in it.
+    assert.match(fs.readFileSync(path.join(__dirname, '../../extension/core/settings-visual-system.js'), 'utf8'),
+        /#ytkit-settings-panel \.ytkit-insights \{\s*display: none !important;/, 'this test is here because the rail is hidden');
+    const source = fs.readFileSync(path.join(__dirname, '../../extension/features/settings-panel/index.js'), 'utf8');
+    const railStart = source.indexOf('function buildPanelInsightsRail()');
+    const railEnd = source.indexOf('const insights = buildPanelInsightsRail();', railStart);
+    assert.ok(railStart > -1 && railEnd > railStart, 'the rail builder is found');
+    assert.doesNotMatch(source.slice(railStart, railEnd), /createPanelActionButton\(|createElement\('(button|input|select|a)'\)/);
+});
+
 test('the built panel draws every feature once, sub-cards under their parent', () => {
     const placed = buildRealPanel([
         { id: 'hideVideoEndContent', name: 'Hide Video End Content', group: 'Video Player', type: 'checkbox' },

@@ -296,8 +296,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Userscript Structural Drift (Browser-Gated)
 
-- [ ] P2 — Drive Takeout import and install assist in Tampermonkey. Retested 2026-10-31 on Tampermonkey 5.5.0: panel Import and Undo work on the real userscript (`Imported 19 settings updated, 1 blocked channel.`, then `Import undone.`), and that run found the older-backup refusal fixed in `745764d9`. Still not driven: the Takeout history import (the file chooser never opened from a scripted click, it needs a real gesture on the history-import button), `runInstallAssist` and `copyInstallCommand`.
-
 ## P1 — Premise disproven, needs a product decision (2026-09-05)
 
 - [ ] P1 — Retire the inert panel stylesheets from `ytkit.js`

@@ -1305,24 +1305,6 @@
             display: none !important;
         }
 
-        #ytkit-settings-panel .ytkit-rail-action {
-            width: auto !important;
-            min-height: 40px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            background: transparent !important;
-            color: var(--ytkit-v3-muted) !important;
-            font-size: 13px !important;
-            box-shadow: none !important;
-            justify-content: flex-start !important;
-        }
-
-        #ytkit-settings-panel .ytkit-rail-action:hover {
-            color: var(--ytkit-v3-accent) !important;
-        }
-
         #ytkit-settings-panel .ytkit-footer {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) auto !important;
