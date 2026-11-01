@@ -8,14 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 - The download popup's clip timeline shows a video frame as you hover over it or drag a handle, so you can find the right spot without guessing at timestamps. It uses the same preview images YouTube shows on its own progress bar, and if a video doesn't have them the timeline works the way it always did.
-
 - Restore Deleted Video Titles, off by default and only in the GitHub builds. Turn on Show unavailable videos in a playlist's menu and each deleted or private row gets its old title, channel and upload date from [Filmot](https://filmot.com), using your own API key saved in the toolbar popup. Without a key, the row links to Filmot's page for that video, and no video IDs get sent anywhere. The userscript always uses the link.
 - SponsorBlock: click a segment on the progress bar to watch it. Its marker dims and it won't get skipped again until you leave the video. Dragging across the bar still skips as before, and there's still no toast over the video.
-
 - Development: `npm run visual:popup` screenshots the whole popup in Chromium and Firefox (dark, light, German and Arabic) and fails when the picture changes, with a diff image. `npm run visual:popup:update` writes new baselines.
 
 ### Changed
-
 - Selector evidence is current again. 23 of the 29 surfaces waiting on a fresh capture now have one, or a rendered check through the new `npm run probe:selector-surfaces`. The six still owed say what they need, which comes down to a signed-in account or a served ad. Selectors YouTube no longer draws (the old search box ids, `ytd-page-header-renderer`, `yt-app-drawer` and a few more) moved to the fallback lists, so they still work if a page serves the older layout.
 - Toasts and the page menu now start their fade from the stylesheet instead of waiting for the next animation frame. They look the same, and reduced motion still shows them at once.
 - Dropdowns in the settings panel and the popup now open in the panel's own theme, dark or light, on Chrome and Edge 135 and newer. Escape closes just the list and leaves the panel open. Firefox and older browsers keep their native list.
@@ -27,9 +24,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The Q&A and Local Summary buttons now show up in the player. They tried once, before any player button they could sit beside existed, so a fresh page never had them, and without AI Summary turned on they never appeared at all. Turning Local Summary off also stopped taking the study export buttons with it.
 - A blocked channel now gets its blocked screen however you reach its videos. A block saved by channel id used to miss when you clicked through inside YouTube, and a block saved by handle used to miss when you opened the link directly.
 - Firefox: the first page after installing could fail to load one of the extension's modules and leave Astra Deck dead until a reload. Firefox now loads them a few at a time and retries a failed fetch with a growing pause. Chrome keeps loading them all at once, since the same limit made its startup about half again slower. A failed feature module now also gets those retries before it's reported by name.
-- **Restoring an older settings backup** from the settings panel works again, in the extension and the userscript. A backup made before the last settings change was refused with `unknown setting "_settingsVersion"`, because the check ran after the import had stamped its own internal version onto the file. A backup holding a setting this build doesn't have was refused too. Now those settings are left out and counted in the summary, the way the popup's import already did it. A known setting with a bad value still refuses the file.
-- **Channel Landing Tab** now works on every URL a channel has. Opening a channel at `/channel/UC...`, `/c/...`, `/user/...` or a handle in different capitals used to land on Videos no matter which tab you'd picked, since YouTube's tab list only names the channel's handle.
-- Playlist pages: YouTube can now draw a playlist's rows and header in a newer layout, and Show Playlist Duration, Quick Remove, Remove Watched and the Watch Later Workbench found nothing on it. They read both layouts now, and the duration shows up in the header you can actually see.
+- Restoring an older settings backup from the settings panel works again, in the extension and the userscript. A backup made before the last settings change was refused with `unknown setting "_settingsVersion"`, because the check ran after the import had stamped its own internal version onto the file. A backup holding a setting this build doesn't have was refused too. Now those settings are left out and counted in the summary, the way the popup's import already did it. A known setting with a bad value still refuses the file.
+- Channel Landing Tab now works on every URL a channel has. Opening a channel at `/channel/UC...`, `/c/...`, `/user/...` or a handle in different capitals used to land on Videos no matter which tab you'd picked, since YouTube's tab list only names the channel's handle.
+- Playlist pages: YouTube can now draw a playlist's rows and header in a newer layout, and Show Playlist Duration, Quick Remove, Remove Watched and the Watch Later Workbench found nothing on it. They read both layouts now, and the duration shows up in the header you can see.
 - HD Thumbnails skipped the newer thumbnail element, which is most of what YouTube draws today. It covers those now, and a video with no HD image keeps its normal thumbnail. YouTube answers those with a gray placeholder that the old fallback didn't notice.
 - SponsorBlock no longer treats a playing ad as the video. On a real 183 second pre-roll it was jumping around inside the ad using the video's segments and drawing the markers far off the bar. It now waits for the ad to finish.
 - Auto-Dismiss "Still Watching?" now answers the prompt through its own button. It used to press the player's Play first, which restarted the video and left the prompt sitting on top of it. If the answer doesn't restart the video, Astra Deck plays it.
@@ -49,12 +46,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Square Search Bar did nothing after that same rebuild, because it named parts of the old box. It works again, so anyone who kept the old look through the last defaults change gets the square bar back.
 - Compact / Unfixed Header sizes the new search box too, and keeps it centered in the 40 pixel header.
 - Compact / Unfixed Header now scrolls away like it says. YouTube's fixed container held it on screen, and the page started at the very top, so the header sat over the top of the video and the first sidebar row.
-- The Video Hider's blocked-channel screen is a real modal dialog now. Escape also keeps working after you click on it, which used to do nothing.
-- The Subscription Groups name box is a real modal dialog now, so Tab and a screen reader both stay inside it until it's closed.
-- The Watch Stats dashboard is a real modal dialog too, so a screen reader can't wander off into the page behind it and Tab can't either.
-- The quick controls menu is a real modal dialog as well, so the page behind it can't be reached until it closes. A toast that was already up when you open it moves inside, so its Undo button keeps working.
-- The settings panel is a real modal dialog now, so nothing behind it can be reached by mouse, keyboard or a screen reader, and Escape, an open dropdown and the backdrop all do what the browser says they should. It also fixes something that wasn't visible. The closed panel stayed in the page's tab order, so Tab could wander through controls you couldn't see.
-- Digital Wellbeing's prompts are real modal dialogs now, so the page behind them can't be reached by mouse, keyboard or a screen reader. On the hard Shorts block, Enter and Space also work on Leave Shorts again. Every key but Tab was being cancelled, so anyone on a keyboard had no way out of it.
+- The Video Hider's blocked-channel screen now opens as a modal dialog. Escape also works after you've clicked on it, where it used to do nothing.
+- Tab and screen readers stay inside the Subscription Groups name box until you close it, since it's a modal dialog now.
+- Neither Tab nor a screen reader can wander off behind the Watch Stats dashboard anymore. It's a modal dialog too.
+- The page behind the quick controls menu can't be reached until the menu closes. A toast that was already up when you open it moves inside, so its Undo button keeps working.
+- The settings panel is a modal dialog now, so nothing behind it can be reached by mouse, keyboard or a screen reader. Escape, an open dropdown and the backdrop follow the browser's own rules for a dialog. The closed panel also used to stay in the page's tab order, where Tab could wander through controls you couldn't see.
+- Digital Wellbeing's prompts now keep the mouse, the keyboard and screen readers away from the page behind them. On the hard Shorts block, Enter and Space also work on Leave Shorts again. Every key but Tab was being cancelled, so anyone on a keyboard had no way out of it.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)
@@ -160,7 +157,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Added
 
 - DeArrow picks up ten options from the upstream extension. Cards hide their title and cover while the lookup runs, so the clickbait version never flashes (it's on by default and gives up after 7 seconds). A new slider fades covers toward grayscale, and emoji and fancy Unicode letters get stripped from titles unless you turn that off.
-- Title formatting now follows DeArrow's own rules. Short acronyms like TV, 4K or PSG and words like iPhone keep their caps, shouting titles get calmed down, and trailing "!!!" goes away.
+- Title formatting now follows DeArrow's own rules. Short acronyms like TV, 4K or PSG and words like iPhone keep their caps, shouting titles get calmed down, and a trailing row of exclamation marks goes away.
 - Casual mode has a vote threshold per category (funny, creative, clever, descriptive, other), can still format the original title, and can keep the original cover when it accepts the original title.
 - The watch page title is looked up by a short hash of the video ID instead of the ID itself, the same privacy lookup DeArrow uses.
 
@@ -197,11 +194,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ### Fixed
 
 - The transcript's export buttons no longer show up when there's nothing to export. A failed or empty load used to leave Copy Text and the download buttons on screen. Blank caption lines are dropped before they reach the panel, and the export buttons check for lines themselves.
-- With the Diagnostic Error Log on, an error is now saved within a few seconds of happening, and right away when the page closes. It used to wait for the next time you changed a setting, so a reload could lose it. A burst of errors still keeps the log to its 500-entry cap and saves at most six times a minute. These saves write only the log, so they never carry along a setting you're halfway through changing. If the browser refuses one, Astra quietly stops trying for five minutes. There's no "settings could not be saved" toast, and the failure isn't added to the log itself. Private windows still keep the log in memory only.
+- With the Diagnostic Error Log on, an error is now saved within a few seconds of happening, and right away when the page closes. It used to wait for the next time you changed a setting, so a reload could lose it. A burst of errors still keeps the log to its 500-entry cap and saves at most six times a minute. These saves write only the log, so they never carry along a setting you're halfway through changing. If the browser refuses one, Astra stops trying for five minutes. There's no "settings could not be saved" toast, and the failure isn't added to the log itself. Private windows still keep the log in memory only.
 
 ### Documentation
 
-- The privacy policy now lists the automatic check of the project's signed known-breakage list on GitHub (at most every six hours while Known-Breakage Notices is on, which it is by default) and the selector packs, which download when you run a selector refresh or about once a day if you turn on selector auto-refresh (off by default). It also says plainly that the store-safe build talks to Astra Downloader too, not just GitHub-full, and that SponsorBlock and DeArrow are on by default. The store checklist and permission notes got the same corrections.
+- The privacy policy now lists the automatic check of the project's signed known-breakage list on GitHub (at most every six hours while Known-Breakage Notices is on, which it is by default) and the selector packs, which download when you run a selector refresh or about once a day if you turn on selector auto-refresh (off by default). It also says plainly that the store-safe and GitHub-full builds both talk to Astra Downloader, and that SponsorBlock and DeArrow are on by default. The store checklist and permission notes got the same corrections.
 - INSTALL.md now covers the Allow User Scripts switch that Chrome 138 and newer need before a userscript manager runs anything.
 - The feature request and pull request templates match how things work now: API features aren't all off by default, the companion isn't GitHub-full only, and PRs link issues with "Refs #n" because an issue stays open until its reporter confirms the fix.
 
