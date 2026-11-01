@@ -462,6 +462,50 @@
         });
     }
 
+    // YouTube answers an InnerTube POST carrying an extension's Origin with a
+    // 403 "Sorry..." page, on every endpoint and client. The same call succeeds
+    // with the page's Origin, which is what a content script's fetch sends, so
+    // these leave from here instead of through the background.
+    const INNERTUBE_POST_URL = /^https:\/\/www\.youtube\.com\/youtubei\/v1\//;
+    const INNERTUBE_POST_TIMEOUT_MS = 30000;
+
+    function sendInnertubePost(details, body) {
+        const controller = new AbortController();
+        let timedOut = false;
+        const timer = setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+        }, details.timeout > 0 ? details.timeout : INNERTUBE_POST_TIMEOUT_MS);
+        const onAbort = () => controller.abort();
+        details.signal?.addEventListener?.('abort', onAbort, { once: true });
+        fetch(details.url, {
+            method: 'POST',
+            headers: details.headers || {},
+            body,
+            credentials: details.credentials === 'omit' ? 'omit' : 'include',
+            redirect: 'manual',
+            signal: controller.signal
+        }).then(async (response) => {
+            const responseText = await response.text();
+            details.onload?.({
+                status: response.status,
+                statusText: response.statusText,
+                responseText,
+                responseHeaders: [...response.headers].map(([name, value]) => `${name}: ${value}`).join('\r\n'),
+                finalUrl: response.url,
+                response: responseText
+            });
+        }).catch((error) => {
+            if (timedOut) details.ontimeout?.({ timeout: true });
+            // i18n-static: transport error identifier, not user-facing copy
+            else if (details.signal?.aborted) details.onerror?.({ error: 'Operation cancelled', name: 'AbortError' });
+            else details.onerror?.({ error: error?.message || 'InnerTube request failed' });
+        }).finally(() => {
+            clearTimeout(timer);
+            details.signal?.removeEventListener?.('abort', onAbort);
+        });
+    }
+
     function extensionRequest(details) {
         if (details?.signal?.aborted) {
             // i18n-static: transport error identifier, not user-facing copy
@@ -493,6 +537,11 @@
         const serializedBody = requestBody instanceof URLSearchParams
             ? requestBody.toString()
             : requestBody;
+
+        if (details?.method === 'POST' && INNERTUBE_POST_URL.test(String(details?.url || ''))) {
+            sendInnertubePost(details, serializedBody);
+            return;
+        }
 
         const bridgeDetails = {
             method: details.method || 'GET',
@@ -21175,7 +21224,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _describeTranscriptSource(source) {
                 switch (source) {
                 case 'player-global': return t('transcriptSourcePlayerGlobal', 'the current page player data');
-                case 'innertube-player': return t('transcriptSourceInnertube', 'fresh YouTube player data');
+                case 'innertube-player':
+                case 'innertube-mobile': return t('transcriptSourceInnertube', 'fresh YouTube player data');
                 case 'watch-page-player':
                 case 'watch-page-regex': return t('transcriptSourceWatchPage', 'a fresh YouTube watch page');
                 case 'dom-panel':

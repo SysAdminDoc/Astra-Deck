@@ -6130,8 +6130,29 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 	};
 	const INNERTUBE_CLIENT_VERSION_FALLBACK = '2.20260401.00.00';
 	const CAPTION_TRACK_EXPIRY_SKEW_MS = 30 * 1000;
+	const MOBILE_CAPTION_CLIENTS = Object.freeze([
+		Object.freeze({ clientName: 'ANDROID', clientVersion: '20.10.38' }),
+		Object.freeze({
+			clientName: 'IOS',
+			clientVersion: '20.10.4',
+			deviceMake: 'Apple',
+			deviceModel: 'iPhone16,2',
+			osName: 'iPhone',
+			osVersion: '18.3.2.22D82'
+		}),
+		Object.freeze({
+			clientName: 'ANDROID_VR',
+			clientVersion: '1.60.19',
+			deviceMake: 'Oculus',
+			deviceModel: 'Quest 3',
+			androidSdkVersion: 32,
+			osName: 'Android',
+			osVersion: '12L'
+		})
+	]);
+	const MOBILE_CAPTION_SOURCE = 'innertube-mobile';
 	const TRANSCRIPT_SOURCES = new Set([
-		'none', 'player-global', 'innertube-player', 'watch-page-player',
+		'none', 'player-global', 'innertube-player', MOBILE_CAPTION_SOURCE, 'watch-page-player',
 		'watch-page-regex', 'dom-panel-track', 'dom-panel'
 	]);
 	const TRANSCRIPT_PANEL_SELECTORS = Object.freeze([
@@ -6248,6 +6269,13 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 		const match = baseUrl.match(/[?&]v=([^&#]+)/);
 		try { return match?.[1] ? decodeURIComponent(match[1]) : ''; }
 		catch (_) { return match?.[1] || ''; }
+	}
+	function stripCaptionFormat(baseUrl) {
+		return String(baseUrl).replace(/([?&])fmt=[^&#]*&?/g, '$1').replace(/[?&]$/, '');
+	}
+	function getPageLanguage() {
+		const lang = typeof document !== 'undefined' ? document.documentElement?.lang : '';
+		return /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang || '') ? lang : 'en';
 	}
 	function getTranscriptHttpStatus(error) {
 		const status = Number(error?.response?.status ?? error?.status);
@@ -6440,7 +6468,10 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 				let fetchError = null;
 				if (!staleReason) {
 					try {
-						segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, { signal });
+						segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, {
+							signal,
+							...(trackData.source === MOBILE_CAPTION_SOURCE ? { credentials: 'omit' } : {})
+						});
 					} catch (error) {
 						if (error?.name === 'AbortError') throw error;
 						fetchError = error;
@@ -6495,6 +6526,38 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 						fallbackReason = 'refresh-captionless';
 					}
 				}
+				if (!segments?.length && trackData.source !== MOBILE_CAPTION_SOURCE) {
+					let mobileData = null;
+					try {
+						mobileData = await this._getCaptionTracks(videoId, { signal, mobileOnly: true });
+					} catch (error) {
+						if (error?.name === 'AbortError') throw error;
+						this._log('Mobile caption route found nothing:', error.message);
+					}
+					this._assertVideoCurrent(videoId, signal, allowOffPage);
+					const mobileTrack = mobileData?.tracks?.length
+						? this._selectRefreshedTrack(mobileData.tracks, selectedTrack, options)
+						: null;
+					if (mobileTrack?.baseUrl) {
+						try {
+							const mobileSegments = await this._fetchTranscriptContent(
+								mobileTrack.baseUrl,
+								{ signal, credentials: 'omit' }
+							);
+							if (mobileSegments?.length) {
+								segments = mobileSegments;
+								selectedTrack = mobileTrack;
+								trackData = mobileData;
+								expiresAt = parseCaptionTrackExpiresAt(mobileTrack.baseUrl);
+								fallbackReason = 'mobile-client';
+							}
+						} catch (error) {
+							if (error?.name === 'AbortError') throw error;
+							this._log('Mobile caption track failed:', error.message);
+						}
+						this._assertVideoCurrent(videoId, signal, allowOffPage);
+					}
+				}
 				if (!segments?.length) {
 					const panelResult = tryRenderedPanel(
 						staleReason ? `dom-after-${staleReason}` : 'dom-after-empty',
@@ -6546,12 +6609,18 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 			async _getCaptionTracks(videoId, options = {}) {
 				const signal = options.signal;
 				const allowOffPage = options.allowOffPage === true;
-				const methods = [
+				const mobileMethod = {
+					name: 'Innertube mobile client',
+					source: MOBILE_CAPTION_SOURCE,
+					fn: () => this._method6_MobileClientPlayer(videoId, { signal })
+				};
+				const methods = options.mobileOnly === true ? [mobileMethod] : [
 					...(options.forceFresh === true || allowOffPage ? [] : [{
 						name: 'ytInitialPlayerResponse',
 						source: 'player-global',
 						fn: () => this._method1_WindowVariable(videoId)
 					}]),
+					mobileMethod,
 					{ name: 'Innertube API', source: 'innertube-player', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
 					{ name: 'HTML Page Fetch', source: 'watch-page-player', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
 					{ name: 'captionTracks Regex', source: 'watch-page-regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
@@ -6852,6 +6921,37 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 				const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || videoId;
 				return { tracks, videoTitle };
 			},
+			async _method6_MobileClientPlayer(videoId, options = {}) {
+				let lastError = null;
+				for (const client of MOBILE_CAPTION_CLIENTS) {
+					throwIfAborted(options.signal);
+					try {
+						const { data } = await extensionFetchJson({
+							url: 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							credentials: 'omit',
+							retry: false,
+							data: JSON.stringify({
+								context: { client: { ...client, hl: getPageLanguage() } },
+								videoId
+							}),
+							signal: options.signal
+						});
+						throwIfAborted(options.signal);
+						if (data?.videoDetails?.videoId !== videoId) {
+							throw new Error(`${client.clientName} player response is for a different video`);
+						}
+						const { tracks, videoTitle } = this._extractFromPlayerResponse(data);
+						if (tracks.some((track) => track.baseUrl)) return { tracks, videoTitle };
+					} catch (error) {
+						if (error?.name === 'AbortError') throw error;
+						lastError = error;
+						this._log(`${client.clientName} player call failed:`, error.message);
+					}
+				}
+				throw lastError || new Error('No mobile client returned caption tracks');
+			},
 			_extractFromPlayerResponse(playerResponse) {
 				if (!playerResponse || typeof playerResponse !== 'object') {
 					throw new Error('Invalid player response');
@@ -6859,6 +6959,7 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 				const rawTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
 				const captionTracks = Array.isArray(rawTracks) ? rawTracks : [];
 				const videoTitle = playerResponse.videoDetails?.title || '';
+				const playability = playerResponse.playabilityStatus?.status;
 				return {
 					tracks: captionTracks.map(t => ({
 						baseUrl: t.baseUrl,
@@ -6868,7 +6969,7 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 						vssId: t.vssId
 					})),
 					videoTitle: videoTitle,
-					captionless: captionTracks.length === 0
+					captionless: captionTracks.length === 0 && (!playability || playability === 'OK')
 				};
 			},
 			_selectBestTrack(tracks) {
@@ -6895,15 +6996,20 @@ __astraDeckRegistry["core/transcript-service.js"] = function (globalThis, self, 
 			async _fetchTranscriptContent(baseUrl, options = {}) {
 				if (!baseUrl) throw new Error('No baseUrl provided for transcript');
 				const formats = ['json3', 'xml'];
+				const trackUrl = stripCaptionFormat(baseUrl);
 				let emptyResult = null;
 				let terminalHttpError = null;
 				for (const fmt of formats) {
 					throwIfAborted(options.signal);
 					try {
 						const url = fmt === 'xml'
-							? baseUrl
-							: `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}fmt=${fmt}`;
-						const { text: content } = await extensionFetchText({ url, signal: options.signal });
+							? trackUrl
+							: `${trackUrl}${trackUrl.includes('?') ? '&' : '?'}fmt=${fmt}`;
+						const { text: content } = await extensionFetchText({
+							url,
+							signal: options.signal,
+							...(options.credentials ? { credentials: options.credentials } : {})
+						});
 						throwIfAborted(options.signal);
 						const segments = fmt === 'json3'
 							? this._parseJSON3(content)

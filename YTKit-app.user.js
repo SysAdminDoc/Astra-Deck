@@ -398,6 +398,43 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			}).catch(reject);
 		});
 	}
+	const INNERTUBE_POST_URL = /^https:\/\/www\.youtube\.com\/youtubei\/v1\//;
+	const INNERTUBE_POST_TIMEOUT_MS = 30000;
+	function sendInnertubePost(details, body) {
+		const controller = new AbortController();
+		let timedOut = false;
+		const timer = setTimeout(() => {
+			timedOut = true;
+			controller.abort();
+		}, details.timeout > 0 ? details.timeout : INNERTUBE_POST_TIMEOUT_MS);
+		const onAbort = () => controller.abort();
+		details.signal?.addEventListener?.('abort', onAbort, { once: true });
+		fetch(details.url, {
+			method: 'POST',
+			headers: details.headers || {},
+			body,
+			credentials: details.credentials === 'omit' ? 'omit' : 'include',
+			redirect: 'manual',
+			signal: controller.signal
+		}).then(async (response) => {
+			const responseText = await response.text();
+			details.onload?.({
+				status: response.status,
+				statusText: response.statusText,
+				responseText,
+				responseHeaders: [...response.headers].map(([name, value]) => `${name}: ${value}`).join('\r\n'),
+				finalUrl: response.url,
+				response: responseText
+			});
+		}).catch((error) => {
+			if (timedOut) details.ontimeout?.({ timeout: true });
+			else if (details.signal?.aborted) details.onerror?.({ error: 'Operation cancelled', name: 'AbortError' });
+			else details.onerror?.({ error: error?.message || 'InnerTube request failed' });
+		}).finally(() => {
+			clearTimeout(timer);
+			details.signal?.removeEventListener?.('abort', onAbort);
+		});
+	}
 	function extensionRequest(details) {
 		if (details?.signal?.aborted) {
 			details.onerror?.({ error: 'Operation cancelled', name: 'AbortError' });
@@ -422,6 +459,10 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 		const serializedBody = requestBody instanceof URLSearchParams
 			? requestBody.toString()
 			: requestBody;
+		if (details?.method === 'POST' && INNERTUBE_POST_URL.test(String(details?.url || ''))) {
+			sendInnertubePost(details, serializedBody);
+			return;
+		}
 		const bridgeDetails = {
 			method: details.method || 'GET',
 			url: details.url,
@@ -14103,7 +14144,8 @@ const STORAGE_KEYS = Object.freeze({
 			_describeTranscriptSource(source) {
 				switch (source) {
 				case 'player-global': return t('transcriptSourcePlayerGlobal', 'the current page player data');
-				case 'innertube-player': return t('transcriptSourceInnertube', 'fresh YouTube player data');
+				case 'innertube-player':
+				case 'innertube-mobile': return t('transcriptSourceInnertube', 'fresh YouTube player data');
 				case 'watch-page-player':
 				case 'watch-page-regex': return t('transcriptSourceWatchPage', 'a fresh YouTube watch page');
 				case 'dom-panel':

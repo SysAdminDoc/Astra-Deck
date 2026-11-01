@@ -2088,6 +2088,8 @@
                         method: 'POST',
                         url: `https://www.youtube.com/youtubei/v1/next?prettyPrint=false&fields=${encodeURIComponent(AI_LABEL_LOOKUP_FIELDS)}`,
                         headers: { 'Content-Type': 'application/json' },
+                        // The label is public, so this never needs the account.
+                        credentials: 'omit',
                         data: JSON.stringify({
                             context: { client: { clientName: 'WEB', clientVersion: getInnertubeClientVersion() || '2.20261001.00.00' } },
                             videoId

@@ -30,8 +30,33 @@
 
     const INNERTUBE_CLIENT_VERSION_FALLBACK = '2.20260401.00.00';
     const CAPTION_TRACK_EXPIRY_SKEW_MS = 30 * 1000;
+    // The web player's caption URLs carry exp=xpe and answer 200 with an empty
+    // body unless they also hold a token only YouTube's own player can make.
+    // These clients get URLs that still return words. TVHTML5, MWEB and
+    // WEB_EMBEDDED_PLAYER returned no tracks at all when this was measured.
+    const MOBILE_CAPTION_CLIENTS = Object.freeze([
+        Object.freeze({ clientName: 'ANDROID', clientVersion: '20.10.38' }),
+        Object.freeze({
+            clientName: 'IOS',
+            clientVersion: '20.10.4',
+            deviceMake: 'Apple',
+            deviceModel: 'iPhone16,2',
+            osName: 'iPhone',
+            osVersion: '18.3.2.22D82'
+        }),
+        Object.freeze({
+            clientName: 'ANDROID_VR',
+            clientVersion: '1.60.19',
+            deviceMake: 'Oculus',
+            deviceModel: 'Quest 3',
+            androidSdkVersion: 32,
+            osName: 'Android',
+            osVersion: '12L'
+        })
+    ]);
+    const MOBILE_CAPTION_SOURCE = 'innertube-mobile';
     const TRANSCRIPT_SOURCES = new Set([
-        'none', 'player-global', 'innertube-player', 'watch-page-player',
+        'none', 'player-global', 'innertube-player', MOBILE_CAPTION_SOURCE, 'watch-page-player',
         'watch-page-regex', 'dom-panel-track', 'dom-panel'
     ]);
     const TRANSCRIPT_PANEL_SELECTORS = Object.freeze([
@@ -161,6 +186,17 @@
         const match = baseUrl.match(/[?&]v=([^&#]+)/);
         try { return match?.[1] ? decodeURIComponent(match[1]) : ''; }
         catch (_) { return match?.[1] || ''; }
+    }
+
+    // Mobile clients' URLs already name a format (fmt=srv3), and asking for a
+    // second one would leave the answer up to which fmt the server reads.
+    function stripCaptionFormat(baseUrl) {
+        return String(baseUrl).replace(/([?&])fmt=[^&#]*&?/g, '$1').replace(/[?&]$/, '');
+    }
+
+    function getPageLanguage() {
+        const lang = typeof document !== 'undefined' ? document.documentElement?.lang : '';
+        return /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang || '') ? lang : 'en';
     }
 
     function getTranscriptHttpStatus(error) {
@@ -385,7 +421,10 @@
                 let fetchError = null;
                 if (!staleReason) {
                     try {
-                        segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, { signal });
+                        segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, {
+                            signal,
+                            ...(trackData.source === MOBILE_CAPTION_SOURCE ? { credentials: 'omit' } : {})
+                        });
                     } catch (error) {
                         if (error?.name === 'AbortError') throw error;
                         fetchError = error;
@@ -442,6 +481,43 @@
                         }
                     } else if (freshData?.captionless === true) {
                         fallbackReason = 'refresh-captionless';
+                    }
+                }
+
+                // A track can answer 200 with nothing in it, which no refresh
+                // above treats as a failure, and a fresh web URL has the same
+                // problem. Skipped when the mobile route already supplied the
+                // track, since asking it again would return the same URL.
+                if (!segments?.length && trackData.source !== MOBILE_CAPTION_SOURCE) {
+                    let mobileData = null;
+                    try {
+                        mobileData = await this._getCaptionTracks(videoId, { signal, mobileOnly: true });
+                    } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
+                        this._log('Mobile caption route found nothing:', error.message);
+                    }
+                    this._assertVideoCurrent(videoId, signal, allowOffPage);
+                    const mobileTrack = mobileData?.tracks?.length
+                        ? this._selectRefreshedTrack(mobileData.tracks, selectedTrack, options)
+                        : null;
+                    if (mobileTrack?.baseUrl) {
+                        try {
+                            const mobileSegments = await this._fetchTranscriptContent(
+                                mobileTrack.baseUrl,
+                                { signal, credentials: 'omit' }
+                            );
+                            if (mobileSegments?.length) {
+                                segments = mobileSegments;
+                                selectedTrack = mobileTrack;
+                                trackData = mobileData;
+                                expiresAt = parseCaptionTrackExpiresAt(mobileTrack.baseUrl);
+                                fallbackReason = 'mobile-client';
+                            }
+                        } catch (error) {
+                            if (error?.name === 'AbortError') throw error;
+                            this._log('Mobile caption track failed:', error.message);
+                        }
+                        this._assertVideoCurrent(videoId, signal, allowOffPage);
                     }
                 }
 
@@ -506,13 +582,22 @@
             async _getCaptionTracks(videoId, options = {}) {
                 const signal = options.signal;
                 const allowOffPage = options.allowOffPage === true;
-                const methods = [
+                const mobileMethod = {
+                    // i18n-static: diagnostic method identifier, not rendered copy.
+                    name: 'Innertube mobile client',
+                    source: MOBILE_CAPTION_SOURCE,
+                    fn: () => this._method6_MobileClientPlayer(videoId, { signal })
+                };
+                const methods = options.mobileOnly === true ? [mobileMethod] : [
                     ...(options.forceFresh === true || allowOffPage ? [] : [{
                         // i18n-static: diagnostic method identifier, not rendered copy.
                         name: 'ytInitialPlayerResponse',
                         source: 'player-global',
                         fn: () => this._method1_WindowVariable(videoId)
                     }]),
+                    // First of the network routes, since it's the only one whose
+                    // URLs have been seen returning words rather than an empty 200.
+                    mobileMethod,
                     // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'Innertube API', source: 'innertube-player', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
                     // i18n-static: diagnostic method identifier, not rendered copy.
@@ -882,6 +967,43 @@
                 return { tracks, videoTitle };
             },
 
+            // Method 6: the player API as a mobile client. Anonymous, so a video
+            // that needs an account gets no tracks here and the caller's other
+            // routes decide. No tracks from this route never means "no captions":
+            // a client refused or an age gate look exactly the same.
+            async _method6_MobileClientPlayer(videoId, options = {}) {
+                let lastError = null;
+                for (const client of MOBILE_CAPTION_CLIENTS) {
+                    throwIfAborted(options.signal);
+                    try {
+                        const { data } = await extensionFetchJson({
+                            url: 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'omit',
+                            // The next client is the retry.
+                            retry: false,
+                            data: JSON.stringify({
+                                context: { client: { ...client, hl: getPageLanguage() } },
+                                videoId
+                            }),
+                            signal: options.signal
+                        });
+                        throwIfAborted(options.signal);
+                        if (data?.videoDetails?.videoId !== videoId) {
+                            throw new Error(`${client.clientName} player response is for a different video`);
+                        }
+                        const { tracks, videoTitle } = this._extractFromPlayerResponse(data);
+                        if (tracks.some((track) => track.baseUrl)) return { tracks, videoTitle };
+                    } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
+                        lastError = error;
+                        this._log(`${client.clientName} player call failed:`, error.message);
+                    }
+                }
+                throw lastError || new Error('No mobile client returned caption tracks');
+            },
+
             _extractFromPlayerResponse(playerResponse) {
                 if (!playerResponse || typeof playerResponse !== 'object') {
                     throw new Error('Invalid player response');
@@ -889,6 +1011,9 @@
                 const rawTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
                 const captionTracks = Array.isArray(rawTracks) ? rawTracks : [];
                 const videoTitle = playerResponse.videoDetails?.title || '';
+                // A player that wouldn't play the video lists no tracks either,
+                // whether or not it has captions, so only its OK says "none".
+                const playability = playerResponse.playabilityStatus?.status;
 
                 return {
                     tracks: captionTracks.map(t => ({
@@ -899,7 +1024,7 @@
                         vssId: t.vssId
                     })),
                     videoTitle: videoTitle,
-                    captionless: captionTracks.length === 0
+                    captionless: captionTracks.length === 0 && (!playability || playability === 'OK')
                 };
             },
 
@@ -935,6 +1060,7 @@
                 if (!baseUrl) throw new Error('No baseUrl provided for transcript');
 
                 const formats = ['json3', 'xml'];
+                const trackUrl = stripCaptionFormat(baseUrl);
 
                 // A format can parse successfully yet yield zero segments
                 // (e.g. a valid-but-empty json3 body). Only short-circuit on a
@@ -947,9 +1073,13 @@
                     throwIfAborted(options.signal);
                     try {
                         const url = fmt === 'xml'
-                            ? baseUrl
-                            : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}fmt=${fmt}`;
-                        const { text: content } = await extensionFetchText({ url, signal: options.signal });
+                            ? trackUrl
+                            : `${trackUrl}${trackUrl.includes('?') ? '&' : '?'}fmt=${fmt}`;
+                        const { text: content } = await extensionFetchText({
+                            url,
+                            signal: options.signal,
+                            ...(options.credentials ? { credentials: options.credentials } : {})
+                        });
                         throwIfAborted(options.signal);
 
                         const segments = fmt === 'json3'

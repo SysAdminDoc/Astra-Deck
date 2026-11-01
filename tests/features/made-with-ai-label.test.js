@@ -175,7 +175,7 @@ test('stage two: unknown cards are looked up masked, four at a time, without coo
     const request = fetches[0];
     assert.equal(request.method, 'POST');
     assert.match(request.url, /^https:\/\/www\.youtube\.com\/youtubei\/v1\/next\?prettyPrint=false&fields=contents\.twoColumnWatchNextResults/);
-    assert.equal(request.credentials, undefined, 'the proxy omits cookies unless a caller asks for them');
+    assert.equal(request.credentials, 'omit', 'the label is public, so the account stays out of it');
     assert.equal(request.retry, false);
     assert.equal(JSON.parse(request.data).videoId, LABELED);
 
