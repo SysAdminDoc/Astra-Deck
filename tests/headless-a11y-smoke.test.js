@@ -156,3 +156,37 @@ test('download dialog positioning and keyboard containment stay resilient', () =
     assert.match(ytkit, /\.ytkit-dl-popup \[hidden\]\s*\{\s*display:\s*none !important/,
         'inactive format rows must not remain visually rendered or tabbable');
 });
+
+test('the shared focus ring only replaces the outline where a shadow can paint', () => {
+    const css = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'core', 'settings-visual-system.js'),
+        'utf8'
+    );
+    // Walk the braces so each ring knows which at-rules it sits inside.
+    const rings = [];
+    const open = [];
+    let prelude = '';
+    for (let index = 0; index < css.length; index += 1) {
+        const char = css[index];
+        if (char === '{') {
+            open.push(prelude.replace(/\/\*[\s\S]*?\*\//g, '').trim());
+            prelude = '';
+        } else if (char === '}') {
+            open.pop();
+            prelude = '';
+        } else if (char === ';') {
+            if (prelude.trim() === 'outline: 0 !important'
+                && /box-shadow: var\(--ytkit-premium-focus\)/.test(css.slice(index, index + 140))) {
+                rings.push([...open]);
+            }
+            prelude = '';
+        } else {
+            prelude += char;
+        }
+    }
+    assert.equal(rings.length, 2, 'the two shared focus lanes');
+    for (const enclosing of rings) {
+        assert.ok(enclosing.includes('@media (forced-colors: none)'),
+            'forced colors paints no box-shadow, so outline: 0 there leaves no ring at all');
+    }
+});

@@ -3132,21 +3132,25 @@
             font: inherit !important;
         }
 
-        :is(
-            .ytkit-dl-progress,
-            .ytkit-subs-load-banner,
-            .ytkit-sub-toolbar,
-            .ytkit-search-container,
-            #ytkit-mediadl-install-prompt,
-            #ytkit-reaction-spammer-panel,
-            .ytkit-mediadl-banner,
-            .ytkit-playlist-enhance,
-            .ytkit-speed-presets,
-            .ytkit-mini-player-bar
-        ) :is(button, input, select, textarea, a):focus-visible {
-            outline: 0 !important;
-            border-color: var(--ytkit-premium-accent) !important;
-            box-shadow: var(--ytkit-premium-focus) !important;
+        /* A forced-colors palette paints no box-shadow, so this ring doesn't exist
+           there and the outline it replaces has to stay. */
+        @media (forced-colors: none) {
+            :is(
+                .ytkit-dl-progress,
+                .ytkit-subs-load-banner,
+                .ytkit-sub-toolbar,
+                .ytkit-search-container,
+                #ytkit-mediadl-install-prompt,
+                #ytkit-reaction-spammer-panel,
+                .ytkit-mediadl-banner,
+                .ytkit-playlist-enhance,
+                .ytkit-speed-presets,
+                .ytkit-mini-player-bar
+            ) :is(button, input, select, textarea, a):focus-visible {
+                outline: 0 !important;
+                border-color: var(--ytkit-premium-accent) !important;
+                box-shadow: var(--ytkit-premium-focus) !important;
+            }
         }
 
         :is(
@@ -3182,36 +3186,40 @@
             font: inherit !important;
         }
 
-        :is(
-            .ytkit-ai-qa-modal__body,
-            .ytkit-local-ai-modal__body,
-            .ytkit-aisum-panel,
-            .ytkit-transcript-search-panel,
-            .ytkit-transcript-batch-panel,
-            .ytkit-dl-popup,
-            .ytkit-dl-history-panel,
-            .ytkit-stream-links-panel,
-            .ytkit-vvf-panel,
-            .ytkit-wha-card,
-            .ytkit-sub-group-dialog__card,
-            .ytkit-sub-members-panel,
-            .ytkit-sub-digest-panel,
-            .ytkit-search-watch-panel,
-            .ytkit-video-notes-container,
-            .ytkit-bookmarks-container,
-            .ytkit-queue-panel,
-            .ytkit-wlwb-panel,
-            .ytkit-rc-panel,
-            .ytkit-speed-popup,
-            .ytkit-sleep-popover,
-            .ytkit-ql-drop,
-            .ytkit-context-menu,
-            .ytkit-wellbeing-card,
-            .ytkit-blocked-watch-dialog
-        ) :is(button, input, select, textarea, a):focus-visible {
-            outline: 0 !important;
-            border-color: var(--ytkit-premium-accent) !important;
-            box-shadow: var(--ytkit-premium-focus) !important;
+        /* A forced-colors palette paints no box-shadow, so this ring doesn't exist
+           there and the outline it replaces has to stay. */
+        @media (forced-colors: none) {
+            :is(
+                .ytkit-ai-qa-modal__body,
+                .ytkit-local-ai-modal__body,
+                .ytkit-aisum-panel,
+                .ytkit-transcript-search-panel,
+                .ytkit-transcript-batch-panel,
+                .ytkit-dl-popup,
+                .ytkit-dl-history-panel,
+                .ytkit-stream-links-panel,
+                .ytkit-vvf-panel,
+                .ytkit-wha-card,
+                .ytkit-sub-group-dialog__card,
+                .ytkit-sub-members-panel,
+                .ytkit-sub-digest-panel,
+                .ytkit-search-watch-panel,
+                .ytkit-video-notes-container,
+                .ytkit-bookmarks-container,
+                .ytkit-queue-panel,
+                .ytkit-wlwb-panel,
+                .ytkit-rc-panel,
+                .ytkit-speed-popup,
+                .ytkit-sleep-popover,
+                .ytkit-ql-drop,
+                .ytkit-context-menu,
+                .ytkit-wellbeing-card,
+                .ytkit-blocked-watch-dialog
+            ) :is(button, input, select, textarea, a):focus-visible {
+                outline: 0 !important;
+                border-color: var(--ytkit-premium-accent) !important;
+                box-shadow: var(--ytkit-premium-focus) !important;
+            }
         }
 
 
