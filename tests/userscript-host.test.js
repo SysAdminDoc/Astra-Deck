@@ -191,3 +191,88 @@ test('the early switches run at document start after the page world, with the ch
         'the app runs after the early switches');
     assert.deepEqual(build.modules.earlyStart, ['core/early-switches.js']);
 });
+
+// ── downloads ──
+
+const SETUP_URL = 'https://github.com/SysAdminDoc/AstraDownloader/releases/latest/download/AstraDownloader.exe';
+
+function downloadHost(answer, grants) {
+    const details = [];
+    const run = captureAdapters(mainSource, build, {}, {
+        grants: grants || { GM_download: (request) => { details.push(request); answer?.(request); } },
+    });
+    const { downloads } = run.captured.background;
+    const changes = [];
+    downloads.onChanged.addListener((delta) => changes.push(JSON.parse(JSON.stringify(delta))));
+    return { run, downloads, details, changes };
+}
+
+async function isPending(promise) {
+    const marker = {};
+    const seen = await Promise.race([promise.then(() => 'settled', () => 'settled'), new Promise((resolve) => setImmediate(() => resolve(marker)))]);
+    return seen === marker;
+}
+
+test('a download the manager refuses fails instead of reading as saved', async () => {
+    // Tampermonkey's default whitelist answers this for an .exe, in 6 ms measured.
+    const host = downloadHost((request) => request.onerror({ error: 'not_whitelisted' }));
+    await assert.rejects(host.downloads.download({ url: SETUP_URL, filename: 'AstraDownloader.exe', saveAs: false }), /not_whitelisted/);
+    assert.equal(host.details[0].url, SETUP_URL);
+    assert.equal(host.details[0].name, 'AstraDownloader.exe');
+    assert.equal(host.details[0].saveAs, false);
+    await settle(host.run.drain);
+    assert.deepEqual(host.changes, [{ id: 1, state: { previous: 'in_progress', current: 'interrupted' }, error: { current: 'not_whitelisted' } }]);
+});
+
+test('a download the manager gives up on fails too', async () => {
+    const host = downloadHost((request) => request.ontimeout());
+    await assert.rejects(host.downloads.download({ url: SETUP_URL }), /TIMEOUT/);
+    await settle(host.run.drain);
+    assert.equal(host.changes[0].state.current, 'interrupted');
+    assert.equal(host.changes[0].error.current, 'TIMEOUT');
+});
+
+test('a refusal with no reason still fails, with a reason of its own', async () => {
+    const host = downloadHost((request) => request.onerror());
+    await assert.rejects(host.downloads.download({ url: SETUP_URL }), /FAILED/);
+});
+
+test('a download waits for the manager, then counts as started on its first progress', async () => {
+    const host = downloadHost();
+    const started = host.downloads.download({ url: SETUP_URL });
+    assert.equal(await isPending(started), true, 'no answer from the manager yet, so nothing is known about the download');
+    host.details[0].onprogress({ loaded: 1 });
+    assert.equal(await started, 1);
+    assert.deepEqual(host.changes, []);
+    host.details[0].onload();
+    await settle(host.run.drain);
+    assert.deepEqual(host.changes, [{ id: 1, state: { previous: 'in_progress', current: 'complete' } }]);
+});
+
+test('a download that finishes in its first answer hands over the id before reporting the end', async () => {
+    const order = [];
+    const host = downloadHost((request) => request.onload());
+    host.downloads.onChanged.addListener(() => order.push('changed'));
+    const id = await host.downloads.download({ url: SETUP_URL });
+    order.push(`id ${id}`);
+    await settle(host.run.drain);
+    assert.deepEqual(order, ['id 1', 'changed'], 'a listener matching on the id would miss an end reported first');
+});
+
+test('a manager sitting on its own prompt cannot hang the caller, and its later refusal still reports', async () => {
+    const host = downloadHost();
+    const started = host.downloads.download({ url: SETUP_URL });
+    assert.equal(await isPending(started), true);
+    host.run.drain();
+    assert.equal(await started, 1, 'the wait ran out, so it counts as started');
+    host.details[0].onerror({ error: 'not_permitted' });
+    await settle(host.run.drain);
+    assert.equal(host.changes[0].error.current, 'not_permitted');
+});
+
+test('a manager without GM_download opens the file in a tab', async () => {
+    const opened = [];
+    const host = downloadHost(null, { GM_download: undefined, GM_openInTab: (url) => opened.push(url) });
+    assert.equal(await host.downloads.download({ url: SETUP_URL }), 1);
+    assert.deepEqual(opened, [SETUP_URL]);
+});

@@ -92,6 +92,26 @@ test('MediaDLManager.runInstallAssist falls back to opening the URL when the dow
     const result = await withClipboard(REFUSING_CLIPBOARD, () => obj.runInstallAssist());
     assert.equal(result.downloaded, false);
     assert.deepEqual(calls.external, [obj.INSTALLER_URL], 'a failed download must open the installer URL instead');
+    assert.equal(calls.toasts.length, 1);
+    assert.match(calls.toasts[0], /^Setup opened\./);
+    assert.doesNotMatch(calls.toasts[0], /ready|copied/i, 'nothing was saved and nothing was copied, so neither gets claimed');
+});
+
+test('MediaDLManager.runInstallAssist says the command was copied when only the tab opened', async () => {
+    const { obj, calls } = loadMediaDL({ downloadFails: true });
+    const result = await withClipboard({ writeText: async () => {} }, () => obj.runInstallAssist());
+    assert.equal(result.copied, true);
+    assert.equal(result.downloaded, false);
+    assert.match(calls.toasts[0], /^Setup opened\./);
+    assert.match(calls.toasts[0], /command copied/i);
+    assert.doesNotMatch(calls.toasts[0], /ready/i);
+});
+
+test('MediaDLManager.runInstallAssist only calls the file ready once it was saved', async () => {
+    const { obj, calls } = loadMediaDL();
+    await withClipboard({ writeText: async () => {} }, () => obj.runInstallAssist());
+    assert.match(calls.toasts[0], /^Setup file ready\./);
+    assert.match(calls.toasts[0], /copied too/);
 });
 
 // ── settingsManager: import, undo, Takeout ──

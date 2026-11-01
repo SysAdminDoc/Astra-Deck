@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- In Tampermonkey, Download setup told you "Setup downloaded" when nothing had downloaded, because Tampermonkey refuses .exe files by default and the userscript never heard about it. It now notices the refusal and opens the setup file in a tab instead, which the browser downloads normally, and the message says so.
 - Dragging from inside a dialog and letting go on the dim behind it no longer closes the dialog. Selecting text a bit too far used to shut Watch Stats, Local Summary, the page menu, Settings, Subscription Groups and the Wellbeing prompts, and in Transcript Q&A it took your typed question with it.
 - The download options popup is a real modal dialog now. Tab can't wander off into YouTube behind it, it stays above the player in fullscreen, and Escape closes it the way it closes any other dialog. A drag that starts in a clip field and ends outside the box no longer closes it either.
 - Local Summary and Transcript Q&A could sit on their loading state forever in a browser that never says whether its built-in AI is there. They now wait 5 seconds and move on: Local Summary to your own AI provider, Q&A to a message saying the on-device model isn't available.

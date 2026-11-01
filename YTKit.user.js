@@ -4852,6 +4852,11 @@ const ASTRA_DECK_BUILD = {
     const downloadsChanged = createEvent('downloads.onChanged');
     const downloadsErased = createEvent('downloads.onErased');
     let nextDownloadId = 1;
+    // How long a download can go unanswered before it counts as started. A
+    // manager refuses in milliseconds (Tampermonkey 5.5.1 took 6 ms to answer
+    // not_whitelisted for an .exe), but it can also sit on its own permission
+    // prompt, with no callback at all, for as long as nobody clicks it.
+    const DOWNLOAD_ANSWER_WAIT_MS = 3000;
 
     function fileNameFromUrl(url) {
         try {
@@ -4874,19 +4879,40 @@ const ASTRA_DECK_BUILD = {
                 GM_API.openInTab(url, { active: true });
                 return id;
             }
-            GM_API.download({
-                url,
-                name,
-                saveAs: options.saveAs === true,
-                headers: options.headers ? headersToObject(Object.fromEntries((options.headers || []).map((h) => [h.name, h.value]))) : undefined,
-                onload: () => downloadsChanged.dispatch({ id, state: { previous: 'in_progress', current: 'complete' } }),
-                onerror: (result) => downloadsChanged.dispatch({
+            // chrome.downloads.download settles once the browser took the
+            // download or refused it. GM_download only answers through callbacks,
+            // so handing back the id right away reported a refused file as saved.
+            return new Promise((resolve, reject) => {
+                // On a later task, so the caller holds the id before it hears the end.
+                const report = (current, error) => setTimeout(() => downloadsChanged.dispatch({
                     id,
-                    state: { previous: 'in_progress', current: 'interrupted' },
-                    error: { current: String(result?.error || 'FAILED') }
-                })
+                    state: { previous: 'in_progress', current },
+                    ...(error ? { error: { current: error } } : {})
+                }));
+                const started = () => {
+                    clearTimeout(noAnswer);
+                    resolve(id);
+                };
+                const refused = (error) => {
+                    clearTimeout(noAnswer);
+                    reject(new Error(error));
+                    report('interrupted', error);
+                };
+                const noAnswer = setTimeout(started, DOWNLOAD_ANSWER_WAIT_MS);
+                GM_API.download({
+                    url,
+                    name,
+                    saveAs: options.saveAs === true,
+                    headers: options.headers ? headersToObject(Object.fromEntries((options.headers || []).map((h) => [h.name, h.value]))) : undefined,
+                    onprogress: started,
+                    onload: () => {
+                        started();
+                        report('complete');
+                    },
+                    onerror: (result) => refused(String(result?.error || 'FAILED')),
+                    ontimeout: () => refused('TIMEOUT')
+                });
             });
-            return id;
         }),
         show: apiMethod(() => true),
         showDefaultFolder: apiMethod(() => undefined),

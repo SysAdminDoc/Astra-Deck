@@ -103,6 +103,7 @@ function captureAdapters(mainSource, build, initialValues = {}, options = {}) {
         GM_addElement: element, GM_xmlhttpRequest: noop, GM_download: noop, GM_openInTab: noop,
         GM_registerMenuCommand: (label, run) => menu.push({ label, run }),
         prompt: () => (prompts.length ? prompts.shift() : null), GM_getResourceText: () => '{}', GM_cookie: { list: (details, done) => done([]) },
+        ...(options.grants || {}),
     };
     sandbox.globalThis = sandbox;
     sandbox.window = sandbox;

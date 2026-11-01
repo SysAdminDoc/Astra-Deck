@@ -1444,11 +1444,14 @@
                     void openExternalUrl(this.INSTALLER_URL).catch(() => {});
                 }
                 const hint = t('dlInstallerRunHint', this.INSTALLER_RUN_HINT);
+                const opened = t('settingsDlSetupOpened', 'Setup opened. Finish installation, then refresh.');
+                const copiedNote = t('toastDlCmdCopied', 'Fallback install command copied. Use it only if you cannot run the downloaded setup file.');
+                const saved = (copied
+                    ? t('dlInstallerReadyCopiedTpl', 'Setup file ready. {hint} The fallback command was copied too.')
+                    : t('dlInstallerReadyTpl', 'Setup file ready. {hint}')
+                ).replace('{hint}', () => hint);
                 showToast(
-                    (copied
-                        ? t('dlInstallerReadyCopiedTpl', 'Setup file ready. {hint} The fallback command was copied too.')
-                        : t('dlInstallerReadyTpl', 'Setup file ready. {hint}')
-                    ).replace('{hint}', () => hint),
+                    downloaded ? saved : (copied ? `${opened} ${copiedNote}` : opened),
                     '#22c55e',
                     { duration: 8 }
                 );
