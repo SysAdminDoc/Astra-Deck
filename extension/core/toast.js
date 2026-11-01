@@ -150,13 +150,21 @@
         return raised;
     }
 
-    // Where something meant to float over everything has to live right now.
+    // Where something meant to float over everything has to live right now. The
+    // settings panel is last because it's the only one the others can open over.
+    const MODAL_HOSTS = Object.freeze([
+        '#ytkit-page-modal:modal',
+        '.ytkit-wha-overlay:modal',
+        '#ytkit-settings-panel:modal'
+    ]);
+
     function topLayerHost() {
         if (typeof document === 'undefined') return null;
-        return document.querySelector?.('#ytkit-page-modal:modal')
-            || document.querySelector?.('#ytkit-settings-panel:modal')
-            || document.body
-            || null;
+        for (const selector of MODAL_HOSTS) {
+            const host = document.querySelector?.(selector);
+            if (host) return host;
+        }
+        return document.body || null;
     }
 
     core.toast = Object.freeze({

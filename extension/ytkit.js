@@ -31992,23 +31992,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const total = days.reduce((s, d) => s + d.secs, 0);
                 const avg = total / 30;
                 const active = days.filter(d => d.secs > 0).length;
-                const overlay = document.createElement('div');
+                // The dialog is the whole dim overlay, so a click on the dim
+                // still lands on it and the card stays centered by flex.
+                const overlay = document.createElement('dialog');
                 overlay.className = 'ytkit-wha-overlay';
                 overlay.onclick = (e) => { if (e.target === overlay) this._open(); };
                 const card = document.createElement('div');
                 card.className = 'ytkit-wha-card';
-                // Dialog semantics: the settings panel and toasts got these in
-                // d4bebef5; this overlay was skipped and is absent from the
-                // audit-overlays covered list, so nothing caught it.
-                card.setAttribute('role', 'dialog');
-                card.setAttribute('aria-modal', 'true');
                 card.tabIndex = -1;
                 const head = document.createElement('div');
                 head.className = 'ytkit-wha-head';
                 const title = document.createElement('h2');
                 title.id = 'ytkit-wha-title';
                 title.textContent = t('whaTitle', 'Watch Time, Last 30 Days');
-                card.setAttribute('aria-labelledby', title.id);
+                overlay.setAttribute('aria-labelledby', title.id);
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.textContent = '×';
@@ -32068,23 +32065,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.body.appendChild(overlay);
                 this._modal = overlay;
                 this._lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-                this._keyHandler = (event) => {
-                    if (event.key === 'Escape') {
-                        event.stopPropagation();
-                        this._open();
-                    }
-                };
-                overlay.addEventListener('keydown', this._keyHandler);
+                // `close` is queued, so a late one mustn't shut a newer dashboard.
+                overlay.addEventListener('close', () => { if (this._modal === overlay) this._closeOverlay(); });
+                // The browser closes on Escape. The page's own key handlers still don't get it.
+                overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
+                try {
+                    overlay.showModal();
+                    // A toast shown before the dashboard is now inert outside it, Undo included.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                } catch (_) {
+                    // reason: the dashboard still paints by its z-index if the browser refuses.
+                }
                 card.focus();
             },
 
             _closeOverlay() {
-                if (this._keyHandler && this._modal) {
-                    this._modal.removeEventListener('keydown', this._keyHandler);
-                }
-                this._keyHandler = null;
-                this._modal?.remove();
+                const overlay = this._modal;
+                if (!overlay) return;
                 this._modal = null;
+                if (overlay.open) overlay.close();
+                // Before it leaves the document, or a toast hosted inside goes with it.
+                globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                overlay.remove();
                 if (this._lastFocus?.isConnected) this._lastFocus.focus();
                 this._lastFocus = null;
             },
@@ -32092,9 +32094,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl = injectStyle(`
                     .ytkit-wha-overlay {
                         position: fixed; inset: 0; z-index: 2147483647;
+                        width: auto; height: auto; max-width: none; max-height: none; margin: 0; border: 0;
                         background: rgba(8, 10, 16, 0.86); display: flex; align-items: center; justify-content: center; padding: 16px;
                         backdrop-filter: none;
                     }
+                    .ytkit-wha-overlay::backdrop { background: transparent; }
                     .ytkit-wha-card {
                         background: #12151c; color: #f4f6fb; border: 1px solid rgba(255,255,255,0.1);
                         border-radius: 12px; padding: 20px;

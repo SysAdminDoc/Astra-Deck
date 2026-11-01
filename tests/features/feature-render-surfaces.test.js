@@ -380,16 +380,35 @@ test('sleepTimer chip, popover and announcements come from the catalogue', () =>
 });
 
 // ── watchHistoryAnalytics ──────────────────────────────────────────────
-function analyticsFixture(stats) {
+function analyticsFixture(stats, { refuseModal = false } = {}) {
     const doc = renderDocument(() => []);
+    const calls = [];
+    const create = doc.createElement;
+    // A browser's <dialog> as far as the dashboard can see it.
+    doc.createElement = (tag) => {
+        const node = create(tag);
+        if (tag === 'dialog') {
+            node.open = false;
+            node.showModal = () => {
+                if (refuseModal) throw new Error('refused');
+                calls.push('showModal');
+                node.open = true;
+            };
+            node.close = () => { calls.push('close'); node.open = false; };
+            const remove = node.remove.bind(node);
+            node.remove = () => { calls.push('remove'); remove(); };
+        }
+        return node;
+    };
     const feature = loadFeature('watchHistoryAnalytics', {
         document: doc,
         HTMLElement: function HTMLElement() {},
         STORAGE_KEYS: { watchTime: 'ytkit-watch-time' },
         StorageManager: { get: (_key, fallback) => stats || fallback, set() {} },
-        sanitizeWatchTimeStats: (value) => ({ days: value?.days || {}, total: value?.total || 0 })
+        sanitizeWatchTimeStats: (value) => ({ days: value?.days || {}, total: value?.total || 0 }),
+        YTKitCore: { toast: { raiseActiveToasts: () => calls.push('raise') } }
     });
-    return { feature, doc };
+    return { feature, doc, calls };
 }
 
 function dayKey(offset) {
@@ -405,16 +424,16 @@ test('watchHistoryAnalytics renders an empty state rather than thirty zero-heigh
     feature._open();
 
     assert.equal(doc.body.children.length, 1);
-    const card = doc.body.children[0].children[0];
-    assert.equal(card.getAttribute('role'), 'dialog');
-    assert.equal(card.getAttribute('aria-modal'), 'true');
-    assert.equal(card.getAttribute('aria-labelledby'), 'ytkit-wha-title');
+    const overlay = doc.body.children[0];
+    const card = overlay.children[0];
+    assert.equal(overlay.tagName.toLowerCase(), 'dialog');
+    assert.equal(overlay.getAttribute('aria-labelledby'), 'ytkit-wha-title');
     assert.equal(collect(card, 'ytkit-wha-chart').length, 0, 'no chart is drawn with no data');
     assert.equal(collect(card, 'ytkit-wha-stats').length, 0);
     const empty = collect(card, 'ytkit-wha-empty');
     assert.equal(empty.length, 1);
     assert.equal(textOf(card, 'ytkit-wha-empty-title')[0], 'No watch time tracked yet');
-    assert.equal(doc.activeElement, card, 'the dialog takes focus when it opens');
+    assert.ok(doc.activeElement === card, 'the dialog takes focus when it opens');
 });
 
 test('watchHistoryAnalytics draws one column per day and totals only the tracked ones', () => {
@@ -445,6 +464,94 @@ test('watchHistoryAnalytics draws one column per day and totals only the tracked
     assert.match(bars.at(-1).title, /: 1h 0m$/);
 });
 
+test('watchHistoryAnalytics opens as a real modal, with no hand-written role to go stale', () => {
+    const { feature, doc, calls } = analyticsFixture({ days: {}, total: 0 });
+
+    feature._open();
+
+    const overlay = doc.body.children[0];
+    const card = overlay.children[0];
+    assert.deepEqual(calls, ['showModal', 'raise'],
+        'a toast already up moves inside once the rest of the page has gone inert');
+    for (const node of [overlay, card]) {
+        assert.equal(node.getAttribute('role'), null);
+        assert.equal(node.getAttribute('aria-modal'), null);
+    }
+    assert.ok(doc.activeElement === card, 'focus starts on the card, not on the close button');
+});
+
+test('watchHistoryAnalytics still opens if the browser refuses the modal', () => {
+    const { feature, doc, calls } = analyticsFixture({ days: {}, total: 0 }, { refuseModal: true });
+
+    feature._open();
+
+    assert.equal(doc.body.children.length, 1);
+    assert.ok(doc.activeElement === doc.body.children[0].children[0]);
+    assert.deepEqual(calls, []);
+});
+
+test('watchHistoryAnalytics lets a hosted toast out before the dialog leaves', () => {
+    const { feature, calls } = analyticsFixture({ days: {}, total: 0 });
+
+    feature._open();
+    calls.length = 0;
+    feature._closeOverlay();
+
+    assert.deepEqual(calls, ['close', 'raise', 'remove'],
+        'closed first so the toast stops looking inside, and moved before the removal takes it along');
+    assert.ok(!feature._modal, 'nothing left to close');
+});
+
+test('watchHistoryAnalytics follows the browser closing it, and only for the dialog on screen', () => {
+    const { feature, doc, calls } = analyticsFixture({ days: {}, total: 0 });
+
+    feature._open();
+    const first = doc.body.children[0];
+    first.open = false;
+    first.handlers.get('close')();
+    assert.equal(doc.body.children.length, 0, 'Escape closes the dialog, and the dashboard follows');
+    assert.ok(!feature._modal, 'nothing left to close');
+    assert.equal(calls.includes('close'), false, 'the browser already closed it');
+
+    feature._open();
+    const second = doc.body.children[0];
+    first.handlers.get('close')();
+    assert.ok(feature._modal === second, 'a queued close from the last one leaves this one alone');
+    assert.equal(doc.body.children.length, 1);
+});
+
+test('watchHistoryAnalytics closes on the dim and not on the card', () => {
+    const { feature, doc } = analyticsFixture({ days: {}, total: 0 });
+
+    feature._open();
+    const overlay = doc.body.children[0];
+    overlay.onclick({ target: overlay.children[0] });
+    assert.equal(doc.body.children.length, 1);
+    overlay.onclick({ target: overlay });
+    assert.equal(doc.body.children.length, 0);
+});
+
+test('watchHistoryAnalytics keeps Escape away from the page, and only Escape', () => {
+    const { feature, doc } = analyticsFixture({ days: {}, total: 0 });
+
+    feature._open();
+    const overlay = doc.body.children[0];
+    let stopped = 0;
+    overlay.handlers.get('keydown')({ key: 'k', stopPropagation() { stopped += 1; } });
+    assert.equal(stopped, 0);
+    overlay.handlers.get('keydown')({ key: 'Escape', stopPropagation() { stopped += 1; } });
+    assert.equal(stopped, 1);
+    assert.equal(doc.body.children.length, 1, 'the browser does the closing, through the close event');
+});
+
+test('watchHistoryAnalytics leaves toasts alone when there is nothing to close', () => {
+    const { feature, calls } = analyticsFixture({ days: {}, total: 0 });
+
+    feature._closeOverlay();
+
+    assert.deepEqual(calls, [], 'destroy runs this on every page, and each re-stack replays a toast');
+});
+
 test('watchHistoryAnalytics closes the dialog it opened instead of stacking a second one', () => {
     const { feature, doc } = analyticsFixture({ days: { [dayKey(1)]: 600 }, total: 600 });
 
@@ -453,7 +560,7 @@ test('watchHistoryAnalytics closes the dialog it opened instead of stacking a se
 
     feature._open();
     assert.equal(doc.body.children.length, 0, 'a second call closes rather than duplicating');
-    assert.equal(feature._modal, null);
+    assert.ok(!feature._modal, 'nothing left to close');
 });
 
 // ── quickLinkMenu ──────────────────────────────────────────────────────

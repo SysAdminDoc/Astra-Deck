@@ -695,6 +695,25 @@ test('the page menu wins the host over the settings panel, and floating overlays
     }
 });
 
+// Anything hand-made can only open over the panel, never the other way around.
+test('every modal a toast can join is asked for before the settings panel', () => {
+    const asked = [];
+    const { api, restore } = toastCoreWith({
+        body: { id: 'body' },
+        querySelector(selector) { asked.push(selector); return null; },
+        querySelectorAll: () => []
+    });
+    try {
+        assert.equal(api.topLayerHost()?.id, 'body');
+        assert.equal(asked.at(-1), '#ytkit-settings-panel:modal');
+        for (const host of ['#ytkit-page-modal:modal', '.ytkit-wha-overlay:modal']) {
+            assert.ok(asked.includes(host), host);
+        }
+    } finally {
+        restore();
+    }
+});
+
 test('a page with no modal open hosts on the body', () => {
     const fixture = topLayerFixture();
     const { api, restore } = toastCoreWith(fixture.documentStub);

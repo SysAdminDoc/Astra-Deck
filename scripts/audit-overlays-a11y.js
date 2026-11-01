@@ -572,13 +572,13 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // The watch-time dashboard shipped with no dialog semantics, an unlabeled
     // close button and no Escape handling — it was simply absent from this
     // list, so nothing caught it.
-    add('Watch-time dashboard is modal, labelled, and Escape-closeable',
-        ytkit.includes("card.setAttribute('role', 'dialog')") &&
-        ytkit.includes("card.setAttribute('aria-modal', 'true')") &&
-        ytkit.includes("card.setAttribute('aria-labelledby', title.id)") &&
+    add('Watch-time dashboard is a real modal dialog, labelled, and Escape-closeable',
+        /const overlay = document\.createElement\('dialog'\);\s+overlay\.className = 'ytkit-wha-overlay';/.test(ytkit) &&
+        ytkit.includes("overlay.setAttribute('aria-labelledby', title.id)") &&
         ytkit.includes("close.setAttribute('aria-label', t('whaCloseAria', 'Close watch time dashboard'))") &&
-        ytkit.includes("if (event.key === 'Escape')"),
-        'Watch-time dashboard must be labelled, modal, and close on Escape');
+        ytkit.includes('if (this._modal === overlay) this._closeOverlay();') &&
+        /overlay\.showModal\(\);\s+\/\/ A toast shown before the dashboard/.test(ytkit),
+        'Watch-time dashboard must open through showModal, which gives it the inert page and Escape');
 
     // The Reaction Sender was the only role="dialog" in the codebase with
     // neither Escape nor a trap — it was simply not in this gate's source list,

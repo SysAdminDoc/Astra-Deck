@@ -23038,20 +23038,18 @@ const STORAGE_KEYS = Object.freeze({
 				const total = days.reduce((s, d) => s + d.secs, 0);
 				const avg = total / 30;
 				const active = days.filter(d => d.secs > 0).length;
-				const overlay = document.createElement('div');
+				const overlay = document.createElement('dialog');
 				overlay.className = 'ytkit-wha-overlay';
 				overlay.onclick = (e) => { if (e.target === overlay) this._open(); };
 				const card = document.createElement('div');
 				card.className = 'ytkit-wha-card';
-				card.setAttribute('role', 'dialog');
-				card.setAttribute('aria-modal', 'true');
 				card.tabIndex = -1;
 				const head = document.createElement('div');
 				head.className = 'ytkit-wha-head';
 				const title = document.createElement('h2');
 				title.id = 'ytkit-wha-title';
 				title.textContent = t('whaTitle', 'Watch Time, Last 30 Days');
-				card.setAttribute('aria-labelledby', title.id);
+				overlay.setAttribute('aria-labelledby', title.id);
 				const close = document.createElement('button');
 				close.type = 'button';
 				close.textContent = '×';
@@ -23106,27 +23104,27 @@ const STORAGE_KEYS = Object.freeze({
 				document.body.appendChild(overlay);
 				this._modal = overlay;
 				this._lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-				this._keyHandler = (event) => {
-					if (event.key === 'Escape') {
-						event.stopPropagation();
-						this._open();
-					}
-				};
-				overlay.addEventListener('keydown', this._keyHandler);
+				overlay.addEventListener('close', () => { if (this._modal === overlay) this._closeOverlay(); });
+				overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
+				try {
+					overlay.showModal();
+					globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+				} catch (_) {
+				}
 				card.focus();
 			},
 			_closeOverlay() {
-				if (this._keyHandler && this._modal) {
-					this._modal.removeEventListener('keydown', this._keyHandler);
-				}
-				this._keyHandler = null;
-				this._modal?.remove();
+				const overlay = this._modal;
+				if (!overlay) return;
 				this._modal = null;
+				if (overlay.open) overlay.close();
+				globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+				overlay.remove();
 				if (this._lastFocus?.isConnected) this._lastFocus.focus();
 				this._lastFocus = null;
 			},
 			init() {
-				this._styleEl = injectStyle(`.ytkit-wha-overlay{position:fixed;inset:0;z-index:2147483647;background:rgba(8,10,16,0.86);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:none}.ytkit-wha-card{background:#12151c;color:#f4f6fb;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;width:min(680px,100%);max-height:min(88vh,100%);overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);font:13px Roboto,system-ui}.ytkit-wha-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.ytkit-wha-head h2{margin:0;font:700 18px Roboto;color:#f4f6fb}.ytkit-wha-close{background:transparent;color:#f4f6fb;border:none;font-size:24px;cursor:pointer;border-radius:8px;line-height:1;padding:0 6px}.ytkit-wha-close:focus-visible{outline:2px solid var(--ytkit-accent-light,#ff7a59);outline-offset:2px}.ytkit-wha-card:focus-visible{outline:2px solid var(--ytkit-accent-light,#ff7a59);outline-offset:4px}.ytkit-wha-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}.ytkit-wha-stat{background:rgba(255,255,255,0.05);padding:10px;border-radius:8px;text-align:center}.ytkit-wha-stat-v{font:700 18px Roboto;color:var(--ytkit-accent-light,#ff9f87)}.ytkit-wha-stat-l{color:rgba(244,246,251,0.72);font-size:11px;margin-top:2px}.ytkit-wha-chart{display:grid;grid-template-columns:repeat(30,1fr);gap:3px;height:240px;align-items:end}.ytkit-wha-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:240px;text-align:center;padding:0 24px}.ytkit-wha-empty-title{color:#f4f6fb;font-size:15px;font-weight:600}.ytkit-wha-empty-copy{color:rgba(244,246,251,0.72);font-size:12px;line-height:1.5;max-width:46ch}html:not([dark]) .ytkit-wha-empty-title{color:#0f1114}html:not([dark]) .ytkit-wha-empty-copy{color:rgba(15,17,20,0.72)}.ytkit-wha-col{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}.ytkit-wha-bar{width:100%;background:linear-gradient(180deg,rgba(var(--ytkit-accent-rgb,255,122,89),0.95),rgba(var(--ytkit-accent-rgb,255,122,89),0.45));border-radius:4px 4px 0 0;min-height:2px;transition:filter 120ms}.ytkit-wha-bar:hover{filter:brightness(1.3)}.ytkit-wha-lbl{font-size:9px;color:rgba(244,246,251,0.55);margin-top:4px;transform:rotate(-45deg);white-space:nowrap}`, this.id, true);
+				this._styleEl = injectStyle(`.ytkit-wha-overlay{position:fixed;inset:0;z-index:2147483647;width:auto;height:auto;max-width:none;max-height:none;margin:0;border:0;background:rgba(8,10,16,0.86);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:none}.ytkit-wha-overlay::backdrop{background:transparent}.ytkit-wha-card{background:#12151c;color:#f4f6fb;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;width:min(680px,100%);max-height:min(88vh,100%);overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);font:13px Roboto,system-ui}.ytkit-wha-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.ytkit-wha-head h2{margin:0;font:700 18px Roboto;color:#f4f6fb}.ytkit-wha-close{background:transparent;color:#f4f6fb;border:none;font-size:24px;cursor:pointer;border-radius:8px;line-height:1;padding:0 6px}.ytkit-wha-close:focus-visible{outline:2px solid var(--ytkit-accent-light,#ff7a59);outline-offset:2px}.ytkit-wha-card:focus-visible{outline:2px solid var(--ytkit-accent-light,#ff7a59);outline-offset:4px}.ytkit-wha-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}.ytkit-wha-stat{background:rgba(255,255,255,0.05);padding:10px;border-radius:8px;text-align:center}.ytkit-wha-stat-v{font:700 18px Roboto;color:var(--ytkit-accent-light,#ff9f87)}.ytkit-wha-stat-l{color:rgba(244,246,251,0.72);font-size:11px;margin-top:2px}.ytkit-wha-chart{display:grid;grid-template-columns:repeat(30,1fr);gap:3px;height:240px;align-items:end}.ytkit-wha-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:240px;text-align:center;padding:0 24px}.ytkit-wha-empty-title{color:#f4f6fb;font-size:15px;font-weight:600}.ytkit-wha-empty-copy{color:rgba(244,246,251,0.72);font-size:12px;line-height:1.5;max-width:46ch}html:not([dark]) .ytkit-wha-empty-title{color:#0f1114}html:not([dark]) .ytkit-wha-empty-copy{color:rgba(15,17,20,0.72)}.ytkit-wha-col{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}.ytkit-wha-bar{width:100%;background:linear-gradient(180deg,rgba(var(--ytkit-accent-rgb,255,122,89),0.95),rgba(var(--ytkit-accent-rgb,255,122,89),0.45));border-radius:4px 4px 0 0;min-height:2px;transition:filter 120ms}.ytkit-wha-bar:hover{filter:brightness(1.3)}.ytkit-wha-lbl{font-size:9px;color:rgba(244,246,251,0.55);margin-top:4px;transform:rotate(-45deg);white-space:nowrap}`, this.id, true);
 				window.__ytkitOpenAnalytics = () => this._open();
 				this._navRule = () => this._scheduleInject(2000);
 				this._scheduleInject(2500);
