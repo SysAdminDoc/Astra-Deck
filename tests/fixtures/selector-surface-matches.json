@@ -2051,14 +2051,14 @@
           "matchCount": 1
         },
         {
-          "selector": "[data-target-id=\"PAmodern_transcript_view\"]",
+          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
           "matched": false,
           "matchCount": 0
         }
       ],
       "fallback": [
         {
-          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
+          "selector": "[data-target-id=\"PAmodern_transcript_view\"]",
           "matched": false,
           "matchCount": 0
         },
@@ -2077,7 +2077,7 @@
       "surface": "transcriptPanel",
       "source": "tests/fixtures/transcript-panel-modern.html",
       "fixture": "transcript-panel-modern.html",
-      "elementCount": 5,
+      "elementCount": 21,
       "stable": [
         {
           "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"]",
@@ -2085,26 +2085,26 @@
           "matchCount": 0
         },
         {
-          "selector": "[data-target-id=\"PAmodern_transcript_view\"]",
+          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
           "matched": true,
           "matchCount": 1
         }
       ],
       "fallback": [
         {
-          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
-          "matched": false,
-          "matchCount": 0
+          "selector": "[data-target-id=\"PAmodern_transcript_view\"]",
+          "matched": true,
+          "matchCount": 1
         },
         {
           "selector": "ytd-transcript-renderer",
-          "matched": true,
-          "matchCount": 1
+          "matched": false,
+          "matchCount": 0
         }
       ],
       "matchedSelectors": [
-        "[data-target-id=\"PAmodern_transcript_view\"]",
-        "ytd-transcript-renderer"
+        "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
+        "[data-target-id=\"PAmodern_transcript_view\"]"
       ]
     }
   }

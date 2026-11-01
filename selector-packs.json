@@ -965,10 +965,10 @@
     "transcriptPanel": {
       "stable": [
         "ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"]",
-        "[data-target-id=\"PAmodern_transcript_view\"]"
+        "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]"
       ],
       "fallback": [
-        "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
+        "[data-target-id=\"PAmodern_transcript_view\"]",
         "ytd-transcript-renderer"
       ],
       "hooks": {},
@@ -977,11 +977,11 @@
         "tests/fixtures/transcript-panel-classic.html",
         "tests/fixtures/transcript-panel-modern.html"
       ],
-      "lastVerified": "2026-10-31",
+      "lastVerified": "2026-11-01",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
-      "notes": "Legacy searchable transcript and PAmodern_transcript_view rollout shapes."
+      "notes": "Legacy searchable transcript and PAmodern_transcript_view rollout shapes. Both sit hidden in the page from the start."
     },
     "watch": {
       "stable": [
@@ -1158,5 +1158,5 @@
       "notes": "Route state is best read from ytd-watch-flexy[video-id]."
     }
   },
-  "digest": "sha256:93c1be4945d0d0f1d1385ebfe0b809f9551a4ab0c159b6e2cb20a34cdcefab32"
+  "digest": "sha256:240142db5c8c6f2e482ec4311eb203d76b7f9daa04a33bd734848adad303a65c"
 }

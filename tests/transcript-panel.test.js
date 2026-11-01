@@ -21,7 +21,7 @@ function loadVariant(name) {
 function loadServiceForVariant(name) {
     const variant = loadVariant(name);
     const panelSelector = name === 'modern'
-        ? '[data-target-id="PAmodern_transcript_view"]'
+        ? 'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]'
         : 'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]';
     const transcriptRenderer = {
         data: {
@@ -60,7 +60,12 @@ function loadServiceForVariant(name) {
             return null;
         },
     };
-    const context = { console, document, globalThis: null };
+    const context = {
+        console,
+        document,
+        setTimeout: (fn) => { setImmediate(fn); return 1; },
+        globalThis: null,
+    };
     context.globalThis = context;
     vm.createContext(context);
     vm.runInContext(SERVICE_SOURCE, context, { filename: 'core/transcript-service.js' });
@@ -178,4 +183,191 @@ test('rendered-panel fallback reports unknown language and current-video provena
         endMs: 83000,
         text: 'Rendered caption',
     }]);
+});
+
+// The page as measured 2026-11-01: every rollout's panel sits in the DOM from the
+// start with no box, "Show transcript" opens it, rows follow, and its own Close
+// puts it away with the rows still inside.
+const VIDEO = 'abcdefghijk';
+
+function fakeWatchPage({ startsOpen = false, rowsAfterPolls = 0, rows = true, hasButton = true, onPoll } = {}) {
+    const state = { open: startsOpen, opens: 0, closes: 0, polls: 0, videoId: VIDEO };
+    const row = {
+        querySelector: (selector) => selector.includes('transcript-segment-view-model > [aria-hidden="true"]')
+            ? { textContent: ' 0:18 ' }
+            : null,
+    };
+    const cue = {
+        textContent: "  We're no\n strangers  ",
+        closest: (selector) => selector.includes('transcript-segment-view-model') ? row : null,
+    };
+    const closeButton = { click() { state.closes += 1; state.open = false; } };
+    const hiddenPanel = {
+        id: 'classic',
+        isConnected: true,
+        hidden: false,
+        getAttribute: () => null,
+        getClientRects: () => [],
+        querySelector: () => null,
+        querySelectorAll: () => [],
+    };
+    const panel = {
+        id: 'modern',
+        isConnected: true,
+        hidden: false,
+        getAttribute: () => null,
+        getClientRects: () => (state.open ? [{}] : []),
+        querySelector: (selector) => (selector === '#visibility-button button' ? closeButton : null),
+        querySelectorAll: (selector) => (rows && state.polls >= rowsAfterPolls
+            && selector.includes('transcript-segment-view-model [role="text"]') ? [cue] : []),
+    };
+    // Only there once the panel has opened, on screen, and with no Close button.
+    const innerList = {
+        id: 'inner-list',
+        isConnected: true,
+        hidden: false,
+        getAttribute: () => null,
+        getClientRects: () => [{}],
+        querySelector: () => null,
+        querySelectorAll: () => [],
+    };
+    const button = { click() { state.opens += 1; state.open = true; } };
+    const document = {
+        querySelector: (selector) => (hasButton
+            && selector === 'ytd-video-description-transcript-section-renderer button' ? button : null),
+        querySelectorAll: (selector) => {
+            if (selector.includes('engagement-panel-searchable-transcript')) return [hiddenPanel];
+            if (selector.startsWith('[data-target-id=')) return state.open ? [innerList] : [];
+            if (selector.includes('PAmodern_transcript_view')) return [panel];
+            return [];
+        },
+    };
+    const context = {
+        console,
+        document,
+        setTimeout: (fn) => {
+            state.polls += 1;
+            onPoll?.(state);
+            setImmediate(fn);
+            return state.polls;
+        },
+        globalThis: null,
+    };
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(SERVICE_SOURCE, context, { filename: 'core/transcript-service.js' });
+    const service = context.YTKitCore.createTranscriptService({
+        getVideoId: () => state.videoId,
+        isDomTranscriptForVideo: (_videoId, candidate) => candidate === panel,
+    });
+    service._getCaptionTracks = async () => { throw new Error('network unavailable'); };
+    return { core: context.YTKitCore, document, panel, service, state };
+}
+
+test('the panel lookup for an open panel skips the ones only sitting hidden in the page', () => {
+    const closed = fakeWatchPage();
+    assert.equal(closed.core.getTranscriptPanelElement(closed.document)?.id, 'classic',
+        'found is not the same as open');
+    assert.ok(!closed.core.getTranscriptPanelElement(closed.document, { open: true }));
+
+    const open = fakeWatchPage({ startsOpen: true });
+    assert.equal(open.core.getTranscriptPanelElement(open.document, { open: true })?.id, 'modern');
+});
+
+test('the selectors for the newer panel match its measured markup', () => {
+    const { elements } = loadVariant('modern');
+    assert.equal(selectorMatchCount(elements, 'transcript-segment-view-model [role="text"]'), 2);
+    assert.equal(selectorMatchCount(elements, 'transcript-segment-view-model > [aria-hidden="true"]'), 2);
+    assert.equal(selectorMatchCount(elements, '#visibility-button button'), 1);
+    // The list inside the open panel answers to the older selector too, and the
+    // lookup has to prefer the panel around it or there's no Close button to press.
+    assert.equal(selectorMatchCount(elements, '[data-target-id="PAmodern_transcript_view"]'), 1);
+});
+
+test('the newer rows read as cues at their shown time', () => {
+    const { service } = fakeWatchPage({ startsOpen: true });
+    assert.deepEqual(JSON.parse(JSON.stringify(service._scrapeRenderedTranscript(VIDEO))), [{
+        startMs: 18000,
+        endMs: 18000,
+        text: "We're no strangers",
+    }]);
+});
+
+test('with every route down the panel is opened, read and put away', async () => {
+    const { service, state } = fakeWatchPage({ rowsAfterPolls: 3 });
+    const result = await service.fetchTranscript(VIDEO);
+    assert.equal(result.status, 'ready');
+    assert.equal(result.segments[0].text, "We're no strangers");
+    assert.equal(result.provenance.source, 'dom-panel');
+    assert.equal(result.provenance.fallbackReason, 'discovery-failed');
+    assert.equal(state.opens, 1);
+    assert.equal(state.polls, 3);
+    assert.equal(state.closes, 1);
+    assert.equal(state.open, false);
+});
+
+test('a panel the viewer already has open is read and left open', async () => {
+    const { service, state } = fakeWatchPage({ startsOpen: true, rowsAfterPolls: 2 });
+    const result = await service.fetchTranscript(VIDEO);
+    assert.equal(result.status, 'ready');
+    assert.equal(state.opens, 0);
+    assert.equal(state.closes, 0);
+    assert.equal(state.open, true);
+});
+
+test('a panel already showing its rows is read straight away', async () => {
+    const { service, state } = fakeWatchPage({ startsOpen: true });
+    const result = await service.fetchTranscript(VIDEO);
+    assert.equal(result.status, 'ready');
+    assert.equal(state.polls, 0);
+    assert.equal(state.opens, 0);
+    assert.equal(state.closes, 0);
+});
+
+test('no transcript button and nothing open gives up without waiting', async () => {
+    const { service, state } = fakeWatchPage({ hasButton: false });
+    await assert.rejects(() => service.fetchTranscript(VIDEO), /network unavailable/);
+    assert.equal(state.polls, 0);
+    assert.equal(state.opens, 0);
+    assert.equal(state.closes, 0);
+});
+
+test('a panel that never fills is given a limit, closed and the first error stands', async () => {
+    const { service, state } = fakeWatchPage({ rows: false });
+    await assert.rejects(() => service.fetchTranscript(VIDEO), /network unavailable/);
+    assert.equal(state.opens, 1);
+    assert.equal(state.polls, 32);
+    assert.equal(state.closes, 1);
+    assert.equal(state.open, false);
+});
+
+test('moving to another video during the wait stops it and puts the panel away', async () => {
+    const { service, state } = fakeWatchPage({
+        rows: false,
+        onPoll: (s) => { if (s.polls === 2) s.videoId = 'zzzzzzzzzzz'; },
+    });
+    await assert.rejects(() => service.fetchTranscript(VIDEO), (error) => error.name === 'AbortError');
+    assert.equal(state.polls, 2);
+    assert.equal(state.closes, 1);
+});
+
+test('a panel closed by someone else during the wait is opened again, once', async () => {
+    const { service, state } = fakeWatchPage({
+        startsOpen: true,
+        rowsAfterPolls: 4,
+        onPoll: (s) => { if (s.polls === 2) s.open = false; },
+    });
+    const result = await service.fetchTranscript(VIDEO);
+    assert.equal(result.status, 'ready');
+    assert.equal(state.opens, 1);
+    assert.equal(state.closes, 1);
+});
+
+test('a request that rules out the rendered panel never opens it', async () => {
+    for (const options of [{ allowDomFallback: false }, { strictTrack: true }, { allowOffPage: true }]) {
+        const { service, state } = fakeWatchPage();
+        await assert.rejects(() => service.fetchTranscript(VIDEO, options), /network unavailable/);
+        assert.equal(state.opens, 0, JSON.stringify(options));
+        assert.equal(state.polls, 0, JSON.stringify(options));
+    }
 });

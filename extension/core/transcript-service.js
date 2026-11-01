@@ -61,10 +61,17 @@
     ]);
     const TRANSCRIPT_PANEL_SELECTORS = Object.freeze([
         'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
-        '[data-target-id="PAmodern_transcript_view"]',
         'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
+        // Once open, the list inside the newer panel carries this attribute. The
+        // outer panel comes first since it's the one holding the Close button.
+        '[data-target-id="PAmodern_transcript_view"]',
         'ytd-transcript-renderer'
     ]);
+    const TRANSCRIPT_OPEN_BUTTON = 'ytd-video-description-transcript-section-renderer button';
+    const TRANSCRIPT_CLOSE_BUTTON = '#visibility-button button';
+    // Rows arrive within about 250 ms on a good connection.
+    const RENDERED_PANEL_POLL_MS = 250;
+    const RENDERED_PANEL_POLLS = 32;
 
     function formatTranscriptSeconds(seconds) {
         const total = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -134,16 +141,22 @@
                 addCandidate(root.querySelector(selector));
             }
         }
-        const isActive = typeof options.isForVideo === 'function'
-            ? (panel) => {
-                if (panel.isConnected === false
-                    || panel.hidden === true
-                    || panel.getAttribute?.('aria-hidden') === 'true'
-                    || (typeof panel.getClientRects === 'function' && panel.getClientRects().length === 0)) return false;
+        // Every rollout's panel sits in the page from the start, hidden, so being
+        // found says nothing about being open.
+        const isOnScreen = (panel) => !(panel.isConnected === false
+            || panel.hidden === true
+            || panel.getAttribute?.('aria-hidden') === 'true'
+            || (typeof panel.getClientRects === 'function' && panel.getClientRects().length === 0));
+        let isActive = () => true;
+        if (typeof options.isForVideo === 'function') {
+            isActive = (panel) => {
+                if (!isOnScreen(panel)) return false;
                 try { return options.isForVideo(options.videoId, panel) === true; }
                 catch (_) { return false; }
-            }
-            : () => true;
+            };
+        } else if (options.open === true) {
+            isActive = isOnScreen;
+        }
         const match = candidates.find(isActive) || null;
         if (match) return match;
         if (options.required) {
@@ -342,9 +355,10 @@
                     && !allowOffPage
                     && !strictTrack;
                 this._assertVideoCurrent(videoId, signal, allowOffPage);
-                const tryRenderedPanel = (fallbackReason, title = videoId, staleReason = '') => {
+                const tryRenderedPanel = async (fallbackReason, title = videoId, staleReason = '') => {
                     if (!allowDomFallback) return null;
-                    const panelSegments = this._scrapeRenderedTranscript(videoId, { signal });
+                    const panelSegments = this._scrapeRenderedTranscript(videoId, { signal })
+                        || await this._openRenderedTranscript(videoId, { signal });
                     if (!panelSegments?.length) return null;
                     return this._finalizeTranscriptResult({
                         status: 'ready',
@@ -366,7 +380,7 @@
                 } catch (error) {
                     if (error?.name === 'AbortError') throw error;
                     this._assertVideoCurrent(videoId, signal, allowOffPage);
-                    const panelResult = tryRenderedPanel('discovery-failed');
+                    const panelResult = await tryRenderedPanel('discovery-failed');
                     if (panelResult) return panelResult;
                     this._setTranscriptDiagnostic(videoId, 'error', {
                         source: 'none',
@@ -387,7 +401,7 @@
                     });
                 }
                 if (!trackData?.tracks?.length) {
-                    const panelResult = tryRenderedPanel('no-fetchable-track', trackData?.videoTitle);
+                    const panelResult = await tryRenderedPanel('no-fetchable-track', trackData?.videoTitle);
                     if (panelResult) return panelResult;
                     return this._finalizeTranscriptResult({
                         status: 'unavailable', videoId, title: trackData?.videoTitle || '', segments: []
@@ -522,7 +536,7 @@
                 }
 
                 if (!segments?.length) {
-                    const panelResult = tryRenderedPanel(
+                    const panelResult = await tryRenderedPanel(
                         staleReason ? `dom-after-${staleReason}` : 'dom-after-empty',
                         trackData.videoTitle,
                         staleReason
@@ -693,7 +707,8 @@
                 if (!panel) return null;
                 const segments = panel.querySelectorAll?.(
                     'ytd-transcript-segment-renderer .segment-text, ' +
-                    'ytd-transcript-segment-renderer yt-formatted-string'
+                    'ytd-transcript-segment-renderer yt-formatted-string, ' +
+                    'transcript-segment-view-model [role="text"]'
                 );
                 if (!segments?.length) return null;
                 const cues = [];
@@ -701,8 +716,10 @@
                     this._assertVideoCurrent(videoId, options.signal);
                     const text = String(segment.textContent || '').replace(/\s+/g, ' ').trim();
                     if (!text) continue;
-                    const row = segment.closest?.('ytd-transcript-segment-renderer');
-                    const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]')
+                    const row = segment.closest?.('ytd-transcript-segment-renderer, transcript-segment-view-model');
+                    // In the newer row the spoken form of the time sits next to
+                    // the shown one, and only the shown one is aria-hidden.
+                    const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"], transcript-segment-view-model > [aria-hidden="true"]')
                         ?.textContent?.trim() || '';
                     // YouTube renders this timestamp with the viewer's own
                     // numerals, and `Number('٠:٠٧')` is NaN, so every cue in an
@@ -723,6 +740,36 @@
                     cues.push({ startMs: startSeconds * 1000, endMs: startSeconds * 1000, text });
                 }
                 return cues.length ? cues : null;
+            },
+
+            // The last route: YouTube's own panel, which the page fills for itself
+            // whatever has happened to the routes above. It's on screen for a
+            // moment, so it goes back the way it was found.
+            async _openRenderedTranscript(videoId, options = {}) {
+                if (typeof document === 'undefined') return null;
+                const button = document.querySelector?.(TRANSCRIPT_OPEN_BUTTON);
+                const isOpen = () => !!getTranscriptPanelElement(document, { open: true });
+                if (!button && !isOpen()) return null;
+                let openedHere = false;
+                try {
+                    for (let attempt = 0; attempt < RENDERED_PANEL_POLLS; attempt += 1) {
+                        // A second reader can find the panel a first one is
+                        // about to close, so this is asked every time.
+                        if (!openedHere && button && !isOpen()) {
+                            button.click();
+                            openedHere = true;
+                        }
+                        await new Promise((resolve) => { setTimeout(resolve, RENDERED_PANEL_POLL_MS); });
+                        const cues = this._scrapeRenderedTranscript(videoId, options);
+                        if (cues?.length) return cues;
+                    }
+                    return null;
+                } finally {
+                    if (openedHere) {
+                        getTranscriptPanelElement(document, { open: true })
+                            ?.querySelector?.(TRANSCRIPT_CLOSE_BUTTON)?.click?.();
+                    }
+                }
             },
 
             _setTranscriptDiagnostic(videoId, status, provenance) {
@@ -1317,6 +1364,8 @@
         CAPTION_TRACK_EXPIRY_SKEW_MS,
         createTranscriptService,
         getTranscriptPanelElement,
+        TRANSCRIPT_CLOSE_BUTTON,
+        TRANSCRIPT_OPEN_BUTTON,
         normalizeTranscriptSegments,
         parseCaptionTrackExpiresAt,
         sanitizeTranscriptProvenance,

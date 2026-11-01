@@ -2322,13 +2322,14 @@ const STORAGE_KEYS = Object.freeze({
                 try {
                     return Array.from(document.querySelectorAll('ytd-watch-flexy')).some((flexy) => {
                         const style = getComputedStyle(flexy);
-                        const responseVideoId = (flexy.__data?.playerResponse || flexy.playerResponse)
-                            ?.videoDetails?.videoId;
+                        // The element's player data lives in the page's world,
+                        // out of a content script's reach. This attribute is
+                        // readable and follows in-app moves.
                         return flexy.isConnected
                             && flexy.getClientRects().length > 0
                             && style.display !== 'none'
                             && style.visibility !== 'hidden'
-                            && responseVideoId === videoId
+                            && flexy.getAttribute('video-id') === videoId
                             && (!panel || flexy.contains(panel));
                     });
                 } catch (_) {
@@ -27596,8 +27597,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._openTimer = setTimeout(() => {
                     this._openTimer = null;
                     if (!isWatchPagePath()) return;
-                    const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
-                    if (moreBtn && !globalThis.YTKitCore?.getTranscriptPanelElement?.(document)) {
+                    const moreBtn = document.querySelector(globalThis.YTKitCore?.TRANSCRIPT_OPEN_BUTTON);
+                    if (moreBtn && !globalThis.YTKitCore?.getTranscriptPanelElement?.(document, { open: true })) {
                         moreBtn.click();
                     }
                 }, delay);
@@ -31627,14 +31628,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const desc = below.querySelector('ytd-watch-metadata, #description-inline-expander, ytd-text-inline-expander');
                 const comments = document.querySelector('ytd-comments#comments');
                 const chapters = document.querySelector('ytd-macro-markers-list-renderer, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]');
-                const transcript = globalThis.YTKitCore?.getTranscriptPanelElement?.(document) || null;
                 const setVis = (el, vis) => { if (!el) return; el.style.display = vis ? '' : 'none'; };
                 setVis(desc, which === 'desc');
                 setVis(comments, which === 'comments');
                 setVis(chapters, which === 'chapters');
-                setVis(transcript, which === 'transcript');
+                // YouTube's panel opens and closes through its own buttons. An
+                // inline display would outlive the page's next open of it.
+                const core = globalThis.YTKitCore;
                 if (which === 'transcript') {
-                    document.querySelector('ytd-video-description-transcript-section-renderer button')?.click();
+                    document.querySelector(core?.TRANSCRIPT_OPEN_BUTTON)?.click();
+                } else if (this._tabsEl?.querySelector('.ytkit-wtab--active')?.dataset.wtab === 'transcript') {
+                    core?.getTranscriptPanelElement?.(document, { open: true })
+                        ?.querySelector(core.TRANSCRIPT_CLOSE_BUTTON)?.click();
                 }
                 this._tabsEl?.querySelectorAll('.ytkit-wtab').forEach(b => {
                     b.classList.toggle('ytkit-wtab--active', b.dataset.wtab === which);

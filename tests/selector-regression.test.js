@@ -549,7 +549,7 @@ test('selector surface match fixture proves expanded capture-backed selectors re
             'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
         ],
         'transcriptPanel.modern': [
-            '[data-target-id="PAmodern_transcript_view"]',
+            'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
         ],
     };
 

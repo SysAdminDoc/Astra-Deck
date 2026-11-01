@@ -12,10 +12,10 @@
         surface: 'transcriptPanel',
         stable: Object.freeze([
             'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
-            '[data-target-id="PAmodern_transcript_view"]'
+            'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]'
         ]),
         fallback: Object.freeze([
-            'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
+            '[data-target-id="PAmodern_transcript_view"]',
             'ytd-transcript-renderer'
         ]),
         captureEvidence: Object.freeze([
@@ -23,9 +23,9 @@
             'tests/fixtures/transcript-panel-classic.html',
             'tests/fixtures/transcript-panel-modern.html'
         ]),
-        lastVerified: '2026-10-31',
+        lastVerified: '2026-11-01',
         highChurn: true,
         needsFreshCapture: false,
-        notes: 'Legacy searchable transcript and PAmodern_transcript_view rollout shapes.'
+        notes: 'Legacy searchable transcript and PAmodern_transcript_view rollout shapes. Both sit hidden in the page from the start.'
     }));
 })();
