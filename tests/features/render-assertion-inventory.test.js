@@ -118,7 +118,7 @@ test('every inventoried UI builder has a live renderer and tree assertion', () =
         assert.doesNotMatch(runtimeChain, /(?:featureSlice|extractFeatureBlock|MODULE_SOURCE)/,
             `${id} render evidence and its invoked helpers must not inspect implementation text`);
         if (runtimeChain.includes('readFileSync')) {
-            assert.match(runtimeChain, /(?:\beval\b|runInNewContext)/,
+            assert.match(runtimeChain, /(?:\beval\b|runIn(?:New)?Context)/,
                 `${id} may read implementation source only to execute the live module in its harness`);
         }
     }

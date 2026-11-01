@@ -517,7 +517,7 @@ test('headless a11y smoke audits real focus traversal and the correct injected t
     assert.match(a11ySmoke, /Input\.dispatchKeyEvent/);
     assert.match(a11ySmoke, /:focus-visible/);
     assert.match(a11ySmoke, /async function auditFocusTrap\(/);
-    assert.match(a11ySmoke, /name: 'settings'[\s\S]*?focusTrap: Object\.freeze\(\{ root: '#ytkit-settings-panel' \}\)/);
+    assert.match(a11ySmoke, /name: 'settings'[\s\S]*?focusTrap: Object\.freeze\(\{ root: '#ytkit-settings-panel', nativeModal: true \}\)/);
     assert.match(a11ySmoke, /name: 'download'[\s\S]*?focusTrap: Object\.freeze\(\{ root: '\.ytkit-dl-popup' \}\)/);
     assert.equal(
         SURFACES.find((surface) => surface.name === 'transcript')?.focusTrap,
