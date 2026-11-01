@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- Shorts Player Controls stays on for every Short. YouTube keeps one player across Shorts and resets its controls and looping for each new one and after a seek, so the controls only held on the first Short.
 - Redirect Shorts keeps a series in order. An episode opened from its series page plays in the regular player with the series list, so the next episode comes next.
 - Remove Shorts leaves a Shorts series, a playlist and a channel opened at its /channel/ address alone. It used to empty a series page down to its sidebar and take a playlist's header with its rows.
 - Import History is back. The button that imports your YouTube Takeout watch history has been out of reach since the July settings redesign, hidden along with the old side rail. It now sits in the settings footer right after Import.

@@ -28456,25 +28456,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ytd-reel-video-renderer .overlay.ytd-reel-video-renderer > * { pointer-events: auto; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
-                const enhanceShorts = () => {
-                    document.querySelectorAll('ytd-reel-video-renderer:not([data-ytkit-shorts-enhanced])').forEach(reel => {
-                        reel.dataset.ytkitShortsEnhanced = '1';
-                        const video = reel.querySelector('video');
-                        if (!video) return;
-                        video.controls = true;
-                        video.style.objectFit = 'contain';
-                        video.removeAttribute('loop');
+                // YouTube keeps one reel and one video across Shorts and sets
+                // controls and loop back on it for each new Short and again
+                // after a seek, often with nothing else on the page changing.
+                // So this watches those two attributes on the video itself
+                // rather than stamp the reel once.
+                const enhance = () => {
+                    document.querySelectorAll('ytd-reel-video-renderer video').forEach(video => {
+                        if (!video.controls) video.controls = true;
+                        if (video.loop) video.loop = false;
+                        if (video.style.objectFit !== 'contain') video.style.objectFit = 'contain';
+                        this._resetWatch.observe(video, { attributes: true, attributeFilter: ['controls', 'loop'] });
                     });
                 };
-                addMutationRule(this.id, enhanceShorts);
+                this._resetWatch = new MutationObserver(enhance);
+                addMutationRule(this.id, enhance);
             },
             destroy() {
                 removeMutationRule(this.id);
                 this._styleElement?.remove(); this._styleElement = null;
-                document.querySelectorAll('[data-ytkit-shorts-enhanced]').forEach(el => {
-                    delete el.dataset.ytkitShortsEnhanced;
-                    const v = el.querySelector('video');
-                    if (v) v.controls = false;
+                if (!this._resetWatch) return;
+                this._resetWatch.disconnect();
+                this._resetWatch = null;
+                document.querySelectorAll('ytd-reel-video-renderer video').forEach(video => {
+                    video.controls = false;
+                    video.loop = true;
+                    video.style.objectFit = '';
                 });
             }
         },

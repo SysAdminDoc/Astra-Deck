@@ -19974,25 +19974,27 @@ const STORAGE_KEYS = Object.freeze({
 			init() {
 				const css = `ytd-reel-video-renderer video::-webkit-media-controls{display:flex!important;opacity:1!important}ytd-reel-video-renderer .overlay.ytd-reel-video-renderer{pointer-events:none}ytd-reel-video-renderer .overlay.ytd-reel-video-renderer > *{pointer-events:auto}`;
 				this._styleElement = injectStyle(css, this.id, true);
-				const enhanceShorts = () => {
-					document.querySelectorAll('ytd-reel-video-renderer:not([data-ytkit-shorts-enhanced])').forEach(reel => {
-						reel.dataset.ytkitShortsEnhanced = '1';
-						const video = reel.querySelector('video');
-						if (!video) return;
-						video.controls = true;
-						video.style.objectFit = 'contain';
-						video.removeAttribute('loop');
+				const enhance = () => {
+					document.querySelectorAll('ytd-reel-video-renderer video').forEach(video => {
+						if (!video.controls) video.controls = true;
+						if (video.loop) video.loop = false;
+						if (video.style.objectFit !== 'contain') video.style.objectFit = 'contain';
+						this._resetWatch.observe(video, { attributes: true, attributeFilter: ['controls', 'loop'] });
 					});
 				};
-				addMutationRule(this.id, enhanceShorts);
+				this._resetWatch = new MutationObserver(enhance);
+				addMutationRule(this.id, enhance);
 			},
 			destroy() {
 				removeMutationRule(this.id);
 				this._styleElement?.remove(); this._styleElement = null;
-				document.querySelectorAll('[data-ytkit-shorts-enhanced]').forEach(el => {
-					delete el.dataset.ytkitShortsEnhanced;
-					const v = el.querySelector('video');
-					if (v) v.controls = false;
+				if (!this._resetWatch) return;
+				this._resetWatch.disconnect();
+				this._resetWatch = null;
+				document.querySelectorAll('ytd-reel-video-renderer video').forEach(video => {
+					video.controls = false;
+					video.loop = true;
+					video.style.objectFit = '';
 				});
 			}
 		},
