@@ -123,6 +123,18 @@ test('native Theater validator requires themed full-bleed geometry and reachable
     hiddenSecondarySurface.supportSurface.width = 0;
     assert.match(nativeTheaterFailures(hiddenSecondarySurface, 'dark Theater', 'dark').join('\n'), /related videos or live chat/);
 
+    const narrowTitleColumn = theaterDetails();
+    narrowTitleColumn.supportSurface.width = 115;
+    assert.deepEqual(nativeTheaterFailures(narrowTitleColumn, 'dark Theater', 'dark'), []);
+
+    const blankOwnerChip = theaterDetails();
+    blankOwnerChip.creatorChip = { text: '@jawed', textFill: 'rgb(245, 245, 247)', background: 'rgb(241, 241, 241)', contrast: 1.04 };
+    assert.match(nativeTheaterFailures(blankOwnerChip, 'dark Theater', 'dark').join('\n'), /name chip is not readable/);
+
+    const readableOwnerChip = theaterDetails();
+    readableOwnerChip.creatorChip = { text: '@jawed', textFill: 'rgb(15, 15, 15)', background: 'rgb(241, 241, 241)', contrast: 17.2 };
+    assert.deepEqual(nativeTheaterFailures(readableOwnerChip, 'dark Theater', 'dark'), []);
+
     const emptyComments = theaterDetails();
     emptyComments.surfaces = [
         readable('ytd-watch-metadata h1 yt-formatted-string, ytd-watch-metadata h1', 'Video title'),

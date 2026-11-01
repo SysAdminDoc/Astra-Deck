@@ -14,6 +14,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
+const { LEGACY_LOOK_DEFAULTS } = require('../extension/core/settings-schema.js');
 
 const {
     browserCandidates,
@@ -861,6 +862,16 @@ async function captureWatchDetails(client, name) {
         commentTarget?.scrollIntoView({ block: 'center', behavior: 'instant' });
         await delay(600);
         const commentSurfaces = commentSelectors.map(inspect);
+        const chip = pickNode('ytd-comments#comments ytd-author-comment-badge-renderer[creator]');
+        const chipName = chip?.querySelector('#channel-name #text') || null;
+        const creatorChip = chip && chipName
+            ? {
+                text: String(chipName.textContent || '').trim().slice(0, 40),
+                textFill: getComputedStyle(chipName).webkitTextFillColor,
+                background: effectiveBackground(chip),
+                contrast: contrast(getComputedStyle(chipName).webkitTextFillColor, effectiveBackground(chip))
+            }
+            : null;
         const replyThread = pickNode('ytd-comment-thread-renderer:has(ytd-comment-replies-renderer)');
         const connectorCandidates = replyThread
             ? [replyThread, ...replyThread.querySelectorAll('*')].filter((node) => {
@@ -917,6 +928,7 @@ async function captureWatchDetails(client, name) {
             authorProbeMatches: document.querySelectorAll(authorProbeSelector).length,
             featureStyles,
             connectorCandidates,
+            creatorChip,
             supportSurface: related
                 ? { type: 'related', ...related }
                 : (liveChat ? { type: 'live-chat', ...liveChat } : null),
@@ -936,6 +948,14 @@ async function captureWatchDetails(client, name) {
     details.modeState = modeState;
     await capture(client, name);
     return details;
+}
+
+function creatorChipFailures(details, label) {
+    const chip = details?.creatorChip;
+    if (chip && chip.contrast < 4.5) {
+        return [`${label}: the channel owner's name chip is not readable (${chip.textFill} on ${chip.background})`];
+    }
+    return [];
 }
 
 function nativeTheaterFailures(details, label, expectedColorScheme) {
@@ -994,8 +1014,12 @@ function nativeTheaterFailures(details, label, expectedColorScheme) {
             failures.push(`${label}: empty-comments state is not readable`);
         }
     }
+    failures.push(...creatorChipFailures(details, label));
+    // Measured on the title. YouTube gives a related card's thumbnail 62.5% of the
+    // card now, which leaves a title 115 px wide at 1440x900, so this asks that the
+    // title is there and hasn't collapsed.
     const support = details.supportSurface;
-    if (!support || support.width < 120 || support.height < 24) {
+    if (!support || support.width < 100 || support.height < 24) {
         failures.push(`${label}: related videos or live chat are unavailable`);
     } else if (support.type === 'related' && (!support.text || support.contrast < 4.5)) {
         failures.push(`${label}: related-video text is not readable`);
@@ -1149,7 +1173,9 @@ function splitEngagementFailures(states, theme) {
     if (base.colorScheme !== theme) failures.push(`${theme}: color-scheme is ${base.colorScheme}`);
     // Spacing along the row comes from the count's margins, not a column gap.
     if (base.toolbarGap !== '0px') failures.push(`${theme}: toolbar column gap is ${base.toolbarGap || 'unset'}`);
-    if (base.toolbarHeight < 31 || base.toolbarHeight > 33) {
+    // A creator heart is YouTube's own 36 px box and sets the row's height on the
+    // comments that have one. Like and Reply are held to 31-33 px below either way.
+    if (base.toolbarHeight < 31 || base.toolbarHeight > Math.max(33, base.heart?.height || 0)) {
         failures.push(`${theme}: toolbar height is ${base.toolbarHeight}px`);
     }
     for (const [name, control] of [['Like', base.like], ['Reply', base.reply]]) {
@@ -1402,17 +1428,27 @@ async function captureSplitMetadataLayout(client, theme) {
     if (!snapshot.titleFirst) failures.push(`${theme}: utility controls still precede the video title`);
     if (snapshot.utilityRowDelta > 6) failures.push(`${theme}: title utilities span multiple rows (${snapshot.utilityRowDelta.toFixed(1)}px)`);
     if (snapshot.title.height > 110) failures.push(`${theme}: title card is ${snapshot.title.height.toFixed(1)}px tall`);
-    if (snapshot.owner.height > 110) failures.push(`${theme}: owner card is ${snapshot.owner.height.toFixed(1)}px tall`);
-    if (snapshot.metadata.height > 235) failures.push(`${theme}: metadata stack is ${snapshot.metadata.height.toFixed(1)}px tall`);
+    // Like, Download, Add to Watch Feed and the two tool buttons need about 480 px,
+    // and the column opens at 392 to 464 px, so the actions take two rows: 41 px of
+    // channel, a 12 px gap and 80 px of actions. A third row would break these.
+    if (snapshot.owner.height > 140) failures.push(`${theme}: owner card is ${snapshot.owner.height.toFixed(1)}px tall`);
+    if (snapshot.metadata.height > 280) failures.push(`${theme}: metadata stack is ${snapshot.metadata.height.toFixed(1)}px tall`);
     if (snapshot.identitySubscribeDelta > 16) failures.push(`${theme}: subscribe control is not aligned with channel identity`);
     if (snapshot.actions && (snapshot.ownerActionGap < 4 || snapshot.ownerActionGap > 18)) {
         failures.push(`${theme}: channel-to-action gap is ${snapshot.ownerActionGap.toFixed(1)}px`);
     }
     if (snapshot.metadataTail > 24) failures.push(`${theme}: metadata retains ${snapshot.metadataTail.toFixed(1)}px below the owner card`);
     if (snapshot.commentsGap > 36) failures.push(`${theme}: comments begin ${snapshot.commentsGap.toFixed(1)}px below metadata`);
-    const expectedOwnerActionColor = theme === 'dark' ? 'rgb(245, 247, 251)' : 'rgb(23, 35, 53)';
+    // A count has to read as primary text, not a dimmed one. The dark look has two
+    // near-white text colors a hair apart, so this tests the tone.
+    const isPrimaryInk = (color) => {
+        const [red, green, blue] = (String(color).match(/\d+/g) || []).map(Number);
+        return theme === 'dark'
+            ? Math.min(red, green, blue) >= 230
+            : Math.max(red, green, blue) <= 70;
+    };
     const unreadableOwnerLabels = snapshot.ownerActionLabels.filter(label => /\d/.test(label.text)
-        && (label.color !== expectedOwnerActionColor || label.effectiveOpacity < 0.85));
+        && (!isPrimaryInk(label.color) || label.effectiveOpacity < 0.85));
     if (unreadableOwnerLabels.length) {
         failures.push(`${theme}: owner action labels are unreadable: ${JSON.stringify(unreadableOwnerLabels)}`);
     }
@@ -1925,6 +1961,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         }
     }
     for (const details of [normalDarkDetails, normalLightDetails]) {
+        failures.push(...creatorChipFailures(details, 'watch themes: normal'));
         const content = details.surfaces.find((surface) => surface?.selector.includes('#content-text'));
         const action = details.surfaces.find((surface) => surface?.selector.includes('ytd-comment-engagement-bar button'));
         if (content && content.background !== 'rgba(0, 0, 0, 0)') failures.push('watch themes: normal comment text retained a decorative background');
@@ -2176,6 +2213,17 @@ async function runCandidate(candidate, stageDir, options) {
             throw new Error(`MV3 zero-ad ruleset is not enabled: ${JSON.stringify(enabledRulesets)}`);
         }
 
+        // Theater Split and the restyled watch page have been opt-in since 4.106.0,
+        // and the checks below are about them, so this runs as a profile that kept
+        // that look. The first navigation below picks it up.
+        await evaluate(backgroundClient, `(async () => {
+            const stored = await chrome.storage.local.get('ytSuiteSettings');
+            await chrome.storage.local.set({
+                ytSuiteSettings: { ...(stored.ytSuiteSettings || {}), ...${JSON.stringify(LEGACY_LOOK_DEFAULTS)} }
+            });
+            return true;
+        })()`);
+
         const pageTarget = await waitForYoutubePage(port, options.timeoutMs);
         client = await connectCdp(pageTarget.webSocketDebuggerUrl);
         await client.send('Page.enable');
@@ -2333,6 +2381,7 @@ module.exports = {
     adEvents,
     captureWatchModeState,
     main,
+    creatorChipFailures,
     nativeTheaterFailures,
     pageSnapshot,
     parseArgs,
