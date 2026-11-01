@@ -27600,6 +27600,7 @@ const STORAGE_KEYS = Object.freeze({
 			pages: [PageTypes.WATCH],
 			_styleElement: null,
 			_btn: null,
+			_attachTimer: null,
 			_navRule: null,
 			_runController: null,
 			_ensureStyles() {
@@ -27694,19 +27695,29 @@ const STORAGE_KEYS = Object.freeze({
 				overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 				document.body.appendChild(overlay);
 			},
+			_scheduleAttach() {
+				if (this._attachTimer) return;
+				this._attachTimer = setTimeout(() => {
+					this._attachTimer = null;
+					this._attach();
+				}, 400);
+			},
 			_attach() {
 				if (!isWatchPagePath()) return;
-				const anchor = document.querySelector('.ytkit-ai-summary-btn, .ytp-right-controls .ytkit-player-btn');
-				if (!anchor || anchor.parentElement?.querySelector('.ytkit-local-ai-btn')) return;
+				const controls = document.querySelector('.ytp-right-controls');
+				if (!controls || controls.querySelector('.ytkit-local-ai-launcher')) return;
 				this._btn = document.createElement('button');
 				this._btn.type = 'button';
-				this._btn.className = 'ytkit-local-ai-btn';
+				this._btn.className = 'ytp-button ytkit-player-btn ytkit-player-btn--text ytkit-local-ai-launcher';
 				this._btn.textContent = 'Local Summary';
 				this._btn.title = this._hasApi()
 					? 'Summarize this video using your browser\u2019s built-in AI model.'
 					: 'Chrome built-in Summarizer not detected. Click to learn how to enable it.';
-				this._btn.addEventListener('click', () => this._summarize());
-				anchor.insertAdjacentElement('afterend', this._btn);
+				this._btn.addEventListener('click', (event) => {
+					event.stopPropagation();
+					this._summarize();
+				});
+				controls.insertBefore(this._btn, controls.firstChild);
 			},
 			init() {
 				this._ensureStyles();
@@ -27714,19 +27725,25 @@ const STORAGE_KEYS = Object.freeze({
 					this._runController?.abort();
 					this._runController = null;
 					document.querySelector('.ytkit-local-ai-modal')?.remove();
-					setTimeout(() => this._attach(), 1500);
+					this._scheduleAttach();
 				};
 				addNavigateRule(this.id, this._navRule);
+				addMutationRule(this.id, () => {
+					if (isWatchPagePath() && !document.querySelector('.ytkit-local-ai-launcher')) this._scheduleAttach();
+				});
 				this._navRule();
 			},
 			destroy() {
 				removeNavigateRule(this.id);
+				removeMutationRule(this.id);
+				clearTimeout(this._attachTimer);
+				this._attachTimer = null;
 				this._navRule = null;
 				this._runController?.abort();
 				this._runController = null;
 				this._btn?.remove();
 				this._btn = null;
-				document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-btn').forEach(el => el.remove());
+				document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-launcher').forEach(el => el.remove());
 				this._styleElement?.remove();
 				this._styleElement = null;
 			}
@@ -27740,6 +27757,7 @@ const STORAGE_KEYS = Object.freeze({
 			pages: [PageTypes.WATCH],
 			_styleElement: null,
 			_btn: null,
+			_attachTimer: null,
 			_navRule: null,
 			_session: null,
 			_sessionIdentity: null,
@@ -28181,30 +28199,46 @@ const STORAGE_KEYS = Object.freeze({
 					this._setBusy(false);
 				});
 			},
+			_scheduleAttach() {
+				if (this._attachTimer) return;
+				this._attachTimer = setTimeout(() => {
+					this._attachTimer = null;
+					this._attach();
+				}, 400);
+			},
 			_attach() {
 				if (!isWatchPagePath()) return;
-				const anchor = document.querySelector('.ytkit-local-ai-btn, .ytkit-ai-summary-btn, .ytp-right-controls .ytkit-player-btn');
-				if (!anchor || anchor.parentElement?.querySelector('.ytkit-ai-qa-btn')) return;
+				const controls = document.querySelector('.ytp-right-controls');
+				if (!controls || controls.querySelector('.ytkit-ai-qa-btn')) return;
 				this._btn = document.createElement('button');
 				this._btn.type = 'button';
-				this._btn.className = 'ytkit-ai-qa-btn';
+				this._btn.className = 'ytp-button ytkit-player-btn ytkit-player-btn--text ytkit-ai-qa-btn';
 				this._btn.textContent = t('transcriptQaButton', 'Q&A');
 				this._btn.title = t('transcriptQaButtonTitle', 'Ask citation-backed questions about this video.');
 				this._btn.setAttribute('aria-label', t('transcriptQaButtonTitle', 'Ask citation-backed questions about this video.'));
-				this._btn.addEventListener('click', () => this._openQaPanel());
-				anchor.insertAdjacentElement('afterend', this._btn);
+				this._btn.addEventListener('click', (event) => {
+					event.stopPropagation();
+					this._openQaPanel();
+				});
+				controls.insertBefore(this._btn, controls.firstChild);
 			},
 			init() {
 				this._ensureStyles();
 				this._navRule = () => {
 					this._closePanel({ restoreFocus: false });
-					setTimeout(() => this._attach(), 1500);
+					this._scheduleAttach();
 				};
 				addNavigateRule(this.id, this._navRule);
+				addMutationRule(this.id, () => {
+					if (isWatchPagePath() && !document.querySelector('.ytkit-ai-qa-btn')) this._scheduleAttach();
+				});
 				this._navRule();
 			},
 			destroy() {
 				removeNavigateRule(this.id);
+				removeMutationRule(this.id);
+				clearTimeout(this._attachTimer);
+				this._attachTimer = null;
 				this._navRule = null;
 				this._closePanel({ restoreFocus: false });
 				this._btn?.remove();

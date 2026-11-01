@@ -3380,20 +3380,6 @@
             border-radius: 4px !important;
         }
 
-        html .ytkit-ai-qa-btn {
-            min-height: 36px !important;
-            padding: 7px 11px !important;
-            border: 1px solid rgba(var(--ytkit-premium-accent-rgb),0.42) !important;
-            border-radius: 6px !important;
-            background: rgba(var(--ytkit-premium-accent-rgb),0.10) !important;
-            color: var(--ytkit-premium-accent) !important;
-            box-shadow: none !important;
-        }
-
-        html .ytkit-ai-qa-btn:hover {
-            background: rgba(var(--ytkit-premium-accent-rgb),0.18) !important;
-        }
-
         html .ytkit-ai-qa-modal {
             background: rgba(2,7,14,0.88) !important;
         }
