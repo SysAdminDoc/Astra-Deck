@@ -9214,6 +9214,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         -webkit-text-fill-color: var(--ytkit-watch-text) !important;
                     }
 
+                    /* YouTube draws the channel owner's name as a chip in the opposite of the page's colors. The fill above inherits onto it, white on white in dark mode and dark on dark in light, so the chip takes this look's raised surface instead. */
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments ytd-author-comment-badge-renderer[creator] {
+                        --ytd-author-comment-badge-background-color: var(--ytkit-watch-raised) !important;
+                        --ytd-author-comment-badge-icon-color: var(--ytkit-watch-text) !important;
+                        background-color: var(--ytkit-watch-raised) !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments ytd-author-comment-badge-renderer[creator] yt-icon {
+                        color: var(--ytkit-watch-text) !important;
+                    }
+
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #count#count,
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #sort-menu#sort-menu,
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #sort-menu#sort-menu *,

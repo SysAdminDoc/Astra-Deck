@@ -20,6 +20,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
 
 ### Fixed
+- With Watch Page Restyle on, a channel owner's name on their own comment was invisible, white on a white chip in dark mode and dark on a dark chip in light mode. The chip takes the look's own raised surface now.
 - The Screenshot button's camera icon sits inside the button again. YouTube started padding icons in its player buttons, which pushed ours out past the bottom edge.
 - The Q&A and Local Summary buttons now show up in the player. They tried once, before any player button they could sit beside existed, so a fresh page never had them, and without AI Summary turned on they never appeared at all. Turning Local Summary off also stopped taking the study export buttons with it.
 - A blocked channel now gets its blocked screen however you reach its videos. A block saved by channel id used to miss when you clicked through inside YouTube, and a block saved by handle used to miss when you opened the link directly.

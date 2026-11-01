@@ -1171,6 +1171,8 @@ test('watchPageRestyle gives native service popups the premium comment-card trea
         'watchPageRestyle should style two-line dropdown subtitles to match the premium popup treatment');
     assert.ok(block.includes('Normal watch comments stay themed even when Studio Comments is disabled.'),
         'watchPageRestyle should own a readable normal-comment fallback independently of Studio Comments');
+    assert.match(block, /ytd-author-comment-badge-renderer\[creator\] \{\s*--ytd-author-comment-badge-background-color: var\(--ytkit-watch-raised\) !important;/,
+        'watchPageRestyle should give the channel owner chip its own surface, or the inherited fill paints the name in the chip color');
     assert.ok(block.includes('body ytd-comment-view-model #author-text#author-text')
         && block.includes('body ytd-comment-renderer #content-text#content-text'),
         'watchPageRestyle should override YouTube late comment text rules in both renderer generations');
