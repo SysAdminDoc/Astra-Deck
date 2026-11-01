@@ -32036,7 +32036,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // still lands on it and the card stays centered by flex.
                 const overlay = document.createElement('dialog');
                 overlay.className = 'ytkit-wha-overlay';
-                overlay.onclick = (e) => { if (e.target === overlay) this._open(); };
+                // A drag that began inside and ended out here lands on the dialog too.
+                let pressedHere = false;
+                overlay.onpointerdown = (e) => { pressedHere = e.target === overlay; };
+                overlay.onclick = (e) => { if (pressedHere && e.target === overlay) this._open(); };
                 const card = document.createElement('div');
                 card.className = 'ytkit-wha-card';
                 card.tabIndex = -1;
@@ -37526,7 +37529,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 close.addEventListener('click', () => this._closeModal());
                 inner.appendChild(close);
                 overlay.appendChild(inner);
-                overlay.addEventListener('click', (e) => { if (e.target === overlay) this._closeModal(); });
+                // A drag that began inside and ended out here lands on the dialog too.
+                let pressedHere = false;
+                overlay.addEventListener('pointerdown', (e) => { pressedHere = e.target === overlay; });
+                overlay.addEventListener('click', (e) => { if (pressedHere && e.target === overlay) this._closeModal(); });
                 // `close` is queued, so a late one mustn't shut a newer dialog.
                 overlay.addEventListener('close', () => { if (this._modal === overlay) this._closeModal(); });
                 // The browser closes on Escape. The page's own key handlers still don't get it.
@@ -38051,7 +38057,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const closePanel = () => self._closePanel();
                 closeBtn.addEventListener('click', closePanel);
-                overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
+                // A drag that began inside and ended out here lands on the dialog too,
+                // and closing then would lose the question being typed.
+                let pressedHere = false;
+                overlay.addEventListener('pointerdown', (e) => { pressedHere = e.target === overlay; });
+                overlay.addEventListener('click', (e) => { if (pressedHere && e.target === overlay) closePanel(); });
                 // `close` is queued, so a late one mustn't shut a newer panel.
                 overlay.addEventListener('close', () => { if (this._overlay === overlay) closePanel(); });
                 // The browser closes on Escape. The page's own key handlers still don't get it.
@@ -43646,14 +43656,19 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             if (_pageModalEl === modal) closePageModal();
         });
         // A click on the backdrop reaches the dialog itself, as does one on its
-        // own edge, so only the position can tell them apart.
+        // own edge, so only the position can tell them apart. A drag that began
+        // inside and ended out there reaches it too, so the press has to count.
+        const isOnBackdrop = (e) => {
+            if (e.target !== modal) return false;
+            const box = modal.getBoundingClientRect();
+            return e.clientX < box.left || e.clientX > box.right
+                || e.clientY < box.top || e.clientY > box.bottom;
+        };
+        let pressedBackdrop = false;
+        modal.addEventListener('pointerdown', (e) => { pressedBackdrop = isOnBackdrop(e); });
         modal.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (e.target !== modal) return;
-            const box = modal.getBoundingClientRect();
-            const inside = e.clientX >= box.left && e.clientX <= box.right
-                && e.clientY >= box.top && e.clientY <= box.bottom;
-            if (!inside) closePageModal();
+            if (pressedBackdrop && isOnBackdrop(e)) closePageModal();
         });
 
         // Header

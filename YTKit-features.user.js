@@ -15918,8 +15918,10 @@ __astraDeckRegistry["features/subscription-groups/index.js"] = function (globalT
 				overlay.addEventListener('close', () => {
 					if (this._newGroupDialog === overlay) dismiss();
 				});
+				let pressedHere = false;
+				overlay.addEventListener('pointerdown', (e) => { pressedHere = e.target === overlay; });
 				overlay.addEventListener('click', (e) => {
-					if (e.target === overlay) dismiss();
+					if (pressedHere && e.target === overlay) dismiss();
 				});
 			},
 			_renderToolbar() {
@@ -17140,8 +17142,10 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 					else dismissOverlay();
 				});
 				button.addEventListener('click', runAction);
+				let pressedHere = false;
+				o.addEventListener('pointerdown', (event) => { pressedHere = event.target === o; });
 				o.addEventListener('click', (event) => {
-					if (!locked && event.target === o) dismissOverlay();
+					if (!locked && pressedHere && event.target === o) dismissOverlay();
 				});
 				o.showModal();
 				requestAnimationFrame(() => button.focus({ preventScroll: true }));
@@ -17840,12 +17844,16 @@ function buildSettingsPanel() {
 		panel.addEventListener('close', () => {
 			if (!panel.open && isSettingsPanelOpen()) setSettingsPanelOpen(false);
 		});
-		panel.addEventListener('click', (event) => {
-			if (event.target !== panel) return;
+		const isOnBackdrop = (event) => {
+			if (event.target !== panel) return false;
 			const box = panel.getBoundingClientRect();
-			const inside = event.clientX >= box.left && event.clientX <= box.right
-				&& event.clientY >= box.top && event.clientY <= box.bottom;
-			if (!inside) setSettingsPanelOpen(false);
+			return event.clientX < box.left || event.clientX > box.right
+				|| event.clientY < box.top || event.clientY > box.bottom;
+		};
+		let pressedBackdrop = false;
+		panel.addEventListener('pointerdown', (event) => { pressedBackdrop = isOnBackdrop(event); });
+		panel.addEventListener('click', (event) => {
+			if (pressedBackdrop && isOnBackdrop(event)) setSettingsPanelOpen(false);
 		});
 		const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
 		const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();

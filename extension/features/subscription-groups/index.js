@@ -2247,8 +2247,11 @@
                 overlay.addEventListener('close', () => {
                     if (this._newGroupDialog === overlay) dismiss();
                 });
+                // A drag that began inside and ended out here lands on the dialog too.
+                let pressedHere = false;
+                overlay.addEventListener('pointerdown', (e) => { pressedHere = e.target === overlay; });
                 overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) dismiss();
+                    if (pressedHere && e.target === overlay) dismiss();
                 });
             },
 

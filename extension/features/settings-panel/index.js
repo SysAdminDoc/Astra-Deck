@@ -770,13 +770,18 @@ function buildSettingsPanel() {
             if (!panel.open && isSettingsPanelOpen()) setSettingsPanelOpen(false);
         });
         // A click on the backdrop reaches the dialog itself, as does one on its
-        // own edge, so only the position can tell them apart.
-        panel.addEventListener('click', (event) => {
-            if (event.target !== panel) return;
+        // own edge, so only the position can tell them apart. A drag that began
+        // inside and ended out there reaches it too, so the press has to count.
+        const isOnBackdrop = (event) => {
+            if (event.target !== panel) return false;
             const box = panel.getBoundingClientRect();
-            const inside = event.clientX >= box.left && event.clientX <= box.right
-                && event.clientY >= box.top && event.clientY <= box.bottom;
-            if (!inside) setSettingsPanelOpen(false);
+            return event.clientX < box.left || event.clientX > box.right
+                || event.clientY < box.top || event.clientY > box.bottom;
+        };
+        let pressedBackdrop = false;
+        panel.addEventListener('pointerdown', (event) => { pressedBackdrop = isOnBackdrop(event); });
+        panel.addEventListener('click', (event) => {
+            if (pressedBackdrop && isOnBackdrop(event)) setSettingsPanelOpen(false);
         });
         const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
         const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();

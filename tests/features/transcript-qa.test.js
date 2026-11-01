@@ -279,10 +279,21 @@ test('Transcript Q&A closes on a backdrop click and stays open for one on the ca
     const overlay = feature._overlay;
     const card = byClass(overlay, 'ytkit-ai-qa-modal__body')[0];
 
-    overlay.dispatch('click', { target: card });
+    const pressAndRelease = (from, to) => {
+        overlay.dispatch('pointerdown', { target: from });
+        overlay.dispatch('click', { target: to });
+    };
+
+    pressAndRelease(card, card);
     assert.ok(feature._overlay === overlay, 'a click inside the card keeps it open');
 
-    overlay.dispatch('click', { target: overlay });
+    pressAndRelease(card, overlay);
+    assert.ok(feature._overlay === overlay, 'selecting the typed question past the edge must not lose it');
+
+    pressAndRelease(overlay, card);
+    assert.ok(feature._overlay === overlay, 'nor does a drag that ends on the card close it');
+
+    pressAndRelease(overlay, overlay);
     assert.ok(feature._overlay === null, 'a click on the dialog itself is the backdrop');
 });
 

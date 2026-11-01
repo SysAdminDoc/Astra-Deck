@@ -141,9 +141,12 @@ test('closing the page menu lets go first, so its queued close event does nothin
 test('a backdrop click closes the page menu and a click on the menu does not', () => {
     const { modal, state } = openPageMenu();
     let stopped = 0;
-    const click = (target, clientX, clientY) => modal.dispatchEvent({
-        type: 'click', target, clientX, clientY, stopPropagation() { stopped += 1; }
-    });
+    const click = (target, clientX, clientY) => {
+        modal.dispatchEvent({ type: 'pointerdown', target, clientX, clientY });
+        modal.dispatchEvent({
+            type: 'click', target, clientX, clientY, stopPropagation() { stopped += 1; }
+        });
+    };
     click({ inner: true }, 40, 40);
     assert.equal(state._pageModalOpen, true, 'a control inside is not the backdrop, wherever the event says it was');
     click(modal, 100, 60);
@@ -152,6 +155,28 @@ test('a backdrop click closes the page menu and a click on the menu does not', (
     assert.equal(stopped, 3, 'clicks inside the menu must not reach the page');
     click(modal, 99, 400);
     assert.equal(state._pageModalOpen, false);
+
+    for (const [x, y] of [[401, 300], [200, 59], [200, 501]]) {
+        const again = openPageMenu();
+        again.modal.dispatchEvent({ type: 'pointerdown', target: again.modal, clientX: x, clientY: y });
+        again.modal.dispatchEvent({ type: 'click', target: again.modal, clientX: x, clientY: y, stopPropagation() {} });
+        assert.equal(again.state._pageModalOpen, false, `at ${x},${y}`);
+    }
+});
+
+test('a drag between the page menu and the backdrop leaves the menu open', () => {
+    const { modal, state } = openPageMenu();
+    const drag = (pressTarget, pressX, pressY, target, clientX, clientY) => {
+        modal.dispatchEvent({ type: 'pointerdown', target: pressTarget, clientX: pressX, clientY: pressY });
+        modal.dispatchEvent({ type: 'click', target, clientX, clientY, stopPropagation() {} });
+    };
+    // Either way the click lands on the dialog, the one thing both ends share.
+    drag({ inner: true }, 200, 200, modal, 99, 400);
+    assert.equal(state._pageModalOpen, true, 'pressed on a control, let go on the backdrop');
+    drag(modal, 99, 400, modal, 200, 200);
+    assert.equal(state._pageModalOpen, true, 'pressed on the backdrop, let go on the menu');
+    drag(modal, 200, 200, modal, 99, 400);
+    assert.equal(state._pageModalOpen, true, 'pressed on the menu\'s own edge, let go on the backdrop');
 });
 
 test('no hand-made Tab or Escape handling is left behind the page menu', () => {

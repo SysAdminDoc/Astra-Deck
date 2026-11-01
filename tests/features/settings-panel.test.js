@@ -411,7 +411,10 @@ test('a close event left over from before does not shut a reopened panel', (t) =
 test('a click on the backdrop closes the panel, one on its own edge does not', (t) => {
     withOpenablePanel(t, ({ panel, runtime, isOpen }) => {
         runtime.setSettingsPanelOpen(true);
-        const click = (clientX, clientY, target = panel) => panel.dispatchEvent({ type: 'click', target, clientX, clientY });
+        const click = (clientX, clientY, target = panel) => {
+            panel.dispatchEvent({ type: 'pointerdown', target, clientX, clientY });
+            panel.dispatchEvent({ type: 'click', target, clientX, clientY });
+        };
 
         click(500, 400);
         assert.ok(isOpen(), 'inside the box, the edge of the dialog itself');
@@ -427,6 +430,24 @@ test('a click on the backdrop closes the panel, one on its own edge does not', (
             click(x, y);
             assert.ok(!isOpen(), `at ${x},${y}`);
         }
+    });
+});
+
+test('a drag between the panel and the backdrop leaves the panel open', (t) => {
+    withOpenablePanel(t, ({ panel, runtime, isOpen }) => {
+        runtime.setSettingsPanelOpen(true);
+        // Either way the click lands on the dialog, the one thing both ends share.
+        panel.dispatchEvent({ type: 'pointerdown', target: { tagName: 'INPUT' }, clientX: 500, clientY: 400 });
+        panel.dispatchEvent({ type: 'click', target: panel, clientX: 5, clientY: 400 });
+        assert.ok(isOpen(), 'selecting text in the search box past the edge');
+
+        panel.dispatchEvent({ type: 'pointerdown', target: panel, clientX: 5, clientY: 400 });
+        panel.dispatchEvent({ type: 'click', target: panel, clientX: 500, clientY: 400 });
+        assert.ok(isOpen(), 'pressed on the backdrop, let go on the panel');
+
+        panel.dispatchEvent({ type: 'pointerdown', target: panel, clientX: 500, clientY: 400 });
+        panel.dispatchEvent({ type: 'click', target: panel, clientX: 5, clientY: 400 });
+        assert.ok(isOpen(), 'pressed on the panel\'s own edge, let go on the backdrop');
     });
 });
 

@@ -525,9 +525,19 @@ test('watchHistoryAnalytics closes on the dim and not on the card', () => {
 
     feature._open();
     const overlay = doc.body.children[0];
-    overlay.onclick({ target: overlay.children[0] });
+    const card = overlay.children[0];
+    const pressAndRelease = (from, to) => {
+        overlay.onpointerdown({ target: from });
+        overlay.onclick({ target: to });
+    };
+    pressAndRelease(card, card);
     assert.equal(doc.body.children.length, 1);
-    overlay.onclick({ target: overlay });
+    // That click lands on the dialog, the one thing both ends share.
+    pressAndRelease(card, overlay);
+    assert.equal(doc.body.children.length, 1, 'a drag out of the card is not a click on the dim');
+    pressAndRelease(overlay, card);
+    assert.equal(doc.body.children.length, 1, 'nor is a drag that ends on the card');
+    pressAndRelease(overlay, overlay);
     assert.equal(doc.body.children.length, 0);
 });
 

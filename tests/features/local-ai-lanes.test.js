@@ -156,10 +156,22 @@ test('the dialog closes on a backdrop click and stays open for one on the card',
     feature._renderModal('Local Summary', 'The answer.');
     const overlay = feature._modal;
 
-    overlay.dispatch('click', { target: overlay.children[0] });
+    const card = overlay.children[0];
+    const pressAndRelease = (from, to) => {
+        overlay.dispatch('pointerdown', { target: from });
+        overlay.dispatch('click', { target: to });
+    };
+
+    pressAndRelease(card, card);
     assert.ok(feature._modal === overlay, 'a click inside the card keeps it open');
 
-    overlay.dispatch('click', { target: overlay });
+    pressAndRelease(card, overlay);
+    assert.ok(feature._modal === overlay, 'selecting text and letting go past the edge keeps it open');
+
+    pressAndRelease(overlay, card);
+    assert.ok(feature._modal === overlay, 'nor does a drag that ends on the card close it');
+
+    pressAndRelease(overlay, overlay);
     assert.ok(feature._modal === null, 'a click on the dialog itself is the backdrop');
 });
 

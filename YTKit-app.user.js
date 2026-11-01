@@ -23063,7 +23063,9 @@ const STORAGE_KEYS = Object.freeze({
 				const active = days.filter(d => d.secs > 0).length;
 				const overlay = document.createElement('dialog');
 				overlay.className = 'ytkit-wha-overlay';
-				overlay.onclick = (e) => { if (e.target === overlay) this._open(); };
+				let pressedHere = false;
+				overlay.onpointerdown = (e) => { pressedHere = e.target === overlay; };
+				overlay.onclick = (e) => { if (pressedHere && e.target === overlay) this._open(); };
 				const card = document.createElement('div');
 				card.className = 'ytkit-wha-card';
 				card.tabIndex = -1;
@@ -27741,7 +27743,9 @@ const STORAGE_KEYS = Object.freeze({
 				close.addEventListener('click', () => this._closeModal());
 				inner.appendChild(close);
 				overlay.appendChild(inner);
-				overlay.addEventListener('click', (e) => { if (e.target === overlay) this._closeModal(); });
+				let pressedHere = false;
+				overlay.addEventListener('pointerdown', (e) => { pressedHere = e.target === overlay; });
+				overlay.addEventListener('click', (e) => { if (pressedHere && e.target === overlay) this._closeModal(); });
 				overlay.addEventListener('close', () => { if (this._modal === overlay) this._closeModal(); });
 				overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
 				document.body.appendChild(overlay);
@@ -28208,7 +28212,9 @@ const STORAGE_KEYS = Object.freeze({
 				});
 				const closePanel = () => self._closePanel();
 				closeBtn.addEventListener('click', closePanel);
-				overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
+				let pressedHere = false;
+				overlay.addEventListener('pointerdown', (e) => { pressedHere = e.target === overlay; });
+				overlay.addEventListener('click', (e) => { if (pressedHere && e.target === overlay) closePanel(); });
 				overlay.addEventListener('close', () => { if (this._overlay === overlay) closePanel(); });
 				overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
 				actions.appendChild(askBtn);
@@ -31327,13 +31333,17 @@ const STORAGE_KEYS = Object.freeze({
 		modal.addEventListener('close', () => {
 			if (_pageModalEl === modal) closePageModal();
 		});
+		const isOnBackdrop = (e) => {
+			if (e.target !== modal) return false;
+			const box = modal.getBoundingClientRect();
+			return e.clientX < box.left || e.clientX > box.right
+				|| e.clientY < box.top || e.clientY > box.bottom;
+		};
+		let pressedBackdrop = false;
+		modal.addEventListener('pointerdown', (e) => { pressedBackdrop = isOnBackdrop(e); });
 		modal.addEventListener('click', (e) => {
 			e.stopPropagation();
-			if (e.target !== modal) return;
-			const box = modal.getBoundingClientRect();
-			const inside = e.clientX >= box.left && e.clientX <= box.right
-				&& e.clientY >= box.top && e.clientY <= box.bottom;
-			if (!inside) closePageModal();
+			if (pressedBackdrop && isOnBackdrop(e)) closePageModal();
 		});
 		const header = document.createElement('div');
 		header.className = 'ytkit-pm-header';

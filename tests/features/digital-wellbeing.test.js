@@ -389,6 +389,27 @@ test('closing a prompt from code does not run its dismissal twice', (t) => {
     assert.equal(dismissed, 0, 'a route change clears the prompt, nobody dismissed it');
 });
 
+test('a prompt closes on a click on the backdrop, not on a drag that ends there', (t) => {
+    overlayEnvironment(t, { paused: false, pathname: '/shorts/abc123' });
+    const { feature } = build();
+
+    feature._showOverlay('shorts-limit', { onAction: () => true });
+    const dialog = feature._overlay;
+    const [button] = dialog.querySelectorAll('.ytkit-wellbeing-btn');
+
+    dialog.dispatchEvent({ type: 'pointerdown', target: button });
+    dialog.dispatchEvent({ type: 'click', target: dialog });
+    assert.ok(feature._overlay === dialog, 'that click lands on the dialog, the one thing both ends share');
+
+    dialog.dispatchEvent({ type: 'pointerdown', target: dialog });
+    dialog.dispatchEvent({ type: 'click', target: button });
+    assert.ok(feature._overlay === dialog, 'nor does a drag that ends on the card close it');
+
+    dialog.dispatchEvent({ type: 'pointerdown', target: dialog });
+    dialog.dispatchEvent({ type: 'click', target: dialog });
+    assert.ok(!feature._overlay, 'pressed and let go on the backdrop');
+});
+
 test('a locked prompt can only be left through its own button', (t) => {
     const env = overlayEnvironment(t, { paused: false, pathname: '/shorts/abc123' });
     const { feature } = build();
@@ -408,6 +429,7 @@ test('a locked prompt can only be left through its own button', (t) => {
     assert.ok(feature._overlay === dialog, 'still ours after a close nobody could refuse');
     assert.equal(dialog.modalOpens, 2, 'and straight back on screen');
 
+    dialog.dispatchEvent({ type: 'pointerdown', target: dialog });
     dialog.dispatchEvent({ type: 'click', target: dialog });
     assert.ok(feature._overlay === dialog, 'a click on the backdrop leaves it up');
 

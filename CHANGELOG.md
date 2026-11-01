@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- Dragging from inside a dialog and letting go on the dim behind it no longer closes the dialog. Selecting text a bit too far used to shut Watch Stats, Local Summary, the page menu, Settings, Subscription Groups and the Wellbeing prompts, and in Transcript Q&A it took your typed question with it.
 - The download options popup is a real modal dialog now. Tab can't wander off into YouTube behind it, it stays above the player in fullscreen, and Escape closes it the way it closes any other dialog. A drag that starts in a clip field and ends outside the box no longer closes it either.
 - Local Summary and Transcript Q&A could sit on their loading state forever in a browser that never says whether its built-in AI is there. They now wait 5 seconds and move on: Local Summary to your own AI provider, Q&A to a message saying the on-device model isn't available.
 - If every other route to a transcript fails, Astra Deck now reads YouTube's own transcript panel. It opens for a moment, gets read and closes again, and one you already had open stays open. Auto-Open Transcript works again too: YouTube keeps the panel hidden in the page from the start, so the feature always thought it was already open. Watch Page Tabs' Transcript tab now opens YouTube's panel and closes it when you move to another tab.

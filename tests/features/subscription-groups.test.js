@@ -290,9 +290,15 @@ test('a click closes the new group dialog on the dim, not on the card', () => {
         feature._showNewGroupDialog(anchor);
         const [dialog] = groupDialogs(doc);
         const card = doc.querySelector('.ytkit-sub-group-dialog__card');
-        dialog.dispatchEvent({ type: 'click', target: card });
+        const pressAndRelease = (from, to) => {
+            dialog.dispatchEvent({ type: 'pointerdown', target: from });
+            dialog.dispatchEvent({ type: 'click', target: to });
+        };
+        pressAndRelease(card, card);
         assert.equal(groupDialogs(doc).length, 1);
-        dialog.dispatchEvent({ type: 'click', target: dialog });
+        pressAndRelease(card, dialog);
+        assert.equal(groupDialogs(doc).length, 1, 'selecting the name past the edge keeps it open');
+        pressAndRelease(dialog, dialog);
         assert.equal(groupDialogs(doc).length, 0);
     });
 });

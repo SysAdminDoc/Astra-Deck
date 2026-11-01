@@ -323,8 +323,11 @@
                     else dismissOverlay();
                 });
                 button.addEventListener('click', runAction);
+                // A drag that began inside and ended out here lands on the dialog too.
+                let pressedHere = false;
+                o.addEventListener('pointerdown', (event) => { pressedHere = event.target === o; });
                 o.addEventListener('click', (event) => {
-                    if (!locked && event.target === o) dismissOverlay();
+                    if (!locked && pressedHere && event.target === o) dismissOverlay();
                 });
                 o.showModal();
                 requestAnimationFrame(() => button.focus({ preventScroll: true }));
