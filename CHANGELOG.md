@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- The download popup's clip timeline shows a video frame as you hover over it or drag a handle, so you can find the right spot without guessing at timestamps. It uses the same preview images YouTube shows on its own progress bar, and if a video doesn't have them the timeline works the way it always did.
 
 - Restore Deleted Video Titles, off by default and only in the GitHub builds. Turn on Show unavailable videos in a playlist's menu and each deleted or private row gets its old title, channel and upload date from [Filmot](https://filmot.com), using your own API key saved in the toolbar popup. Without a key, the row links to Filmot's page for that video, and no video IDs get sent anywhere. The userscript always uses the link.
 - SponsorBlock: click a segment on the progress bar to watch it. Its marker dims and it won't get skipped again until you leave the video. Dragging across the bar still skips as before, and there's still no toast over the video.

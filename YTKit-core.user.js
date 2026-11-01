@@ -26314,6 +26314,20 @@ void 0;
 	}
 	_obsRegister(['data-ytkit-resource-unlock'], _syncResourceUnlock);
 	_syncResourceUnlock();
+	var _storyboardWant = '';
+	_obsRegister(['data-ytkit-storyboard-want'], function() {
+		var want = _bridgeGet('data-ytkit-storyboard-want');
+		if (!want || want === _storyboardWant) return;
+		_storyboardWant = want;
+		var videoId = String(want).split(':')[0];
+		var player = document.getElementById('movie_player');
+		var response = player && typeof player.getPlayerResponse === 'function' ? player.getPlayerResponse() : null;
+		if (!response || !response.videoDetails || response.videoDetails.videoId !== videoId) return;
+		var renderer = response.storyboards && response.storyboards.playerStoryboardSpecRenderer;
+		if (renderer && typeof renderer.spec === 'string') {
+			document.documentElement.setAttribute('data-ytkit-storyboard', JSON.stringify({ id: videoId, spec: renderer.spec }));
+		}
+	});
 	(function installFeedPrefilter() {
 		if (typeof document === 'undefined' || !document.documentElement
 			|| typeof JSON === 'undefined') return;

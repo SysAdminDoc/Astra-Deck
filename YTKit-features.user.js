@@ -65,6 +65,51 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 		);
 		return seconds <= 86400 ? Math.round(seconds * 1000) / 1000 : null;
 	}
+	const STORYBOARD_URL_PREFIX = 'https://i.ytimg.com/sb/';
+	const STORYBOARD_PREVIEW_WIDTH = 160;
+	function parseStoryboardSpec(spec) {
+		const [template, ...blocks] = String(spec || '').split('|');
+		if (!template.startsWith(STORYBOARD_URL_PREFIX)) return null;
+		const levels = [];
+		blocks.forEach((block, index) => {
+			const [width, height, count, columns, rows, intervalMs, name, sigh] = block.split('#');
+			const sizes = [width, height, count, columns, rows].map(Number);
+			if (!name || !sizes.every((value) => Number.isInteger(value) && value > 0)) return;
+			levels.push({
+				index,
+				width: sizes[0],
+				height: sizes[1],
+				count: sizes[2],
+				columns: sizes[3],
+				rows: sizes[4],
+				intervalMs: Number(intervalMs) || 0,
+				name,
+				sigh: sigh || ''
+			});
+		});
+		return levels.length ? { template, levels } : null;
+	}
+	function storyboardFrame(storyboard, seconds, duration) {
+		const level = storyboard.levels.reduce((best, candidate) => {
+			if (candidate.width > STORYBOARD_PREVIEW_WIDTH) return best.width > STORYBOARD_PREVIEW_WIDTH && candidate.width < best.width ? candidate : best;
+			return best.width > STORYBOARD_PREVIEW_WIDTH || candidate.width > best.width ? candidate : best;
+		});
+		const position = level.intervalMs > 0
+			? (seconds * 1000) / level.intervalMs
+			: (seconds / duration) * (level.count - 1);
+		const frame = Math.min(level.count - 1, Math.max(0, Math.round(position)));
+		const perSheet = level.columns * level.rows;
+		const cell = frame % perSheet;
+		const name = level.name.replace('$M', String(Math.floor(frame / perSheet)));
+		const url = storyboard.template.replace('$L', String(level.index)).replace('$N', () => name);
+		return {
+			url: level.sigh ? `${url}&sigh=${level.sigh}` : url,
+			width: level.width,
+			height: level.height,
+			x: (cell % level.columns) * level.width,
+			y: Math.floor(cell / level.columns) * level.height
+		};
+	}
 	function formatSectionTimestamp(seconds) {
 		const tenths = Math.round(Math.max(0, Number(seconds) || 0) * 10);
 		const whole = Math.floor(tenths / 10);
@@ -454,6 +499,8 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			t = (_key, fallback) => fallback,
 			getPlayerResponseGlobal = () => null,
 			getMainVideoElement = () => null,
+			publishBridgeAttribute = () => {},
+			clearBridgeAttribute = () => {},
 			supportsPopover = () => false,
 			createCloseWatcher = () => null,
 			destroyCloseWatcher = () => {},
@@ -472,6 +519,24 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			const media = getMainVideoElement();
 			const measured = Number(media?.duration);
 			return Number.isFinite(measured) && measured > 0 ? measured : 0;
+		}
+		const STORYBOARD_REQUEST_ATTR = 'data-ytkit-storyboard-want';
+		const STORYBOARD_REPLY_ATTR = 'data-ytkit-storyboard';
+		const STORYBOARD_MAX_FAILED_SHEETS = 3;
+		function requestStoryboardSpec() {
+			const videoId = getVideoId();
+			if (videoId) publishBridgeAttribute(STORYBOARD_REQUEST_ATTR, `${videoId}:${Date.now()}`);
+		}
+		function readStoryboardSpec() {
+			const videoId = getVideoId();
+			try {
+				const reply = JSON.parse(document.documentElement?.getAttribute?.(STORYBOARD_REPLY_ATTR) || 'null');
+				if (reply?.id === videoId && reply.spec) return reply.spec;
+			} catch (_) {   }
+			const response = getPlayerResponseGlobal();
+			return response?.videoDetails?.videoId === videoId
+				? response.storyboards?.playerStoryboardSpecRenderer?.spec || ''
+				: '';
 		}
 		const CLIP_MIN_LENGTH_SECONDS = 0.1;
 		function buildClipTimeline({ duration, labelId, startInput, endInput }) {
@@ -630,6 +695,65 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				media.addEventListener('timeupdate', syncPlayhead);
 				syncPlayhead();
 			}
+			requestStoryboardSpec();
+			let storyboard = null;
+			let previewAt = null;
+			let preview = null;
+			let failedSheets = 0;
+			const sheets = new Map();
+			const hidePreview = () => {
+				previewAt = null;
+				if (preview) preview.hidden = true;
+			};
+			const loadSheet = (frame) => {
+				sheets.set(frame.url, 'loading');
+				const image = document.createElement('img');
+				image.onload = () => {
+					const usable = !(image.naturalWidth < frame.width);
+					sheets.set(frame.url, usable ? 'ready' : 'failed');
+					if (!usable) failedSheets += 1;
+					if (previewAt !== null) drawPreview(previewAt);
+				};
+				image.onerror = () => {
+					sheets.set(frame.url, 'failed');
+					failedSheets += 1;
+				};
+				image.src = frame.url;
+			};
+			function drawPreview(seconds) {
+				previewAt = seconds;
+				storyboard = storyboard || parseStoryboardSpec(readStoryboardSpec());
+				if (!storyboard || failedSheets >= STORYBOARD_MAX_FAILED_SHEETS) return;
+				const frame = storyboardFrame(storyboard, seconds, duration);
+				if (!sheets.has(frame.url)) loadSheet(frame);
+				if (sheets.get(frame.url) !== 'ready') {
+					if (preview) preview.hidden = true;
+					return;
+				}
+				if (!preview) {
+					preview = document.createElement('div');
+					preview.className = 'ytkit-dl-popup__clip-preview';
+					preview.setAttribute('aria-hidden', 'true');
+					track.appendChild(preview);
+				}
+				const trackWidth = track.getBoundingClientRect()?.width || 0;
+				const centered = (seconds / duration) * trackWidth - frame.width / 2;
+				preview.style.left = `${Math.max(0, Math.min(trackWidth - frame.width, centered))}px`;
+				preview.style.width = `${frame.width}px`;
+				preview.style.height = `${frame.height}px`;
+				preview.style.backgroundImage = `url("${frame.url}")`;
+				preview.style.backgroundPosition = `-${frame.x}px -${frame.y}px`;
+				preview.dataset.time = formatSectionTimestamp(seconds);
+				preview.hidden = false;
+			}
+			track.addEventListener('pointermove', (event) => {
+				const { start, end } = effective();
+				if (dragging) drawPreview(dragging === 'start' ? start : end);
+				else drawPreview(secondsFromClientX(event.clientX));
+			});
+			track.addEventListener('pointerleave', () => {
+				if (!dragging) hidePreview();
+			});
 			track.setAttribute('role', 'group');
 			if (labelId) track.setAttribute('aria-labelledby', labelId);
 			readInputs();
@@ -1959,6 +2083,8 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				destroyCloseWatcher(watcher);
 			}
 			if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
+			clearBridgeAttribute(STORYBOARD_REQUEST_ATTR);
+			document.documentElement?.removeAttribute?.(STORYBOARD_REPLY_ATTR);
 			if (_dlPopup) {
 				try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) {   }
 				_dlPopup.remove(); _dlPopup = null;
@@ -3496,6 +3622,8 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			normalizeSectionInput,
 			formatSectionTimestamp,
 			effectiveClipSection,
+			parseStoryboardSpec,
+			storyboardFrame,
 			DOWNLOAD_HEALTH_SCHEMA_VERSION,
 			AUTO_START_RETRY_BUDGET
 		};

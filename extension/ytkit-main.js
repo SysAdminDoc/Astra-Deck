@@ -248,6 +248,23 @@
     _obsRegister(['data-ytkit-resource-unlock'], _syncResourceUnlock);
     _syncResourceUnlock();
 
+    // The clip track's preview. The isolated world can only read the inline player
+    // response, which describes the tab's first video, so it asks the player here.
+    var _storyboardWant = '';
+    _obsRegister(['data-ytkit-storyboard-want'], function() {
+        var want = _bridgeGet('data-ytkit-storyboard-want');
+        if (!want || want === _storyboardWant) return;
+        _storyboardWant = want;
+        var videoId = String(want).split(':')[0];
+        var player = document.getElementById('movie_player');
+        var response = player && typeof player.getPlayerResponse === 'function' ? player.getPlayerResponse() : null;
+        if (!response || !response.videoDetails || response.videoDetails.videoId !== videoId) return;
+        var renderer = response.storyboards && response.storyboards.playerStoryboardSpecRenderer;
+        if (renderer && typeof renderer.spec === 'string') {
+            document.documentElement.setAttribute('data-ytkit-storyboard', JSON.stringify({ id: videoId, spec: renderer.spec }));
+        }
+    });
+
     // ──────────────────────────────────────────────────────────────────
     // Feature: pre-render feed filter (data-ytkit-feed-prefilter)
     // ──────────────────────────────────────────────────────────────────

@@ -6257,6 +6257,8 @@ const STORAGE_KEYS = Object.freeze({
         getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
         // The clip track's playhead and its duration fallback read the video.
         getMainVideoElement,
+        publishBridgeAttribute,
+        clearBridgeAttribute,
         })
         : createUnavailableDownloadUIFeature();
     const _elementZapper = typeof globalThis.YTKitFeatures?.createElementZapperFeature === 'function'
@@ -47338,6 +47340,34 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         .ytkit-dl-popup__clip-track[data-dragging="1"] {
             cursor: ew-resize;
+        }
+
+        .ytkit-dl-popup__clip-preview {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background-color: rgba(6,9,13,0.9);
+            background-repeat: no-repeat;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .ytkit-dl-popup__clip-preview[hidden] {
+            display: none;
+        }
+
+        .ytkit-dl-popup__clip-preview::after {
+            content: attr(data-time);
+            position: absolute;
+            inset-inline-end: 4px;
+            bottom: 4px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background: rgba(6,9,13,0.8);
+            color: #fff;
+            font: 700 11px/1.3 var(--ytkit-font);
         }
 
         @media (prefers-reduced-motion: reduce) {
