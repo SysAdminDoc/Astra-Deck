@@ -192,7 +192,7 @@
                     .ytkit-sub-toolbar__label{font:600 11px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
                     .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
-                    .ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible,.ytkit-sub-group-chip:focus-visible,.ytkit-sub-digest-close:focus-visible,.ytkit-sub-digest-row button:focus-visible,.ytkit-sub-group-dialog button:focus-visible,.ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
+                    .ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible,.ytkit-sub-group-chip:focus-visible,.ytkit-sub-digest-close:focus-visible,.ytkit-sub-digest-row button:focus-visible,.ytkit-sub-group-dialog__card button:focus-visible,.ytkit-sub-group-dialog__card input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
                     .ytkit-sub-toolbar button[data-action="scan-stale"]{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.32);color:#bfdbfe;}
                     .ytkit-sub-toolbar button[data-action="digest"]{background:rgba(14,165,233,0.12);border-color:rgba(14,165,233,0.32);color:#bae6fd;}
@@ -212,8 +212,8 @@
                     .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 Roboto,Arial,sans-serif;}
                     .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-digest-close:hover,.ytkit-sub-digest-row button:hover{background:rgba(255,255,255,0.08);}
-                    .ytkit-sub-group-dialog input{min-height:34px;outline:none;}
-                    .ytkit-sub-group-dialog button{min-height:30px;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-group-dialog__card input{min-height:34px;outline:none;}
+                    .ytkit-sub-group-dialog__card button{min-height:30px;outline:none;touch-action:manipulation;}
                     .ytkit-sub-digest-list{display:flex;flex-direction:column;gap:6px;}
                     .ytkit-sub-digest-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto auto;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
                     .ytkit-sub-digest-row[data-depth="1"]{margin-inline-start:16px;}
@@ -260,7 +260,8 @@
                     .ytkit-sub-members-row input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-sub-members-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:600;}
                     .ytkit-sub-members-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
-                    .ytkit-sub-group-dialog{position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.55);font-family:Roboto,Arial,sans-serif;}
+                    .ytkit-sub-group-dialog{position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:16px;border:0;background:rgba(0,0,0,0.55);font-family:Roboto,Arial,sans-serif;}
+                    .ytkit-sub-group-dialog::backdrop{background:transparent;}
                     .ytkit-sub-group-dialog__card{width:min(420px,100%);min-width:min(320px,100%);box-sizing:border-box;padding:18px;border-radius:12px;background:var(--yt-spec-menu-background,#0f0f10);color:var(--yt-spec-text-primary,#e5e7eb);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:13px/1.5 Roboto,Arial,sans-serif;box-shadow:0 22px 48px rgba(0,0,0,.6);}
                     .ytkit-sub-group-dialog__title{font:600 14px/1.3 Roboto,Arial,sans-serif;color:var(--yt-spec-text-primary,#fafafa);margin-bottom:10px;}
                     .ytkit-sub-group-dialog__input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#fff);font:13px Roboto,Arial,sans-serif;box-sizing:border-box;}
@@ -302,7 +303,7 @@
                     html:not([dark]) .ytkit-sub-group-dialog{background:rgba(15,23,42,0.28);}
                     html:not([dark]) .ytkit-sub-group-dialog__input{background:#fff;border-color:rgba(15,23,42,0.2);color:var(--yt-spec-text-primary,#0f0f0f);}
                     html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#a78bfa);color:var(--ytkit-accent-contrast,#14181f);}
-                    html:not([dark]) .ytkit-sub-toolbar select:focus-visible,html:not([dark]) .ytkit-sub-toolbar button:focus-visible,html:not([dark]) .ytkit-sub-group-chip:focus-visible,html:not([dark]) .ytkit-sub-digest-close:focus-visible,html:not([dark]) .ytkit-sub-digest-row button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(124,58,237,0.42);}
+                    html:not([dark]) .ytkit-sub-toolbar select:focus-visible,html:not([dark]) .ytkit-sub-toolbar button:focus-visible,html:not([dark]) .ytkit-sub-group-chip:focus-visible,html:not([dark]) .ytkit-sub-digest-close:focus-visible,html:not([dark]) .ytkit-sub-digest-row button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog__card button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog__card input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(124,58,237,0.42);}
                 `, 'subscription-groups', true);
             },
 
@@ -2163,15 +2164,14 @@
             _showNewGroupDialog(anchorEl, parentId = '') {
                 // Audit-pass replacement for window.prompt — modal blocks the
                 // page, ships unstyled, and is deprecated in some contexts.
-                // This inline dialog reuses Astra surface CSS, focus-traps to
-                // the input, and dismisses on Esc / outside click.
+                // This inline dialog reuses Astra surface CSS. The dialog is
+                // the whole dim overlay, so a click on the dim still lands on
+                // it and the card stays centered by flex.
                 const groups = this._readGroups();
                 const safeParentId = this._normalizeNewGroupParentId(parentId, groups);
-                document.querySelector('.ytkit-sub-group-dialog')?.remove();
-                const overlay = document.createElement('div');
+                this._closeNewGroupDialog();
+                const overlay = document.createElement('dialog');
                 overlay.className = 'ytkit-sub-group-dialog';
-                overlay.setAttribute('role', 'dialog');
-                overlay.setAttribute('aria-modal', 'true');
                 overlay.setAttribute('aria-label', safeParentId
                     ? t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')
                     : t('subscriptionCreateGroupDialogAria', 'Create subscription group'));
@@ -2205,10 +2205,18 @@
                 card.append(h, input, actions);
                 overlay.appendChild(card);
                 document.body.appendChild(overlay);
-                setTimeout(() => input.focus(), 30);
+                this._newGroupDialog = overlay;
+                try {
+                    overlay.showModal();
+                    // A toast shown before the dialog is now inert outside it, Undo included.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                } catch {
+                    // reason: the dialog still paints by its z-index if the browser refuses.
+                }
+                input.focus();
 
                 const dismiss = () => {
-                    overlay.remove();
+                    this._closeNewGroupDialog();
                     if (anchorEl?.focus) try { anchorEl.focus(); } catch { /* reason: focus restore is best-effort */ }
                 };
                 const submit = () => {
@@ -2235,8 +2243,9 @@
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') { e.preventDefault(); submit(); }
                 });
-                overlay.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') { e.preventDefault(); dismiss(); }
+                // The browser closes on Escape. `close` is queued, so a late one mustn't shut a newer dialog.
+                overlay.addEventListener('close', () => {
+                    if (this._newGroupDialog === overlay) dismiss();
                 });
                 overlay.addEventListener('click', (e) => {
                     if (e.target === overlay) dismiss();
@@ -2652,10 +2661,20 @@
                 });
                 document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; delete el.dataset.ytkitOrigId; });
                 // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
-                document.querySelector('.ytkit-sub-group-dialog')?.remove();
+                this._closeNewGroupDialog();
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._activeGroupId = '';
+            },
+
+            _closeNewGroupDialog() {
+                const dialog = this._newGroupDialog;
+                if (!dialog) return;
+                this._newGroupDialog = null;
+                if (dialog.open) dialog.close();
+                // Before it leaves the document, or a toast hosted inside goes with it.
+                globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                dialog.remove();
             },
 
             // ── Group membership editor (NF: Edit Channels) ──

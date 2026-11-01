@@ -46,6 +46,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Square Search Bar did nothing after that same rebuild, because it named parts of the old box. It works again, so anyone who kept the old look through the last defaults change gets the square bar back.
 - Compact / Unfixed Header sizes the new search box too, and keeps it centered in the 40 pixel header.
 - Compact / Unfixed Header now scrolls away like it says. YouTube's fixed container held it on screen, and the page started at the very top, so the header sat over the top of the video and the first sidebar row.
+- The Subscription Groups name box is a real modal dialog now, so Tab and a screen reader both stay inside it until it's closed.
 - The Watch Stats dashboard is a real modal dialog too, so a screen reader can't wander off into the page behind it and Tab can't either.
 - The quick controls menu is a real modal dialog as well, so the page behind it can't be reached until it closes. A toast that was already up when you open it moves inside, so its Undo button keeps working.
 - The settings panel is a real modal dialog now, so nothing behind it can be reached by mouse, keyboard or a screen reader, and Escape, an open dropdown and the backdrop all do what the browser says they should. It also fixes something that wasn't visible. The closed panel stayed in the page's tab order, so Tab could wander through controls you couldn't see.

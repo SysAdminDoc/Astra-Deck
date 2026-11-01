@@ -561,14 +561,14 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         subscriptionGroups.includes("mark.setAttribute('aria-label', t('subscriptionDigestMarkReadAriaTpl', 'Mark {group} digest as read')") &&
         subscriptionGroups.includes("view.setAttribute('aria-label', t('subscriptionDigestViewAriaTpl', 'View {group} subscriptions')"),
         'Subscription digest must expose named close, mark-read, and view actions');
-    add('Subscription group modal is modal, labelled, and Escape-closeable',
-        subscriptionGroups.includes("overlay.setAttribute('role', 'dialog')") &&
-        subscriptionGroups.includes("overlay.setAttribute('aria-modal', 'true')") &&
+    add('Subscription group modal is a real modal dialog, labelled, and Escape-closeable',
+        /const overlay = document\.createElement\('dialog'\);\s+overlay\.className = 'ytkit-sub-group-dialog';/.test(subscriptionGroups) &&
         subscriptionGroups.includes("t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')") &&
         subscriptionGroups.includes("t('subscriptionCreateGroupDialogAria', 'Create subscription group')") &&
         subscriptionGroups.includes("input.setAttribute('aria-label', t('subscriptionGroupNameAria', 'Group name'))") &&
-        subscriptionGroups.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
-        'Subscription group modal must be labelled, modal, and close on Escape');
+        /overlay\.showModal\(\);\s+\/\/ A toast shown before the dialog/.test(subscriptionGroups) &&
+        subscriptionGroups.includes('if (this._newGroupDialog === overlay) dismiss();'),
+        'Subscription group modal must open through showModal, which gives it the inert page and Escape');
     // The watch-time dashboard shipped with no dialog semantics, an unlabeled
     // close button and no Escape handling — it was simply absent from this
     // list, so nothing caught it.
@@ -631,7 +631,8 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Settings and subscription overlays must use native select controls so browser typeahead works');
     add('Subscription group modal covers Enter submit and Escape close',
         subscriptionGroups.includes("if (e.key === 'Enter') { e.preventDefault(); submit(); }") &&
-        subscriptionGroups.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
+        subscriptionGroups.includes('if (this._newGroupDialog === overlay) dismiss();') &&
+        !subscriptionGroups.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
         'Subscription group modal must cover Enter submit and Escape close keyboard paths');
     add('Subscription membership editor restores focus and closes on Escape',
         subscriptionGroups.includes("editBtn.setAttribute('aria-haspopup', 'dialog')") &&
@@ -641,12 +642,12 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Subscription membership editor must expose dialog semantics, Escape close, first focus, and focus restore');
     add('Subscription controls have focus-visible and target size',
         subscriptionGroups.includes('.ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible') &&
-        subscriptionGroups.includes('.ytkit-sub-group-dialog button:focus-visible') &&
+        subscriptionGroups.includes('.ytkit-sub-group-dialog__card button:focus-visible') &&
         hasMinTarget(subscriptionGroups, '.ytkit-sub-toolbar select,.ytkit-sub-toolbar button') &&
         hasMinTarget(subscriptionGroups, '.ytkit-sub-group-chip') &&
         hasMinTarget(subscriptionGroups, '.ytkit-sub-digest-close,.ytkit-sub-digest-row button') &&
-        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-dialog input') &&
-        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-dialog button'),
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-dialog__card input') &&
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-dialog__card button'),
         'Subscription overlay controls must declare focus-visible and at least 24px target size');
 
     // Manual checklist must document the boundary left after static audit.

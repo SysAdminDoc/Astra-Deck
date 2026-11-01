@@ -5672,13 +5672,16 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
     // API are allowed and useful for historical context.
     assert.ok(!/window\.prompt\s*\(/.test(block),
         'subscriptionGroups must not call window.prompt(...)');
-    // The dialog must focus-trap (aria-modal) and clean up on destroy.
+    // A real modal holds focus and takes Esc from the browser. Its `close`
+    // event is what has to clean up.
     const dlgIdx = block.indexOf('_showNewGroupDialog');
     const dlgBody = block.slice(dlgIdx, dlgIdx + 10000);
-    assert.match(dlgBody, /setAttribute\('aria-modal', 'true'\)/,
-        'dialog must declare aria-modal so screen readers trap focus');
-    assert.match(dlgBody, /key === 'Escape'/,
-        'dialog must dismiss on Esc');
+    assert.match(dlgBody, /createElement\('dialog'\)/,
+        'the new-group dialog must be a real dialog element');
+    assert.match(dlgBody, /\.showModal\(\)/,
+        'the new-group dialog must open modally so the page behind it is inert');
+    assert.match(dlgBody, /addEventListener\('close'/,
+        'the new-group dialog must clean up when the browser closes it on Esc');
 });
 
 test('subscriptionGroups light theme covers every injected card surface and keeps RTL-safe spacing', () => {

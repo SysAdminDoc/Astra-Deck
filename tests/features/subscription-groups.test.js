@@ -125,6 +125,55 @@ class FakeDocument {
     }
 }
 
+// What the feature asks a real <dialog> for. The browser queues `close`, so a
+// test delivers it itself, whenever the case it's checking needs it delivered.
+class FakeDialogDocument extends FakeDocument {
+    constructor({ refuseModal = false } = {}) {
+        super();
+        this.calls = [];
+        this.refuseModal = refuseModal;
+    }
+
+    createElement(tagName) {
+        const node = super.createElement(tagName);
+        if (tagName !== 'dialog') return node;
+        const { calls, refuseModal } = this;
+        const remove = node.remove.bind(node);
+        node.open = false;
+        node.showModal = () => {
+            if (refuseModal) throw new Error('refused');
+            node.open = true;
+            calls.push('showModal');
+        };
+        node.close = () => {
+            node.open = false;
+            calls.push('close');
+        };
+        node.remove = () => {
+            calls.push('remove');
+            remove();
+        };
+        return node;
+    }
+}
+
+function withGroupDialog(run, options = {}) {
+    const previousDocument = globalThis.document;
+    const previousCore = globalThis.YTKitCore;
+    const doc = new FakeDialogDocument(options);
+    globalThis.document = doc;
+    globalThis.YTKitCore = { toast: { raiseActiveToasts: () => doc.calls.push('raise') } };
+    try {
+        const { feature } = makeFeature({ subscriptionGroupData: {} });
+        return run({ doc, feature, anchor: new FakeNode('button') });
+    } finally {
+        globalThis.document = previousDocument;
+        globalThis.YTKitCore = previousCore;
+    }
+}
+
+const groupDialogs = (doc) => doc.querySelectorAll('.ytkit-sub-group-dialog');
+
 function makeFeature(settings = {}, options = {}) {
     const appState = { settings: { ...settings } };
     const toasts = [];
@@ -147,6 +196,118 @@ function makeFeature(settings = {}, options = {}) {
     feature._renderDeadChannelMarkers = () => {};
     return { appState, feature, toasts, storage, exports };
 }
+
+test('the new group dialog opens as a real modal and takes the toasts in with it', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        const [dialog] = groupDialogs(doc);
+        assert.equal(dialog.tagName, 'DIALOG');
+        assert.equal(dialog.parentNode === doc.body, true);
+        assert.equal(dialog.open, true);
+        assert.equal(dialog.getAttribute('aria-label'), 'Create subscription group');
+        // A modal <dialog> says both of these by itself.
+        assert.equal(dialog.getAttribute('role'), null);
+        assert.equal(dialog.getAttribute('aria-modal'), null);
+        assert.deepEqual(doc.calls, ['showModal', 'raise']);
+        assert.equal(doc.querySelector('.ytkit-sub-group-dialog__input').focused, true);
+    });
+});
+
+test('the new group dialog still works when the browser refuses a modal', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        assert.doesNotThrow(() => feature._showNewGroupDialog(anchor));
+        assert.equal(groupDialogs(doc).length, 1);
+        assert.equal(doc.querySelector('.ytkit-sub-group-dialog__input').focused, true);
+        doc.querySelector('.ytkit-sub-group-dialog__button').dispatchEvent({ type: 'click' });
+        assert.equal(groupDialogs(doc).length, 0);
+    }, { refuseModal: true });
+});
+
+test('closing the new group dialog lets the toasts out before it leaves', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        doc.calls.length = 0;
+        doc.querySelector('.ytkit-sub-group-dialog__button').dispatchEvent({ type: 'click' });
+        assert.deepEqual(doc.calls, ['close', 'raise', 'remove']);
+        assert.equal(groupDialogs(doc).length, 0);
+        assert.equal(anchor.focused, true);
+        assert.ok(!feature._newGroupDialog, 'nothing left to close');
+
+        doc.calls.length = 0;
+        feature._closeNewGroupDialog();
+        assert.deepEqual(doc.calls, [], 'with nothing open there is nothing to re-stack');
+    });
+});
+
+test('Escape belongs to the browser, and its close cleans the new group dialog up', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        const [dialog] = groupDialogs(doc);
+        let prevented = false;
+        dialog.dispatchEvent({ type: 'keydown', key: 'Escape', target: dialog, preventDefault() { prevented = true; } });
+        assert.equal(prevented, false, 'cancelling the keydown would stop the browser closing it');
+        assert.equal(groupDialogs(doc).length, 1, 'the browser closes it, not a key handler');
+
+        // The browser already closed it, so nothing asks it to close twice.
+        dialog.open = false;
+        doc.calls.length = 0;
+        dialog.dispatchEvent({ type: 'close' });
+        assert.deepEqual(doc.calls, ['raise', 'remove']);
+        assert.equal(groupDialogs(doc).length, 0);
+        assert.equal(anchor.focused, true);
+    });
+});
+
+test('a late close from an old new group dialog leaves the newer one open', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        const [first] = groupDialogs(doc);
+        doc.querySelector('.ytkit-sub-group-dialog__button').dispatchEvent({ type: 'click' });
+        anchor.focused = false;
+
+        feature._showNewGroupDialog(anchor);
+        const [second] = groupDialogs(doc);
+        first.dispatchEvent({ type: 'close' });
+        assert.equal(groupDialogs(doc).length, 1);
+        assert.equal(second.open, true);
+        assert.equal(anchor.focused, false, 'focus stays in the dialog that is still open');
+    });
+});
+
+test('opening the new group dialog again replaces the open one without moving focus out', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        const [first] = groupDialogs(doc);
+        feature._showNewGroupDialog(anchor);
+        assert.equal(groupDialogs(doc).length, 1);
+        assert.equal(first.open, false, 'a removed modal would otherwise keep the page inert');
+        assert.equal(anchor.focused, undefined);
+    });
+});
+
+test('a click closes the new group dialog on the dim, not on the card', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        const [dialog] = groupDialogs(doc);
+        const card = doc.querySelector('.ytkit-sub-group-dialog__card');
+        dialog.dispatchEvent({ type: 'click', target: card });
+        assert.equal(groupDialogs(doc).length, 1);
+        dialog.dispatchEvent({ type: 'click', target: dialog });
+        assert.equal(groupDialogs(doc).length, 0);
+    });
+});
+
+test('turning the feature off closes an open new group dialog', () => {
+    withGroupDialog(({ doc, feature, anchor }) => {
+        feature._showNewGroupDialog(anchor);
+        const [dialog] = groupDialogs(doc);
+        doc.calls.length = 0;
+        feature.destroy();
+        assert.equal(dialog.open, false, 'a removed modal would otherwise keep the page inert');
+        assert.deepEqual(doc.calls, ['close', 'raise', 'remove']);
+        assert.equal(groupDialogs(doc).length, 0);
+    });
+});
 
 test('subscription groups support create/read/update/delete flows and membership editing', () => {
     const previousDocument = globalThis.document;

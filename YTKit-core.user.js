@@ -19397,6 +19397,7 @@ __astraDeckRegistry["core/toast.js"] = function (globalThis, self, window, chrom
 	const MODAL_HOSTS = Object.freeze([
 		'#ytkit-page-modal:modal',
 		'.ytkit-wha-overlay:modal',
+		'.ytkit-sub-group-dialog:modal',
 		'#ytkit-settings-panel:modal'
 	]);
 	function topLayerHost() {
