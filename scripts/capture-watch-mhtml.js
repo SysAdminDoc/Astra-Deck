@@ -18,6 +18,16 @@ const REPO_ROOT = fs.realpathSync.native(path.join(__dirname, '..'));
 const DEFAULT_URL = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
 const DEFAULT_OUT = path.join(REPO_ROOT, 'mhtml', 'WatchPage.mhtml');
 const SURFACE_PROFILES = Object.freeze({
+    'live-chat': Object.freeze({
+        // Streams end, so --url names one that's on air today.
+        url: null,
+        out: path.join(REPO_ROOT, 'mhtml', 'LiveChat.mhtml'),
+        waitSelectors: Object.freeze(['yt-live-chat-app', 'yt-live-chat-renderer', 'yt-live-chat-text-message-renderer']),
+        requiredTokens: Object.freeze(['yt-live-chat-renderer']),
+        inlineTokens: Object.freeze(['ytcfg']),
+        requireDelhi: false,
+        subject: 'YouTube live chat DOM fixture',
+    }),
     watch: Object.freeze({
         url: DEFAULT_URL,
         out: DEFAULT_OUT,
@@ -25,6 +35,7 @@ const SURFACE_PROFILES = Object.freeze({
         requiredTokens: Object.freeze(['ytd-watch-flexy', 'movie_player']),
         inlineTokens: Object.freeze(['ytInitialPlayerResponse', 'ytcfg']),
         requireDelhi: true,
+        preCaptureAction: 'open-watch-surfaces',
         subject: 'YouTube watch DOM fixture',
     }),
     search: Object.freeze({
@@ -182,6 +193,9 @@ function parseArgs(argv) {
     const profile = SURFACE_PROFILES[raw.surface];
     if (!profile) {
         throw new Error(`Unknown --surface "${raw.surface}". Expected one of: ${Object.keys(SURFACE_PROFILES).join(', ')}`);
+    }
+    if (!raw.url && !profile.url) {
+        throw new Error(`--surface ${raw.surface} requires --url <a page that is on air today>`);
     }
     const userDataDir = resolveUserDataDir(raw.userDataDir, raw.surface);
     if (profile.authRequired && !userDataDir) {
@@ -551,7 +565,19 @@ function chooseCaptureData({ snapshot, renderedHtml, inlineTokens = [], buildFal
     };
 }
 
-function buildSinglePartMhtml(url, html, subject) {
+// The rendered DOM brings back the scripts a snapshot dropped, but it only links
+// to the stylesheets. YouTube's CSS names most of its custom elements, so a
+// capture without it reads as if they had all gone.
+function snapshotStylesheetParts(snapshot) {
+    const text = String(snapshot || '');
+    const boundary = /boundary="?([^";\r\n]+)"?/.exec(text)?.[1];
+    if (!boundary) return [];
+    return text.split(`--${boundary}`)
+        .map((part) => part.trim())
+        .filter((part) => /^Content-Type:\s*text\/css/im.test(part));
+}
+
+function buildSinglePartMhtml(url, html, subject, extraParts = []) {
     const boundary = '----astra-deck-dom-' + Date.now().toString(36);
     return [
         'From: <Saved by Astra Deck>',
@@ -567,9 +593,64 @@ function buildSinglePartMhtml(url, html, subject) {
         '',
         html,
         '',
+        ...extraParts.flatMap((part) => [`--${boundary}`, part, '']),
         `--${boundary}--`,
         '',
     ].join('\r\n');
+}
+
+// YouTube answers a browser that calls itself HeadlessChrome with an out-of-date
+// page on the chat popout, so the capture has to go by the ordinary name.
+function ordinaryUserAgent(userAgent) {
+    return String(userAgent || '').replace('HeadlessChrome/', 'Chrome/');
+}
+
+// No window and no sound: a capture runs on someone's desktop while they work.
+function chromeLaunchArgs({ port, userDataDir }) {
+    return [
+        '--headless=new',
+        `--remote-debugging-port=${port}`,
+        `--user-data-dir=${userDataDir}`,
+        '--no-first-run',
+        '--disable-extensions',
+        '--autoplay-policy=no-user-gesture-required',
+        '--mute-audio',
+        '--window-size=1280,900',
+        'about:blank',
+    ];
+}
+
+// The settings menu builds its rows when it opens and comments load when they're
+// scrolled to, so a capture of a resting page can't speak for either.
+async function openWatchSurfaces(cdp, opts, { attempts = 40, pauseMs = 400 } = {}) {
+    if (opts.preCaptureAction !== 'open-watch-surfaces') return false;
+
+    const evaluate = async (expression) => (await cdp.send('Runtime.evaluate', {
+        expression,
+        returnByValue: true,
+    }, 5000)).result?.value;
+    const waitFor = async (step) => {
+        for (let i = 0; i < attempts; i += 1) {
+            if (await evaluate(step)) return true;
+            await sleep(pauseMs);
+        }
+        return false;
+    };
+
+    const comments = await waitFor(`(() => {
+        document.querySelector('ytd-comments')?.scrollIntoView();
+        return !!document.querySelector('ytd-comment-thread-renderer');
+    })()`);
+    if (!comments) throw new Error('watch capture requires comments to load: pass a --url that has them');
+
+    await evaluate(`(() => {
+        window.scrollTo(0, 0);
+        document.querySelector('.ytp-settings-button')?.click();
+        return true;
+    })()`);
+    const menu = await waitFor(`!!document.querySelector('.ytp-menuitem')`);
+    if (!menu) throw new Error('watch capture requires the player settings menu to open');
+    return true;
 }
 
 async function capture(opts) {
@@ -577,17 +658,7 @@ async function capture(opts) {
     const port = await findFreePort();
     const tempProfileDir = opts.userDataDir ? null : fs.mkdtempSync(path.join(os.tmpdir(), 'astra-deck-cdp-'));
     const userDataDir = opts.userDataDir || tempProfileDir;
-    const chromeArgs = [
-        `--remote-debugging-port=${port}`,
-        `--user-data-dir=${userDataDir}`,
-        '--no-first-run',
-        '--disable-extensions',
-        '--autoplay-policy=no-user-gesture-required',
-        '--window-size=1280,900',
-        '--new-window',
-        'about:blank',
-    ];
-    const proc = spawn(chrome, chromeArgs, {
+    const proc = spawn(chrome, chromeLaunchArgs({ port, userDataDir }), {
         stdio: 'ignore',
         windowsHide: true,
     });
@@ -607,6 +678,8 @@ async function capture(opts) {
         await cdp.send('Page.enable');
         await cdp.send('Runtime.enable');
         await cdp.send('Network.enable');
+        const version = await fetchJson(`http://127.0.0.1:${port}/json/version`);
+        await cdp.send('Network.setUserAgentOverride', { userAgent: ordinaryUserAgent(version['User-Agent']) });
         await cdp.send('Network.setBlockedURLs', {
             urls: [
                 '*.googlevideo.com/*',
@@ -619,6 +692,7 @@ async function capture(opts) {
         await cdp.send('Page.navigate', { url: opts.url });
         const initialProbe = await waitForSurface(cdp, opts);
         const actionProbe = await openNotificationsMenu(cdp, opts);
+        await openWatchSurfaces(cdp, opts);
         const probe = actionProbe || initialProbe;
         assertSurfaceContent(probe, opts);
 
@@ -664,7 +738,7 @@ async function capture(opts) {
                 snapshot: data,
                 renderedHtml,
                 inlineTokens,
-                buildFallback: (html) => buildSinglePartMhtml(opts.url, html, opts.subject)
+                buildFallback: (html) => buildSinglePartMhtml(opts.url, html, opts.subject, snapshotStylesheetParts(data))
             });
             if (chosen.missing.length) {
                 throw new Error(
@@ -728,4 +802,13 @@ if (require.main === module) {
         });
 }
 
-module.exports = { chooseCaptureData, SURFACE_PROFILES };
+module.exports = {
+    buildSinglePartMhtml,
+    chooseCaptureData,
+    chromeLaunchArgs,
+    openWatchSurfaces,
+    ordinaryUserAgent,
+    parseArgs,
+    snapshotStylesheetParts,
+    SURFACE_PROFILES,
+};

@@ -566,7 +566,7 @@
       "surface": "mainVideo",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
-      "elementCount": 5070,
+      "elementCount": 9790,
       "stable": [
         {
           "selector": "video.html5-main-video",
@@ -602,7 +602,7 @@
       "surface": "player",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
-      "elementCount": 5070,
+      "elementCount": 9790,
       "stable": [
         {
           "selector": "#movie_player",
@@ -638,7 +638,7 @@
       "surface": "playerChrome",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
-      "elementCount": 5070,
+      "elementCount": 9790,
       "stable": [
         {
           "selector": ".ytp-chrome-bottom",
@@ -658,7 +658,7 @@
         {
           "selector": ".ytp-progress-bar-padding",
           "matched": true,
-          "matchCount": 3
+          "matchCount": 1
         }
       ],
       "fallback": [
@@ -702,7 +702,7 @@
       "surface": "playerSettings",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
-      "elementCount": 5070,
+      "elementCount": 9790,
       "stable": [
         {
           "selector": ".ytp-settings-button",
@@ -716,8 +716,8 @@
         },
         {
           "selector": ".ytp-menuitem",
-          "matched": false,
-          "matchCount": 0
+          "matched": true,
+          "matchCount": 2
         }
       ],
       "fallback": [
@@ -745,17 +745,447 @@
       "matchedSelectors": [
         ".ytp-settings-button",
         ".ytp-panel",
+        ".ytp-menuitem",
         ".ytp-popup",
         ".ytp-panel-menu",
         ".ytp-overflow-panel",
         "#movie_player .ytp-panel-menu"
       ]
     },
+    "watch.appShell": {
+      "surface": "appShell",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-app",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-page-manager",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "body > ytd-app",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-page-manager.style-scope",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-app",
+        "ytd-page-manager",
+        "body > ytd-app",
+        "ytd-page-manager.style-scope"
+      ]
+    },
+    "watch.comments": {
+      "surface": "comments",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-comments",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "ytd-comment-thread-renderer",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "ytd-comment-view-model",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "#more-replies-sub-thread",
+          "matched": true,
+          "matchCount": 16
+        },
+        {
+          "selector": "#expanded-threads",
+          "matched": true,
+          "matchCount": 16
+        },
+        {
+          "selector": "#expander-contents",
+          "matched": true,
+          "matchCount": 16
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-comment-thread-renderer.style-scope",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "ytd-comment-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "#more-replies",
+          "matched": true,
+          "matchCount": 16
+        },
+        {
+          "selector": "#less-replies",
+          "matched": true,
+          "matchCount": 16
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-comments",
+        "ytd-comment-thread-renderer",
+        "ytd-comment-view-model",
+        "#more-replies-sub-thread",
+        "#expanded-threads",
+        "#expander-contents",
+        "ytd-comment-thread-renderer.style-scope",
+        "#more-replies",
+        "#less-replies"
+      ]
+    },
+    "watch.engagementPanels": {
+      "surface": "engagementPanels",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-engagement-panel-section-list-renderer",
+          "matched": true,
+          "matchCount": 7
+        },
+        {
+          "selector": "#panels ytd-engagement-panel-section-list-renderer",
+          "matched": true,
+          "matchCount": 7
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-engagement-panel-section-list-renderer.style-scope",
+          "matched": true,
+          "matchCount": 7
+        },
+        {
+          "selector": "ytd-engagement-panel-title-header-renderer",
+          "matched": true,
+          "matchCount": 3
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-engagement-panel-section-list-renderer",
+        "#panels ytd-engagement-panel-section-list-renderer",
+        "ytd-engagement-panel-section-list-renderer.style-scope",
+        "ytd-engagement-panel-title-header-renderer"
+      ]
+    },
+    "watch.masthead": {
+      "surface": "masthead",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-masthead",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#masthead-container",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-masthead div.style-scope",
+          "matched": true,
+          "matchCount": 22
+        },
+        {
+          "selector": "#masthead-container div.style-scope",
+          "matched": true,
+          "matchCount": 22
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-masthead",
+        "#masthead-container",
+        "ytd-masthead div.style-scope",
+        "#masthead-container div.style-scope"
+      ]
+    },
+    "watch.media": {
+      "surface": "media",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "video",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "img",
+          "matched": true,
+          "matchCount": 84
+        },
+        {
+          "selector": "ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": true,
+          "matchCount": 20
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "#content video",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#content img",
+          "matched": true,
+          "matchCount": 84
+        },
+        {
+          "selector": "#content ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "video",
+        "img",
+        "ytd-thumbnail",
+        "yt-thumbnail-view-model",
+        "#content video",
+        "#content img",
+        "#content ytd-thumbnail"
+      ]
+    },
+    "watch.nav": {
+      "surface": "nav",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-masthead",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#masthead-container",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-masthead div.style-scope",
+          "matched": true,
+          "matchCount": 22
+        },
+        {
+          "selector": "#masthead-container div.style-scope",
+          "matched": true,
+          "matchCount": 22
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-masthead",
+        "#masthead-container",
+        "ytd-masthead div.style-scope",
+        "#masthead-container div.style-scope"
+      ]
+    },
+    "watch.relatedSidebar": {
+      "surface": "relatedSidebar",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "#secondary ytd-watch-next-secondary-results-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-watch-next-secondary-results-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-watch-next-secondary-results-renderer.style-scope",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#related",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "#secondary ytd-watch-next-secondary-results-renderer",
+        "ytd-watch-next-secondary-results-renderer",
+        "ytd-watch-next-secondary-results-renderer.style-scope",
+        "#related"
+      ]
+    },
+    "watch.sidebar": {
+      "surface": "sidebar",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "#secondary",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-watch-flexy #secondary",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "#secondary.style-scope",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-watch-flexy[is-two-columns_] #secondary",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "#secondary",
+        "ytd-watch-flexy #secondary",
+        "#secondary.style-scope",
+        "ytd-watch-flexy[is-two-columns_] #secondary"
+      ]
+    },
+    "watch.thumbnail": {
+      "surface": "thumbnail",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "a#thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytThumbnailViewModelHost",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-thumbnail a#thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-thumbnail",
+        "yt-thumbnail-view-model",
+        "a#thumbnail",
+        "ytd-thumbnail a#thumbnail"
+      ]
+    },
+    "watch.watch": {
+      "surface": "watch",
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 9790,
+      "stable": [
+        {
+          "selector": "ytd-watch-flexy[video-id]",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-watch-flexy",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-watch-metadata",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#below",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-watch-metadata.watch-active-metadata",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-watch-flexy[flexy]",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-watch-flexy[video-id]",
+        "ytd-watch-flexy",
+        "ytd-watch-metadata",
+        "#below",
+        "ytd-watch-metadata.watch-active-metadata"
+      ]
+    },
     "liveChat": {
       "surface": "liveChat",
       "source": "mhtml/LiveChat.mhtml",
       "fixture": "yt-live-chat.tokens.txt",
-      "elementCount": 6776,
+      "elementCount": 6754,
       "stable": [
         {
           "selector": "yt-live-chat-app",
@@ -777,7 +1207,7 @@
         {
           "selector": "yt-live-chat-text-message-renderer",
           "matched": true,
-          "matchCount": 75
+          "matchCount": 67
         },
         {
           "selector": "yt-live-chat-message-input-renderer",
@@ -796,12 +1226,12 @@
       "surface": "shortsShelf",
       "source": "mhtml/Shorts.mhtml",
       "fixture": "yt-shorts.tokens.txt",
-      "elementCount": 2847,
+      "elementCount": 2788,
       "stable": [
         {
           "selector": "a[href^=\"/shorts\"]",
           "matched": true,
-          "matchCount": 2
+          "matchCount": 1
         },
         {
           "selector": "ytd-rich-shelf-renderer",
@@ -834,7 +1264,7 @@
       "surface": "media",
       "source": "mhtml/Shorts.mhtml",
       "fixture": "yt-shorts.tokens.txt",
-      "elementCount": 2847,
+      "elementCount": 2788,
       "stable": [
         {
           "selector": "video",
@@ -844,7 +1274,7 @@
         {
           "selector": "img",
           "matched": true,
-          "matchCount": 13
+          "matchCount": 14
         },
         {
           "selector": "ytd-thumbnail",
@@ -866,7 +1296,7 @@
         {
           "selector": "#content img",
           "matched": true,
-          "matchCount": 13
+          "matchCount": 14
         },
         {
           "selector": "#content ytd-thumbnail",
@@ -887,7 +1317,7 @@
       "surface": "thumbnail",
       "source": "mhtml/Shorts.mhtml",
       "fixture": "yt-shorts.tokens.txt",
-      "elementCount": 2847,
+      "elementCount": 2788,
       "stable": [
         {
           "selector": "ytd-thumbnail",
@@ -927,7 +1357,7 @@
       "surface": "search",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "yt-searchbox",
@@ -965,7 +1395,7 @@
       "surface": "searchResults",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-search[page-subtype=\"search\"]",
@@ -979,8 +1409,8 @@
         },
         {
           "selector": "ytd-section-list-renderer[page-subtype=\"search\"]",
-          "matched": true,
-          "matchCount": 1
+          "matched": false,
+          "matchCount": 0
         }
       ],
       "fallback": [
@@ -998,7 +1428,6 @@
       "matchedSelectors": [
         "ytd-search[page-subtype=\"search\"]",
         "ytd-two-column-search-results-renderer[is-search]",
-        "ytd-section-list-renderer[page-subtype=\"search\"]",
         "ytd-search",
         "ytd-two-column-search-results-renderer"
       ]
@@ -1007,7 +1436,7 @@
       "surface": "feedCard",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-rich-item-renderer",
@@ -1022,7 +1451,7 @@
         {
           "selector": "ytd-video-renderer",
           "matched": true,
-          "matchCount": 19
+          "matchCount": 20
         }
       ],
       "fallback": [
@@ -1046,12 +1475,12 @@
       "surface": "feedExperimentChips",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "yt-chip-cloud-chip-renderer",
           "matched": true,
-          "matchCount": 7
+          "matchCount": 6
         },
         {
           "selector": "yt-chip-cloud-renderer",
@@ -1085,7 +1514,7 @@
       "surface": "feedPlayables",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-game-card-renderer",
@@ -1126,7 +1555,7 @@
       "surface": "feedPrompt",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-feedback-survey-renderer",
@@ -1167,7 +1596,7 @@
       "surface": "feedSponsored",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-in-feed-ad-layout-renderer",
@@ -1210,12 +1639,12 @@
       "surface": "thumbnail",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-thumbnail",
           "matched": true,
-          "matchCount": 20
+          "matchCount": 22
         },
         {
           "selector": "yt-thumbnail-view-model",
@@ -1225,7 +1654,7 @@
         {
           "selector": "a#thumbnail",
           "matched": true,
-          "matchCount": 20
+          "matchCount": 22
         }
       ],
       "fallback": [
@@ -1237,7 +1666,7 @@
         {
           "selector": "ytd-thumbnail a#thumbnail",
           "matched": true,
-          "matchCount": 20
+          "matchCount": 22
         }
       ],
       "matchedSelectors": [
@@ -1251,7 +1680,7 @@
       "surface": "nav",
       "source": "mhtml/SearchResults.mhtml",
       "fixture": "yt-search-results.tokens.txt",
-      "elementCount": 3969,
+      "elementCount": 6829,
       "stable": [
         {
           "selector": "ytd-masthead",
@@ -1268,12 +1697,12 @@
         {
           "selector": "ytd-masthead div.style-scope",
           "matched": true,
-          "matchCount": 21
+          "matchCount": 22
         },
         {
           "selector": "#masthead-container div.style-scope",
           "matched": true,
-          "matchCount": 21
+          "matchCount": 22
         }
       ],
       "matchedSelectors": [
@@ -1327,7 +1756,7 @@
       "surface": "profile",
       "source": "mhtml/Channel.mhtml",
       "fixture": "yt-channel.tokens.txt",
-      "elementCount": 6028,
+      "elementCount": 6244,
       "stable": [
         {
           "selector": "ytd-video-owner-renderer",
@@ -1359,12 +1788,12 @@
         {
           "selector": "yt-avatar-shape",
           "matched": true,
-          "matchCount": 63
+          "matchCount": 77
         },
         {
           "selector": "yt-decorated-avatar-view-model",
           "matched": true,
-          "matchCount": 8
+          "matchCount": 6
         },
         {
           "selector": "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer",
@@ -1384,7 +1813,7 @@
       "surface": "channelProfile",
       "source": "mhtml/Channel.mhtml",
       "fixture": "yt-channel.tokens.txt",
-      "elementCount": 6028,
+      "elementCount": 6244,
       "stable": [
         {
           "selector": "ytd-video-owner-renderer",
@@ -1416,12 +1845,12 @@
         {
           "selector": "yt-avatar-shape",
           "matched": true,
-          "matchCount": 63
+          "matchCount": 77
         },
         {
           "selector": "yt-decorated-avatar-view-model",
           "matched": true,
-          "matchCount": 8
+          "matchCount": 6
         },
         {
           "selector": "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer",
@@ -1441,7 +1870,7 @@
       "surface": "feedCard",
       "source": "mhtml/Channel.mhtml",
       "fixture": "yt-channel.tokens.txt",
-      "elementCount": 6028,
+      "elementCount": 6244,
       "stable": [
         {
           "selector": "ytd-rich-item-renderer",
@@ -1479,7 +1908,7 @@
       "surface": "thumbnail",
       "source": "mhtml/Channel.mhtml",
       "fixture": "yt-channel.tokens.txt",
-      "elementCount": 6028,
+      "elementCount": 6244,
       "stable": [
         {
           "selector": "ytd-thumbnail",
@@ -1520,7 +1949,7 @@
       "surface": "player",
       "source": "mhtml/EmbedPlayer.mhtml",
       "fixture": "yt-embed-player.tokens.txt",
-      "elementCount": 50,
+      "elementCount": 90,
       "stable": [
         {
           "selector": "#movie_player",
@@ -1554,7 +1983,7 @@
       "surface": "mainVideo",
       "source": "mhtml/EmbedPlayer.mhtml",
       "fixture": "yt-embed-player.tokens.txt",
-      "elementCount": 50,
+      "elementCount": 90,
       "stable": [
         {
           "selector": "video.html5-main-video",

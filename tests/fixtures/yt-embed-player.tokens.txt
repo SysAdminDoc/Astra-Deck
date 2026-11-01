@@ -1,9 +1,9 @@
 # Selector-regression canary fixture.
 # Source: mhtml/EmbedPlayer.mhtml
-# YouTube client: unknown
-# Captured: 2026-06-05 (from file mtime)
+# YouTube client: 2.20261029.11.00
+# Captured: 2026-10-29 (from INNERTUBE_CLIENT_VERSION)
 # Regenerated via: npm run build:fixtures
-# Captured tokens: 1341
+# Captured tokens: 1378
 # Encoding: one token per line, sorted.
 content
 contents
@@ -36,8 +36,8 @@ yt-delhi-bottom-controls-height-xsmall-width-mode
 yt-delhi-icon-size
 yt-delhi-pill-height
 yt-delhi-pill-top-height
-yt-dual-avatar-view-model-badge-cutout-radius
 yt-frosted-glass-backdrop-filter-override
+yt-interstitial-view-model
 yt-light-rim-color
 yt-light-wash-color
 yt-light-wash-opacity
@@ -45,7 +45,11 @@ yt-light-wash-size
 yt-light-wash-x
 yt-light-wash-y
 yt-metadata-badge-renderer
-yt-shorts-video-title-max-lines
+yt-player-controls-button-height
+yt-player-controls-button-padding
+yt-player-controls-button-width
+yt-player-interstitial-renderer
+yt-player-overlay-video-details-renderer
 yt-slider-shape-gradient-percent
 yt-sys-color-baseline--error-indicator
 yt-sys-color-baseline--overlay-background-brand
@@ -59,7 +63,9 @@ yt-sys-color-baseline--overlay-text-secondary
 yt-sys-color-baseline--overlay-tonal-hover
 yt-sys-color-baseline--red-indicator
 yt-sys-color-baseline--static-brand-red
+yt-sys-color-baseline--static-brand-white
 yt-sys-color-baseline--suggested-action
+yt-touch-feedback-shape
 yt-ui-ellipsis
 yt-ui-ellipsis-10
 yt-ui-ellipsis-2
@@ -599,16 +605,23 @@ ytp-equalizer-bar-left
 ytp-equalizer-bar-middle
 ytp-equalizer-bar-right
 ytp-error
+ytp-error-button
+ytp-error-button-dismiss
+ytp-error-button-proceed
+ytp-error-buttons
 ytp-error-content
 ytp-error-content-wrap
 ytp-error-content-wrap-reason
 ytp-error-content-wrap-subreason
+ytp-error-has-dismiss
+ytp-error-has-proceed
 ytp-error-icon-container
 ytp-exp-bottom-control-flexbox
 ytp-exp-chapter-hover-container
 ytp-exp-chapter-hover-effect
 ytp-exp-contain-thumbnail
 ytp-exp-frame0
+ytp-exp-ppp-label-refresh
 ytp-exp-ppp-update
 ytp-expand
 ytp-expand-pause-overlay
@@ -734,6 +747,7 @@ ytp-grid-scrolling
 ytp-gvn
 ytp-has-duration
 ytp-has-fullscreen-quick-actions
+ytp-hbr-quality-badge
 ytp-hd-quality-badge
 ytp-hdr-quality-badge
 ytp-heat-map
@@ -956,6 +970,15 @@ ytp-pause-overlay-controls-hidden
 ytp-play-button
 ytp-play-button-playlist
 ytp-play-progress
+ytp-player-clickable-ad
+ytp-player-clickable-ad-no-cursor
+ytp-player-clickable-ad-open-in-new-cornered-icon
+ytp-player-clickable-ad-open-in-new-icon
+ytp-player-clickable-ad-open-in-new-icon-inner-arrow
+ytp-player-clickable-ad-open-in-new-persistent-icon
+ytp-player-clickable-ad-visit-site-cta
+ytp-player-clickable-ad-visit-site-cta-inner-arrow
+ytp-player-clickable-ad-visit-site-cta-text
 ytp-player-content
 ytp-player-document-picture-in-picture
 ytp-player-in-bar-disable-ui
@@ -974,6 +997,8 @@ ytp-playlist-menu-title
 ytp-playlist-ui
 ytp-popup
 ytp-popup-animating
+ytp-ppp-label-refresh
+ytp-ppp-label-refresh-motion
 ytp-premium-label
 ytp-prev-button
 ytp-preview
@@ -1091,6 +1116,7 @@ ytp-show-tiles
 ytp-show-watch-later-title
 ytp-skip-ad
 ytp-skip-ad-button
+ytp-skip-ad-button-fix-fullscreen-grid
 ytp-skip-ad-button__icon
 ytp-skip-ad-button__text
 ytp-skip-intro-button
@@ -1189,6 +1215,7 @@ ytp-timed-pie-countdown__inner
 ytp-timed-pie-countdown__outer
 ytp-timely-actions-content
 ytp-timely-actions-overlay
+ytp-timely-shelf-overlay
 ytp-timely-shelf-present
 ytp-tiny-mode
 ytp-title
@@ -1238,6 +1265,15 @@ ytp-tooltip-title
 ytp-touch-device
 ytp-touch-mode
 ytp-transparent
+ytp-unified-seek-active
+ytp-unified-seek-content
+ytp-unified-seek-icon
+ytp-unified-seek-icon-left-wrapper
+ytp-unified-seek-icon-right-wrapper
+ytp-unified-seek-revealed
+ytp-unified-seek-shrinking
+ytp-unified-seek-solo-icon
+ytp-unified-seek-wrapper
 ytp-unmute
 ytp-unmute-alpha-anim
 ytp-unmute-animated
@@ -1289,6 +1325,7 @@ ytp-video-interstitial-buttoned-centered-layout__content__lockup__ad-button-cont
 ytp-video-interstitial-buttoned-centered-layout__content__lockup__details-line-container
 ytp-video-interstitial-buttoned-centered-layout__content__lockup__headline
 ytp-video-interstitial-buttoned-centered-layout__content__lockup__headline-container
+ytp-video-interstitial-buttoned-centered-layout__player-clickable-ad-container
 ytp-video-interstitial-buttoned-centered-layout__timed-pie-countdown-container
 ytp-video-menu-item
 ytp-video-menu-item-author

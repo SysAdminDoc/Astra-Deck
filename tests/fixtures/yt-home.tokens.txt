@@ -3,7 +3,7 @@
 # YouTube client: unknown
 # Captured: 2026-04-23 (from file mtime)
 # Regenerated via: npm run build:fixtures
-# Captured tokens: 3405
+# Captured tokens: 3406
 # Encoding: one token per line, sorted.
 content
 contents
@@ -3410,3 +3410,4 @@ ytp-ypc-clickwrap-overlay
 ytp-ypc-player-content
 ytp-yto-preroll
 ytp-yto-preroll-message
+ytw-search-friction-view-model

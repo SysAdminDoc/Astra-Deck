@@ -17,10 +17,106 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { chooseCaptureData, SURFACE_PROFILES } = require('../scripts/capture-watch-mhtml.js');
+const {
+    buildSinglePartMhtml,
+    chooseCaptureData,
+    chromeLaunchArgs,
+    openWatchSurfaces,
+    ordinaryUserAgent,
+    parseArgs,
+    snapshotStylesheetParts,
+    SURFACE_PROFILES,
+} = require('../scripts/capture-watch-mhtml.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const buildFallback = (html) => `MHTML-FALLBACK\n${html}`;
+
+test('a capture opens no window and plays no sound', () => {
+    const args = chromeLaunchArgs({ port: 9222, userDataDir: 'profile' });
+    assert.ok(args.includes('--headless=new'));
+    assert.ok(args.includes('--mute-audio'));
+    assert.ok(!args.includes('--new-window'));
+    assert.ok(args.includes('--remote-debugging-port=9222'));
+    assert.ok(args.includes('--user-data-dir=profile'));
+});
+
+test('a headless capture goes by the ordinary browser name', () => {
+    assert.equal(
+        ordinaryUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36'),
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36',
+    );
+});
+
+test('a recovered capture keeps the stylesheets the snapshot held', () => {
+    const snapshot = [
+        'From: <Saved by Blink>',
+        'Content-Type: multipart/related; type="text/html"; boundary="----MultipartBoundary--abc"',
+        '',
+        '------MultipartBoundary--abc',
+        'Content-Type: text/html',
+        '',
+        '<html><body>no scripts</body></html>',
+        '------MultipartBoundary--abc',
+        'Content-Type: text/css',
+        'Content-Location: https://www.youtube.com/s/a.css',
+        '',
+        'yt-live-chat-message-input-renderer { display: block }',
+        '------MultipartBoundary--abc',
+        'Content-Type: image/png',
+        'Content-Location: https://www.youtube.com/a.png',
+        '',
+        'bytes',
+        '------MultipartBoundary--abc--',
+    ].join('\r\n');
+    const parts = snapshotStylesheetParts(snapshot);
+    assert.equal(parts.length, 1);
+    const mhtml = buildSinglePartMhtml('https://www.youtube.com/', '<html>ytcfg</html>', 'x', parts);
+    assert.ok(mhtml.includes('<html>ytcfg</html>'));
+    assert.ok(mhtml.includes('yt-live-chat-message-input-renderer'));
+    assert.ok(!mhtml.includes('no scripts'));
+    assert.ok(!mhtml.includes('image/png'));
+    assert.equal(snapshotStylesheetParts('not mhtml').length, 0);
+});
+
+test('a watch capture loads comments and opens the settings menu before saving', async () => {
+    assert.equal(SURFACE_PROFILES.watch.preCaptureAction, 'open-watch-surfaces');
+    const steps = [];
+    const cdp = {
+        send: async (_method, { expression }) => {
+            steps.push(expression);
+            return { result: { value: true } };
+        },
+    };
+    assert.equal(await openWatchSurfaces(cdp, { preCaptureAction: 'open-watch-surfaces' }, { pauseMs: 0 }), true);
+    assert.ok(steps[0].includes('ytd-comment-thread-renderer'), 'comments load first, since the menu opens at the top');
+    assert.ok(steps.some((step) => step.includes('.ytp-settings-button') && step.includes('.click()')));
+    assert.ok(steps.at(-1).includes('.ytp-menuitem'));
+});
+
+test('a watch capture stops when comments or the settings menu never appear', async () => {
+    const answering = (ready) => ({
+        send: async (_method, { expression }) => ({ result: { value: ready(expression) } }),
+    });
+    const opts = { preCaptureAction: 'open-watch-surfaces' };
+    const quick = { attempts: 2, pauseMs: 0 };
+    await assert.rejects(openWatchSurfaces(answering(() => false), opts, quick), /comments/);
+    await assert.rejects(
+        openWatchSurfaces(answering((expression) => !expression.includes('.ytp-menuitem')), opts, quick),
+        /settings menu/,
+    );
+    let touched = false;
+    const untouched = { send: async () => { touched = true; return {}; } };
+    assert.equal(await openWatchSurfaces(untouched, { preCaptureAction: null }, quick), false);
+    assert.equal(touched, false, 'other surfaces are left at rest');
+});
+
+test('a capture with no stable address has to be told which page', () => {
+    assert.throws(() => parseArgs(['--surface', 'live-chat']), /--url/);
+    assert.equal(
+        parseArgs(['--surface', 'live-chat', '--url', 'https://www.youtube.com/live_chat?v=abc']).url,
+        'https://www.youtube.com/live_chat?v=abc',
+    );
+});
 
 test('a snapshot that kept its inline payload is used as-is', () => {
     const chosen = chooseCaptureData({

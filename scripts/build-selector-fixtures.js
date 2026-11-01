@@ -38,7 +38,9 @@ const SOURCES = [
     { mhtml: 'SearchResults.mhtml', out: 'yt-search-results.tokens.txt' },
     { mhtml: 'Channel.mhtml', out: 'yt-channel.tokens.txt' },
     { mhtml: 'EmbedPlayer.mhtml', out: 'yt-embed-player.tokens.txt' },
-    { source: 'Subscriptions - YouTube.mhtml', out: 'yt-subscriptions.tokens.txt' },
+    // Signed-in captures. Without the account's file the committed evidence
+    // stands, and every public surface can still refresh.
+    { source: 'Subscriptions - YouTube.mhtml', out: 'yt-subscriptions.tokens.txt', keepWhenMissing: true },
 ];
 
 const SURFACE_MATCH_SOURCES = [
@@ -60,6 +62,16 @@ const SURFACE_MATCH_SOURCES = [
     { surface: 'player', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'playerChrome', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'playerSettings', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.appShell', surface: 'appShell', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.comments', surface: 'comments', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.engagementPanels', surface: 'engagementPanels', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.masthead', surface: 'masthead', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.media', surface: 'media', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.nav', surface: 'nav', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.relatedSidebar', surface: 'relatedSidebar', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.sidebar', surface: 'sidebar', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.thumbnail', surface: 'thumbnail', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { id: 'watch.watch', surface: 'watch', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'liveChat', mhtml: 'LiveChat.mhtml', fixture: 'yt-live-chat.tokens.txt' },
     { id: 'shorts.shortsShelf', surface: 'shortsShelf', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
     { id: 'shorts.media', surface: 'media', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
@@ -73,7 +85,7 @@ const SURFACE_MATCH_SOURCES = [
     { id: 'searchResults.feedSponsored', surface: 'feedSponsored', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.thumbnail', surface: 'thumbnail', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.nav', surface: 'nav', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
-    { id: 'subscriptions.root', surface: 'subscriptions', source: 'Subscriptions - YouTube.mhtml', fixture: 'yt-subscriptions.tokens.txt' },
+    { id: 'subscriptions.root', surface: 'subscriptions', source: 'Subscriptions - YouTube.mhtml', keepWhenMissing: true, fixture: 'yt-subscriptions.tokens.txt' },
     { id: 'channel.profile', surface: 'profile', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
     { id: 'channel.channelProfile', surface: 'channelProfile', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
     { id: 'channel.feedCard', surface: 'feedCard', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
@@ -102,11 +114,13 @@ const VOID_TAGS = new Set([
 ]);
 
 // Patterns we care to canary. YouTube uses ytd-* for Polymer elements,
-// ytp-* for player chrome classes, yt-* for newer attributed-string
-// components, and html5-* for the media element wrapper. The `movie_player`
+// ytw-* for the ones it has rewritten so far, ytp-* for player chrome classes,
+// yt-* for newer attributed-string components, and html5-* for the media
+// element wrapper. The `movie_player`
 // element id is the canonical entry point for the player API.
 const TOKEN_PATTERNS = [
     /\b(ytd-[a-z][\w-]*)/g,
+    /\b(ytw-[a-z][\w-]*)/g,
     /\b(ytp-[a-z][\w-]*)/g,
     /\b(yt-[a-z][\w-]*)/g,
     /\b(html5-[a-z][\w-]*)/g,
@@ -432,7 +446,7 @@ function evaluateSelectorGroup(elements, selectors) {
     });
 }
 
-function buildSurfaceMatchFixture() {
+function buildSurfaceMatchFixture(committed = null) {
     const surfaceMap = loadSurfaceSelectorMap();
     const decodedByMhtml = new Map();
     const elementsByMhtml = new Map();
@@ -445,6 +459,13 @@ function buildSurfaceMatchFixture() {
         }
 
         const source = target.source || `mhtml/${target.mhtml}`;
+        const kept = target.keepWhenMissing && !fs.existsSync(path.join(REPO_ROOT, source))
+            ? committed?.surfaces?.[target.id || target.surface]
+            : null;
+        if (kept) {
+            surfaces[target.id || target.surface] = kept;
+            continue;
+        }
         if (!decodedByMhtml.has(source)) {
             const sourcePath = path.join(REPO_ROOT, source);
             const sourceText = target.source
@@ -488,9 +509,13 @@ function main() {
         fs.mkdirSync(FIXTURE_DIR, { recursive: true });
     }
 
-    for (const { mhtml, source, out } of SOURCES) {
+    for (const { mhtml, source, out, keepWhenMissing } of SOURCES) {
         const sourceName = source || `mhtml/${mhtml}`;
         const mhtmlPath = path.join(REPO_ROOT, sourceName);
+        if (!fs.existsSync(mhtmlPath) && keepWhenMissing && fs.existsSync(path.join(FIXTURE_DIR, out))) {
+            console.warn(`[build-selector-fixtures] kept ${out}: no ${sourceName} here`);
+            continue;
+        }
         if (!fs.existsSync(mhtmlPath)) {
             console.error(`[build-selector-fixtures] missing: ${mhtmlPath}`);
             process.exit(1);
@@ -513,8 +538,9 @@ function main() {
         console.log(`[build-selector-fixtures] wrote ${tokens.length} tokens → ${path.relative(REPO_ROOT, outPath)}`);
     }
 
-    const matchFixture = buildSurfaceMatchFixture();
     const matchOutPath = path.join(FIXTURE_DIR, 'selector-surface-matches.json');
+    const committed = fs.existsSync(matchOutPath) ? JSON.parse(fs.readFileSync(matchOutPath, 'utf8')) : null;
+    const matchFixture = buildSurfaceMatchFixture(committed);
     fs.writeFileSync(matchOutPath, `${JSON.stringify(matchFixture, null, 2)}\n`, 'utf8');
     console.log(`[build-selector-fixtures] wrote selector matches → ${path.relative(REPO_ROOT, matchOutPath)}`);
 }
