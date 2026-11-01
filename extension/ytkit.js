@@ -8004,7 +8004,7 @@ const STORAGE_KEYS = Object.freeze({
         hideSidebar: 'Left nav panel completely removed, page-manager goes full-width',
         uiStyleManager: 'Applies border-radius:0 globally for square UI look',
         chatStyleComments: 'Comments get compact card layout with inline vote badges',
-        removeAllShorts: 'All shorts links and shelf renderers hidden site-wide',
+        removeAllShorts: 'Shorts links and shelves hidden from feeds and recommendations',
         redirectShorts: 'Shorts URLs rewritten to /watch?v= for standard player',
         stickyVideo: 'Full-screen player with scroll-triggered side-by-side comments',
         hideRelatedVideos: 'Secondary panel hidden, primary stretches to full width',
@@ -11322,7 +11322,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _observer: null,
             init() {
-                const isExemptPage = () => /^\/@[^/]+/.test(window.location.pathname) || window.location.pathname.startsWith('/results');
+                // Pages someone opened on purpose, where Shorts are the content
+                // rather than a feed's filler: a channel at any of its URLs,
+                // search, a Shorts series (/show/VL...) and a playlist. A series
+                // or playlist's Play button is a Shorts link too, so hiding by
+                // link took the page's header along with its rows.
+                const isExemptPage = () => /^\/(?:@[^/]+|channel\/|c\/|user\/|results|show\/|playlist\/?$)/.test(window.location.pathname);
 
                 const hideShort = (a) => {
                     const parent = findShortsHideTarget(a);

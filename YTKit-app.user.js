@@ -5882,7 +5882,7 @@ const STORAGE_KEYS = Object.freeze({
 		hideSidebar: 'Left nav panel completely removed, page-manager goes full-width',
 		uiStyleManager: 'Applies border-radius:0 globally for square UI look',
 		chatStyleComments: 'Comments get compact card layout with inline vote badges',
-		removeAllShorts: 'All shorts links and shelf renderers hidden site-wide',
+		removeAllShorts: 'Shorts links and shelves hidden from feeds and recommendations',
 		redirectShorts: 'Shorts URLs rewritten to /watch?v= for standard player',
 		stickyVideo: 'Full-screen player with scroll-triggered side-by-side comments',
 		hideRelatedVideos: 'Secondary panel hidden, primary stretches to full width',
@@ -6736,7 +6736,7 @@ const STORAGE_KEYS = Object.freeze({
 			_styleElement: null,
 			_observer: null,
 			init() {
-				const isExemptPage = () => /^\/@[^/]+/.test(window.location.pathname) || window.location.pathname.startsWith('/results');
+				const isExemptPage = () => /^\/(?:@[^/]+|channel\/|c\/|user\/|results|show\/|playlist\/?$)/.test(window.location.pathname);
 				const hideShort = (a) => {
 					const parent = findShortsHideTarget(a);
 					if (parent instanceof HTMLElement && !parent.dataset.ytkitShortsHidden) {
