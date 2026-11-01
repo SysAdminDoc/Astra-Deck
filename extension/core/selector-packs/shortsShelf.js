@@ -33,11 +33,12 @@
         // search results on 2026-10-10); the mhtml corpus predates it.
         fallback: Object.freeze(['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer', 'grid-shelf-view-model.ytGridShelfViewModelHost']),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',
             'mhtml/Shorts.mhtml'
         ]),
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         canary: Object.freeze({

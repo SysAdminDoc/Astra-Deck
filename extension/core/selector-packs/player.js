@@ -21,7 +21,7 @@
             'Worldwide Societal Collapse... - YouTube.mhtml',
             'mhtml/EmbedPlayer.mhtml'
         ]),
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         canary: Object.freeze({

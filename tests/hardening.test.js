@@ -9293,7 +9293,7 @@ test('v4.31.0 freezeEntry preserves captureEvidence and lastVerified on entries 
     assert.ok(Object.isFrozen(appShell.captureEvidence), 'captureEvidence must be frozen');
     assert.ok(appShell.captureEvidence.includes('mhtml/WatchPage.mhtml'),
         'appShell pack must list the WatchPage capture as evidence');
-    assert.equal(appShell.lastVerified, '2026-05-19');
+    assert.equal(appShell.lastVerified, '2026-10-31');
 });
 
 test('v4.31.0 every surface now resolves through SurfaceSelectorMap (no regression after full pack migration)', () => {
@@ -9321,12 +9321,12 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     const entry = core.getSurfaceSelectorEntry('search');
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
-    assert.equal(entry.lastVerified, '2026-06-05');
+    assert.equal(entry.lastVerified, '2026-10-31');
     const liveChat = core.getSurfaceSelectorEntry('liveChat');
     assert.ok(Array.isArray(liveChat.captureEvidence), 'liveChat captureEvidence must be an array');
     assert.ok(liveChat.captureEvidence.includes('mhtml/LiveChat.mhtml'),
         'liveChat captureEvidence must list the fresh popout-chat MHTML capture');
-    assert.equal(liveChat.lastVerified, '2026-06-04');
+    assert.equal(liveChat.lastVerified, '2026-10-31');
 });
 
 // ── v4.32.0 NX1: selector-pack batch 2 (feed-shell) ──
@@ -9358,10 +9358,10 @@ test('v4.32.0 feed-shell pack files exist with the v4.31.0 schema fields', () =>
 test('v4.32.0 feed-shell surfaces now come from the pack registry, not INLINE_SURFACES', () => {
     const core = loadSelectorPackContextV432();
     const expectedLastVerified = {
-        feed: '2026-05-19',
-        feedCard: '2026-06-05',
-        thumbnail: '2026-06-05',
-        shortsShelf: '2026-06-05'
+        feed: '2026-10-31',
+        feedCard: '2026-10-31',
+        thumbnail: '2026-10-31',
+        shortsShelf: '2026-10-31'
     };
     for (const surface of V432_FEED_SHELL_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
@@ -9434,10 +9434,10 @@ test('v4.33.0 watch-shell pack files exist with the v4.31.0 schema fields', () =
 test('v4.33.0 watch-shell surfaces now come from the pack registry with capture evidence', () => {
     const core = loadSelectorPackContext();
     const expectedLastVerified = {
-        watch: '2026-05-19',
-        relatedSidebar: '2026-05-19',
-        player: '2026-06-05',
-        mainVideo: '2026-06-05'
+        watch: '2026-10-31',
+        relatedSidebar: '2026-10-31',
+        player: '2026-10-31',
+        mainVideo: '2026-10-31'
     };
     for (const surface of V433_WATCH_SHELL_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
@@ -9507,10 +9507,10 @@ test('v4.34.0 player-chrome batch pack files exist with the v4.31.0 schema field
 test('v4.34.0 player-chrome batch surfaces now come from the pack registry', () => {
     const core = loadSelectorPackContext();
     const expectedLastVerified = {
-        playerChrome: '2026-06-04',
-        playerSettings: '2026-05-19',
-        sidebar: '2026-05-19',
-        modals: '2026-05-19',
+        playerChrome: '2026-10-31',
+        playerSettings: '2026-10-31',
+        sidebar: '2026-10-31',
+        modals: '2026-10-31',
     };
     for (const surface of V434_BATCH_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
@@ -9581,7 +9581,7 @@ test('v4.35.0 engagement surfaces now come from the pack registry', () => {
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence after the v4.35.0 peel`);
         assert.ok(
-            entry.lastVerified === '2026-05-19' || entry.lastVerified === '2026-06-19',
+            entry.lastVerified === '2026-05-19' || entry.lastVerified === '2026-10-31',
             `${surface} must have a reviewed lastVerified date`
         );
     }
@@ -9642,10 +9642,10 @@ test('v4.36.0 misc batch surfaces now come from the pack registry', () => {
         // (scripts/smoke-settings-overlay.js) which found the live overlay
         // root #ytkit-settings-panel missing from the stable set.
         settingsOverlay: '2026-07-09',
-        profile: '2026-06-05',
-        channelProfile: '2026-06-05',
+        profile: '2026-10-31',
+        channelProfile: '2026-10-31',
         notifications: '2026-05-19',
-        media: '2026-06-05'
+        media: '2026-10-31'
     };
     for (const surface of V436_BATCH_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
@@ -9720,8 +9720,8 @@ test('v4.37.0 live-chat surfaces come from the pack registry and carry fresh cap
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         assert.equal(entry.needsFreshCapture, false,
             `${surface} must be marked capture-backed after the EI8 refresh`);
-        assert.equal(entry.lastVerified, '2026-06-04',
-            `${surface} lastVerified must track the EI8 live-chat refresh date`);
+        assert.equal(entry.lastVerified, '2026-10-31',
+            `${surface} lastVerified must track the last live-chat refresh date`);
     }
 });
 

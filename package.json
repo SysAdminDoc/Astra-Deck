@@ -55,6 +55,7 @@
     "capture:watch": "node scripts/capture-watch-mhtml.js",
     "capture:surface": "node scripts/capture-watch-mhtml.js --require-surface",
     "capture:theater-split": "node scripts/capture-theater-split.js",
+    "probe:selector-surfaces": "node scripts/probe-selector-surfaces.js",
     "check": "node scripts/run-checks.js",
     "project-facts": "node scripts/project-facts.js --write",
     "check:project-facts": "node scripts/project-facts.js --check",

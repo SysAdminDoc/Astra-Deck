@@ -19,10 +19,11 @@
             'ytd-transcript-renderer'
         ]),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'tests/fixtures/transcript-panel-classic.html',
             'tests/fixtures/transcript-panel-modern.html'
         ]),
-        lastVerified: '2026-07-14',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Legacy searchable transcript and PAmodern_transcript_view rollout shapes.'

@@ -22,7 +22,7 @@
             'Subscriptions - YouTube.mhtml',
             'mhtml/Shorts.mhtml'
         ]),
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: false,
         needsFreshCapture: false,
         notes: 'Generic media resolver; prefer feature-specific roots.'

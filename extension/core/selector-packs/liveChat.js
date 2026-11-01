@@ -25,7 +25,7 @@
             'yt-live-chat-message-input-renderer'
         ]),
         captureEvidence: Object.freeze(['mhtml/LiveChat.mhtml']),
-        lastVerified: '2026-06-04',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Live chat iframe document surface verified from a popout chat MHTML capture.'

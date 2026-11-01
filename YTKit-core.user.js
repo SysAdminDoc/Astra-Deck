@@ -2630,7 +2630,7 @@ __astraDeckRegistry["core/selector-packs/appShell.js"] = function (globalThis, s
 			'Subscriptions - YouTube.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: false,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -2676,7 +2676,7 @@ __astraDeckRegistry["core/selector-packs/nav.js"] = function (globalThis, self, 
 		stable: stable,
 		fallback: fallback,
 		captureEvidence: captureEvidence,
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: false,
 		needsFreshCapture: false,
 		hooks,
@@ -2687,7 +2687,7 @@ __astraDeckRegistry["core/selector-packs/nav.js"] = function (globalThis, self, 
 		stable: stable,
 		fallback: fallback,
 		captureEvidence: captureEvidence,
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: false,
 		needsFreshCapture: false,
 		hooks,
@@ -2704,18 +2704,18 @@ __astraDeckRegistry["core/selector-packs/search.js"] = function (globalThis, sel
 	if (registry.has('search')) return;
 	registry.set('search', Object.freeze({
 		surface: 'search',
-		stable: Object.freeze(['yt-searchbox', 'input#search', 'form[role="search"] input']),
-		fallback: Object.freeze(['yt-searchbox-input', 'ytd-searchbox #container.ytd-searchbox']),
+		stable: Object.freeze(['yt-searchbox', 'yt-searchbox input[name="search_query"]']),
+		fallback: Object.freeze(['input#search', 'form[role="search"] input', 'yt-searchbox-input', 'ytd-searchbox #container.ytd-searchbox']),
 		captureEvidence: Object.freeze([
 			'mhtml/WatchPage.mhtml',
 			'mhtml/YouTube.mhtml',
 			'Subscriptions - YouTube.mhtml',
 			'mhtml/SearchResults.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
-		notes: 'Prefer roles and labels where present; avoid raw wrapper classes.'
+		notes: 'The box opens with a hidden file input for image search, so name the field rather than the first input. Prefer roles and labels where present; avoid raw wrapper classes.'
 	}));
 })();
 };
@@ -2730,15 +2730,15 @@ __astraDeckRegistry["core/selector-packs/searchResults.js"] = function (globalTh
 		surface: 'searchResults',
 		stable: Object.freeze([
 			'ytd-search[page-subtype="search"]',
-			'ytd-two-column-search-results-renderer[is-search]',
-			'ytd-section-list-renderer[page-subtype="search"]'
+			'ytd-two-column-search-results-renderer[is-search]'
 		]),
 		fallback: Object.freeze([
 			'ytd-search',
-			'ytd-two-column-search-results-renderer'
+			'ytd-two-column-search-results-renderer',
+			'ytd-section-list-renderer[page-subtype="search"]'
 		]),
 		captureEvidence: Object.freeze(['mhtml/SearchResults.mhtml']),
-		lastVerified: '2026-07-14',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -2788,18 +2788,20 @@ __astraDeckRegistry["core/selector-packs/leftNav.js"] = function (globalThis, se
 	if (registry.has('leftNav')) return;
 	registry.set('leftNav', Object.freeze({
 		surface: 'leftNav',
-		stable: Object.freeze(['ytd-guide-renderer', 'ytd-mini-guide-renderer', 'yt-app-drawer']),
+		stable: Object.freeze(['ytd-guide-renderer', 'ytd-mini-guide-renderer']),
 		fallback: Object.freeze([
+			'yt-app-drawer',
 			'ytd-mini-guide-entry-renderer.style-scope',
 			'ytd-guide-entry-renderer.style-scope'
 		]),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'mhtml/WatchPage.mhtml',
 			'mhtml/YouTube.mhtml',
 			'Subscriptions - YouTube.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Subscriptions capture has full guide; home often has mini guide.'
@@ -2818,10 +2820,11 @@ __astraDeckRegistry["core/selector-packs/feed.js"] = function (globalThis, self,
 		stable: Object.freeze(['ytd-browse ytd-rich-grid-renderer', 'ytd-rich-grid-renderer']),
 		fallback: Object.freeze(['ytd-rich-grid-renderer.style-scope', '#contents.ytd-rich-grid-renderer']),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'mhtml/YouTube.mhtml',
 			'Subscriptions - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -2844,13 +2847,14 @@ __astraDeckRegistry["core/selector-packs/feedCard.js"] = function (globalThis, s
 		stable: Object.freeze(['ytd-rich-item-renderer', 'yt-lockup-view-model', 'ytd-video-renderer']),
 		fallback: Object.freeze(['yt-lockup-view-model.ytd-rich-item-renderer', 'ytd-rich-item-renderer.style-scope']),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'mhtml/YouTube.mhtml',
 			'Subscriptions - YouTube.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml',
 			'mhtml/SearchResults.mhtml',
 			'mhtml/Channel.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -2895,13 +2899,14 @@ __astraDeckRegistry["core/selector-packs/feedPlayables.js"] = function (globalTh
 	if (registry.has('feedPlayables')) return;
 	registry.set('feedPlayables', Object.freeze({
 		surface: 'feedPlayables',
-		stable: Object.freeze(['ytd-game-card-renderer', 'ytd-mini-game-card-view-model', 'ytd-rich-shelf-renderer']),
-		fallback: Object.freeze(['ytd-game-details-renderer', 'yt-mini-app-game-info-dialog-view-model', 'ytd-rich-grid-renderer ytd-rich-shelf-renderer']),
+		stable: Object.freeze(['ytd-mini-game-card-view-model', 'ytd-rich-shelf-renderer']),
+		fallback: Object.freeze(['ytd-game-card-renderer', 'ytd-game-details-renderer', 'yt-mini-app-game-info-dialog-view-model', 'ytd-rich-grid-renderer ytd-rich-shelf-renderer']),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'mhtml/YouTube.mhtml',
 			'mhtml/SearchResults.mhtml'
 		]),
-		lastVerified: '2026-06-29',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Playables and mini-game shelves are capture-backed separately from organic video feed cards.'
@@ -2971,7 +2976,7 @@ __astraDeckRegistry["core/selector-packs/thumbnail.js"] = function (globalThis, 
 			'mhtml/SearchResults.mhtml',
 			'mhtml/Channel.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Resolve from nearest card root before querying document-wide.'
@@ -3002,11 +3007,12 @@ __astraDeckRegistry["core/selector-packs/shortsShelf.js"] = function (globalThis
 		stable: Object.freeze(['a[href^="/shorts"]', 'ytd-rich-shelf-renderer']),
 		fallback: Object.freeze(['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer', 'grid-shelf-view-model.ytGridShelfViewModelHost']),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'mhtml/YouTube.mhtml',
 			'Subscriptions - YouTube.mhtml',
 			'mhtml/Shorts.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -3163,7 +3169,7 @@ __astraDeckRegistry["core/selector-packs/watch.js"] = function (globalThis, self
 			'mhtml/WatchPage.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -3198,7 +3204,7 @@ __astraDeckRegistry["core/selector-packs/relatedSidebar.js"] = function (globalT
 			'mhtml/WatchPage.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Related and compact cards change often; resolve section root first.'
@@ -3221,7 +3227,7 @@ __astraDeckRegistry["core/selector-packs/player.js"] = function (globalThis, sel
 			'Worldwide Societal Collapse... - YouTube.mhtml',
 			'mhtml/EmbedPlayer.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -3248,7 +3254,7 @@ __astraDeckRegistry["core/selector-packs/mainVideo.js"] = function (globalThis, 
 			'Worldwide Societal Collapse... - YouTube.mhtml',
 			'mhtml/EmbedPlayer.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		canary: Object.freeze({
@@ -3302,7 +3308,7 @@ __astraDeckRegistry["core/selector-packs/playerChrome.js"] = function (globalThi
 			'Worldwide Societal Collapse... - YouTube.mhtml',
 			'HARDENING.md#h21'
 		]),
-		lastVerified: '2026-06-04',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Player redesign transition surface; 2026-06-04 stopped-loading Chrome Stable capture confirmed Delhi shell, overflow panel, and time-wrapper selectors. Action-pill/action-container remain fallback watchlist entries until captured.'
@@ -3329,7 +3335,7 @@ __astraDeckRegistry["core/selector-packs/playerSettings.js"] = function (globalT
 			'mhtml/WatchPage.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Avoid forced menu opening where MAIN APIs exist.'
@@ -3351,7 +3357,7 @@ __astraDeckRegistry["core/selector-packs/sidebar.js"] = function (globalThis, se
 			'mhtml/WatchPage.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: false,
 		needsFreshCapture: false,
 		notes: 'Watch sidebar container for related, chat, and secondary panels.'
@@ -3378,10 +3384,11 @@ __astraDeckRegistry["core/selector-packs/modals.js"] = function (globalThis, sel
 			'ytd-popup-container .style-scope'
 		]),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'mhtml/WatchPage.mhtml',
 			'mhtml/YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Native YouTube popups and dialogs.'
@@ -3452,7 +3459,7 @@ __astraDeckRegistry["core/selector-packs/comments.js"] = function (globalThis, s
 			'mhtml/WatchPage.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-06-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		hooks,
@@ -3538,7 +3545,7 @@ __astraDeckRegistry["core/selector-packs/engagementPanels.js"] = function (globa
 			'mhtml/WatchPage.mhtml',
 			'Worldwide Societal Collapse... - YouTube.mhtml'
 		]),
-		lastVerified: '2026-05-19',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		hooks,
@@ -3564,10 +3571,11 @@ __astraDeckRegistry["core/selector-packs/transcriptPanel.js"] = function (global
 			'ytd-transcript-renderer'
 		]),
 		captureEvidence: Object.freeze([
+			'docs/selector-fixture-workflow.md#rendered-surface-probe',
 			'tests/fixtures/transcript-panel-classic.html',
 			'tests/fixtures/transcript-panel-modern.html'
 		]),
-		lastVerified: '2026-07-14',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Legacy searchable transcript and PAmodern_transcript_view rollout shapes.'
@@ -3604,12 +3612,13 @@ __astraDeckRegistry["core/selector-packs/profile.js"] = function (globalThis, se
 		'ytd-video-owner-renderer',
 		'ytd-channel-name',
 		'#channel-name',
-		'ytd-c4-tabbed-header-renderer',
-		'ytd-page-header-renderer'
+		'yt-page-header-renderer'
 	]);
 	const fallback = Object.freeze([
 		'yt-avatar-shape',
 		'yt-decorated-avatar-view-model',
+		'ytd-page-header-renderer',
+		'ytd-c4-tabbed-header-renderer',
 		'ytd-browse[page-subtype="channels"] ytd-c4-tabbed-header-renderer'
 	]);
 	const captureEvidence = Object.freeze([
@@ -3624,7 +3633,7 @@ __astraDeckRegistry["core/selector-packs/profile.js"] = function (globalThis, se
 		stable: stable,
 		fallback: fallback,
 		captureEvidence: captureEvidence,
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Resolve channel ID or handle from links, not visible text.'
@@ -3634,7 +3643,7 @@ __astraDeckRegistry["core/selector-packs/profile.js"] = function (globalThis, se
 		stable: stable,
 		fallback: fallback,
 		captureEvidence: captureEvidence,
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Alias for profile.'
@@ -3704,7 +3713,7 @@ __astraDeckRegistry["core/selector-packs/media.js"] = function (globalThis, self
 			'Subscriptions - YouTube.mhtml',
 			'mhtml/Shorts.mhtml'
 		]),
-		lastVerified: '2026-06-05',
+		lastVerified: '2026-10-31',
 		highChurn: false,
 		needsFreshCapture: false,
 		notes: 'Generic media resolver; prefer feature-specific roots.'
@@ -3726,7 +3735,7 @@ __astraDeckRegistry["core/selector-packs/liveChatFrame.js"] = function (globalTh
 			'mhtml/LiveChat.mhtml',
 			'docs/selector-fixture-workflow.md#watch-page-wrapper-probe'
 		]),
-		lastVerified: '2026-06-04',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Watch-page live chat frame verified by rendered DOM probe; iframe internals are capture-backed by LiveChat.mhtml.'
@@ -3752,7 +3761,7 @@ __astraDeckRegistry["core/selector-packs/liveChat.js"] = function (globalThis, s
 			'yt-live-chat-message-input-renderer'
 		]),
 		captureEvidence: Object.freeze(['mhtml/LiveChat.mhtml']),
-		lastVerified: '2026-06-04',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Live chat iframe document surface verified from a popout chat MHTML capture.'
@@ -3774,7 +3783,7 @@ __astraDeckRegistry["core/selector-packs/liveChatPlaceholder.js"] = function (gl
 			'mhtml/LiveChat.mhtml',
 			'docs/selector-fixture-workflow.md#watch-page-wrapper-probe'
 		]),
-		lastVerified: '2026-06-04',
+		lastVerified: '2026-10-31',
 		highChurn: true,
 		needsFreshCapture: false,
 		notes: 'Placeholder canary verified by rendered watch-page DOM probe; iframe internals are capture-backed by LiveChat.mhtml.'

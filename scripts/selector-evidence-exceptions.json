@@ -3,150 +3,35 @@
   "note": "High-churn selector surfaces whose evidence predates the freshness limit. Shrinking this file is always allowed; growing it means a surface went stale without a recapture.",
   "staleAfterDays": 60,
   "surfaces": {
-    "channelProfile": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
     "commentComposer": {
       "lastVerified": "2026-05-19",
       "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "comments": {
-      "lastVerified": "2026-06-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "engagementPanels": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "feed": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "feedCard": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+      "reason": "YouTube only draws the comment box for a signed-in account."
     },
     "feedExperimentChips": {
       "lastVerified": "2026-06-29",
       "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "feedPlayables": {
-      "lastVerified": "2026-06-29",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+      "reason": "The chip bar sits on the home feed, and a signed-out home page has no feed. Search's chips didn't render in the 2026-10-31 probe either."
     },
     "feedPrompt": {
       "lastVerified": "2026-06-29",
       "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+      "reason": "Surveys and identity prompts only appear on a signed-in home feed. Only the signed-out feed nudge rendered on 2026-10-31."
     },
     "feedSponsored": {
       "lastVerified": "2026-06-29",
       "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "leftNav": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "liveChat": {
-      "lastVerified": "2026-06-04",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "liveChatFrame": {
-      "lastVerified": "2026-06-04",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "liveChatPlaceholder": {
-      "lastVerified": "2026-06-04",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "mainVideo": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "modals": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+      "reason": "Needs a served in-feed ad. None appeared on the signed-out pages the 2026-10-31 probe visited, so these names can't be confirmed or retired yet."
     },
     "notifications": {
       "lastVerified": "2026-05-19",
       "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "player": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "playerChrome": {
-      "lastVerified": "2026-06-04",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "playerSettings": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "profile": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "relatedSidebar": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "search": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "searchResults": {
-      "lastVerified": "2026-07-14",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "shortsShelf": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+      "reason": "The bell and its menu only exist for a signed-in account."
     },
     "subscriptions": {
       "lastVerified": "2026-07-14",
       "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "thumbnail": {
-      "lastVerified": "2026-06-05",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "transcriptPanel": {
-      "lastVerified": "2026-07-14",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
-    },
-    "watch": {
-      "lastVerified": "2026-05-19",
-      "acceptedOn": "2026-08-27",
-      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+      "reason": "These selectors matched the same grid on a channel's Videos tab on 2026-10-31, but the Subscriptions page itself needs a signed-in account."
     }
   }
 }

@@ -18,13 +18,14 @@
         stable: Object.freeze(['ytd-rich-item-renderer', 'yt-lockup-view-model', 'ytd-video-renderer']),
         fallback: Object.freeze(['yt-lockup-view-model.ytd-rich-item-renderer', 'ytd-rich-item-renderer.style-scope']),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',
             'Worldwide Societal Collapse... - YouTube.mhtml',
             'mhtml/SearchResults.mhtml',
             'mhtml/Channel.mhtml'
         ]),
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         canary: Object.freeze({

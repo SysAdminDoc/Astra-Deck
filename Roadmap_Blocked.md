@@ -296,12 +296,12 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Browser-Gated
 
-- [ ] P2 — Selector fixture refresh for Delhi Modern player
-  Why: YouTube's "Delhi Modern" player rollout (Oct 2025–Jan 2026) changed player button DOM to translucent overlay buttons. The selector packs have canaries for `ytp-delhi-modern` but the MHTML fixture may predate the completed rollout.
-  Touches: `scripts/capture-watch-mhtml.js`, `scripts/build-selector-fixtures.js`, `tests/selector-regression.test.js`, `core/selector-packs/playerChrome.js`
-  Acceptance: Selector fixture regenerated from a live 2026-era YouTube watch page. All critical playerChrome/playerSettings selectors match.
+- [ ] P2 — Capture the selector surfaces only a signed-in account can see
+  Why: Six selector surfaces can't be proven signed out, so they're the only ones still on `scripts/selector-evidence-exceptions.json`: `commentComposer`, `notifications`, `subscriptions`, `feedExperimentChips`, `feedPrompt` and `feedSponsored`. `mhtml/YouTube.mhtml` is also still the April capture, because a signed-out home page has no feed. These names appear in the code and on no surface I can reach, so they can't be confirmed or retired yet: `ytd-channel-avatar-editor`, `ytd-feedback-option-renderer`, `ytd-feedback-question-renderer`, `ytd-feedback-survey-renderer`, `ytd-movie-offer-module-renderer`.
+  Touches: `scripts/capture-watch-mhtml.js` (`history`, `watch-later`, `notifications` profiles), `scripts/selector-evidence-exceptions.json`, those six selector packs.
+  Acceptance: A signed-in capture or probe of the home feed, Subscriptions, the comment box and the notifications menu. Each surface re-dated or its dead names moved to fallback, and the exceptions list empty or down to what needs a served ad.
   Complexity: S
-  Blocker: Requires a live Chrome browser to capture MHTML from YouTube. Browser binaries not available in this environment.
+  Blocker: Needs Matt's sign-in. Retested 2026-10-31: `.auth/` holds zero cookies and the capture helper refuses repo-local profiles, so there's no account to drive. Signed out, the Delhi Modern part of this entry is done: every critical `playerChrome` and `playerSettings` selector matches a capture from today, and 23 of the 29 owed surfaces came back through captures and `npm run probe:selector-surfaces`. `feedSponsored` also needs an ad to be served, and none appeared on the signed-out pages visited.
 
 ## P2 — Browser-Gated (CSS Adoption)
 

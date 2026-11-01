@@ -20,7 +20,7 @@
             'mhtml/LiveChat.mhtml',
             'docs/selector-fixture-workflow.md#watch-page-wrapper-probe'
         ]),
-        lastVerified: '2026-06-04',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Watch-page live chat frame verified by rendered DOM probe; iframe internals are capture-backed by LiveChat.mhtml.'

@@ -17,10 +17,11 @@
         stable: Object.freeze(['ytd-browse ytd-rich-grid-renderer', 'ytd-rich-grid-renderer']),
         fallback: Object.freeze(['ytd-rich-grid-renderer.style-scope', '#contents.ytd-rich-grid-renderer']),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         canary: Object.freeze({

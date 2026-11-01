@@ -59,7 +59,7 @@
             'mhtml/WatchPage.mhtml',
             'Worldwide Societal Collapse... - YouTube.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         hooks,

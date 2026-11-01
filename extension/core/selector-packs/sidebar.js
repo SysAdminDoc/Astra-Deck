@@ -20,7 +20,7 @@
             'mhtml/WatchPage.mhtml',
             'Worldwide Societal Collapse... - YouTube.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-10-31',
         highChurn: false,
         needsFreshCapture: false,
         notes: 'Watch sidebar container for related, chat, and secondary panels.'

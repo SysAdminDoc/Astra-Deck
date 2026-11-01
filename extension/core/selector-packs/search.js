@@ -14,17 +14,17 @@
 
     registry.set('search', Object.freeze({
         surface: 'search',
-        stable: Object.freeze(['yt-searchbox', 'input#search', 'form[role="search"] input']),
-        fallback: Object.freeze(['yt-searchbox-input', 'ytd-searchbox #container.ytd-searchbox']),
+        stable: Object.freeze(['yt-searchbox', 'yt-searchbox input[name="search_query"]']),
+        fallback: Object.freeze(['input#search', 'form[role="search"] input', 'yt-searchbox-input', 'ytd-searchbox #container.ytd-searchbox']),
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',
             'mhtml/SearchResults.mhtml'
         ]),
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
-        notes: 'Prefer roles and labels where present; avoid raw wrapper classes.'
+        notes: 'The box opens with a hidden file input for image search, so name the field rather than the first input. Prefer roles and labels where present; avoid raw wrapper classes.'
     }));
 })();

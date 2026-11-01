@@ -16,11 +16,12 @@
 // build. High-churn surfaces are held to that bar; the rest are reported but
 // not enforced, because a stable surface aging is not by itself a defect.
 //
-// The recapture itself needs a live browser and is tracked in
-// Roadmap_Blocked.md ("Selector fixture refresh for Delhi Modern player").
-// This gate cannot perform it, so surfaces already stale on the day the gate
-// landed are recorded in selector-evidence-exceptions.json with the date they
-// were accepted. The gate fails on anything NEW: a surface that goes stale
+// A recapture needs a live browser, so this gate can't do one itself. Most
+// surfaces come back with docs/selector-fixture-workflow.md signed out. The few
+// only an account can see are tracked in Roadmap_Blocked.md ("Capture the
+// selector surfaces only a signed-in account can see") and recorded in
+// selector-evidence-exceptions.json with the date they were accepted. The gate
+// fails on anything NEW: a surface that goes stale
 // later, a pack whose date moves without the exception being updated, or an
 // exception for a surface that is no longer stale. That is the same shape as
 // the dependency audit's reviewed-exception list, and it means the debt is
@@ -174,13 +175,12 @@ function main(argv) {
         const surfaces = {};
         for (const row of rows.filter((entry) => entry.stale && entry.highChurn).sort((a, b) => a.surface.localeCompare(b.surface))) {
             const prior = previous[row.surface];
-            const carried = prior && prior.lastVerified === row.lastVerified
-                ? prior.acceptedOn
-                : null;
+            const unmoved = prior && prior.lastVerified === row.lastVerified;
+            const carried = unmoved ? prior.acceptedOn : null;
             surfaces[row.surface] = {
                 lastVerified: row.lastVerified,
                 acceptedOn: carried || today,
-                reason: 'Awaiting the browser-gated capture tracked in Roadmap_Blocked.md.'
+                reason: (unmoved && prior.reason) || 'Awaiting a capture; see docs/selector-fixture-workflow.md.'
             };
         }
         const payload = {
@@ -226,7 +226,7 @@ function main(argv) {
         const oldest = outstanding.reduce((worst, row) => (row.ageDays > worst.ageDays ? row : worst));
         console.log(
             `[selector-evidence] oldest evidence: ${oldest.surface} at ${oldest.lastVerified} `
-            + `(${oldest.ageDays} days). Recapture is browser-gated; see Roadmap_Blocked.md.`);
+            + `(${oldest.ageDays} days). Each exception says what its capture needs.`);
     }
 }
 

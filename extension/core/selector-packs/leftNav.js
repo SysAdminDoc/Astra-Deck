@@ -13,18 +13,20 @@
 
     registry.set('leftNav', Object.freeze({
         surface: 'leftNav',
-        stable: Object.freeze(['ytd-guide-renderer', 'ytd-mini-guide-renderer', 'yt-app-drawer']),
+        stable: Object.freeze(['ytd-guide-renderer', 'ytd-mini-guide-renderer']),
         fallback: Object.freeze([
+            'yt-app-drawer',
             'ytd-mini-guide-entry-renderer.style-scope',
             'ytd-guide-entry-renderer.style-scope'
         ]),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'mhtml/WatchPage.mhtml',
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',
             'Worldwide Societal Collapse... - YouTube.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Subscriptions capture has full guide; home often has mini guide.'

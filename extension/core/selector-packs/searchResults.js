@@ -9,15 +9,15 @@
         surface: 'searchResults',
         stable: Object.freeze([
             'ytd-search[page-subtype="search"]',
-            'ytd-two-column-search-results-renderer[is-search]',
-            'ytd-section-list-renderer[page-subtype="search"]'
+            'ytd-two-column-search-results-renderer[is-search]'
         ]),
         fallback: Object.freeze([
             'ytd-search',
-            'ytd-two-column-search-results-renderer'
+            'ytd-two-column-search-results-renderer',
+            'ytd-section-list-renderer[page-subtype="search"]'
         ]),
         captureEvidence: Object.freeze(['mhtml/SearchResults.mhtml']),
-        lastVerified: '2026-07-14',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         canary: Object.freeze({

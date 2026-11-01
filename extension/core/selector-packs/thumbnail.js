@@ -24,7 +24,7 @@
             'mhtml/SearchResults.mhtml',
             'mhtml/Channel.mhtml'
         ]),
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Resolve from nearest card root before querying document-wide.'

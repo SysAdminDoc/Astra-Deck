@@ -17,12 +17,13 @@
         'ytd-video-owner-renderer',
         'ytd-channel-name',
         '#channel-name',
-        'ytd-c4-tabbed-header-renderer',
-        'ytd-page-header-renderer'
+        'yt-page-header-renderer'
     ]);
     const fallback = Object.freeze([
         'yt-avatar-shape',
         'yt-decorated-avatar-view-model',
+        'ytd-page-header-renderer',
+        'ytd-c4-tabbed-header-renderer',
         'ytd-browse[page-subtype="channels"] ytd-c4-tabbed-header-renderer'
     ]);
     const captureEvidence = Object.freeze([
@@ -38,7 +39,7 @@
         stable: stable,
         fallback: fallback,
         captureEvidence: captureEvidence,
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Resolve channel ID or handle from links, not visible text.'
@@ -49,7 +50,7 @@
         stable: stable,
         fallback: fallback,
         captureEvidence: captureEvidence,
-        lastVerified: '2026-06-05',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Alias for profile.'

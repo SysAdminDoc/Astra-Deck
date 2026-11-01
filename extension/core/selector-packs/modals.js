@@ -26,10 +26,11 @@
             'ytd-popup-container .style-scope'
         ]),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'mhtml/WatchPage.mhtml',
             'mhtml/YouTube.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Native YouTube popups and dialogs.'

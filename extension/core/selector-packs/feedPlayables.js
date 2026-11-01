@@ -13,13 +13,14 @@
 
     registry.set('feedPlayables', Object.freeze({
         surface: 'feedPlayables',
-        stable: Object.freeze(['ytd-game-card-renderer', 'ytd-mini-game-card-view-model', 'ytd-rich-shelf-renderer']),
-        fallback: Object.freeze(['ytd-game-details-renderer', 'yt-mini-app-game-info-dialog-view-model', 'ytd-rich-grid-renderer ytd-rich-shelf-renderer']),
+        stable: Object.freeze(['ytd-mini-game-card-view-model', 'ytd-rich-shelf-renderer']),
+        fallback: Object.freeze(['ytd-game-card-renderer', 'ytd-game-details-renderer', 'yt-mini-app-game-info-dialog-view-model', 'ytd-rich-grid-renderer ytd-rich-shelf-renderer']),
         captureEvidence: Object.freeze([
+            'docs/selector-fixture-workflow.md#rendered-surface-probe',
             'mhtml/YouTube.mhtml',
             'mhtml/SearchResults.mhtml'
         ]),
-        lastVerified: '2026-06-29',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Playables and mini-game shelves are capture-backed separately from organic video feed cards.'

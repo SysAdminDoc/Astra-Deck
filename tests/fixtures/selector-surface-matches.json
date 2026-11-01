@@ -164,11 +164,6 @@
       "elementCount": 3277,
       "stable": [
         {
-          "selector": "ytd-game-card-renderer",
-          "matched": false,
-          "matchCount": 0
-        },
-        {
           "selector": "ytd-mini-game-card-view-model",
           "matched": false,
           "matchCount": 0
@@ -180,6 +175,11 @@
         }
       ],
       "fallback": [
+        {
+          "selector": "ytd-game-card-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
         {
           "selector": "ytd-game-details-renderer",
           "matched": false,
@@ -298,14 +298,14 @@
           "selector": "ytd-mini-guide-renderer",
           "matched": true,
           "matchCount": 1
-        },
+        }
+      ],
+      "fallback": [
         {
           "selector": "yt-app-drawer",
           "matched": false,
           "matchCount": 0
-        }
-      ],
-      "fallback": [
+        },
         {
           "selector": "ytd-mini-guide-entry-renderer.style-scope",
           "matched": true,
@@ -459,6 +459,13 @@
           "matchCount": 1
         },
         {
+          "selector": "yt-searchbox input[name=\"search_query\"]",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
           "selector": "input#search",
           "matched": false,
           "matchCount": 0
@@ -467,9 +474,7 @@
           "selector": "form[role=\"search\"] input",
           "matched": false,
           "matchCount": 0
-        }
-      ],
-      "fallback": [
+        },
         {
           "selector": "yt-searchbox-input",
           "matched": false,
@@ -482,7 +487,8 @@
         }
       ],
       "matchedSelectors": [
-        "yt-searchbox"
+        "yt-searchbox",
+        "yt-searchbox input[name=\"search_query\"]"
       ]
     },
     "shortsShelf": {
@@ -1365,6 +1371,13 @@
           "matchCount": 1
         },
         {
+          "selector": "yt-searchbox input[name=\"search_query\"]",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
           "selector": "input#search",
           "matched": false,
           "matchCount": 0
@@ -1373,9 +1386,7 @@
           "selector": "form[role=\"search\"] input",
           "matched": false,
           "matchCount": 0
-        }
-      ],
-      "fallback": [
+        },
         {
           "selector": "yt-searchbox-input",
           "matched": false,
@@ -1388,7 +1399,8 @@
         }
       ],
       "matchedSelectors": [
-        "yt-searchbox"
+        "yt-searchbox",
+        "yt-searchbox input[name=\"search_query\"]"
       ]
     },
     "searchResults.root": {
@@ -1406,11 +1418,6 @@
           "selector": "ytd-two-column-search-results-renderer[is-search]",
           "matched": true,
           "matchCount": 1
-        },
-        {
-          "selector": "ytd-section-list-renderer[page-subtype=\"search\"]",
-          "matched": false,
-          "matchCount": 0
         }
       ],
       "fallback": [
@@ -1423,6 +1430,11 @@
           "selector": "ytd-two-column-search-results-renderer",
           "matched": true,
           "matchCount": 1
+        },
+        {
+          "selector": "ytd-section-list-renderer[page-subtype=\"search\"]",
+          "matched": false,
+          "matchCount": 0
         }
       ],
       "matchedSelectors": [
@@ -1517,11 +1529,6 @@
       "elementCount": 6829,
       "stable": [
         {
-          "selector": "ytd-game-card-renderer",
-          "matched": false,
-          "matchCount": 0
-        },
-        {
           "selector": "ytd-mini-game-card-view-model",
           "matched": false,
           "matchCount": 0
@@ -1533,6 +1540,11 @@
         }
       ],
       "fallback": [
+        {
+          "selector": "ytd-game-card-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
         {
           "selector": "ytd-game-details-renderer",
           "matched": false,
@@ -1774,14 +1786,9 @@
           "matchCount": 2
         },
         {
-          "selector": "ytd-c4-tabbed-header-renderer",
-          "matched": false,
-          "matchCount": 0
-        },
-        {
-          "selector": "ytd-page-header-renderer",
-          "matched": false,
-          "matchCount": 0
+          "selector": "yt-page-header-renderer",
+          "matched": true,
+          "matchCount": 1
         }
       ],
       "fallback": [
@@ -1796,6 +1803,16 @@
           "matchCount": 6
         },
         {
+          "selector": "ytd-page-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-c4-tabbed-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
           "selector": "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer",
           "matched": false,
           "matchCount": 0
@@ -1805,6 +1822,7 @@
         "ytd-video-owner-renderer",
         "ytd-channel-name",
         "#channel-name",
+        "yt-page-header-renderer",
         "yt-avatar-shape",
         "yt-decorated-avatar-view-model"
       ]
@@ -1831,14 +1849,9 @@
           "matchCount": 2
         },
         {
-          "selector": "ytd-c4-tabbed-header-renderer",
-          "matched": false,
-          "matchCount": 0
-        },
-        {
-          "selector": "ytd-page-header-renderer",
-          "matched": false,
-          "matchCount": 0
+          "selector": "yt-page-header-renderer",
+          "matched": true,
+          "matchCount": 1
         }
       ],
       "fallback": [
@@ -1853,6 +1866,16 @@
           "matchCount": 6
         },
         {
+          "selector": "ytd-page-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-c4-tabbed-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
           "selector": "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer",
           "matched": false,
           "matchCount": 0
@@ -1862,6 +1885,7 @@
         "ytd-video-owner-renderer",
         "ytd-channel-name",
         "#channel-name",
+        "yt-page-header-renderer",
         "yt-avatar-shape",
         "yt-decorated-avatar-view-model"
       ]

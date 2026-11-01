@@ -56,7 +56,7 @@
             'Worldwide Societal Collapse... - YouTube.mhtml',
             'HARDENING.md#h21'
         ]),
-        lastVerified: '2026-06-04',
+        lastVerified: '2026-10-31',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Player redesign transition surface; 2026-06-04 stopped-loading Chrome Stable capture confirmed Delhi shell, overflow panel, and time-wrapper selectors. Action-pill/action-container remain fallback watchlist entries until captured.'
