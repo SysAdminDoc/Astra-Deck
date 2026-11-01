@@ -195,3 +195,10 @@ test('Local Summary leaves the study export buttons that share its pill style', 
 
     assert.equal(exportButton.isConnected, true);
 });
+
+test('a player button keeps its icon inside, against the padding YouTube gives player SVGs', () => {
+    const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../extension/ytkit.js'), 'utf8');
+    const rule = source.match(/\.ytkit-player-btn svg \{([^}]*)\}/);
+    assert.ok(rule, 'the shared icon rule exists');
+    assert.match(rule[1], /padding: 0 !important;/);
+});

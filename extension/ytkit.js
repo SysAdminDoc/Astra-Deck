@@ -2455,6 +2455,7 @@ const STORAGE_KEYS = Object.freeze({
             z-index: 1;
             width: 17px;
             height: 17px;
+            padding: 0 !important;
             fill: currentColor;
             pointer-events: none;
             transition: transform 160ms var(--ytkit-ease-out), opacity 160ms var(--ytkit-ease-out);

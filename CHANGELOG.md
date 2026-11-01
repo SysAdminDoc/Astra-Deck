@@ -23,6 +23,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
 
 ### Fixed
+- The Screenshot button's camera icon sits inside the button again. YouTube started padding icons in its player buttons, which pushed ours out past the bottom edge.
 - The Q&A and Local Summary buttons now show up in the player. They tried once, before any player button they could sit beside existed, so a fresh page never had them, and without AI Summary turned on they never appeared at all. Turning Local Summary off also stopped taking the study export buttons with it.
 - A blocked channel now gets its blocked screen however you reach its videos. A block saved by channel id used to miss when you clicked through inside YouTube, and a block saved by handle used to miss when you opened the link directly.
 - Firefox: the first page after installing could fail to load one of the extension's modules and leave Astra Deck dead until a reload. Firefox now loads them a few at a time and retries a failed fetch with a growing pause. Chrome keeps loading them all at once, since the same limit made its startup about half again slower. A failed feature module now also gets those retries before it's reported by name.
