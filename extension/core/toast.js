@@ -156,6 +156,7 @@
         '#ytkit-page-modal:modal',
         '.ytkit-wha-overlay:modal',
         '.ytkit-sub-group-dialog:modal',
+        '.ytkit-blocked-watch-overlay:modal',
         '#ytkit-settings-panel:modal'
     ]);
 

@@ -9348,6 +9348,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 		return svg;
 	}
 	const REFILTER_SETTING_KEYS = new Set(['advancedLocalPredicate', 'advancedLocalPredicateCode', 'markWatchedVideos']);
+	const DIRECT_WATCH_BACK_REPEAT_MS = 2000;
 	const SUBSCRIBER_COUNT_LABELS =/(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
 	const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
 	const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
@@ -9613,6 +9614,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			_directWatchTimer: null,
 			_directWatchEvaluationToken: 0,
 			_directWatchDialog: null,
+			_directWatchBackAt: 0,
 			_directWatchPreviousFocus: null,
 			_directWatchPlayHandler: null,
 			_directWatchResumeAfterDecision: false,
@@ -10506,8 +10508,14 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			},
 			_closeDirectWatchInterstitial({ restoreFocus = true } = {}) {
 				this._removeDirectWatchPlaybackGuard();
-				this._directWatchDialog?.remove?.();
+				const dialog = this._directWatchDialog;
 				this._directWatchDialog = null;
+				this._directWatchBackAt = 0;
+				if (dialog) {
+					if (dialog.open) dialog.close();
+					globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+					dialog.remove?.();
+				}
 				if (restoreFocus && this._directWatchPreviousFocus?.isConnected) {
 					try { this._directWatchPreviousFocus.focus?.({ preventScroll: true }); } catch (_) {   }
 				}
@@ -10528,6 +10536,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					return;
 				}
 				if (action === 'back') {
+					const now = Date.now();
+					if (now - this._directWatchBackAt < DIRECT_WATCH_BACK_REPEAT_MS) return;
+					this._directWatchBackAt = now;
 					this._directWatchDialog?.querySelectorAll?.('button').forEach(button => { button.disabled = true; });
 					navigateBack();
 				}
@@ -10537,15 +10548,14 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				this._pauseDirectWatchPlayback();
 				this._installDirectWatchPlaybackGuard();
 				this._directWatchPreviousFocus = documentRef.activeElement || null;
-				const overlay = documentRef.createElement('div');
+				const overlay = documentRef.createElement('dialog');
 				overlay.className = 'ytkit-blocked-watch-overlay';
 				overlay.dataset.ytkitBlockedWatch = 'true';
-				const dialog = documentRef.createElement('section');
-				dialog.className = 'ytkit-blocked-watch-dialog';
-				dialog.setAttribute('role', 'alertdialog');
-				dialog.setAttribute('aria-modal', 'true');
-				dialog.setAttribute('aria-labelledby', 'ytkit-blocked-watch-title');
-				dialog.setAttribute('aria-describedby', 'ytkit-blocked-watch-description');
+				overlay.setAttribute('role', 'alertdialog');
+				overlay.setAttribute('aria-labelledby', 'ytkit-blocked-watch-title');
+				overlay.setAttribute('aria-describedby', 'ytkit-blocked-watch-description');
+				const card = documentRef.createElement('section');
+				card.className = 'ytkit-blocked-watch-dialog';
 				const eyebrow = documentRef.createElement('span');
 				eyebrow.className = 'ytkit-blocked-watch-eyebrow';
 				eyebrow.textContent = t('statBlocked', 'Blocked');
@@ -10575,34 +10585,28 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 					button.addEventListener('click', () => this._handleDirectWatchDecision(action, channelInfo));
 					actions.appendChild(button);
 				}
-				dialog.appendChild(eyebrow);
-				dialog.appendChild(title);
-				dialog.appendChild(description);
-				dialog.appendChild(channel);
-				dialog.appendChild(actions);
-				overlay.appendChild(dialog);
-				overlay.addEventListener('keydown', event => {
-					if (event.key === 'Escape') {
-						event.preventDefault();
-						this._handleDirectWatchDecision('back', channelInfo);
-						return;
-					}
-					if (event.key !== 'Tab') return;
-					const buttons = [...dialog.querySelectorAll('button:not([disabled])')];
-					if (!buttons.length) return;
-					const first = buttons[0];
-					const last = buttons[buttons.length - 1];
-					if (event.shiftKey && documentRef.activeElement === first) {
-						event.preventDefault();
-						last.focus();
-					} else if (!event.shiftKey && documentRef.activeElement === last) {
-						event.preventDefault();
-						first.focus();
-					}
+				card.appendChild(eyebrow);
+				card.appendChild(title);
+				card.appendChild(description);
+				card.appendChild(channel);
+				card.appendChild(actions);
+				overlay.appendChild(card);
+				overlay.addEventListener('cancel', event => {
+					event.preventDefault();
+					this._handleDirectWatchDecision('back', channelInfo);
+				});
+				overlay.addEventListener('close', () => {
+					if (this._directWatchDialog !== overlay) return;
+					try { overlay.showModal(); } catch (_) {   }
+					this._handleDirectWatchDecision('back', channelInfo);
 				});
 				documentRef.body.appendChild(overlay);
 				this._directWatchDialog = overlay;
-				dialog.querySelector?.('[data-action="back"]')?.focus?.({ preventScroll: true });
+				try {
+					overlay.showModal();
+					globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+				} catch (_) {   }
+				card.querySelector?.('[data-action="back"]')?.focus?.({ preventScroll: true });
 			},
 			_clearDirectWatchEvaluation() {
 				this._directWatchEvaluationToken += 1;
@@ -12388,8 +12392,17 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
                         z-index: ${Z.BANNER};
                         display: grid;
                         place-items: center;
+                        width: auto;
+                        height: auto;
+                        max-width: none;
+                        max-height: none;
+                        margin: 0;
                         padding: 24px;
+                        border: 0;
                         background: rgba(4, 7, 12, 0.82);
+                    }
+                    .ytkit-blocked-watch-overlay::backdrop {
+                        background: transparent;
                     }
                     .ytkit-blocked-watch-dialog {
                         width: min(520px, 100%);

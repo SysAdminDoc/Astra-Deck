@@ -22,6 +22,7 @@
     // Settings outside the hideVideos* family that still change which cards
     // a scan hides or marks.
     const REFILTER_SETTING_KEYS = new Set(['advancedLocalPredicate', 'advancedLocalPredicateCode', 'markWatchedVideos']);
+    const DIRECT_WATCH_BACK_REPEAT_MS = 2000;
     const SUBSCRIBER_COUNT_LABELS =/(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
     const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
     // These markers are deliberately explicit rather than a general-purpose
@@ -364,6 +365,7 @@
             _directWatchTimer: null,
             _directWatchEvaluationToken: 0,
             _directWatchDialog: null,
+            _directWatchBackAt: 0,
             _directWatchPreviousFocus: null,
             _directWatchPlayHandler: null,
             _directWatchResumeAfterDecision: false,
@@ -1353,8 +1355,16 @@
 
             _closeDirectWatchInterstitial({ restoreFocus = true } = {}) {
                 this._removeDirectWatchPlaybackGuard();
-                this._directWatchDialog?.remove?.();
+                const dialog = this._directWatchDialog;
+                // So the dialog's own close event, which is queued, isn't read as the browser closing it.
                 this._directWatchDialog = null;
+                this._directWatchBackAt = 0;
+                if (dialog) {
+                    if (dialog.open) dialog.close();
+                    // Before it leaves the document, or a toast hosted inside goes with it.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                    dialog.remove?.();
+                }
                 if (restoreFocus && this._directWatchPreviousFocus?.isConnected) {
                     try { this._directWatchPreviousFocus.focus?.({ preventScroll: true }); } catch (_) { /* reason: focus restoration is best-effort */ }
                 }
@@ -1382,6 +1392,12 @@
                     return;
                 }
                 if (action === 'back') {
+                    // Escape can repeat before the route changes, and every press
+                    // would go another entry back. A later one may still try again,
+                    // since a back that stays on this video changes nothing here.
+                    const now = Date.now();
+                    if (now - this._directWatchBackAt < DIRECT_WATCH_BACK_REPEAT_MS) return;
+                    this._directWatchBackAt = now;
                     this._directWatchDialog?.querySelectorAll?.('button').forEach(button => { button.disabled = true; });
                     navigateBack();
                 }
@@ -1393,16 +1409,16 @@
                 this._installDirectWatchPlaybackGuard();
                 this._directWatchPreviousFocus = documentRef.activeElement || null;
 
-                const overlay = documentRef.createElement('div');
+                // The dialog is the whole dim overlay and the card stays centered by grid.
+                const overlay = documentRef.createElement('dialog');
                 overlay.className = 'ytkit-blocked-watch-overlay';
                 overlay.dataset.ytkitBlockedWatch = 'true';
+                overlay.setAttribute('role', 'alertdialog');
+                overlay.setAttribute('aria-labelledby', 'ytkit-blocked-watch-title');
+                overlay.setAttribute('aria-describedby', 'ytkit-blocked-watch-description');
 
-                const dialog = documentRef.createElement('section');
-                dialog.className = 'ytkit-blocked-watch-dialog';
-                dialog.setAttribute('role', 'alertdialog');
-                dialog.setAttribute('aria-modal', 'true');
-                dialog.setAttribute('aria-labelledby', 'ytkit-blocked-watch-title');
-                dialog.setAttribute('aria-describedby', 'ytkit-blocked-watch-description');
+                const card = documentRef.createElement('section');
+                card.className = 'ytkit-blocked-watch-dialog';
 
                 const eyebrow = documentRef.createElement('span');
                 eyebrow.className = 'ytkit-blocked-watch-eyebrow';
@@ -1438,35 +1454,33 @@
                     actions.appendChild(button);
                 }
 
-                dialog.appendChild(eyebrow);
-                dialog.appendChild(title);
-                dialog.appendChild(description);
-                dialog.appendChild(channel);
-                dialog.appendChild(actions);
-                overlay.appendChild(dialog);
-                overlay.addEventListener('keydown', event => {
-                    if (event.key === 'Escape') {
-                        event.preventDefault();
-                        this._handleDirectWatchDecision('back', channelInfo);
-                        return;
-                    }
-                    if (event.key !== 'Tab') return;
-                    const buttons = [...dialog.querySelectorAll('button:not([disabled])')];
-                    if (!buttons.length) return;
-                    const first = buttons[0];
-                    const last = buttons[buttons.length - 1];
-                    if (event.shiftKey && documentRef.activeElement === first) {
-                        event.preventDefault();
-                        last.focus();
-                    } else if (!event.shiftKey && documentRef.activeElement === last) {
-                        event.preventDefault();
-                        first.focus();
-                    }
+                card.appendChild(eyebrow);
+                card.appendChild(title);
+                card.appendChild(description);
+                card.appendChild(channel);
+                card.appendChild(actions);
+                overlay.appendChild(card);
+                // Escape means Back here, and the screen stays up until the route changes.
+                overlay.addEventListener('cancel', event => {
+                    event.preventDefault();
+                    this._handleDirectWatchDecision('back', channelInfo);
+                });
+                // With no recent click on the page the browser closes it anyway, so
+                // put it back: the blocked video stays covered until the route changes.
+                overlay.addEventListener('close', () => {
+                    if (this._directWatchDialog !== overlay) return;
+                    try { overlay.showModal(); } catch (_) { /* reason: the screen still paints by its z-index */ }
+                    this._handleDirectWatchDecision('back', channelInfo);
                 });
 
                 documentRef.body.appendChild(overlay);
                 this._directWatchDialog = overlay;
-                dialog.querySelector?.('[data-action="back"]')?.focus?.({ preventScroll: true });
+                try {
+                    overlay.showModal();
+                    // A toast shown before the dialog is now inert outside it, Undo included.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                } catch (_) { /* reason: the screen still paints by its z-index if the browser refuses */ }
+                card.querySelector?.('[data-action="back"]')?.focus?.({ preventScroll: true });
             },
 
             _clearDirectWatchEvaluation() {
@@ -3558,8 +3572,17 @@
                         z-index: ${Z.BANNER};
                         display: grid;
                         place-items: center;
+                        width: auto;
+                        height: auto;
+                        max-width: none;
+                        max-height: none;
+                        margin: 0;
                         padding: 24px;
+                        border: 0;
                         background: rgba(4, 7, 12, 0.82);
+                    }
+                    .ytkit-blocked-watch-overlay::backdrop {
+                        background: transparent;
                     }
                     .ytkit-blocked-watch-dialog {
                         width: min(520px, 100%);
