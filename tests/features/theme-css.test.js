@@ -55,6 +55,14 @@ test('the compact header shrinks the search box YouTube draws today', () => {
     assert.match(css, /ytd-masthead \.ytSearchboxComponentSearchButton[^{]*\{ height: 32px !important/);
 });
 
+test('the compact header scrolls away and the page starts below it', () => {
+    const css = themeCss.buildCompactUnfixedHeaderCss();
+    assert.match(css, /#masthead-container \{ position: absolute !important;/,
+        'an absolute masthead inside a fixed container stays on screen');
+    assert.match(css, /ytd-page-manager \{ margin-top: 40px !important;/,
+        'with no room left for it the header covers the top of the video');
+});
+
 test('the selection builder always emits a rule, so the caller owns the toggle', () => {
     const css = themeCss.buildSelectionColorCss({ selectionColor: '#0000ff' });
     assert.match(css, /::selection \{ background: #0000ff !important/);

@@ -17030,12 +17030,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // byte-identical to features/theme-css/index.js's
                     // buildCompactUnfixedHeaderCss.
                     css = `
+                    #masthead-container { position: absolute !important; }
                     ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }
                     ytd-masthead #container.ytd-masthead { height: 40px !important; }
                     ytd-masthead #logo { height: 16px !important; }
                     ytd-masthead #search-form, ytd-masthead #search-input, ytd-masthead .ytSearchboxComponentInputBox, ytd-masthead .ytSearchboxComponentSearchButton { height: 32px !important; box-sizing: border-box !important; }
                     ytd-masthead yt-searchbox { margin-top: 8px !important; }
-                    ytd-page-manager { margin-top: 0 !important; }
+                    ytd-page-manager { margin-top: 40px !important; }
                     html[dark] #cinematics { top: 40px !important; }
                 `;
                 }

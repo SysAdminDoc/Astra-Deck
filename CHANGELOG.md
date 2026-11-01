@@ -44,6 +44,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Search While Watching: clicking the magnifier took you off the video to the results page, and only Enter opened the panel. YouTube's rebuilt search box starts with a hidden image picker and its button has no `type` anymore, so the feature read the wrong field and never recognized the button.
 - Square Search Bar did nothing after that same rebuild, because it named parts of the old box. It works again, so anyone who kept the old look through the last defaults change gets the square bar back.
 - Compact / Unfixed Header sizes the new search box too, and keeps it centered in the 40 pixel header.
+- Compact / Unfixed Header now scrolls away like it says. YouTube's fixed container held it on screen, and the page started at the very top, so the header sat over the top of the video and the first sidebar row.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)

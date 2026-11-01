@@ -4767,12 +4767,13 @@ __astraDeckRegistry["features/theme-css/index.js"] = function (globalThis, self,
 			+ '                    }\n                ';
 	}
 	function buildCompactUnfixedHeaderCss() {
-		return '\n                    ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }\n'
+		return '\n                    #masthead-container { position: absolute !important; }\n'
+			+ '                    ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }\n'
 			+ '                    ytd-masthead #container.ytd-masthead { height: 40px !important; }\n'
 			+ '                    ytd-masthead #logo { height: 16px !important; }\n'
 			+ '                    ytd-masthead #search-form, ytd-masthead #search-input, ytd-masthead .ytSearchboxComponentInputBox, ytd-masthead .ytSearchboxComponentSearchButton { height: 32px !important; box-sizing: border-box !important; }\n'
 			+ '                    ytd-masthead yt-searchbox { margin-top: 8px !important; }\n'
-			+ '                    ytd-page-manager { margin-top: 0 !important; }\n'
+			+ '                    ytd-page-manager { margin-top: 40px !important; }\n'
 			+ '                    html[dark] #cinematics { top: 40px !important; }\n                ';
 	}
 	function buildHideVideoEndContentCss() {

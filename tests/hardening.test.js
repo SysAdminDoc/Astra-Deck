@@ -8551,7 +8551,10 @@ test('v4.22.0 buildCompactUnfixedHeaderCss shrinks the masthead surface', () => 
     assert.match(css, /ytd-masthead \{ position: absolute !important; height: 40px !important;/);
     assert.match(css, /ytd-masthead #container\.ytd-masthead \{ height: 40px !important;/);
     assert.match(css, /ytd-masthead #logo \{ height: 16px !important;/);
-    assert.match(css, /ytd-page-manager \{ margin-top: 0 !important;/);
+    assert.match(css, /#masthead-container \{ position: absolute !important;/,
+        'YouTube pins the container, so the header only scrolls away once that lets go');
+    assert.match(css, /ytd-page-manager \{ margin-top: 40px !important;/,
+        'the page starts below the header instead of underneath it');
 });
 
 test('v4.22.0 buildHideVideoEndContentCss covers every end-screen surface', () => {

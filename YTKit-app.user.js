@@ -10506,7 +10506,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (typeof mod === 'function') {
 					css = mod();
 				} else {
-					css = `ytd-masthead{position:absolute!important;height:40px!important;min-height:40px!important}ytd-masthead #container.ytd-masthead{height:40px!important}ytd-masthead #logo{height:16px!important}ytd-masthead #search-form,ytd-masthead #search-input,ytd-masthead .ytSearchboxComponentInputBox,ytd-masthead .ytSearchboxComponentSearchButton{height:32px!important;box-sizing:border-box!important}ytd-masthead yt-searchbox{margin-top:8px!important}ytd-page-manager{margin-top:0!important}html[dark] #cinematics{top:40px!important}`;
+					css = `#masthead-container{position:absolute!important}ytd-masthead{position:absolute!important;height:40px!important;min-height:40px!important}ytd-masthead #container.ytd-masthead{height:40px!important}ytd-masthead #logo{height:16px!important}ytd-masthead #search-form,ytd-masthead #search-input,ytd-masthead .ytSearchboxComponentInputBox,ytd-masthead .ytSearchboxComponentSearchButton{height:32px!important;box-sizing:border-box!important}ytd-masthead yt-searchbox{margin-top:8px!important}ytd-page-manager{margin-top:40px!important}html[dark] #cinematics{top:40px!important}`;
 				}
 				this._styleEl = injectStyle(css, this.id, true);
 			},
