@@ -2325,6 +2325,22 @@ const STALE_AFTER_ENGLISH_REWRITE_TRANSLATIONS = {
   }
 };
 for (const [locale, messages] of Object.entries(STALE_AFTER_ENGLISH_REWRITE_TRANSLATIONS)) Object.assign(T[locale], messages);
+// Hide AI Summary's translations still described the old combined feature
+// ("and Ask AI buttons"), which Hide Ask AI took over when the toggles split.
+const AI_SUMMARY_DESC = 'Remove AI-generated summary panels and the Summary row on search results';
+const AI_SUMMARY_DESC_TRANSLATIONS = {
+  ar: 'إزالة لوحات الملخصات المُنشأة بالذكاء الاصطناعي وصف الملخص في نتائج البحث',
+  de: 'KI-generierte Zusammenfassungsbereiche und die Zeile „Zusammenfassung“ in den Suchergebnissen entfernen',
+  es: 'Eliminar los paneles de resumen generados por IA y la fila de resumen en los resultados de búsqueda',
+  fr: 'Supprimer les panneaux de résumé générés par IA et la ligne de résumé dans les résultats de recherche',
+  it: 'Rimuovi i pannelli di riepilogo generati dall\'IA e la riga del riepilogo nei risultati di ricerca',
+  ja: 'AI 生成の要約パネルと検索結果の要約行を削除',
+  ko: 'AI 생성 요약 패널과 검색 결과의 요약 행 제거',
+  pt_BR: 'Remover os painéis de resumo gerados por IA e a linha de resumo nos resultados da pesquisa',
+  ru: 'Убрать панели со сводкой от ИИ и строку сводки в результатах поиска',
+  zh_CN: '移除 AI 生成的摘要面板和搜索结果中的摘要行'
+};
+for (const [locale, message] of Object.entries(AI_SUMMARY_DESC_TRANSLATIONS)) T[locale][AI_SUMMARY_DESC] = message;
 const STORAGE_WRITE_FAILURE_TRANSLATIONS = {
   ar: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة.' },
   de: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck kann in diesem Browserprofil nicht speichern. Aktuelle Änderungen gehen möglicherweise verloren.' },

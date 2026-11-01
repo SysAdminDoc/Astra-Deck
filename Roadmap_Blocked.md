@@ -165,25 +165,14 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Load note for the ask: since v4.99.0 the default cover for an unsubmitted video is `getThumbnail?videoID=&redirectUrl=` with no `time`, which only reads the cache (no render is queued; a miss answers 307 to YouTube's own still). Submitted frames still send `time`, as before.
   Blocker: asking upstream and deciding what to do with the answer is the maintainer's call, the same family as the SponsorBlock-submission item.
 
-- [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
-  Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.
-  Evidence: RESEARCH.md §Community (socialmediatoday 2026-08-12; dead Google support thread asking how to turn it off); `extension/core/settings-schema.js:192,195`.
-  Touches: `extension/core/selector-packs/**`, `extension/ytkit.js`, `extension/core/settings-schema.js` (new key(s) via the nine-places checklist), `extension/_locales/**`, `YTKit.user.js`
-  Acceptance: the Ask-YouTube entry button/panel and the search AI carousel are hidden when enabled, via structural selectors captured from the live post-2026-08-12 DOM (browser-gated capture first — do NOT guess selectors; the existing `hideAiSummary` selectors get re-verified in the same capture); hide-attribution marks the hidden nodes; userscript ported or classified.
-  Complexity: M
-  Blocker: the item's own acceptance requires capturing the post-2026-08-12 DOM
-  from a live session before writing selectors, and this repository forbids
-  shipping selectors it could not verify. The Ask-YouTube chatbot is gated to
-  signed-in US accounts, so the capture needs an authenticated browser session
-  that is not available to an autonomous pass. Guessing renderer names here
-  would produce a feature that silently does nothing — the exact failure mode
-  the anti-guessing rule exists to prevent.
-  Unblock by: one authenticated capture of a watch page and a search results
-  page with the Ask entry point and any AI carousel present, recording their
-  outerHTML (tag names, ids, stable attributes) so the selectors can be written
-  from evidence. The same capture should re-verify the existing `hideAiSummary`
-  and `hideAiContextPanels` selectors, which have not been checked against the
-  new surfaces.
+- [ ] P2 — Hide the Ask-YouTube chatbot button and any search AI carousel
+  Why: YouTube rolled the "Ask" chatbot to all signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels and "Highlights" through July. Top user complaint class.
+  Evidence: RESEARCH.md §Community (socialmediatoday 2026-08-12); `extension/ytkit.js` `hideAskAi`, `hideAiSummary`.
+  Touches: `extension/core/selector-packs/**`, `extension/ytkit.js`, `extension/early.css`, `extension/_locales/**`.
+  Acceptance: the Ask entry button and panel and a search AI carousel, if one still exists, are hidden when enabled, through structural selectors read from a signed-in page; the existing `hideAskAi` selectors get re-verified in the same capture; hide-attribution marks whole cards that go, and rows inside a card stay plain CSS like the other AI hides.
+  Complexity: S once captured
+  Blocker (retested 2026-10-31): needs Matt's signed-in US session. The AI Summary half of this entry didn't need one and is done: `ytd-expandable-metadata-renderer[has-video-summary]` was read off signed-out search pages and is now hidden, with chapter rows left alone, seen live. Signed out, four searches showed no AI carousel and a watch page shows no Ask button, so those selectors can't be read from here. `.auth/` holds zero cookies. `customElements.get` for the Ask button and youchat tags is empty signed out, which says nothing either way because YouTube loads those pieces on demand. YouTube's app code isn't reachable through the page's script list (17 scripts, none naming even the search row's own tag), so it can't answer this either.
+  Unblock by: Matt signing in once on the harness profile, then one capture of a watch page and a search results page with the Ask button present.
 
 ## P2 — Greasy Fork publication (2026-08-11)
 

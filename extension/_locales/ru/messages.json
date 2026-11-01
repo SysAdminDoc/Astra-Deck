@@ -2919,7 +2919,7 @@
     "message": "Скрыть AI-панели контекста"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Убрать AI-генерированные резюме и кнопки «Спросить AI»"
+    "message": "Убрать панели со сводкой от ИИ и строку сводки в результатах поиска"
   },
   "feature_hideAiSummary_name": {
     "message": "Скрыть AI-резюме"

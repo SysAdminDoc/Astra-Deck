@@ -81,6 +81,20 @@ test('combined AI CSS is split without cross-hiding the independent surfaces', (
     assert.doesNotMatch(context, /conversational-ui-watch-metadata-button-view-model|is-ask-ai|target-id\*="summary"/);
 });
 
+test('Hide AI Summary reaches the Summary row on search results and leaves chapter rows', () => {
+    // Captured live 2026-10-31, signed out: both rows are this tag, only the AI
+    // one carries the attribute, and it doesn't depend on the page's language.
+    const row = 'ytd-expandable-metadata-renderer[has-video-summary]';
+    assert.ok(featureBlock('hideAiSummary').includes(row));
+    assert.ok(earlyCss.includes(`body.ytkit-hideAiSummary ${row}`));
+
+    for (const source of [featureBlock('hideAiSummary'), earlyCss]) {
+        for (const match of source.matchAll(/ytd-expandable-metadata-renderer(.?)/g)) {
+            assert.equal(match[1], '[', 'a bare tag selector would hide chapter rows too');
+        }
+    }
+});
+
 test('AI early-hide rules are body-scoped for every independent toggle', () => {
     for (const id of ['hideAskAi', 'hideGeminiButtons', 'hideAiSummary', 'hideAiContextPanels']) {
         assert.match(

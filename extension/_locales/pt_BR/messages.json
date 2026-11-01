@@ -2919,7 +2919,7 @@
     "message": "Ocultar Painéis de Contexto de IA"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remover resumos gerados por IA e botões Perguntar à IA"
+    "message": "Remover os painéis de resumo gerados por IA e a linha de resumo nos resultados da pesquisa"
   },
   "feature_hideAiSummary_name": {
     "message": "Ocultar Resumo IA"

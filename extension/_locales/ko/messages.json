@@ -2919,7 +2919,7 @@
     "message": "AI 맥락 패널 숨기기"
   },
   "feature_hideAiSummary_desc": {
-    "message": "AI 생성 요약 및 AI에게 물어보기 버튼 제거"
+    "message": "AI 생성 요약 패널과 검색 결과의 요약 행 제거"
   },
   "feature_hideAiSummary_name": {
     "message": "AI 요약 숨기기"

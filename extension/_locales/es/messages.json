@@ -2919,7 +2919,7 @@
     "message": "Ocultar paneles de contexto de AI"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Eliminar resúmenes generados por AI y botones de Preguntar AI"
+    "message": "Eliminar los paneles de resumen generados por IA y la fila de resumen en los resultados de búsqueda"
   },
   "feature_hideAiSummary_name": {
     "message": "Ocultar resumen AI"

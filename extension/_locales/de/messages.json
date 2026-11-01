@@ -2919,7 +2919,7 @@
     "message": "AI-Kontext-Panels ausblenden"
   },
   "feature_hideAiSummary_desc": {
-    "message": "AI-generierte Zusammenfassungen und AI-Fragen-Schaltflächen entfernen"
+    "message": "KI-generierte Zusammenfassungsbereiche und die Zeile „Zusammenfassung“ in den Suchergebnissen entfernen"
   },
   "feature_hideAiSummary_name": {
     "message": "AI-Zusammenfassung ausblenden"

@@ -110,6 +110,7 @@ body.ytkit-hideAiSummary ytd-engagement-panel-section-list-renderer[target-id*="
 body.ytkit-hideAiSummary ytd-engagement-panel-section-list-renderer[target-id*="summary" i],
 body.ytkit-hideAiSummary ytd-engagement-panel-section-list-renderer[panel-target-id*="summary" i],
 body.ytkit-hideAiSummary ytd-ai-summary-renderer,
+body.ytkit-hideAiSummary ytd-expandable-metadata-renderer[has-video-summary],
 body.ytkit-hideAiSummary [class*="ai-summary" i],
 body.ytkit-hideAiSummary [class*="aiSummary"] {
     display: none !important;

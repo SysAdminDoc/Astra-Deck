@@ -2919,7 +2919,7 @@
     "message": "隐藏 AI 背景面板"
   },
   "feature_hideAiSummary_desc": {
-    "message": "移除 AI 生成的摘要和提问 AI 按钮"
+    "message": "移除 AI 生成的摘要面板和搜索结果中的摘要行"
   },
   "feature_hideAiSummary_name": {
     "message": "隐藏 AI 摘要"

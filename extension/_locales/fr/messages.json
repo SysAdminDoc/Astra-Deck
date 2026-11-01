@@ -2919,7 +2919,7 @@
     "message": "Masquer les panneaux de contexte IA"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Supprimer les résumés générés par IA et les boutons Demander à l'IA"
+    "message": "Supprimer les panneaux de résumé générés par IA et la ligne de résumé dans les résultats de recherche"
   },
   "feature_hideAiSummary_name": {
     "message": "Masquer le résumé IA"

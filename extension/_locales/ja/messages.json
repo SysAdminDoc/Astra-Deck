@@ -2919,7 +2919,7 @@
     "message": "AI コンテキストパネルを非表示"
   },
   "feature_hideAiSummary_desc": {
-    "message": "AI 生成の要約と Ask AI ボタンを削除"
+    "message": "AI 生成の要約パネルと検索結果の要約行を削除"
   },
   "feature_hideAiSummary_name": {
     "message": "AI 要約を非表示"

@@ -2933,7 +2933,7 @@
     "message": "Hide AI Context Panels"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summary panels only"
+    "message": "Remove AI-generated summary panels and the Summary row on search results"
   },
   "feature_hideAiSummary_name": {
     "message": "Hide AI Summary"

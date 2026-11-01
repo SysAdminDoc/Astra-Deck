@@ -2919,7 +2919,7 @@
     "message": "Nascondi pannelli di contesto AI"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Rimuovi i riepiloghi generati dall'AI e i pulsanti Chiedi all'AI"
+    "message": "Rimuovi i pannelli di riepilogo generati dall'IA e la riga del riepilogo nei risultati di ricerca"
   },
   "feature_hideAiSummary_name": {
     "message": "Nascondi riepilogo AI"
