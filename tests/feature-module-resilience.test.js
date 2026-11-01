@@ -37,8 +37,8 @@ const IMPORT_CALL = /\bimport\(/g;
  */
 async function runBootstrap({ failing = [], settings = {} } = {}) {
     const substitutionCount = (generated.match(IMPORT_CALL) || []).length;
-    assert.equal(substitutionCount, 3,
-        'the bootstrap should load exactly the core loader, the feature tier, and the monolith; '
+    assert.equal(substitutionCount, 2,
+        'the bootstrap should import through one helper, once plainly and once for its retry; '
         + 'a new import() call needs this harness updated');
     const source = generated.replace(IMPORT_CALL, '__stubImport(');
 

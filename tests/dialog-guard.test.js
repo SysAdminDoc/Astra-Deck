@@ -130,7 +130,8 @@ test('the still-watching dismisser refuses its paused-video fallback during veri
     // The paused-video branch is the dangerous one: a verification
     // interstitial also pauses playback.
     assert.match(body, /findComplianceDialog\(\)\)\s*return false;/);
-    assert.match(body, /btn && isSafeToAutoClick\(btn\)/);
+    assert.match(body, /if \(!isSafeToAutoClick\(promptBtn\)\) return;/);
+    assert.match(body, /!isSafeToAutoClick\(playerBtn\)\) return;/);
 });
 
 test('the canonical unsubscribe-confirm runtime consults the guard before clicking', () => {
