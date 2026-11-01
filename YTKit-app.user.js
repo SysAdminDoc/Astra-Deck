@@ -19972,7 +19972,7 @@ const STORAGE_KEYS = Object.freeze({
 			icon: 'film',
 			_styleElement: null,
 			init() {
-				const css = `ytd-reel-video-renderer video::-webkit-media-controls{display:flex!important;opacity:1!important}ytd-reel-video-renderer .overlay.ytd-reel-video-renderer{pointer-events:none}ytd-reel-video-renderer .overlay.ytd-reel-video-renderer > *{pointer-events:auto}`;
+				const css = `ytd-reel-video-renderer video::-webkit-media-controls{display:flex!important;opacity:1!important}ytd-reel-video-renderer [class*="ytReelPlayerOverlayViewModelMetadataContainer"]{pointer-events:none!important}ytd-reel-video-renderer yt-reel-metapanel-view-model{pointer-events:auto!important;transform:translateY(-56px)}ytd-reel-video-renderer yt-progress-bar{pointer-events:auto!important}`;
 				this._styleElement = injectStyle(css, this.id, true);
 				const enhance = () => {
 					document.querySelectorAll('ytd-reel-video-renderer video').forEach(video => {

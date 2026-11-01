@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- With Shorts Player Controls on, pressing the video or YouTube's play button works again and the native bar can be pressed. YouTube's newer overlay covers the whole video and an old rule made all of it catch the pointer.
 - Shorts Player Controls stays on for every Short. YouTube keeps one player across Shorts and resets its controls and looping for each new one and after a seek, so the controls only held on the first Short.
 - Redirect Shorts keeps a series in order. An episode opened from its series page plays in the regular player with the series list, so the next episode comes next.
 - Remove Shorts leaves a Shorts series, a playlist and a channel opened at its /channel/ address alone. It used to empty a series page down to its sidebar and take a playlist's header with its rows.

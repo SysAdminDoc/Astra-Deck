@@ -28450,10 +28450,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'film',
             _styleElement: null,
             init() {
+                // YouTube's overlay already lets the pointer through to the video.
+                // Only the box around the channel and title sits on the native
+                // bar, so the title block lifts clear and presses go through the box.
                 const css = `
                     ytd-reel-video-renderer video::-webkit-media-controls { display: flex !important; opacity: 1 !important; }
-                    ytd-reel-video-renderer .overlay.ytd-reel-video-renderer { pointer-events: none; }
-                    ytd-reel-video-renderer .overlay.ytd-reel-video-renderer > * { pointer-events: auto; }
+                    ytd-reel-video-renderer [class*="ytReelPlayerOverlayViewModelMetadataContainer"] { pointer-events: none !important; }
+                    ytd-reel-video-renderer yt-reel-metapanel-view-model { pointer-events: auto !important; transform: translateY(-56px); }
+                    ytd-reel-video-renderer yt-progress-bar { pointer-events: auto !important; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
                 // YouTube keeps one reel and one video across Shorts and sets

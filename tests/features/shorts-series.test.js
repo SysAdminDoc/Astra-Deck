@@ -217,7 +217,10 @@ function shortsPlayer({ videoReady = true } = {}) {
         MutationObserver: attributeObservers.FakeMutationObserver,
         addMutationRule: (id, rule) => mutationRules.set(id, rule),
         removeMutationRule: (id) => mutationRules.delete(id),
-        injectStyle: () => ({ remove() {} }),
+        injectStyle: (css) => {
+            state.css = css;
+            return { remove() { state.cssRemoved = true; } };
+        },
     });
     // What the player does to the video it keeps: for each new Short and after
     // a seek. Measured live, with no other mutation on the page to follow it.
@@ -270,6 +273,45 @@ test('a reel that had no video yet gets the controls once the video shows up', (
     player.videoReady = true;
     player.mutationRules.get('shortsAsRegularVideo')();
     assertEnhanced(player.video, 'on a late video');
+});
+
+// The rule for one selector, read from what the feature injects.
+function ruleFor(css, selector) {
+    const at = css.indexOf(`${selector} {`);
+    if (at < 0) return '';
+    return css.slice(at + selector.length, css.indexOf('}', at));
+}
+
+test('Shorts Player Controls leaves presses on the video and on YouTube\'s own buttons alone', () => {
+    const player = shortsPlayer();
+    player.feature.init();
+    // A press in the middle of the Short did nothing while this rule was here:
+    // it made YouTube's full-size overlay wrapper catch the pointer.
+    assert.equal(/\.overlay[^{]*>\s*\*\s*\{[^}]*pointer-events:\s*auto/.test(player.css), false);
+    assert.equal(player.css.includes('.overlay.ytd-reel-video-renderer'), false, 'that wrapper is YouTube\'s to manage');
+    assert.equal(player.css.includes('yt-reel-player-overlay-view-model'), false);
+});
+
+test('Shorts Player Controls clears the box over the native bar and keeps what is in it working', () => {
+    const player = shortsPlayer();
+    player.feature.init();
+    const metadataBox = ruleFor(player.css, 'ytd-reel-video-renderer [class*="ytReelPlayerOverlayViewModelMetadataContainer"]');
+    const titleBlock = ruleFor(player.css, 'ytd-reel-video-renderer yt-reel-metapanel-view-model');
+    const youTubeBar = ruleFor(player.css, 'ytd-reel-video-renderer yt-progress-bar');
+
+    // YouTube's own class rule on the box wins unless these are important.
+    assert.match(metadataBox, /pointer-events:\s*none !important/, 'a press goes through the box to the native bar');
+    assert.match(titleBlock, /pointer-events:\s*auto !important/, 'the channel and title stay pressable');
+    assert.match(youTubeBar, /pointer-events:\s*auto !important/, 'YouTube\'s own timeline still seeks');
+    // The native buttons sit 49 px up and the timeline 23 px, under the title row.
+    assert.match(titleBlock, /transform:\s*translateY\(-56px\)/, 'the title row sits above the native bar');
+});
+
+test('turning it off removes the pointer rules along with the rest', () => {
+    const player = shortsPlayer();
+    player.feature.init();
+    player.feature.destroy();
+    assert.equal(player.cssRemoved, true);
 });
 
 test('turning it off hands the player back and stops listening', () => {
