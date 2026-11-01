@@ -317,6 +317,35 @@ test('the idle lane gates CPU, layout churn and heap growth per minute', () => {
     assert.match(benchmark.checkSteadyState(thrash, baseline)[0], /idleLayoutsPerMin/);
 });
 
+test('the idle lane waits out one-time setup, then still charges what keeps running', async () => {
+    let scriptSeconds = 0;
+    let heapBytes = 1000;
+    const client = {
+        send: async (method) => {
+            if (method === 'Performance.getMetrics') {
+                return { metrics: [{ name: 'ScriptDuration', value: scriptSeconds }] };
+            }
+            if (method === 'Runtime.getHeapUsage') return { usedSize: heapBytes };
+            return {};
+        }
+    };
+    // Node fires expired timers in order, so a stall can't move these across the
+    // settle timer: setup lands before the first reading, the tick after it.
+    const setup = setTimeout(() => { scriptSeconds += 1; heapBytes += 1000000; }, 20);
+    const tick = setTimeout(() => { scriptSeconds += 0.001; }, 300);
+    try {
+        const idle = await benchmark.runSteadyStateSession(client, 200, 200);
+        assert.ok(idle.idleScriptMsPerMin > 0, 'work inside the window must still count');
+        assert.ok(idle.idleScriptMsPerMin < 1000, 'setup that finished before sampling must not be charged');
+        assert.equal(idle.idleHeapGrowthBytesPerMin, 0, 'setup memory must not read as a leak');
+    } finally {
+        clearTimeout(setup);
+        clearTimeout(tick);
+    }
+    assert.ok(benchmark.STEADY_STATE_SETTLE_MS >= 3000,
+        'one-time setup was measured running for two seconds into the window');
+});
+
 test('machine load widens the idle CPU budgets and nothing else', () => {
     const baseline = {
         steadyStateBudget: {

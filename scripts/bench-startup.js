@@ -48,6 +48,13 @@ const BOUNDED_SESSION_MS = 750;
 // interval is unmistakable and short enough to gate on; results are normalised
 // per minute so this can change without moving the recorded budget.
 const STEADY_STATE_MS = 10000;
+// One-time setup keeps running for a couple of seconds past the first feature
+// paint: the card buttons, the transcript panel, the health report, the first ad
+// scan. Over a full minute on the 2026-10-31 watch capture all of the script
+// landed in the first two seconds and none after, so sampling straight away
+// multiplied that setup by six and reported it as a recurring cost. Wait it out.
+// The budgets are about what keeps running, the only cost an open page pays again.
+const STEADY_STATE_SETTLE_MS = 5000;
 const STEADY_STATE_KEYS = Object.freeze([
     'idleScriptMsPerMin',
     'idleTaskMsPerMin',
@@ -880,8 +887,9 @@ async function readPerformanceMetrics(client) {
 // numbers it shares a harness with. It also could not see intervals scheduled
 // before the wrapper was installed — which is exactly the case that matters.
 // ScriptDuration/TaskDuration are real CPU seconds and cost nothing to read.
-async function runSteadyStateSession(client, durationMs) {
+async function runSteadyStateSession(client, durationMs, settleMs = STEADY_STATE_SETTLE_MS) {
     await client.send('Performance.enable', {}).catch(() => {});
+    await new Promise((resolve) => setTimeout(resolve, settleMs));
     const heapStartBytes = await readHeapBytes(client, { collectFirst: true });
     const before = await readPerformanceMetrics(client);
     const startedAt = Date.now();
@@ -1228,7 +1236,9 @@ module.exports = {
     parseArgs,
     prepareFixture,
     readBaseline,
+    runSteadyStateSession,
     STEADY_STATE_KEYS,
+    STEADY_STATE_SETTLE_MS,
     summarize,
     summarizeSteadyState,
 };
