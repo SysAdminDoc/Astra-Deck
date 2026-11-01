@@ -6634,7 +6634,7 @@ const STORAGE_KEYS = Object.freeze({
 				const processComment = (comment) => {
 					const wasStyled = comment.dataset.ytkitChat === '1';
 					comment.dataset.ytkitChat = '1';
-					setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
+					setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytw-pinned-comment-badge-renderer:not([hidden]), ytd-pinned-comment-badge-renderer:not([hidden])'));
 					setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
 					setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
 					comment.querySelector('.ytkit-vote-badge')?.remove();
@@ -7282,7 +7282,7 @@ const STORAGE_KEYS = Object.freeze({
 			_styleElement: null,
 			_scopedRuleActive: false,
 			_isPinnedThread(thread) {
-				return !!thread.querySelector('ytd-comment-view-model[pinned], ytd-pinned-comment-badge-renderer, #pinned-comment-badge ytd-pinned-comment-badge-renderer');
+				return !!thread.querySelector('ytd-comment-view-model[pinned], ytw-pinned-comment-badge-renderer, ytd-pinned-comment-badge-renderer');
 			},
 			_restoreThread(thread) {
 				thread.style.display = thread.dataset.ytkitPinnedCommentDisplay || '';
@@ -7314,12 +7314,12 @@ const STORAGE_KEYS = Object.freeze({
 				});
 			},
 			init() {
-				this._styleElement = injectStyle(`ytd-comment-thread-renderer[data-ytkit-pinned-comment-hidden="1"],#comments ytd-comment-thread-renderer:has(ytd-pinned-comment-badge-renderer),#comments ytd-comment-thread-renderer:has(ytd-comment-view-model[pinned]),#comments ytd-comment-thread-renderer:has(#pinned-comment-badge:not(:empty)),ytd-comments ytd-comment-thread-renderer:has(ytd-pinned-comment-badge-renderer),ytd-comments ytd-comment-thread-renderer:has(ytd-comment-view-model[pinned]),ytd-comments ytd-comment-thread-renderer:has(#pinned-comment-badge:not(:empty)){display:none!important}#comments ytd-pinned-comment-badge-renderer,ytd-comments ytd-pinned-comment-badge-renderer{display:none!important}`, this.id, true);
+				this._styleElement = injectStyle(`ytd-comment-thread-renderer[data-ytkit-pinned-comment-hidden="1"],#comments ytd-comment-thread-renderer:has(ytw-pinned-comment-badge-renderer),#comments ytd-comment-thread-renderer:has(ytd-pinned-comment-badge-renderer),#comments ytd-comment-thread-renderer:has(ytd-comment-view-model[pinned]),#comments ytd-comment-thread-renderer:has(#pinned-comment-badge:not(:empty)),ytd-comments ytd-comment-thread-renderer:has(ytw-pinned-comment-badge-renderer),ytd-comments ytd-comment-thread-renderer:has(ytd-pinned-comment-badge-renderer),ytd-comments ytd-comment-thread-renderer:has(ytd-comment-view-model[pinned]),ytd-comments ytd-comment-thread-renderer:has(#pinned-comment-badge:not(:empty)){display:none!important}#comments :is(ytw-pinned-comment-badge-renderer,ytd-pinned-comment-badge-renderer),ytd-comments :is(ytw-pinned-comment-badge-renderer,ytd-pinned-comment-badge-renderer){display:none!important}`, this.id, true);
 				this._hidePinnedThreads();
 				if (typeof addScopedMutationRule === 'function') {
 					addScopedMutationRule(
 						this.id,
-						'ytd-comment-thread-renderer, ytd-pinned-comment-badge-renderer, ytd-comment-view-model[pinned], #pinned-comment-badge',
+						'ytd-comment-thread-renderer, ytw-pinned-comment-badge-renderer, ytd-pinned-comment-badge-renderer, ytd-comment-view-model[pinned], #pinned-comment-badge',
 						(_target, addedElements) => this._hidePinnedThreads(addedElements)
 					);
 					this._scopedRuleActive = true;
@@ -11202,7 +11202,7 @@ const STORAGE_KEYS = Object.freeze({
 			_process() {
 				const mode = appState.settings.hideWatchedMode || 'dim';
 				document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer').forEach(item => {
-					const watched = !!item.querySelector('#progress, ytd-thumbnail-overlay-resume-playback-renderer');
+					const watched = globalThis.YTKitCore?.isWatchedCard?.(item) === true;
 					if (watched) {
 						item.setAttribute('ytkit-watched-check', '1');
 						item.classList.add('ytkit-watched');
@@ -17330,6 +17330,8 @@ const STORAGE_KEYS = Object.freeze({
 					: parts[0] * 3600 + parts[1] * 60 + parts[2];
 			},
 			_getWatchedPercent(item) {
+				const barPercent = globalThis.YTKitCore?.readWatchedPercent?.(item);
+				if (barPercent) return barPercent;
 				const progress = item.querySelector(
 					'#progress, ytd-thumbnail-overlay-resume-playback-renderer #progress, [aria-valuenow]'
 				);
@@ -20156,7 +20158,7 @@ const STORAGE_KEYS = Object.freeze({
 						? rawHex.slice(0, 3).split('').map((digit) => digit + digit).join('')
 						: rawHex.slice(0, 6);
 					const accentRgb = [0, 2, 4].map((offset) => parseInt(rgbHex.slice(offset, offset + 2), 16)).join(',');
-					css = `:root{--ytkit-accent:${accent}!important;--ytkit-accent-rgb:${accentRgb}!important;--ytkit-split-theme-accent:${accent}!important}.ytp-swatch-background-color,.ytp-play-progress,#progress.ytd-thumbnail-overlay-resume-playback-renderer{background:${accent}!important}yt-chip-cloud-chip-renderer[selected]{background-color:${accent}!important}ytd-toggle-button-renderer.style-default-active[is-icon-button] yt-icon{color:${accent}!important}`;
+					css = `:root{--ytkit-accent:${accent}!important;--ytkit-accent-rgb:${accentRgb}!important;--ytkit-split-theme-accent:${accent}!important}.ytp-swatch-background-color,.ytp-play-progress,#progress.ytd-thumbnail-overlay-resume-playback-renderer,.ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress,.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment{background:${accent}!important}yt-chip-cloud-chip-renderer[selected]{background-color:${accent}!important}ytd-toggle-button-renderer.style-default-active[is-icon-button] yt-icon{color:${accent}!important}`;
 				}
 				this._styleElement = injectStyle(css, this.id, true);
 			},

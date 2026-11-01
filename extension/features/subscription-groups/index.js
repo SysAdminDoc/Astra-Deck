@@ -1980,7 +1980,7 @@
                             : (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0);
                     }
                     if (mode === 'unwatched') {
-                        return card.querySelector('ytd-thumbnail-overlay-resume-playback-renderer') ? 1 : 0;
+                        return globalThis.YTKitCore?.isWatchedCard?.(card) ? 1 : 0;
                     }
                     if (mode === 'date-desc') {
                         // Keep YouTube's native order; this is the upstream sort.

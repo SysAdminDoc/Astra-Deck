@@ -405,3 +405,57 @@ test('cardTextWithoutByline drops a lockup byline row and a meta block channel n
     assert.equal(cardTextWithoutByline(name), '');
     assert.equal(cardTextWithoutByline(null), '');
 });
+
+// What each card kind really draws, from a signed-in home capture and today's search page.
+function barCard(bar) {
+    return {
+        querySelector(list) {
+            return list.split(',').map((part) => part.trim()).includes(bar.selector) ? bar : null;
+        },
+    };
+}
+const bar = (selector, width, aria = null) => ({
+    selector,
+    style: { width },
+    getAttribute: (name) => (name === 'aria-valuenow' ? aria : null),
+});
+
+test('a watched bar is read from every kind of card YouTube draws', () => {
+    const { isWatchedCard, readWatchedPercent } = loadCore();
+    for (const [selector, width, percent] of [
+        ['.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment', '91%', 91],
+        ['.ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress', '88%', 88],
+        ['#progress', '42.5%', 42.5],
+        ['ytd-thumbnail-overlay-resume-playback-renderer [style*="width"]', '7%', 7],
+    ]) {
+        const card = barCard(bar(selector, width));
+        assert.equal(isWatchedCard(card), true, selector);
+        assert.equal(readWatchedPercent(card), percent, selector);
+    }
+});
+
+test('a bar host with no width yet still marks the card watched', () => {
+    const { isWatchedCard, readWatchedPercent } = loadCore();
+    for (const selector of [
+        '.ytThumbnailOverlayProgressBarHostWatchedProgressBar',
+        'ytw-thumbnail-overlay-resume-playback-renderer',
+        'ytd-thumbnail-overlay-resume-playback-renderer',
+    ]) {
+        const card = barCard(bar(selector, ''));
+        assert.equal(isWatchedCard(card), true, selector);
+        assert.equal(readWatchedPercent(card), 0, selector);
+    }
+});
+
+test('a card with no bar reads as unwatched, and only a percent counts', () => {
+    const { isWatchedCard, readWatchedPercent } = loadCore();
+    const none = { querySelector: () => null };
+    assert.equal(isWatchedCard(none), false);
+    assert.equal(readWatchedPercent(none), 0);
+    assert.equal(isWatchedCard(null), false);
+    assert.equal(readWatchedPercent(null), 0);
+    assert.equal(readWatchedPercent(barCard(bar('#progress', '120px'))), 0);
+    assert.equal(readWatchedPercent(barCard(bar('#progress', '140%'))), 100);
+    assert.equal(readWatchedPercent(barCard(bar('#progress', '', '63'))), 63);
+    assert.equal(readWatchedPercent(barCard(bar('#progress', '', '163'))), 100);
+});

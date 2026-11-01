@@ -1074,3 +1074,39 @@ test('undo refuses to overwrite a group that has taken the id back', () => {
         assert.match(String(toasts[toasts.length - 1][0]), /not restored/);
     });
 });
+
+test('Unwatched first moves cards with any watched bar YouTube draws to the end', () => {
+    const { feature } = makeFeature({ subscriptionSortMode: 'unwatched' });
+    const card = (name, watchedSelector) => ({
+        name,
+        dataset: {},
+        textContent: '',
+        querySelector(selector) {
+            if (selector.startsWith('a#thumbnail')) return null;
+            return watchedSelector && selector.split(',').some((part) => part.trim() === watchedSelector) ? {} : null;
+        },
+    });
+    const cards = [
+        card('lockup', '.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment'),
+        card('fresh'),
+        card('ytw', 'ytw-thumbnail-overlay-resume-playback-renderer'),
+        card('legacy', 'ytd-thumbnail-overlay-resume-playback-renderer'),
+        card('alsoFresh'),
+    ];
+    const placed = [];
+    const previousDocument = globalThis.document;
+    const previousCore = globalThis.YTKitCore;
+    globalThis.YTKitCore = loadCore('text-metrics.js');
+    globalThis.document = {
+        querySelector: () => ({ querySelectorAll: () => cards, appendChild() {} }),
+        createDocumentFragment: () => ({ appendChild(node) { placed.push(node.name); } }),
+    };
+    try {
+        feature._applySort();
+    } finally {
+        globalThis.document = previousDocument;
+        globalThis.YTKitCore = previousCore;
+    }
+
+    assert.deepEqual(placed, ['fresh', 'alsoFresh', 'lockup', 'ytw', 'legacy']);
+});

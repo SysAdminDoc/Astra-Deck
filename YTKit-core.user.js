@@ -11193,7 +11193,7 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 (() => {
 	'use strict';
 	const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-	if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText && core.cardTextWithoutByline) return;
+	if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText && core.cardTextWithoutByline && core.isWatchedCard && core.readWatchedPercent) return;
 	function hex(value, width = 2) {
 		return value.toString(16).padStart(width, '0');
 	}
@@ -11399,7 +11399,31 @@ __astraDeckRegistry["core/text-metrics.js"] = function (globalThis, self, window
 		for (const cut of node.querySelectorAll?.(BYLINE_SELECTOR) || []) text = text.replace(cut.textContent || '', ' ');
 		return text;
 	}
-	Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText, cardTextWithoutByline });
+	const WATCHED_BAR_SELECTOR = [
+		'.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment',
+		'.ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress',
+		'#progress',
+		'ytd-thumbnail-overlay-resume-playback-renderer [style*="width"]'
+	].join(', ');
+	const WATCHED_CARD_SELECTOR = [
+		WATCHED_BAR_SELECTOR,
+		'.ytThumbnailOverlayProgressBarHostWatchedProgressBar',
+		'ytw-thumbnail-overlay-resume-playback-renderer',
+		'ytd-thumbnail-overlay-resume-playback-renderer'
+	].join(', ');
+	function isWatchedCard(card) {
+		return !!card?.querySelector?.(WATCHED_CARD_SELECTOR);
+	}
+	function readWatchedPercent(card) {
+		const bar = card?.querySelector?.(WATCHED_BAR_SELECTOR);
+		if (!bar) return 0;
+		const ariaNow = Number(bar.getAttribute?.('aria-valuenow'));
+		if (Number.isFinite(ariaNow) && ariaNow > 0) return Math.min(100, ariaNow);
+		const width = bar.style?.width || '';
+		const percent = /(\d+(?:\.\d+)?)\s*%/.exec(String(width));
+		return percent ? Math.min(100, Number(percent[1])) : 0;
+	}
+	Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText, cardTextWithoutByline, isWatchedCard, readWatchedPercent });
 })();
 };
 __astraDeckRegistry["core/date-time.js"] = function (globalThis, self, window, chrome, browser, fetch, importScripts, trustedTypes) {

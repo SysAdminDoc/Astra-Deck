@@ -1869,13 +1869,7 @@
             },
 
             _extractWatchedRatio(element) {
-                const progress = element.querySelector('#progress, ytd-thumbnail-overlay-resume-playback-renderer #progress, ytd-thumbnail-overlay-resume-playback-renderer [style*="width"]');
-                if (!progress) return 0;
-                const ariaNow = Number(progress.getAttribute('aria-valuenow'));
-                if (Number.isFinite(ariaNow) && ariaNow > 0) return Math.max(0, Math.min(100, ariaNow));
-                const styleText = `${progress.getAttribute('style') || ''};width:${progress.style?.width || ''}`;
-                const match = styleText.match(/width\s*:\s*(\d+(?:\.\d+)?)%/i);
-                return match ? Math.max(0, Math.min(100, Number(match[1]) || 0)) : 0;
+                return globalThis.YTKitCore?.readWatchedPercent?.(element) || 0;
             },
 
             _extractDescriptionText(element) {

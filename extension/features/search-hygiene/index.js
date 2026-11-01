@@ -24,6 +24,7 @@
     ].join(', ');
     const RESULT_SELECTOR = 'ytd-video-renderer, yt-lockup-view-model';
     const WATCHED_MARKER_SELECTOR = [
+        'ytw-thumbnail-overlay-resume-playback-renderer',
         'ytd-thumbnail-overlay-resume-playback-renderer',
         '.ytThumbnailOverlayProgressBarHostWatchedProgressBar',
         '[is-watched]'

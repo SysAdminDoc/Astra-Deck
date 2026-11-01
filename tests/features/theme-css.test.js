@@ -39,6 +39,16 @@ test('the accent builder publishes both the hex and the rgb triple', () => {
         'the triple must be derived from the hex, not hardcoded');
 });
 
+test('the accent builder colors the watched bar under every name YouTube gives it', () => {
+    const css = themeCss.buildAccentColorCss({ themeAccentColor: '#00ff66' });
+    for (const selector of [
+        '.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment',
+        '.ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress',
+    ]) {
+        assert.ok(css.includes(selector), `accent must name ${selector}`);
+    }
+});
+
 test('the selection builder always emits a rule, so the caller owns the toggle', () => {
     const css = themeCss.buildSelectionColorCss({ selectionColor: '#0000ff' });
     assert.match(css, /::selection \{ background: #0000ff !important/);

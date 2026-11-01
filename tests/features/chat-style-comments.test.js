@@ -211,6 +211,15 @@ test('premium comments finish with one flat tokenized theme in normal watch mode
     assert.match(normalLane, /ytd-comment-engagement-bar[\s\S]*background: transparent !important/);
 });
 
+test('the pinned flag reads the attribute and the badge under both of its names', () => {
+    const moduleSource = require('fs').readFileSync(require.resolve('../../extension/features/chat-style-comments/index.js'), 'utf8');
+    const line = moduleSource.split('\n').find((text) => text.includes("setDataFlag(comment, 'ytkitPinned'"));
+    assert.ok(line, 'the pinned flag must still be set');
+    for (const signal of ["matches?.('[pinned]')", 'ytw-pinned-comment-badge-renderer', 'ytd-pinned-comment-badge-renderer']) {
+        assert.ok(line.includes(signal), `pinned flag must read ${signal}`);
+    }
+});
+
 test('hearted flag requires is-hearted, not merely a visible heart button', () => {
     const moduleSource = require('fs').readFileSync(
         require.resolve(MODULE_PATH), 'utf8');

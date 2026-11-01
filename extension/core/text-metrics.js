@@ -2,7 +2,7 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText && core.cardTextWithoutByline) return;
+    if (core.parseCompactCount && core.escapeRegExp && core.isUpcomingCardText && core.cardTextWithoutByline && core.isWatchedCard && core.readWatchedPercent) return;
 
     function hex(value, width = 2) {
         return value.toString(16).padStart(width, '0');
@@ -279,8 +279,41 @@
         return text;
     }
 
+    // A card's watched bar, which YouTube draws differently by card: a lockup's
+    // segment on the home feed and watch sidebar, and a resume overlay on search
+    // results that went from ytd- to ytw- and lost its #progress on the way. Older
+    // renderers keep #progress. Every one carries the percent as a CSS width.
+    const WATCHED_BAR_SELECTOR = [
+        '.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment',
+        '.ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress',
+        '#progress',
+        'ytd-thumbnail-overlay-resume-playback-renderer [style*="width"]'
+    ].join(', ');
+    // The bar's host appears before the bar has a width, and already means watched.
+    const WATCHED_CARD_SELECTOR = [
+        WATCHED_BAR_SELECTOR,
+        '.ytThumbnailOverlayProgressBarHostWatchedProgressBar',
+        'ytw-thumbnail-overlay-resume-playback-renderer',
+        'ytd-thumbnail-overlay-resume-playback-renderer'
+    ].join(', ');
+
+    function isWatchedCard(card) {
+        return !!card?.querySelector?.(WATCHED_CARD_SELECTOR);
+    }
+
+    function readWatchedPercent(card) {
+        const bar = card?.querySelector?.(WATCHED_BAR_SELECTOR);
+        if (!bar) return 0;
+        const ariaNow = Number(bar.getAttribute?.('aria-valuenow'));
+        if (Number.isFinite(ariaNow) && ariaNow > 0) return Math.min(100, ariaNow);
+        // Only a percent counts: a width of "120px" says nothing about how much was watched.
+        const width = bar.style?.width || '';
+        const percent = /(\d+(?:\.\d+)?)\s*%/.exec(String(width));
+        return percent ? Math.min(100, Number(percent[1])) : 0;
+    }
+
     // normalizeDigits is shared: the transcript scraper needs the same
     // Arabic-Indic / Devanagari / Thai / fullwidth table when it reads a
     // rendered timestamp out of YouTube's own DOM.
-    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText, cardTextWithoutByline });
+    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits, isUpcomingCardText, cardTextWithoutByline, isWatchedCard, readWatchedPercent });
 })();

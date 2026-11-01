@@ -1287,7 +1287,7 @@ ${COMMENT} :is(#published-time-text, #published-time-text a) {
     line-height: 1.3 !important;
     text-decoration: none !important;
 }
-${COMMENT} #pinned-comment-badge :is(ytd-pinned-comment-badge-renderer, #badge, .badge) {
+${COMMENT} #pinned-comment-badge :is(ytw-pinned-comment-badge-renderer, ytd-pinned-comment-badge-renderer, #badge, .badge) {
     color: var(--ytkit-split-muted) !important;
     font-size: 12px !important;
 }

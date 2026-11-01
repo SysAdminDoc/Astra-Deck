@@ -1643,7 +1643,7 @@
         const translate = typeof options.t === 'function' ? options.t : (_key, fallback) => fallback;
         const wasStyled = comment.dataset.ytkitChat === '1';
         comment.dataset.ytkitChat = '1';
-        setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
+        setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytw-pinned-comment-badge-renderer:not([hidden]), ytd-pinned-comment-badge-renderer:not([hidden])'));
         setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
         setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
         // Rebuild rather than leave the old one: YouTube recycles comment hosts,

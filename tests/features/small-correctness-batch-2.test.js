@@ -8,6 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const { sources } = require('../helpers/source');
 const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
 
@@ -171,6 +172,28 @@ test('playlist watched-percent requires a % sign and reads aria-valuenow directl
     // sign too.
     assert.equal(feature._getWatchedPercent(playlistItem({ ariaLabel: '80% watched' })), 80);
     assert.equal(feature._getWatchedPercent(playlistItem({ ariaLabel: '80 watched' })), 0);
+});
+
+test('playlist watched-percent reads the bar on lockup rows and on the renamed overlay', () => {
+    const context = {};
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(read('extension', 'core', 'text-metrics.js'), context);
+    const feature = loadFeature('playlistEnhancer', {
+        document: fakeDocument(() => []),
+        YTKitCore: context.YTKitCore,
+    });
+    const row = (className, width) => {
+        const item = fakeNode({ tag: 'yt-lockup-view-model' });
+        const bar = fakeNode({ tag: 'div' });
+        bar.style.width = width;
+        item.querySelector = (selector) => (selector.split(',').some((part) => part.trim() === `.${className}`) ? bar : null);
+        item.querySelectorAll = () => [];
+        return item;
+    };
+
+    assert.equal(feature._getWatchedPercent(row('ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment', '91%')), 91);
+    assert.equal(feature._getWatchedPercent(row('ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress', '88%')), 88);
 });
 
 test('playlist ordering sorts an entry it never saw to the end instead of shuffling the list', () => {

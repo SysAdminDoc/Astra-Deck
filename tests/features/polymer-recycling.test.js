@@ -7,7 +7,21 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
+
+function textMetricsCore() {
+    const context = {};
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'core', 'text-metrics.js'), 'utf8'),
+        context,
+    );
+    return context.YTKitCore;
+}
 
 function card({ watched = false } = {}) {
     const node = fakeNode({ tag: 'ytd-rich-item-renderer' });
@@ -22,6 +36,7 @@ test('hideWatchedVideos releases a recycled card that now shows an unwatched vid
     const cards = [card({ watched: true }), card({ watched: true })];
     const feature = loadFeature('hideWatchedVideos', {
         appState: { settings: { hideWatchedMode: 'dim' } },
+        YTKitCore: textMetricsCore(),
         document: fakeDocument((selector) =>
             (selector.includes('[ytkit-watched-check]')
                 ? cards.filter(c => c.hasAttribute('ytkit-watched-check'))
@@ -43,6 +58,7 @@ test('hideWatchedVideos releases a recycled card that now shows an unwatched vid
 test('hideWatchedVideos catches a card whose resume overlay hydrates late', () => {
     const late = card({ watched: false });
     const feature = loadFeature('hideWatchedVideos', {
+        YTKitCore: textMetricsCore(),
         appState: { settings: { hideWatchedMode: 'hide' } },
         document: fakeDocument(() => [late])
     });
@@ -61,6 +77,7 @@ test('hideWatchedVideos never restores a card it did not mark', () => {
     const foreign = card({ watched: false });
     foreign.style.display = 'none';   // hidden by some other feature
     const feature = loadFeature('hideWatchedVideos', {
+        YTKitCore: textMetricsCore(),
         appState: { settings: { hideWatchedMode: 'hide' } },
         document: fakeDocument(() => [foreign])
     });
@@ -176,4 +193,21 @@ test('timestampBookmarks removes its stale container so the next video rebinds',
     feature._inject();
     assert.equal(mounted().length, 1, 'exactly one container may exist');
     assert.notEqual(feature._panel, first, 'the panel must rebind to the new video');
+});
+
+// ── hidePinnedComments ──────────────────────────────────────────────────
+
+test('hidePinnedComments recognises a thread by the renamed pinned badge alone', () => {
+    const feature = loadFeature('hidePinnedComments', { document: fakeDocument(() => []) });
+    const thread = (answersTo) => {
+        const node = fakeNode({ tag: 'ytd-comment-thread-renderer' });
+        node.querySelector = (selector) => (selector.split(',').some((part) => part.trim() === answersTo)
+            ? fakeNode({ tag: 'div' })
+            : null);
+        return node;
+    };
+
+    assert.equal(feature._isPinnedThread(thread('ytw-pinned-comment-badge-renderer')), true);
+    assert.equal(feature._isPinnedThread(thread('ytd-comment-view-model[pinned]')), true);
+    assert.equal(feature._isPinnedThread(thread('nothing')), false);
 });

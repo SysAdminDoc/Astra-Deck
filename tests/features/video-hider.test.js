@@ -1839,3 +1839,17 @@ test('the settings listener runs on a real document event and is gone after deta
         globalThis.document = originalDocument;
     }
 });
+
+test('the watched filter reads the bar YouTube draws on lockups and on search results', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const card = (className, width) => ({
+        querySelector: (selector) => (selector.split(',').some((part) => part.trim() === `.${className}`)
+            ? { getAttribute: () => null, style: { width } }
+            : null),
+    });
+
+    assert.equal(feature._extractWatchedRatio(card('ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment', '91%')), 91);
+    assert.equal(feature._extractWatchedRatio(card('ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress', '88%')), 88);
+    assert.equal(feature._extractWatchedRatio({ querySelector: () => null }), 0);
+});

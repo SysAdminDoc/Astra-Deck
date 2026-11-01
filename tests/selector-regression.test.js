@@ -570,6 +570,14 @@ test('selector surface match fixture proves expanded capture-backed selectors re
     }
 });
 
+test('the fixtures see ytw- elements, and the watched bar reader knows the one search draws', () => {
+    const tokens = loadTokens(FIXTURES.searchResults);
+    assert.ok(tokens.has('ytw-thumbnail-overlay-resume-playback-renderer'),
+        'the token builder must keep ytw- names, or a rename of a ytd- element goes unseen');
+    assert.ok(fs.readFileSync(path.join(REPO_ROOT, 'extension', 'core', 'text-metrics.js'), 'utf8').includes('ytw-thumbnail-overlay-resume-playback-renderer'),
+        'the watched bar reader must name the overlay search results draw today');
+});
+
 test('feed experiment token canaries remain capture-backed and source-referenced', () => {
     const tokenFixtures = [
         loadTokens(FIXTURES.home),

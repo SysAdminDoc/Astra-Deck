@@ -74,7 +74,9 @@
         const rgb = accentRgbTuple(accent);
         return '\n                    :root { --ytkit-accent: ' + accent + ' !important; --ytkit-accent-rgb: ' + rgb + ' !important; }\n'
             + '                    .ytp-swatch-background-color, .ytp-play-progress,\n'
-            + '                    #progress.ytd-thumbnail-overlay-resume-playback-renderer {\n'
+            + '                    #progress.ytd-thumbnail-overlay-resume-playback-renderer,\n'
+            + '                    .ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress,\n'
+            + '                    .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment {\n'
             + '                        background: ' + accent + ' !important;\n'
             + '                    }\n'
             + '                    yt-chip-cloud-chip-renderer[selected] {\n'

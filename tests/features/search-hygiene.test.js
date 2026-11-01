@@ -27,6 +27,7 @@ class FakeNode {
     querySelector(selector) {
         if (this.kind === 'related-shelf' && selector === 'yt-related-chip-cloud-renderer') return RELATED;
         if (this.kind === 'watched' && selector.includes('resume-playback')) return WATCHED_MARKER;
+        if (this.kind === 'ytw-watched' && selector.includes('ytw-thumbnail-overlay-resume-playback-renderer')) return WATCHED_MARKER;
         // Locale-independent structural marker (data-content-type) — the
         // primary recommendation-reason detection path.
         if (this.kind === 'reason-result' && selector.includes('recommendation-reason')) return REASON;
@@ -94,6 +95,8 @@ function harness() {
 
 test('watched and recommendation classification uses structural markers and bounded reason text', () => {
     assert.equal(isWatchedOrRecommended(new FakeNode('watched')), true);
+    assert.equal(isWatchedOrRecommended(new FakeNode('ytw-watched')), true,
+        'search results draw the bar under its ytw- name today');
     assert.equal(isWatchedOrRecommended(new FakeNode('reason-result')), true,
         'structural data-content-type marker must classify without any text match');
     assert.equal(isWatchedOrRecommended(new FakeNode('text-reason-result')), true,
