@@ -462,19 +462,15 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         hasMinTarget(ytkit, '.ytkit-transcript-search-panel__footer button'),
         'Transcript search controls must declare focus-visible and at least 24px target size');
     add('Transcript Q&A is modal, labelled, and citation-backed',
-        ytkit.includes("inner.setAttribute('role', 'dialog')") &&
-        ytkit.includes("inner.setAttribute('aria-modal', 'true')") &&
-        ytkit.includes("inner.setAttribute('aria-labelledby', 'ytkit-ai-qa-title')") &&
-        ytkit.includes("inner.setAttribute('aria-describedby', 'ytkit-ai-qa-description')") &&
+        /const overlay = document\.createElement\('dialog'\);\s+overlay\.className = 'ytkit-ai-qa-modal';/.test(ytkit) &&
+        ytkit.includes("overlay.setAttribute('aria-labelledby', 'ytkit-ai-qa-title')") &&
+        ytkit.includes("overlay.setAttribute('aria-describedby', 'ytkit-ai-qa-description')") &&
         ytkit.includes("history.setAttribute('role', 'log')") &&
         ytkit.includes("link.setAttribute('aria-label', `${t('transcriptQaCitationLabel', 'Transcript citation')} ${cue.timestamp}`)"),
         'Transcript Q&A must be a labelled modal whose history and timestamp citations are exposed to assistive technology');
-    add('Transcript Q&A traps focus, closes on Escape, and restores focus',
-        ytkit.includes('this._dialogKeydown = (event) =>') &&
-        ytkit.includes("if (event.key === 'Escape')") &&
-        ytkit.includes("if (event.key !== 'Tab') return") &&
-        ytkit.includes('controls[nextIndex].focus()') &&
-        ytkit.includes("this._overlay.removeEventListener('keydown', this._dialogKeydown)") &&
+    add('Transcript Q&A opens as a native modal, closes on Escape, and restores focus',
+        /overlay\.showModal\(\);\s+\/\/ A toast shown before the panel/.test(ytkit) &&
+        /if \(this\._overlay === overlay\) closePanel\(\); \}\);\s+\/\/ The browser closes on Escape[^\n]*\s+overlay\.addEventListener\('keydown', \(event\) => \{ if \(event\.key === 'Escape'\) event\.stopPropagation\(\); \}\);/.test(ytkit) &&
         ytkit.includes('returnFocus?.focus?.({ preventScroll: true })'),
         'Transcript Q&A must contain Tab in the modal, close on Escape, remove its handler, and restore the launcher');
     add('Transcript Q&A reports busy and error state',

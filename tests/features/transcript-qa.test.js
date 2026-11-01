@@ -20,9 +20,10 @@ function byClass(root, className) {
     return collect(root, (node) => node.classList?.contains?.(className));
 }
 
-function qaDocument() {
+function qaDocument(options = {}) {
     const doc = fakeDocument(() => []);
     doc.activeElement = null;
+    doc.dialogEvents = [];
     const create = doc.createElement.bind(doc);
     doc.createElement = (tag) => {
         const node = create(tag);
@@ -36,6 +37,7 @@ function qaDocument() {
             event.target ||= node;
             event.currentTarget = node;
             event.preventDefault ||= function preventDefault() { this.defaultPrevented = true; };
+            event.stopPropagation ||= function stopPropagation() { this.propagationStopped = true; };
             for (const handler of listeners.get(type) || []) handler(event);
             return event;
         };
@@ -58,6 +60,24 @@ function qaDocument() {
             });
         };
         node.querySelector = (selector) => node.querySelectorAll(selector)[0] || null;
+        if (node.tagName === 'DIALOG') {
+            const remove = node.remove.bind(node);
+            node.open = false;
+            node.showModal = () => {
+                if (options.refuseModal) throw new Error('InvalidStateError');
+                node.open = true;
+                doc.dialogEvents.push('showModal');
+            };
+            // The browser only queues the close event, and tests fire it when it would land.
+            node.close = () => {
+                node.open = false;
+                doc.dialogEvents.push('close');
+            };
+            node.remove = () => {
+                doc.dialogEvents.push('remove');
+                remove();
+            };
+        }
         return node;
     };
     return doc;
@@ -78,7 +98,7 @@ function makeTranscript() {
 }
 
 function makeFeature(options = {}) {
-    const doc = qaDocument();
+    const doc = qaDocument(options);
     const trigger = doc.createElement('button');
     trigger.isConnected = true;
     trigger.focus();
@@ -122,7 +142,11 @@ function makeFeature(options = {}) {
         document: doc,
         window: {},
         appState,
-        YTKitCore: { aiSummaryArtifacts: artifacts, localAi },
+        YTKitCore: {
+            aiSummaryArtifacts: artifacts,
+            localAi,
+            toast: { raiseActiveToasts: () => doc.dialogEvents.push('raise') }
+        },
         DebugManager: { log: (...args) => logs.push(args.join(' ')) },
         StorageManager: {
             get: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
@@ -151,8 +175,8 @@ test('Transcript Q&A renders a localized modal with live status and citation lin
     await settle();
 
     const dialog = fixture.feature._dialog;
-    assert.equal(dialog.getAttribute('role'), 'dialog');
-    assert.equal(dialog.getAttribute('aria-modal'), 'true');
+    assert.equal(dialog.tagName, 'DIALOG');
+    assert.equal(dialog.open, true);
     assert.equal(dialog.getAttribute('aria-labelledby'), 'ytkit-ai-qa-title');
     assert.equal(dialog.getAttribute('aria-describedby'), 'ytkit-ai-qa-description');
     assert.equal(fixture.feature._status.getAttribute('role'), 'status', fixture.logs.join('\n'));
@@ -180,30 +204,99 @@ test('Transcript Q&A renders a localized modal with live status and citation lin
     assert.match(css, /\.ytkit-ai-qa-modal textarea:focus-visible/);
 });
 
-test('Transcript Q&A traps focus, closes on Escape, and restores the launcher', async () => {
+test('Transcript Q&A opens as a modal, moves focus in, and raises a toast that was already up', async () => {
+    const { doc, feature } = makeFeature();
+    feature._openQaPanel();
+    await settle();
+
+    assert.equal(feature._overlay.open, true);
+    assert.deepEqual(doc.dialogEvents, ['showModal', 'raise']);
+    assert.ok(doc.activeElement === feature._input, 'focus starts on the question box');
+});
+
+test('Transcript Q&A closes when the browser does, keeps Escape from the page, and restores the launcher', async () => {
+    const { doc, feature, trigger } = makeFeature();
+    feature._openQaPanel();
+    await settle();
+    const overlay = feature._overlay;
+
+    const escaped = overlay.dispatch('keydown', { key: 'Escape' });
+    assert.equal(escaped.propagationStopped, true, "YouTube's own key handlers don't get Escape");
+    assert.ok(feature._overlay === overlay, 'the browser does the closing, not the key handler');
+    const typed = overlay.dispatch('keydown', { key: 'a' });
+    assert.notEqual(typed.propagationStopped, true);
+
+    overlay.open = false;
+    overlay.dispatch('close');
+    assert.ok(feature._overlay === null, 'the panel state is gone');
+    assert.ok(doc.activeElement === trigger, 'focus is back on the launcher');
+    assert.ok(doc.dialogEvents.includes('remove'), 'the dialog left the document');
+});
+
+test('Transcript Q&A closes the dialog and rehosts toasts before it leaves the document', async () => {
+    const { doc, feature, trigger } = makeFeature();
+    feature._openQaPanel();
+    await settle();
+    doc.dialogEvents.length = 0;
+
+    feature._closePanel();
+
+    assert.deepEqual(doc.dialogEvents, ['close', 'raise', 'remove']);
+    assert.ok(doc.activeElement === trigger, 'focus is back on the launcher');
+});
+
+test('Transcript Q&A leaves focus alone when a route change closes it', async () => {
     const { doc, feature, trigger } = makeFeature();
     feature._openQaPanel();
     await settle();
 
-    const controls = feature._dialog.querySelectorAll(
-        'a[href],button:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-    );
-    const first = controls[0];
-    const last = controls.at(-1);
-    last.focus();
-    const wrapped = feature._overlay.dispatch('keydown', { key: 'Tab', shiftKey: false });
-    assert.equal(wrapped.defaultPrevented, true);
-    assert.equal(doc.activeElement, first);
+    feature._closePanel({ restoreFocus: false });
 
-    first.focus();
-    const reverse = feature._overlay.dispatch('keydown', { key: 'Tab', shiftKey: true });
-    assert.equal(reverse.defaultPrevented, true);
-    assert.equal(doc.activeElement, last);
+    assert.ok(feature._overlay === null, 'the panel closed');
+    assert.ok(doc.activeElement !== trigger, 'focus did not jump to a launcher on the old page');
+});
 
-    const escaped = feature._overlay.dispatch('keydown', { key: 'Escape' });
-    assert.equal(escaped.defaultPrevented, true);
-    assert.equal(feature._overlay, null);
-    assert.equal(doc.activeElement, trigger);
+test('a late close event from the old panel leaves a newer one open', async () => {
+    const { feature } = makeFeature();
+    feature._openQaPanel();
+    await settle();
+    const oldOverlay = feature._overlay;
+
+    feature._openQaPanel();
+    await settle();
+    const newOverlay = feature._overlay;
+    assert.ok(newOverlay !== oldOverlay, 'reopening builds a new dialog');
+
+    oldOverlay.dispatch('close');
+    assert.ok(feature._overlay === newOverlay, 'the newer panel stays');
+    assert.equal(newOverlay.open, true);
+});
+
+test('Transcript Q&A closes on a backdrop click and stays open for one on the card', async () => {
+    const { feature } = makeFeature();
+    feature._openQaPanel();
+    await settle();
+    const overlay = feature._overlay;
+    const card = byClass(overlay, 'ytkit-ai-qa-modal__body')[0];
+
+    overlay.dispatch('click', { target: card });
+    assert.ok(feature._overlay === overlay, 'a click inside the card keeps it open');
+
+    overlay.dispatch('click', { target: overlay });
+    assert.ok(feature._overlay === null, 'a click on the dialog itself is the backdrop');
+});
+
+test('a refused modal still leaves a working panel', async () => {
+    const { doc, feature } = makeFeature({ refuseModal: true });
+    assert.doesNotThrow(() => feature._openQaPanel());
+    await settle();
+
+    assert.equal(feature._overlay.open, false);
+    assert.ok(doc.activeElement === feature._input, 'focus still lands on the question box');
+    assert.ok(!doc.dialogEvents.includes('raise'), 'nothing to raise a toast into');
+    feature._closePanel();
+    assert.ok(!doc.dialogEvents.includes('close'), 'a dialog that never opened is not closed');
+    assert.ok(doc.dialogEvents.includes('remove'), 'it still leaves the document');
 });
 
 test('Transcript Q&A busy state keeps controls and Escape inside the modal', async () => {
@@ -214,16 +307,18 @@ test('Transcript Q&A busy state keeps controls and Escape inside the modal', asy
 
     feature._setBusy(true, 'Checking transcript evidence', true);
 
-    assert.equal(doc.activeElement, feature._askBtn,
+    assert.ok(doc.activeElement === feature._askBtn,
         'entering busy state must not blur the focused modal control to the page');
+    assert.equal(feature._dialog.getAttribute('aria-busy'), 'true');
     assert.equal(feature._askBtn.disabled, false);
     assert.equal(feature._askBtn.getAttribute('aria-disabled'), 'true');
     assert.equal(feature._input.disabled, false);
     assert.equal(feature._input.readOnly, true);
-    const escaped = feature._overlay.dispatch('keydown', { key: 'Escape' });
-    assert.equal(escaped.defaultPrevented, true);
-    assert.equal(feature._overlay, null);
-    assert.equal(doc.activeElement, trigger);
+    const overlay = feature._overlay;
+    overlay.open = false;
+    overlay.dispatch('close');
+    assert.ok(feature._overlay === null, 'closing still works while busy');
+    assert.ok(doc.activeElement === trigger, 'focus is back on the launcher');
 });
 
 test('Transcript Q&A uses the configured provider only after its existing grant gate', async () => {

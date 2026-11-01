@@ -706,7 +706,7 @@ test('every modal a toast can join is asked for before the settings panel', () =
     try {
         assert.equal(api.topLayerHost()?.id, 'body');
         assert.equal(asked.at(-1), '#ytkit-settings-panel:modal');
-        for (const host of ['#ytkit-page-modal:modal', '.ytkit-wha-overlay:modal', '.ytkit-sub-group-dialog:modal', '.ytkit-blocked-watch-overlay:modal']) {
+        for (const host of ['#ytkit-page-modal:modal', '.ytkit-wha-overlay:modal', '.ytkit-sub-group-dialog:modal', '.ytkit-blocked-watch-overlay:modal', '.ytkit-ai-qa-modal:modal']) {
             assert.ok(asked.includes(host), host);
         }
     } finally {

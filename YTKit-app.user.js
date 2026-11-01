@@ -27776,10 +27776,9 @@ const STORAGE_KEYS = Object.freeze({
 			_history: null,
 			_meta: null,
 			_returnFocus: null,
-			_dialogKeydown: null,
 			_ensureStyles() {
 				if (this._styleElement) return;
-				this._styleElement = injectStyle(`.ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;margin-inline-start:6px;border-radius:8px;border:1px solid rgba(96,165,250,.48);background:rgba(37,99,235,.2);color:#dbeafe;font:700 12px/1 'YouTube Sans',system-ui;cursor:pointer}.ytkit-ai-qa-btn:hover{background:rgba(37,99,235,.34)}.ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,.72)}.ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:12px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}.ytkit-ai-qa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ytkit-ai-qa-head h3{margin:0;color:#f8fafc;font-size:18px;line-height:1.35}.ytkit-ai-qa-description,.ytkit-ai-qa-meta,.ytkit-ai-qa-status,.ytkit-ai-qa-empty{margin:0;color:#b8c4d6}.ytkit-ai-qa-meta{font-size:12px;overflow-wrap:anywhere}.ytkit-ai-qa-close{display:inline-grid;place-items:center;flex:0 0 auto;min-width:36px;min-height:36px;padding:0;border-radius:8px;border:1px solid #475569;background:#172033;color:#f8fafc;cursor:pointer;font:700 20px/1 system-ui}.ytkit-ai-qa-question-label{font-weight:700;color:#f8fafc}.ytkit-ai-qa-input{box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:8px;border:1px solid #52617a;background:#111827;color:#f8fafc;font:14px/1.5 system-ui;resize:vertical}.ytkit-ai-qa-input::placeholder{color:#94a3b8}.ytkit-ai-qa-input[readonly]{opacity:.72}.ytkit-ai-qa-status{min-height:24px;padding:8px 10px;border-radius:8px;background:#121c30;border:1px solid #263650}.ytkit-ai-qa-status--error{color:#fecaca;border-color:#7f1d1d;background:#2a1015}.ytkit-ai-qa-status--busy{color:#bfdbfe;border-color:#1d4ed8}.ytkit-ai-qa-history{display:grid;gap:10px}.ytkit-ai-qa-turn{padding:12px;border-radius:10px;background:#111827;border:1px solid #334155}.ytkit-ai-qa-turn h4{margin:0 0 8px;color:#f8fafc;font-size:14px}.ytkit-ai-qa-claims{display:grid;gap:8px;margin:0;padding-inline-start:20px}.ytkit-ai-qa-claim{padding-inline-start:2px}.ytkit-ai-qa-citations{display:inline-flex;flex-wrap:wrap;gap:5px;margin-inline-start:7px}.ytkit-ai-qa-citation{display:inline-flex;align-items:center;min-height:24px;padding:2px 7px;border:1px solid #52617a;border-radius:6px;color:#93c5fd;text-decoration:none;font:700 12px/1.2 system-ui}.ytkit-ai-qa-no-answer{margin:0;color:#cbd5e1}.ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.ytkit-ai-qa-ask{min-height:36px;padding:7px 16px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font:700 13px/1 system-ui}.ytkit-ai-qa-ask:hover{background:#1d4ed8}.ytkit-ai-qa-ask[aria-disabled="true"]{opacity:.55;cursor:not-allowed}.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}html:not([dark]) .ytkit-ai-qa-btn{background:#eff6ff;color:#1e3a8a;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-modal{background:rgba(15,23,42,.46)}html:not([dark]) .ytkit-ai-qa-modal__body{background:#fff;color:#172033;border-color:#cbd5e1;box-shadow:0 24px 70px rgba(15,23,42,.24)}html:not([dark]) .ytkit-ai-qa-head h3,html:not([dark]) .ytkit-ai-qa-question-label,html:not([dark]) .ytkit-ai-qa-turn h4{color:#0f172a}html:not([dark]) .ytkit-ai-qa-description,html:not([dark]) .ytkit-ai-qa-meta,html:not([dark]) .ytkit-ai-qa-status,html:not([dark]) .ytkit-ai-qa-empty{color:#475569}html:not([dark]) .ytkit-ai-qa-close,html:not([dark]) .ytkit-ai-qa-input,html:not([dark]) .ytkit-ai-qa-turn{background:#f8fafc;color:#0f172a;border-color:#94a3b8}html:not([dark]) .ytkit-ai-qa-status{background:#f1f5f9;border-color:#cbd5e1}html:not([dark]) .ytkit-ai-qa-status--error{background:#fff1f2;color:#991b1b;border-color:#fda4af}html:not([dark]) .ytkit-ai-qa-citation{color:#1d4ed8;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-no-answer{color:#334155}@media(max-width:600px){.ytkit-ai-qa-modal{align-items:flex-end;padding:8px}.ytkit-ai-qa-modal__body{max-height:calc(100vh - 16px);padding:14px;border-radius:12px}.ytkit-ai-qa-actions{justify-content:stretch}.ytkit-ai-qa-ask{width:100%}}@media(forced-colors:active){.ytkit-ai-qa-modal__body,.ytkit-ai-qa-close,.ytkit-ai-qa-input,.ytkit-ai-qa-status,.ytkit-ai-qa-turn,.ytkit-ai-qa-citation,.ytkit-ai-qa-ask{background:Canvas;color:CanvasText;border:1px solid CanvasText}.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid Highlight}}@media(prefers-reduced-motion:reduce){.ytkit-ai-qa-modal *{transition:none!important;scroll-behavior:auto!important}}`, 'ai-qa');
+				this._styleElement = injectStyle(`.ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;margin-inline-start:6px;border-radius:8px;border:1px solid rgba(96,165,250,.48);background:rgba(37,99,235,.2);color:#dbeafe;font:700 12px/1 'YouTube Sans',system-ui;cursor:pointer}.ytkit-ai-qa-btn:hover{background:rgba(37,99,235,.34)}.ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;width:auto;height:auto;max-width:none;max-height:none;margin:0;border:0;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,.72)}.ytkit-ai-qa-modal::backdrop{background:transparent}.ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:12px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}.ytkit-ai-qa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ytkit-ai-qa-head h3{margin:0;color:#f8fafc;font-size:18px;line-height:1.35}.ytkit-ai-qa-description,.ytkit-ai-qa-meta,.ytkit-ai-qa-status,.ytkit-ai-qa-empty{margin:0;color:#b8c4d6}.ytkit-ai-qa-meta{font-size:12px;overflow-wrap:anywhere}.ytkit-ai-qa-close{display:inline-grid;place-items:center;flex:0 0 auto;min-width:36px;min-height:36px;padding:0;border-radius:8px;border:1px solid #475569;background:#172033;color:#f8fafc;cursor:pointer;font:700 20px/1 system-ui}.ytkit-ai-qa-question-label{font-weight:700;color:#f8fafc}.ytkit-ai-qa-input{box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:8px;border:1px solid #52617a;background:#111827;color:#f8fafc;font:14px/1.5 system-ui;resize:vertical}.ytkit-ai-qa-input::placeholder{color:#94a3b8}.ytkit-ai-qa-input[readonly]{opacity:.72}.ytkit-ai-qa-status{min-height:24px;padding:8px 10px;border-radius:8px;background:#121c30;border:1px solid #263650}.ytkit-ai-qa-status--error{color:#fecaca;border-color:#7f1d1d;background:#2a1015}.ytkit-ai-qa-status--busy{color:#bfdbfe;border-color:#1d4ed8}.ytkit-ai-qa-history{display:grid;gap:10px}.ytkit-ai-qa-turn{padding:12px;border-radius:10px;background:#111827;border:1px solid #334155}.ytkit-ai-qa-turn h4{margin:0 0 8px;color:#f8fafc;font-size:14px}.ytkit-ai-qa-claims{display:grid;gap:8px;margin:0;padding-inline-start:20px}.ytkit-ai-qa-claim{padding-inline-start:2px}.ytkit-ai-qa-citations{display:inline-flex;flex-wrap:wrap;gap:5px;margin-inline-start:7px}.ytkit-ai-qa-citation{display:inline-flex;align-items:center;min-height:24px;padding:2px 7px;border:1px solid #52617a;border-radius:6px;color:#93c5fd;text-decoration:none;font:700 12px/1.2 system-ui}.ytkit-ai-qa-no-answer{margin:0;color:#cbd5e1}.ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.ytkit-ai-qa-ask{min-height:36px;padding:7px 16px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font:700 13px/1 system-ui}.ytkit-ai-qa-ask:hover{background:#1d4ed8}.ytkit-ai-qa-ask[aria-disabled="true"]{opacity:.55;cursor:not-allowed}.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}html:not([dark]) .ytkit-ai-qa-btn{background:#eff6ff;color:#1e3a8a;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-modal{background:rgba(15,23,42,.46)}html:not([dark]) .ytkit-ai-qa-modal__body{background:#fff;color:#172033;border-color:#cbd5e1;box-shadow:0 24px 70px rgba(15,23,42,.24)}html:not([dark]) .ytkit-ai-qa-head h3,html:not([dark]) .ytkit-ai-qa-question-label,html:not([dark]) .ytkit-ai-qa-turn h4{color:#0f172a}html:not([dark]) .ytkit-ai-qa-description,html:not([dark]) .ytkit-ai-qa-meta,html:not([dark]) .ytkit-ai-qa-status,html:not([dark]) .ytkit-ai-qa-empty{color:#475569}html:not([dark]) .ytkit-ai-qa-close,html:not([dark]) .ytkit-ai-qa-input,html:not([dark]) .ytkit-ai-qa-turn{background:#f8fafc;color:#0f172a;border-color:#94a3b8}html:not([dark]) .ytkit-ai-qa-status{background:#f1f5f9;border-color:#cbd5e1}html:not([dark]) .ytkit-ai-qa-status--error{background:#fff1f2;color:#991b1b;border-color:#fda4af}html:not([dark]) .ytkit-ai-qa-citation{color:#1d4ed8;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-no-answer{color:#334155}@media(max-width:600px){.ytkit-ai-qa-modal{align-items:flex-end;padding:8px}.ytkit-ai-qa-modal__body{max-height:calc(100vh - 16px);padding:14px;border-radius:12px}.ytkit-ai-qa-actions{justify-content:stretch}.ytkit-ai-qa-ask{width:100%}}@media(forced-colors:active){.ytkit-ai-qa-modal__body,.ytkit-ai-qa-close,.ytkit-ai-qa-input,.ytkit-ai-qa-status,.ytkit-ai-qa-turn,.ytkit-ai-qa-citation,.ytkit-ai-qa-ask{background:Canvas;color:CanvasText;border:1px solid CanvasText}.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid Highlight}}@media(prefers-reduced-motion:reduce){.ytkit-ai-qa-modal *{transition:none!important;scroll-behavior:auto!important}}`, 'ai-qa');
 			},
 			_hasPromptApi() {
 				const localAi = globalThis.YTKitCore?.localAi;
@@ -28058,11 +28057,8 @@ const STORAGE_KEYS = Object.freeze({
 				this._fetchController?.abort();
 				this._fetchController = null;
 				this._destroySession();
-				if (this._dialogKeydown && this._overlay) {
-					this._overlay.removeEventListener('keydown', this._dialogKeydown);
-				}
 				const returnFocus = this._returnFocus;
-				this._overlay?.remove();
+				const overlay = this._overlay;
 				this._overlay = null;
 				this._dialog = null;
 				this._input = null;
@@ -28070,12 +28066,16 @@ const STORAGE_KEYS = Object.freeze({
 				this._status = null;
 				this._history = null;
 				this._meta = null;
-				this._dialogKeydown = null;
 				this._returnFocus = null;
 				this._panelVideoId = null;
 				this._transcript = null;
 				this._identity = null;
 				this._conversation = null;
+				if (overlay) {
+					if (overlay.open) overlay.close();
+					globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+					overlay.remove();
+				}
 				if (restoreFocus && returnFocus?.isConnected !== false) {
 					returnFocus?.focus?.({ preventScroll: true });
 				}
@@ -28086,14 +28086,12 @@ const STORAGE_KEYS = Object.freeze({
 				this._closePanel({ restoreFocus: false });
 				this._panelVideoId = panelVideoId;
 				this._returnFocus = document.activeElement || this._btn;
-				const overlay = document.createElement('div');
+				const overlay = document.createElement('dialog');
 				overlay.className = 'ytkit-ai-qa-modal';
+				overlay.setAttribute('aria-labelledby', 'ytkit-ai-qa-title');
+				overlay.setAttribute('aria-describedby', 'ytkit-ai-qa-description');
 				const inner = document.createElement('div');
 				inner.className = 'ytkit-ai-qa-modal__body';
-				inner.setAttribute('role', 'dialog');
-				inner.setAttribute('aria-modal', 'true');
-				inner.setAttribute('aria-labelledby', 'ytkit-ai-qa-title');
-				inner.setAttribute('aria-describedby', 'ytkit-ai-qa-description');
 				const head = document.createElement('div');
 				head.className = 'ytkit-ai-qa-head';
 				const h = document.createElement('h3');
@@ -28152,40 +28150,26 @@ const STORAGE_KEYS = Object.freeze({
 					}
 				});
 				const closePanel = () => self._closePanel();
-				this._dialogKeydown = (event) => {
-					if (event.key === 'Escape') {
-						event.preventDefault();
-						closePanel();
-						return;
-					}
-					if (event.key !== 'Tab') return;
-					const controls = Array.from(inner.querySelectorAll(
-						'a[href],button:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-					)).filter((control) => control.getAttribute('aria-hidden') !== 'true');
-					if (!controls.length) return;
-					const current = controls.indexOf(document.activeElement);
-					const nextIndex = event.shiftKey
-						? (current <= 0 ? controls.length - 1 : current - 1)
-						: (current === controls.length - 1 ? 0 : current + 1);
-					if (current === -1 || (event.shiftKey && current === 0) || (!event.shiftKey && current === controls.length - 1)) {
-						event.preventDefault();
-						controls[nextIndex].focus();
-					}
-				};
 				closeBtn.addEventListener('click', closePanel);
 				overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
-				overlay.addEventListener('keydown', this._dialogKeydown);
+				overlay.addEventListener('close', () => { if (this._overlay === overlay) closePanel(); });
+				overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
 				actions.appendChild(askBtn);
 				inner.appendChild(actions);
 				overlay.appendChild(inner);
 				document.body.appendChild(overlay);
 				this._overlay = overlay;
-				this._dialog = inner;
+				this._dialog = overlay;
 				this._input = input;
 				this._askBtn = askBtn;
 				this._status = status;
 				this._history = history;
 				this._meta = meta;
+				try {
+					overlay.showModal();
+					globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+				} catch (_) {
+				}
 				input.focus();
 				const controller = new AbortController();
 				this._fetchController = controller;

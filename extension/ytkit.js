@@ -37560,13 +37560,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _history: null,
             _meta: null,
             _returnFocus: null,
-            _dialogKeydown: null,
 
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
                     .ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;margin-inline-start:6px;border-radius:8px;border:1px solid rgba(96,165,250,.48);background:rgba(37,99,235,.2);color:#dbeafe;font:700 12px/1 'YouTube Sans',system-ui;cursor:pointer}.ytkit-ai-qa-btn:hover{background:rgba(37,99,235,.34)}
-                    .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,.72)}
+                    .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;width:auto;height:auto;max-width:none;max-height:none;margin:0;border:0;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,.72)}.ytkit-ai-qa-modal::backdrop{background:transparent}
                     .ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:12px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}
                     .ytkit-ai-qa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ytkit-ai-qa-head h3{margin:0;color:#f8fafc;font-size:18px;line-height:1.35}.ytkit-ai-qa-description,.ytkit-ai-qa-meta,.ytkit-ai-qa-status,.ytkit-ai-qa-empty{margin:0;color:#b8c4d6}.ytkit-ai-qa-meta{font-size:12px;overflow-wrap:anywhere}
                     .ytkit-ai-qa-close{display:inline-grid;place-items:center;flex:0 0 auto;min-width:36px;min-height:36px;padding:0;border-radius:8px;border:1px solid #475569;background:#172033;color:#f8fafc;cursor:pointer;font:700 20px/1 system-ui}
@@ -37873,11 +37872,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._fetchController?.abort();
                 this._fetchController = null;
                 this._destroySession();
-                if (this._dialogKeydown && this._overlay) {
-                    this._overlay.removeEventListener('keydown', this._dialogKeydown);
-                }
                 const returnFocus = this._returnFocus;
-                this._overlay?.remove();
+                const overlay = this._overlay;
                 this._overlay = null;
                 this._dialog = null;
                 this._input = null;
@@ -37885,12 +37881,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._status = null;
                 this._history = null;
                 this._meta = null;
-                this._dialogKeydown = null;
                 this._returnFocus = null;
                 this._panelVideoId = null;
                 this._transcript = null;
                 this._identity = null;
                 this._conversation = null;
+                if (overlay) {
+                    if (overlay.open) overlay.close();
+                    // Before it leaves the document, or a toast hosted inside goes with it.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                    overlay.remove();
+                }
                 if (restoreFocus && returnFocus?.isConnected !== false) {
                     returnFocus?.focus?.({ preventScroll: true });
                 }
@@ -37902,15 +37903,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._closePanel({ restoreFocus: false });
                 this._panelVideoId = panelVideoId;
                 this._returnFocus = document.activeElement || this._btn;
-                const overlay = document.createElement('div');
+                const overlay = document.createElement('dialog');
                 overlay.className = 'ytkit-ai-qa-modal';
+                overlay.setAttribute('aria-labelledby', 'ytkit-ai-qa-title');
+                overlay.setAttribute('aria-describedby', 'ytkit-ai-qa-description');
 
                 const inner = document.createElement('div');
                 inner.className = 'ytkit-ai-qa-modal__body';
-                inner.setAttribute('role', 'dialog');
-                inner.setAttribute('aria-modal', 'true');
-                inner.setAttribute('aria-labelledby', 'ytkit-ai-qa-title');
-                inner.setAttribute('aria-describedby', 'ytkit-ai-qa-description');
 
                 const head = document.createElement('div');
                 head.className = 'ytkit-ai-qa-head';
@@ -37981,41 +37980,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
 
                 const closePanel = () => self._closePanel();
-                this._dialogKeydown = (event) => {
-                    if (event.key === 'Escape') {
-                        event.preventDefault();
-                        closePanel();
-                        return;
-                    }
-                    if (event.key !== 'Tab') return;
-                    const controls = Array.from(inner.querySelectorAll(
-                        'a[href],button:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-                    )).filter((control) => control.getAttribute('aria-hidden') !== 'true');
-                    if (!controls.length) return;
-                    const current = controls.indexOf(document.activeElement);
-                    const nextIndex = event.shiftKey
-                        ? (current <= 0 ? controls.length - 1 : current - 1)
-                        : (current === controls.length - 1 ? 0 : current + 1);
-                    if (current === -1 || (event.shiftKey && current === 0) || (!event.shiftKey && current === controls.length - 1)) {
-                        event.preventDefault();
-                        controls[nextIndex].focus();
-                    }
-                };
                 closeBtn.addEventListener('click', closePanel);
                 overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
-                overlay.addEventListener('keydown', this._dialogKeydown);
+                // `close` is queued, so a late one mustn't shut a newer panel.
+                overlay.addEventListener('close', () => { if (this._overlay === overlay) closePanel(); });
+                // The browser closes on Escape. The page's own key handlers still don't get it.
+                overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
 
                 actions.appendChild(askBtn);
                 inner.appendChild(actions);
                 overlay.appendChild(inner);
                 document.body.appendChild(overlay);
                 this._overlay = overlay;
-                this._dialog = inner;
+                this._dialog = overlay;
                 this._input = input;
                 this._askBtn = askBtn;
                 this._status = status;
                 this._history = history;
                 this._meta = meta;
+                try {
+                    overlay.showModal();
+                    // A toast shown before the panel is now inert outside it, Undo included.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                } catch (_) {
+                    // reason: the panel still paints by its z-index if the browser refuses.
+                }
                 input.focus();
                 const controller = new AbortController();
                 this._fetchController = controller;

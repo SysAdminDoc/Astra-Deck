@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- Transcript Q&A is a real dialog now. Keyboard and screen reader users stay inside it while it's open, instead of tabbing off into the page behind, and Escape closes it reliably. A toast with an Undo button that was already on screen stays clickable above it.
+
 ## [4.107.0] (2026-11-01)
 
 ### Added

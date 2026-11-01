@@ -146,7 +146,7 @@ const SURFACES = Object.freeze([
         height: 800,
         settleMs: 300,
         themes: Object.freeze(['dark', 'light']),
-        focusTrap: Object.freeze({ root: '.ytkit-ai-qa-modal__body' }),
+        focusTrap: Object.freeze({ root: '.ytkit-ai-qa-modal', nativeModal: true }),
         busyFocus: true,
         localeStates: LOCALE_STATES,
         localizedInjectedCopy: true,
@@ -925,7 +925,7 @@ async function auditTranscriptQaBusyFocus(client, surface, stateName) {
         const feature = globalThis.ytkit?.allFeatures?.find(
             (candidate) => candidate?.id === 'localAiTranscriptQa'
         );
-        const dialog = document.querySelector('.ytkit-ai-qa-modal__body');
+        const dialog = document.querySelector('.ytkit-ai-qa-modal');
         const ask = dialog?.querySelector('.ytkit-ai-qa-ask');
         const input = dialog?.querySelector('.ytkit-ai-qa-input');
         if (!feature || !dialog || !ask || !input) return { error: 'Transcript Q&A fixture is incomplete' };
@@ -952,17 +952,21 @@ async function auditTranscriptQaBusyFocus(client, surface, stateName) {
 
     await dispatchTab(client);
     const afterTab = await client.evaluate(`(() => {
-        const dialog = document.querySelector('.ytkit-ai-qa-modal__body');
+        const dialog = document.querySelector('.ytkit-ai-qa-modal');
         return {
             active: document.activeElement?.tagName || '',
             inside: Boolean(dialog?.contains(document.activeElement)),
         };
     })()`);
-    if (!afterTab.inside || afterTab.active === 'BODY') {
+    // Ask is the last control, so a native modal goes round through the browser's own UI,
+    // which reads as the body from here. What it can't do is land on a control behind.
+    if (!afterTab.inside && afterTab.active !== 'BODY') {
         failures.push(`Tab escaped the busy dialog to ${afterTab.active || 'no active element'}`);
     }
 
     await dispatchEscape(client);
+    // The browser queues the dialog's `close` event.
+    await sleep(150);
     const afterEscape = await client.evaluate(`(() => {
         const feature = globalThis.ytkit?.allFeatures?.find(
             (candidate) => candidate?.id === 'localAiTranscriptQa'
