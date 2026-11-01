@@ -11420,10 +11420,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Content',
             icon: 'external-link',
             init() {
+                // A series plays in order through its list, and an episode's own
+                // link doesn't name it. The series page it was opened from does.
+                let seriesList = '';
                 const redirectRule = () => {
-                    if (window.location.pathname.startsWith('/shorts/')) {
-                        window.location.replace(window.location.href.replace('/shorts/', '/watch?v='));
+                    const { pathname } = window.location;
+                    if (!pathname.startsWith('/shorts/')) {
+                        seriesList = /^\/show\/VL([\w-]+)/.exec(pathname)?.[1] || '';
+                        return;
                     }
+                    const videoId = pathname.split('/')[2];
+                    if (!videoId) return;
+                    const url = new URL(window.location.href);
+                    const params = new URLSearchParams({ v: videoId });
+                    if (seriesList) params.set('list', seriesList);
+                    url.searchParams.forEach((value, key) => {
+                        if (!params.has(key)) params.set(key, value);
+                    });
+                    url.pathname = '/watch';
+                    url.search = params.toString();
+                    window.location.replace(url.href);
                 };
                 addNavigateRule(this.id, redirectRule);
             },

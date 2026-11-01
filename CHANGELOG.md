@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- Redirect Shorts keeps a series in order. An episode opened from its series page plays in the regular player with the series list, so the next episode comes next.
 - Remove Shorts leaves a Shorts series, a playlist and a channel opened at its /channel/ address alone. It used to empty a series page down to its sidebar and take a playlist's header with its rows.
 - Import History is back. The button that imports your YouTube Takeout watch history has been out of reach since the July settings redesign, hidden along with the old side rail. It now sits in the settings footer right after Import.
 - In Tampermonkey, Download setup told you "Setup downloaded" when nothing had downloaded, because Tampermonkey refuses .exe files by default and the userscript never heard about it. It now notices the refusal and opens the setup file in a tab instead, which the browser downloads normally, and the message says so.

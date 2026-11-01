@@ -81,3 +81,89 @@ for (const pathname of ['/', '/feed/subscriptions', '/playlists', '/showcase', '
         assert.equal(page.row.dataset.ytkitShortsHidden, '1');
     });
 }
+
+// ── Redirect Shorts ─────────────────────────────────────────────────────────
+
+function redirectShortsSession() {
+    const replaced = [];
+    const location = {
+        href: 'https://www.youtube.com/',
+        pathname: '/',
+        replace: (url) => replaced.push(url),
+    };
+    const navigateRules = new Map();
+    const feature = loadFeature('redirectShorts', {
+        window: { location },
+        location,
+        URL,
+        URLSearchParams,
+        addNavigateRule: (id, rule) => navigateRules.set(id, rule),
+        removeNavigateRule: (id) => navigateRules.delete(id),
+    });
+    feature.init();
+    return {
+        replaced,
+        navigateRules,
+        feature,
+        go(path) {
+            const url = new URL(path, 'https://www.youtube.com');
+            location.href = url.href;
+            location.pathname = url.pathname;
+            navigateRules.get('redirectShorts')();
+        },
+    };
+}
+
+test('an episode opened from its series page keeps the series, so the next episode comes next', () => {
+    const session = redirectShortsSession();
+    session.go('/show/VLPLOHLtX9hAwfo?sbp=QAE%253D');
+    assert.equal(session.replaced.length, 0, 'the series page itself stays put');
+    session.go('/shorts/XGK5rHmUVi0');
+    assert.deepEqual([...session.replaced], ['https://www.youtube.com/watch?v=XGK5rHmUVi0&list=PLOHLtX9hAwfo']);
+});
+
+test('a season tab of a series page counts as that series', () => {
+    const session = redirectShortsSession();
+    session.go('/show/VLPLOHLtX9hAwfo?season=1&sbp=CgEx');
+    session.go('/shorts/XGK5rHmUVi0');
+    assert.deepEqual([...session.replaced], ['https://www.youtube.com/watch?v=XGK5rHmUVi0&list=PLOHLtX9hAwfo']);
+});
+
+test('a Short opened from anywhere else has no list', () => {
+    const session = redirectShortsSession();
+    session.go('/feed/subscriptions');
+    session.go('/shorts/XGK5rHmUVi0');
+    assert.deepEqual([...session.replaced], ['https://www.youtube.com/watch?v=XGK5rHmUVi0']);
+});
+
+test('leaving a series page forgets the series', () => {
+    const session = redirectShortsSession();
+    session.go('/show/VLPLOHLtX9hAwfo');
+    session.go('/feed/subscriptions');
+    session.go('/shorts/XGK5rHmUVi0');
+    assert.deepEqual([...session.replaced], ['https://www.youtube.com/watch?v=XGK5rHmUVi0']);
+});
+
+test('a shared link keeps its own parameters as parameters, not glued to the video id', () => {
+    const session = redirectShortsSession();
+    session.go('/shorts/XGK5rHmUVi0?si=abc123&t=5');
+    assert.deepEqual([...session.replaced], ['https://www.youtube.com/watch?v=XGK5rHmUVi0&si=abc123&t=5']);
+});
+
+test('a shared link cannot swap the video by naming its own v', () => {
+    const session = redirectShortsSession();
+    session.go('/shorts/XGK5rHmUVi0?v=somethingElse');
+    assert.deepEqual([...session.replaced], ['https://www.youtube.com/watch?v=XGK5rHmUVi0']);
+});
+
+test('a Shorts path with no id stays where it is', () => {
+    const session = redirectShortsSession();
+    session.go('/shorts/');
+    assert.equal(session.replaced.length, 0);
+});
+
+test('Redirect Shorts releases its rule on teardown', () => {
+    const session = redirectShortsSession();
+    session.feature.destroy();
+    assert.equal(session.navigateRules.has('redirectShorts'), false);
+});

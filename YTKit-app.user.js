@@ -6803,10 +6803,24 @@ const STORAGE_KEYS = Object.freeze({
 			group: 'Content',
 			icon: 'external-link',
 			init() {
+				let seriesList = '';
 				const redirectRule = () => {
-					if (window.location.pathname.startsWith('/shorts/')) {
-						window.location.replace(window.location.href.replace('/shorts/', '/watch?v='));
+					const { pathname } = window.location;
+					if (!pathname.startsWith('/shorts/')) {
+						seriesList = /^\/show\/VL([\w-]+)/.exec(pathname)?.[1] || '';
+						return;
 					}
+					const videoId = pathname.split('/')[2];
+					if (!videoId) return;
+					const url = new URL(window.location.href);
+					const params = new URLSearchParams({ v: videoId });
+					if (seriesList) params.set('list', seriesList);
+					url.searchParams.forEach((value, key) => {
+						if (!params.has(key)) params.set(key, value);
+					});
+					url.pathname = '/watch';
+					url.search = params.toString();
+					window.location.replace(url.href);
 				};
 				addNavigateRule(this.id, redirectRule);
 			},
