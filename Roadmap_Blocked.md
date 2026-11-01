@@ -305,13 +305,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Browser-Gated (CSS Adoption)
 
-- [ ] P2 — `@starting-style` adoption for panel entry animations
-  Why: `@starting-style` (Baseline 2025) would replace JS rAF timing hacks for toast/panel animations with pure CSS.
-  Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/core/toast-dom.js`
-  Acceptance: Panel/toast animations use `@starting-style` with `transition-behavior: allow-discrete`.
-  Complexity: S
-  Blocker: Toast CSS is duplicated in both the monolith and toast-dom.js (userscript parity). The headless Chromium harness (`scripts/smoke-chromium-optional-hosts.js`) can load the extension, so the open part is an older engine without `@starting-style` (Chromium before 117, Firefox before 129) pinned for that harness to show toasts and panels still appear there.
-
 ## P2 — Userscript Structural Drift (Browser-Gated)
 
 - [ ] P2 — Drive Takeout import and install assist in Tampermonkey. Retested 2026-10-31 on Tampermonkey 5.5.0: panel Import and Undo work on the real userscript (`Imported 19 settings updated, 1 blocked channel.`, then `Import undone.`), and that run found the older-backup refusal fixed in `745764d9`. Still not driven: the Takeout history import (the file chooser never opened from a scripted click, it needs a real gesture on the history-import button), `runInstallAssist` and `copyInstallCommand`.

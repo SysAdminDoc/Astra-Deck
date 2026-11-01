@@ -263,7 +263,7 @@
                 toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
             }
 
-            requestAnimationFrame(() => toast.classList.add('is-visible'));
+            toast.classList.add('is-visible');
             if (!persistent && durationMs > 0) {
                 toast._dismissTimer = setTimeout(() => dismissToast(toast), durationMs);
             }

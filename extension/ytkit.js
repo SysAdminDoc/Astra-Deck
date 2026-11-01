@@ -2866,6 +2866,15 @@ const STORAGE_KEYS = Object.freeze({
             transform: translateX(-50%) translateY(0) scale(1);
         }
 
+        /* The entrance. An engine without @starting-style drops this block, and
+           the toast still shows. */
+        @starting-style {
+            .ytkit-global-toast.is-visible {
+                opacity: 0;
+                transform: translateX(-50%) translateY(18px) scale(0.985);
+            }
+        }
+
         .ytkit-global-toast[data-tone="error"] {
             box-shadow:
                 0 22px 52px rgba(120, 20, 20, 0.28),
@@ -3472,7 +3481,7 @@ const STORAGE_KEYS = Object.freeze({
             toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
         }
 
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
+        toast.classList.add('is-visible');
         if (!persistent && durationMs > 0) {
             toast._dismissTimer = setTimeout(() => dismissToast(toast), durationMs);
         }
@@ -43523,7 +43532,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         ov.addEventListener('click', closePageModal);
         document.body.appendChild(ov);
         _pageModalOverlay = ov;
-        requestAnimationFrame(() => ov.classList.add('ytkit-pm-ov-visible'));
+        ov.classList.add('ytkit-pm-ov-visible');
 
         // Modal panel
         const modal = document.createElement('div');
@@ -43778,8 +43787,8 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         document.body.appendChild(modal);
         _pageModalEl = modal;
+        modal.classList.add('ytkit-pm-visible');
         requestAnimationFrame(() => {
-            modal.classList.add('ytkit-pm-visible');
             (closeBtn || getFocusableUiElements(modal)[0])?.focus({ preventScroll: true });
         });
 
@@ -43917,6 +43926,17 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         .ytkit-pm-visible {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        @starting-style {
+            .ytkit-pm-ov-visible {
+                opacity: 0;
+            }
+
+            .ytkit-pm-visible {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {

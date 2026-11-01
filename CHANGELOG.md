@@ -16,6 +16,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Toasts and the page menu now start their fade from the stylesheet instead of waiting for the next animation frame. They look the same, and reduced motion still shows them at once.
 - Dropdowns in the settings panel and the popup now open in the panel's own theme, dark or light, on Chrome and Edge 135 and newer. Escape closes just the list and leaves the panel open. Firefox and older browsers keep their native list.
 - Like Rate grades again match what you see on the page. YouTube started counting a view from the first frame on August 24, 2026, and videos uploaded since then read about half the like rate of older ones, so most of them were landing on Quiet. Those uploads now grade at 6% Excellent, 2% Strong and 1% Steady. Older uploads keep 8%, 4% and 2%, since their numbers barely moved. The badge still shows the real like and view counts when you hover over it.
 - Keep Volume At Full now turns off YouTube's Stable Volume too, in any language, and puts it back when you turn the feature off. On a loud test video the player's output went from 56% to 75%. YouTube still turns down loud videos, and the description now says so.
