@@ -26376,6 +26376,24 @@ void 0;
 			document.documentElement.setAttribute('data-ytkit-storyboard', JSON.stringify({ id: videoId, spec: renderer.spec }));
 		}
 	});
+	var _watchChannelWant = '';
+	_obsRegister(['data-ytkit-watch-channel-want'], function() {
+		var want = _bridgeGet('data-ytkit-watch-channel-want');
+		if (!want || want === _watchChannelWant) return;
+		_watchChannelWant = want;
+		var videoId = String(want).split(':')[0];
+		var player = document.getElementById('movie_player');
+		var response = player && typeof player.getPlayerResponse === 'function' ? player.getPlayerResponse() : null;
+		var details = response && response.videoDetails;
+		if (!details || details.videoId !== videoId || !details.channelId) return;
+		var microformat = response.microformat && response.microformat.playerMicroformatRenderer;
+		document.documentElement.setAttribute('data-ytkit-watch-channel', JSON.stringify({
+			id: videoId,
+			channelId: details.channelId,
+			name: details.author || '',
+			url: (microformat && microformat.ownerProfileUrl) || ''
+		}));
+	});
 	(function installFeedPrefilter() {
 		if (typeof document === 'undefined' || !document.documentElement
 			|| typeof JSON === 'undefined') return;

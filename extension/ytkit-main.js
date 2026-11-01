@@ -265,6 +265,28 @@
         }
     });
 
+    // Whose video this is, for the blocked-channel check. After an in-app move the
+    // player knows long before the page's owner link does, and it names the channel
+    // both ways, by id and by handle. A block can be recorded under either.
+    var _watchChannelWant = '';
+    _obsRegister(['data-ytkit-watch-channel-want'], function() {
+        var want = _bridgeGet('data-ytkit-watch-channel-want');
+        if (!want || want === _watchChannelWant) return;
+        _watchChannelWant = want;
+        var videoId = String(want).split(':')[0];
+        var player = document.getElementById('movie_player');
+        var response = player && typeof player.getPlayerResponse === 'function' ? player.getPlayerResponse() : null;
+        var details = response && response.videoDetails;
+        if (!details || details.videoId !== videoId || !details.channelId) return;
+        var microformat = response.microformat && response.microformat.playerMicroformatRenderer;
+        document.documentElement.setAttribute('data-ytkit-watch-channel', JSON.stringify({
+            id: videoId,
+            channelId: details.channelId,
+            name: details.author || '',
+            url: (microformat && microformat.ownerProfileUrl) || ''
+        }));
+    });
+
     // ──────────────────────────────────────────────────────────────────
     // Feature: pre-render feed filter (data-ytkit-feed-prefilter)
     // ──────────────────────────────────────────────────────────────────

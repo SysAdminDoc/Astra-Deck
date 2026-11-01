@@ -9349,6 +9349,9 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 	}
 	const REFILTER_SETTING_KEYS = new Set(['advancedLocalPredicate', 'advancedLocalPredicateCode', 'markWatchedVideos']);
 	const DIRECT_WATCH_BACK_REPEAT_MS = 2000;
+	const WATCH_CHANNEL_REQUEST_ATTR = 'data-ytkit-watch-channel-want';
+	const WATCH_CHANNEL_REPLY_ATTR = 'data-ytkit-watch-channel';
+	const DIRECT_WATCH_PLAYER_WAIT_ATTEMPTS = 12;
 	const SUBSCRIBER_COUNT_LABELS =/(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
 	const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
 	const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
@@ -9517,6 +9520,7 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 			parseLockupChannels = globalThis.YTKitCore?.parseLockupChannels || (() => null),
 			isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (path => String(path || '').startsWith('/watch')),
 			publishBridgeAttribute = () => {},
+			clearBridgeAttribute = () => {},
 			isPlainObject = value => !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype,
 			createSVG = (globalThis.YTKitCore && globalThis.YTKitCore.createSVG) || createFallbackSvg,
 			showToast = () => {},
@@ -10464,10 +10468,29 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				const name = String(link.textContent || link.getAttribute?.('aria-label') || '').replace(/\s+/g, ' ').trim();
 				return this._normalizeDirectWatchChannel({ name, url, source: 'watch-dom' });
 			},
+			_readDirectWatchChannelReply(routeKey) {
+				const raw = documentRef?.documentElement?.getAttribute?.(WATCH_CHANNEL_REPLY_ATTR);
+				if (!raw) return null;
+				let reply = null;
+				try { reply = JSON.parse(raw); } catch (_) {   }
+				if (reply?.id !== routeKey) return null;
+				return this._normalizeDirectWatchChannel({
+					channelId: String(reply.channelId || '').trim(),
+					name: String(reply.name || '').trim(),
+					url: String(reply.url || '').trim(),
+					source: 'player-response'
+				});
+			},
 			_resolveDirectWatchChannel(routeKey, attempt = 0) {
 				const playerResult = this._getDirectWatchChannelFromPlayer(routeKey);
-				if (playerResult.channel || playerResult.stale) return playerResult.channel;
-				return this._getDirectWatchChannelFromDom(routeKey, attempt);
+				if (playerResult.channel) return playerResult.channel;
+				const reply = this._readDirectWatchChannelReply(routeKey);
+				if (reply) return reply;
+				publishBridgeAttribute(WATCH_CHANNEL_REQUEST_ATTR, `${routeKey}:${attempt}`);
+				if (playerResult.stale) return null;
+				const fromDom = this._getDirectWatchChannelFromDom(routeKey, attempt);
+				if (fromDom && attempt < DIRECT_WATCH_PLAYER_WAIT_ATTEMPTS && !this._isChannelBlocked(fromDom)) return null;
+				return fromDom;
 			},
 			_getDirectWatchVideo() {
 				return documentRef?.querySelector?.('video.html5-main-video, #movie_player video, video') || null;
@@ -12643,6 +12666,8 @@ __astraDeckRegistry["features/video-hider/index.js"] = function (globalThis, sel
 				this._cancelBudgetedScans();
 				this._clearDirectWatchEvaluation();
 				this._closeDirectWatchInterstitial({ restoreFocus: false });
+				clearBridgeAttribute(WATCH_CHANNEL_REQUEST_ATTR);
+				documentRef?.documentElement?.removeAttribute?.(WATCH_CHANNEL_REPLY_ATTR);
 				this._directWatchRouteKey = null;
 				this._directWatchAllowedRouteKey = null;
 				this._directWatchResumeAfterDecision = false;

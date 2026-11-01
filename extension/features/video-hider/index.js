@@ -23,6 +23,10 @@
     // a scan hides or marks.
     const REFILTER_SETTING_KEYS = new Set(['advancedLocalPredicate', 'advancedLocalPredicateCode', 'markWatchedVideos']);
     const DIRECT_WATCH_BACK_REPEAT_MS = 2000;
+    const WATCH_CHANNEL_REQUEST_ATTR = 'data-ytkit-watch-channel-want';
+    const WATCH_CHANNEL_REPLY_ATTR = 'data-ytkit-watch-channel';
+    // About 3 s of retries before the page's owner link has to decide alone.
+    const DIRECT_WATCH_PLAYER_WAIT_ATTEMPTS = 12;
     const SUBSCRIBER_COUNT_LABELS =/(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
     const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
     // These markers are deliberately explicit rather than a general-purpose
@@ -258,6 +262,7 @@
             parseLockupChannels = globalThis.YTKitCore?.parseLockupChannels || (() => null),
             isWatchPagePath = globalThis.YTKitCore?.isWatchPagePath || (path => String(path || '').startsWith('/watch')),
             publishBridgeAttribute = () => {},
+            clearBridgeAttribute = () => {},
             isPlainObject = value => !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype,
             createSVG = (globalThis.YTKitCore && globalThis.YTKitCore.createSVG) || createFallbackSvg,
             showToast = () => {},
@@ -1305,10 +1310,35 @@
                 return this._normalizeDirectWatchChannel({ name, url, source: 'watch-dom' });
             },
 
+            _readDirectWatchChannelReply(routeKey) {
+                const raw = documentRef?.documentElement?.getAttribute?.(WATCH_CHANNEL_REPLY_ATTR);
+                if (!raw) return null;
+                let reply = null;
+                try { reply = JSON.parse(raw); } catch (_) { /* reason: a malformed reply is the same as no reply */ }
+                if (reply?.id !== routeKey) return null;
+                return this._normalizeDirectWatchChannel({
+                    channelId: String(reply.channelId || '').trim(),
+                    name: String(reply.name || '').trim(),
+                    url: String(reply.url || '').trim(),
+                    source: 'player-response'
+                });
+            },
+
             _resolveDirectWatchChannel(routeKey, attempt = 0) {
                 const playerResult = this._getDirectWatchChannelFromPlayer(routeKey);
-                if (playerResult.channel || playerResult.stale) return playerResult.channel;
-                return this._getDirectWatchChannelFromDom(routeKey, attempt);
+                if (playerResult.channel) return playerResult.channel;
+                // The inline response only describes the tab's first video, so
+                // after an in-app move the player itself gets asked.
+                const reply = this._readDirectWatchChannelReply(routeKey);
+                if (reply) return reply;
+                publishBridgeAttribute(WATCH_CHANNEL_REQUEST_ATTR, `${routeKey}:${attempt}`);
+                if (playerResult.stale) return null;
+                const fromDom = this._getDirectWatchChannelFromDom(routeKey, attempt);
+                // The owner link only names a handle, which says nothing about a
+                // block recorded by channel id. A match settles it, but "not
+                // blocked" has to wait for the player's fuller answer.
+                if (fromDom && attempt < DIRECT_WATCH_PLAYER_WAIT_ATTEMPTS && !this._isChannelBlocked(fromDom)) return null;
+                return fromDom;
             },
 
             _getDirectWatchVideo() {
@@ -3878,6 +3908,8 @@
                 this._cancelBudgetedScans();
                 this._clearDirectWatchEvaluation();
                 this._closeDirectWatchInterstitial({ restoreFocus: false });
+                clearBridgeAttribute(WATCH_CHANNEL_REQUEST_ATTR);
+                documentRef?.documentElement?.removeAttribute?.(WATCH_CHANNEL_REPLY_ATTR);
                 this._directWatchRouteKey = null;
                 this._directWatchAllowedRouteKey = null;
                 this._directWatchResumeAfterDecision = false;

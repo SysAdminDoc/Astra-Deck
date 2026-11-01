@@ -517,3 +517,39 @@ test('a page script cannot hand the feed prefilter its own blocklist', () => {
     world.context.JSON.parse('{"contents":{}}');
     assert.deepEqual(filtered, [['UCrealrealrealrealreal00']]);
 });
+
+test('the blocked-channel check asks the player, and a page script cannot ask for it', () => {
+    const world = mainWorld();
+    let response = {
+        videoDetails: { videoId: 'firstVideo0', channelId: 'UCownerownerownerowner00', author: 'Owner' },
+        microformat: { playerMicroformatRenderer: { ownerProfileUrl: 'http://www.youtube.com/@owner' } },
+    };
+    world.context.document.getElementById = (id) => (id === 'movie_player' ? { getPlayerResponse: () => response } : null);
+    const reply = () => world.attributes.get('data-ytkit-watch-channel');
+
+    world.documentElement.setAttribute('data-ytkit-watch-channel-want', 'firstVideo0:0');
+    assert.equal(reply(), undefined, 'a forged ask is decor');
+
+    world.channel.publish('data-ytkit-watch-channel-want', 'otherVideo0:0');
+    assert.equal(reply(), undefined, 'the player is still on the other video');
+
+    world.channel.publish('data-ytkit-watch-channel-want', 'firstVideo0:1');
+    assert.deepEqual(JSON.parse(reply()), {
+        id: 'firstVideo0',
+        channelId: 'UCownerownerownerowner00',
+        name: 'Owner',
+        url: 'http://www.youtube.com/@owner',
+    });
+
+    world.attributes.delete('data-ytkit-watch-channel');
+    world.channel.publish('data-ytkit-watch-channel-want', 'firstVideo0:1');
+    assert.equal(reply(), undefined, 'the same ask is answered once');
+
+    response = { videoDetails: { videoId: 'firstVideo0' } };
+    world.channel.publish('data-ytkit-watch-channel-want', 'firstVideo0:2');
+    assert.equal(reply(), undefined, 'a player with no channel yet says nothing');
+
+    response = { videoDetails: { videoId: 'firstVideo0', channelId: 'UCownerownerownerowner00' } };
+    world.channel.publish('data-ytkit-watch-channel-want', 'firstVideo0:3');
+    assert.deepEqual(JSON.parse(reply()), { id: 'firstVideo0', channelId: 'UCownerownerownerowner00', name: '', url: '' });
+});

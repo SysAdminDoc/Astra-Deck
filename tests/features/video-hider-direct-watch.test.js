@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createHideVideosFromHomeFeature } = require('../../extension/features/video-hider/index.js');
+const { loadDeclarations } = require('../helpers/monolith');
 
 const VIDEO_A = 'a1b2c3d4e5F';
 const VIDEO_B = 'f6g7h8i9j0K';
@@ -124,6 +125,11 @@ class FakeDocument {
         };
         this.player = null;
         this.watchRoot = null;
+        this.rootAttributes = new Map();
+        this.documentElement = {
+            getAttribute: name => (this.rootAttributes.has(name) ? this.rootAttributes.get(name) : null),
+            removeAttribute: name => { this.rootAttributes.delete(name); }
+        };
     }
 
     createElement(tagName) {
@@ -213,18 +219,23 @@ function makeFeature(options = {}) {
         videoDetails: { videoId: VIDEO_A, channelId: CHANNEL_ID, author: 'Blocked Creator' },
         microformat: { playerMicroformatRenderer: { ownerProfileUrl: `/channel/${CHANNEL_ID}` } }
     };
-    let storedChannels = [{ channelId: CHANNEL_ID, id: CHANNEL_ID, name: 'Blocked Creator' }];
+    let storedChannels = options.stored || [{ channelId: CHANNEL_ID, id: CHANNEL_ID, name: 'Blocked Creator' }];
     const writes = [];
+    const published = [];
+    const cleared = [];
     let backCalls = 0;
+    const normalize = options.normalize || normalizeChannel;
 
     const feature = createHideVideosFromHomeFeature({
         documentRef,
         getCurrentPath: () => path,
         getVideoId: () => videoId,
         getPlayerResponseGlobal: () => playerResponse,
-        normalizeBlockedChannelRecord: normalizeChannel,
-        getBlockedChannelIdentityKeys: channelKeys,
-        sanitizeImportedBlockedChannels: value => Array.isArray(value) ? value.map(normalizeChannel).filter(Boolean) : [],
+        normalizeBlockedChannelRecord: normalize,
+        getBlockedChannelIdentityKeys: options.keys || channelKeys,
+        sanitizeImportedBlockedChannels: value => Array.isArray(value) ? value.map(normalize).filter(Boolean) : [],
+        publishBridgeAttribute: (name, value) => { published.push([name, value]); },
+        clearBridgeAttribute: (name) => { cleared.push(name); },
         storageRead: (key, fallback) => key === 'ytkit-blocked-channels' ? storedChannels : fallback,
         storageWrite: (key, value) => {
             if (key === 'ytkit-blocked-channels') storedChannels = value;
@@ -240,6 +251,8 @@ function makeFeature(options = {}) {
         documentRef,
         timers,
         writes,
+        published,
+        cleared,
         setPath(value) { path = value; },
         setVideoId(value) { videoId = value; },
         setPlayerResponse(value) { playerResponse = value; },
@@ -580,4 +593,206 @@ test('route cleanup cancels identity retries and removes playback guards', () =>
     assert.equal(harness.feature._directWatchDialog, null);
     assert.equal(harness.documentRef.listeners.has('play:true'), false);
     assert.equal(harness.feature._directWatchRouteKey, null);
+});
+
+// The real channel rules, since which keys a record ends up with is the point here.
+// A block can be recorded by id or by handle, and a video can be reached by a direct
+// load (the inline response names the id, and the handle only in a URL) or in-app (the
+// inline response is gone and the owner link names only the handle).
+const channelRules = loadDeclarations([
+    'isPlainObject', 'YOUTUBE_CHANNEL_ID_PATTERN', 'YOUTUBE_CHANNEL_HANDLE_PATTERN',
+    'normalizeChannelUrlCandidate', 'decodeChannelPathSegment', 'getChannelIdentityFromValue',
+    'normalizeBlockedChannelRecord', 'getBlockedChannelIdentityKeys'
+], { URL });
+
+const OWNER_ID = 'UCuAXFkgsw1L7xaCfnd5JJOw';
+const OWNER_HANDLE = '@RickAstleyYT';
+const OWNER_URL = `http://www.youtube.com/${OWNER_HANDLE}`;
+const BLOCK_BY_ID = { channelId: OWNER_ID, id: OWNER_ID, name: 'Owner' };
+const BLOCK_BY_HANDLE = { id: OWNER_HANDLE, handle: OWNER_HANDLE, name: 'Owner' };
+const BLOCK_OTHER = { channelId: 'UC4QobU6STFB0P71PMvOGN5A', id: 'UC4QobU6STFB0P71PMvOGN5A', handle: '@jawed', name: 'Other' };
+const REPLY_ATTR = 'data-ytkit-watch-channel';
+const WANT_ATTR = 'data-ytkit-watch-channel-want';
+
+function realFeature(stored) {
+    return makeFeature({
+        stored: [stored],
+        normalize: channelRules.normalizeBlockedChannelRecord,
+        keys: channelRules.getBlockedChannelIdentityKeys
+    });
+}
+
+function directLoad(harness) {
+    harness.setPlayerResponse({
+        videoDetails: { videoId: VIDEO_A, channelId: OWNER_ID, author: 'Owner' },
+        microformat: { playerMicroformatRenderer: { ownerProfileUrl: OWNER_URL } }
+    });
+}
+
+function inAppMove(harness, href = `/${OWNER_HANDLE}`) {
+    harness.setPlayerResponse(null);
+    const root = new FakeElement('ytd-watch-flexy', harness.documentRef);
+    root.setAttribute('video-id', VIDEO_A);
+    const link = new FakeElement('a', harness.documentRef);
+    link.setAttribute('href', href);
+    link.textContent = 'Owner';
+    root.querySelector = () => link;
+    harness.documentRef.watchRoot = root;
+}
+
+function playerAnswers(harness, id = VIDEO_A) {
+    harness.documentRef.rootAttributes.set(REPLY_ATTR, JSON.stringify({ id, channelId: OWNER_ID, name: 'Owner', url: OWNER_URL }));
+}
+
+const asks = harness => harness.published.filter(([name]) => name === WANT_ATTR).map(([, value]) => value);
+
+test('a direct load blocks a channel recorded by id', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    directLoad(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(harness.feature._directWatchDialog, 'screen up');
+    assert.deepEqual(asks(harness), [], 'the inline response was enough');
+});
+
+test('a direct load blocks a channel recorded only by handle', () => {
+    const harness = realFeature(BLOCK_BY_HANDLE);
+    directLoad(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(harness.feature._directWatchDialog, 'screen up');
+});
+
+test('a direct load of another channel stays free', () => {
+    const harness = realFeature(BLOCK_OTHER);
+    directLoad(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(!harness.feature._directWatchDialog, 'no screen');
+    assert.equal(harness.timers.queue.length, 0, 'the answer was final');
+});
+
+test('an in-app move asks the player, and blocks a channel recorded only by id', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    inAppMove(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(!harness.feature._directWatchDialog, 'the owner link alone cannot say');
+    assert.deepEqual(asks(harness), [`${VIDEO_A}:0`]);
+
+    playerAnswers(harness);
+    harness.timers.runNext();
+    assert.ok(harness.feature._directWatchDialog, 'screen up');
+    assert.equal(harness.timers.queue.length, 0, 'no more retries');
+    assert.deepEqual(asks(harness), [`${VIDEO_A}:0`], 'no more asking once answered');
+});
+
+test('an in-app move blocks a channel recorded only by handle from the player alone', () => {
+    const harness = realFeature(BLOCK_BY_HANDLE);
+    harness.setPlayerResponse(null);
+    playerAnswers(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(harness.feature._directWatchDialog, 'screen up before the owner link exists');
+});
+
+test('an owner link that already matches does not wait for the player', () => {
+    const harness = realFeature(BLOCK_BY_HANDLE);
+    inAppMove(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(harness.feature._directWatchDialog, 'screen up');
+    assert.equal(harness.timers.queue.length, 0);
+});
+
+test('an owner link that does not match gets about 3 s for the player, then decides', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    inAppMove(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.equal(harness.timers.runAll(), 12);
+    assert.equal(harness.timers.queue.length, 0, 'decided');
+    assert.ok(!harness.feature._directWatchDialog, 'no player, and the handle is not on the list');
+    assert.equal(asks(harness).length, 13);
+    assert.equal(new Set(asks(harness)).size, 13, 'each ask is new, or the main world would ignore it');
+});
+
+test('the player answering late still blocks inside the wait', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    inAppMove(harness);
+    harness.feature._evaluateDirectWatchBlock();
+    for (let i = 0; i < 11; i += 1) harness.timers.runNext();
+    assert.ok(!harness.feature._directWatchDialog);
+    playerAnswers(harness);
+    harness.timers.runNext();
+    assert.ok(harness.feature._directWatchDialog, 'screen up');
+});
+
+test('the player answering about another video is ignored', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    harness.setPlayerResponse(null);
+    playerAnswers(harness, VIDEO_B);
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(!harness.feature._directWatchDialog, 'no screen');
+    assert.deepEqual(asks(harness), [`${VIDEO_A}:0`], 'still asking about this one');
+});
+
+test('a malformed answer reads as no answer', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    harness.setPlayerResponse(null);
+    harness.documentRef.rootAttributes.set(REPLY_ATTR, '{nope');
+    assert.doesNotThrow(() => harness.feature._evaluateDirectWatchBlock());
+    assert.ok(!harness.feature._directWatchDialog, 'no screen');
+    assert.deepEqual(asks(harness), [`${VIDEO_A}:0`]);
+});
+
+test('an empty answer settles nothing', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    harness.setPlayerResponse(null);
+    harness.documentRef.rootAttributes.set(REPLY_ATTR, JSON.stringify({ id: VIDEO_A }));
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(!harness.feature._directWatchDialog, 'no screen');
+    assert.deepEqual(asks(harness), [`${VIDEO_A}:0`], 'still asking');
+});
+
+test('a stale inline response never lets the owner link decide, but the player can', () => {
+    const harness = realFeature(BLOCK_BY_HANDLE);
+    inAppMove(harness);
+    harness.setPlayerResponse({ videoDetails: { videoId: VIDEO_B, channelId: OWNER_ID } });
+    harness.feature._evaluateDirectWatchBlock();
+    assert.ok(!harness.feature._directWatchDialog, 'stale means wait');
+    assert.deepEqual(asks(harness), [`${VIDEO_A}:0`]);
+
+    playerAnswers(harness);
+    harness.timers.runNext();
+    assert.ok(harness.feature._directWatchDialog, 'the player settled it');
+});
+
+test('switching the feature off clears the bridge attributes', () => {
+    const harness = realFeature(BLOCK_BY_ID);
+    harness.setPlayerResponse(null);
+    playerAnswers(harness);
+    const previous = globalThis.document;
+    globalThis.document = harness.documentRef;
+    try {
+        harness.feature.destroy();
+    } finally {
+        if (previous === undefined) delete globalThis.document;
+        else globalThis.document = previous;
+    }
+    assert.deepEqual(harness.cleared.filter(name => name === WANT_ATTR), [WANT_ATTR]);
+    assert.equal(harness.documentRef.rootAttributes.has(REPLY_ATTR), false);
+});
+
+test('a blocked record keeps every name its URL carries', () => {
+    const { normalizeBlockedChannelRecord: normalize, getBlockedChannelIdentityKeys: keys } = channelRules;
+
+    const fromProfile = normalize({ channelId: OWNER_ID, url: OWNER_URL });
+    assert.equal(fromProfile.channelId, OWNER_ID);
+    assert.equal(fromProfile.handle, OWNER_HANDLE);
+    assert.ok([...keys(fromProfile)].includes(`handle:${OWNER_HANDLE.toLowerCase()}`));
+    assert.ok([...keys(fromProfile)].includes(`channel:${OWNER_ID}`));
+
+    const handleFirst = normalize({ id: OWNER_HANDLE, url: `/channel/${OWNER_ID}` });
+    assert.equal(handleFirst.handle, OWNER_HANDLE);
+    assert.equal(handleFirst.channelId, OWNER_ID);
+
+    assert.equal(normalize({ channelId: OWNER_ID, url: 'https://www.youtube.com/c/OldName' }).vanity, 'OldName');
+
+    const notAChannel = normalize({ channelId: OWNER_ID, url: 'https://www.youtube.com/watch?v=abc' });
+    assert.equal(notAChannel.handle, undefined);
+    assert.equal(notAChannel.vanity, undefined);
 });

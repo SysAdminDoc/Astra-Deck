@@ -1326,8 +1326,10 @@ const STORAGE_KEYS = Object.freeze({
 			|| getChannelIdentityFromValue(isPlainObject(entry) ? entry.handle : '');
 		if (!identity?.primary) return null;
 		if (isPlainObject(entry)) {
-			identity.channelId = identity.channelId || getChannelIdentityFromValue(entry.channelId)?.channelId || '';
-			identity.handle = identity.handle || getChannelIdentityFromValue(entry.handle)?.handle || '';
+			const fromUrl = getChannelIdentityFromValue(entry.url);
+			identity.channelId = identity.channelId || getChannelIdentityFromValue(entry.channelId)?.channelId || fromUrl?.channelId || '';
+			identity.handle = identity.handle || getChannelIdentityFromValue(entry.handle)?.handle || fromUrl?.handle || '';
+			identity.vanity = identity.vanity || fromUrl?.vanity || '';
 		}
 		const nameSource = isPlainObject(entry) && typeof entry.name === 'string'
 			? entry.name
@@ -8909,7 +8911,8 @@ const STORAGE_KEYS = Object.freeze({
 			t,
 			runBudgetedElementBatch,
 			injectStyle,
-			publishBridgeAttribute
+			publishBridgeAttribute,
+			clearBridgeAttribute
 		}) || {
 			id: 'hideVideosFromHome',
 			name: t('feature_hideVideosFromHome_name', 'Video Hider'),

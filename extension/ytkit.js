@@ -1704,9 +1704,12 @@ const STORAGE_KEYS = Object.freeze({
         // A channel known both ways keeps both: a card's link gives the
         // handle, its data the channel id, and the watch sidebar shows only
         // the id. Taking just the first lost the handle the feeds match on.
+        // A watch page names the handle only inside the owner's profile URL.
         if (isPlainObject(entry)) {
-            identity.channelId = identity.channelId || getChannelIdentityFromValue(entry.channelId)?.channelId || '';
-            identity.handle = identity.handle || getChannelIdentityFromValue(entry.handle)?.handle || '';
+            const fromUrl = getChannelIdentityFromValue(entry.url);
+            identity.channelId = identity.channelId || getChannelIdentityFromValue(entry.channelId)?.channelId || fromUrl?.channelId || '';
+            identity.handle = identity.handle || getChannelIdentityFromValue(entry.handle)?.handle || fromUrl?.handle || '';
+            identity.vanity = identity.vanity || fromUrl?.vanity || '';
         }
         const nameSource = isPlainObject(entry) && typeof entry.name === 'string'
             ? entry.name
@@ -14767,7 +14770,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             t,
             runBudgetedElementBatch,
             injectStyle,
-            publishBridgeAttribute
+            publishBridgeAttribute,
+            clearBridgeAttribute
         }) || {
             // Descriptor only. The behaviour lives in
             // extension/features/video-hider/index.js.
