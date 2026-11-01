@@ -28591,6 +28591,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'fast-forward',
             pages: [PageTypes.SHORTS],
             _endedHandler: null,
+            _loopWatch: null,
             _videoRef: null,
             _attachTimer: null,
 
@@ -28605,6 +28606,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
                 this._videoRef = video;
                 video.addEventListener('ended', this._endedHandler);
+                // A seek sets loop back on with nothing else on the page changing,
+                // and a looping video never ends.
+                this._loopWatch.observe(video, { attributes: true, attributeFilter: ['loop'] });
             },
             _scheduleAttach(delay = 400) {
                 if (this._attachTimer) clearTimeout(this._attachTimer);
@@ -28616,9 +28620,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._endedHandler = () => {
-                    const nextBtn = document.querySelector('#navigation-button-down button, #navigation-button-down');
-                    if (nextBtn) nextBtn.click();
+                    // Only the button itself. A list naming its container as well
+                    // answers the container, first in the document, and a click
+                    // there does nothing.
+                    document.querySelector('#navigation-button-down button')?.click();
                 };
+                this._loopWatch = new MutationObserver(() => {
+                    if (this._videoRef?.loop) this._videoRef.loop = false;
+                });
                 this._attach();
                 addMutationRule(this.id, () => this._scheduleAttach(400));
                 addNavigateRule('shortsAutoAdvance', () => this._scheduleAttach(600));
@@ -28626,6 +28635,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._attachTimer) { clearTimeout(this._attachTimer); this._attachTimer = null; }
                 if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
+                this._loopWatch?.disconnect();
+                this._loopWatch = null;
                 this._videoRef = null;
                 this._endedHandler = null;
                 removeMutationRule(this.id);

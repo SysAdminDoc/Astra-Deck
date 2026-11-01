@@ -33,6 +33,14 @@ function shortsPage({ pathname = '/shorts/abc12345678', settings = {}, activeRee
     const video = newVideo();
     const offscreenVideo = newVideo();
     const nextButton = scratch.createElement('button');
+    // The box around it, which is first in the document and ignores a click.
+    const nextContainer = scratch.createElement('div');
+    const attributeWatches = [];
+    class FakeMutationObserver {
+        constructor(callback) { this.callback = callback; this.watching = []; attributeWatches.push(this); }
+        observe(target, options) { this.watching.push({ target, attributes: options.attributeFilter }); }
+        disconnect() { this.watching = []; }
+    }
     // Each node declares what it IS and where it sits, and the selector has to
     // actually match it. Substring routing answered
     // `ytd-reel-video-renderer[is-active] video.NO-SUCH-CLASS` too, so both
@@ -43,7 +51,9 @@ function shortsPage({ pathname = '/shorts/abc12345678', settings = {}, activeRee
     };
     const offscreenIs = { tag: 'video', ancestors: [{ tag: 'div', id: 'shorts-player' }] };
     const nextIs = { tag: 'button', ancestors: [{ tag: 'div', id: 'navigation-button-down' }] };
+    const nextContainerIs = { tag: 'div', id: 'navigation-button-down' };
     const documentRef = fakeTreeDocument((selector) => {
+        if (selectorMatches(selector, nextContainerIs)) return nextContainer;
         if (selectorMatches(selector, nextIs)) return nextButton;
         if (activeReel && selectorMatches(selector, activeIs)) return video;
         if (selectorMatches(selector, offscreenIs)) return offscreenVideo;
@@ -56,12 +66,22 @@ function shortsPage({ pathname = '/shorts/abc12345678', settings = {}, activeRee
         video,
         offscreenVideo,
         nextButton,
+        nextContainer,
         documentRef,
+        attributeWatchCount: () => attributeWatches.reduce((sum, observer) => sum + observer.watching.length, 0),
+        // The player setting loop back on, with nothing else on the page changing.
+        playerSetsLoop(target) {
+            target.loop = true;
+            attributeWatches.forEach((observer) => {
+                if (observer.watching.some((entry) => entry.target === target && entry.attributes.includes('loop'))) observer.callback([]);
+            });
+        },
         timers,
         rates,
         navigateRules,
         globals: {
             document: documentRef,
+            MutationObserver: FakeMutationObserver,
             location: { pathname },
             appState: { settings },
             setTimeout: (fn, delay) => { timers.push({ fn, delay }); return timers.length; },
@@ -140,6 +160,21 @@ test('auto-advance unloops the reel and clicks the native next control when it e
 
     page.video.listeners.get('ended').forEach((handler) => handler());
     assert.equal(page.nextButton.clicked, 1, 'the native down-navigation control is what advances the reel');
+    assert.equal(page.nextContainer.clicked, 0, 'a click on the box around it moves nothing');
+});
+
+test('auto-advance keeps loop off when a seek sets it back with nothing else changing', () => {
+    const page = shortsPage();
+    const feature = loadFeature('shortsAutoAdvance', page.globals);
+    feature.init();
+
+    page.playerSetsLoop(page.video);
+    assert.equal(page.video.loop, false, 'a looping video never fires ended');
+
+    feature.destroy();
+    page.playerSetsLoop(page.video);
+    assert.equal(page.video.loop, true, 'switched off, the Short loops again');
+    assert.equal(page.attributeWatchCount(), 0, 'and nothing is left watching the video');
 });
 
 test('auto-advance leaves a watch page alone and detaches on teardown', () => {

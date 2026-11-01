@@ -20092,6 +20092,7 @@ const STORAGE_KEYS = Object.freeze({
 			icon: 'fast-forward',
 			pages: [PageTypes.SHORTS],
 			_endedHandler: null,
+			_loopWatch: null,
 			_videoRef: null,
 			_attachTimer: null,
 			_attach() {
@@ -20105,6 +20106,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
 				this._videoRef = video;
 				video.addEventListener('ended', this._endedHandler);
+				this._loopWatch.observe(video, { attributes: true, attributeFilter: ['loop'] });
 			},
 			_scheduleAttach(delay = 400) {
 				if (this._attachTimer) clearTimeout(this._attachTimer);
@@ -20115,9 +20117,11 @@ const STORAGE_KEYS = Object.freeze({
 			},
 			init() {
 				this._endedHandler = () => {
-					const nextBtn = document.querySelector('#navigation-button-down button, #navigation-button-down');
-					if (nextBtn) nextBtn.click();
+					document.querySelector('#navigation-button-down button')?.click();
 				};
+				this._loopWatch = new MutationObserver(() => {
+					if (this._videoRef?.loop) this._videoRef.loop = false;
+				});
 				this._attach();
 				addMutationRule(this.id, () => this._scheduleAttach(400));
 				addNavigateRule('shortsAutoAdvance', () => this._scheduleAttach(600));
@@ -20125,6 +20129,8 @@ const STORAGE_KEYS = Object.freeze({
 			destroy() {
 				if (this._attachTimer) { clearTimeout(this._attachTimer); this._attachTimer = null; }
 				if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
+				this._loopWatch?.disconnect();
+				this._loopWatch = null;
 				this._videoRef = null;
 				this._endedHandler = null;
 				removeMutationRule(this.id);
