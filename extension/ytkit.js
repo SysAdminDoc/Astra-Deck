@@ -30814,7 +30814,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingsManager,
             DebugManager,
             injectStyle,
-            trapFocusWithin,
             t
         }) || {
             // Descriptor only. The behaviour lives in

@@ -15,7 +15,6 @@
             settingsManager = { save() {} },
             DebugManager = { log() {} },
             injectStyle = () => ({ remove() {} }),
-            trapFocusWithin = () => {},
             t = (_key, fallback) => fallback
         } = deps;
 
@@ -222,12 +221,10 @@
                 const hintText = options.hint || (kind === 'break'
                     ? 'Playback is paused until you are ready to continue.'
                     : 'This reminder will stay quiet until your next local day starts.');
-                const o = document.createElement('div');
+                const o = document.createElement('dialog');
                 o.className = 'ytkit-wellbeing-overlay';
                 o.dataset.kind = kind;
                 o.dataset.locked = locked ? 'true' : 'false';
-                o.setAttribute('role', 'dialog');
-                o.setAttribute('aria-modal', 'true');
 
                 const card = document.createElement('div');
                 card.className = 'ytkit-wellbeing-card';
@@ -302,27 +299,34 @@
                     if (result !== false) dismissOverlay();
                 };
 
-                this._overlayKeyHandler = (event) => {
-                    if (event.key === 'Tab') {
-                        event.preventDefault();
-                        trapFocusWithin(o, event);
-                        return;
-                    }
-                    if (locked) {
+                // A locked prompt answers only to its own button. A cancelled
+                // keydown is what stops Escape reaching the browser's close
+                // request, and it keeps page shortcuts from running behind it.
+                if (locked) {
+                    this._overlayKeyHandler = (event) => {
+                        if (event.key === 'Tab') return;
+                        if ((event.key === 'Enter' || event.key === ' ') && o.contains(event.target)) return;
                         event.preventDefault();
                         event.stopPropagation?.();
-                        return;
-                    }
-                    if (event.key === 'Escape') {
-                        event.preventDefault();
-                        dismissOverlay();
-                    }
-                };
-                document.addEventListener('keydown', this._overlayKeyHandler, true);
+                    };
+                    document.addEventListener('keydown', this._overlayKeyHandler, true);
+                }
+                o.addEventListener('cancel', (event) => {
+                    event.preventDefault();
+                    if (!locked) dismissOverlay();
+                });
+                // Chrome won't let a page refuse a close request it made without
+                // a user gesture, so a dialog can still close here.
+                o.addEventListener('close', () => {
+                    if (this._overlay !== o) return;
+                    if (locked) o.showModal();
+                    else dismissOverlay();
+                });
                 button.addEventListener('click', runAction);
                 o.addEventListener('click', (event) => {
                     if (!locked && event.target === o) dismissOverlay();
                 });
+                o.showModal();
                 requestAnimationFrame(() => button.focus({ preventScroll: true }));
             },
 
@@ -414,7 +418,9 @@
             init() {
                 this._styleEl = injectStyle(`
                     .ytkit-wellbeing-overlay {
-                        position: fixed; inset: 0; z-index: 2147483600;
+                        position: fixed; inset: 0;
+                        width: auto; height: auto; max-width: none; max-height: none;
+                        margin: 0; border: 0; color: inherit;
                         padding: max(24px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
                         background:
                             radial-gradient(circle at top, rgba(99,102,241,0.12), transparent 28%),
@@ -423,6 +429,7 @@
                         overscroll-behavior: contain;
                         animation: ytkit-wb-fade 220ms ease-out;
                     }
+                    .ytkit-wellbeing-overlay::backdrop { background: transparent; }
                     @keyframes ytkit-wb-fade { from { opacity: 0; } to { opacity: 1; } }
                     .ytkit-wellbeing-card {
                         width: min(480px, calc(100vw - 24px));

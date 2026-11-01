@@ -1391,6 +1391,7 @@ test('digitalWellbeing Resume Video resumes only playback paused by the reminder
             removeEventListener() {},
             remove() {},
             setAttribute() {},
+            showModal() {},
             focus() {}
         };
         created.push(node);
@@ -1475,6 +1476,7 @@ test('digitalWellbeing enforces a Shorts budget with an inaccessible hard block 
                 removeEventListener() {},
                 remove() { this.removed = true; },
                 setAttribute() {},
+                showModal() {},
                 focus() {}
             };
             created.push(node);
@@ -1690,7 +1692,6 @@ test('digitalWellbeing monolith prefers the module runtime factory before inline
         'settingsManager',
         'DebugManager',
         'injectStyle',
-        'trapFocusWithin',
         't'
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);

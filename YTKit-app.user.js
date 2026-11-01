@@ -22033,7 +22033,6 @@ const STORAGE_KEYS = Object.freeze({
 			settingsManager,
 			DebugManager,
 			injectStyle,
-			trapFocusWithin,
 			t
 		}) || {
 			id: 'digitalWellbeing',

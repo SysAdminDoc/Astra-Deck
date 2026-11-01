@@ -16891,7 +16891,6 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 			settingsManager = { save() {} },
 			DebugManager = { log() {} },
 			injectStyle = () => ({ remove() {} }),
-			trapFocusWithin = () => {},
 			t = (_key, fallback) => fallback
 		} = deps;
 		const tCount = (count, key, one, other) => (
@@ -17059,12 +17058,10 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 				const hintText = options.hint || (kind === 'break'
 					? 'Playback is paused until you are ready to continue.'
 					: 'This reminder will stay quiet until your next local day starts.');
-				const o = document.createElement('div');
+				const o = document.createElement('dialog');
 				o.className = 'ytkit-wellbeing-overlay';
 				o.dataset.kind = kind;
 				o.dataset.locked = locked ? 'true' : 'false';
-				o.setAttribute('role', 'dialog');
-				o.setAttribute('aria-modal', 'true');
 				const card = document.createElement('div');
 				card.className = 'ytkit-wellbeing-card';
 				card.dataset.kind = kind;
@@ -17125,27 +17122,29 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 					const result = typeof options.onAction === 'function' ? options.onAction() : undefined;
 					if (result !== false) dismissOverlay();
 				};
-				this._overlayKeyHandler = (event) => {
-					if (event.key === 'Tab') {
-						event.preventDefault();
-						trapFocusWithin(o, event);
-						return;
-					}
-					if (locked) {
+				if (locked) {
+					this._overlayKeyHandler = (event) => {
+						if (event.key === 'Tab') return;
+						if ((event.key === 'Enter' || event.key === ' ') && o.contains(event.target)) return;
 						event.preventDefault();
 						event.stopPropagation?.();
-						return;
-					}
-					if (event.key === 'Escape') {
-						event.preventDefault();
-						dismissOverlay();
-					}
-				};
-				document.addEventListener('keydown', this._overlayKeyHandler, true);
+					};
+					document.addEventListener('keydown', this._overlayKeyHandler, true);
+				}
+				o.addEventListener('cancel', (event) => {
+					event.preventDefault();
+					if (!locked) dismissOverlay();
+				});
+				o.addEventListener('close', () => {
+					if (this._overlay !== o) return;
+					if (locked) o.showModal();
+					else dismissOverlay();
+				});
 				button.addEventListener('click', runAction);
 				o.addEventListener('click', (event) => {
 					if (!locked && event.target === o) dismissOverlay();
 				});
+				o.showModal();
 				requestAnimationFrame(() => button.focus({ preventScroll: true }));
 			},
 			_tick() {
@@ -17222,7 +17221,7 @@ __astraDeckRegistry["features/digital-wellbeing/index.js"] = function (globalThi
 				}
 			},
 			init() {
-				this._styleEl = injectStyle(`.ytkit-wellbeing-overlay{position:fixed;inset:0;z-index:2147483600;padding:max(24px,env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));background:radial-gradient(circle at top,rgba(99,102,241,0.12),transparent 28%),rgba(8,11,16,0.86);display:flex;align-items:center;justify-content:center;overscroll-behavior:contain;animation:ytkit-wb-fade 220ms ease-out}@keyframes ytkit-wb-fade{from{opacity:0}to{opacity:1}}.ytkit-wellbeing-card{width:min(480px,calc(100vw - 24px));display:grid;gap:14px;padding:22px 22px 20px;border-radius:12px;border:1px solid rgba(137,180,250,0.2);background:radial-gradient(circle at top right,rgba(137,180,250,0.16),transparent 36%),linear-gradient(180deg,rgba(23,30,42,0.98),rgba(10,14,21,0.98));color:#e2e8f0;box-shadow:0 26px 64px rgba(0,0,0,0.46);text-align:left}.ytkit-wellbeing-card[data-kind="cap"]{border-color:rgba(251,191,36,0.24);background:radial-gradient(circle at top right,rgba(251,191,36,0.16),transparent 38%),linear-gradient(180deg,rgba(30,24,16,0.98),rgba(15,11,8,0.98))}.ytkit-wellbeing-card[data-kind="shorts-limit"]{border-color:rgba(167,139,250,0.3);background:radial-gradient(circle at top right,rgba(167,139,250,0.18),transparent 38%),linear-gradient(180deg,rgba(27,22,45,0.98),rgba(12,10,23,0.98))}.ytkit-wellbeing-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.ytkit-wellbeing-eyebrow,.ytkit-wellbeing-badge{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.05);font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap}.ytkit-wellbeing-eyebrow{color:rgba(226,232,240,0.72)}.ytkit-wellbeing-badge{color:rgba(255,255,255,0.92)}.ytkit-wellbeing-icon-wrap{display:grid;place-items:center;width:64px;height:64px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02)),rgba(255,255,255,0.03)}.ytkit-wellbeing-icon{font-size:34px;line-height:1}.ytkit-wellbeing-title{margin:0;color:rgba(248,250,252,0.96);font:700 27px/1.12 'Roboto',system-ui,sans-serif;letter-spacing:0;text-wrap:balance}.ytkit-wellbeing-msg{margin:0;font-size:15px;line-height:1.65;color:rgba(226,232,240,0.74);text-wrap:pretty}.ytkit-wellbeing-hint{margin:-4px 0 0;color:rgba(226,232,240,0.62);font-size:12px;line-height:1.55;text-wrap:pretty}.ytkit-wellbeing-btn{appearance:none;-webkit-appearance:none;justify-self:start;min-height:42px;padding:0 18px;border-radius:10px;border:1px solid rgba(137,180,250,0.18);background:linear-gradient(135deg,#89b4fa,#b4befe);color:#141a26;font:700 14px 'Roboto',system-ui,sans-serif;letter-spacing:0.01em;cursor:pointer;touch-action:manipulation;transition:transform 120ms ease,box-shadow 160ms ease,filter 160ms ease}.ytkit-wellbeing-card[data-kind="cap"] .ytkit-wellbeing-btn{border-color:rgba(251,191,36,0.18);background:linear-gradient(135deg,#fbbf24,#fde68a);color:#1f140f}.ytkit-wellbeing-btn:hover{transform:translateY(-1px);filter:brightness(1.03)}.ytkit-wellbeing-btn:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(137,180,250,0.2)}.ytkit-wellbeing-card[data-kind="cap"] .ytkit-wellbeing-btn:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(251,191,36,0.22)}@media (max-width:560px){.ytkit-wellbeing-card{padding:18px 18px 16px;border-radius:12px}.ytkit-wellbeing-title{font-size:24px}.ytkit-wellbeing-btn{width:100%;justify-self:stretch;justify-content:center}}@media (prefers-reduced-motion:reduce){.ytkit-wellbeing-overlay{animation:none}.ytkit-wellbeing-btn{transition:none}.ytkit-wellbeing-btn:hover{transform:none}}`, this.id, true);
+				this._styleEl = injectStyle(`.ytkit-wellbeing-overlay{position:fixed;inset:0;width:auto;height:auto;max-width:none;max-height:none;margin:0;border:0;color:inherit;padding:max(24px,env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));background:radial-gradient(circle at top,rgba(99,102,241,0.12),transparent 28%),rgba(8,11,16,0.86);display:flex;align-items:center;justify-content:center;overscroll-behavior:contain;animation:ytkit-wb-fade 220ms ease-out}.ytkit-wellbeing-overlay::backdrop{background:transparent}@keyframes ytkit-wb-fade{from{opacity:0}to{opacity:1}}.ytkit-wellbeing-card{width:min(480px,calc(100vw - 24px));display:grid;gap:14px;padding:22px 22px 20px;border-radius:12px;border:1px solid rgba(137,180,250,0.2);background:radial-gradient(circle at top right,rgba(137,180,250,0.16),transparent 36%),linear-gradient(180deg,rgba(23,30,42,0.98),rgba(10,14,21,0.98));color:#e2e8f0;box-shadow:0 26px 64px rgba(0,0,0,0.46);text-align:left}.ytkit-wellbeing-card[data-kind="cap"]{border-color:rgba(251,191,36,0.24);background:radial-gradient(circle at top right,rgba(251,191,36,0.16),transparent 38%),linear-gradient(180deg,rgba(30,24,16,0.98),rgba(15,11,8,0.98))}.ytkit-wellbeing-card[data-kind="shorts-limit"]{border-color:rgba(167,139,250,0.3);background:radial-gradient(circle at top right,rgba(167,139,250,0.18),transparent 38%),linear-gradient(180deg,rgba(27,22,45,0.98),rgba(12,10,23,0.98))}.ytkit-wellbeing-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.ytkit-wellbeing-eyebrow,.ytkit-wellbeing-badge{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.05);font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap}.ytkit-wellbeing-eyebrow{color:rgba(226,232,240,0.72)}.ytkit-wellbeing-badge{color:rgba(255,255,255,0.92)}.ytkit-wellbeing-icon-wrap{display:grid;place-items:center;width:64px;height:64px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02)),rgba(255,255,255,0.03)}.ytkit-wellbeing-icon{font-size:34px;line-height:1}.ytkit-wellbeing-title{margin:0;color:rgba(248,250,252,0.96);font:700 27px/1.12 'Roboto',system-ui,sans-serif;letter-spacing:0;text-wrap:balance}.ytkit-wellbeing-msg{margin:0;font-size:15px;line-height:1.65;color:rgba(226,232,240,0.74);text-wrap:pretty}.ytkit-wellbeing-hint{margin:-4px 0 0;color:rgba(226,232,240,0.62);font-size:12px;line-height:1.55;text-wrap:pretty}.ytkit-wellbeing-btn{appearance:none;-webkit-appearance:none;justify-self:start;min-height:42px;padding:0 18px;border-radius:10px;border:1px solid rgba(137,180,250,0.18);background:linear-gradient(135deg,#89b4fa,#b4befe);color:#141a26;font:700 14px 'Roboto',system-ui,sans-serif;letter-spacing:0.01em;cursor:pointer;touch-action:manipulation;transition:transform 120ms ease,box-shadow 160ms ease,filter 160ms ease}.ytkit-wellbeing-card[data-kind="cap"] .ytkit-wellbeing-btn{border-color:rgba(251,191,36,0.18);background:linear-gradient(135deg,#fbbf24,#fde68a);color:#1f140f}.ytkit-wellbeing-btn:hover{transform:translateY(-1px);filter:brightness(1.03)}.ytkit-wellbeing-btn:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(137,180,250,0.2)}.ytkit-wellbeing-card[data-kind="cap"] .ytkit-wellbeing-btn:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(251,191,36,0.22)}@media (max-width:560px){.ytkit-wellbeing-card{padding:18px 18px 16px;border-radius:12px}.ytkit-wellbeing-title{font-size:24px}.ytkit-wellbeing-btn{width:100%;justify-self:stretch;justify-content:center}}@media (prefers-reduced-motion:reduce){.ytkit-wellbeing-overlay{animation:none}.ytkit-wellbeing-btn{transition:none}.ytkit-wellbeing-btn:hover{transform:none}}`, this.id, true);
 				this._timer = setInterval(() => this._tick(), 1000);
 				this._flushHandler = () => {
 					this._flushToday();

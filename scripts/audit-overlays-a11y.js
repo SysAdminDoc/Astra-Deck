@@ -656,11 +656,12 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         && digitalWellbeing.includes("this._overlayReturnFocus = typeof previouslyFocused?.focus === 'function' ? previouslyFocused : null;")
         && digitalWellbeing.includes('returnTo.focus({ preventScroll: true })'),
         'The break overlay must restore focus to its trigger when it closes');
-    add('Digital Wellbeing overlay keeps its focus entry, trap and Escape',
+    add('Digital Wellbeing overlay is a real modal dialog with its focus entry',
         digitalWellbeing.includes('button.focus({ preventScroll: true })')
-        && digitalWellbeing.includes('trapFocusWithin')
-        && digitalWellbeing.includes("'Escape'"),
-        'The break overlay must move focus in, trap it, and close on Escape');
+        && digitalWellbeing.includes("document.createElement('dialog')")
+        && digitalWellbeing.includes('o.showModal()')
+        && digitalWellbeing.includes("o.addEventListener('cancel'"),
+        'The break overlay must open through showModal, which gives it the inert page and Escape, and move focus in');
 
     // Each rule row is a bare checkbox and a "Remove" button in a plain div
     // beside the selector text. Nothing associated either control with the rule

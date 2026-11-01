@@ -245,6 +245,17 @@ function overlayEnvironment(t, { paused = false, pathname = '/watch' } = {}) {
     documentRef.querySelector = (selector) => (selector === 'video' ? video : realQuerySelector(selector));
     documentRef.hidden = false;
     documentRef.visibilityState = 'visible';
+    // A real <dialog> needs showModal to open at all, so a harness without it
+    // would pass over the one call the conversion rests on.
+    const realCreateElement = documentRef.createElement.bind(documentRef);
+    documentRef.createElement = (tag) => {
+        const node = realCreateElement(tag);
+        if (tag === 'dialog') {
+            node.modalOpens = 0;
+            node.showModal = () => { node.modalOpens += 1; };
+        }
+        return node;
+    };
 
     const windowListeners = new Map();
     const windowRef = {
@@ -301,6 +312,131 @@ test('the break reminder appears once the session passes the configured interval
     assert.equal(env.video.paused, true, 'a break reminder pauses playback');
 
     feature._clearOverlay();
+});
+
+function keyEvent(key, target) {
+    const event = {
+        key,
+        target,
+        prevented: false,
+        stopped: false,
+        preventDefault() { this.prevented = true; },
+        stopPropagation() { this.stopped = true; }
+    };
+    return event;
+}
+
+function cancelEvent() {
+    return { type: 'cancel', prevented: false, preventDefault() { this.prevented = true; } };
+}
+
+test('a prompt opens as a real modal dialog, so the browser does the trapping', (t) => {
+    overlayEnvironment(t, { paused: false });
+    const { feature } = build();
+
+    feature._showOverlay('break', {});
+
+    assert.equal(feature._overlay.tagName, 'DIALOG');
+    assert.equal(feature._overlay.modalOpens, 1,
+        'show() would leave the page live behind it, only showModal makes it inert');
+    assert.equal(feature._overlay.getAttribute('aria-modal'), null,
+        'showModal already says this, and a stale attribute is how the claim drifts from the truth');
+    assert.ok(!feature._overlayKeyHandler, 'an ordinary prompt leaves the keyboard to the browser');
+    feature._clearOverlay();
+});
+
+test('Escape on an ordinary prompt dismisses it through the dialog and resumes the video', (t) => {
+    const env = overlayEnvironment(t, { paused: false });
+    const { feature } = build();
+    let dismissed = 0;
+
+    feature._showOverlay('break', { onDismiss: () => { dismissed += 1; } });
+    assert.equal(env.video.paused, true);
+
+    const cancel = cancelEvent();
+    feature._overlay.dispatchEvent(cancel);
+
+    assert.ok(cancel.prevented, 'the feature closes it, so its own clean-up is what runs');
+    assert.ok(!feature._overlay, 'the prompt is gone');
+    assert.equal(env.video.paused, false, 'a break reminder gives the video back');
+    assert.equal(dismissed, 1);
+});
+
+test('a close the page was not allowed to refuse still runs the whole dismissal', (t) => {
+    const env = overlayEnvironment(t, { paused: false });
+    const { feature } = build();
+
+    // Chrome fires a cancel that can't be prevented when there has been no user
+    // gesture, then closes the dialog anyway. Without this the node would stay
+    // in the page, closed, and the video would stay paused.
+    feature._showOverlay('break', {});
+    feature._overlay.dispatchEvent({ type: 'close' });
+
+    assert.ok(!feature._overlay, 'the prompt is gone');
+    assert.equal(env.video.paused, false, 'and the video came back');
+});
+
+test('closing a prompt from code does not run its dismissal twice', (t) => {
+    overlayEnvironment(t, { paused: false });
+    const { feature } = build();
+    let dismissed = 0;
+
+    feature._showOverlay('break', { onDismiss: () => { dismissed += 1; } });
+    const dialog = feature._overlay;
+    feature._clearOverlay();
+    dialog.dispatchEvent({ type: 'close' });
+
+    assert.equal(dismissed, 0, 'a route change clears the prompt, nobody dismissed it');
+});
+
+test('a locked prompt can only be left through its own button', (t) => {
+    const env = overlayEnvironment(t, { paused: false, pathname: '/shorts/abc123' });
+    const { feature } = build();
+    let acted = 0;
+
+    feature._showOverlay('shorts-limit', { locked: true, onAction: () => { acted += 1; return true; } });
+    const dialog = feature._overlay;
+    const [button] = dialog.querySelectorAll('.ytkit-wellbeing-btn');
+    assert.ok(button, 'the button is in the dialog');
+
+    const cancel = cancelEvent();
+    dialog.dispatchEvent(cancel);
+    assert.ok(cancel.prevented, 'Escape must not close it');
+    assert.ok(feature._overlay === dialog, 'still up after the cancel');
+
+    dialog.dispatchEvent({ type: 'close' });
+    assert.ok(feature._overlay === dialog, 'still ours after a close nobody could refuse');
+    assert.equal(dialog.modalOpens, 2, 'and straight back on screen');
+
+    dialog.dispatchEvent({ type: 'click', target: dialog });
+    assert.ok(feature._overlay === dialog, 'a click on the backdrop leaves it up');
+
+    const escape = keyEvent('Escape', button);
+    feature._overlayKeyHandler(escape);
+    assert.ok(escape.prevented && escape.stopped, 'a cancelled keydown is what stops the close request');
+
+    const shortcut = keyEvent('k', button);
+    feature._overlayKeyHandler(shortcut);
+    assert.ok(shortcut.prevented && shortcut.stopped, 'page shortcuts must not run behind it');
+
+    const tab = keyEvent('Tab', button);
+    feature._overlayKeyHandler(tab);
+    assert.ok(!tab.prevented, 'Tab is the browser\'s job now');
+
+    for (const key of ['Enter', ' ']) {
+        const press = keyEvent(key, button);
+        feature._overlayKeyHandler(press);
+        assert.ok(!press.prevented && !press.stopped,
+            `${key} on the button is the only keyboard way out, and it used to be cancelled too`);
+    }
+    const stray = keyEvent('Enter', env.documentRef.body);
+    feature._overlayKeyHandler(stray);
+    assert.ok(stray.prevented, 'Enter anywhere else still stops here');
+
+    button.dispatchEvent({ type: 'click' });
+    assert.equal(acted, 1);
+    assert.ok(!feature._overlay, 'the button did its job');
+    assert.ok(!feature._overlayKeyHandler, 'and the key guard went with the prompt');
 });
 
 test('a break interval of zero never interrupts', (t) => {

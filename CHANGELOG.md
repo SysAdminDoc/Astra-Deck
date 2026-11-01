@@ -46,6 +46,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Square Search Bar did nothing after that same rebuild, because it named parts of the old box. It works again, so anyone who kept the old look through the last defaults change gets the square bar back.
 - Compact / Unfixed Header sizes the new search box too, and keeps it centered in the 40 pixel header.
 - Compact / Unfixed Header now scrolls away like it says. YouTube's fixed container held it on screen, and the page started at the very top, so the header sat over the top of the video and the first sidebar row.
+- Digital Wellbeing's prompts are real modal dialogs now, so the page behind them can't be reached by mouse, keyboard or a screen reader. On the hard Shorts block, Enter and Space also work on Leave Shorts again. Every key but Tab was being cancelled, so anyone on a keyboard had no way out of it.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)
