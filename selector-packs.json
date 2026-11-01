@@ -18,7 +18,7 @@
         "Subscriptions - YouTube.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": false,
       "needsFreshCapture": false,
       "canary": {
@@ -44,12 +44,13 @@
         "ytd-video-owner-renderer",
         "ytd-channel-name",
         "#channel-name",
-        "ytd-c4-tabbed-header-renderer",
-        "ytd-page-header-renderer"
+        "yt-page-header-renderer"
       ],
       "fallback": [
         "yt-avatar-shape",
         "yt-decorated-avatar-view-model",
+        "ytd-page-header-renderer",
+        "ytd-c4-tabbed-header-renderer",
         "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer"
       ],
       "hooks": {},
@@ -60,7 +61,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/Channel.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -152,7 +153,7 @@
         "mhtml/WatchPage.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-06-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -206,7 +207,7 @@
         "mhtml/WatchPage.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -223,10 +224,11 @@
       ],
       "hooks": {},
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "mhtml/YouTube.mhtml",
         "Subscriptions - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -252,13 +254,14 @@
       ],
       "hooks": {},
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "mhtml/YouTube.mhtml",
         "Subscriptions - YouTube.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/SearchResults.mhtml",
         "mhtml/Channel.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -301,21 +304,22 @@
     },
     "feedPlayables": {
       "stable": [
-        "ytd-game-card-renderer",
         "ytd-mini-game-card-view-model",
         "ytd-rich-shelf-renderer"
       ],
       "fallback": [
+        "ytd-game-card-renderer",
         "ytd-game-details-renderer",
         "yt-mini-app-game-info-dialog-view-model",
         "ytd-rich-grid-renderer ytd-rich-shelf-renderer"
       ],
       "hooks": {},
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "mhtml/YouTube.mhtml",
         "mhtml/SearchResults.mhtml"
       ],
-      "lastVerified": "2026-06-29",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -368,21 +372,22 @@
     "leftNav": {
       "stable": [
         "ytd-guide-renderer",
-        "ytd-mini-guide-renderer",
-        "yt-app-drawer"
+        "ytd-mini-guide-renderer"
       ],
       "fallback": [
+        "yt-app-drawer",
         "ytd-mini-guide-entry-renderer.style-scope",
         "ytd-guide-entry-renderer.style-scope"
       ],
       "hooks": {},
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "mhtml/WatchPage.mhtml",
         "mhtml/YouTube.mhtml",
         "Subscriptions - YouTube.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -402,7 +407,7 @@
       "captureEvidence": [
         "mhtml/LiveChat.mhtml"
       ],
-      "lastVerified": "2026-06-04",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -423,7 +428,7 @@
         "mhtml/LiveChat.mhtml",
         "docs/selector-fixture-workflow.md#watch-page-wrapper-probe"
       ],
-      "lastVerified": "2026-06-04",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -443,7 +448,7 @@
         "mhtml/LiveChat.mhtml",
         "docs/selector-fixture-workflow.md#watch-page-wrapper-probe"
       ],
-      "lastVerified": "2026-06-04",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -464,7 +469,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/EmbedPlayer.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -508,7 +513,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/SearchResults.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": false,
       "needsFreshCapture": false,
       "canary": null,
@@ -533,7 +538,7 @@
         "Subscriptions - YouTube.mhtml",
         "mhtml/Shorts.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": false,
       "needsFreshCapture": false,
       "canary": null,
@@ -552,10 +557,11 @@
       ],
       "hooks": {},
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "mhtml/WatchPage.mhtml",
         "mhtml/YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -589,7 +595,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/SearchResults.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": false,
       "needsFreshCapture": false,
       "canary": null,
@@ -652,7 +658,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/EmbedPlayer.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -689,7 +695,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "HARDENING.md#h21"
       ],
-      "lastVerified": "2026-06-04",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -712,7 +718,7 @@
         "mhtml/WatchPage.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -723,12 +729,13 @@
         "ytd-video-owner-renderer",
         "ytd-channel-name",
         "#channel-name",
-        "ytd-c4-tabbed-header-renderer",
-        "ytd-page-header-renderer"
+        "yt-page-header-renderer"
       ],
       "fallback": [
         "yt-avatar-shape",
         "yt-decorated-avatar-view-model",
+        "ytd-page-header-renderer",
+        "ytd-c4-tabbed-header-renderer",
         "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer"
       ],
       "hooks": {},
@@ -739,7 +746,7 @@
         "Worldwide Societal Collapse... - YouTube.mhtml",
         "mhtml/Channel.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -759,7 +766,7 @@
         "mhtml/WatchPage.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -768,10 +775,11 @@
     "search": {
       "stable": [
         "yt-searchbox",
-        "input#search",
-        "form[role=\"search\"] input"
+        "yt-searchbox input[name=\"search_query\"]"
       ],
       "fallback": [
+        "input#search",
+        "form[role=\"search\"] input",
         "yt-searchbox-input",
         "ytd-searchbox #container.ytd-searchbox"
       ],
@@ -782,27 +790,27 @@
         "Subscriptions - YouTube.mhtml",
         "mhtml/SearchResults.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
-      "notes": "Prefer roles and labels where present; avoid raw wrapper classes."
+      "notes": "The box opens with a hidden file input for image search, so name the field rather than the first input. Prefer roles and labels where present; avoid raw wrapper classes."
     },
     "searchResults": {
       "stable": [
         "ytd-search[page-subtype=\"search\"]",
-        "ytd-two-column-search-results-renderer[is-search]",
-        "ytd-section-list-renderer[page-subtype=\"search\"]"
+        "ytd-two-column-search-results-renderer[is-search]"
       ],
       "fallback": [
         "ytd-search",
-        "ytd-two-column-search-results-renderer"
+        "ytd-two-column-search-results-renderer",
+        "ytd-section-list-renderer[page-subtype=\"search\"]"
       ],
       "hooks": {},
       "captureEvidence": [
         "mhtml/SearchResults.mhtml"
       ],
-      "lastVerified": "2026-07-14",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -861,11 +869,12 @@
         }
       },
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "mhtml/YouTube.mhtml",
         "Subscriptions - YouTube.mhtml",
         "mhtml/Shorts.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -893,7 +902,7 @@
         "mhtml/WatchPage.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": false,
       "needsFreshCapture": false,
       "canary": null,
@@ -947,7 +956,7 @@
         "mhtml/SearchResults.mhtml",
         "mhtml/Channel.mhtml"
       ],
-      "lastVerified": "2026-06-05",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -964,10 +973,11 @@
       ],
       "hooks": {},
       "captureEvidence": [
+        "docs/selector-fixture-workflow.md#rendered-surface-probe",
         "tests/fixtures/transcript-panel-classic.html",
         "tests/fixtures/transcript-panel-modern.html"
       ],
-      "lastVerified": "2026-07-14",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": null,
@@ -1131,7 +1141,7 @@
         "mhtml/WatchPage.mhtml",
         "Worldwide Societal Collapse... - YouTube.mhtml"
       ],
-      "lastVerified": "2026-05-19",
+      "lastVerified": "2026-10-31",
       "highChurn": true,
       "needsFreshCapture": false,
       "canary": {
@@ -1148,5 +1158,5 @@
       "notes": "Route state is best read from ytd-watch-flexy[video-id]."
     }
   },
-  "digest": "sha256:dc47ecc00e66f0ddbec65334177c62df75e0a10227c01d0601cdc2e71a0d60e3"
+  "digest": "sha256:4067f7a32ba4ac4f15afdf2a5c1c16623b82e56ff44315ef25bd9997dc6a36ea"
 }

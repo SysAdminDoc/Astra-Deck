@@ -1235,7 +1235,7 @@
             line-height: 1.3 !important;
             text-decoration: none !important;
         }
-        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #pinned-comment-badge :is(ytd-pinned-comment-badge-renderer, #badge, .badge) {
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) #pinned-comment-badge :is(ytw-pinned-comment-badge-renderer, ytd-pinned-comment-badge-renderer, #badge, .badge) {
             color: var(--ts-muted) !important;
             font-size: 12px !important;
         }
