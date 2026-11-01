@@ -31,20 +31,12 @@ function isSelectorPack(relativePath) {
     return relativePath.replace(/\\/g, '/').startsWith('extension/core/selector-packs/');
 }
 
-function isIntentionalBlockedFallback(selector) {
-    // Popout chat is separately operator-gated because it needs a fresh
-    // authenticated live-chat capture. Keep it out of this ratchet until that
-    // blocked item is reopened.
-    return /aria-label\s*[*^$]?=\s*["']popout chat["']/i.test(selector);
-}
-
 function collectSelectorFindingsFromSource(source, relativePath) {
     const findings = [];
     let match;
     SELECTOR_RE.lastIndex = 0;
     while ((match = SELECTOR_RE.exec(String(source || '')))) {
         const selector = normalizeSelector(match[0]);
-        if (isIntentionalBlockedFallback(selector)) continue;
         findings.push({
             key: `${relativePath}|${selector}`,
             file: relativePath,
@@ -106,6 +98,5 @@ module.exports = {
     collectSelectorFindings,
     collectSelectorFindingsFromSource,
     checkLocalizedSelectors,
-    isIntentionalBlockedFallback,
     normalizeSelector
 };

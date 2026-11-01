@@ -17,21 +17,26 @@
     ]);
     const CHAT_ELEMENT_SELECTORS = Object.freeze({
         header: 'yt-live-chat-header-renderer',
-        menu: 'yt-live-chat-header-renderer #overflow',
-        // The English aria-label only exists on the older header layout; current
-        // YouTube moves popout into the header's overflow menu, where the entry
-        // is identified by its "open in new" glyph. Both glyph revisions are
-        // captured in mhtml/LiveChat.mhtml and are language-independent.
+        // #overflow was the three-dot button until YouTube renamed it; today's
+        // is yt-live-chat-button#live-chat-header-context-menu.
+        menu: 'yt-live-chat-header-renderer #overflow, yt-live-chat-header-renderer #live-chat-header-context-menu',
+        // Popout lives in the header's three-dot menu, where its "open in new"
+        // glyph is the language-independent handle. A standalone /live_chat page
+        // is already popout mode and has no such entry, so this only ever shows
+        // in the chat embedded on a watch page. Keep the older glyph revisions
+        // for accounts YouTube hasn't moved yet.
         popout: [
-            'yt-live-chat-header-renderer button[aria-label="Popout chat"]',
+            'tp-yt-iron-dropdown.yt-live-chat-app ytd-menu-service-item-renderer:has(path[d^="M19 5H8a1 1 0 000 2h7.586L5.293 17.293"])',
             'tp-yt-iron-dropdown.yt-live-chat-app ytd-menu-service-item-renderer:has(path[d^="M21,21H3V3h9v1H4v16h16v-8h1V21z"])',
             'tp-yt-iron-dropdown.yt-live-chat-app ytd-menu-service-item-renderer:has(path[d^="M19 19H5V5h7V3H5c-1.11"])'
         ].join(', '),
         reactions: 'yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model',
-        timestamps: '#show-hide-button.ytd-live-chat-frame',
+        // This used to name the watch page's "Show chat" toggle, which has nothing
+        // to do with message times.
+        timestamps: 'yt-live-chat-text-message-renderer #timestamp',
         polls: 'yt-live-chat-poll-renderer, yt-live-chat-banner-manager, yt-live-chat-action-panel-renderer:has(yt-live-chat-poll-renderer)',
         ticker: 'yt-live-chat-ticker-renderer',
-        leaderboard: 'yt-live-chat-participant-list-renderer, yt-pdg-buy-flow-renderer',
+        leaderboard: 'yt-live-chat-participant-list-renderer, yt-pdg-buy-flow-renderer, yt-live-chat-header-renderer #viewer-leaderboard-entry-point',
         support: 'yt-live-chat-message-buy-flow-renderer, #product-picker, .yt-live-chat-message-input-renderer[id="picker-buttons"]',
         banner: 'yt-live-chat-banner-renderer',
         emoji: '#emoji-picker-button, yt-live-chat-message-input-renderer #picker-buttons yt-icon-button',

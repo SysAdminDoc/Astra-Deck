@@ -38,7 +38,7 @@ function loadSelectorCore() {
     return ctx.globalThis.YTKitCore;
 }
 
-test('localized selector gate rejects new aria-label selectors and excludes blocked Popout chat', () => {
+test('localized selector gate rejects new aria-label selectors', () => {
     const findings = selectorGate.collectSelectorFindingsFromSource(
         'a[aria-label="New action"], b[aria-label*="New action"]',
         'extension/features/example.js'
@@ -49,7 +49,8 @@ test('localized selector gate rejects new aria-label selectors and excludes bloc
             'button[aria-label="Popout chat"]',
             'extension/features/live-chat/index.js'
         ).length,
-        0
+        1,
+        'Popout chat has structural selectors now, so its old exemption is gone'
     );
 });
 

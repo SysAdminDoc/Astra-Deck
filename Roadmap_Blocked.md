@@ -227,12 +227,12 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P3 — Browser-Gated Verification (2026-07-15 audit)
 
-- [ ] P3 — Live-chat English-only structural fallbacks need browser-gated verification
-  Why: the popout-hide selector matches aria-label="Popout chat" and one tooltip test matches an English sentence; both degrade silently on non-English UI.
-  Where: `extension/features/live-chat/index.js` (~20, ~146)
-  Acceptance: replacement selectors are structural (attribute/renderer-based, no English text), verified against the live YouTube live-chat DOM in at least one non-English UI locale.
+- [ ] P3 — Check the live chat's signed-in controls
+  Why: the input panel only exists for a signed-in viewer, so the Emoji Button and Support Buttons hides and the subscribe tooltip's structural path have never been seen against today's chat. The tooltip keeps its English sentence as a fallback until that path is proven.
+  Where: `extension/features/live-chat/index.js` (`CHAT_ELEMENT_SELECTORS.emoji`, `.support`, `scanEngagement`)
+  Acceptance: on a signed-in live stream in one non-English language, Emoji Button and Support Buttons hide what they name, and the subscribe tooltip hides through `engagementAnchored`. Drop the English sentence if it does.
   Complexity: S
-  Blocker: needs live-DOM verification of stable structural hooks on an actual YouTube live stream (the live-chat iframe cannot be reproduced from fixtures); changing the selectors blind risks silently breaking popout hiding for all locales.
+  Blocker: 2026-10-31: drove the chat embedded on real live streams signed out in Japanese, German and Arabic. Menu, Popout and Leaderboard are fixed and proven, and every other selector was counted. The signed-out chat has no input panel, and `.auth/` holds zero cookies, so this one needs Matt's sign-in.
 
 ## P0 — Legal / Distribution Decision (2026-07-14)
 

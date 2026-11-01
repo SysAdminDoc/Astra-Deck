@@ -7,22 +7,58 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
-test('live-chat popout and subscribe-tooltip matches are not English-only', () => {
-    // Both were text/aria-label matches, so the toggles silently no-opped on
-    // the ten non-English locales — and the popout label only ever existed on
-    // the older header layout, where current YouTube puts the entry in the
-    // header's overflow menu instead.
+// Both tables, evaluated as written. The monolith's runs in the page and the
+// module's in the chat frame, so a selector fixed in only one looks fine in the
+// other's tests.
+function readChatSelectorTables() {
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'live-chat', 'index.js'), 'utf8');
+    const moduleBlock = moduleSource.slice(
+        moduleSource.indexOf('const CHAT_ELEMENT_SELECTORS'),
+        moduleSource.indexOf('const REACTION_DEPENDENT_CONTROLS'));
+    const monolithSource = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    const featureStart = monolithSource.indexOf("id: 'hiddenChatElementsManager'");
+    const tableStart = monolithSource.indexOf('_selectors: {', featureStart);
+    const tableEnd = monolithSource.indexOf('_reactionSpammerControlKeys', tableStart);
+    return {
+        module: new Function(moduleBlock.replace('const CHAT_ELEMENT_SELECTORS =', 'return'))(),
+        monolith: new Function(`return {${monolithSource.slice(tableStart, tableEnd).trim().replace(/,$/, '')}}`)()._selectors
+    };
+}
+
+for (const key of ['module', 'monolith']) {
+    test(`the ${key} selectors reach the chat header YouTube serves today`, () => {
+        const table = readChatSelectorTables()[key];
+        assert.doesNotMatch(table.popout, /aria-label/,
+            'the popout hide must not depend on an English label');
+        assert.match(table.popout, /tp-yt-iron-dropdown\.yt-live-chat-app ytd-menu-service-item-renderer:has\(path\[d\^="M19 5H8a1 1 0 000 2h7\.586L5\.293 17\.293"\]\)/,
+            'the glyph live chat uses today must be matched');
+        assert.match(table.popout, /:has\(path\[d\^="M21,21H3V3h9v1H4v16h16v-8h1V21z"\]\)/,
+            'the previous glyph revision stays for accounts that still get it');
+        assert.match(table.popout, /:has\(path\[d\^="M19 19H5V5h7V3H5c-1\.11"\]\)/,
+            'the oldest glyph revision stays too');
+        assert.match(table.menu, /yt-live-chat-header-renderer #live-chat-header-context-menu/,
+            'the three-dot button is no longer #overflow');
+        assert.match(table.leaderboard, /yt-live-chat-header-renderer #viewer-leaderboard-entry-point/,
+            'the leaderboard button sits in the header now');
+        assert.equal(table.timestamps, 'yt-live-chat-text-message-renderer #timestamp',
+            'the Timestamps hide must name message times, never the Show chat toggle');
+    });
+}
+
+test('the module and the monolith agree on every chat element selector they share', () => {
+    const tables = readChatSelectorTables();
+    assert.deepEqual(Object.keys(tables.monolith).sort(), Object.keys(tables.module).sort());
+    for (const key of Object.keys(tables.module)) {
+        assert.equal(tables.monolith[key], tables.module[key], `${key} must match in both tables`);
+    }
+});
+
+test('live-chat subscribe-tooltip match is not English-only', () => {
+    // The sentence match hid nothing on the ten non-English locales.
     const source = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'live-chat', 'index.js'), 'utf8');
-    const popoutStart = source.indexOf('popout: [');
-    assert.ok(popoutStart > -1, 'the popout selector must list alternatives');
-    const popout = source.slice(popoutStart, popoutStart + 700);
-    assert.match(popout, /button\[aria-label="Popout chat"\]/,
-        'the legacy English label stays as one anchor');
-    assert.match(popout, /ytd-menu-service-item-renderer:has\(path\[d\^="M21,21H3V3h9v1H4v16h16v-8h1V21z"\]\)/,
-        'the current open-in-new glyph must be matched');
-    assert.match(popout, /ytd-menu-service-item-renderer:has\(path\[d\^="M19 19H5V5h7V3H5c-1\.11"\]\)/,
-        'the older open-in-new glyph revision must also be matched');
 
     const tooltipStart = source.indexOf('const engagementAnchored');
     assert.ok(tooltipStart > -1, 'the tooltip check must have a structural path');

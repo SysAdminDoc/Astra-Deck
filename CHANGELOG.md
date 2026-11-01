@@ -34,6 +34,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Hide AI Summary now also removes the AI "Summary" row YouTube adds under some search results. Chapter rows look almost the same and stay. Its description in the 10 translated languages also still promised to hide the Ask AI buttons, which has been a separate setting for a while, so that's corrected too.
 - RSS Feed Link shows up again. It was still looking for a channel header YouTube has retired, so the button never appeared. It now sits next to Subscribe and keeps pointing at the right channel when you move between channels without reloading.
 - The download popup no longer says "Something unexpected went wrong" just because Astra Downloader isn't running. The format line now says that plainly and nothing goes in the diagnostic log.
+- Live chat: the Chat Menu and Popout Button hides had stopped working in every language because YouTube renamed the three-dot button and changed the popout icon. Both work again, and Leaderboard now covers the button in the chat header too. Popout no longer relies on an English label. The Timestamps hide pointed at the watch page's Show chat button, so it now names the message times instead.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)
