@@ -49,6 +49,12 @@ test('the accent builder colors the watched bar under every name YouTube gives i
     }
 });
 
+test('the compact header shrinks the search box YouTube draws today', () => {
+    const css = themeCss.buildCompactUnfixedHeaderCss();
+    assert.match(css, /ytd-masthead \.ytSearchboxComponentInputBox[^{]*\{ height: 32px !important/);
+    assert.match(css, /ytd-masthead \.ytSearchboxComponentSearchButton[^{]*\{ height: 32px !important/);
+});
+
 test('the selection builder always emits a rule, so the caller owns the toggle', () => {
     const css = themeCss.buildSelectionColorCss({ selectionColor: '#0000ff' });
     assert.match(css, /::selection \{ background: #0000ff !important/);

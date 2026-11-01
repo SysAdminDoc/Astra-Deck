@@ -41,6 +41,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Hide Watched Videos, the Video Hider's watched filter, Unwatched first sorting, search hygiene and the accent color on the bar all stopped seeing watched videos, because YouTube renamed that bar. Search results draw it as `ytw-thumbnail-overlay-resume-playback-renderer` now, and home feed cards had already moved to a different bar back in April. They all read one shared reader that knows every version.
 - Hide Pinned Comments and chat-style comments also recognize the pinned badge under its new `ytw-` name. Both still worked through the `[pinned]` attribute, so this one is insurance for when that goes too.
 - Selector captures: `npm run build:fixtures` no longer stops when you don't have a Subscriptions capture, and token lists now include `ytw-` names, which is why the rename above went unnoticed. The watch capture runs headless and muted, loads comments and opens the settings menu before saving, and keeps the page's stylesheets when it has to rebuild from the rendered page.
+- Search While Watching: clicking the magnifier took you off the video to the results page, and only Enter opened the panel. YouTube's rebuilt search box starts with a hidden image picker and its button has no `type` anymore, so the feature read the wrong field and never recognized the button.
+- Square Search Bar did nothing after that same rebuild, because it named parts of the old box. It works again, so anyone who kept the old look through the last defaults change gets the square bar back.
+- Compact / Unfixed Header sizes the new search box too, and keeps it centered in the 40 pixel header.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)

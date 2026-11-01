@@ -10506,7 +10506,7 @@ const STORAGE_KEYS = Object.freeze({
 				if (typeof mod === 'function') {
 					css = mod();
 				} else {
-					css = `ytd-masthead{position:absolute!important;height:40px!important;min-height:40px!important}ytd-masthead #container.ytd-masthead{height:40px!important}ytd-masthead #logo{height:16px!important}ytd-masthead #search-form,ytd-masthead #search-input{height:32px!important}ytd-page-manager{margin-top:0!important}html[dark] #cinematics{top:40px!important}`;
+					css = `ytd-masthead{position:absolute!important;height:40px!important;min-height:40px!important}ytd-masthead #container.ytd-masthead{height:40px!important}ytd-masthead #logo{height:16px!important}ytd-masthead #search-form,ytd-masthead #search-input,ytd-masthead .ytSearchboxComponentInputBox,ytd-masthead .ytSearchboxComponentSearchButton{height:32px!important;box-sizing:border-box!important}ytd-masthead yt-searchbox{margin-top:8px!important}ytd-page-manager{margin-top:0!important}html[dark] #cinematics{top:40px!important}`;
 				}
 				this._styleEl = injectStyle(css, this.id, true);
 			},
@@ -21172,7 +21172,7 @@ const STORAGE_KEYS = Object.freeze({
 			}
 		},
 		cssFeature('squareSearchBar', 'Square Search Bar', 'Remove rounded corners from the search bar', 'Theme', 'search',
-			'ytd-searchbox #container.ytd-searchbox, ytd-searchbox #container.ytd-searchbox input#search, #search-icon-legacy { border-radius: 0 !important; }'),
+			'.ytSearchboxComponentInputBox, .ytSearchboxComponentSearchButton, ytd-searchbox #container.ytd-searchbox, ytd-searchbox #container.ytd-searchbox input#search, #search-icon-legacy { border-radius: 0 !important; }'),
 		cssFeature('squareAvatars', 'Square Avatars', 'Make channel avatars square instead of round', 'Theme', 'user',
 			'yt-img-shadow, #avatar-link, #author-thumbnail, ytd-channel-avatar-editor img, yt-img-shadow img, .yt-spec-avatar-shape--circle { border-radius: 0 !important; }'),
 		{

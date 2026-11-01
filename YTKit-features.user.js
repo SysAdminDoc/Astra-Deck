@@ -4770,7 +4770,8 @@ __astraDeckRegistry["features/theme-css/index.js"] = function (globalThis, self,
 		return '\n                    ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }\n'
 			+ '                    ytd-masthead #container.ytd-masthead { height: 40px !important; }\n'
 			+ '                    ytd-masthead #logo { height: 16px !important; }\n'
-			+ '                    ytd-masthead #search-form, ytd-masthead #search-input { height: 32px !important; }\n'
+			+ '                    ytd-masthead #search-form, ytd-masthead #search-input, ytd-masthead .ytSearchboxComponentInputBox, ytd-masthead .ytSearchboxComponentSearchButton { height: 32px !important; box-sizing: border-box !important; }\n'
+			+ '                    ytd-masthead yt-searchbox { margin-top: 8px !important; }\n'
 			+ '                    ytd-page-manager { margin-top: 0 !important; }\n'
 			+ '                    html[dark] #cinematics { top: 40px !important; }\n                ';
 	}
@@ -22269,12 +22270,13 @@ __astraDeckRegistry["features/search-while-watching/index.js"] = function (globa
 (() => {
 	'use strict';
 	const SEARCH_INPUT_SELECTOR = [
-		'yt-searchbox input',
+		'yt-searchbox input:not([type="file"])',
 		'ytd-searchbox input#search',
 		'form[role="search"] input',
 		'input#search'
 	].join(', ');
 	const SEARCH_BUTTON_SELECTOR = [
+		'yt-searchbox .ytSearchboxComponentSearchButton',
 		'ytd-searchbox #search-icon-legacy',
 		'yt-searchbox button[type="submit"]',
 		'form[role="search"] button[type="submit"]'

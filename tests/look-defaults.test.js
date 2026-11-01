@@ -221,3 +221,11 @@ test('the welcome flow offers Astra Look, so a new user finds it without reading
         assert.ok(en[key]?.message, `${key} needs English copy`);
     }
 });
+
+test('Square Search Bar names the box YouTube draws today', () => {
+    const block = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8')
+        .split('\n')
+        .find((line) => line.includes('.ytSearchboxComponentInputBox') && line.includes('border-radius: 0'));
+    assert.ok(block, 'the rule must round off the input box');
+    assert.ok(block.includes('.ytSearchboxComponentSearchButton'), 'and the button beside it');
+});

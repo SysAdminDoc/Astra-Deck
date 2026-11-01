@@ -231,3 +231,111 @@ test('search panel renders loading, results, keyboard close, and teardown in the
     feature.destroy();
     assert.equal(documentRef.body.querySelector('.ytkit-search-watch-panel'), null);
 });
+
+// The box as YouTube draws it today: a hidden file picker comes first, the real
+// field sits in a form, and the search button is outside that form with no type.
+function searchBoxFixture(query) {
+    const inList = (selector, part) => selector.split(',').some((item) => item.trim() === part);
+    const fileInput = { value: '' };
+    const field = { value: query };
+    const box = {
+        querySelector(selector) {
+            if (inList(selector, 'yt-searchbox input')) return fileInput;
+            if (inList(selector, 'yt-searchbox input:not([type="file"])')) return field;
+            return null;
+        },
+    };
+    const button = {
+        closest(selector) {
+            if (inList(selector, 'yt-searchbox .ytSearchboxComponentSearchButton')) return button;
+            return selector === 'yt-searchbox, ytd-searchbox, form[role="search"]' ? box : null;
+        },
+    };
+    field.matches = (selector) => inList(selector, 'yt-searchbox input') || inList(selector, 'yt-searchbox input:not([type="file"])');
+    field.closest = () => box;
+    return { button, field };
+}
+
+function searchFeatureWithRequests() {
+    const queries = [];
+    const documentRef = fakeTreeDocument();
+    const feature = createSearchWhileWatchingFeature({
+        documentRef,
+        windowRef: { location: { assign() {} } },
+        appState: { settings: {} },
+        isWatchPagePath: () => true,
+        extensionFetchText: async (request) => {
+            queries.push(new URL(request.url).searchParams.get('search_query'));
+            return { text: searchHtml(SEARCH_DATA) };
+        },
+        injectStyle: () => ({ remove() {} }),
+    });
+    feature.init();
+    return { documentRef, feature, queries };
+}
+
+const handlerFor = (documentRef, type) => [...documentRef.listeners.get(type)][0];
+const trackedEvent = (target) => {
+    const seen = { prevented: false, stopped: false };
+    return {
+        seen,
+        event: {
+            target,
+            preventDefault() { seen.prevented = true; },
+            stopPropagation() { seen.stopped = true; },
+            stopImmediatePropagation() {},
+        },
+    };
+};
+
+test('clicking the search button opens the panel with the words typed in the real field', async () => {
+    const { documentRef, feature, queries } = searchFeatureWithRequests();
+    const { button } = searchBoxFixture('engineering');
+    const { event, seen } = trackedEvent(button);
+
+    handlerFor(documentRef, 'click')(event);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(seen.prevented, true, "YouTube's own search must not take the page off the video");
+    assert.deepEqual(queries, ['engineering']);
+    assert.equal(documentRef.body.querySelector('.ytkit-search-watch-panel').hidden, false);
+    feature.destroy();
+});
+
+test('a submit from the search form reads the real field, not the hidden file picker', async () => {
+    const { documentRef, feature, queries } = searchFeatureWithRequests();
+    const { button } = searchBoxFixture('engineering');
+    const { event, seen } = trackedEvent(button);
+
+    handlerFor(documentRef, 'submit')(event);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(seen.prevented, true);
+    assert.deepEqual(queries, ['engineering']);
+    feature.destroy();
+});
+
+test('Enter in the search field still opens the panel', async () => {
+    const { documentRef, feature, queries } = searchFeatureWithRequests();
+    const { field } = searchBoxFixture('engineering');
+    const { event, seen } = trackedEvent(field);
+
+    handlerFor(documentRef, 'keydown')({ ...event, key: 'Enter' });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(seen.prevented, true);
+    assert.deepEqual(queries, ['engineering']);
+    feature.destroy();
+});
+
+test('an empty search field leaves the click to YouTube', () => {
+    const { documentRef, feature, queries } = searchFeatureWithRequests();
+    const { button } = searchBoxFixture('');
+    const { event, seen } = trackedEvent(button);
+
+    handlerFor(documentRef, 'click')(event);
+
+    assert.equal(seen.prevented, false);
+    assert.deepEqual(queries, []);
+    feature.destroy();
+});

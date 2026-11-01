@@ -1,13 +1,15 @@
 (() => {
     'use strict';
 
+    // The box's first input is a hidden file picker for searching by image.
     const SEARCH_INPUT_SELECTOR = [
-        'yt-searchbox input',
+        'yt-searchbox input:not([type="file"])',
         'ytd-searchbox input#search',
         'form[role="search"] input',
         'input#search'
     ].join(', ');
     const SEARCH_BUTTON_SELECTOR = [
+        'yt-searchbox .ytSearchboxComponentSearchButton',
         'ytd-searchbox #search-icon-legacy',
         'yt-searchbox button[type="submit"]',
         'form[role="search"] button[type="submit"]'
