@@ -305,13 +305,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Browser-Gated (CSS Adoption)
 
-- [ ] P2 — Customizable `<select>` adoption for settings panel
-  Why: Chrome 135+ supports `appearance: base-select` for styled native dropdowns.
-  Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/early.css`
-  Acceptance: Settings panel `<select>` elements render with dark-theme styling on Chrome 135+. Unsupported browsers fall back to native `<select>`.
-  Complexity: S
-  Blocker: A browser isn't what's missing: `scripts/smoke-chromium-optional-hosts.js` already loads the staged extension in headless Chromium. What's owed is a screenshot review of the styled dropdowns against the dark theme, and a pre-135 Chromium build pinned for the harness to prove the native `<select>` fallback.
-
 - [ ] P2 — `@starting-style` adoption for panel entry animations
   Why: `@starting-style` (Baseline 2025) would replace JS rAF timing hacks for toast/panel animations with pure CSS.
   Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/core/toast-dom.js`

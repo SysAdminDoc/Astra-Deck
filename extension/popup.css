@@ -2840,6 +2840,72 @@ button:focus-visible {
   color: var(--text-primary);
 }
 
+/* Chromium 135+ draws the opened list from these rules. Every other browser
+   keeps its own list, which color-scheme already paints to match. */
+@supports (appearance: base-select) {
+  select,
+  select::picker(select),
+  #languageSelect,
+  #languageSelect::picker(select) {
+    appearance: base-select;
+  }
+
+  select {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  select::picker-icon {
+    margin-inline-start: auto;
+    color: var(--text-muted);
+  }
+
+  /* This one draws its own chevron as a background image. */
+  #languageSelect::picker-icon {
+    display: none;
+  }
+
+  select::picker(select) {
+    box-sizing: border-box;
+    margin-block: 4px;
+    padding: 4px;
+    max-height: min(280px, 70vh);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--astra-surface);
+    color: var(--text-primary);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  }
+
+  select option,
+  #languageSelect option {
+    min-height: 30px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 500;
+  }
+
+  select option:hover,
+  select option:focus-visible,
+  #languageSelect option:hover,
+  #languageSelect option:focus-visible {
+    outline: 0;
+    background: var(--surface-hover);
+  }
+
+  select option:checked {
+    font-weight: 650;
+  }
+
+  select option::checkmark {
+    color: var(--accent);
+  }
+}
+
 /* ── Quick toggles section ── */
 
 .quick-toggles-section {

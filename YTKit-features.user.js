@@ -17315,6 +17315,15 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 		searchActions.appendChild(searchMeta);
 		return searchMeta;
 	}
+	function isSelectListOpen(target) {
+		const select = target?.closest?.('select');
+		if (!select) return false;
+		try {
+			return select.matches(':open');
+		} catch (_) {
+			return false;
+		}
+	}
 	function createSettingsPanelRuntime(deps = {}) {
 		const {
 			BRAND,
@@ -20954,7 +20963,7 @@ function attachUIEventListeners() {
 				setSettingsPanelOpen(false);
 			});
 			doc.addEventListener('keydown', (e) => {
-				if (e.key === 'Escape' && isSettingsPanelOpen()) {
+				if (e.key === 'Escape' && isSettingsPanelOpen() && !isSelectListOpen(e.target)) {
 					setSettingsPanelOpen(false);
 				}
 				const activeDialog = getPageModalOpen()

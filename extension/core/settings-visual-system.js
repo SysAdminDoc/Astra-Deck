@@ -2772,6 +2772,64 @@
         #ytkit-settings-panel .ytkit-vh-summary-card { background: transparent !important; }
 
         #ytkit-settings-panel .ytkit-select { font-size: 14px !important; }
+
+        /* Chromium 135+ draws the opened list from these rules. Every other
+           browser keeps its own list, which color-scheme already paints to match. */
+        @supports (appearance: base-select) {
+            #ytkit-settings-panel .ytkit-select,
+            #ytkit-settings-panel .ytkit-select::picker(select) {
+                appearance: base-select !important;
+            }
+
+            #ytkit-settings-panel .ytkit-select {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                padding: 0 14px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-select::picker-icon {
+                margin-inline-start: auto;
+                color: var(--ytkit-v3-muted);
+            }
+
+            #ytkit-settings-panel .ytkit-select::picker(select) {
+                box-sizing: border-box;
+                margin-block: 4px;
+                padding: 4px;
+                max-height: min(320px, 60vh);
+                border: 1px solid var(--ytkit-v3-border-strong);
+                border-radius: 8px;
+                background: var(--ytkit-v3-surface-raised);
+                color: var(--ytkit-v3-text);
+                box-shadow: 0 14px 34px rgba(0,0,0,0.34);
+            }
+
+            #ytkit-settings-panel .ytkit-select option {
+                min-height: 36px;
+                padding: 6px 10px;
+                border-radius: 6px;
+                background: transparent;
+                color: inherit;
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            #ytkit-settings-panel .ytkit-select option:hover,
+            #ytkit-settings-panel .ytkit-select option:focus-visible {
+                outline: 0;
+                background: rgba(var(--ytkit-v3-accent-rgb),0.16);
+            }
+
+            #ytkit-settings-panel .ytkit-select option:checked {
+                font-weight: 640;
+            }
+
+            #ytkit-settings-panel .ytkit-select option::checkmark {
+                color: var(--ytkit-v3-accent);
+            }
+        }
+
         #ytkit-settings-panel .ytkit-footer-left { justify-content: flex-start !important; padding-inline-start: 0 !important; }
         #ytkit-settings-panel .ytkit-vh-hero.is-empty { border-radius: 8px !important; }
         #ytkit-settings-panel .ytkit-vh-hero__title { font-size: 20px !important; }

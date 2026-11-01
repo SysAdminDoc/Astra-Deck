@@ -58,6 +58,19 @@
         return searchMeta;
     }
 
+    // A native list keeps Escape to itself. The list `appearance: base-select` draws
+    // lets it through to the page, so the key would close the dialog too.
+    function isSelectListOpen(target) {
+        const select = target?.closest?.('select');
+        if (!select) return false;
+        try {
+            return select.matches(':open');
+        } catch (_) {
+            // reason: browsers older than Chromium 133 don't know :open, and they only have native lists.
+            return false;
+        }
+    }
+
     function createSettingsPanelRuntime(deps = {}) {
         const {
             BRAND,
@@ -4358,7 +4371,7 @@ function attachUIEventListeners() {
 
             // Keyboard shortcuts
             doc.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && isSettingsPanelOpen()) {
+                if (e.key === 'Escape' && isSettingsPanelOpen() && !isSelectListOpen(e.target)) {
                     setSettingsPanelOpen(false);
                 }
                 const activeDialog = getPageModalOpen()

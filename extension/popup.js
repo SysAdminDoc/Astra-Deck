@@ -1875,9 +1875,23 @@ function focusInitialPopupControl() {
     });
 }
 
+// A native list keeps Escape to itself. The list `appearance: base-select` draws
+// lets it through to the page, so the key would close the dialog too.
+function isSelectListOpen(target) {
+    const select = target?.closest?.('select');
+    if (!select) return false;
+    try {
+        return select.matches(':open');
+    } catch (_) {
+        // reason: browsers older than Chromium 133 don't know :open, and they only have native lists.
+        return false;
+    }
+}
+
 function handlePopupDialogKeydown(event) {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Escape') {
+        if (isSelectListOpen(event.target)) return;
         const openMaintenance = document.querySelector('.maintenance-menu[open]');
         if (openMaintenance) {
             event.preventDefault();
