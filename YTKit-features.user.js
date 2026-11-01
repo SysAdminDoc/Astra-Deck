@@ -506,8 +506,6 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			publishBridgeAttribute = () => {},
 			clearBridgeAttribute = () => {},
 			supportsPopover = () => false,
-			createCloseWatcher = () => null,
-			destroyCloseWatcher = () => {},
 			setTimeoutFn = setTimeout,
 			clearTimeoutFn = clearTimeout,
 			setIntervalFn = setInterval,
@@ -2074,7 +2072,6 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 		let _dlPopup = null;
 		let _dlPopupCleanup = null;
 		let _dlPopupReturnFocus = null;
-		let _dlPopupCloseWatcher = null;
 		function isDisclosureTrigger(el) {
 			if (!el || typeof el.getAttribute !== 'function') return false;
 			if (el.tagName === 'BUTTON') return true;
@@ -2084,17 +2081,15 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 		function _closeDlPopup() {
 			const returnFocus = _dlPopupReturnFocus;
 			_dlPopupReturnFocus = null;
-			if (_dlPopupCloseWatcher) {
-				const watcher = _dlPopupCloseWatcher;
-				_dlPopupCloseWatcher = null;
-				destroyCloseWatcher(watcher);
-			}
 			if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
 			clearBridgeAttribute(STORYBOARD_REQUEST_ATTR);
 			document.documentElement?.removeAttribute?.(STORYBOARD_REPLY_ATTR);
 			if (_dlPopup) {
-				try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) {   }
-				_dlPopup.remove(); _dlPopup = null;
+				const popup = _dlPopup;
+				_dlPopup = null;
+				if (popup.open) popup.close();
+				globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+				popup.remove();
 			}
 			if (returnFocus?.isConnected) returnFocus.focus();
 		}
@@ -2143,22 +2138,14 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 						: t('dlPopupCtaVideoAriaTpl', `Download video as ${format.toUpperCase()} at ${quality}`).replace('{format}', format.toUpperCase()).replace('{quality}', quality)
 				);
 			};
-			const popup = document.createElement('div');
+			const popup = document.createElement('dialog');
 			popup.className = 'ytkit-dl-popup';
-			popup.setAttribute('role', 'dialog');
-			popup.setAttribute('aria-modal', 'true');
 			popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
-			let _usePopover = false;
-			try {
-				_usePopover = supportsPopover() === true;
-			} catch (_) {
-			}
 			const _useCssAnchor = Boolean(
 				anchorEl?.matches?.('.ytkit-po-dl')
 				&& CSS.supports?.('anchor-name: --x')
 			);
 			if (_useCssAnchor) popup.classList.add('ytkit-dl-popup--anchored');
-			if (_usePopover) popup.setAttribute('popover', 'auto');
 			const toolbar = document.createElement('div');
 			toolbar.className = 'ytkit-dl-popup__toolbar';
 			const tabs = document.createElement('div');
@@ -2689,41 +2676,21 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					: window.location.href === openedUrl;
 				if (!stayedOnOpenedVideo) _closeDlPopup();
 			});
-			const dialogKeydown = (event) => {
-				if (event.key === 'Escape') {
-					event.preventDefault();
-					event.stopPropagation();
-					_closeDlPopup();
-					return;
-				}
-				if (event.key !== 'Tab') return;
-				const controls = Array.from(popup.querySelectorAll(
-					'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-				)).filter((control) => !control.closest('[hidden], [inert]') && control.offsetParent !== null);
-				if (!controls.length) return;
-				event.preventDefault();
-				const activeIndex = controls.indexOf(document.activeElement);
-				const nextIndex = event.shiftKey
-					? (activeIndex <= 0 ? controls.length - 1 : activeIndex - 1)
-					: (activeIndex < 0 || activeIndex === controls.length - 1 ? 0 : activeIndex + 1);
-				controls[nextIndex].focus();
+			popup.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
+			popup.addEventListener('close', () => { if (_dlPopup === popup) _closeDlPopup(); });
+			const isOutsideBox = (event) => {
+				if (event.target !== popup) return false;
+				const box = popup.getBoundingClientRect();
+				return event.clientX < box.left || event.clientX > box.right
+					|| event.clientY < box.top || event.clientY > box.bottom;
 			};
-			popup.addEventListener('keydown', dialogKeydown);
-			let popupToggleHandler = null;
-			if (_usePopover) {
-				try {
-					popup.showPopover();
-					popupToggleHandler = (e) => {
-						if (e.newState !== 'closed') return;
-						popup.removeEventListener('toggle', popupToggleHandler);
-						_closeDlPopup();
-					};
-					popup.addEventListener('toggle', popupToggleHandler);
-					_dlPopupCloseWatcher = createCloseWatcher(() => _closeDlPopup());
-				} catch (_) {
-					popup.removeAttribute('popover');
-					_usePopover = false;
-				}
+			let pressedOutside = false;
+			popup.addEventListener('pointerdown', (event) => { pressedOutside = isOutsideBox(event); });
+			popup.addEventListener('click', (event) => { if (pressedOutside && isOutsideBox(event)) _closeDlPopup(); });
+			try {
+				popup.showModal();
+				globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+			} catch (_) {
 			}
 			if (anchorEl && !_useCssAnchor) {
 				const r = anchorEl.getBoundingClientRect();
@@ -2754,32 +2721,10 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				if (rect.left + shift < MIN_VIEWPORT_GAP_PX) shift = MIN_VIEWPORT_GAP_PX - rect.left;
 				if (shift) popup.style.marginLeft = shift + 'px';
 			}
-			if (!_usePopover) {
-				const outsideClick = (e) => {
-					if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
-				};
-				const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
-				setTimeout(() => {
-					if (!popup.isConnected) return;
-					document.addEventListener('click', outsideClick, true);
-					document.addEventListener('keydown', escHandler);
-				}, 50);
-				_dlPopupCleanup = () => {
-					document.removeEventListener('click', outsideClick, true);
-					document.removeEventListener('keydown', escHandler);
-					popup.removeEventListener('keydown', dialogKeydown);
-					if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
-					removeNavigateRule(DL_POPUP_NAV_RULE_ID);
-					disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
-				};
-			} else {
-				_dlPopupCleanup = () => {
-					popup.removeEventListener('keydown', dialogKeydown);
-					if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
-					removeNavigateRule(DL_POPUP_NAV_RULE_ID);
-					disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
-				};
-			}
+			_dlPopupCleanup = () => {
+				removeNavigateRule(DL_POPUP_NAV_RULE_ID);
+				disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
+			};
 			queueMicrotask(() => { if (popup.isConnected) vidTab.focus(); });
 			(async () => {
 				qualityStatus.textContent = t('dlPopupFormatsLoading', 'Checking…');

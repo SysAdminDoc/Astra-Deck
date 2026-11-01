@@ -138,18 +138,14 @@ test('rendered accessibility fixes remain pinned at their root causes', () => {
 
 test('download dialog positioning and keyboard containment stay resilient', () => {
     for (const [label, implementation] of [['canonical module', downloadUi]]) {
-        assert.match(implementation, /popup\.setAttribute\('aria-modal', 'true'\)/,
-            `${label} must expose modal dialog semantics`);
-        assert.match(implementation, /const dialogKeydown = \(event\) =>/,
-            `${label} must own its Tab and Escape behavior`);
-        assert.match(implementation, /controls\[nextIndex\]\.focus\(\)/,
-            `${label} must traverse every visible dialog control`);
+        assert.match(implementation, /popup\.showModal\(\)/,
+            `${label} must open as a real modal, which holds Tab and answers Escape`);
         assert.match(implementation, /_dlPopupReturnFocus/,
             `${label} must restore focus to the trigger on close`);
         assert.match(implementation, /anchorEl\?\.matches\?\.\('\.ytkit-po-dl'\)/,
             `${label} must only use the named CSS anchor for the player-dock trigger`);
         assert.match(implementation, /popup\.style\.inset = 'auto'/,
-            `${label} manual positioning must reset popover UA insets`);
+            `${label} manual positioning must reset the dialog UA insets`);
     }
     assert.doesNotMatch(ytkit, /function showDownloadPopup/,
         'ytkit.js must not retain a drifting inline download-dialog fallback');

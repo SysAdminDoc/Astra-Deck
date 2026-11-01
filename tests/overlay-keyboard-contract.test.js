@@ -414,24 +414,6 @@ test('a dialog with nothing focusable still receives focus itself', () => {
     assert.equal(dialog.tabIndex, -1, 'and is made programmatically focusable to do it');
 });
 
-// WHEN Tab reaches either end of a dialog, focus SHALL wrap inside it.
-test('Tab wraps at both ends of a dialog that asked to trap it', () => {
-    const { doc, dialog, controls, helpers } = dialogFixture();
-    helpers.installDialogFocusContract(dialog, { trapFocus: true });
-
-    controls[2].focus();
-    assert.ok(dialog.press('Tab'), 'the last control wraps to the first');
-    assert.equal(doc.activeElement, controls[0]);
-
-    controls[0].focus();
-    assert.ok(dialog.press('Tab', true), 'and shift-Tab wraps backwards');
-    assert.equal(doc.activeElement, controls[2]);
-
-    controls[1].focus();
-    assert.equal(dialog.press('Tab'), false,
-        'in the middle the browser moves focus, the trap does not interfere');
-});
-
 test('Escape closes a dialog and focus returns to its trigger', () => {
     const { dialog, trigger, helpers } = dialogFixture();
     let closed = 0;
@@ -527,30 +509,12 @@ test('the two non-modal panels neither trap nor claim modality', () => {
         const build = source.slice(at, at + 900);
         assert.ok(!/aria-modal/.test(build), `${className} must not claim modality`);
     }
-    // And neither install asks for the trap.
-    const installs = [...source.matchAll(/installDialogFocusContract\(panel, \{[\s\S]{0,300}?\}\);/g)]
-        .map((match) => match[0]);
-    assert.ok(installs.length >= 2, 'both panels must still install the contract');
-    for (const install of installs) {
-        assert.ok(!/trapFocus:\s*true/.test(install),
-            'neither of these panels is modal, so neither may trap Tab');
-    }
 });
 
-// The trap itself still works where it is asked for, or the option is a way to
-// silently lose it.
-test('the trap is opt-in and still traps when asked', () => {
-    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
-    assert.match(source, /trapFocus = false \} = \{\}\) \{/,
-        'trapping must be the thing a caller asks for, not the default');
-    assert.match(source, /if \(event\.key !== 'Tab' \|\| !trapFocus\) return;/,
-        'and the guard has to be on the Tab branch');
-});
-
-// WHEN a dialog does not ask to trap focus, Tab SHALL leave it. Trapping is
-// only correct for something genuinely modal; in a corner widget or a side
-// panel it means a keyboard user cannot get back to the page behind it.
-test('Tab leaves a dialog that did not ask to trap it', () => {
+// Tab SHALL leave one of these dialogs. They're a corner widget and a side
+// panel, and trapping it there would mean a keyboard user can't get back to
+// the page behind them.
+test('Tab leaves a dialog that is not modal', () => {
     const { doc, dialog, controls, helpers } = dialogFixture();
     helpers.installDialogFocusContract(dialog, {});
 
@@ -562,7 +526,7 @@ test('Tab leaves a dialog that did not ask to trap it', () => {
     controls[0].focus();
     assert.equal(dialog.press('Tab', true), false);
 
-    // Everything else the contract promises still holds without the trap.
+    // Everything else the contract promises still holds.
     let closed = 0;
     const second = dialogFixture();
     second.helpers.installDialogFocusContract(second.dialog, {

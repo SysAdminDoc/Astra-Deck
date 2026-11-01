@@ -818,8 +818,6 @@ function buildFixture(stageDir, { runtimeSettings = null } = {}) {
             appState: { settings: {} },
             extensionFetchJson: async () => ({ data: null }),
             supportsPopover: () => globalThis.YTKitCore?.toast?.supportsPopover?.() === true,
-            createCloseWatcher: (onClose) => globalThis.YTKitCore?.toast?.createCloseWatcher?.(onClose) || null,
-            destroyCloseWatcher: (watcher) => globalThis.YTKitCore?.toast?.destroyCloseWatcher?.(watcher),
             t: (_key, fallback) => fallback
         });
         return downloadUi;
@@ -1832,23 +1830,19 @@ async function main() {
                 // must win hit testing even though both legacy fallbacks keep
                 // their historical maximum z-index values.
                 const stackingProof = await client.evaluate(`(() => {
-                    const supports = typeof globalThis.HTMLElement?.prototype?.showPopover === 'function'
-                        && typeof globalThis.HTMLElement?.prototype?.hidePopover === 'function';
                     const opened = globalThis.__ytkitA11y?.openDownload?.() === true;
                     const popup = document.querySelector('.ytkit-dl-popup');
                     const panel = document.querySelector('#ytkit-settings-panel');
-                    if (!opened || !popup || !panel) return { supports, opened, found: Boolean(popup), panelOpen: Boolean(panel) };
+                    if (!opened || !popup || !panel) return { opened, found: Boolean(popup), panelOpen: Boolean(panel) };
                     const rect = popup.getBoundingClientRect();
                     const probe = document.elementFromPoint(
                         rect.left + Math.max(1, Math.min(rect.width / 2, rect.width - 1)),
                         rect.top + Math.max(1, Math.min(rect.height / 2, rect.height - 1))
                     );
                     return {
-                        supports,
                         opened,
                         found: true,
-                        popover: popup.getAttribute('popover') || '',
-                        popupOpen: supports ? popup.matches(':popover-open') : true,
+                        popupOpen: popup.matches(':modal'),
                         panelOpen: panel.matches(':modal'),
                         width: Math.round(rect.width),
                         height: Math.round(rect.height),
@@ -1857,15 +1851,15 @@ async function main() {
                 })()`);
                 if (!stackingProof?.opened || !stackingProof?.found) {
                     failuresByState[state.name].push('download options popup did not render for the stacking proof');
-                } else if (stackingProof.supports) {
-                    if (stackingProof.popover !== 'auto' || !stackingProof.popupOpen) {
-                        failuresByState[state.name].push('download options popup is not open as an auto Popover');
+                } else {
+                    if (!stackingProof.popupOpen) {
+                        failuresByState[state.name].push('download options popup did not open as a modal');
                     }
                     if (!stackingProof.panelOpen) {
-                        failuresByState[state.name].push('settings panel closed when the download Popover opened');
+                        failuresByState[state.name].push('settings panel closed when the download popup opened');
                     }
                     if (!stackingProof.abovePanel) {
-                        failuresByState[state.name].push('download Popover did not win top-layer hit testing over the settings panel');
+                        failuresByState[state.name].push('download popup did not win hit testing over the settings panel');
                     }
                 }
                 await client.evaluate('globalThis.__ytkitA11y?.closeDownload?.()');

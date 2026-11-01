@@ -4,9 +4,8 @@
 // and the clip range for the video it was opened on — but the download CTA
 // re-read window.location.href at CLICK time.
 //
-// YouTube's autoplay advances the page with no user gesture, so the popover's
-// light-dismiss never fires and nothing else closed it. The popup therefore
-// sat over the next video showing video A's formats, and clicking Download
+// YouTube's autoplay advances the page with no user gesture, and nothing
+// closed the popup when it did. The popup therefore sat over the next video showing video A's formats, and clicking Download
 // fetched video B.
 //
 // This was 13 regex pins on the identifiers involved. It now opens the real
@@ -28,7 +27,7 @@ const VIDEO_B = 'https://www.youtube.com/watch?v=BBBBBBBBBBB';
  * Open the real download popup on `url` and hand back everything needed to
  * observe where it sends the user afterwards.
  */
-function openDownloadPopup({ url = VIDEO_A, supportsPopover = false } = {}) {
+function openDownloadPopup({ url = VIDEO_A } = {}) {
     const documentRef = fakeTreeDocument(() => null);
     const createElement = documentRef.createElement.bind(documentRef);
     documentRef.createElement = (tag) => {
@@ -38,8 +37,8 @@ function openDownloadPopup({ url = VIDEO_A, supportsPopover = false } = {}) {
         node.getBoundingClientRect = () => ({ top: 0, bottom: 230, left: 0, right: 320, width: 320, height: 230 });
         node.replaceChildren = () => { node.children.length = 0; };
         node.scrollIntoView = () => {};
-        node.showPopover = () => { node.popoverOpen = true; };
-        node.hidePopover = () => { node.popoverOpen = false; };
+        node.showModal = () => { node.open = true; };
+        node.close = () => { node.open = false; };
         return node;
     };
     documentRef.getElementById = () => null;
@@ -69,7 +68,6 @@ function openDownloadPopup({ url = VIDEO_A, supportsPopover = false } = {}) {
         isWatchPagePath: () => true,
         addNavigateRule: (id, rule) => navRules.set(id, rule),
         removeNavigateRule: (id) => navRules.delete(id),
-        supportsPopover: () => supportsPopover,
         DebugManager: { log: (area, message) => debugLines.push(`${area}: ${message}`) },
         // Captured, not scheduled: the arm-window timer would otherwise fire
         // long after the test that started it, into another test's document.
@@ -219,24 +217,167 @@ test('the playlist url is derived from the frozen url, not the current page', as
     assert.match(source, /playlistId = new URL\(openedUrl\)\.searchParams\.get\('list'\) \|\| '';/);
 });
 
-test('both cleanup branches deregister the navigate rule under the same id', async () => {
-    for (const supportsPopover of [false, true]) {
-        const session = openDownloadPopup({ supportsPopover });
+const fire = (node, type, event = {}) => {
+    node.listeners?.get(type)?.forEach((handler) => handler.call(node, { type, ...event }));
+};
+
+// Inside the fake box is 0..320 by 0..230.
+const OUTSIDE = { clientX: 500, clientY: 500 };
+const INSIDE = { clientX: 100, clientY: 100 };
+
+test('the popup opens as a real modal dialog', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    assert.equal(String(session.popup.tagName).toLowerCase(), 'dialog');
+    assert.equal(session.popup.open, true, 'showModal ran');
+    assert.equal(session.popup.getAttribute('popover'), null, 'and it is no popover as well');
+    assert.equal(session.popup.getAttribute('aria-label'), 'Download options');
+});
+
+test('when the browser closes the dialog the popup comes down with it', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    assert.equal(session.anchor.getAttribute('aria-expanded'), 'true');
+    let focused = 0;
+    session.anchor.focus = () => { focused += 1; };
+
+    // What Escape does: the browser closes it, then `close` arrives.
+    session.popup.open = false;
+    fire(session.popup, 'close');
+
+    assert.equal(session.navRules.size, 0, 'this path does not go through the navigate rule');
+    assert.equal(session.popup.isConnected, false);
+    assert.equal(session.anchor.getAttribute('aria-expanded'), 'false');
+    assert.equal(focused, 1, 'focus goes back to the trigger');
+});
+
+test('a late close from an earlier popup leaves the newer one open', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    const first = session.popup;
+    session.feature.showDownloadPopup(session.anchor);
+    await session.settle();
+    fire(first, 'close');
+    assert.equal(mountedPopups(session.documentRef), 1);
+    const second = session.documentRef.body.children.at(-1);
+    assert.equal(second.open, true);
+    assert.equal(session.navRules.size, 1);
+});
+
+test('Escape stays away from the page, and the browser does the closing', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    let stopped = 0;
+    const stopPropagation = () => { stopped += 1; };
+    fire(session.popup, 'keydown', { key: 'Escape', stopPropagation });
+    assert.equal(stopped, 1);
+    assert.equal(session.popup.isConnected, true, 'the close event takes it down, not the key');
+    fire(session.popup, 'keydown', { key: 'a', stopPropagation });
+    assert.equal(stopped, 1, 'other keys are left alone');
+});
+
+test('a press and release outside the box close the popup', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    fire(session.popup, 'pointerdown', { target: session.popup, ...OUTSIDE });
+    fire(session.popup, 'click', { target: session.popup, ...OUTSIDE });
+    assert.equal(session.popup.isConnected, false);
+});
+
+test('past any side of the box counts as outside', async () => {
+    const sides = [
+        { clientX: -5, clientY: 100 },
+        { clientX: 325, clientY: 100 },
+        { clientX: 100, clientY: -5 },
+        { clientX: 100, clientY: 235 }
+    ];
+    for (const side of sides) {
+        const session = openDownloadPopup();
         await session.settle();
-        const [registeredId] = session.navRules.keys();
-        assert.equal(typeof registeredId, 'string');
-        assert.ok(registeredId.length > 0);
-
-        // Escape runs the popup's own dialog handler, which is the close
-        // path that does NOT go through the navigate rule.
-        const keydown = session.popup.listeners?.get('keydown');
-        assert.ok(keydown && keydown.size > 0, 'the popup must handle its own keydown');
-        keydown.forEach((handler) => handler({ key: 'Escape', preventDefault() {}, stopPropagation() {} }));
-
-        assert.equal(session.navRules.size, 0,
-            `the ${supportsPopover ? 'anchored' : 'fallback'} cleanup path must deregister`);
-        assert.equal(session.popup.isConnected, false, 'Escape closes the popup');
+        fire(session.popup, 'pointerdown', { target: session.popup, ...side });
+        fire(session.popup, 'click', { target: session.popup, ...side });
+        assert.equal(session.popup.isConnected, false, JSON.stringify(side));
     }
+});
+
+test('a drag that began inside and ended outside leaves the popup open', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    // The browser sends that click to what both ends share, the dialog itself.
+    fire(session.popup, 'pointerdown', { target: findByClass(session.popup, 'ytkit-dl-popup__tab'), ...INSIDE });
+    fire(session.popup, 'click', { target: session.popup, ...OUTSIDE });
+    assert.equal(session.popup.isConnected, true);
+    assert.equal(session.popup.open, true);
+});
+
+test('a drag that began outside and ended inside leaves the popup open', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    fire(session.popup, 'pointerdown', { target: session.popup, ...OUTSIDE });
+    fire(session.popup, 'click', { target: session.popup, ...INSIDE });
+    assert.equal(session.popup.isConnected, true);
+});
+
+test('the box border and the controls inside it do not close the popup', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    fire(session.popup, 'pointerdown', { target: session.popup, ...INSIDE });
+    fire(session.popup, 'click', { target: session.popup, ...INSIDE });
+    assert.equal(session.popup.isConnected, true, 'the dialog\'s own edge is inside the box');
+    const tab = findByClass(session.popup, 'ytkit-dl-popup__tab');
+    fire(session.popup, 'pointerdown', { target: tab, ...OUTSIDE });
+    fire(session.popup, 'click', { target: tab, ...OUTSIDE });
+    assert.equal(session.popup.isConnected, true);
+});
+
+test('a toast hosted in the popup gets out before the popup leaves the document', async () => {
+    const order = [];
+    const session = openDownloadPopup();
+    await session.settle();
+    const { popup } = session;
+    const close = popup.close;
+    popup.close = () => { order.push('close'); close(); };
+    const previous = globalThis.YTKitCore;
+    globalThis.YTKitCore = {
+        toast: { raiseActiveToasts: () => { order.push(popup.isConnected ? 'raise while mounted' : 'raise too late'); return 0; } }
+    };
+    try {
+        session.feature._closeDlPopup();
+    } finally {
+        globalThis.YTKitCore = previous;
+    }
+    assert.deepEqual(order, ['close', 'raise while mounted']);
+    assert.equal(popup.isConnected, false);
+});
+
+test('a toast shown before the popup comes up over it', async () => {
+    let raised = 0;
+    const previous = globalThis.YTKitCore;
+    globalThis.YTKitCore = { toast: { raiseActiveToasts: () => { raised += 1; return 0; } } };
+    try {
+        openDownloadPopup();
+    } finally {
+        globalThis.YTKitCore = previous;
+    }
+    assert.equal(raised, 1);
+});
+
+test('a browser that refuses the modal still gets a popup with a way out', async () => {
+    const session = openDownloadPopup();
+    await session.settle();
+    const documentRef = session.documentRef;
+    const createElement = documentRef.createElement.bind(documentRef);
+    documentRef.createElement = (tag) => {
+        const node = createElement(tag);
+        node.showModal = () => { throw new Error('refused'); };
+        return node;
+    };
+    session.feature.showDownloadPopup(session.anchor);
+    await session.settle();
+    const popup = documentRef.body.children.at(-1);
+    assert.ok(String(popup.className).includes('ytkit-dl-popup'));
+    fire(findByClass(popup, 'ytkit-dl-popup__close'), 'click');
+    assert.equal(popup.isConnected, false);
 });
 
 test('reopening the popup replaces the rule rather than stacking rules', async () => {

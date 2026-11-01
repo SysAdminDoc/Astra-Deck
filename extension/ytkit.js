@@ -3583,10 +3583,6 @@ const STORAGE_KEYS = Object.freeze({
     // stop, role="dialog" promises focus goes in and comes back out. Declaring
     // one and implementing none of it is worse than declaring nothing, because
     // assistive tech announces the promise.
-    //
-    // The Transcript Q&A modal already had a working version of the dialog
-    // half. These are that, factored out, so the next overlay gets it by
-    // calling one function instead of by copying forty lines.
 
     const MENU_ITEM_SELECTOR = '[role="menuitem"],[role="menuitemradio"],[role="menuitemcheckbox"]';
     const DIALOG_FOCUSABLE_SELECTOR = 'a[href],button:not([disabled]),input:not([disabled]),'
@@ -3665,18 +3661,13 @@ const STORAGE_KEYS = Object.freeze({
         };
     }
 
-    // A dialog takes focus, keeps it while it is open, gives it back on close.
-    //
-    // Trapping Tab is OPT-IN and only correct for a dialog that is genuinely
-    // modal: one with a backdrop, where nothing behind it is reachable. The
-    // queue and the AI summary are neither — they are a corner widget and a
-    // side panel, the video keeps playing behind both, and nothing outside is
-    // inert. Trapping Tab there means a keyboard user who opens the queue
-    // cannot reach the player again without dismissing it, and declaring
-    // aria-modal to justify the trap tells assistive technology something
-    // untrue. They take focus, answer Escape and give focus back; Tab leaves,
-    // which is what a non-modal dialog is supposed to do.
-    function installDialogFocusContract(dialog, { onClose, initialFocus, returnFocus, trapFocus = false } = {}) {
+    // A dialog takes focus and gives it back on close. This is for the ones that
+    // aren't modal: the queue and the AI summary are a corner widget and a side
+    // panel, the video keeps playing behind both, and nothing outside is inert.
+    // They take focus, answer Escape and give focus back; Tab leaves, which is
+    // what a non-modal dialog is supposed to do. Anything modal is a real
+    // <dialog> opened with showModal, where the browser does all of this.
+    function installDialogFocusContract(dialog, { onClose, initialFocus, returnFocus } = {}) {
         const controlsOf = () => Array.from(dialog.querySelectorAll(DIALOG_FOCUSABLE_SELECTOR))
             .filter((control) => control.getAttribute('aria-hidden') !== 'true');
 
@@ -3685,26 +3676,6 @@ const STORAGE_KEYS = Object.freeze({
                 event.preventDefault();
                 event.stopPropagation();
                 onClose?.();
-                return;
-            }
-            if (event.key !== 'Tab' || !trapFocus) return;
-            const list = controlsOf();
-            if (!list.length) return;
-            const current = list.indexOf(document.activeElement);
-            const last = list.length - 1;
-            if (current === -1) {
-                event.preventDefault();
-                list[0].focus({ preventScroll: true });
-                return;
-            }
-            if (event.shiftKey && current === 0) {
-                event.preventDefault();
-                list[last].focus({ preventScroll: true });
-                return;
-            }
-            if (!event.shiftKey && current === last) {
-                event.preventDefault();
-                list[0].focus({ preventScroll: true });
             }
         };
 
@@ -6312,8 +6283,6 @@ const STORAGE_KEYS = Object.freeze({
         BRAND,
         t,
         supportsPopover,
-        createCloseWatcher,
-        destroyCloseWatcher,
         getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
         // The clip track's playhead and its duration fallback read the video.
         getMainVideoElement,
@@ -47288,7 +47257,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             -webkit-backdrop-filter: none;
         }
 
-        /* The UA popover sheet centres the box with 'inset: 0; margin: auto'.
+        /* The UA dialog sheet centres the box with 'inset: 0; margin: auto'.
            This rule used to restate 'inset: auto !important', which outranked
            BOTH positioning paths — author !important beats the JS branch's
            inline left/top, and it ties with (then wins on sheet order over)
@@ -47298,7 +47267,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
            author-origin and already outranks the UA sheet, so nothing here
            needs !important; the margin reset stays only for the branch that
            does not use margin for its anchor gap. */
-        .ytkit-dl-popup:popover-open:not(.ytkit-dl-popup--anchored) {
+        .ytkit-dl-popup:modal:not(.ytkit-dl-popup--anchored) {
             margin: 0 !important;
         }
 

@@ -162,7 +162,7 @@ const SURFACES = Object.freeze([
         height: 700,
         settleMs: 300,
         themes: Object.freeze(['dark', 'light']),
-        focusTrap: Object.freeze({ root: '.ytkit-dl-popup' }),
+        focusTrap: Object.freeze({ root: '.ytkit-dl-popup', nativeModal: true }),
         localeStates: LOCALE_STATES,
     }),
     Object.freeze({

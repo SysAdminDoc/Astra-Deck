@@ -370,10 +370,12 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Install prompt close/buttons must declare focus-visible and at least 24px target size');
 
     // Download options dialog.
-    add('Download options dialog has role, label, and Escape close',
-        downloadUi.includes("popup.setAttribute('role', 'dialog')") &&
+    // A real modal closes on Escape in the browser, which then fires `close`.
+    add('Download options dialog is a labelled modal that closes on Escape',
+        downloadUi.includes("document.createElement('dialog')") &&
+        downloadUi.includes('popup.showModal()') &&
         downloadUi.includes("popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'))") &&
-        downloadUi.includes("if (e.key === 'Escape') _closeDlPopup();"),
+        /popup\.addEventListener\('close', [^\n]*_closeDlPopup\(\)/.test(downloadUi),
         'Download options dialog must be labelled and close on Escape');
     add('Download options close button has aria-label',
         downloadUi.includes("closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'))"),
@@ -715,7 +717,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // real helpers against a fake DOM: a gate cannot press a key.
     add('The overlay keyboard contracts exist as one shared implementation',
         /function installMenuKeyboardModel\(menu, \{ onClose, returnFocus \} = \{\}\)/.test(ytkit)
-        && /function installDialogFocusContract\(dialog, \{ onClose, initialFocus, returnFocus, trapFocus = false \} = \{\}\)/.test(ytkit),
+        && /function installDialogFocusContract\(dialog, \{ onClose, initialFocus, returnFocus \} = \{\}\)/.test(ytkit),
         'Copying the contract per overlay is how four of them ended up with none of it');
 
     add('The speed popup implements the menu role it declares',
@@ -731,30 +733,6 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     add('The persistent queue takes focus and gives it back',
         /this\._queueDialogDispose = installDialogFocusContract\(panel, \{/.test(ytkit),
         'role="dialog" promises focus goes in on open and returns to the trigger on close');
-    // This check used to be two ways vacuous. Its first disjunct looked for
-    // role="dialog" within 400 characters of the install call — the real
-    // distances are 1959 and 2238 — so it matched nowhere and !false satisfied
-    // the OR before the second disjunct was consulted; and that second disjunct
-    // was a bare file-wide search for aria-modal that six unrelated overlays
-    // already satisfied. Stripping aria-modal from both new dialogs left it
-    // green.
-    //
-    // It asks the real question now: every trapFocus caller declares modality,
-    // and every caller that does not trap does not claim it.
-    const dialogInstalls = [...ytkit.matchAll(/installDialogFocusContract\(([\s\S]{0,400}?)\}\);/g)]
-        .map((match) => match[1]);
-    add('Every overlay that traps Tab is one the page calls modal',
-        dialogInstalls.length >= 2
-        && dialogInstalls.every((call) => {
-            const traps = /trapFocus:\s*true/.test(call);
-            const target = /installDialogFocusContract\((\w+)/.exec('installDialogFocusContract(' + call);
-            const name = target ? target[1] : '';
-            if (!traps) return true;
-            // A trapping overlay has to declare aria-modal on the same element.
-            const declares = new RegExp(name + "\\.setAttribute\\('aria-modal', 'true'\\)").test(ytkit);
-            return declares;
-        }),
-        'Trapping Tab inside something the page declares NOT modal is a bug, not a fix');
     // Scoped to the two it applies to. The settings panel IS modal — a
     // full-screen overlay with a real trap — and has to keep saying so.
     const nonModalPanels = ['ytkit-queue-panel', 'ytkit-aisum-panel'];

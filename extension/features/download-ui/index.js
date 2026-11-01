@@ -598,8 +598,6 @@
             publishBridgeAttribute = () => {},
             clearBridgeAttribute = () => {},
             supportsPopover = () => false,
-            createCloseWatcher = () => null,
-            destroyCloseWatcher = () => {},
             setTimeoutFn = setTimeout,
             clearTimeoutFn = clearTimeout,
             setIntervalFn = setInterval,
@@ -2606,7 +2604,6 @@
         let _dlPopup = null;
         let _dlPopupCleanup = null;
         let _dlPopupReturnFocus = null;
-        let _dlPopupCloseWatcher = null;
 
         // aria-expanded belongs on the widget that owns the disclosure. A
         // <button>, or anything explicitly given a button/widget role, qualifies;
@@ -2621,17 +2618,16 @@
         function _closeDlPopup() {
             const returnFocus = _dlPopupReturnFocus;
             _dlPopupReturnFocus = null;
-            if (_dlPopupCloseWatcher) {
-                const watcher = _dlPopupCloseWatcher;
-                _dlPopupCloseWatcher = null;
-                destroyCloseWatcher(watcher);
-            }
             if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
             clearBridgeAttribute(STORYBOARD_REQUEST_ATTR);
             document.documentElement?.removeAttribute?.(STORYBOARD_REPLY_ATTR);
             if (_dlPopup) {
-                try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
-                _dlPopup.remove(); _dlPopup = null;
+                const popup = _dlPopup;
+                _dlPopup = null;
+                if (popup.open) popup.close();
+                // Before it leaves the document, or a toast hosted inside goes with it.
+                globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                popup.remove();
             }
             if (returnFocus?.isConnected) returnFocus.focus();
         }
@@ -2666,8 +2662,8 @@
             // preview and the clip range are all captured for THIS url; the
             // download CTA used to re-read window.location.href at click time,
             // so a YouTube autoplay transition (which fires no user gesture and
-            // therefore never light-dismisses the popover) left the popup
-            // showing video A's formats while the button downloaded video B.
+            // so closes nothing) left the popup showing video A's formats while
+            // the button downloaded video B.
             const openedUrl = window.location.href;
             let playlistId = '';
             try {
@@ -2690,23 +2686,14 @@
                 );
             };
 
-            const popup = document.createElement('div');
+            const popup = document.createElement('dialog');
             popup.className = 'ytkit-dl-popup';
-            popup.setAttribute('role', 'dialog');
-            popup.setAttribute('aria-modal', 'true');
             popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
-            let _usePopover = false;
-            try {
-                _usePopover = supportsPopover() === true;
-            } catch (_) {
-                // reason: host feature detection must not prevent download options.
-            }
             const _useCssAnchor = Boolean(
                 anchorEl?.matches?.('.ytkit-po-dl')
                 && CSS.supports?.('anchor-name: --x')
             );
             if (_useCssAnchor) popup.classList.add('ytkit-dl-popup--anchored');
-            if (_usePopover) popup.setAttribute('popover', 'auto');
 
             // ── Toolbar: tabs + close in one row ──
             const toolbar = document.createElement('div');
@@ -3284,9 +3271,8 @@
             disclosureAnchor?.setAttribute?.('aria-expanded', 'true');
 
             // Nothing else closes this popup on SPA navigation: YouTube's
-            // autoplay advances the page with no user gesture, so the
-            // popover's own light-dismiss never fires. Without this the popup
-            // sits over the next video still showing the previous one's
+            // autoplay advances the page with no user gesture. Without this the
+            // popup sits over the next video still showing the previous one's
             // formats, sizes and playlist preview.
             const openedVideoId = getVideoId(openedUrl);
             addNavigateRule(DL_POPUP_NAV_RULE_ID, () => {
@@ -3297,43 +3283,28 @@
                 if (!stayedOnOpenedVideo) _closeDlPopup();
             });
 
-            const dialogKeydown = (event) => {
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    _closeDlPopup();
-                    return;
-                }
-                if (event.key !== 'Tab') return;
-                const controls = Array.from(popup.querySelectorAll(
-                    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-                )).filter((control) => !control.closest('[hidden], [inert]') && control.offsetParent !== null);
-                if (!controls.length) return;
-                event.preventDefault();
-                const activeIndex = controls.indexOf(document.activeElement);
-                const nextIndex = event.shiftKey
-                    ? (activeIndex <= 0 ? controls.length - 1 : activeIndex - 1)
-                    : (activeIndex < 0 || activeIndex === controls.length - 1 ? 0 : activeIndex + 1);
-                controls[nextIndex].focus();
+            // The browser closes on Escape. The page's own key handlers still don't get it.
+            popup.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
+            // `close` is queued, so a late one mustn't shut a newer popup.
+            popup.addEventListener('close', () => { if (_dlPopup === popup) _closeDlPopup(); });
+            // A click outside the box lands on the dialog itself. So does a drag
+            // that began in a clip field and ended out there, and that one mustn't
+            // close it, so the press has to have started outside as well.
+            const isOutsideBox = (event) => {
+                if (event.target !== popup) return false;
+                const box = popup.getBoundingClientRect();
+                return event.clientX < box.left || event.clientX > box.right
+                    || event.clientY < box.top || event.clientY > box.bottom;
             };
-            popup.addEventListener('keydown', dialogKeydown);
-
-            let popupToggleHandler = null;
-            if (_usePopover) {
-                try {
-                    popup.showPopover();
-                    popupToggleHandler = (e) => {
-                        if (e.newState !== 'closed') return;
-                        popup.removeEventListener('toggle', popupToggleHandler);
-                        _closeDlPopup();
-                    };
-                    popup.addEventListener('toggle', popupToggleHandler);
-                    _dlPopupCloseWatcher = createCloseWatcher(() => _closeDlPopup());
-                } catch (_) {
-                    // reason: a browser can expose Popover but reject this show call.
-                    popup.removeAttribute('popover');
-                    _usePopover = false;
-                }
+            let pressedOutside = false;
+            popup.addEventListener('pointerdown', (event) => { pressedOutside = isOutsideBox(event); });
+            popup.addEventListener('click', (event) => { if (pressedOutside && isOutsideBox(event)) _closeDlPopup(); });
+            try {
+                popup.showModal();
+                // A toast shown before the popup is now inert outside it.
+                globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+            } catch (_) {
+                // reason: the popup still paints by its z-index if the browser refuses.
             }
 
             if (anchorEl && !_useCssAnchor) {
@@ -3398,35 +3369,10 @@
                 if (shift) popup.style.marginLeft = shift + 'px';
             }
 
-            if (!_usePopover) {
-                const outsideClick = (e) => {
-                    if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
-                };
-                const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
-                setTimeout(() => {
-                    // If the popup was closed inside the 50ms arm window its
-                    // cleanup already ran — attaching now would leak both
-                    // capture-phase listeners for the rest of the page.
-                    if (!popup.isConnected) return;
-                    document.addEventListener('click', outsideClick, true);
-                    document.addEventListener('keydown', escHandler);
-                }, 50);
-                _dlPopupCleanup = () => {
-                    document.removeEventListener('click', outsideClick, true);
-                    document.removeEventListener('keydown', escHandler);
-                    popup.removeEventListener('keydown', dialogKeydown);
-                    if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
-                    removeNavigateRule(DL_POPUP_NAV_RULE_ID);
-                    disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
-                };
-            } else {
-                _dlPopupCleanup = () => {
-                    popup.removeEventListener('keydown', dialogKeydown);
-                    if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
-                    removeNavigateRule(DL_POPUP_NAV_RULE_ID);
-                    disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
-                };
-            }
+            _dlPopupCleanup = () => {
+                removeNavigateRule(DL_POPUP_NAV_RULE_ID);
+                disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
+            };
             queueMicrotask(() => { if (popup.isConnected) vidTab.focus(); });
 
             // Populate the size labels as soon as the picker opens. The
