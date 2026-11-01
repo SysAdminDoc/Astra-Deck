@@ -47425,6 +47425,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.18);
             background-color: rgba(6,9,13,0.9);
+            color: #fff;
             background-repeat: no-repeat;
             box-shadow: 0 6px 18px rgba(0,0,0,0.45);
             pointer-events: none;
