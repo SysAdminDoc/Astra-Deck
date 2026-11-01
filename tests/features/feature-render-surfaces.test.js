@@ -2035,16 +2035,22 @@ function watchTabsFixture() {
     below.appendChild(description);
     const comments = fakeNode({ tag: 'ytd-comments', attributes: { id: 'comments' } });
     const chapters = fakeNode({ tag: 'ytd-macro-markers-list-renderer' });
-    const transcript = fakeNode({ tag: 'ytd-transcript-renderer' });
+    const transcript = fakeNode({ tag: 'ytd-engagement-panel-section-list-renderer' });
     // Start every panel hidden. An unset inline display already reads '', so a
     // test that expects '' on the shown panel cannot fail unless the reveal has
     // something to undo.
-    for (const panel of [description, comments, chapters, transcript]) panel.style.display = 'none';
+    for (const panel of [description, comments, chapters]) panel.style.display = 'none';
+    // The transcript panel belongs to YouTube, and only its own buttons move it.
+    const panelState = { open: false, opens: 0, closes: 0 };
+    const openButton = { click() { panelState.open = true; panelState.opens += 1; } };
+    const closeButton = { click() { panelState.open = false; panelState.closes += 1; } };
+    transcript.querySelector = (selector) => (selector === 'close button' ? closeButton : null);
     below.querySelector = (selector) => (
         selector.includes('ytd-watch-metadata') ? description : collectMatching(below, selector)[0] || null
     );
 
     const doc = renderDocument((selector) => {
+        if (selector === 'open button') return openButton;
         if (selector.includes('#below')) return below;
         if (selector.includes('ytd-comments#comments')) return comments;
         if (selector.includes('macro-markers')) return chapters;
@@ -2052,9 +2058,13 @@ function watchTabsFixture() {
     });
     const feature = loadFeature('watchPageTabs', {
         document: doc,
-        YTKitCore: { getTranscriptPanelElement: () => transcript }
+        YTKitCore: {
+            TRANSCRIPT_OPEN_BUTTON: 'open button',
+            TRANSCRIPT_CLOSE_BUTTON: 'close button',
+            getTranscriptPanelElement: (_root, { open } = {}) => (open && !panelState.open ? null : transcript)
+        }
     });
-    return { feature, below, description, comments, chapters, transcript };
+    return { feature, below, description, comments, chapters, transcript, panelState };
 }
 
 test('watchPageTabs builds one tab bar and opens on the description', () => {
@@ -2079,24 +2089,27 @@ test('watchPageTabs builds one tab bar and opens on the description', () => {
 });
 
 test('watchPageTabs shows exactly one panel per tab and moves the active mark with it', () => {
-    const { feature, below, description, comments, chapters, transcript } = watchTabsFixture();
+    const { feature, below, description, comments, chapters, panelState } = watchTabsFixture();
 
     feature._inject();
     const tabs = collect(collect(below, 'ytkit-wtabs')[0], 'ytkit-wtab');
 
     tabs[1].onclick();
     assert.deepEqual(
-        [description.style.display, comments.style.display, chapters.style.display, transcript.style.display],
-        ['none', '', 'none', 'none']
+        [description.style.display, comments.style.display, chapters.style.display],
+        ['none', '', 'none']
     );
+    assert.equal(panelState.opens, 0, 'no other tab opens YouTube\'s transcript panel');
+    assert.equal(panelState.closes, 0, 'and there is nothing to close yet');
     assert.deepEqual(Array.from(tabs, (tab) => tab.classList.contains('ytkit-wtab--active')),
         [false, true, false, false]);
 
     tabs[3].onclick();
     assert.deepEqual(
-        [description.style.display, comments.style.display, chapters.style.display, transcript.style.display],
-        ['none', 'none', 'none', '']
+        [description.style.display, comments.style.display, chapters.style.display],
+        ['none', 'none', 'none']
     );
+    assert.equal(panelState.open, true, 'the Transcript tab opens the panel with YouTube\'s button');
     assert.deepEqual(Array.from(tabs, (tab) => tab.classList.contains('ytkit-wtab--active')),
         [false, false, false, true]);
 
@@ -2104,9 +2117,15 @@ test('watchPageTabs shows exactly one panel per tab and moves the active mark wi
     // and not left resting on the state the fixture started in.
     tabs[0].onclick();
     assert.deepEqual(
-        [description.style.display, comments.style.display, chapters.style.display, transcript.style.display],
-        ['', 'none', 'none', 'none']
+        [description.style.display, comments.style.display, chapters.style.display],
+        ['', 'none', 'none']
     );
+    assert.equal(panelState.open, false, 'leaving the Transcript tab closes the panel with YouTube\'s button');
+    assert.equal(panelState.closes, 1);
+
+    tabs[1].onclick();
+    assert.equal(panelState.closes, 1, 'moving between other tabs clicks nothing of YouTube\'s');
+    assert.equal(panelState.opens, 1);
 });
 
 // ── playbackStatsOverlay ───────────────────────────────────────────────
