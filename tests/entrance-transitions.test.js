@@ -96,6 +96,21 @@ test('the page modal and its overlay start from their hidden states', () => {
     assert.equal(overlayStart.opacity, overlay.opacity);
 });
 
+test('the page modal keeps its place and its fade as a dialog', () => {
+    const modal = ruleBody(ytkit, '.ytkit-pm');
+    // A closed dialog is display:none by the browser's rule, which would cut
+    // the fade off the moment close() runs.
+    assert.equal(modal.display, 'block');
+    // The browser centers a dialog with these and caps it short of our box.
+    assert.equal(modal.margin, '0');
+    assert.equal(modal.padding, '0');
+    assert.equal(modal['max-width'], 'none');
+    assert.equal(modal.left, 'auto');
+    assert.equal(modal.bottom, 'auto');
+    assert.match(ytkit, /\.ytkit-pm::backdrop \{\s+background: transparent;/,
+        'the overlay already paints the dim, and a second one would double it');
+});
+
 test('the page modal only waits a frame for focus', () => {
     assert.match(ytkit, /^\s+ov\.classList\.add\('ytkit-pm-ov-visible'\);$/m);
     const at = ytkit.indexOf("modal.classList.add('ytkit-pm-visible');");

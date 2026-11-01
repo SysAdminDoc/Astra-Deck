@@ -129,9 +129,6 @@
             toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive);
             toast.setAttribute('aria-atomic', 'true');
             toast.tabIndex = -1;
-            if (actions.length > 0) {
-                toast.setAttribute('data-ytkit-focus-portal', 'true');
-            }
 
             const badge = document.createElement('span');
             badge.className = 'ytkit-toast-badge';

@@ -108,12 +108,8 @@
             storageReadJSON,
             storageWrite,
             t,
-            trapFocusWithin,
             escapeRegExp: escapeRegExpDependency = null
         } = deps;
-        const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
-            ? deps.getPageModalOpen
-            : () => false;
         const getFeatureCrashCounts = typeof deps.getFeatureCrashCounts === 'function'
             ? deps.getFeatureCrashCounts
             : () => ({});
@@ -4340,22 +4336,6 @@ function attachUIEventListeners() {
             // Auto-close panel on SPA navigation — prevents overlay persisting on home/other pages
             doc.addEventListener('yt-navigate-start', () => {
                 setSettingsPanelOpen(false);
-            });
-
-            // Keyboard shortcuts
-            doc.addEventListener('keydown', (e) => {
-                const activeDialog = getPageModalOpen()
-                    ? document.getElementById('ytkit-page-modal')
-                    : null;
-                if (e.key === 'Tab' && activeDialog) {
-                    const toastPortal = document.querySelector(
-                        '.ytkit-global-toast[data-ytkit-focus-portal="true"]'
-                    );
-                    trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);
-                }
-                // v4.5.3: Ctrl+Alt+Y in-page toggle retired with the rest of
-                // the shortcut surface per the "no keyboard shortcuts" rule.
-                // Activators: toolbar action button, in-page gear icon, popup.
             });
 
             _globalUIListenersAttached = true;

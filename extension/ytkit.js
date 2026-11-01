@@ -3349,9 +3349,6 @@ const STORAGE_KEYS = Object.freeze({
         toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive);
         toast.setAttribute('aria-atomic', 'true');
         toast.tabIndex = -1;
-        if (actions.length > 0) {
-            toast.setAttribute('data-ytkit-focus-portal', 'true');
-        }
 
         const badge = document.createElement('span');
         badge.className = 'ytkit-toast-badge';
@@ -7215,9 +7212,7 @@ const STORAGE_KEYS = Object.freeze({
                 storageWrite,
                 t,
                 escapeRegExp,
-                trapFocusWithin,
                 getPinSessionUnlocked: () => _pinSessionUnlocked,
-                getPageModalOpen: () => _pageModalOpen,
                 getFeatureCrashCounts: () => _featureCrashCounts,
                 getFeatureDisableNotice,
                 getFeatureDisableFeedStatus,
@@ -7256,42 +7251,6 @@ const STORAGE_KEYS = Object.freeze({
             const style = window.getComputedStyle(element);
             return style.display !== 'none' && style.visibility !== 'hidden';
         });
-    }
-
-    function trapFocusWithin(root, event, additionalRoots = []) {
-        if (event.key !== 'Tab') return;
-        const roots = [root, ...additionalRoots].filter(Boolean);
-        const focusable = [...new Set(roots.flatMap(candidate => getFocusableUiElements(candidate)))];
-        if (focusable.length === 0) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        const activeElement = document.activeElement;
-        const activeInside = roots.some(candidate => candidate.contains(activeElement));
-
-        if (additionalRoots.length > 0) {
-            const activeIndex = focusable.indexOf(activeElement);
-            const direction = event.shiftKey ? -1 : 1;
-            const nextIndex = activeIndex < 0
-                ? (event.shiftKey ? focusable.length - 1 : 0)
-                : (activeIndex + direction + focusable.length) % focusable.length;
-            event.preventDefault();
-            focusable[nextIndex].focus();
-            return;
-        }
-
-        if (event.shiftKey) {
-            if (activeElement === first || !activeInside) {
-                event.preventDefault();
-                last.focus();
-            }
-            return;
-        }
-
-        if (activeElement === last || !activeInside) {
-            event.preventDefault();
-            first.focus();
-        }
     }
 
     let _pageModalOpen = false;
@@ -43499,6 +43458,8 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             modalEl.classList.remove('ytkit-pm-visible');
             nodesToRemove.push(modalEl);
             _pageModalEl = null;
+            if (modalEl.open) modalEl.close();
+            globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
         }
         if (_pageModalOverlay) {
             const overlayEl = _pageModalOverlay;
@@ -43553,20 +43514,31 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         // Overlay
         const ov = document.createElement('div');
         ov.className = 'ytkit-pm-overlay';
-        ov.addEventListener('click', closePageModal);
         document.body.appendChild(ov);
         _pageModalOverlay = ov;
         ov.classList.add('ytkit-pm-ov-visible');
 
         // Modal panel
-        const modal = document.createElement('div');
+        const modal = document.createElement('dialog');
         modal.id = 'ytkit-page-modal';
         modal.className = 'ytkit-pm';
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('aria-labelledby', 'ytkit-pm-title');
         modal.setAttribute('aria-describedby', 'ytkit-pm-copy');
-        modal.addEventListener('click', e => e.stopPropagation());
+        // Escape and any other close the browser makes land here. Ours has
+        // already let go of it by the time this queued event arrives.
+        modal.addEventListener('close', () => {
+            if (_pageModalEl === modal) closePageModal();
+        });
+        // A click on the backdrop reaches the dialog itself, as does one on its
+        // own edge, so only the position can tell them apart.
+        modal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.target !== modal) return;
+            const box = modal.getBoundingClientRect();
+            const inside = e.clientX >= box.left && e.clientX <= box.right
+                && e.clientY >= box.top && e.clientY <= box.bottom;
+            if (!inside) closePageModal();
+        });
 
         // Header
         const header = document.createElement('div');
@@ -43811,6 +43783,13 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         document.body.appendChild(modal);
         _pageModalEl = modal;
+        try {
+            modal.showModal();
+            // A toast shown before the menu is now inert outside it, Undo included.
+            globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+        } catch (_) {
+            // reason: the menu still paints by its z-index if the browser refuses.
+        }
         modal.classList.add('ytkit-pm-visible');
         requestAnimationFrame(() => {
             (closeBtn || getFocusableUiElements(modal)[0])?.focus({ preventScroll: true });
@@ -43884,16 +43863,6 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         };
 
         addNavigateRule('_pageModalBtnRule', handleDisplay);
-
-        // Close modal on Escape. Registered once — a module-level flag prevents
-        // stacking duplicate listeners if injectPageModalButton() is ever called
-        // more than once (e.g. future hot-reload or feature toggle path).
-        if (!injectPageModalButton._escInstalled) {
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && _pageModalOpen) closePageModal();
-            });
-            injectPageModalButton._escInstalled = true;
-        }
     }
 
     appendStyleSheet(`
@@ -43913,11 +43882,18 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         }
 
         .ytkit-pm {
+            display: block;
             position: fixed;
             top: 60px;
             right: 16px;
+            bottom: auto;
+            left: auto;
             width: min(392px, calc(100vw - 24px));
+            height: auto;
+            max-width: none;
             max-height: calc(100vh - 80px);
+            margin: 0;
+            padding: 0;
             overflow-y: auto;
             overscroll-behavior: contain;
             z-index: 99991;
@@ -43932,6 +43908,11 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             transition: opacity 0.16s ease, transform 0.16s ease;
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,0.12) transparent;
+        }
+
+        /* .ytkit-pm-overlay is the backdrop people see, painted under the top layer. */
+        .ytkit-pm::backdrop {
+            background: transparent;
         }
 
         .ytkit-pm::-webkit-scrollbar {

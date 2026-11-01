@@ -306,7 +306,6 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act, core, deps =
             settingsManager: { defaults: {}, save: async () => ({ ok: true }) },
             showToast: noop,
             t: (_key, fallback) => fallback,
-            trapFocusWithin: noop,
             storageRead: storage ? (key, fallback) => (key in storage ? storage[key] : fallback) : () => null,
             storageReadJSON: () => null,
             storageWrite: storage ? (key, value) => { storage[key] = value; } : noop,

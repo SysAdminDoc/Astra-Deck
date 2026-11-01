@@ -17364,12 +17364,8 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			storageReadJSON,
 			storageWrite,
 			t,
-			trapFocusWithin,
 			escapeRegExp: escapeRegExpDependency = null
 		} = deps;
-		const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
-			? deps.getPageModalOpen
-			: () => false;
 		const getFeatureCrashCounts = typeof deps.getFeatureCrashCounts === 'function'
 			? deps.getFeatureCrashCounts
 			: () => ({});
@@ -20933,17 +20929,6 @@ function attachUIEventListeners() {
 		if (!_globalUIListenersAttached) {
 			doc.addEventListener('yt-navigate-start', () => {
 				setSettingsPanelOpen(false);
-			});
-			doc.addEventListener('keydown', (e) => {
-				const activeDialog = getPageModalOpen()
-					? document.getElementById('ytkit-page-modal')
-					: null;
-				if (e.key === 'Tab' && activeDialog) {
-					const toastPortal = document.querySelector(
-						'.ytkit-global-toast[data-ytkit-focus-portal="true"]'
-					);
-					trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);
-				}
 			});
 			_globalUIListenersAttached = true;
 		}

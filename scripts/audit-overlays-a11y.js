@@ -603,23 +603,20 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         settingsPanel.includes("panel.addEventListener('close'") &&
         settingsPanel.includes('panel.inert = !open'),
         'The panel must open through showModal, which gives it the inert page and Escape, and stay out of the tab order while closed');
-    add('Settings panel traps Tab and Shift+Tab in active dialogs',
-        settingsPanel.includes("if (e.key === 'Tab' && activeDialog)") &&
-        settingsPanel.includes('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : [])') &&
-        ytkit.includes('function trapFocusWithin(root, event, additionalRoots = [])') &&
-        ytkit.includes('event.shiftKey'),
-        'Settings panel must trap Tab and Shift+Tab inside the active settings dialog');
-    add('Settings panel focus trap includes actionable toast recovery controls',
-        settingsPanel.includes('.ytkit-global-toast[data-ytkit-focus-portal="true"]') &&
-        settingsPanel.includes('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : [])') &&
-        toastDom.includes("toast.setAttribute('data-ytkit-focus-portal', 'true')") &&
+    add('Page menu is a real modal dialog',
+        ytkit.includes("const modal = document.createElement('dialog');") &&
+        ytkit.includes('modal.showModal();') &&
+        ytkit.includes("modal.addEventListener('close'") &&
+        ytkit.includes('if (modalEl.open) modalEl.close();'),
+        'The page menu must open through showModal, which gives it the inert page and Escape');
+    add('Undo toasts join the open modal and stay until dismissed',
+        toastDom.includes('topLayerHost?.() || document.body') &&
         toastDom.includes("document.body?.classList.contains('ytkit-panel-open')") &&
-        ytkit.includes('(activeIndex + direction + focusable.length) % focusable.length') &&
         // Held only while the panel is open, re-checked when it closes.
         toastDom.includes('const isPersistent = () => options.persistent === true') &&
         toastDom.includes('const persistent = isPersistent();') &&
         toastDom.includes("toast._panelWatch.observe(document.body, { attributes: true, attributeFilter: ['class'] });"),
-        'Settings Undo toasts must join the focus trap and remain until dismissed or activated');
+        'Settings Undo toasts must mount inside the open modal, the only place they can be reached, and remain until dismissed or activated');
     add('Settings panel tabs expose keyboard navigation and selected state',
         ['ArrowRight', 'ArrowLeft', 'Home', 'End'].every((key) => settingsPanel.includes(`event.key === '${key}'`)) &&
         settingsPanel.includes("button.setAttribute('aria-selected', String(isActive))") &&
@@ -861,16 +858,15 @@ function runSelfTest(baseSources) {
             mutate: (source) => source.replace('min-height: 32px;', 'min-height: 20px;')
         },
         {
-            name: 'missing Tab trap',
-            target: 'settingsPanel',
-            expected: 'Settings panel must trap Tab and Shift+Tab inside the active settings dialog',
-            mutate: (source) => source.replace('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);', '')
+            name: 'page menu back to a plain element',
+            expected: 'The page menu must open through showModal, which gives it the inert page and Escape',
+            mutate: (source) => source.replace("const modal = document.createElement('dialog');", "const modal = document.createElement('div');")
         },
         {
-            name: 'missing toast focus portal',
-            target: 'settingsPanel',
-            expected: 'Settings Undo toasts must join the focus trap and remain until dismissed or activated',
-            mutate: (source) => source.replace('.ytkit-global-toast[data-ytkit-focus-portal="true"]', '.ytkit-global-toast')
+            name: 'toast left outside the open modal',
+            target: 'toastDom',
+            expected: 'Settings Undo toasts must mount inside the open modal, the only place they can be reached, and remain until dismissed or activated',
+            mutate: (source) => source.replace('topLayerHost?.() || document.body', 'document.body')
         },
         {
             name: 'missing aria-expanded close',

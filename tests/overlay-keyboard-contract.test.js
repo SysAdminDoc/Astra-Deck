@@ -15,6 +15,152 @@ const path = require('node:path');
 const repoRoot = path.join(__dirname, '..');
 const { sources } = require('./helpers/source');
 
+// The page menu, opened by the monolith's own code on a fake tree.
+function openPageMenu({ refuseModal = false } = {}) {
+    const { loadDeclarations, fakeTreeDocument, fakeNode } = require('./helpers/monolith');
+    const documentRef = fakeTreeDocument();
+    const create = documentRef.createElement.bind(documentRef);
+    const calls = [];
+    documentRef.createElement = (tag) => {
+        const node = create(tag);
+        if (tag === 'dialog') {
+            node.isDialog = true;
+            node.open = false;
+            node.showModal = () => {
+                if (refuseModal) throw new Error('refused');
+                calls.push('showModal');
+                node.open = true;
+            };
+            node.close = () => {
+                calls.push('close');
+                node.open = false;
+            };
+            node.getBoundingClientRect = () => ({ left: 100, top: 60, right: 400, bottom: 500 });
+        }
+        return node;
+    };
+    const holder = {};
+    const features = [{ id: 'stickyVideo', name: 'Theater Split', init() {}, destroy() {} }];
+    holder.api = loadDeclarations([
+        'tCount', 'clearPendingPageModalRemoval', 'updatePageModalEnabledCount', 'closePageModal', 'openPageModal'
+    ], {
+        document: documentRef,
+        features,
+        appState: { settings: { stickyVideo: false } },
+        _pageModalOpen: false,
+        _pageModalEl: null,
+        _pageModalOverlay: null,
+        _pageModalLastFocus: null,
+        _pageModalRemovalTimer: null,
+        _pageModalPendingRemoval: [],
+        _pageModalNavCleanup: null,
+        YTKitCore: {
+            toast: {
+                raiseActiveToasts() {
+                    // Hosting asks which modal is open, so ours has to be gone by now.
+                    calls.push(holder.api?.globalThis._pageModalEl ? 'raise while held' : 'raise');
+                }
+            }
+        },
+        getCurrentPage: () => 'watch',
+        getFeatureById: (id) => features.find((entry) => entry.id === id) || null,
+        getFeatureName: (entry) => entry?.name || '',
+        getFeatureDescription: () => '',
+        getFocusableUiElements: () => [],
+        setSettingsPanelOpen() {},
+        HTMLElement: class {},
+        BRAND: { name: 'Astra Deck' },
+        PAGE_MODAL_PAGE_MAP: { watch: 'watch' },
+        PAGE_MODAL_CONFIG: { watch: [{ id: 'stickyVideo', label: 'Theater Split' }] },
+        PAGE_MODAL_META: {},
+        PAGE_LABELS: { watch: 'Watch' },
+        ICONS: new Proxy({}, { get: () => () => fakeNode() }),
+        requestAnimationFrame: (fn) => fn(),
+        setTimeout: () => 0,
+        clearTimeout() {},
+        settingsManager: { save: () => ({ ok: true }) },
+        applyExternalSettingsUpdate() {},
+        showToast() {},
+        t: (key, fallback) => fallback,
+        DebugManager: { log() {} }
+    });
+    const state = holder.api.globalThis;
+    holder.api.openPageModal();
+    return { api: holder.api, state, calls, modal: state._pageModalEl, overlay: state._pageModalOverlay };
+}
+
+test('the page menu opens as a modal dialog and brings a waiting toast in', () => {
+    const { calls, modal, state } = openPageMenu();
+    assert.equal(modal.isDialog, true);
+    assert.deepEqual(calls, ['showModal', 'raise while held'],
+        'the toast has to move after the menu is modal, or it is hosted on the page and goes inert');
+    assert.equal(modal.getAttribute('role'), null, 'a dialog element already says it is one');
+    assert.equal(modal.getAttribute('aria-modal'), null);
+    assert.equal(modal.getAttribute('aria-labelledby'), 'ytkit-pm-title');
+    assert.equal(modal.classList.contains('ytkit-pm-visible'), true);
+    assert.equal(state._pageModalOpen, true);
+});
+
+test('a page menu the browser refuses to make modal still opens', () => {
+    const { calls, modal, state } = openPageMenu({ refuseModal: true });
+    assert.deepEqual(calls, []);
+    assert.equal(modal.classList.contains('ytkit-pm-visible'), true);
+    assert.equal(state._pageModalOpen, true);
+});
+
+test('a close from the browser, like Escape, runs the whole page menu close', () => {
+    const { calls, modal, overlay, state } = openPageMenu();
+    calls.length = 0;
+    modal.open = false;
+    modal.dispatchEvent({ type: 'close' });
+    assert.equal(state._pageModalOpen, false);
+    assert.equal(state._pageModalEl === null, true);
+    assert.equal(modal.classList.contains('ytkit-pm-visible'), false);
+    assert.equal(overlay.classList.contains('ytkit-pm-ov-visible'), false);
+    assert.deepEqual(calls, ['raise'], 'the toast moves back out, and an already closed dialog is not closed again');
+});
+
+test('closing the page menu lets go first, so its queued close event does nothing', () => {
+    const { api, calls, modal, state } = openPageMenu();
+    calls.length = 0;
+    api.closePageModal();
+    assert.equal(modal.open, false);
+    assert.deepEqual(calls, ['close', 'raise'], 'the toast must leave after the menu stops being modal');
+
+    api.openPageModal();
+    const reopened = state._pageModalEl;
+    assert.equal(reopened === modal, false);
+    calls.length = 0;
+    // Arrives after the reopen: close is queued, and it belongs to the old menu.
+    modal.dispatchEvent({ type: 'close' });
+    assert.equal(state._pageModalOpen, true, 'the old menu closing must not shut the new one');
+    assert.equal(state._pageModalEl === reopened, true);
+    assert.deepEqual(calls, []);
+});
+
+test('a backdrop click closes the page menu and a click on the menu does not', () => {
+    const { modal, state } = openPageMenu();
+    let stopped = 0;
+    const click = (target, clientX, clientY) => modal.dispatchEvent({
+        type: 'click', target, clientX, clientY, stopPropagation() { stopped += 1; }
+    });
+    click({ inner: true }, 40, 40);
+    assert.equal(state._pageModalOpen, true, 'a control inside is not the backdrop, wherever the event says it was');
+    click(modal, 100, 60);
+    click(modal, 400, 500);
+    assert.equal(state._pageModalOpen, true, 'the dialog\'s own edge is still the menu');
+    assert.equal(stopped, 3, 'clicks inside the menu must not reach the page');
+    click(modal, 99, 400);
+    assert.equal(state._pageModalOpen, false);
+});
+
+test('no hand-made Tab or Escape handling is left behind the page menu', () => {
+    for (const relative of ['extension/ytkit.js', 'extension/features/settings-panel/index.js', 'extension/core/toast-dom.js']) {
+        const source = fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+        assert.doesNotMatch(source, /trapFocusWithin|getPageModalOpen|data-ytkit-focus-portal|_escInstalled/, relative);
+    }
+});
+
 // The smallest DOM these helpers touch: querySelectorAll, contains, focus,
 // tabIndex, getAttribute, and one keydown listener.
 function makeDom() {

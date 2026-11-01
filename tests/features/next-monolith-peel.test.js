@@ -1814,9 +1814,7 @@ test('settingsPanel monolith delegates to the module runtime and keeps no inline
         'storageReadJSON',
         'storageWrite',
         't',
-        'trapFocusWithin',
         'getPinSessionUnlocked',
-        'getPageModalOpen',
         'getFeatureCrashCounts',
         'persistCrashCounts'
     ]) {
