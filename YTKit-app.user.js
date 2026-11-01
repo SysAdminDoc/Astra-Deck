@@ -10569,13 +10569,18 @@ const STORAGE_KEYS = Object.freeze({
 				}, delay);
 			},
 			_inject() {
-				const container = document.querySelector('#channel-header-container #inner-header-container #buttons, ytd-c4-tabbed-header-renderer #buttons, #page-header #flexible-item-buttons');
-				if (!container || container.querySelector('.ytkit-rss-btn')) return;
+				const container = document.querySelector('ytd-browse:not([hidden]) yt-page-header-renderer yt-flexible-actions-view-model, #channel-header-container #inner-header-container #buttons, ytd-c4-tabbed-header-renderer #buttons, #page-header #flexible-item-buttons');
+				if (!container) return;
 				const channelId = document.querySelector('ytd-c4-tabbed-header-renderer')?.data?.header?.c4TabbedHeaderRenderer?.channelId
 					|| document.querySelector('meta[itemprop="identifier"], meta[property="og:url"]')?.content?.match(/channel\/(UC[a-zA-Z0-9_-]+)/)?.[1]
 					|| document.querySelector('link[rel="canonical"]')?.href?.match(/channel\/(UC[a-zA-Z0-9_-]+)/)?.[1];
 				if (!channelId) return;
 				const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+				const existing = container.querySelector('.ytkit-rss-btn');
+				if (existing) {
+					if (existing.href !== rssUrl) existing.href = rssUrl;
+					return;
+				}
 				const btn = document.createElement('a');
 				btn.className = 'ytkit-rss-btn';
 				btn.href = rssUrl;
@@ -10588,11 +10593,15 @@ const STORAGE_KEYS = Object.freeze({
 			init() {
 				this._scheduleInject(2000);
 				addNavigateRule('rssFeed', () => this._scheduleInject(2000));
+				addMutationRule('rssFeed', () => {
+					if (!this._injectTimer) this._scheduleInject(400);
+				});
 			},
 			destroy() {
 				if (this._injectTimer) clearTimeout(this._injectTimer);
 				this._injectTimer = null;
 				removeNavigateRule('rssFeed');
+				removeMutationRule('rssFeed');
 				document.querySelectorAll('.ytkit-rss-btn').forEach(el => el.remove());
 			}
 		},

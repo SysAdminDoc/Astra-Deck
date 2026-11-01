@@ -31,6 +31,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Precise View Counts, Video Age Display and the Theater Split header no longer show the date of the first video you opened on every video you click to after it. YouTube leaves that first video's tags on the page, so a date now only counts when its tag names the video on screen.
 - Like Rate now shows up when Video Age Display is on too. The two badges kept rebuilding themselves and each other, which kept the like badge from ever drawing. Neither one touches the page now unless its numbers changed.
 - Hide AI Summary now also removes the AI "Summary" row YouTube adds under some search results. Chapter rows look almost the same and stay. Its description in the 10 translated languages also still promised to hide the Ask AI buttons, which has been a separate setting for a while, so that's corrected too.
+- RSS Feed Link shows up again. It was still looking for a channel header YouTube has retired, so the button never appeared. It now sits next to Subscribe and keeps pointing at the right channel when you move between channels without reloading.
 - Userscript: when a library doesn't load, the console message now says to check `cdn.jsdelivr.net`, which is where the libraries come from. It was still naming raw GitHub.
 
 ## [4.106.0] (2026-10-31)
