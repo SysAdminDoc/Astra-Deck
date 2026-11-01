@@ -1160,7 +1160,10 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				}
 				if (!usePopover || typeof el.showPopover !== 'function') return false;
 				el.setAttribute('popover', 'manual');
+				el.setAttribute('data-ytkit-follows-modal', 'true');
 				try {
+					const host = globalThis.YTKitCore?.toast?.topLayerHost?.();
+					if (host && el.parentNode !== host) host.appendChild(el);
 					el.showPopover();
 					return true;
 				} catch (_) {
@@ -2673,7 +2676,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			});
 			footer.appendChild(dlBtn);
 			popup.appendChild(footer);
-			document.body.appendChild(popup);
+			(globalThis.YTKitCore?.toast?.topLayerHost?.() || document.body).appendChild(popup);
 			_dlPopup = popup;
 			_dlPopupReturnFocus = anchorEl?.isConnected ? anchorEl : null;
 			const disclosureAnchor = isDisclosureTrigger(anchorEl) ? anchorEl : null;
@@ -17312,15 +17315,6 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 		searchActions.appendChild(searchMeta);
 		return searchMeta;
 	}
-	function isSelectListOpen(target) {
-		const select = target?.closest?.('select');
-		if (!select) return false;
-		try {
-			return select.matches(':open');
-		} catch (_) {
-			return false;
-		}
-	}
 	function createSettingsPanelRuntime(deps = {}) {
 		const {
 			BRAND,
@@ -17371,9 +17365,6 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 			storageWrite,
 			t,
 			trapFocusWithin,
-			supportsPopover = () => false,
-			createCloseWatcher = () => null,
-			destroyCloseWatcher = () => {},
 			escapeRegExp: escapeRegExpDependency = null
 		} = deps;
 		const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
@@ -17411,7 +17402,6 @@ __astraDeckRegistry["features/settings-panel/index.js"] = function (globalThis, 
 		let _globalUIListenersAttached = false;
 		let _panelUIListenersAttached = false;
 		let _panelSearchUpdater = null;
-		let _panelCloseWatcher = null;
 		let _changedOnly = false;
 		function settingDiffersFromDefault(key) {
 			if (!key) return false;
@@ -17627,14 +17617,13 @@ function setSettingsPanelOpen(open) {
 		document.body.classList.toggle(PANEL_OPEN_CLASS, !!open);
 		document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
 		panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
+		if (panel) panel.inert = !open;
 		if (open) {
-			if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
+			if (!wasOpen && panel && !panel.open) {
 				try {
-					panel.showPopover();
+					panel.showModal();
 					globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
-					_panelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
 				} catch (_) {
-					panel.removeAttribute('popover');
 				}
 			}
 			const focusInitialControl = () => {
@@ -17659,17 +17648,8 @@ function setSettingsPanelOpen(open) {
 			});
 		} else if (wasOpen) {
 			_deepLinkFocus = null;
-			if (_panelCloseWatcher) {
-				const watcher = _panelCloseWatcher;
-				_panelCloseWatcher = null;
-				destroyCloseWatcher(watcher);
-			}
-			if (typeof panel?.hidePopover === 'function') {
-				try {
-					panel.hidePopover();
-				} catch (_) {
-				}
-			}
+			if (panel?.open) panel.close();
+			globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
 			const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
 				? _settingsPanelLastFocus
 				: document.getElementById('ytkit-watch-btn') || document.getElementById('ytkit-masthead-btn');
@@ -17860,26 +17840,21 @@ function buildSettingsPanel() {
 		const overlay = document.createElement('div');
 		overlay.id = 'ytkit-overlay';
 		overlay.setAttribute('aria-hidden', 'true');
-		overlay.onclick = () => setSettingsPanelOpen(false);
-		const panel = document.createElement('div');
+		const panel = document.createElement('dialog');
 		panel.id = 'ytkit-settings-panel';
-		panel.setAttribute('role', 'dialog');
-		panel.setAttribute('aria-modal', 'true');
 		panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
 		panel.setAttribute('aria-hidden', 'true');
-		let panelUsesPopover = false;
-		try {
-			panelUsesPopover = supportsPopover() === true;
-		} catch (_) {
-		}
-		if (panelUsesPopover) {
-			panel.setAttribute('popover', 'manual');
-			panel.addEventListener('toggle', (event) => {
-				if (event.newState === 'closed' && isSettingsPanelOpen()) {
-					setSettingsPanelOpen(false);
-				}
-			});
-		}
+		panel.inert = true;
+		panel.addEventListener('close', () => {
+			if (!panel.open && isSettingsPanelOpen()) setSettingsPanelOpen(false);
+		});
+		panel.addEventListener('click', (event) => {
+			if (event.target !== panel) return;
+			const box = panel.getBoundingClientRect();
+			const inside = event.clientX >= box.left && event.clientX <= box.right
+				&& event.clientY >= box.top && event.clientY <= box.bottom;
+			if (!inside) setSettingsPanelOpen(false);
+		});
 		const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
 		const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
 		panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
@@ -20960,14 +20935,9 @@ function attachUIEventListeners() {
 				setSettingsPanelOpen(false);
 			});
 			doc.addEventListener('keydown', (e) => {
-				if (e.key === 'Escape' && isSettingsPanelOpen() && !isSelectListOpen(e.target)) {
-					setSettingsPanelOpen(false);
-				}
 				const activeDialog = getPageModalOpen()
 					? document.getElementById('ytkit-page-modal')
-					: isSettingsPanelOpen()
-						? document.getElementById('ytkit-settings-panel')
-						: null;
+					: null;
 				if (e.key === 'Tab' && activeDialog) {
 					const toastPortal = document.querySelector(
 						'.ytkit-global-toast[data-ytkit-focus-portal="true"]'
@@ -20981,7 +20951,7 @@ function attachUIEventListeners() {
 		_panelUIListenersAttached = true;
 		doc.addEventListener('click', (e) => {
 			if (!isSettingsPanelOpen()) return;
-			if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer') || e.target.matches('#ytkit-overlay')) {
+			if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer')) {
 				setSettingsPanelOpen(false);
 				return;
 			}

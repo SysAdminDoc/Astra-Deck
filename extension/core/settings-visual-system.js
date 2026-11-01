@@ -228,7 +228,7 @@
             overflow: hidden !important;
         }
 
-        #ytkit-settings-panel:popover-open {
+        #ytkit-settings-panel:modal {
             inset: auto !important;
             top: 50% !important;
             right: auto !important;

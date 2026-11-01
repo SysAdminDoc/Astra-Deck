@@ -234,6 +234,20 @@ test('a sub-feature whose own group lands elsewhere goes where its parent goes',
 function buildRealPanel(features, settings = {}, { shortsKeys, act, core, deps = {}, storage, storageKeys = {}, userscriptHost, version = '0.0.0' } = {}) {
     const { fakeTreeDocument } = require('../helpers/monolith');
     const doc = fakeTreeDocument();
+    // A real <dialog> needs showModal to open at all, so a harness without it
+    // would pass over the one call the panel rests on.
+    const realCreateElement = doc.createElement.bind(doc);
+    doc.createElement = (tag) => {
+        const node = realCreateElement(tag);
+        if (tag === 'dialog') {
+            node.open = false;
+            node.modalOpens = 0;
+            node.closes = 0;
+            node.showModal = () => { node.open = true; node.modalOpens += 1; };
+            node.close = () => { node.open = false; node.closes += 1; };
+        }
+        return node;
+    };
     const saved = {
         document: globalThis.document, chrome: globalThis.chrome, YTKitCore: globalThis.YTKitCore, CSS: globalThis.CSS,
         host: globalThis.__astraDeckUserscript
@@ -324,6 +338,98 @@ function buildRealPanel(features, settings = {}, { shortsKeys, act, core, deps =
         if (!deferred) restore();
     }
 }
+
+// The panel is a modal dialog. The browser does the trapping, the inert page and
+// Escape, so what's left to test is what this code does around them.
+function withOpenablePanel(t, act, { raised = { count: 0 } } = {}) {
+    const previous = { frame: globalThis.requestAnimationFrame, element: globalThis.HTMLElement };
+    globalThis.requestAnimationFrame = () => 0;
+    globalThis.HTMLElement = class {};
+    t.after(() => {
+        globalThis.requestAnimationFrame = previous.frame;
+        if (previous.element === undefined) delete globalThis.HTMLElement;
+        else globalThis.HTMLElement = previous.element;
+    });
+    buildRealPanel([], {}, {
+        core: { toast: { raiseActiveToasts() { raised.count += 1; } } },
+        act: (doc, runtime) => {
+            const panel = doc.getElementById('ytkit-settings-panel');
+            panel.getBoundingClientRect = () => ({ left: 100, right: 900, top: 100, bottom: 700 });
+            act({ doc, panel, runtime, isOpen: () => doc.body.classList.contains(PANEL_OPEN_CLASS) });
+        }
+    });
+}
+
+test('the panel opens as a real modal and takes a waiting toast with it', (t) => {
+    const raised = { count: 0 };
+    withOpenablePanel(t, ({ panel, runtime, isOpen }) => {
+        assert.equal(panel.tagName, 'DIALOG');
+        assert.equal(panel.getAttribute('role'), null, 'a dialog already says this');
+        assert.equal(panel.getAttribute('aria-modal'), null, 'and showModal says this one');
+        assert.equal(panel.getAttribute('popover'), null, 'a popover opened modally throws');
+        assert.equal(panel.inert, true, 'it stays rendered while closed so it can fade, out of the tab order');
+
+        runtime.setSettingsPanelOpen(true);
+        assert.equal(panel.modalOpens, 1, 'show() would leave the page live behind it');
+        assert.equal(panel.inert, false, 'an inert dialog could not take focus');
+        assert.equal(raised.count, 1, 'a toast already up has to move inside or its Undo goes dead');
+        assert.ok(isOpen());
+
+        runtime.setSettingsPanelOpen(true);
+        assert.equal(panel.modalOpens, 1, 'showModal on an open dialog throws');
+
+        runtime.setSettingsPanelOpen(false);
+        assert.equal(panel.closes, 1);
+        assert.equal(panel.inert, true);
+        assert.equal(raised.count, 2, 'and back out, a closed panel would hide it');
+        assert.ok(!isOpen());
+    }, { raised });
+});
+
+test('a close the browser made runs the panel\'s whole close', (t) => {
+    withOpenablePanel(t, ({ panel, runtime, isOpen }) => {
+        runtime.setSettingsPanelOpen(true);
+        // Escape, with the browser having closed the dialog already.
+        panel.open = false;
+        panel.dispatchEvent({ type: 'close' });
+        assert.ok(!isOpen(), 'the page would stay dimmed behind a panel that had gone');
+        assert.equal(panel.inert, true);
+    });
+});
+
+test('a close event left over from before does not shut a reopened panel', (t) => {
+    withOpenablePanel(t, ({ panel, runtime, isOpen }) => {
+        runtime.setSettingsPanelOpen(true);
+        runtime.setSettingsPanelOpen(false);
+        runtime.setSettingsPanelOpen(true);
+        // `close` is queued, so it lands after the reopen.
+        panel.dispatchEvent({ type: 'close' });
+        assert.ok(isOpen());
+        assert.equal(panel.modalOpens, 2);
+    });
+});
+
+test('a click on the backdrop closes the panel, one on its own edge does not', (t) => {
+    withOpenablePanel(t, ({ panel, runtime, isOpen }) => {
+        runtime.setSettingsPanelOpen(true);
+        const click = (clientX, clientY, target = panel) => panel.dispatchEvent({ type: 'click', target, clientX, clientY });
+
+        click(500, 400);
+        assert.ok(isOpen(), 'inside the box, the edge of the dialog itself');
+        click(5, 400, { tagName: 'BUTTON' });
+        assert.ok(isOpen(), 'a control in the panel');
+        click(100, 100);
+        assert.ok(isOpen(), 'exactly on the corner is still the panel');
+        click(5, 400);
+        assert.ok(!isOpen(), 'left of it');
+
+        for (const [x, y] of [[950, 400], [500, 50], [500, 750]]) {
+            runtime.setSettingsPanelOpen(true);
+            click(x, y);
+            assert.ok(!isOpen(), `at ${x},${y}`);
+        }
+    });
+});
 
 /** Where a built panel stands: selected tab, the readout of it, and focus. */
 function panelState(doc) {

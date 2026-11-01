@@ -593,15 +593,136 @@ test('the injected download icon inherits its colour instead of hardcoding white
 // popover therefore silently undid the v4.50.1 fix that put panel-fired Undo
 // toasts above it, and left behind the two download overlays whose
 // z-index 2147483647 existed purely to beat the panel's 2147483646.
-test('an open toast is re-raised when the settings panel popover opens', () => {
+function toastCoreWith(documentStub) {
+    const file = path.join(__dirname, '..', 'extension', 'core', 'toast.js');
+    const savedDocument = globalThis.document;
+    const savedCore = globalThis.YTKitCore;
+    delete require.cache[require.resolve(file)];
+    globalThis.document = documentStub;
+    delete globalThis.YTKitCore;
+    const api = require(file);
+    return {
+        api,
+        restore() {
+            globalThis.document = savedDocument;
+            if (savedCore === undefined) delete globalThis.YTKitCore;
+            else globalThis.YTKitCore = savedCore;
+            delete require.cache[require.resolve(file)];
+        }
+    };
+}
+
+function topLayerFixture({ modal = null } = {}) {
+    const log = [];
+    const host = (id) => ({ id, appendChild(el) { log.push(`move to ${id}`); el.parentNode = this; } });
+    const body = host('body');
+    const panel = host('panel');
+    const pageModal = host('page modal');
+    const toast = {
+        parentNode: body,
+        isConnected: true,
+        _restackDepth: 0,
+        hidePopover() { log.push('hide'); },
+        showPopover() { log.push('show'); }
+    };
+    const selectors = [];
+    const documentStub = {
+        body,
+        querySelector(selector) {
+            if (selector === '#ytkit-page-modal:modal') return modal === 'page' || modal === 'both' ? pageModal : null;
+            if (selector === '#ytkit-settings-panel:modal') return modal === 'panel' || modal === 'both' ? panel : null;
+            return null;
+        },
+        querySelectorAll(selector) {
+            selectors.push(selector);
+            return [toast];
+        }
+    };
+    return { log, body, panel, pageModal, toast, documentStub, selectors };
+}
+
+// A modal dialog makes everything outside it inert. Measured live, Chromium 153:
+// a manual popover left on the body under an open modal paints but can't be hit
+// or focused, and the same popover inside the dialog works.
+test('an open toast moves inside a modal dialog, and hides before it moves', () => {
+    const fixture = topLayerFixture({ modal: 'panel' });
+    const { api, restore } = toastCoreWith(fixture.documentStub);
+    try {
+        assert.equal(api.raiseActiveToasts(), 1);
+        assert.deepEqual(fixture.log, ['hide', 'move to panel', 'show'],
+            'taking an open popover out of the document closes it with no toggle, which leaves the counter owing one');
+        assert.equal(fixture.toast._restackDepth, 1);
+        assert.ok(fixture.toast.parentNode === fixture.panel, 'and it stays there');
+    } finally {
+        restore();
+    }
+});
+
+test('a toast goes back to the page when the modal closes', () => {
+    const fixture = topLayerFixture();
+    fixture.toast.parentNode = fixture.panel;
+    const { api, restore } = toastCoreWith(fixture.documentStub);
+    try {
+        api.raiseActiveToasts();
+        assert.deepEqual(fixture.log, ['hide', 'move to body', 'show'],
+            'a closed panel is aria-hidden and inert, and either would swallow it');
+    } finally {
+        restore();
+    }
+});
+
+test('a toast already in the right place only re-stacks', () => {
+    const fixture = topLayerFixture();
+    const { api, restore } = toastCoreWith(fixture.documentStub);
+    try {
+        api.raiseActiveToasts();
+        assert.deepEqual(fixture.log, ['hide', 'show']);
+    } finally {
+        restore();
+    }
+});
+
+test('the page menu wins the host over the settings panel, and floating overlays follow too', () => {
+    const fixture = topLayerFixture({ modal: 'both' });
+    const { api, restore } = toastCoreWith(fixture.documentStub);
+    try {
+        assert.equal(api.topLayerHost()?.id, 'page modal');
+        api.raiseActiveToasts();
+        assert.deepEqual(fixture.selectors, ['.ytkit-global-toast[popover], [data-ytkit-follows-modal][popover]'],
+            'a download\'s progress card has a Cancel button to keep usable too');
+    } finally {
+        restore();
+    }
+});
+
+test('a page with no modal open hosts on the body', () => {
+    const fixture = topLayerFixture();
+    const { api, restore } = toastCoreWith(fixture.documentStub);
+    try {
+        assert.equal(api.topLayerHost()?.id, 'body');
+    } finally {
+        restore();
+    }
+});
+
+test('both toast systems and the download overlays ask where to live', () => {
+    const host = /\(globalThis\.YTKitCore\?\.toast\?\.topLayerHost\?\.\(\) \|\| document\.body\)\.appendChild\(toast\)/;
+    assert.match(ytkitSource, host, 'monolith toast');
+    assert.match(fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'toast-dom.js'), 'utf8'), host, 'toast-dom toast');
+    const downloadUi = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'), 'utf8');
+    assert.match(downloadUi, /\(globalThis\.YTKitCore\?\.toast\?\.topLayerHost\?\.\(\) \|\| document\.body\)\.appendChild\(popup\)/);
+    assert.match(downloadUi, /setAttribute\('data-ytkit-follows-modal', 'true'\)[\s\S]{0,160}?topLayerHost/);
+});
+
+test('an open toast is re-raised when the settings panel dialog opens', () => {
     const toastCore = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'core', 'toast.js'), 'utf8');
     assert.match(toastCore, /function raiseActiveToasts\(\)/,
         'the shared toast layer must expose a re-stacking helper');
-    assert.match(toastCore, /toast\._restackDepth = \(toast\._restackDepth \|\| 0\) \+ 1;[\s\S]{0,120}?hidePopover\(\);[\s\S]{0,40}?showPopover\(\);/,
+    assert.match(toastCore, /toast\._restackDepth = \(toast\._restackDepth \|\| 0\) \+ 1;[\s\S]{0,120}?hidePopover\(\);[\s\S]{0,120}?showPopover\(\);/,
         're-stacking must close and reopen the popover under a restack counter');
 
-    assert.match(settingsPanelModuleSource, /panel\.showPopover\(\);[\s\S]{0,260}?raiseActiveToasts\?\.\(\)/,
+    assert.match(settingsPanelModuleSource, /panel\.showModal\(\);[\s\S]{0,260}?raiseActiveToasts\?\.\(\)/,
         'the settings-panel module must re-raise toasts after showing');
 
     // The close half of a re-stack must not be mistaken for a dismissal.
@@ -634,7 +755,7 @@ test('toast dismissal hides the popover only after the exit animation', () => {
 test('the install prompt and download progress card enter the top layer', () => {
     const downloadUi = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'), 'utf8');
-    assert.match(downloadUi, /_raiseOverlay\(el\) \{[\s\S]{0,600}?setAttribute\('popover', 'manual'\)[\s\S]{0,200}?showPopover\(\)/,
+    assert.match(downloadUi, /_raiseOverlay\(el\) \{[\s\S]{0,600}?setAttribute\('popover', 'manual'\)[\s\S]{0,400}?showPopover\(\)/,
         'a shared helper must raise an overlay into the top layer with a fallback');
     assert.match(downloadUi, /this\._raiseOverlay\(prompt\)/,
         'the install/repair prompt must be raised');

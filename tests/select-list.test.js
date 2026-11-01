@@ -32,7 +32,6 @@ function target(select) {
 }
 
 for (const [label, file] of [
-    ['settings panel', ['features', 'settings-panel', 'index.js']],
     ['popup', ['popup.js']]
 ]) {
     const isSelectListOpen = new Function(
@@ -57,9 +56,15 @@ for (const [label, file] of [
     });
 }
 
-test('Escape on an open list leaves the settings panel alone', () => {
+// The panel is a modal dialog now. An open list has its own close watcher on top
+// of the dialog's, so the browser sends Escape to the list first, which is what
+// this guard used to do by hand. Measured live, Chromium 153: the first Escape
+// closes the list, the second closes the panel.
+test('the settings panel leaves Escape to the browser', () => {
     const source = read('features', 'settings-panel', 'index.js');
-    assert.match(source, /e\.key === 'Escape' && isSettingsPanelOpen\(\) && !isSelectListOpen\(e\.target\)/);
+    assert.ok(!source.includes('isSelectListOpen'), 'a second opinion on Escape is how the two drifted apart');
+    assert.ok(!/key === 'Escape'/.test(source.slice(source.indexOf("doc.addEventListener('keydown'"))),
+        'and no document handler closes it behind the browser\'s back');
 });
 
 test('Escape on an open list leaves the popup alone', () => {

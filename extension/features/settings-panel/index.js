@@ -58,18 +58,6 @@
         return searchMeta;
     }
 
-    // A native list keeps Escape to itself. The list `appearance: base-select` draws
-    // lets it through to the page, so the key would close the dialog too.
-    function isSelectListOpen(target) {
-        const select = target?.closest?.('select');
-        if (!select) return false;
-        try {
-            return select.matches(':open');
-        } catch (_) {
-            // reason: browsers older than Chromium 133 don't know :open, and they only have native lists.
-            return false;
-        }
-    }
 
     function createSettingsPanelRuntime(deps = {}) {
         const {
@@ -121,9 +109,6 @@
             storageWrite,
             t,
             trapFocusWithin,
-            supportsPopover = () => false,
-            createCloseWatcher = () => null,
-            destroyCloseWatcher = () => {},
             escapeRegExp: escapeRegExpDependency = null
         } = deps;
         const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
@@ -173,7 +158,6 @@
         let _globalUIListenersAttached = false;
         let _panelUIListenersAttached = false;
         let _panelSearchUpdater = null;
-        let _panelCloseWatcher = null;
         // "Changed from defaults" filtering. The popup has had a diff view for a
         // while; the overlay owns every setting and had no way to answer "what
         // did I actually change", which is the question people ask before they
@@ -490,17 +474,18 @@ function setSettingsPanelOpen(open) {
         document.body.classList.toggle(PANEL_OPEN_CLASS, !!open);
         document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
         panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
+        // It stays rendered while closed so it can fade, which would leave
+        // every control in it in the page's tab order.
+        if (panel) panel.inert = !open;
         if (open) {
-            if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
+            if (!wasOpen && panel && !panel.open) {
                 try {
-                    panel.showPopover();
-                    // The top layer stacks by show-order: a toast shown before the
-                    // panel would now sit UNDER it for the rest of its life.
+                    panel.showModal();
+                    // A toast shown before the panel is now inert outside it,
+                    // Undo included.
                     globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
-                    _panelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
                 } catch (_) {
-                    // reason: a browser can expose Popover but reject this show call.
-                    panel.removeAttribute('popover');
+                    // reason: the panel still paints by its z-index if the browser refuses.
                 }
             }
             const focusInitialControl = () => {
@@ -528,18 +513,8 @@ function setSettingsPanelOpen(open) {
             });
         } else if (wasOpen) {
             _deepLinkFocus = null;
-            if (_panelCloseWatcher) {
-                const watcher = _panelCloseWatcher;
-                _panelCloseWatcher = null;
-                destroyCloseWatcher(watcher);
-            }
-            if (typeof panel?.hidePopover === 'function') {
-                try {
-                    panel.hidePopover();
-                } catch (_) {
-                    // reason: the panel may already have been closed natively.
-                }
-            }
+            if (panel?.open) panel.close();
+            globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
                 ? _settingsPanelLastFocus
                 : document.getElementById('ytkit-watch-btn') || document.getElementById('ytkit-masthead-btn');
@@ -786,29 +761,27 @@ function buildSettingsPanel() {
         const overlay = document.createElement('div');
         overlay.id = 'ytkit-overlay';
         overlay.setAttribute('aria-hidden', 'true');
-        overlay.onclick = () => setSettingsPanelOpen(false);
 
         // Create panel
-        const panel = document.createElement('div');
+        const panel = document.createElement('dialog');
         panel.id = 'ytkit-settings-panel';
-        panel.setAttribute('role', 'dialog');
-        panel.setAttribute('aria-modal', 'true');
         panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
         panel.setAttribute('aria-hidden', 'true');
-        let panelUsesPopover = false;
-        try {
-            panelUsesPopover = supportsPopover() === true;
-        } catch (_) {
-            // reason: host feature detection must not prevent the panel from building.
-        }
-        if (panelUsesPopover) {
-            panel.setAttribute('popover', 'manual');
-            panel.addEventListener('toggle', (event) => {
-                if (event.newState === 'closed' && isSettingsPanelOpen()) {
-                    setSettingsPanelOpen(false);
-                }
-            });
-        }
+        panel.inert = true;
+        // Escape and any other close the browser makes land here. `close` is
+        // queued, so a panel reopened in the meantime has to stay open.
+        panel.addEventListener('close', () => {
+            if (!panel.open && isSettingsPanelOpen()) setSettingsPanelOpen(false);
+        });
+        // A click on the backdrop reaches the dialog itself, as does one on its
+        // own edge, so only the position can tell them apart.
+        panel.addEventListener('click', (event) => {
+            if (event.target !== panel) return;
+            const box = panel.getBoundingClientRect();
+            const inside = event.clientX >= box.left && event.clientX <= box.right
+                && event.clientY >= box.top && event.clientY <= box.bottom;
+            if (!inside) setSettingsPanelOpen(false);
+        });
         const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
         const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
         panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
@@ -4371,14 +4344,9 @@ function attachUIEventListeners() {
 
             // Keyboard shortcuts
             doc.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && isSettingsPanelOpen() && !isSelectListOpen(e.target)) {
-                    setSettingsPanelOpen(false);
-                }
                 const activeDialog = getPageModalOpen()
                     ? document.getElementById('ytkit-page-modal')
-                    : isSettingsPanelOpen()
-                        ? document.getElementById('ytkit-settings-panel')
-                        : null;
+                    : null;
                 if (e.key === 'Tab' && activeDialog) {
                     const toastPortal = document.querySelector(
                         '.ytkit-global-toast[data-ytkit-focus-portal="true"]'
@@ -4399,7 +4367,7 @@ function attachUIEventListeners() {
         // Close panel + Tab navigation (single delegated handler)
         doc.addEventListener('click', (e) => {
             if (!isSettingsPanelOpen()) return;
-            if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer') || e.target.matches('#ytkit-overlay')) {
+            if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer')) {
                 setSettingsPanelOpen(false);
                 return;
             }

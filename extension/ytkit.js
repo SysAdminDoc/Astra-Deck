@@ -3412,7 +3412,7 @@ const STORAGE_KEYS = Object.freeze({
             // reason: host feature detection must not prevent a toast.
         }
         if (usePopover) toast.setAttribute('popover', 'manual');
-        document.body.appendChild(toast);
+        (globalThis.YTKitCore?.toast?.topLayerHost?.() || document.body).appendChild(toast);
 
         if (usePopover) {
             const toggleHandler = (event) => {
@@ -7214,9 +7214,6 @@ const STORAGE_KEYS = Object.freeze({
                 storageReadJSON,
                 storageWrite,
                 t,
-                supportsPopover,
-                createCloseWatcher,
-                destroyCloseWatcher,
                 escapeRegExp,
                 trapFocusWithin,
                 getPinSessionUnlocked: () => _pinSessionUnlocked,
@@ -41961,6 +41958,19 @@ body.ytkit-panel-open {
     box-sizing: border-box;
 }
 
+/* A toast lives in here while the panel is open, or the modal would make its
+   Undo inert. It should look the way it does on the page. */
+#ytkit-settings-panel .ytkit-global-toast,
+#ytkit-settings-panel .ytkit-global-toast :not(button) {
+    box-sizing: content-box;
+}
+
+#ytkit-settings-panel .ytkit-global-toast {
+    font-size: 10px;
+    line-height: normal;
+    color-scheme: normal;
+}
+
 #ytkit-settings-panel ::-webkit-scrollbar { width: 6px; height: 6px; }
 #ytkit-settings-panel ::-webkit-scrollbar-track { background: transparent; }
 #ytkit-settings-panel ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
@@ -41988,19 +41998,26 @@ body.ytkit-panel-open {
     color-scheme: dark;
     font-family: var(--ytkit-font);
     color: var(--ytkit-text-primary);
+    max-width: none;
+    padding: 0;
     opacity: 0;
     pointer-events: none;
     transition: opacity 260ms var(--ytkit-ease-out), transform 260ms var(--ytkit-ease-out);
     overflow: hidden;
 }
 
-#ytkit-settings-panel:popover-open {
+#ytkit-settings-panel:modal {
     inset: auto !important;
     top: 50% !important;
     right: auto !important;
     bottom: auto !important;
     left: 50% !important;
     margin: 0 !important;
+}
+
+/* #ytkit-overlay is the backdrop people see, painted under the top layer. */
+#ytkit-settings-panel::backdrop {
+    background: transparent;
 }
 
 #ytkit-overlay {

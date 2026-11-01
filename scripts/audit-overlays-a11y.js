@@ -597,6 +597,12 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         liveChat.includes("panel?.removeEventListener('keydown', handlePanelKeydown)"),
         'Reaction Sender must not leave a keydown listener bound to a removed panel');
 
+    add('Settings panel is a real modal dialog',
+        settingsPanel.includes("const panel = document.createElement('dialog')") &&
+        settingsPanel.includes('panel.showModal()') &&
+        settingsPanel.includes("panel.addEventListener('close'") &&
+        settingsPanel.includes('panel.inert = !open'),
+        'The panel must open through showModal, which gives it the inert page and Escape, and stay out of the tab order while closed');
     add('Settings panel traps Tab and Shift+Tab in active dialogs',
         settingsPanel.includes("if (e.key === 'Tab' && activeDialog)") &&
         settingsPanel.includes('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : [])') &&

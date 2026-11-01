@@ -121,7 +121,7 @@ const SURFACES = Object.freeze([
         height: 860,
         settleMs: 500,
         themes: Object.freeze(['dark', 'light']),
-        focusTrap: Object.freeze({ root: '#ytkit-settings-panel' }),
+        focusTrap: Object.freeze({ root: '#ytkit-settings-panel', nativeModal: true }),
         localeStates: LOCALE_STATES,
     }),
     Object.freeze({
@@ -883,20 +883,36 @@ async function auditFocusTrap(client, surface, stateName) {
     }
 
     // The final and first controls are the two wrap points that distinguish a
-    // real modal focus trap from a source-only aria-modal declaration.
-    await focusToken(last);
-    await dispatchTab(client);
-    const forwardWrap = await readFocus();
-    if (!forwardWrap.inside || forwardWrap.token !== first) {
-        failures.push(`Tab from the final control did not wrap to ${first}`);
+    // real modal focus trap from a source-only aria-modal declaration. A native
+    // modal goes round through the browser's own UI, which reads as the body from
+    // here. On YouTube the far end comes back on the next press, but once other
+    // tabs have been open headless can keep the focus up there, so coming back
+    // isn't required. Where it lands is: no control behind the dialog, ever.
+    if (trap.nativeModal && !await client.evaluate(`Boolean(document.querySelector(${JSON.stringify(trap.root)})?.matches(':modal'))`)) {
+        failures.push(`${trap.root} did not open as a modal`);
     }
+    const tabAroundTo = async (shift, expected, label) => {
+        await dispatchTab(client, shift);
+        let focus = await readFocus();
+        for (let press = 0; trap.nativeModal && !focus.inside && press < 2; press += 1) {
+            if (!await client.evaluate('document.activeElement === document.body || !document.activeElement')) {
+                failures.push(`${label} reached a control behind the dialog (${focus.label})`);
+                return;
+            }
+            await dispatchTab(client, shift);
+            focus = await readFocus();
+        }
+        if (trap.nativeModal && !focus.inside && await client.evaluate('document.activeElement === document.body || !document.activeElement')) return;
+        if (!focus.inside || focus.token !== expected) {
+            failures.push(`${label} did not wrap to ${expected} (actual=${focus.token || 'none'}:${focus.label || 'no active control'}, expected label=${inventory.labels[Number(expected)]})`);
+        }
+    };
+
+    await focusToken(last);
+    await tabAroundTo(false, first, 'Tab from the final control');
 
     await focusToken(first);
-    await dispatchTab(client, true);
-    const backwardWrap = await readFocus();
-    if (!backwardWrap.inside || backwardWrap.token !== last) {
-        failures.push(`Shift+Tab from the first control did not wrap to ${last}`);
-    }
+    await tabAroundTo(true, last, 'Shift+Tab from the first control');
 
     if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
     return 3;

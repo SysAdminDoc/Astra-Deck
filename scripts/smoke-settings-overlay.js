@@ -315,12 +315,8 @@ const IN_PAGE_CHECKS = `(() => {
     const failures = [];
     const panel = document.querySelector(PANEL_SELECTOR);
     if (!panel) return JSON.stringify({ failures: ['settings overlay root not found (' + PANEL_SELECTOR + ')'] });
-    const hasPopover = typeof globalThis.HTMLElement?.prototype?.showPopover === 'function'
-        && typeof globalThis.HTMLElement?.prototype?.hidePopover === 'function';
-    if (hasPopover) {
-        if (panel.getAttribute('popover') !== 'manual') failures.push('settings panel did not opt into manual Popover mode');
-        if (!panel.matches(':popover-open')) failures.push('settings panel is not open in the Popover top layer');
-    }
+    if (panel.tagName !== 'DIALOG') failures.push('settings panel is not a dialog');
+    if (!panel.matches(':modal')) failures.push('settings panel did not open modally');
     const rect = panel.getBoundingClientRect();
     const controls = panel.querySelectorAll('button, input, select, textarea, [role="tab"]');
     if (rect.width < 280 || rect.height < 300) {
@@ -1853,7 +1849,7 @@ async function main() {
                         found: true,
                         popover: popup.getAttribute('popover') || '',
                         popupOpen: supports ? popup.matches(':popover-open') : true,
-                        panelOpen: supports ? panel.matches(':popover-open') : true,
+                        panelOpen: panel.matches(':modal'),
                         width: Math.round(rect.width),
                         height: Math.round(rect.height),
                         abovePanel: probe === popup || popup.contains(probe)

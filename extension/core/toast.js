@@ -123,15 +123,22 @@
     // the close half of this cycle must not be mistaken for a dismissal. It is
     // a counter rather than a boolean because `toggle` is queued, so the event
     // can arrive after a boolean would already have been reset.
+    //
+    // A modal dialog makes everything outside it inert, so what has to stay
+    // usable over one also moves in here, and back out when it closes. It's
+    // hidden first because taking an open popover out of the document closes
+    // it without a `toggle`, which would leave the counter owing one.
     function raiseActiveToasts() {
         if (typeof document === 'undefined') return 0;
         let raised = 0;
-        document.querySelectorAll('.ytkit-global-toast[popover]').forEach((toast) => {
+        const host = topLayerHost();
+        document.querySelectorAll('.ytkit-global-toast[popover], [data-ytkit-follows-modal][popover]').forEach((toast) => {
             if (!toast.isConnected) return;
             if (typeof toast.showPopover !== 'function' || typeof toast.hidePopover !== 'function') return;
             try {
                 toast._restackDepth = (toast._restackDepth || 0) + 1;
                 toast.hidePopover();
+                if (host && toast.parentNode !== host) host.appendChild(toast);
                 toast.showPopover();
                 raised += 1;
             } catch (_) {
@@ -143,9 +150,19 @@
         return raised;
     }
 
+    // Where something meant to float over everything has to live right now.
+    function topLayerHost() {
+        if (typeof document === 'undefined') return null;
+        return document.querySelector?.('#ytkit-page-modal:modal')
+            || document.querySelector?.('#ytkit-settings-panel:modal')
+            || document.body
+            || null;
+    }
+
     core.toast = Object.freeze({
         inferToastTone,
         raiseActiveToasts,
+        topLayerHost,
         normalizeToastTone,
         getToastRgb,
         getToastBadgeLabel,
@@ -160,7 +177,7 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             inferToastTone,
-            raiseActiveToasts, normalizeToastTone, getToastRgb, getToastBadgeLabel,
+            raiseActiveToasts, topLayerHost, normalizeToastTone, getToastRgb, getToastBadgeLabel,
             getToastAriaDefaults, supportsPopover, createCloseWatcher,
             destroyCloseWatcher, TONE_RGB, TONE_BADGE
         };

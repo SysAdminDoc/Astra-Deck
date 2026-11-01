@@ -1461,9 +1461,10 @@
             get token() { return this._token; },
 
             // Raise an element into the top layer when the platform supports
-            // it, so it cannot be covered by the settings-panel popover. Falls
-            // back to its stylesheet z-index when the API is missing or the
-            // show call is rejected.
+            // it, so it cannot be covered by the settings panel, and inside
+            // that panel's dialog while it's open, since a modal makes the rest
+            // of the page inert. Falls back to its stylesheet z-index when the
+            // API is missing or the show call is rejected.
             _raiseOverlay(el) {
                 if (!el) return false;
                 let usePopover = false;
@@ -1474,7 +1475,10 @@
                 }
                 if (!usePopover || typeof el.showPopover !== 'function') return false;
                 el.setAttribute('popover', 'manual');
+                el.setAttribute('data-ytkit-follows-modal', 'true');
                 try {
+                    const host = globalThis.YTKitCore?.toast?.topLayerHost?.();
+                    if (host && el.parentNode !== host) host.appendChild(el);
                     el.showPopover();
                     return true;
                 } catch (_) {
@@ -3269,7 +3273,7 @@
             footer.appendChild(dlBtn);
             popup.appendChild(footer);
 
-            document.body.appendChild(popup);
+            (globalThis.YTKitCore?.toast?.topLayerHost?.() || document.body).appendChild(popup);
             _dlPopup = popup;
             _dlPopupReturnFocus = anchorEl?.isConnected ? anchorEl : null;
             // The context-menu path passes #movie_player when no download

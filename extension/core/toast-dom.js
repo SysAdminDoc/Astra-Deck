@@ -192,7 +192,7 @@
                 // reason: host feature detection must not prevent a toast.
             }
             if (usePopover) toast.setAttribute('popover', 'manual');
-            document.body.appendChild(toast);
+            (globalThis.YTKitCore?.toast?.topLayerHost?.() || document.body).appendChild(toast);
 
             if (usePopover) {
                 const toggleHandler = (event) => {
