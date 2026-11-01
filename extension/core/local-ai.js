@@ -42,14 +42,25 @@
         return AVAILABILITY_VALUES.has(normalized) ? normalized : 'unknown';
     }
 
+    // Chromium can leave this question unanswered: Summarizer and LanguageModel were
+    // still pending after 60 s on 153, with no on-device model, while Translator took
+    // 1 ms. Every caller waits on the answer before it shows anything else.
+    const AVAILABILITY_TIMEOUT_MS = 5000;
+
     async function availability(kind, options = {}, scope = root) {
         const factory = getFactory(kind, scope);
         if (!factory) return 'unavailable';
         if (typeof factory.availability !== 'function') return 'unknown';
+        let timer = null;
         try {
-            return normalizeAvailability(await factory.availability(options));
+            const unanswered = new Promise((resolve) => {
+                timer = setTimeout(() => resolve('unavailable'), AVAILABILITY_TIMEOUT_MS);
+            });
+            return normalizeAvailability(await Promise.race([factory.availability(options), unanswered]));
         } catch (_) {
             return 'unavailable';
+        } finally {
+            clearTimeout(timer);
         }
     }
 

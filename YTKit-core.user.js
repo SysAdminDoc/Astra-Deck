@@ -2028,14 +2028,21 @@ __astraDeckRegistry["core/local-ai.js"] = function (globalThis, self, window, ch
 		const normalized = String(value).trim().toLowerCase();
 		return AVAILABILITY_VALUES.has(normalized) ? normalized : 'unknown';
 	}
+	const AVAILABILITY_TIMEOUT_MS = 5000;
 	async function availability(kind, options = {}, scope = root) {
 		const factory = getFactory(kind, scope);
 		if (!factory) return 'unavailable';
 		if (typeof factory.availability !== 'function') return 'unknown';
+		let timer = null;
 		try {
-			return normalizeAvailability(await factory.availability(options));
+			const unanswered = new Promise((resolve) => {
+				timer = setTimeout(() => resolve('unavailable'), AVAILABILITY_TIMEOUT_MS);
+			});
+			return normalizeAvailability(await Promise.race([factory.availability(options), unanswered]));
 		} catch (_) {
 			return 'unavailable';
+		} finally {
+			clearTimeout(timer);
 		}
 	}
 	async function create(kind, options = {}, scope = root) {
