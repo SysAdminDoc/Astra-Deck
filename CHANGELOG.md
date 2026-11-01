@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- Local Summary opens as a real dialog too, so Tab stays inside it and Escape closes it. Closing it now cancels the summary instead of letting the answer pop the box back open a moment later, and the Loading box gets out of the way when a run hands off to your own AI provider, so you can use that panel straight away. The heading no longer renders smaller than the text under it.
 - Transcript Q&A is a real dialog now. Keyboard and screen reader users stay inside it while it's open, instead of tabbing off into the page behind, and Escape closes it reliably. A toast with an Undo button that was already on screen stays clickable above it.
 
 ## [4.107.0] (2026-11-01)

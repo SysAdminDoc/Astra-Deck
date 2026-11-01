@@ -158,6 +158,7 @@
         '.ytkit-sub-group-dialog:modal',
         '.ytkit-blocked-watch-overlay:modal',
         '.ytkit-ai-qa-modal:modal',
+        '.ytkit-local-ai-modal:modal',
         '#ytkit-settings-panel:modal'
     ]);
 

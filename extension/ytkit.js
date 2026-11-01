@@ -37363,15 +37363,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _attachTimer: null,
             _navRule: null,
             _runController: null,
+            _modal: null,
+            _modalTitle: null,
+            _modalText: null,
 
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
                     .ytkit-local-ai-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(124,58,237,0.32);background:rgba(124,58,237,0.12);color:#e9d5ff;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}html:not([dark]) .ytkit-local-ai-btn{background:rgba(0,0,0,0.05);color:var(--yt-spec-text-primary,#0f0f0f);border-color:rgba(0,0,0,0.12);}
                     .ytkit-local-ai-btn:hover{background:rgba(124,58,237,0.22);}
-                    .ytkit-local-ai-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9100;background:rgba(0,0,0,0.5);}
+                    .ytkit-local-ai-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;width:auto;height:auto;max-width:none;max-height:none;margin:0;border:0;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,0.5);}.ytkit-local-ai-modal::backdrop{background:transparent;}
                     .ytkit-local-ai-modal__body{max-width:640px;max-height:80vh;overflow:auto;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;}
-                    .ytkit-local-ai-modal__body h4{margin:0 0 12px;}
+                    .ytkit-local-ai-modal__body h4{margin:0 0 12px;font:600 16px/1.3 system-ui;}
                     .ytkit-local-ai-modal__body pre{white-space:pre-wrap;font:13px/1.5 system-ui;}
                     .ytkit-local-ai-modal__close{margin-top:12px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;}
                 `, 'local-ai');
@@ -37390,6 +37393,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const message = t('aiSummaryByoFallbackNotice', 'Using your configured BYO-key provider instead.');
                 const remote = getFeatureById('aiVideoSummary');
                 if (remote?._run) {
+                    // The loading box would otherwise sit over the panel and make it inert.
+                    this._closeModal();
                     if (typeof showToast === 'function') showToast(message, '#f59e0b', { tone: 'warning' });
                     await remote._run({ laneNotice: message });
                     return true;
@@ -37419,6 +37424,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const availability = localAi?.availability
                         ? await localAi.availability('summarizer', {}, window)
                         : 'unknown';
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
                     if (availability === 'unavailable') {
                         await this._runByoFallback('Chrome\u2019s built-in Summarizer model is unavailable on this device.');
                         return;
@@ -37449,27 +37455,70 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
+            _closeModal({ restoreFocus = true } = {}) {
+                const overlay = this._modal;
+                this._modal = null;
+                this._modalTitle = null;
+                this._modalText = null;
+                // A run left going would come back and open the dialog again with its answer.
+                this._runController?.abort();
+                this._runController = null;
+                if (!overlay) return;
+                if (overlay.open) overlay.close();
+                // Before it leaves the document, or a toast hosted inside goes with it.
+                globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                overlay.remove();
+                if (restoreFocus && this._btn?.isConnected !== false) {
+                    this._btn?.focus?.({ preventScroll: true });
+                }
+            },
+
+            // A run renders several times, and each one replaces the words in the open dialog.
             _renderModal(title, body) {
-                document.querySelector('.ytkit-local-ai-modal')?.remove();
-                const overlay = document.createElement('div');
+                if (this._modal) {
+                    this._modalTitle.textContent = title;
+                    this._modalText.textContent = body;
+                    return;
+                }
+                const overlay = document.createElement('dialog');
                 overlay.className = 'ytkit-local-ai-modal';
+                overlay.setAttribute('aria-labelledby', 'ytkit-local-ai-title');
+                overlay.setAttribute('aria-describedby', 'ytkit-local-ai-text');
                 const inner = document.createElement('div');
                 inner.className = 'ytkit-local-ai-modal__body';
                 const h = document.createElement('h4');
+                h.id = 'ytkit-local-ai-title';
                 h.textContent = title;
                 inner.appendChild(h);
                 const pre = document.createElement('pre');
+                pre.id = 'ytkit-local-ai-text';
+                pre.setAttribute('aria-live', 'polite');
                 pre.textContent = body;
                 inner.appendChild(pre);
                 const close = document.createElement('button');
                 close.className = 'ytkit-local-ai-modal__close';
                 close.type = 'button';
                 close.textContent = 'Close';
-                close.addEventListener('click', () => overlay.remove());
+                close.addEventListener('click', () => this._closeModal());
                 inner.appendChild(close);
                 overlay.appendChild(inner);
-                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) this._closeModal(); });
+                // `close` is queued, so a late one mustn't shut a newer dialog.
+                overlay.addEventListener('close', () => { if (this._modal === overlay) this._closeModal(); });
+                // The browser closes on Escape. The page's own key handlers still don't get it.
+                overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') event.stopPropagation(); });
                 document.body.appendChild(overlay);
+                this._modal = overlay;
+                this._modalTitle = h;
+                this._modalText = pre;
+                try {
+                    overlay.showModal();
+                    // A toast shown before the dialog is now inert outside it, Undo included.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
+                } catch (_) {
+                    // reason: the dialog still paints by its z-index if the browser refuses.
+                }
+                close.focus();
             },
 
             _scheduleAttach() {
@@ -37502,9 +37551,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._ensureStyles();
                 this._navRule = () => {
-                    this._runController?.abort();
-                    this._runController = null;
-                    document.querySelector('.ytkit-local-ai-modal')?.remove();
+                    this._closeModal({ restoreFocus: false });
                     this._scheduleAttach();
                 };
                 addNavigateRule(this.id, this._navRule);
@@ -37520,8 +37567,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 clearTimeout(this._attachTimer);
                 this._attachTimer = null;
                 this._navRule = null;
-                this._runController?.abort();
-                this._runController = null;
+                this._closeModal({ restoreFocus: false });
                 this._btn?.remove();
                 this._btn = null;
                 document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-launcher').forEach(el => el.remove());
