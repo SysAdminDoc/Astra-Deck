@@ -80,6 +80,13 @@
     // The inverse of the parser above, in the shape the placeholders promise
     // (`0:00`, `1:02:03`). Sub-second precision is kept only when it is there,
     // because a handle dragged to 12.000 should read `0:12`, not `0:12.0`.
+    // A status, not a failure: nothing went wrong when the optional helper isn't running.
+    const DOWNLOADER_OFFLINE_ERROR = 'Downloader not running';
+
+    function isDownloaderOffline(error) {
+        return error?.message === DOWNLOADER_OFFLINE_ERROR;
+    }
+
     // YouTube's seek preview sprites. A spec is a URL template followed by one
     // `width#height#count#columns#rows#intervalMs#name#sigh` block per level,
     // such as `160#90#108#5#5#2000#M$M#rs$AOn4...`. The first level has an
@@ -394,7 +401,7 @@
             const request = (async () => {
                 try {
                     const status = await check();
-                    if (!status?.ok || !status.token) throw new Error('Downloader not running');
+                    if (!status?.ok || !status.token) throw new Error(DOWNLOADER_OFFLINE_ERROR);
                     const { response, data } = await fetchJson({
                         method: 'POST',
                         url: baseUrl() + '/formats',
@@ -2905,7 +2912,7 @@
                 // Compatibility fallback for direct module tests and older
                 // extension pages that did not create the shared store.
                 const status = await MediaDLManager.check();
-                if (!status.ok) throw new Error(t('dlPopupDownloaderOffline', 'Downloader not running'));
+                if (!status.ok) throw new Error(DOWNLOADER_OFFLINE_ERROR);
                 const { response, data } = await extensionFetchJson({
                     method: 'POST',
                     url: MediaDLManager.baseUrl() + '/formats',
@@ -2922,6 +2929,16 @@
                 applyFormatProbe(data);
             };
 
+            const showFormatProbeFailure = (error) => {
+                renderQualitySizeLabels(null);
+                const offline = isDownloaderOffline(error);
+                if (!offline) logFailure('format-probe', error);
+                if (!qualityStatus.isConnected) return;
+                qualityStatus.textContent = offline || MediaDLManager._needsUserscriptPairing()
+                    ? downloaderUnavailableText()
+                    : describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
+            };
+
             probeBtn.addEventListener('click', async () => {
                 probeBtn.disabled = true;
                 probeBtn.textContent = t('dlPopupFormatsLoading', 'Checking…');
@@ -2929,11 +2946,7 @@
                 try {
                     await runFormatProbe(true);
                 } catch (error) {
-                    renderQualitySizeLabels(null);
-                    logFailure('format-probe', error);
-                    qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
-                        ? downloaderUnavailableText()
-                        : describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
+                    showFormatProbeFailure(error);
                 } finally {
                     probeBtn.disabled = false;
                     probeBtn.textContent = t('dlPopupFormatsRecheck', 'Check again');
@@ -3420,16 +3433,7 @@
                 try {
                     await runFormatProbe(false);
                 } catch (error) {
-                    renderQualitySizeLabels(null);
-                    logFailure('format-probe', error);
-                    if (qualityStatus.isConnected) {
-                        qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
-                            ? downloaderUnavailableText()
-                            : describeFailureWithLabel(t(
-                                'dlPopupFormatsUnavailable',
-                                'Format list unavailable.'
-                            ), error);
-                    }
+                    showFormatProbeFailure(error);
                 }
             })();
 

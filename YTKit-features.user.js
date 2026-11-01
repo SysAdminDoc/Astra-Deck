@@ -65,6 +65,10 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 		);
 		return seconds <= 86400 ? Math.round(seconds * 1000) / 1000 : null;
 	}
+	const DOWNLOADER_OFFLINE_ERROR = 'Downloader not running';
+	function isDownloaderOffline(error) {
+		return error?.message === DOWNLOADER_OFFLINE_ERROR;
+	}
 	const STORYBOARD_URL_PREFIX = 'https://i.ytimg.com/sb/';
 	const STORYBOARD_PREVIEW_WIDTH = 160;
 	function parseStoryboardSpec(spec) {
@@ -329,7 +333,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 			const request = (async () => {
 				try {
 					const status = await check();
-					if (!status?.ok || !status.token) throw new Error('Downloader not running');
+					if (!status?.ok || !status.token) throw new Error(DOWNLOADER_OFFLINE_ERROR);
 					const { response, data } = await fetchJson({
 						method: 'POST',
 						url: baseUrl() + '/formats',
@@ -2339,7 +2343,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 					return;
 				}
 				const status = await MediaDLManager.check();
-				if (!status.ok) throw new Error(t('dlPopupDownloaderOffline', 'Downloader not running'));
+				if (!status.ok) throw new Error(DOWNLOADER_OFFLINE_ERROR);
 				const { response, data } = await extensionFetchJson({
 					method: 'POST',
 					url: MediaDLManager.baseUrl() + '/formats',
@@ -2355,6 +2359,15 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				}
 				applyFormatProbe(data);
 			};
+			const showFormatProbeFailure = (error) => {
+				renderQualitySizeLabels(null);
+				const offline = isDownloaderOffline(error);
+				if (!offline) logFailure('format-probe', error);
+				if (!qualityStatus.isConnected) return;
+				qualityStatus.textContent = offline || MediaDLManager._needsUserscriptPairing()
+					? downloaderUnavailableText()
+					: describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
+			};
 			probeBtn.addEventListener('click', async () => {
 				probeBtn.disabled = true;
 				probeBtn.textContent = t('dlPopupFormatsLoading', 'Checking…');
@@ -2362,11 +2375,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				try {
 					await runFormatProbe(true);
 				} catch (error) {
-					renderQualitySizeLabels(null);
-					logFailure('format-probe', error);
-					qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
-						? downloaderUnavailableText()
-						: describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
+					showFormatProbeFailure(error);
 				} finally {
 					probeBtn.disabled = false;
 					probeBtn.textContent = t('dlPopupFormatsRecheck', 'Check again');
@@ -2774,16 +2783,7 @@ __astraDeckRegistry["features/download-ui/index.js"] = function (globalThis, sel
 				try {
 					await runFormatProbe(false);
 				} catch (error) {
-					renderQualitySizeLabels(null);
-					logFailure('format-probe', error);
-					if (qualityStatus.isConnected) {
-						qualityStatus.textContent = MediaDLManager._needsUserscriptPairing()
-							? downloaderUnavailableText()
-							: describeFailureWithLabel(t(
-								'dlPopupFormatsUnavailable',
-								'Format list unavailable.'
-							), error);
-					}
+					showFormatProbeFailure(error);
 				}
 			})();
 			(async () => {

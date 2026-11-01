@@ -248,3 +248,37 @@ test('reopening the popup replaces the rule rather than stacking rules', async (
     assert.equal(session.popup.isConnected, false, 'the first popup is taken down');
     assert.equal(mountedPopups(session.documentRef), 1, 'and must not leave two popups mounted');
 });
+
+// The format line said "Something unexpected went wrong" and logged a failure
+// every time the popup opened without the optional helper running.
+test('no downloader running reads as a plain status', async () => {
+    const session = openDownloadPopup();
+    session.feature.downloadFormatEstimates.probe = async () => ({ status: 'unavailable', error: 'Downloader not running' });
+    await session.settle();
+    // The popup's own first look used the harness stub.
+    session.debugLines.length = 0;
+    const button = findByClass(session.popup, 'ytkit-dl-popup__dir-btn');
+    assert.match(String(button.textContent), /Check what/);
+    await [...button.listeners.get('click')][0]();
+    const line = collectFakeTree(session.popup, '*')
+        .filter((node) => String(node.className || '').includes('ytkit-dl-popup__playlist-meta'))
+        .map((node) => String(node.textContent))
+        .find((text) => /Downloader|unavailable|unexpected/i.test(text));
+    assert.equal(line, 'Downloader not running');
+    assert.equal(session.debugLines.filter((entry) => /format-probe/.test(entry)).length, 0);
+});
+
+test('a real format failure still says so', async () => {
+    const session = openDownloadPopup();
+    session.feature.downloadFormatEstimates.probe = async () => ({ status: 'unavailable', error: 'yt-dlp exploded' });
+    await session.settle();
+    const button = findByClass(session.popup, 'ytkit-dl-popup__dir-btn');
+    assert.match(String(button.textContent), /Check what/);
+    await [...button.listeners.get('click')][0]();
+    const line = collectFakeTree(session.popup, '*')
+        .filter((node) => String(node.className || '').includes('ytkit-dl-popup__playlist-meta'))
+        .map((node) => String(node.textContent))
+        .find((text) => /Format list unavailable/.test(text));
+    assert.ok(line, 'the failure is shown');
+    assert.equal(/yt-dlp exploded/.test(line), false, 'a raw error stays out of the popup');
+});
