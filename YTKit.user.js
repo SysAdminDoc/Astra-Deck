@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.108.0
+// @name         YTKit v4.109.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.108.0
+// @version      4.109.0
 // @description  The Astra Deck YouTube extension as a userscript, with the same features, settings panel and themes. Loads its three YTKit libraries through @require, and downloads use the optional Astra Downloader companion app.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -50,19 +50,19 @@
 // @connect      generativelanguage.googleapis.com
 // @connect      apiv1.filmot.com
 // @connect      *
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/YTKit-core.user.js#sha256=00a2dae6e661374f4fd4fb91ccee0b1ba5d3d860019f0aaf17e45c804cfa6181
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/YTKit-features.user.js#sha256=bc0d40aec33ffe59381f166498376984331199fe72b1059d755562116f2c498f
-// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/YTKit-app.user.js#sha256=4b3bc16f5e5bac830d6fec31c01747b7abef235cfb5a6a16b4e80786654590e4
-// @resource     astra-locale-ar https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/ar/messages.json#sha256=7f2bf51ab68f95c9c43ae8aae5603a0a40e365105b9b6b013291cfcb4b8279cb
-// @resource     astra-locale-de https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/de/messages.json#sha256=24c5b32d40867b9a8442e65ebb00456f16814bd5ecef6871aac17aabdfb8fac6
-// @resource     astra-locale-es https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/es/messages.json#sha256=748b002a999ccaf735ccd2dc6eab19544ca977abc485bacf5108a6efcc8f01e1
-// @resource     astra-locale-fr https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/fr/messages.json#sha256=5571d8bcfe8ba1c2b77d4f15e16648f03618b671cc80c78bca8ff37f04d83fc5
-// @resource     astra-locale-it https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/it/messages.json#sha256=6ad73eb608f0da0f48a962f09c28a6c6261b0cf82bbc1496ee83e2334a12a829
-// @resource     astra-locale-ja https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/ja/messages.json#sha256=e86da9f1f36ee373b338ede1ffd59bb3052bb3ab3d5dace04e3267bb11116ee1
-// @resource     astra-locale-ko https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/ko/messages.json#sha256=6b4bbe18cc40809e029de234c0a44248511fb5538d3e39e2e9c73fa8585a1dcf
-// @resource     astra-locale-pt_BR https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/pt_BR/messages.json#sha256=cf843adcfc99a81c9c05246ffae991d74b3359b42d88daa79bb9b3af2a09da91
-// @resource     astra-locale-ru https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/ru/messages.json#sha256=202ca2c67fd6fdb4e4e60931a257ea98cf889d128eab24edd6e3cfa1dffb21c8
-// @resource     astra-locale-zh_CN https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@33b7c02bef7306b039dea53cf7f8727886659b35/extension/_locales/zh_CN/messages.json#sha256=affa51a085fc20c07ccd4b64c59bc8c701e4ad3a741214d1b96fbf2403fcc6d6
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/YTKit-core.user.js#sha256=15cc40b370fc42b52b66b470211c512c34f3ae70fd65790dc5dc2104576e645e
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/YTKit-features.user.js#sha256=edb1b6f2f5377e8dc58e307eb42b677a6b0a03493c129494e1d8947d001e7347
+// @require      https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/YTKit-app.user.js#sha256=4f0c6981dbe34152418da608b11e08090d4f1be4de5423a3f4024679321e1c2a
+// @resource     astra-locale-ar https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/ar/messages.json#sha256=f87def13c9da615251865b35bf19cc4f671da0983b725c129d7d9d883fc10f2c
+// @resource     astra-locale-de https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/de/messages.json#sha256=86e0d0913ab72f3d60314a305b67d8f01b101bfd44d290128d0fe37ed63925b1
+// @resource     astra-locale-es https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/es/messages.json#sha256=057aab9257cb14cfd3e4f2754f75342dcfe511734eccf85479914802431e7819
+// @resource     astra-locale-fr https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/fr/messages.json#sha256=f8c1599c9153d34a3c7ca51428588fab491fd337728a129d1ad59372399cf48e
+// @resource     astra-locale-it https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/it/messages.json#sha256=370c41484ce5be1d9e2ac5dfe152956857dde3f125d061cdaa9289f8dd9074ff
+// @resource     astra-locale-ja https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/ja/messages.json#sha256=57a68f35c6598d86d8c58a248e2dbe30de8131259e61be18e7e7f8237e8cefb3
+// @resource     astra-locale-ko https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/ko/messages.json#sha256=6e9c394b6be728178ae5fca5afef7474a00ce62ef44b6534abbbd0bb4a6e2aaa
+// @resource     astra-locale-pt_BR https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/pt_BR/messages.json#sha256=baab8f1b1f158d6e368b5ee4b1f929655ea647677ef29fc20922884e8f3fc6a0
+// @resource     astra-locale-ru https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/ru/messages.json#sha256=93c2a6835529ba2f75508c4c7fe0e998d49732b49e7e286cc2b2fb45fead6410
+// @resource     astra-locale-zh_CN https://cdn.jsdelivr.net/gh/SysAdminDoc/Astra-Deck@v4.109.0/extension/_locales/zh_CN/messages.json#sha256=936168930885e8b66a45e93c173320a06ba4800ff7e8caa2b0df4cf3ef2c57df
 // ==/UserScript==
 
 // Generated by sync-userscript.js. Do not edit: the code that runs is the
@@ -75,7 +75,7 @@
 // to probe the LAN. The extension refuses it for the same reason.
 
 const ASTRA_DECK_BUILD = {
-	"version": "4.108.0",
+	"version": "4.109.0",
 	"runtimeId": "astra-deck-userscript",
 	"menuLabel": "Open Astra Deck settings",
 	"credentialMenuLabel": "AI provider key",
@@ -138,7 +138,7 @@ const ASTRA_DECK_BUILD = {
 			"https://*/*"
 		],
 		"minimum_chrome_version": "120",
-		"version": "4.108.0",
+		"version": "4.109.0",
 		"x-ytkit-build-profile": "github-full",
 		"x-ytkit-host": "userscript"
 	},
@@ -3800,11 +3800,26 @@ const ASTRA_DECK_BUILD = {
 		"transcriptSearchStillIndexing": "The current video is still being indexed.",
 		"transcriptSearchNoMatchesTpl": "No transcripts matched \"{query}\".",
 		"protocolHandoffToastTpl": "{player} handoff fired. If nothing opened, register the handler on your OS first.",
-		"pageModalEnabledCountTplOne": "{count} Enabled",
-		"pageModalEnabledCountTplOther": "{count} Enabled",
-		"pageModalShortcutCountTplOne": "{count} Shortcut",
-		"pageModalShortcutCountTplOther": "{count} Shortcuts",
-		"pageModalAppliesLive": "Applies Live",
+		"pageModalTitle": "Quick controls",
+		"pageModalPageWatch": "Watch page",
+		"pageModalPageChannel": "Channel",
+		"pageModalCloseAria": "Close quick controls",
+		"pageModalSectionLayout": "Layout",
+		"pageModalSectionTitles": "Titles and thumbnails",
+		"pageModalSectionHide": "Hide from feed",
+		"pageModalLabelDenseGrid": "Dense grid",
+		"pageModalLabelFullWidth": "Full width",
+		"pageModalLabelScheduled": "Scheduled streams",
+		"pageModalLabelWatched": "Watched videos",
+		"pageModalLabelVideosPerRow": "Videos per row",
+		"pageModalLabelExpandWidth": "Expand width",
+		"pageModalLabelMaxResolution": "Max resolution",
+		"pageModalLabelVideosTab": "Open on the Videos tab",
+		"pageModalLabelSortByLength": "Sort videos by length",
+		"pageModalAllSettings": "All settings",
+		"pageModalEmptyTitle": "No quick controls here",
+		"pageModalEmptyCopy": "You'll find every feature in All settings.",
+		"pageModalSaveFailed": "Couldn't save that change. It's back how it was.",
 		"statusSettingsImportUndoFailed": "Import undo failed.",
 		"statusSettingsImportInvalidFormat": "Invalid file format.",
 		"statusSettingsImportNoKnownKeys": "No known settings found in file.",

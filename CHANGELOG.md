@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.109.0] (2026-11-23)
+
 ### Changed
 - The page Quick Controls (the sliders button next to the gear) are a plain list of switches now. Each row is a feature's name, its icon and a square switch like the one in the settings panel, grouped under short headings such as Layout and Hide from feed. The counters, the On/Off tags and the cut-off descriptions are gone, and hovering a row shows its full description. The panel follows YouTube's light and dark themes, and on a short window only the list scrolls, so All settings stays in reach.
 
