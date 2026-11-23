@@ -10,20 +10,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 - The settings panel had a design pass. Rows are 64px with a 15px name over a 13px description, so a long category shows about seven settings a screen where it used to show five. The header reads Astra Deck | Settings, and live apply is a status dot now instead of a switch that looked clickable and did nothing. Category chips say "4 on" and "64 items".
-- On light YouTube the panel's quieter text clears 4.5:1 everywhere. The placeholder and version number sat at 3.4:1 and the search match counts at 4.2:1. The footer's secondary buttons sit on white there too.
+- On light YouTube the panel's gray text all meets the 4.5:1 contrast minimum. The placeholder and version number were at 3.4:1 and the search match counts at 4.2:1. The footer's secondary buttons sit on white there too.
 - Search results tint the matched words with the same soft red as the match counts in the sidebar. They used to get the browser's bright yellow highlight.
 - In a narrow window the categories become one scrolling row of tabs. At phone width Export, Import and Import History fit on one row with Done below them.
-- The reorder arrows at the top of the sidebar stay out of the way until you point at them.
+- The reorder arrows at the top of the sidebar stay faint until you point at them.
 
 ### Fixed
-- Searching the settings narrows the list again. The search counted its matches and said "13 matching settings", but every setting stayed on screen underneath, so you still had to scroll through all of them.
-- Between about 560 and 1240 pixels wide, switches and dropdowns dropped below their description and left the right half of each row empty.
-- Under 900 pixels wide the category tabs broke their names one letter per line.
+- Searching the settings now hides the ones that don't match. The search counted its hits and said "13 matching settings", but every setting stayed on screen below that, so you still had to scroll through all of them.
+- In a window between about 560 and 1240 pixels wide, switches and dropdowns sat below their descriptions and left the right half of each row empty. They're back beside the text.
+- Under 900 pixels wide the category tabs broke their names one letter per line. Each tab is as wide as its name now.
 
 ## [4.109.0] (2026-11-23)
 
 ### Changed
-- The page Quick Controls (the sliders button next to the gear) are a plain list of switches now. Each row is a feature's name, its icon and a square switch like the one in the settings panel, grouped under short headings such as Layout and Hide from feed. The counters, the On/Off tags and the cut-off descriptions are gone, and hovering a row shows its full description. The panel follows YouTube's light and dark themes, and on a short window only the list scrolls, so All settings stays in reach.
+- The page Quick Controls (the sliders button next to the gear) are a plain list of switches now. Each row has the feature's icon and name with a square switch like the settings panel's, under short headings such as Layout and Hide from feed. The counters, the On/Off tags and the cut-off descriptions are gone, and hovering a row shows its full description. The panel follows YouTube's light and dark themes, and on a short window only the list scrolls, so All settings stays in reach.
 
 ### Fixed
 - On YouTube's light theme the quick controls button and the gear next to it were white icons on a white background, so they looked like empty boxes. They're dark there now, in the top bar and under the video.
@@ -32,12 +32,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [4.108.0] (2026-11-23)
 
 ### Added
-- The Subscriptions Quick Controls (the sliders button next to the gear) have four more switches. DeArrow turns the replaced titles and thumbnails on or off, Hide Scheduled Lives brings back the upcoming streams and premieres it hides by default, and Hide Shorts and Hide Watched Videos are there too.
+- The Subscriptions Quick Controls (the sliders button next to the gear) have four more switches. DeArrow turns the replaced titles and thumbnails on or off, Hide Scheduled Lives lets you bring back the upcoming streams and premieres it hides by default, and Hide Shorts and Hide Watched Videos are there too.
 
 ### Fixed
 - Videos Per Row in the Home Quick Controls is a dropdown now. It used to act like an on/off switch on a number, so a click threw away the count you'd picked and saved a value the settings import refuses.
 - Shorts Auto-Advance moves on again. When a Short ended it clicked the box around YouTube's next button rather than the button, so nothing happened.
-- With Shorts Player Controls on, pressing the video or YouTube's play button works again and the native bar can be pressed. YouTube's newer overlay covers the whole video and an old rule made all of it catch the pointer.
+- With Shorts Player Controls on, pressing the video or YouTube's play button works again, and you can press the native bar too. YouTube's newer overlay covers the whole video and an old rule made all of it catch the pointer.
 - Shorts Player Controls stays on for every Short. YouTube keeps one player across Shorts and resets its controls and looping for each new one and after a seek, so the controls only held on the first Short.
 - Redirect Shorts keeps a series in order. An episode opened from its series page plays in the regular player with the series list, so the next episode comes next.
 - Remove Shorts leaves a Shorts series, a playlist and a channel opened at its /channel/ address alone. It used to empty a series page down to its sidebar and take a playlist's header with its rows.
@@ -45,9 +45,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - In Tampermonkey, Download setup told you "Setup downloaded" when nothing had downloaded, because Tampermonkey refuses .exe files by default and the userscript never heard about it. It now notices the refusal and opens the setup file in a tab instead, which the browser downloads normally, and the message says so.
 - Dragging from inside a dialog and letting go on the dim behind it no longer closes the dialog. Selecting text a bit too far used to shut Watch Stats, Local Summary, the page menu, Settings, Subscription Groups and the Wellbeing prompts, and in Transcript Q&A it took your typed question with it.
 - The download options popup is a real modal dialog now. Tab can't wander off into YouTube behind it, it stays above the player in fullscreen, and Escape closes it the way it closes any other dialog. A drag that starts in a clip field and ends outside the box no longer closes it either.
-- Local Summary and Transcript Q&A could sit on their loading state forever in a browser that never says whether its built-in AI is there. They now wait 5 seconds and move on: Local Summary to your own AI provider, Q&A to a message saying the on-device model isn't available.
-- If every other route to a transcript fails, Astra Deck now reads YouTube's own transcript panel. It opens for a moment, gets read and closes again, and one you already had open stays open. Auto-Open Transcript works again too: YouTube keeps the panel hidden in the page from the start, so the feature always thought it was already open. Watch Page Tabs' Transcript tab now opens YouTube's panel and closes it when you move to another tab.
-- Transcripts work again, and they'd been down everywhere: the Transcript Sidebar, Transcript Q&A, Local Summary, dual subtitles and everything else that reads captions came back empty or with an error. YouTube stopped serving words from the caption links on the page, and it turns away requests sent from an extension's background. Captions now come from the links YouTube gives its mobile apps, requested from the page itself. The same refusal had been stopping the Made with AI lookups and Video Insights' YouTube details, so those are back too.
+- Local Summary and Transcript Q&A could sit on their loading state forever in a browser that never says whether its built-in AI is there. They now wait 5 seconds and move on. Local Summary falls back to your own AI provider, and Q&A shows a message saying the on-device model isn't available.
+- If every other route to a transcript fails, Astra Deck now reads YouTube's own transcript panel. It opens for a moment, gets read and closes again, and one you already had open stays open. Auto-Open Transcript works again too. YouTube keeps the panel hidden in the page from the start, so the feature always thought it was already open. Watch Page Tabs' Transcript tab now opens YouTube's panel and closes it when you move to another tab.
+- Transcripts work again after being down everywhere. The Transcript Sidebar, Transcript Q&A, Local Summary, dual subtitles and everything else that reads captions came back empty or with an error. YouTube stopped serving words from the caption links on the page, and it turns away requests sent from an extension's background. Captions now come from the links YouTube gives its mobile apps, requested from the page itself. The same refusal had been stopping the Made with AI lookups and Video Insights' YouTube details, so those are back too.
 - Local Summary opens as a real dialog too, so Tab stays inside it and Escape closes it. Closing it now cancels the summary instead of letting the answer pop the box back open a moment later, and the Loading box gets out of the way when a run hands off to your own AI provider, so you can use that panel straight away. The heading no longer renders smaller than the text under it.
 - Transcript Q&A is a real dialog now. Keyboard and screen reader users stay inside it while it's open, instead of tabbing off into the page behind, and Escape closes it reliably. A toast with an Undo button that was already on screen stays clickable above it.
 
