@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.108.0] (2026-11-23)
+
 ### Added
 - The Subscriptions Quick Controls (the sliders button next to the gear) have four more switches. DeArrow turns the replaced titles and thumbnails on or off, Hide Scheduled Lives brings back the upcoming streams and premieres it hides by default, and Hide Shorts and Hide Watched Videos are there too.
 
