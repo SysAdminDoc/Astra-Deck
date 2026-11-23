@@ -3262,14 +3262,19 @@
            draws the one ring now: the input's own inset 2px on top of the
            box's inset 1px and a 3px glow at 30% was a triple coral border,
            and the panel opens with the search focused, so it was the first
-           thing anyone saw. */
+           thing anyone saw. One 1px line now, and it belongs to the input:
+           the input fills the box edge to edge, so its inset ring traces the
+           box exactly, and a focus ring that only exists on an ancestor is
+           invisible to anything that asks the focused control how it shows
+           focus. The box keeps only the soft outer glow, which the input
+           can't draw past the clip. */
         #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
             border-radius: inherit !important;
-            box-shadow: none !important;
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.85) !important;
         }
 
         #ytkit-settings-panel .ytkit-command-search:focus-within {
-            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.85), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.16) !important;
+            box-shadow: 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.16) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active:focus-visible {
