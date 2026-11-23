@@ -44430,7 +44430,10 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             flex-shrink: 0;
         }
 
+        /* A div, so it doesn't get the border-box sizing the switch buttons
+           get from the browser, and width: 100% plus padding overflowed. */
         .ytkit-pm-card--choice {
+            box-sizing: border-box;
             align-items: center;
             cursor: default;
         }
