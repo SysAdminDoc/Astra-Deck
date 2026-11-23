@@ -252,10 +252,13 @@ test('the cleanup closure removes both listeners and collapses aria-expanded', (
     assert.equal(anchor.getAttribute('aria-expanded'), 'false', 'cleanup collapses the anchor again');
 });
 
-test('the download popup carries the same two guards, in its own geometry', () => {
+test('the download popup caps its height, and its outside-click listeners go with it', () => {
     // Both guards originated in the download popup. Rather than scan its source
     // — the shape this whole file moved away from — open the real popup in a
-    // short viewport and read the same two properties back off it.
+    // short viewport and read the same properties back off it. Since it became
+    // a modal dialog it has no document listeners to leak: an outside click
+    // lands on the dialog itself, so the listeners live on the popup and leave
+    // with it.
     const { createDownloadUIFeature } = require('../extension/features/download-ui');
     const documentRef = fakeTreeDocument(() => null);
     const createElement = documentRef.createElement.bind(documentRef);
@@ -299,14 +302,7 @@ test('the download popup carries the same two guards, in its own geometry', () =
     const anchor = fakeNode({ tag: 'button', attributes: { class: 'ytkit-po-dl' } });
     anchor.getBoundingClientRect = () => ({ top: 100, bottom: 124, left: 400, width: 40 });
     anchor.focus = () => {};
-    // The arm window uses the ambient setTimeout, not the injected one.
-    const realSetTimeout = globalThis.setTimeout;
-    globalThis.setTimeout = (fn, delay) => { timers.push({ fn, delay }); return timers.length; };
-    try {
-        feature.showDownloadPopup(anchor);
-    } finally {
-        globalThis.setTimeout = realSetTimeout;
-    }
+    feature.showDownloadPopup(anchor);
 
     const popup = documentRef.body.children[documentRef.body.children.length - 1];
     // 200px viewport, trigger at 100-124: neither side holds the panel, so the
@@ -314,14 +310,22 @@ test('the download popup carries the same two guards, in its own geometry', () =
     assert.ok(pixels(popup.style.maxHeight) > 0, 'the download popup caps its height too');
     assert.ok(pixels(popup.style.maxHeight) <= 200, 'and the cap fits the viewport it measured');
 
-    // And the same deferred-listener guard: the arm timer must not attach to a
-    // popup that has already closed.
-    const armed = timers.find((entry) => entry.delay === 50);
-    assert.ok(armed, 'the download popup arms its listeners on the same 50ms timer');
-    const attached = [];
-    documentRef.addEventListener = (type) => attached.push(type);
-    popup.isConnected = false;
-    armed.fn();
-    assert.deepEqual(attached, [],
-        'attaching to a closed popup leaks both capture-phase listeners for the page lifetime');
+    for (const type of ['pointerdown', 'mousedown', 'click']) {
+        assert.ok(!documentRef.listeners.get(type)?.size,
+            `opening the popup must not leave a document ${type} listener behind`);
+    }
+    for (const type of ['pointerdown', 'click', 'close']) {
+        assert.ok(popup.listeners.get(type)?.size, `the popup itself listens for ${type}`);
+    }
+
+    // The box is 0-240 x 0-230. A drag that starts in a field and ends out on
+    // the dim keeps the popup; a press and release both outside closes it.
+    const outside = { clientX: 600, clientY: 100 };
+    popup.dispatchEvent({ type: 'pointerdown', target: popup.children[0], clientX: 40, clientY: 40 });
+    popup.dispatchEvent({ type: 'click', target: popup, ...outside });
+    assert.equal(popup.isConnected, true, 'a drag that began inside the box must not close it');
+    popup.dispatchEvent({ type: 'pointerdown', target: popup, ...outside });
+    popup.dispatchEvent({ type: 'click', target: popup, ...outside });
+    assert.equal(popup.isConnected, false, 'a press and release outside the box closes it');
+    assert.equal(anchor.getAttribute('aria-expanded'), 'false', 'and closing collapses the trigger');
 });

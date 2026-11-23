@@ -94,12 +94,28 @@ test('#movie_player does not get the disclosure state', () => {
 test('the popup routes every aria-expanded write through the guard', () => {
     const at = downloadUi.indexOf('const disclosureAnchor = isDisclosureTrigger(anchorEl)');
     assert.ok(at > 0, 'the open path must resolve the disclosure anchor');
-    // Both cleanup closures and the open path: none may write to anchorEl.
+    // The open path and the one cleanup: neither may write to anchorEl.
     const writes = [...downloadUi.matchAll(/(\w+)\?\.setAttribute\?\.\('aria-expanded'/g)]
         .map((m) => m[1]);
-    assert.ok(writes.length >= 3, `expected the open path and both cleanups, found ${writes.length}`);
+    assert.ok(writes.length >= 2, `expected the open path and the cleanup, found ${writes.length}`);
     assert.deepEqual([...new Set(writes)], ['disclosureAnchor'],
         'aria-expanded must never be written to the raw anchor again');
+});
+
+test('every way the popup closes collapses the disclosure again', () => {
+    // The popup is a modal dialog: Escape, the close button, an outside click
+    // and a navigation all end in _closeDlPopup, and that runs the one cleanup
+    // that writes aria-expanded="false". A close that skipped it would leave
+    // the trigger announcing an open panel that's gone.
+    const close = downloadUi.slice(downloadUi.indexOf('function _closeDlPopup()'));
+    assert.match(close.slice(0, close.indexOf('\n        }\n')),
+        /if \(_dlPopupCleanup\) \{ _dlPopupCleanup\(\); _dlPopupCleanup = null; \}/,
+        '_closeDlPopup must run the cleanup that collapses the trigger');
+    assert.match(downloadUi,
+        /popup\.addEventListener\('close', \(\) => \{ if \(_dlPopup === popup\) _closeDlPopup\(\); \}\)/,
+        'the dialog\'s own close (Escape) must go through _closeDlPopup');
+    assert.match(downloadUi, /_dlPopupCleanup = \(\) => \{[^}]*disclosureAnchor\?\.setAttribute\?\.\('aria-expanded', 'false'\)/,
+        'the cleanup must collapse the guarded anchor');
 });
 
 test('the context-menu fallback still passes #movie_player for positioning', () => {
