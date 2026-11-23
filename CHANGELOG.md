@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.110.1] (2026-11-23)
+
 ### Fixed
 - The settings search box draws its keyboard focus ring on the field itself again. 4.110.0 moved the ring to the box around the field, which looked the same, but the field reported no focus indicator of its own to anything that checks the focused control.
 
