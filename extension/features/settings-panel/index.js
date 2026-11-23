@@ -3142,11 +3142,11 @@ function buildSettingsPanel() {
             paneEnabledChip.className = 'ytkit-pane-chip';
             paneEnabledChip.dataset.stat = 'enabled';
             paneEnabledChip.dataset.category = catId;
-            paneEnabledChip.textContent = t('settingsCategoryOnTpl', '{count} On')
+            paneEnabledChip.textContent = t('settingsCategoryOnTpl', '{count} on')
                 .replace('{count}', countEnabledToggleFeatures(parentFeatures));
             const paneTotalChip = document.createElement('span');
             paneTotalChip.className = 'ytkit-pane-chip';
-            paneTotalChip.textContent = t('settingsCategoryItemsTpl', '{count} Items')
+            paneTotalChip.textContent = t('settingsCategoryItemsTpl', '{count} items')
                 .replace('{count}', parentFeatures.length);
             paneMeta.appendChild(paneEnabledChip);
             paneMeta.appendChild(paneTotalChip);
@@ -4303,7 +4303,7 @@ function updateAllToggleStates() {
             const paneEnabledChip = pane.querySelector('.ytkit-pane-chip[data-stat="enabled"]');
             if (paneEnabledChip) paneEnabledChip.textContent = t(
                 'settingsCategoryOnTpl',
-                '{count} On'
+                '{count} on'
             ).replace('{count}', enabledCount);
         });
 

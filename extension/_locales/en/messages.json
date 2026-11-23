@@ -5736,10 +5736,10 @@
     "message": "{enabled}/{total}"
   },
   "settingsCategoryItemsTpl": {
-    "message": "{count} Items"
+    "message": "{count} items"
   },
   "settingsCategoryOnTpl": {
-    "message": "{count} On"
+    "message": "{count} on"
   },
   "settingsCategorySummaryFallback": {
     "message": "Category settings"

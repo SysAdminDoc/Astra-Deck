@@ -3578,8 +3578,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'Einstellungsgruppe',
     'Adjust how this part of YouTube behaves.': 'Passe an, wie dieser Teil von YouTube funktioniert.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} aktiv',
-    '{count} Items': '{count} Elemente',
+    '{count} on': '{count} aktiv',
     'View on GitHub': 'Auf GitHub ansehen',
     'Download the Astra Deck downloader setup file': 'Astra Deck Downloader-Setupdatei herunterladen',
     'v': 'v',
@@ -3699,8 +3698,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'Grupo de configuración',
     'Adjust how this part of YouTube behaves.': 'Ajusta el comportamiento de esta parte de YouTube.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} activados',
-    '{count} Items': '{count} elementos',
+    '{count} on': '{count} activados',
     'View on GitHub': 'Ver en GitHub',
     'Download the Astra Deck downloader setup file': 'Descargar el archivo de configuración del descargador de Astra Deck',
     'v': 'v',
@@ -3820,8 +3818,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'Groupe de paramètres',
     'Adjust how this part of YouTube behaves.': 'Ajustez le comportement de cette partie de YouTube.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} activés',
-    '{count} Items': '{count} éléments',
+    '{count} on': '{count} activés',
     'View on GitHub': 'Voir sur GitHub',
     'Download the Astra Deck downloader setup file': 'Télécharger le fichier d’installation du téléchargeur Astra Deck',
     'v': 'v',
@@ -3941,8 +3938,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'Gruppo di impostazioni',
     'Adjust how this part of YouTube behaves.': 'Regola il comportamento di questa parte di YouTube.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} attivi',
-    '{count} Items': '{count} elementi',
+    '{count} on': '{count} attivi',
     'View on GitHub': 'Visualizza su GitHub',
     'Download the Astra Deck downloader setup file': 'Scarica il file di configurazione del downloader Astra Deck',
     'v': 'v',
@@ -4062,8 +4058,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'Grupo de configurações',
     'Adjust how this part of YouTube behaves.': 'Ajuste como esta parte do YouTube funciona.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} ativados',
-    '{count} Items': '{count} itens',
+    '{count} on': '{count} ativados',
     'View on GitHub': 'Ver no GitHub',
     'Download the Astra Deck downloader setup file': 'Baixar o arquivo de configuração do downloader Astra Deck',
     'v': 'v',
@@ -4183,8 +4178,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'Группа настроек',
     'Adjust how this part of YouTube behaves.': 'Настройте поведение этой части YouTube.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': 'Включено: {count}',
-    '{count} Items': 'Элементов: {count}',
+    '{count} on': 'Включено: {count}',
     'View on GitHub': 'Открыть на GitHub',
     'Download the Astra Deck downloader setup file': 'Скачать файл установки загрузчика Astra Deck',
     'v': 'v',
@@ -4304,8 +4298,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': '設定グループ',
     'Adjust how this part of YouTube behaves.': 'YouTube のこの部分の動作を調整します。',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} 件がオン',
-    '{count} Items': '{count} 項目',
+    '{count} on': '{count} 件がオン',
     'View on GitHub': 'GitHub で表示',
     'Download the Astra Deck downloader setup file': 'Astra Deck ダウンローダーのセットアップファイルをダウンロード',
     'v': 'v',
@@ -4425,8 +4418,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': '설정 그룹',
     'Adjust how this part of YouTube behaves.': 'YouTube의 이 부분이 작동하는 방식을 조정합니다.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count}개 켜짐',
-    '{count} Items': '{count}개 항목',
+    '{count} on': '{count}개 켜짐',
     'View on GitHub': 'GitHub에서 보기',
     'Download the Astra Deck downloader setup file': 'Astra Deck 다운로더 설정 파일 다운로드',
     'v': 'v',
@@ -4546,8 +4538,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': 'مجموعة الإعدادات',
     'Adjust how this part of YouTube behaves.': 'اضبط طريقة عمل هذا الجزء من YouTube.',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '{count} مفعّلة',
-    '{count} Items': '{count} عناصر',
+    '{count} on': '{count} مفعّلة',
     'View on GitHub': 'عرض على GitHub',
     'Download the Astra Deck downloader setup file': 'تنزيل ملف إعداد أداة تنزيل Astra Deck',
     'v': 'v',
@@ -4667,8 +4658,7 @@ const SETTINGS_PANEL_TRANSLATIONS = {
     'Settings group': '设置组',
     'Adjust how this part of YouTube behaves.': '调整 YouTube 此部分的行为方式。',
     '{enabled}/{total}': '{enabled}/{total}',
-    '{count} On': '已开启 {count} 项',
-    '{count} Items': '{count} 项',
+    '{count} on': '已开启 {count} 项',
     'View on GitHub': '在 GitHub 上查看',
     'Download the Astra Deck downloader setup file': '下载 Astra Deck 下载器设置文件',
     'v': 'v',
@@ -11018,9 +11008,11 @@ for (const [locale, messages] of Object.entries(LOOK_DEFAULTS_TRANSLATIONS)) {
 // names the English it translates and stops applying when that wording changes.
 const PROOFED_KEY_TRANSLATIONS = {
   ar: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} عناصر" },
     settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "تطابق واحد ({count})" }
   },
   de: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} Elemente" },
     dlProgressEtaPrefix: { en: "ETA", message: "Restzeit" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Legt einen warmen Farbton über das Bild, um den Blaulichtanteil zu verringern. Die Intensität ist einstellbar." },
     feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Verhindert, dass das nächste Video automatisch startet, wenn das aktuelle zu Ende ist" },
@@ -11028,12 +11020,14 @@ const PROOFED_KEY_TRANSLATIONS = {
     spCategory_watch_player: { en: "Video Player", message: "Video-Player" }
   },
   es: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} elementos" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Aplica un tinte cálido para reducir la emisión de luz azul. La intensidad es configurable." },
     feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Evita que el siguiente video se reproduzca automáticamente cuando termina el actual" },
     spCategory_watch_player: { en: "Video Player", message: "Reproductor de vídeo" },
     stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Cambiar el tamaño de los paneles de Modo cine dividido" }
   },
   fr: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} éléments" },
     dlProgressEtaPrefix: { en: "ETA", message: "Temps restant" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Applique une teinte chaude pour réduire l'émission de lumière bleue. Intensité réglable." },
     feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Empêche la lecture automatique de la vidéo suivante lorsque la vidéo en cours se termine" },
@@ -11043,6 +11037,7 @@ const PROOFED_KEY_TRANSLATIONS = {
     welcomePresetFocusTitle: { en: "Focus", message: "Concentration" }
   },
   it: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} elementi" },
     dlProgressEtaPrefix: { en: "ETA", message: "Tempo rimasto" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Applica una tonalità calda per ridurre l'emissione di luce blu. Intensità configurabile." },
     feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Impedisce che il video successivo parta in automatico quando finisce quello attuale" },
@@ -11054,6 +11049,7 @@ const PROOFED_KEY_TRANSLATIONS = {
     welcomePresetFocusTitle: { en: "Focus", message: "Concentrazione" }
   },
   ja: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} 項目" },
     dlProgressEtaPrefix: { en: "ETA", message: "残り時間" },
     feature_autoTheaterMode_desc: { en: "Automatically enter theater (wide) mode when opening a video", message: "動画を開いたときに、自動的にシアターモード(ワイド表示)にします" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "暖色系の色合いを重ねて、ブルーライトの放出を抑えます。強さは調整できます。" },
@@ -11074,6 +11070,7 @@ const PROOFED_KEY_TRANSLATIONS = {
     videoHiderKeywordsPlaceholder: { en: "reaction, unboxing, prank, shorts…", message: "リアクション、開封、ドッキリ、shorts…" }
   },
   ko: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count}개 항목" },
     dlProgressEtaPrefix: { en: "ETA", message: "예상" },
     feature_autoTheaterMode_desc: { en: "Automatically enter theater (wide) mode when opening a video", message: "동영상을 열 때 자동으로 시어터 모드(와이드 화면)로 전환합니다" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "따뜻한 색조를 입혀 블루라이트 방출을 줄여요. 강도를 조절할 수 있어요." },
@@ -11091,11 +11088,13 @@ const PROOFED_KEY_TRANSLATIONS = {
     videoHiderKeywordsPlaceholder: { en: "reaction, unboxing, prank, shorts…", message: "리액션, 언박싱, 몰래카메라, 쇼츠…" }
   },
   pt_BR: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} itens" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Aplica um tom quente para reduzir a emissão de luz azul. A intensidade é configurável." },
     feature_disableAutoplayNext_desc: { en: "Prevents the next video from automatically playing when the current one finishes", message: "Impede que o próximo vídeo seja reproduzido automaticamente quando o atual termina" },
     stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Redimensionar painéis da Divisão em Modo Cinema" }
   },
   ru: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "Элементов: {count}" },
     dlProgressEtaPrefix: { en: "ETA", message: "Осталось" },
     feature_autoTheaterMode_desc: { en: "Automatically enter theater (wide) mode when opening a video", message: "Автоматически включает режим кинотеатра (широкий режим) при открытии видео" },
     feature_blueLightFilter_desc: { en: "Apply a warm tint to reduce blue light emission. Configurable intensity.", message: "Накладывает тёплый оттенок, чтобы уменьшить излучение синего света. Интенсивность настраивается." },
@@ -11116,6 +11115,7 @@ const PROOFED_KEY_TRANSLATIONS = {
     stickyVideoResizePanelsLabel: { en: "Resize Theater Split panels", message: "Изменить размер панелей разделённого режима кинотеатра" }
   },
   zh_CN: {
+    settingsCategoryItemsTpl: { en: "{count} items", message: "{count} 项" },
     settingsSearchSectionMatchesTplOne: { en: "{count} match", message: "{count} 个匹配" },
     settingsSearchSectionMatchesTplOther: { en: "{count} matches", message: "{count} 个匹配" },
     videoHiderKeywordsPlaceholder: { en: "reaction, unboxing, prank, shorts…", message: "反应视频、开箱、整蛊、shorts…" }
