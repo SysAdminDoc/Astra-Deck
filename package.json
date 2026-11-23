@@ -91,6 +91,7 @@
     "smoke:settings-overlay": "node scripts/smoke-settings-overlay.js",
     "smoke:settings-userscript": "node scripts/smoke-userscript-settings.js",
     "probe:panel-colors": "node scripts/probe-panel-colors.js",
+    "probe:media-session": "node scripts/probe-media-session.js",
     "smoke:light-surfaces": "node scripts/probe-light-surfaces.js",
     "smoke:theme-controls": "node scripts/probe-theme-control-regressions.js",
     "smoke:a11y": "node scripts/smoke-headless-a11y.js",

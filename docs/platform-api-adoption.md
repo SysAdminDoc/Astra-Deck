@@ -28,6 +28,17 @@ paths stay absent from startup code and the Firefox manifest.
 
 On Chromium 156 the service worker's fetch to the companion on `127.0.0.1` got a 200 with no prompt, while a page on `https://example.com` was blocked with the same request. The `host_permissions` exemption holds, so there's no native-messaging fallback for download commands: the companion's native host still serves only ping and get-token. Build that fallback if a real user ever hits an LNA failure. The popup can't fetch loopback itself (its CSP doesn't allow it), which is why those calls go through the background.
 
+## Media keys and the audio graph, measured 2026-11-23
+
+Six audio features route YouTube's `<video>` through `createMediaElementSource`, and Astra has no Media Session code of its own, so the question was whether that graph stops hardware media keys and the OS media panel from reaching the player. It doesn't, in either browser. `npm run probe:media-session` plays a tone with a media session on a local page and asks each browser's own controller, not the page, before the graph, with it attached, and after the re-route that turning the last audio feature off does (Astra never closes its AudioContext).
+
+| Browser | Before the graph | Graph attached | Graph re-routed |
+|---|---|---|---|
+| Chromium 159.0.8154.6 (`chrome://media-internals`, Audio Focus) | Active, Playing, Controllable | Active, Playing, Controllable | Active, Playing, Controllable |
+| Firefox 160.0.1 (`MediaControlService` play/pause key) | handler ran | handler ran | handler ran |
+
+The Chromium row is the session the Windows media flyout and the hardware keys follow. In Firefox the key goes down the same controller path a hardware key takes and reached the page's `pause` handler every time. What this can't show is Windows itself drawing the flyout: a hidden desktop never gets an SMTC session, with or without the graph. The probe exits 1 if a later browser starts dropping the session, so rerun it after any change to the audio graph.
+
 ## Primary references
 
 - [Chrome `runtime.getContexts`](https://developer.chrome.com/docs/extensions/reference/api/runtime#method-getContexts)
