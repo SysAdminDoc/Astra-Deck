@@ -855,15 +855,10 @@ function buildSettingsPanel() {
         liveDot.setAttribute('aria-hidden', 'true');
         const liveCopy = document.createElement('span');
         liveCopy.textContent = t('panelLiveApplyBadge', 'Live apply');
-        const liveSwitch = document.createElement('span');
-        liveSwitch.className = 'ytkit-header-live-switch';
-        liveSwitch.setAttribute('aria-hidden', 'true');
-        const liveSwitchThumb = document.createElement('span');
-        liveSwitchThumb.className = 'ytkit-header-live-switch-thumb';
-        liveSwitch.appendChild(liveSwitchThumb);
+        // A status, not a control. It used to end in a switch that was always
+        // on and did nothing when clicked.
         liveBadge.appendChild(liveDot);
         liveBadge.appendChild(liveCopy);
-        liveBadge.appendChild(liveSwitch);
         headerActions.appendChild(liveBadge);
         headerActions.appendChild(closeBtn);
 
@@ -985,26 +980,31 @@ function buildSettingsPanel() {
         injectStyle(`
             #ytkit-settings-panel .ytkit-nav-reorder {
                 display: flex;
-                gap: 4px;
-                padding: 4px 0 6px;
+                gap: 2px;
+                padding: 0 0 6px;
                 justify-content: flex-end;
             }
+            /* Quiet until pointed at. As bordered, filled buttons they were the
+               heaviest thing at the top of the sidebar, above the categories
+               they move. */
             #ytkit-settings-panel .ytkit-nav-reorder-btn {
                 min-width: 28px;
                 min-height: 28px;
                 padding: 0 6px;
                 border-radius: 6px;
-                border: 1px solid var(--ytkit-premium-border, rgba(255,255,255,0.14));
-                background: var(--ytkit-premium-raised, rgba(255,255,255,0.06));
-                color: var(--ytkit-premium-text, #e8ecf4);
+                border: 1px solid transparent;
+                background: transparent;
+                color: var(--ytkit-v3-muted, var(--ytkit-premium-text, #e8ecf4));
                 font: 600 13px/1 Inter, system-ui, sans-serif;
                 cursor: pointer;
             }
             #ytkit-settings-panel .ytkit-nav-reorder-btn:hover:not(:disabled) {
-                background: var(--ytkit-premium-hover, rgba(255,255,255,0.12));
+                border-color: var(--ytkit-v3-border, var(--ytkit-premium-border, rgba(255,255,255,0.14)));
+                background: var(--ytkit-v3-hover, var(--ytkit-premium-hover, rgba(255,255,255,0.12)));
+                color: var(--ytkit-v3-text, var(--ytkit-premium-text, #e8ecf4));
             }
             #ytkit-settings-panel .ytkit-nav-reorder-btn:disabled {
-                opacity: 0.45;
+                opacity: 0.4;
                 cursor: default;
             }
             /* The changed filter and the per-card reset. Both carry an explicit
@@ -1277,7 +1277,7 @@ function buildSettingsPanel() {
                 const total = counts.hidden + counts.allowed + counts.channels;
                 if (countSpan) {
                     countSpan.textContent = String(total);
-                    countSpan.style.color = '';
+                    countSpan.classList.remove('is-match');
                 }
                 if (stateSpan) stateSpan.dataset.tone = total === 0 ? 'empty' : 'partial';
             };
@@ -3756,6 +3756,7 @@ function buildSettingsPanel() {
         githubLink.rel = 'noopener noreferrer';
         githubLink.className = 'ytkit-github';
         githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
+        githubLink.setAttribute('aria-label', githubLink.title);
         githubLink.appendChild(ICONS.github());
 
         // Userscript installs have no popup, so this is their way to the
@@ -4293,7 +4294,7 @@ function updateAllToggleStates() {
                     'settingsCategoryFractionTpl',
                     '{enabled}/{total}'
                 ).replace('{enabled}', enabledCount).replace('{total}', totalCount);
-                countEl.style.color = '';
+                countEl.classList.remove('is-match');
             }
             const stateEl = btn.querySelector('.ytkit-nav-state');
             if (stateEl) {
@@ -4723,7 +4724,7 @@ function attachUIEventListeners() {
                         countEl.textContent = directMatches > 0
                             ? tCount(directMatches, 'settingsSearchSectionMatchesTpl', '{count} match', '{count} matches')
                             : '0';
-                        countEl.style.color = directMatches > 0 ? '#ffb19a' : '';
+                        countEl.classList.toggle('is-match', directMatches > 0);
                     }
                 }
             });

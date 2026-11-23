@@ -38,16 +38,18 @@ function assertUserscriptRunsSettingsPanel() {
 
 test('settings visual system renders the flat command-deck hierarchy', () => {
     assert.match(visualSystemSource, /settings visual system v5\. Shared settings workspace/);
+    // 64px rows on a 15/13 type pair under a 24px pane title (2026-11-23).
+    // The 76px rows, 16/14 type and 32px title showed five settings a screen.
     assert.match(
         commandDeckCss,
-        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*76px[\s\S]*?background:\s*transparent/
+        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*64px[\s\S]*?background:\s*transparent/
     );
-    assert.match(commandDeckCss, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*32px/);
-    assert.match(commandDeckCss, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
-    assert.match(commandDeckCss, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*14px[\s\S]*?white-space:\s*normal/);
+    assert.match(commandDeckCss, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*24px/);
+    assert.match(commandDeckCss, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*15px/);
+    assert.match(commandDeckCss, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*13px[\s\S]*?white-space:\s*normal/);
     assert.match(
         commandDeckCss,
-        /\.ytkit-feature-glyph\s*\{[^}]*?width:\s*28px[^}]*?background:\s*transparent/
+        /\.ytkit-feature-glyph\s*\{[^}]*?width:\s*24px[^}]*?background:\s*transparent/
     );
     assert.match(commandDeckCss, /\.ytkit-nav-group-label\s*\{[\s\S]*?display:\s*none/);
     assert.match(commandDeckCss, /\.ytkit-pane-context\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
@@ -56,8 +58,17 @@ test('settings visual system renders the flat command-deck hierarchy', () => {
         'command deck should use flat fills without decorative gradients');
     assert.match(commandDeckCss, /\.ytkit-feature-section-title\s*\{[\s\S]*?text-transform:\s*uppercase/);
     assert.match(commandDeckCss, /\.ytkit-feature-section-body\s*\{[\s\S]*?background:[\s\S]*?var\(--ytkit-v3-panel\)/);
-    assert.match(commandDeckCss, /\.ytkit-header-live-switch\s*\{[\s\S]*?background:\s*var\(--ytkit-v3-accent\)/);
-    assert.match(commandDeckCss, /\.ytkit-panel-status::before\s*\{[\s\S]*?content:\s*"✓"/);
+    // "Live apply" is a status. It used to end in an always-on switch that
+    // did nothing when clicked, and a red recording-style dot.
+    assert.doesNotMatch(settingsPanel, /ytkit-header-live-switch/,
+        'the live badge must not render a switch it cannot honour');
+    assert.doesNotMatch(visualSystemSource, /\.ytkit-header-live-switch/);
+    assert.match(visualSystemSource, /\.ytkit-header-live-dot \{[^}]*background:\s*var\(--ytkit-v3-success\)/);
+    // A bare tick: the bordered box around it read as a ticked checkbox.
+    const statusTick = commandDeckCss.match(/\.ytkit-panel-status::before \{([^}]*)\}/);
+    assert.ok(statusTick, 'the footer status keeps its tick');
+    assert.match(statusTick[1], /content:\s*"✓"/);
+    assert.match(statusTick[1], /border:\s*0 !important/);
     assert.match(settingsPanel, /categoryGroupLabels = \{[\s\S]*?panelNavGroupPlayer[\s\S]*?panelNavGroupSystem/);
     assert.match(settingsPanel, /paneContextFeatures[\s\S]*?ytkit-pane-context-value/);
     for (const source of [settingsPanel]) {
@@ -213,15 +224,24 @@ test('settings runtime crash accounting is declared in the shared outer scope', 
 });
 
 test('desktop settings keep labels readable and give Video Hider a summary row', () => {
-    assert.match(visualSystemSource, /Category labels wrap at every width/);
+    assert.match(visualSystemSource, /Category labels wrap in the sidebar at every desktop width/);
     assert.match(
         visualSystemSource,
         /@media \(min-width:\s*1181px\)[\s\S]*?grid-template-columns:\s*320px minmax\(0, 1fr\)/
     );
+    // Sidebar labels wrap; the under-901px row of tabs keeps each name on one
+    // line. Wrapping there broke "Video Player" one letter per line.
     assert.match(
         visualSystemSource,
-        /\.ytkit-nav-label,[\s\S]*?\.ytkit-pane-context-value[\s\S]*?text-overflow:\s*clip !important;[\s\S]*?white-space:\s*normal !important;/
+        /@media \(min-width: 901px\) \{\s*#ytkit-settings-panel \.ytkit-nav-btn \{[^}]*\}\s*#ytkit-settings-panel \.ytkit-nav-label \{[^}]*?text-overflow:\s*clip !important;[^}]*?white-space:\s*normal !important;/
     );
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-pane-context-label,\s*#ytkit-settings-panel \.ytkit-pane-context-value \{[^}]*?white-space:\s*normal !important;/
+    );
+    const narrow = visualSystemSource.slice(visualSystemSource.indexOf('/* One scrolling row of tabs'));
+    assert.match(narrow.slice(0, 3000), /\.ytkit-nav-label \{[^}]*?white-space:\s*nowrap !important;/);
+    assert.match(narrow.slice(0, 3000), /\.ytkit-nav-list \{[^}]*?overflow-x:\s*auto !important;/);
     assert.match(
         visualSystemSource,
         /\.ytkit-vh-summary\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/
@@ -887,4 +907,34 @@ test('the watch canvas rule paints only the page wrapper, not expander content',
     assert.match(block, /html\.ytkit-watch-restyle ytd-app > #content/);
     assert.doesNotMatch(block, /html\.ytkit-watch-restyle #content\b/,
         'a bare #content selector reaches every ytd-expander on the page');
+});
+
+// Three things the second screenshot pass caught. Search hits had no style of
+// their own and drew the browser's #ffff00 <mark>. The light match count sat at
+// 4.24:1. And between 561px and 1240px the legacy sheet moved every switch and
+// select to column 1 under the text while this system kept two columns, so
+// the right column stood empty and descriptions wrapped at half the card.
+test('search hits, light match counts and mid-width controls hold their fixes', () => {
+    const { SETTINGS_VISUAL_SYSTEM_CSS } = require('../extension/core/settings-visual-system.js');
+    const css = SETTINGS_VISUAL_SYSTEM_CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    const mark = css.match(/#ytkit-settings-panel \.ytkit-search-mark \{([^}]*)\}/);
+    assert.ok(mark, 'the search hit carries its own style');
+    assert.match(mark[1], /background: rgba\(var\(--ytkit-v3-accent-rgb\),0\.24\) !important/);
+    assert.match(mark[1], /color: inherit !important/);
+    assert.match(css, /html:not\(\[dark\]\) #ytkit-settings-panel \.ytkit-search-mark \{[^}]*0\.14\)/);
+
+    const lightMatch = css.match(/html:not\(\[dark\]\) #ytkit-settings-panel \.ytkit-nav-count\.is-match \{([^}]*)\}/);
+    assert.ok(lightMatch, 'the light lane sets its own match-count colour');
+    assert.match(lightMatch[1], /color: #a3241f !important/);
+
+    const midStart = css.indexOf('@media (min-width: 561px) {\n            #ytkit-settings-panel .ytkit-feature-card > .ytkit-switch');
+    assert.ok(midStart > 0, 'controls return to auto placement above 560px');
+    const mid = css.slice(midStart, css.indexOf('}', midStart) + 1);
+    for (const control of ['.ytkit-switch', '.ytkit-select-shell', '.ytkit-range-shell', '.ytkit-color-shell']) {
+        assert.ok(mid.includes(`.ytkit-feature-card > ${control}`), `${control} is covered`);
+    }
+    assert.match(mid, /grid-column: auto !important/);
+    assert.match(shell, /\.ytkit-feature-card--select \.ytkit-select-shell,[\s\S]*?grid-column: 1;/,
+        'the legacy rule this undoes is still there; drop the override if it goes');
 });

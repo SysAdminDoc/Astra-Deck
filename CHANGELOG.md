@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+- The settings panel had a design pass. Rows are 64px with a 15px name over a 13px description, so a long category shows about seven settings a screen where it used to show five. The header reads Astra Deck | Settings, and live apply is a status dot now instead of a switch that looked clickable and did nothing. Category chips say "4 on" and "64 items".
+- On light YouTube the panel's quieter text clears 4.5:1 everywhere. The placeholder and version number sat at 3.4:1 and the search match counts at 4.2:1. The footer's secondary buttons sit on white there too.
+- Search results tint the matched words with the same soft red as the match counts in the sidebar. They used to get the browser's bright yellow highlight.
+- In a narrow window the categories become one scrolling row of tabs. At phone width Export, Import and Import History fit on one row with Done below them.
+- The reorder arrows at the top of the sidebar stay out of the way until you point at them.
+
+### Fixed
+- Between about 560 and 1240 pixels wide, switches and dropdowns dropped below their description and left the right half of each row empty.
+- Under 900 pixels wide the category tabs broke their names one letter per line.
+
 ## [4.109.0] (2026-11-23)
 
 ### Changed

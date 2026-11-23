@@ -188,10 +188,12 @@
             /* Known-breakage notices. 10.77:1 on --ytkit-v3-bg. */
             --ytkit-v3-warning: #f6b863;
             /* Toggle parts. The off thumb is what tells you the state, so it
-               has to stand off its track (11.2:1 here). */
+               has to stand off its track (6.0:1 here). It was near-white, as
+               bright as the on thumb, so a column of off switches read as on
+               at a glance; the muted grey matches the Quick Controls switch. */
             --ytkit-v3-switch-track-off: var(--ytkit-v3-surface-raised);
             --ytkit-v3-switch-stroke-off: rgba(151,178,208,0.30);
-            --ytkit-v3-switch-thumb-off: #e8edf2;
+            --ytkit-v3-switch-thumb-off: #b0b3bc;
             --ytkit-v3-switch-thumb-on: #ffffff;
             /* Userscript-only panes still consume the original settings token
                names through inline styles. Keep them on the same semantic lane
@@ -301,22 +303,27 @@
 
         #ytkit-settings-panel .ytkit-eyebrow {
             color: var(--ytkit-v3-text) !important;
-            font-size: 18px !important;
-            font-weight: 720 !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
             line-height: 1 !important;
-            letter-spacing: -0.015em !important;
+            letter-spacing: -0.01em !important;
             text-transform: none !important;
             white-space: nowrap !important;
         }
 
+        /* "Settings" is a label beside the product name, not a second brand.
+           It was coral, uppercase and letterspaced, which put the loudest
+           colour in the header on the least useful word. */
         #ytkit-settings-panel .ytkit-title {
             margin: 0 !important;
-            color: var(--ytkit-v3-accent) !important;
-            font-size: 14px !important;
-            font-weight: 760 !important;
+            padding-inline-start: 12px !important;
+            border-inline-start: 1px solid var(--ytkit-v3-border-strong) !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 16px !important;
+            font-weight: 400 !important;
             line-height: 1 !important;
-            letter-spacing: 0.08em !important;
-            text-transform: uppercase !important;
+            letter-spacing: 0 !important;
+            text-transform: none !important;
             white-space: nowrap !important;
         }
 
@@ -395,30 +402,32 @@
             border: 0 !important;
             border-radius: 0 !important;
             background: transparent !important;
-            color: var(--ytkit-v3-text) !important;
-            font-size: 14px !important;
-            font-weight: 520 !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
             box-shadow: none !important;
             white-space: nowrap !important;
         }
 
+        /* A status light, so it takes the status colour. The accent red read
+           as a recording or error light beside a label that means "all good". */
         #ytkit-settings-panel .ytkit-header-live-dot {
             display: block !important;
             width: 8px !important;
             height: 8px !important;
             border-radius: 50% !important;
-            background: var(--ytkit-v3-accent) !important;
-            box-shadow: 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.10) !important;
+            background: var(--ytkit-v3-success) !important;
+            box-shadow: none !important;
         }
 
         #ytkit-settings-panel .ytkit-close {
-            width: 40px !important;
-            min-width: 40px !important;
-            height: 40px !important;
-            min-height: 40px !important;
+            width: 36px !important;
+            min-width: 36px !important;
+            height: 36px !important;
+            min-height: 36px !important;
             padding: 0 !important;
             border: 0 !important;
-            border-radius: 10px !important;
+            border-radius: 8px !important;
             background: transparent !important;
             color: var(--ytkit-v3-muted) !important;
             box-shadow: none !important;
@@ -1411,10 +1420,12 @@
                white card; this matches the dark lane's relative weight. */
             --ytkit-v3-control-stroke: rgba(15,23,42,0.16);
             --ytkit-v3-text: #17202b;
-            --ytkit-v3-muted: #5f6b79;
+            /* Was #5f6b79, 4.33:1 under the selected section's count. */
+            --ytkit-v3-muted: #566170;
             /* #7d8997 on #f7f8fa was 3.36:1 — below AA for the placeholder,
-               version, and nav-count text that consume this token. */
-            --ytkit-v3-subtle: #66707d;
+               version, and nav-count text that consume this token. #66707d after
+               that still read 4.36:1 on the footer behind the version. */
+            --ytkit-v3-subtle: #5f6975;
             --ytkit-v3-accent: #bd2e28;
             --ytkit-v3-accent-rgb: 189,46,40;
             --ytkit-v3-success: #168845;
@@ -1802,45 +1813,31 @@
         #ytkit-settings-panel .ytkit-header {
             grid-template-columns: 300px minmax(280px, 1fr) auto !important;
             gap: 22px !important;
-            min-height: 72px !important;
-            padding: 0 24px !important;
+            min-height: 64px !important;
+            padding: 0 20px 0 24px !important;
             background: var(--ytkit-v3-rail) !important;
         }
 
         #ytkit-settings-panel .ytkit-command-search {
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 40px !important;
+            min-height: 40px !important;
             border-radius: 8px !important;
             background: var(--ytkit-v3-bg) !important;
+        }
+
+        /* The browser's own clear button drew a second x on top of the
+           Changed chip; the panel has its own clear button. */
+        #ytkit-settings-panel .ytkit-search-input::-webkit-search-cancel-button,
+        #ytkit-settings-panel .ytkit-search-input::-webkit-search-decoration {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            display: none !important;
         }
 
         #ytkit-settings-panel .ytkit-header-live {
             display: inline-flex !important;
             align-items: center !important;
-            gap: 9px !important;
-        }
-
-        #ytkit-settings-panel .ytkit-header-live-switch {
-            position: relative !important;
-            display: inline-block !important;
-            width: 38px !important;
-            height: 22px !important;
-            margin-inline-start: 2px !important;
-            border-radius: 6px !important;
-            background: var(--ytkit-v3-accent) !important;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.13) !important;
-        }
-
-        #ytkit-settings-panel .ytkit-header-live-switch-thumb {
-            position: absolute !important;
-            top: 3px !important;
-            inset-inline-end: 3px !important;
-            display: block !important;
-            width: 16px !important;
-            height: 16px !important;
-            border-radius: 4px !important;
-            background: #fff !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.34) !important;
+            gap: 8px !important;
         }
 
         #ytkit-settings-panel .ytkit-body {
@@ -1849,23 +1846,33 @@
         }
 
         #ytkit-settings-panel .ytkit-sidebar {
-            padding: 18px 12px 14px !important;
+            padding: 12px 12px 12px !important;
             background: var(--ytkit-v3-rail) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-list {
-            gap: 4px !important;
+            gap: 2px !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: var(--ytkit-v3-border-strong) transparent !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-group-label {
             display: none !important;
         }
 
+        /* 44px rows fit all eleven categories in a 900px window. At 50px
+           plus the old 52px floor below, Advanced sat half under the
+           sidebar footer with nothing to say the list scrolled. */
         #ytkit-settings-panel .ytkit-nav-btn {
-            grid-template-columns: 30px minmax(0, 1fr) auto !important;
-            min-height: 50px !important;
-            padding: 0 14px !important;
+            grid-template-columns: 28px minmax(0, 1fr) auto !important;
+            min-height: 44px !important;
+            padding: 0 12px !important;
             border-radius: 8px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-icon svg {
+            width: 18px !important;
+            height: 18px !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn::before {
@@ -1880,17 +1887,22 @@
         }
 
         #ytkit-settings-panel .ytkit-nav-label {
-            font-size: 16px !important;
-            font-weight: 620 !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.active .ytkit-nav-label {
+            font-weight: 600 !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-count {
-            min-width: 39px !important;
-            padding: 3px 6px !important;
+            min-width: 36px !important;
+            padding: 2px 6px !important;
             border-radius: 4px !important;
             background: var(--ytkit-v3-hover) !important;
             color: var(--ytkit-v3-muted) !important;
-            font-size: 11.5px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
             font-variant-numeric: tabular-nums !important;
             text-align: center !important;
         }
@@ -1901,17 +1913,23 @@
         }
 
         #ytkit-settings-panel .ytkit-content {
-            padding: 24px 28px 30px !important;
+            padding: 20px 28px 32px !important;
             background: var(--ytkit-v3-bg) !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: var(--ytkit-v3-border-strong) transparent !important;
         }
 
+        /* The header sticks while the list scrolls under it, so every pixel
+           here is a pixel of settings you can't see. It was a 120px floor
+           under a 32px title; now it's as tall as its content. */
         #ytkit-settings-panel .ytkit-pane-header {
             grid-template-columns: minmax(0, 1fr) auto !important;
             grid-template-areas: "lead actions" !important;
+            align-items: center !important;
             gap: 12px 24px !important;
-            min-height: 120px !important;
+            min-height: 0 !important;
             margin: 0 !important;
-            padding: 12px 0 20px !important;
+            padding: 8px 0 16px !important;
             border: 0 !important;
             border-radius: 0 !important;
             background: var(--ytkit-v3-bg) !important;
@@ -1948,30 +1966,34 @@
         }
 
         #ytkit-settings-panel .ytkit-pane-title h2 {
-            font-size: 32px !important;
+            font-size: 24px !important;
             font-weight: 700 !important;
-            line-height: 1.2 !important;
+            line-height: 1.25 !important;
+            letter-spacing: -0.01em !important;
         }
 
         #ytkit-settings-panel .ytkit-pane-description {
             max-width: 760px !important;
-            margin-top: 7px !important;
+            margin-top: 4px !important;
             color: var(--ytkit-v3-muted) !important;
             font-size: 14px !important;
             white-space: normal !important;
-        
             line-height: 1.5 !important;
         }
 
         #ytkit-settings-panel .ytkit-pane-meta {
-            margin-top: 11px !important;
+            margin-top: 8px !important;
         }
 
+        /* "4 on · 64 items" is a reading, not a heading; the uppercase,
+           letterspaced chip made it shout louder than the description. */
         #ytkit-settings-panel .ytkit-pane-chip {
-            font-size: 10.5px !important;
-            font-weight: 670 !important;
-            letter-spacing: 0.09em !important;
-            text-transform: uppercase !important;
+            color: var(--ytkit-v3-subtle) !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            letter-spacing: 0 !important;
+            text-transform: none !important;
+            font-variant-numeric: tabular-nums !important;
         }
 
         #ytkit-settings-panel .ytkit-pane-context {
@@ -2029,7 +2051,8 @@
             grid-area: actions !important;
             grid-column: auto !important;
             justify-self: end !important;
-            gap: 8px !important;
+            align-items: center !important;
+            gap: 16px !important;
         }
 
         #ytkit-settings-panel .ytkit-reset-group-btn,
@@ -2037,11 +2060,45 @@
             min-height: 32px !important;
         }
 
+        /* Reset and Clear search were bare words that only turned into
+           buttons on hover. Same outline button as the footer, one size down. */
+        #ytkit-settings-panel .ytkit-reset-group-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
+            border: 1px solid var(--ytkit-v3-control-stroke) !important;
+            border-radius: 6px !important;
+            background: transparent !important;
+            color: var(--ytkit-v3-text) !important;
+            font: inherit !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            line-height: 1 !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+        }
+
+        #ytkit-settings-panel .ytkit-reset-group-btn:hover {
+            border-color: var(--ytkit-v3-border-strong) !important;
+            background: var(--ytkit-v3-hover) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-toggle-all {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+        }
+
         #ytkit-settings-panel .ytkit-features-grid {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
-            gap: 16px !important;
-            margin: 16px 0 0 !important;
+            gap: 24px !important;
+            margin: 4px 0 0 !important;
             padding: 0 !important;
             border: 0 !important;
             border-radius: 0 !important;
@@ -2055,12 +2112,12 @@
         }
 
         #ytkit-settings-panel .ytkit-feature-section-title {
-            margin: 0 0 8px 0 !important;
+            margin: 0 0 8px 2px !important;
             color: var(--ytkit-v3-muted) !important;
             font-size: 11px !important;
-            font-weight: 680 !important;
+            font-weight: 600 !important;
             line-height: 1.5 !important;
-            letter-spacing: 0.09em !important;
+            letter-spacing: 0.06em !important;
             text-transform: uppercase !important;
         }
 
@@ -2101,12 +2158,19 @@
             background: var(--ytkit-v3-surface-raised) !important;
         }
 
+        /* 64px rows with a 15/13 type pair. The 76px rows with 16/14 type set
+           a 64-setting category at five rows a screen. */
         #ytkit-settings-panel .ytkit-feature-card {
             grid-template-columns: minmax(0, 1fr) minmax(180px, 260px) !important;
             gap: 24px !important;
-            min-height: 76px !important;
-            padding: 14px 18px !important;
+            min-height: 64px !important;
+            padding: 12px 16px !important;
             background: transparent !important;
+            transition: background-color 120ms ease !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-card:hover {
+            background: var(--ytkit-v3-hover) !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled {
@@ -2119,16 +2183,16 @@
         }
 
         #ytkit-settings-panel .ytkit-feature-main {
-            grid-template-columns: 28px minmax(0, 1fr) !important;
+            grid-template-columns: 24px minmax(0, 1fr) !important;
             gap: 14px !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-glyph {
             display: grid !important;
             place-items: center !important;
-            width: 28px !important;
-            min-width: 28px !important;
-            height: 28px !important;
+            width: 24px !important;
+            min-width: 24px !important;
+            height: 24px !important;
             border: 0 !important;
             border-radius: 0 !important;
             background: transparent !important;
@@ -2136,22 +2200,22 @@
         }
 
         #ytkit-settings-panel .ytkit-feature-glyph svg {
-            width: 24px !important;
-            height: 24px !important;
+            width: 20px !important;
+            height: 20px !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-name {
-            font-size: 16px !important;
-            font-weight: 650 !important;
-        
+            font-size: 15px !important;
+            font-weight: 600 !important;
             line-height: 1.4 !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-desc {
-            margin-top: 3px !important;
+            margin-top: 2px !important;
             overflow: visible !important;
             color: var(--ytkit-v3-muted) !important;
-            font-size: 14px !important;
+            font-size: 13px !important;
+            font-weight: 400 !important;
             line-height: 1.5 !important;
             text-overflow: clip !important;
             white-space: normal !important;
@@ -2159,20 +2223,33 @@
 
         #ytkit-settings-panel .ytkit-select,
         #ytkit-settings-panel .ytkit-input {
-            min-height: 40px !important;
+            min-height: 36px !important;
             border-radius: 6px !important;
             background: var(--ytkit-v3-surface) !important;
+            font-family: inherit !important;
+            font-weight: 500 !important;
         }
 
+        /* Logical, so the branch line flips with the text in RTL. */
         #ytkit-settings-panel .ytkit-sub-features {
-            margin: 0 0 0 24px !important;
-            padding: 0 0 0 18px !important;
+            margin: 0 !important;
+            margin-inline-start: 26px !important;
+            padding: 0 !important;
+            padding-inline-start: 16px !important;
             border-inline-start: 1px solid rgba(var(--ytkit-v3-accent-rgb),0.38) !important;
         }
 
         #ytkit-settings-panel .ytkit-sub-features .ytkit-feature-card {
-            min-height: 62px !important;
+            min-height: 52px !important;
             padding-block: 8px !important;
+        }
+
+        /* A sub-setting whose parent is off. setSubFeatureAvailability()
+           writes opacity 0.35 inline, which in the light theme left the row
+           close to invisible; it is inert either way, so it only has to read
+           as unavailable, not vanish. */
+        #ytkit-settings-panel .ytkit-sub-features[aria-disabled="true"] {
+            opacity: 0.55 !important;
         }
 
         #ytkit-settings-panel .ytkit-mediadl-banner,
@@ -2190,43 +2267,73 @@
         }
 
         #ytkit-settings-panel .ytkit-footer {
-            min-height: 64px !important;
-            padding: 0 24px !important;
+            min-height: 60px !important;
+            padding: 0 20px 0 24px !important;
             background: var(--ytkit-v3-rail) !important;
         }
 
+        /* flex-start: an older rule gives the status a 160px floor and
+           centred its tick and word inside it, 52px off the pane's edge. */
         #ytkit-settings-panel .ytkit-panel-status {
             display: inline-flex !important;
             align-items: center !important;
-            gap: 9px !important;
+            justify-content: flex-start !important;
+            gap: 8px !important;
             justify-self: start !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
         }
 
+        /* A bare tick. The bordered 22px box around it was the exact shape of
+           a ticked checkbox, sitting in a footer full of controls. */
         #ytkit-settings-panel .ytkit-panel-status::before {
             content: "✓" !important;
             display: grid !important;
             place-items: center !important;
-            width: 22px !important;
-            height: 22px !important;
-            border: 1px solid currentColor !important;
-            border-radius: 6px !important;
-            font-size: 12px !important;
+            width: 16px !important;
+            height: 16px !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
             line-height: 1 !important;
-        
             color: var(--ytkit-v3-success) !important;
         }
 
+        #ytkit-settings-panel .ytkit-footer-actions {
+            gap: 8px !important;
+        }
+
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn {
-            min-height: 44px !important;
-            padding-inline: 17px !important;
-            border-color: var(--ytkit-v3-border) !important;
-            background: var(--ytkit-v3-panel) !important;
+            min-height: 36px !important;
+            padding-inline: 14px !important;
+            border-color: var(--ytkit-v3-control-stroke) !important;
+            border-radius: 6px !important;
+            background: transparent !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:not(.ytkit-btn-primary):hover {
+            border-color: var(--ytkit-v3-border-strong) !important;
+            background: var(--ytkit-v3-hover) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn svg {
+            width: 16px !important;
+            height: 16px !important;
         }
 
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
-            min-width: 126px !important;
+            min-width: 96px !important;
             border-color: transparent !important;
             background: var(--ytkit-v3-accent-fill) !important;
+            font-weight: 600 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary:hover {
+            background: var(--ytkit-v3-accent-fill-hover) !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-header,
@@ -2236,12 +2343,20 @@
 
         html:not([dark]) #ytkit-settings-panel .ytkit-command-search,
         html:not([dark]) #ytkit-settings-panel .ytkit-select,
-        html:not([dark]) #ytkit-settings-panel .ytkit-input,
+        html:not([dark]) #ytkit-settings-panel .ytkit-input {
+            background: var(--ytkit-v3-surface) !important;
+        }
+
         /* :not(.ytkit-btn-primary) — this light-lane rule carries a higher
            specificity than the primary button's accent fill, so without the
            exclusion the Done button painted itself pale grey while keeping
-           color:#fff, i.e. white text on near-white. */
+           color:#fff, i.e. white text on near-white. White, not the surface
+           grey: #eef1f5 on the #eceff4 footer was a button with no fill. */
         html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:not(.ytkit-btn-primary) {
+            background: var(--ytkit-v3-panel) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:not(.ytkit-btn-primary):hover {
             background: var(--ytkit-v3-surface) !important;
         }
 
@@ -2317,25 +2432,85 @@
                 flex-direction: column !important;
             }
 
+            /* One scrolling row of tabs, each as wide as its name. The old
+               fixed 66px box held 150px grid columns whose labels wrapped one
+               letter per line ("Vid", "Play") and were cut off at the top. */
             #ytkit-settings-panel .ytkit-sidebar {
-                display: block !important;
-                flex: 0 0 66px !important;
+                display: flex !important;
+                flex: 0 0 auto !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 8px !important;
                 width: 100% !important;
-                height: 66px !important;
-                min-height: 66px !important;
+                height: auto !important;
+                min-height: 0 !important;
                 padding: 8px 12px !important;
                 border-right: 0 !important;
                 border-bottom: 1px solid var(--ytkit-v3-border) !important;
+                overflow: hidden !important;
+            }
+
+            #ytkit-settings-panel .ytkit-sidebar-top,
+            #ytkit-settings-panel .ytkit-sidebar-footer {
+                display: none !important;
             }
 
             #ytkit-settings-panel .ytkit-nav-list {
-                display: grid !important;
-                grid-template-columns: none !important;
-                grid-auto-flow: column !important;
-                grid-auto-columns: minmax(150px, 178px) !important;
-                height: 50px !important;
+                display: flex !important;
+                flex: 1 1 auto !important;
+                flex-direction: row !important;
+                gap: 4px !important;
+                min-width: 0 !important;
+                height: auto !important;
                 overflow-x: auto !important;
                 overflow-y: hidden !important;
+                overscroll-behavior-x: contain !important;
+                /* A thin bar under the row is the cue that it scrolls. */
+                padding-bottom: 4px !important;
+                scrollbar-width: thin !important;
+                scrollbar-color: var(--ytkit-v3-border-strong) transparent !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-reorder {
+                order: 2 !important;
+                flex: none !important;
+                padding: 0 !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-btn {
+                display: inline-flex !important;
+                flex: none !important;
+                align-items: center !important;
+                gap: 8px !important;
+                width: auto !important;
+                min-height: 36px !important;
+                padding: 0 12px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-btn::before {
+                top: auto !important;
+                bottom: 0 !important;
+                left: 10px !important;
+                right: 10px !important;
+                width: auto !important;
+                height: 2px !important;
+                border-radius: 0 !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-icon {
+                width: 18px !important;
+                min-width: 18px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-label {
+                white-space: nowrap !important;
+                overflow-wrap: normal !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-meta,
+            #ytkit-settings-panel .ytkit-nav-state,
+            #ytkit-settings-panel .ytkit-nav-arrow {
+                display: none !important;
             }
 
             #ytkit-settings-panel .ytkit-content {
@@ -2355,9 +2530,10 @@
                 display: none !important;
             }
 
+            /* Together at the start, not flung to opposite edges. */
             #ytkit-settings-panel .ytkit-pane-actions {
-                justify-self: stretch !important;
-                justify-content: space-between !important;
+                justify-self: start !important;
+                justify-content: flex-start !important;
             }
         }
 
@@ -2370,16 +2546,22 @@
                 border-radius: 0 !important;
             }
 
-            #ytkit-settings-panel .ytkit-header-live-switch {
-                display: none !important;
-            }
-
             #ytkit-settings-panel .ytkit-content {
                 padding: 14px 12px 22px !important;
             }
 
             #ytkit-settings-panel .ytkit-header {
                 row-gap: 14px !important;
+            }
+
+            /* An older rule shrank the badge to its dot (font-size 0), which
+               left an unexplained green light beside the close button. */
+            #ytkit-settings-panel .ytkit-header-live {
+                width: auto !important;
+                min-width: 0 !important;
+                height: auto !important;
+                min-height: 0 !important;
+                font-size: 12px !important;
             }
 
             #ytkit-settings-panel .ytkit-brand,
@@ -2514,18 +2696,38 @@
                 overflow-wrap: anywhere !important;
             }
 
+            /* Three across with Done on its own row. Four in a row at 420px
+               wrapped "Import History" onto two lines in a 93px button. */
+            #ytkit-settings-panel .ytkit-footer-actions {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+
             #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn {
-                min-height: 44px !important;
-                line-height: 1.45 !important;
-                white-space: normal !important;
+                min-height: 40px !important;
+                padding-inline: 8px !important;
+                line-height: 1.25 !important;
+                white-space: nowrap !important;
+            }
+
+            /* Even three across, icon plus "Import History" needed about
+               117px of a 110px button and still broke in two. The labels say
+               it all at this width, so the secondary icons step aside. */
+            #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:not(.ytkit-btn-primary) svg {
+                display: none !important;
             }
 
             #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
+                grid-column: 1 / -1 !important;
                 min-width: 0 !important;
             }
         }
 
-        /* Category labels wrap at every width. Video Hider shares the workspace. */
+        /* Category labels wrap in the sidebar at every desktop width. Video
+           Hider shares the workspace. Under 901px the categories are a single
+           scrolling row, where a wrapping label broke one letter per line. */
         @media (min-width: 1181px) {
             #ytkit-settings-panel .ytkit-header {
                 grid-template-columns: 300px minmax(280px, 1fr) auto !important;
@@ -2536,11 +2738,19 @@
             }
         }
 
-        #ytkit-settings-panel .ytkit-nav-btn {
-            min-height: 52px !important;
+        @media (min-width: 901px) {
+            #ytkit-settings-panel .ytkit-nav-btn {
+                min-height: 44px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-label {
+                overflow: visible !important;
+                text-overflow: clip !important;
+                white-space: normal !important;
+                overflow-wrap: anywhere !important;
+            }
         }
 
-        #ytkit-settings-panel .ytkit-nav-label,
         #ytkit-settings-panel .ytkit-pane-context-label,
         #ytkit-settings-panel .ytkit-pane-context-value {
             overflow: visible !important;
@@ -2567,7 +2777,7 @@
             grid-template-columns: minmax(0, 1fr) auto !important;
             grid-template-areas: "lead actions" !important;
             align-items: center !important;
-            min-height: 120px !important;
+            min-height: 0 !important;
         }
 
         #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-actions {
@@ -2636,8 +2846,8 @@
 
         #ytkit-settings-panel .ytkit-vh-summary-card__value {
             color: var(--ytkit-v3-text) !important;
-            font-size: 23px !important;
-            font-weight: 740 !important;
+            font-size: 24px !important;
+            font-weight: 700 !important;
             line-height: 1 !important;
             font-variant-numeric: tabular-nums !important;
         }
@@ -2820,11 +3030,212 @@
         #ytkit-settings-panel .ytkit-vh-list-btn { min-height: 44px !important; padding: 0 16px !important; border-radius: 6px !important; background: var(--ytkit-v3-surface) !important; color: var(--ytkit-v3-text) !important; font: inherit !important; }
         #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-meta { display: none !important; }
 
+        /* The status lines up with the pane's own left edge (sidebar width
+           plus content padding, less the footer's padding), not 44px past it. */
         @media (min-width: 1181px) {
-            #ytkit-settings-panel .ytkit-panel-status { margin-inline-start: 320px !important; }
+            #ytkit-settings-panel .ytkit-panel-status { margin-inline-start: 324px !important; }
         }
         @media (min-width: 901px) and (max-width: 1180px) {
-            #ytkit-settings-panel .ytkit-panel-status { margin-inline-start: 220px !important; }
+            #ytkit-settings-panel .ytkit-panel-status { margin-inline-start: 214px !important; }
+        }
+
+        /* Form controls don't inherit the page font, so selects and buttons
+           fell back to Arial beside Inter text. */
+        #ytkit-settings-panel :is(button, input, select, textarea) {
+            font-family: inherit !important;
+        }
+
+        /* Search results banner. Its only styles lived in the dark-era sheet
+           (a near-black card with a hardcoded dark fill), so on light YouTube
+           the title was #17202b on #0b0f15, 1.09:1, and Clear search 2.79:1.
+           The "Search" badge said what the box above already says. */
+        #ytkit-settings-panel .ytkit-search-state {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            grid-template-areas:
+                "title actions"
+                "copy actions" !important;
+            align-items: center !important;
+            gap: 2px 16px !important;
+            margin: 0 0 20px !important;
+            padding: 14px 16px !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-v3-panel) !important;
+            box-shadow: none !important;
+            color: var(--ytkit-v3-text) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-search-state.is-empty {
+            border-style: dashed !important;
+            border-color: var(--ytkit-v3-border-strong) !important;
+            background: transparent !important;
+        }
+
+        #ytkit-settings-panel .ytkit-search-state-badge {
+            display: none !important;
+        }
+
+        #ytkit-settings-panel .ytkit-search-state-title {
+            grid-area: title !important;
+            margin: 0 !important;
+            color: var(--ytkit-v3-text) !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            line-height: 1.4 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-search-state-copy {
+            grid-area: copy !important;
+            max-width: 760px !important;
+            margin: 0 !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-search-state-actions {
+            grid-area: actions !important;
+            display: flex !important;
+        }
+
+        /* Matched text. Unstyled it fell back to the browser's #ffff00 <mark>
+           with black text, loud on both themes and unlike the match counts. */
+        #ytkit-settings-panel .ytkit-search-mark {
+            padding: 0 2px !important;
+            border-radius: 4px !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.24) !important;
+            color: inherit !important;
+            box-decoration-break: clone !important;
+            -webkit-box-decoration-break: clone !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-search-mark {
+            background: rgba(var(--ytkit-v3-accent-rgb),0.14) !important;
+        }
+
+        @media (max-width: 560px) {
+            #ytkit-settings-panel .ytkit-search-state {
+                grid-template-columns: minmax(0, 1fr) !important;
+                grid-template-areas: "title" "copy" "actions" !important;
+                gap: 6px !important;
+            }
+        }
+
+        /* Search results stack every matching category, so each one gets a
+           plain heading. The full header repeated a sticky title, description,
+           counts, Reset and an All switch per group; Reset and All act on the
+           whole category, not the matches under them (the old sheet hid the
+           actions for that reason, but a later display:flex !important put
+           them back), and each sticky header's cover shadow painted over the
+           bottom edge of the group above it. */
+        #ytkit-settings-panel .ytkit-pane.ytkit-search-active .ytkit-pane-header {
+            position: static !important;
+            display: block !important;
+            min-height: 0 !important;
+            padding: 0 0 10px !important;
+            box-shadow: none !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane.ytkit-search-active .ytkit-pane-title h2 {
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane.ytkit-search-active :is(.ytkit-pane-description, .ytkit-pane-meta, .ytkit-pane-actions) {
+            display: none !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane.ytkit-search-active {
+            margin-bottom: 28px !important;
+        }
+
+        /* While a search is showing results from every category, no single
+           category is "open". The selected row kept its fill and rail, so
+           Video Player looked chosen while the list showed Watch Page. */
+        #ytkit-settings-panel:has(.ytkit-pane.ytkit-search-active) .ytkit-nav-btn.active {
+            background: transparent !important;
+        }
+
+        #ytkit-settings-panel:has(.ytkit-pane.ytkit-search-active) .ytkit-nav-btn.active::before {
+            opacity: 0 !important;
+        }
+
+        #ytkit-settings-panel:has(.ytkit-pane.ytkit-search-active) .ytkit-nav-btn.active .ytkit-nav-label {
+            font-weight: 500 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.ytkit-search-empty-nav .ytkit-nav-label,
+        #ytkit-settings-panel .ytkit-nav-btn.ytkit-search-empty-nav .ytkit-nav-icon {
+            color: var(--ytkit-v3-subtle) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.ytkit-search-empty-nav .ytkit-nav-count {
+            background: transparent !important;
+            color: var(--ytkit-v3-subtle) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-count.is-match {
+            background: rgba(var(--ytkit-v3-accent-rgb),0.12) !important;
+            color: var(--ytkit-v3-accent) !important;
+        }
+
+        /* The light accent on its own 12% tint over the rail was 4.24:1 at
+           11px. A deeper red on a lighter tint clears AA. */
+        html:not([dark]) #ytkit-settings-panel .ytkit-nav-count.is-match {
+            background: rgba(var(--ytkit-v3-accent-rgb),0.08) !important;
+            color: #a3241f !important;
+        }
+
+        /* Sidebar footer: GitHub, diagnostics, downloader. Real 32px buttons
+           with a hover, not loose glyphs. */
+        #ytkit-settings-panel .ytkit-sidebar-footer {
+            align-items: center !important;
+            gap: 2px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sidebar-footer .ytkit-github {
+            display: inline-grid !important;
+            place-items: center !important;
+            width: 32px !important;
+            height: 32px !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 6px !important;
+            background: transparent !important;
+            color: var(--ytkit-v3-muted) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sidebar-footer .ytkit-github:hover {
+            background: var(--ytkit-v3-hover) !important;
+            color: var(--ytkit-v3-text) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sidebar-footer .ytkit-github svg {
+            width: 18px !important;
+            height: 18px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sidebar-footer .ytkit-version {
+            margin-inline-start: auto !important;
+            color: var(--ytkit-v3-subtle) !important;
+            font-size: 12px !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+
+        /* The legacy sheet stacks control cards under 1241px by moving the
+           switch or select to column 1, but this system keeps two columns
+           above 560px. The control fell to a second row and left the right
+           column empty, squeezing descriptions to half the card at 900px.
+           Auto placement puts it back beside the text, as on desktop. */
+        @media (min-width: 561px) {
+            #ytkit-settings-panel .ytkit-feature-card > .ytkit-switch,
+            #ytkit-settings-panel .ytkit-feature-card > .ytkit-select-shell,
+            #ytkit-settings-panel .ytkit-feature-card > .ytkit-range-shell,
+            #ytkit-settings-panel .ytkit-feature-card > .ytkit-color-shell {
+                grid-column: auto !important;
+            }
         }
 
         /* Keep this final focus lane after the footer, light-theme, and
@@ -2847,16 +3258,18 @@
 
         /* The search box clips its children (overflow: hidden), so the
            input's old outer ring was cut off along the bottom edge and drew
-           a red bar under the field, on top of the box's own ring. The input
-           keeps an inset ring the clip can't touch, rounded with the box, and
-           the box adds only the outer glow. */
+           a red bar under the field, on top of the box's own ring. The box
+           draws the one ring now: the input's own inset 2px on top of the
+           box's inset 1px and a 3px glow at 30% was a triple coral border,
+           and the panel opens with the search focused, so it was the first
+           thing anyone saw. */
         #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
             border-radius: inherit !important;
-            box-shadow: inset 0 0 0 2px rgba(var(--ytkit-v3-accent-rgb),0.85) !important;
+            box-shadow: none !important;
         }
 
         #ytkit-settings-panel .ytkit-command-search:focus-within {
-            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.85), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.30) !important;
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.85), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.16) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active:focus-visible {
