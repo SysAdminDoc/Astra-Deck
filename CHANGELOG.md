@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- Videos Per Row in the Home Quick Controls is a dropdown now. It used to act like an on/off switch on a number, so a click threw away the count you'd picked and saved a value the settings import refuses.
 - Shorts Auto-Advance moves on again. When a Short ended it clicked the box around YouTube's next button rather than the button, so nothing happened.
 - With Shorts Player Controls on, pressing the video or YouTube's play button works again and the native bar can be pressed. YouTube's newer overlay covers the whole video and an old rule made all of it catch the pointer.
 - Shorts Player Controls stays on for every Short. YouTube keeps one player across Shorts and resets its controls and looping for each new one and after a seek, so the controls only held on the first Short.

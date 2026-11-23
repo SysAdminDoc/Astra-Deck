@@ -7106,6 +7106,12 @@ const STORAGE_KEYS = Object.freeze({
             const featureId = card.dataset.fid;
             const isOn = !!appState.settings[featureId];
             card.classList.toggle('on', isOn);
+            const choice = card.querySelector('select');
+            if (choice) {
+                choice.value = String(appState.settings[featureId] ?? '');
+                if (choice.selectedIndex < 0) choice.selectedIndex = 0;
+                return;
+            }
             card.setAttribute('aria-checked', String(isOn));
         });
     }
@@ -43798,11 +43804,126 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             cardState.textContent = on ? 'On' : 'Off';
         };
 
+        // Value-aware, so codecSelector goes back to "auto", never false.
+        const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+        const isConflictOn = (cid, settings) => conflictRules?.isSettingConflictOn?.(cid, settings) ?? !!settings[cid];
+
+        // Saves nextSettings and starts or stops what it changed. A refused or
+        // failed save puts the settings it replaced back.
+        const commitQuickSettings = async (fid, feat, previousSettings, nextSettings, conflictsOff = []) => {
+            const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
+            const reconcile = (settings, source) => {
+                if (useSharedReconciliation) {
+                    applyExternalSettingsUpdate({ source, nextSettings: settings });
+                    return;
+                }
+                appState.settings = settings;
+                try {
+                    for (const cid of conflictsOff) {
+                        const conflicting = getFeatureById(cid);
+                        if (!conflicting) continue;
+                        if (isConflictOn(cid, settings)) initFeatureLifecycle(conflicting, source);
+                        else if (conflicting._initialized) destroyFeatureLifecycle(conflicting, 'conflict');
+                    }
+                    if (settings[fid]) initFeatureLifecycle(feat, source);
+                    else destroyFeatureLifecycle(feat, source);
+                } catch (err) {
+                    DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
+                }
+            };
+            try {
+                const saveResult = settingsManager.save(nextSettings);
+                reconcile(nextSettings, 'quick-settings');
+                const result = await Promise.resolve(saveResult);
+                if (result?.ok === false) {
+                    reconcile(result.settings || previousSettings, 'quick-settings-rollback');
+                }
+            } catch (err) {
+                DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
+                reconcile(previousSettings, 'quick-settings-rollback');
+            }
+        };
+
         availableFeatures.forEach(({ id: fid, label, feature: feat }) => {
             const isOn = !!appState.settings[fid];
             const featureName = label || getFeatureName(feat);
             const desc = String(getFeatureDescription(feat) || '').trim();
             const descId = desc ? `ytkit-pm-desc-${fid}` : '';
+            const iconFn = ICONS[feat.icon] || ICONS[feat.group?.toLowerCase()] || ICONS.settings;
+
+            // A setting with a list of values (Videos Per Row: Dynamic, 3 to 8)
+            // gets a dropdown. Flipping it like a switch wrote true or false
+            // into a number, which dropped the chosen count and left a value
+            // the settings import refuses.
+            if (feat.type === 'select' && !feat.settingKey && feat.options && typeof feat.options === 'object') {
+                const choices = Object.entries(feat.options);
+                const numeric = choices.every(([value]) => /^-?\d+$/.test(value));
+                const selectId = `ytkit-pm-select-${fid}`;
+                const card = document.createElement('div');
+                card.className = 'ytkit-pm-card ytkit-pm-card--choice' + (isOn ? ' on' : '');
+                card.dataset.fid = fid;
+
+                const iconWrap = document.createElement('div');
+                iconWrap.className = 'ytkit-pm-card-icon';
+                iconWrap.appendChild(iconFn());
+
+                const textWrap = document.createElement('div');
+                textWrap.className = 'ytkit-pm-card-text';
+                const cardLabel = document.createElement('label');
+                cardLabel.className = 'ytkit-pm-card-label';
+                cardLabel.htmlFor = selectId;
+                cardLabel.textContent = featureName;
+                textWrap.appendChild(cardLabel);
+                if (desc) {
+                    const cardDesc = document.createElement('span');
+                    cardDesc.className = 'ytkit-pm-card-desc';
+                    cardDesc.id = descId;
+                    cardDesc.textContent = desc.length > 72 ? desc.slice(0, 70) + '…' : desc;
+                    textWrap.appendChild(cardDesc);
+                }
+
+                const select = document.createElement('select');
+                select.className = 'ytkit-pm-select';
+                select.id = selectId;
+                if (descId) select.setAttribute('aria-describedby', descId);
+                for (const [value, text] of choices) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = String(text);
+                    select.appendChild(option);
+                }
+                // A stored value with no matching choice (true, from the old
+                // switch) runs as the first one, so show that.
+                const showValue = (value) => {
+                    select.value = String(value ?? '');
+                    if (select.selectedIndex < 0) select.selectedIndex = 0;
+                };
+                showValue(appState.settings[fid]);
+
+                select.addEventListener('change', async () => {
+                    if (select.disabled) return;
+                    select.disabled = true;
+                    const previousSettings = { ...appState.settings };
+                    const nextSettings = {
+                        ...previousSettings,
+                        [fid]: numeric ? Number(select.value) : select.value
+                    };
+                    try {
+                        await commitQuickSettings(fid, feat, previousSettings, nextSettings);
+                    } finally {
+                        showValue(appState.settings[fid]);
+                        card.classList.toggle('on', !!appState.settings[fid]);
+                        updatePageModalEnabledCount(availableFeatures.filter(({ id }) => !!appState.settings[id]).length);
+                        select.disabled = false;
+                    }
+                });
+
+                card.appendChild(iconWrap);
+                card.appendChild(textWrap);
+                card.appendChild(select);
+                grid.appendChild(card);
+                return;
+            }
 
             const card = document.createElement('button');
             card.type = 'button';
@@ -43816,7 +43937,6 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             // Icon area
             const iconWrap = document.createElement('div');
             iconWrap.className = 'ytkit-pm-card-icon';
-            const iconFn = ICONS[feat.icon] || ICONS[feat.group?.toLowerCase()] || ICONS.settings;
             iconWrap.appendChild(iconFn());
 
             // Text
@@ -43865,43 +43985,12 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                 };
                 // Turning a feature on switches off the other side of each
                 // conflict pair, the same as the settings panel toggle.
-                // Value-aware, so codecSelector goes back to "auto", never false.
-                const conflictRules = globalThis.__YTKIT_SETTINGS_SCHEMA__;
-                const isConflictOn = (cid, settings) => conflictRules?.isSettingConflictOn?.(cid, settings) ?? !!settings[cid];
                 const conflictsOff = nextSettings[fid] && CONFLICT_MAP[fid]
                     ? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => isConflictOn(cid, previousSettings))
                     : [];
                 for (const cid of conflictsOff) nextSettings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
-                const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
-                const reconcile = (settings, source) => {
-                    if (useSharedReconciliation) {
-                        applyExternalSettingsUpdate({ source, nextSettings: settings });
-                        return;
-                    }
-                    appState.settings = settings;
-                    try {
-                        for (const cid of conflictsOff) {
-                            const conflicting = getFeatureById(cid);
-                            if (!conflicting) continue;
-                            if (isConflictOn(cid, settings)) initFeatureLifecycle(conflicting, source);
-                            else if (conflicting._initialized) destroyFeatureLifecycle(conflicting, 'conflict');
-                        }
-                        if (settings[fid]) initFeatureLifecycle(feat, source);
-                        else destroyFeatureLifecycle(feat, source);
-                    } catch (err) {
-                        DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
-                    }
-                };
                 try {
-                    const saveResult = settingsManager.save(nextSettings);
-                    reconcile(nextSettings, 'quick-settings');
-                    const result = await Promise.resolve(saveResult);
-                    if (result?.ok === false) {
-                        reconcile(result.settings || previousSettings, 'quick-settings-rollback');
-                    }
-                } catch (err) {
-                    DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
-                    reconcile(previousSettings, 'quick-settings-rollback');
+                    await commitQuickSettings(fid, feat, previousSettings, nextSettings, conflictsOff);
                 } finally {
                     // finally, not a trailing statement: a reconcile() that
                     // throws while rolling back would otherwise escape with the
@@ -44332,6 +44421,51 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         .ytkit-pm-card-toggle {
             flex-shrink: 0;
+        }
+
+        .ytkit-pm-card--choice {
+            align-items: center;
+            cursor: default;
+        }
+
+        .ytkit-pm-card--choice:hover {
+            transform: none;
+        }
+
+        .ytkit-pm-card--choice .ytkit-pm-card-label {
+            cursor: pointer;
+        }
+
+        .ytkit-pm-select {
+            flex-shrink: 0;
+            min-width: 88px;
+            min-height: 28px;
+            padding: 0 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.92);
+            color-scheme: dark;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .ytkit-pm-select:hover {
+            border-color: rgba(255,255,255,0.22);
+            background: rgba(255,255,255,0.09);
+        }
+
+        .ytkit-pm-select:focus-visible {
+            outline: 2px solid rgba(var(--ytkit-accent-rgb),0.7);
+            outline-offset: 2px;
+        }
+
+        .ytkit-pm-select:disabled {
+            opacity: 0.6;
+            cursor: progress;
         }
 
         .ytkit-pm-toggle-track {
@@ -45804,6 +45938,13 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         .ytkit-pm-card-state {
             padding: 3px 6px;
             font-size: 7.5px;
+        }
+
+        .ytkit-pm-select {
+            min-width: 76px;
+            min-height: 24px;
+            padding: 0 6px;
+            font-size: 9.5px;
         }
 
         .ytkit-pm-footer {
