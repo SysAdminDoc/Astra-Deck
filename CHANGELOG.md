@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- On YouTube's light theme the quick controls button and the gear next to it were white icons on a white background, so they looked like empty boxes. They're dark there now, in the top bar and under the video.
+
 ## [4.108.0] (2026-11-23)
 
 ### Added

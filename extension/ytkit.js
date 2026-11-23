@@ -44569,6 +44569,32 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             color: rgba(255,255,255,0.58);
         }
 
+        /* The trigger buttons' base look (this one and the gear beside it) is a
+           white icon on a white wash, which disappears on YouTube's light
+           masthead and under the video. */
+        html:not([dark]) .ytkit-trigger-btn {
+            border-color: rgba(15,23,42,0.12);
+            background: rgba(15,23,42,0.04);
+            color: #0f0f0f;
+        }
+
+        html:not([dark]) .ytkit-trigger-btn:hover,
+        html:not([dark]) .ytkit-trigger-btn.active {
+            border-color: rgba(15,23,42,0.20);
+            background: rgba(15,23,42,0.08);
+            color: #0f0f0f;
+        }
+
+        html:not([dark]) ytd-watch-flexy button.ytkit-trigger-btn {
+            border-color: rgba(15,23,42,0.12) !important;
+            background: rgba(15,23,42,0.04) !important;
+        }
+
+        html:not([dark]) ytd-watch-flexy button.ytkit-trigger-btn:hover {
+            border-color: rgba(15,23,42,0.20) !important;
+            background: rgba(15,23,42,0.08) !important;
+        }
+
         .ytkit-page-trigger.active svg {
             color: #ff9a7c !important;
             transform: none !important;
