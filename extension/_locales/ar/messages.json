@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "تم التسليم إلى {player}. إن لم يُفتح شيء، سجّل المعالج في نظام التشغيل أولاً."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "المفعّلة: {count}"
+  "pageModalTitle": {
+    "message": "عناصر التحكم السريعة"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "المفعّلة: {count}"
+  "pageModalPageWatch": {
+    "message": "صفحة المشاهدة"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "الاختصارات: {count}"
+  "pageModalPageChannel": {
+    "message": "القناة"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "الاختصارات: {count}"
+  "pageModalCloseAria": {
+    "message": "إغلاق عناصر التحكم السريعة"
   },
-  "pageModalAppliesLive": {
-    "message": "يُطبَّق فورًا"
+  "pageModalSectionLayout": {
+    "message": "التخطيط"
+  },
+  "pageModalSectionTitles": {
+    "message": "العناوين والصور المصغّرة"
+  },
+  "pageModalSectionHide": {
+    "message": "إخفاء من الخلاصة"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "شبكة مكثفة"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "العرض الكامل"
+  },
+  "pageModalLabelScheduled": {
+    "message": "البث المجدول"
+  },
+  "pageModalLabelWatched": {
+    "message": "الفيديوهات التي تمت مشاهدتها"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "عدد الفيديوهات في كل صف"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "توسيع العرض"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "أعلى دقة"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "الفتح على علامة تبويب الفيديوهات"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "ترتيب الفيديوهات حسب المدة"
+  },
+  "pageModalAllSettings": {
+    "message": "كل الإعدادات"
+  },
+  "pageModalEmptyTitle": {
+    "message": "لا توجد عناصر تحكم سريعة هنا"
+  },
+  "pageModalEmptyCopy": {
+    "message": "ستجد كل الميزات في \"كل الإعدادات\"."
+  },
+  "pageModalSaveFailed": {
+    "message": "تعذّر حفظ هذا التغيير، وأُعيد كل شيء كما كان."
   },
   "statusSettingsImportUndoFailed": {
     "message": "تعذّر التراجع عن الاستيراد."

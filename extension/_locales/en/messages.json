@@ -9949,20 +9949,65 @@
   "protocolHandoffToastTpl": {
     "message": "{player} handoff fired. If nothing opened, register the handler on your OS first."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count} Enabled"
+  "pageModalTitle": {
+    "message": "Quick controls"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count} Enabled"
+  "pageModalPageWatch": {
+    "message": "Watch page"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "{count} Shortcut"
+  "pageModalPageChannel": {
+    "message": "Channel"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "{count} Shortcuts"
+  "pageModalCloseAria": {
+    "message": "Close quick controls"
   },
-  "pageModalAppliesLive": {
-    "message": "Applies Live"
+  "pageModalSectionLayout": {
+    "message": "Layout"
+  },
+  "pageModalSectionTitles": {
+    "message": "Titles and thumbnails"
+  },
+  "pageModalSectionHide": {
+    "message": "Hide from feed"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "Dense grid"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "Full width"
+  },
+  "pageModalLabelScheduled": {
+    "message": "Scheduled streams"
+  },
+  "pageModalLabelWatched": {
+    "message": "Watched videos"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "Videos per row"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "Expand width"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "Max resolution"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "Open on the Videos tab"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "Sort videos by length"
+  },
+  "pageModalAllSettings": {
+    "message": "All settings"
+  },
+  "pageModalEmptyTitle": {
+    "message": "No quick controls here"
+  },
+  "pageModalEmptyCopy": {
+    "message": "You'll find every feature in All settings."
+  },
+  "pageModalSaveFailed": {
+    "message": "Couldn't save that change. It's back how it was."
   },
   "statusSettingsImportUndoFailed": {
     "message": "Import undo failed."

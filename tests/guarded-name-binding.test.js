@@ -254,8 +254,7 @@ test('userscript Quick Settings turns off the other side of a conflict pair', as
         const saved = [];
         const toasts = [];
         const api = loadUserscriptDeclarations([
-            // tCount picks the One/Other half of the modal's count chips.
-            'tCount', 'CONFLICT_MAP', 'clearPendingPageModalRemoval', 'updatePageModalEnabledCount', 'closePageModal', 'openPageModal'
+            'CONFLICT_MAP', 'clearPendingPageModalRemoval', 'closePageModal', 'openPageModal'
         ], {
             document: documentRef,
             features,
@@ -277,8 +276,8 @@ test('userscript Quick Settings turns off the other side of a conflict pair', as
             BRAND: { name: 'Astra Deck' },
             PAGE_MODAL_PAGE_MAP: { watch: 'watch' },
             PAGE_MODAL_CONFIG: { watch: [{ id: 'stickyVideo', label: 'Theater Split' }, { id: 'fitPlayerToWindow', label: 'Fit Player to Window' }] },
-            PAGE_MODAL_META: {},
-            PAGE_LABELS: { watch: 'Watch' },
+            PAGE_MODAL_SECTIONS: {},
+            PAGE_MODAL_PAGE_NAMES: { watch: ['', 'Watch page'] },
             ICONS: new Proxy({}, { get: () => () => fakeNode() }),
             requestAnimationFrame: (fn) => fn(),
             setTimeout: () => 0,
@@ -307,8 +306,7 @@ test('userscript Quick Settings turns off the other side of a conflict pair', as
         await card.listeners.get('click').values().next().value({});
         const paint = (node) => ({
             checked: node.getAttribute('aria-checked'),
-            label: node.getAttribute('aria-label'),
-            state: node.querySelector('.ytkit-pm-card-state').textContent,
+            on: node.classList.contains('on'),
         });
         return { appState, saved, toasts, cards: [paint(card), paint(fitCard)] };
     };
@@ -322,19 +320,20 @@ test('userscript Quick Settings turns off the other side of a conflict pair', as
     // wording will do as long as the switched-off feature is named.
     assert.match(ok.toasts.join('\n'), /Fit Player to Window/, 'the user is told which feature was turned off');
     assert.deepEqual(ok.cards, [
-        { checked: 'true', label: 'Theater Split. Enabled.', state: 'On' },
-        { checked: 'false', label: 'Fit Player to Window. Disabled.', state: 'Off' },
-    ], 'the switched-off card repaints too, or the grid shows a feature on that is now off');
+        { checked: 'true', on: true },
+        { checked: 'false', on: false },
+    ], 'the switched-off row repaints too, or the panel shows a feature on that is now off');
 
     // A rejected save puts both features back the way they were.
     const rejected = await run(Promise.resolve({ ok: false }));
     assert.deepEqual({ ...rejected.appState.settings }, { stickyVideo: false, fitPlayerToWindow: true });
     assert.deepEqual(calls, ['init:stickyVideo', 'destroy:fitPlayerToWindow', 'destroy:stickyVideo', 'init:fitPlayerToWindow']);
-    assert.equal(rejected.toasts.length, 0, 'nothing was turned off, so nothing is announced');
+    assert.equal(rejected.toasts.length, 1, 'the refused save is reported once');
+    assert.doesNotMatch(rejected.toasts[0], /Fit Player to Window/, 'nothing was turned off, so nothing is announced as off');
     assert.deepEqual(rejected.cards, [
-        { checked: 'false', label: 'Theater Split. Disabled.', state: 'Off' },
-        { checked: 'true', label: 'Fit Player to Window. Enabled.', state: 'On' },
-    ], 'a rolled-back save repaints both cards to what is running');
+        { checked: 'false', on: false },
+        { checked: 'true', on: true },
+    ], 'a rolled-back save repaints both rows to what is running');
 });
 
 test('every allowance names a guard that still exists', () => {

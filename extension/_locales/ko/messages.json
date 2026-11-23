@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "{player}(으)로 넘겼습니다. 아무것도 열리지 않으면 먼저 OS에 핸들러를 등록하세요."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count}개 켜짐"
+  "pageModalTitle": {
+    "message": "빠른 설정"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count}개 켜짐"
+  "pageModalPageWatch": {
+    "message": "시청 페이지"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "바로가기 {count}개"
+  "pageModalPageChannel": {
+    "message": "채널"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "바로가기 {count}개"
+  "pageModalCloseAria": {
+    "message": "빠른 설정 닫기"
   },
-  "pageModalAppliesLive": {
-    "message": "즉시 적용"
+  "pageModalSectionLayout": {
+    "message": "레이아웃"
+  },
+  "pageModalSectionTitles": {
+    "message": "제목 및 썸네일"
+  },
+  "pageModalSectionHide": {
+    "message": "피드에서 숨기기"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "촘촘한 그리드"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "전체 너비"
+  },
+  "pageModalLabelScheduled": {
+    "message": "예정된 스트림"
+  },
+  "pageModalLabelWatched": {
+    "message": "시청한 동영상"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "행당 동영상 수"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "너비 확장"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "최대 해상도"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "동영상 탭에서 열기"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "길이순으로 동영상 정렬"
+  },
+  "pageModalAllSettings": {
+    "message": "모든 설정"
+  },
+  "pageModalEmptyTitle": {
+    "message": "여기에는 빠른 설정이 없습니다"
+  },
+  "pageModalEmptyCopy": {
+    "message": "모든 기능은 \"모든 설정\"에 있습니다."
+  },
+  "pageModalSaveFailed": {
+    "message": "변경 사항을 저장하지 못해 이전 상태로 되돌렸습니다."
   },
   "statusSettingsImportUndoFailed": {
     "message": "가져오기를 되돌리지 못했습니다."

@@ -43541,60 +43541,53 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
     //  Page Quick Settings Modal
     //  A per-page context modal opened by a dedicated button next to the gear.
 
-    // Per-page feature config: id → label override (null = use feature.name)
+    // Per-page quick controls. A row is named by labelKey (a short name that
+    // reads well in a list of switches) or else by the feature's own localized
+    // name. section groups the rows; the headings show once a page has two or
+    // more groups. icon stands in where the feature has none of its own or
+    // shares one with a neighbour.
     const PAGE_MODAL_CONFIG = {
         home: [
-            { id: 'videosPerRow',               label: 'Videos Per Row' },
-            { id: 'hideNewsHome',                label: 'Hide News' },
-            { id: 'hidePlaylistsHome',           label: 'Hide Playlists' },
+            { id: 'videosPerRow',           section: 'layout',   labelKey: 'pageModalLabelVideosPerRow', label: 'Videos per row' },
+            { id: 'hideNewsHome',           section: 'hide',     labelKey: 'feature_guideHide_news_name', label: 'News', icon: 'file-text' },
+            { id: 'hidePlaylistsHome',      section: 'hide',     labelKey: 'feature_guideHide_playlists_name', label: 'Playlists' },
         ],
         subs: [
-            { id: 'subscriptionsGrid',           label: 'Dense Grid' },
-            { id: 'fullWidthSubscriptions',      label: 'Full Width' },
-            { id: 'hideVideosFromHome',          label: 'Video Hider' },
-            // The master switch, not daSurfaceSubscriptions: a quick card
+            { id: 'subscriptionsGrid',      section: 'layout',   labelKey: 'pageModalLabelDenseGrid', label: 'Dense grid' },
+            { id: 'fullWidthSubscriptions', section: 'layout',   labelKey: 'pageModalLabelFullWidth', label: 'Full width' },
+            // The master switch, not daSurfaceSubscriptions: a quick row
             // toggles one feature, and with DeArrow off that surface switch
             // does nothing, so "on" here would be a lie.
-            { id: 'deArrow',                     label: 'DeArrow Titles & Thumbnails' },
-            { id: 'hidePlannedLivestreams',      label: 'Hide Scheduled Lives' },
-            { id: 'removeAllShorts',             label: 'Hide Shorts' },
-            { id: 'hideWatchedVideos',           label: null },
+            { id: 'deArrow',                section: 'titles' },
+            { id: 'hideVideosFromHome',     section: 'hide' },
+            { id: 'hidePlannedLivestreams', section: 'hide',     labelKey: 'pageModalLabelScheduled', label: 'Scheduled streams' },
+            { id: 'removeAllShorts',        section: 'hide',     labelKey: 'spCategory_shorts', label: 'Shorts' },
+            { id: 'hideWatchedVideos',      section: 'hide',     labelKey: 'pageModalLabelWatched', label: 'Watched videos', icon: 'history' },
         ],
         watch: [
-            { id: 'stickyVideo',                 label: 'Theater Split' },
-            { id: 'expandVideoWidth',            label: 'Expand Width' },
-            { id: 'autoMaxResolution',           label: 'Max Resolution' },
+            { id: 'stickyVideo',            section: 'layout' },
+            { id: 'expandVideoWidth',       section: 'layout',   labelKey: 'pageModalLabelExpandWidth', label: 'Expand width' },
+            { id: 'autoMaxResolution',      section: 'playback', labelKey: 'pageModalLabelMaxResolution', label: 'Max resolution' },
         ],
         channel: [
-            { id: 'redirectToVideosTab',         label: 'Auto Videos Tab' },
-            { id: 'channelLengthSort',           label: null },
+            { id: 'redirectToVideosTab',    labelKey: 'pageModalLabelVideosTab', label: 'Open on the Videos tab' },
+            { id: 'channelLengthSort',      labelKey: 'pageModalLabelSortByLength', label: 'Sort videos by length' },
         ],
     };
 
-    const PAGE_LABELS = {
-        home: 'Home',
-        subs: 'Subscriptions',
-        watch: 'Watch',
-        channel: 'Channel',
+    // [message key, English fallback]
+    const PAGE_MODAL_SECTIONS = {
+        layout: ['pageModalSectionLayout', 'Layout'],
+        titles: ['pageModalSectionTitles', 'Titles and thumbnails'],
+        hide: ['pageModalSectionHide', 'Hide from feed'],
+        playback: ['qtGroup_Playback', 'Playback'],
     };
 
-    const PAGE_MODAL_META = {
-        home: {
-            eyebrow: `${BRAND.name} Quick Controls`,
-            description: 'Shape feed density and hide the noisiest surfaces without opening the full workspace.'
-        },
-        subs: {
-            eyebrow: `${BRAND.name} Quick Controls`,
-            description: 'Switch DeArrow and the feed\'s layout and filters on or off without leaving the page.'
-        },
-        watch: {
-            eyebrow: `${BRAND.name} Quick Controls`,
-            description: 'Adjust the watch experience in place with layout and playback shortcuts that apply live.'
-        },
-        channel: {
-            eyebrow: `${BRAND.name} Quick Controls`,
-            description: 'Set channel defaults quickly before diving into the full settings panel.'
-        }
+    const PAGE_MODAL_PAGE_NAMES = {
+        home: ['feature_guideHide_home_name', 'Home'],
+        subs: ['feature_guideHide_subscriptions_name', 'Subscriptions'],
+        watch: ['pageModalPageWatch', 'Watch page'],
+        channel: ['pageModalPageChannel', 'Channel'],
     };
 
     const PAGE_MODAL_PAGE_MAP = {
@@ -43616,13 +43609,6 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                 }
             });
             _pageModalPendingRemoval = [];
-        }
-    }
-
-    function updatePageModalEnabledCount(enabledCount) {
-        const countChip = document.getElementById('ytkit-pm-enabled-count');
-        if (countChip) {
-            countChip.textContent = tCount(enabledCount, 'pageModalEnabledCountTpl', '{count} Enabled', '{count} Enabled').replace('{count}', () => String(enabledCount));
         }
     }
 
@@ -43680,18 +43666,16 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         document.querySelector('#ytkit-page-btn')?.setAttribute('aria-expanded', 'true');
         document.querySelector('#ytkit-page-btn-watch')?.setAttribute('aria-expanded', 'true');
 
-        const pageLabel = PAGE_LABELS[pageKey] || pageKey;
-        const modalMeta = PAGE_MODAL_META[pageKey] || {
-            eyebrow: `${BRAND.name} Quick Controls`,
-            description: 'Quick controls for this page.'
-        };
+        const [pageNameKey, pageNameFallback] = PAGE_MODAL_PAGE_NAMES[pageKey] || ['', pageKey];
+        const pageName = pageNameKey ? t(pageNameKey, pageNameFallback) : pageNameFallback;
         const availableFeatures = featureList
-            .map(({ id, label }) => {
-                const feature = getFeatureById(id);
-                return feature ? { id, label, feature } : null;
+            .map((entry) => {
+                const feature = getFeatureById(entry.id);
+                if (!feature) return null;
+                const name = entry.labelKey ? t(entry.labelKey, entry.label) : (entry.label || getFeatureName(feature));
+                return { ...entry, feature, name };
             })
             .filter(Boolean);
-        const enabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;
 
         // Overlay
         const ov = document.createElement('div');
@@ -43727,51 +43711,32 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             if (pressedBackdrop && isOnBackdrop(e)) closePageModal();
         });
 
-        // Header
+        // Header: what this is, and which page it belongs to.
         const header = document.createElement('div');
         header.className = 'ytkit-pm-header';
 
         const titleWrap = document.createElement('div');
         titleWrap.className = 'ytkit-pm-title-wrap';
 
-        const eyebrowText = document.createElement('span');
-        eyebrowText.className = 'ytkit-pm-eyebrow';
-        eyebrowText.textContent = modalMeta.eyebrow;
-
-        const titleText = document.createElement('h3');
+        const titleText = document.createElement('h2');
         titleText.className = 'ytkit-pm-title';
         titleText.id = 'ytkit-pm-title';
-        titleText.textContent = `${pageLabel} Quick Controls`;
+        titleText.textContent = t('pageModalTitle', 'Quick controls');
 
-        const introText = document.createElement('p');
-        introText.className = 'ytkit-pm-copy';
-        introText.id = 'ytkit-pm-copy';
-        introText.textContent = modalMeta.description;
+        const pageText = document.createElement('p');
+        pageText.className = 'ytkit-pm-copy';
+        pageText.id = 'ytkit-pm-copy';
+        pageText.textContent = pageName;
 
-        const statRow = document.createElement('div');
-        statRow.className = 'ytkit-pm-stats';
-        [
-            { id: 'ytkit-pm-enabled-count', text: tCount(enabledCount, 'pageModalEnabledCountTpl', '{count} Enabled', '{count} Enabled').replace('{count}', () => String(enabledCount)) },
-            { text: tCount(availableFeatures.length, 'pageModalShortcutCountTpl', '{count} Shortcut', '{count} Shortcuts').replace('{count}', () => String(availableFeatures.length)) },
-            { text: t('pageModalAppliesLive', 'Applies Live') }
-        ].forEach((item) => {
-            const stat = document.createElement('span');
-            stat.className = 'ytkit-pm-stat';
-            if (item.id) stat.id = item.id;
-            stat.textContent = item.text;
-            statRow.appendChild(stat);
-        });
-
-        titleWrap.appendChild(eyebrowText);
         titleWrap.appendChild(titleText);
-        titleWrap.appendChild(introText);
-        titleWrap.appendChild(statRow);
+        titleWrap.appendChild(pageText);
 
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'ytkit-pm-close';
-        closeBtn.title = `Close ${pageLabel} quick controls`;
-        closeBtn.setAttribute('aria-label', `Close ${pageLabel} quick controls`);
+        const closeLabel = t('pageModalCloseAria', 'Close quick controls');
+        closeBtn.title = closeLabel;
+        closeBtn.setAttribute('aria-label', closeLabel);
         closeBtn.appendChild(ICONS.close());
         closeBtn.addEventListener('click', closePageModal);
 
@@ -43779,36 +43744,61 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         header.appendChild(closeBtn);
         modal.appendChild(header);
 
-        // Feature grid
-        const grid = document.createElement('div');
-        grid.className = 'ytkit-pm-grid';
+        // The rows. Only this part scrolls, so the header and the way out to
+        // All settings stay put on a short window.
+        const list = document.createElement('div');
+        list.className = 'ytkit-pm-list';
 
         if (!availableFeatures.length) {
             const emptyState = document.createElement('div');
             emptyState.className = 'ytkit-pm-empty';
 
-            const emptyTitle = document.createElement('h4');
+            const emptyTitle = document.createElement('p');
             emptyTitle.className = 'ytkit-pm-empty-title';
-            emptyTitle.textContent = 'No quick controls are available here';
+            emptyTitle.textContent = t('pageModalEmptyTitle', 'No quick controls here');
 
             const emptyCopy = document.createElement('p');
             emptyCopy.className = 'ytkit-pm-empty-copy';
-            emptyCopy.textContent = 'Open the full settings panel to browse every feature and section.';
+            emptyCopy.textContent = t('pageModalEmptyCopy', 'You\'ll find every feature in All settings.');
 
             emptyState.appendChild(emptyTitle);
             emptyState.appendChild(emptyCopy);
-            grid.appendChild(emptyState);
+            list.appendChild(emptyState);
         }
 
-        // One repaint for every card, so a conflict switched off by another
-        // card reads exactly like a card that was clicked.
+        // The row's own name and the switch position say everything; the
+        // full description rides along for screen readers and as a tooltip.
+        const describe = (row, feat, fid) => {
+            const desc = String(getFeatureDescription(feat) || '').trim();
+            if (!desc) return '';
+            row.title = desc;
+            const hidden = document.createElement('span');
+            hidden.className = 'ytkit-pm-sr';
+            hidden.id = `ytkit-pm-desc-${fid}`;
+            hidden.textContent = desc;
+            row.appendChild(hidden);
+            return hidden.id;
+        };
+        // The gear belongs to All settings, so a row with no icon of its own
+        // gets the sliders the trigger wears rather than another gear.
+        const rowIcon = (feat, icon) => {
+            const iconFn = ICONS[icon] || ICONS[feat.icon] || ICONS[feat.group?.toLowerCase()]
+                || ICONS['sliders-horizontal'] || ICONS.settings;
+            const iconWrap = document.createElement('span');
+            iconWrap.className = 'ytkit-pm-card-icon';
+            iconWrap.setAttribute('aria-hidden', 'true');
+            iconWrap.appendChild(iconFn());
+            return iconWrap;
+        };
+        const saveFailed = () => showToast(
+            t('pageModalSaveFailed', 'Couldn\'t save that change. It\'s back how it was.'), '#ef4444');
+
+        // One repaint for every row, so a conflict switched off by another
+        // row reads exactly like a row that was clicked.
         const cardsById = new Map();
-        const paintCard = ({ card, cardState, featureName }, on) => {
+        const paintCard = (card, on) => {
             card.classList.toggle('on', on);
             card.setAttribute('aria-checked', String(on));
-            card.setAttribute('aria-label', `${featureName}. ${on ? 'Enabled' : 'Disabled'}.`);
-            cardState.classList.toggle('on', on);
-            cardState.textContent = on ? 'On' : 'Off';
         };
 
         // Value-aware, so codecSelector goes back to "auto", never false.
@@ -43816,7 +43806,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         const isConflictOn = (cid, settings) => conflictRules?.isSettingConflictOn?.(cid, settings) ?? !!settings[cid];
 
         // Saves nextSettings and starts or stops what it changed. A refused or
-        // failed save puts the settings it replaced back.
+        // failed save puts the settings it replaced back and returns false.
         const commitQuickSettings = async (fid, feat, previousSettings, nextSettings, conflictsOff = []) => {
             const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
             const reconcile = (settings, source) => {
@@ -43844,19 +43834,18 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                 const result = await Promise.resolve(saveResult);
                 if (result?.ok === false) {
                     reconcile(result.settings || previousSettings, 'quick-settings-rollback');
+                    return false;
                 }
+                return true;
             } catch (err) {
                 DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
                 reconcile(previousSettings, 'quick-settings-rollback');
+                return false;
             }
         };
 
-        availableFeatures.forEach(({ id: fid, label, feature: feat }) => {
+        const buildRow = ({ id: fid, name: featureName, feature: feat, icon }) => {
             const isOn = !!appState.settings[fid];
-            const featureName = label || getFeatureName(feat);
-            const desc = String(getFeatureDescription(feat) || '').trim();
-            const descId = desc ? `ytkit-pm-desc-${fid}` : '';
-            const iconFn = ICONS[feat.icon] || ICONS[feat.group?.toLowerCase()] || ICONS.settings;
 
             // A setting with a list of values (Videos Per Row: Dynamic, 3 to 8)
             // gets a dropdown. Flipping it like a switch wrote true or false
@@ -43870,29 +43859,14 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                 card.className = 'ytkit-pm-card ytkit-pm-card--choice' + (isOn ? ' on' : '');
                 card.dataset.fid = fid;
 
-                const iconWrap = document.createElement('div');
-                iconWrap.className = 'ytkit-pm-card-icon';
-                iconWrap.appendChild(iconFn());
-
-                const textWrap = document.createElement('div');
-                textWrap.className = 'ytkit-pm-card-text';
                 const cardLabel = document.createElement('label');
                 cardLabel.className = 'ytkit-pm-card-label';
                 cardLabel.htmlFor = selectId;
                 cardLabel.textContent = featureName;
-                textWrap.appendChild(cardLabel);
-                if (desc) {
-                    const cardDesc = document.createElement('span');
-                    cardDesc.className = 'ytkit-pm-card-desc';
-                    cardDesc.id = descId;
-                    cardDesc.textContent = desc.length > 72 ? desc.slice(0, 70) + '…' : desc;
-                    textWrap.appendChild(cardDesc);
-                }
 
                 const select = document.createElement('select');
                 select.className = 'ytkit-pm-select';
                 select.id = selectId;
-                if (descId) select.setAttribute('aria-describedby', descId);
                 for (const [value, text] of choices) {
                     const option = document.createElement('option');
                     option.value = value;
@@ -43907,29 +43881,42 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                 };
                 showValue(appState.settings[fid]);
 
-                select.addEventListener('change', async () => {
-                    if (select.disabled) return;
-                    select.disabled = true;
-                    const previousSettings = { ...appState.settings };
-                    const nextSettings = {
-                        ...previousSettings,
-                        [fid]: numeric ? Number(select.value) : select.value
-                    };
-                    try {
-                        await commitQuickSettings(fid, feat, previousSettings, nextSettings);
-                    } finally {
-                        showValue(appState.settings[fid]);
-                        card.classList.toggle('on', !!appState.settings[fid]);
-                        updatePageModalEnabledCount(availableFeatures.filter(({ id }) => !!appState.settings[id]).length);
-                        select.disabled = false;
-                    }
-                });
-
-                card.appendChild(iconWrap);
-                card.appendChild(textWrap);
+                card.appendChild(rowIcon(feat, icon));
+                card.appendChild(cardLabel);
                 card.appendChild(select);
-                grid.appendChild(card);
-                return;
+                const descId = describe(card, feat, fid);
+                if (descId) select.setAttribute('aria-describedby', descId);
+
+                // Arrow keys on a closed dropdown fire one change per press,
+                // so each one waits its turn rather than being dropped, and
+                // the shown value is only reset once the last has landed. The
+                // select stays enabled: disabling it would throw keyboard focus
+                // out of the dialog.
+                let queue = Promise.resolve();
+                let pending = 0;
+                select.addEventListener('change', () => {
+                    const wanted = numeric ? Number(select.value) : select.value;
+                    pending += 1;
+                    card.setAttribute('aria-busy', 'true');
+                    const run = async () => {
+                        const previousSettings = { ...appState.settings };
+                        const nextSettings = { ...previousSettings, [fid]: wanted };
+                        let saved = false;
+                        try {
+                            saved = await commitQuickSettings(fid, feat, previousSettings, nextSettings);
+                        } finally {
+                            pending -= 1;
+                            if (!pending) {
+                                showValue(appState.settings[fid]);
+                                card.removeAttribute('aria-busy');
+                            }
+                        }
+                        if (!saved) saveFailed();
+                    };
+                    queue = queue.then(run, run);
+                    return queue;
+                });
+                return card;
             }
 
             const card = document.createElement('button');
@@ -43938,53 +43925,31 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             card.dataset.fid = fid;
             card.setAttribute('role', 'switch');
             card.setAttribute('aria-checked', String(isOn));
-            card.setAttribute('aria-label', `${featureName}. ${isOn ? 'Enabled' : 'Disabled'}.`);
-            if (descId) card.setAttribute('aria-describedby', descId);
-
-            // Icon area
-            const iconWrap = document.createElement('div');
-            iconWrap.className = 'ytkit-pm-card-icon';
-            iconWrap.appendChild(iconFn());
-
-            // Text
-            const textWrap = document.createElement('div');
-            textWrap.className = 'ytkit-pm-card-text';
+            card.setAttribute('aria-label', featureName);
 
             const cardLabel = document.createElement('span');
             cardLabel.className = 'ytkit-pm-card-label';
             cardLabel.textContent = featureName;
 
-            const cardDesc = document.createElement('span');
-            cardDesc.className = 'ytkit-pm-card-desc';
-            if (descId) cardDesc.id = descId;
-            cardDesc.textContent = desc.length > 72 ? desc.slice(0, 70) + '…' : desc;
+            const toggle = document.createElement('span');
+            toggle.className = 'ytkit-pm-switch';
+            toggle.setAttribute('aria-hidden', 'true');
+            const toggleThumb = document.createElement('span');
+            toggleThumb.className = 'ytkit-pm-switch-thumb';
+            toggle.appendChild(toggleThumb);
 
-            const cardState = document.createElement('span');
-            cardState.className = 'ytkit-pm-card-state' + (isOn ? ' on' : '');
-            cardState.textContent = isOn ? 'On' : 'Off';
-
-            textWrap.appendChild(cardLabel);
-            if (desc) textWrap.appendChild(cardDesc);
-            textWrap.appendChild(cardState);
-            cardsById.set(fid, { card, cardState, featureName });
-
-            // Toggle indicator
-            const toggle = document.createElement('div');
-            toggle.className = 'ytkit-pm-card-toggle';
-            const toggleTrack = document.createElement('div');
-            toggleTrack.className = 'ytkit-pm-toggle-track';
-            const toggleThumb = document.createElement('div');
-            toggleThumb.className = 'ytkit-pm-toggle-thumb';
-            toggleTrack.appendChild(toggleThumb);
-            toggle.appendChild(toggleTrack);
-
-            card.appendChild(iconWrap);
-            card.appendChild(textWrap);
+            card.appendChild(rowIcon(feat, icon));
+            card.appendChild(cardLabel);
             card.appendChild(toggle);
+            const descId = describe(card, feat, fid);
+            if (descId) card.setAttribute('aria-describedby', descId);
+            cardsById.set(fid, card);
 
             card.addEventListener('click', async () => {
-                if (card.disabled) return;
-                card.disabled = true;
+                // aria-busy, not disabled: a disabled button gives up keyboard
+                // focus, and inside a modal dialog it has nowhere to go.
+                if (card.getAttribute('aria-busy') === 'true') return;
+                card.setAttribute('aria-busy', 'true');
                 const previousSettings = { ...appState.settings };
                 const nextSettings = {
                     ...previousSettings,
@@ -43996,27 +43961,30 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                     ? (CONFLICT_MAP[fid].conflicts || []).filter((cid) => isConflictOn(cid, previousSettings))
                     : [];
                 for (const cid of conflictsOff) nextSettings[cid] = conflictRules?.settingConflictOffValue?.(cid) ?? false;
+                let saved = false;
                 try {
-                    await commitQuickSettings(fid, feat, previousSettings, nextSettings, conflictsOff);
+                    saved = await commitQuickSettings(fid, feat, previousSettings, nextSettings, conflictsOff);
                 } finally {
                     // finally, not a trailing statement: a reconcile() that
                     // throws while rolling back would otherwise escape with the
-                    // card still disabled, leaving the control dead until the
+                    // row still busy, leaving the control dead until the
                     // panel is rebuilt.
                     const finalValue = appState.settings[fid] === true;
-                    paintCard({ card, cardState, featureName }, finalValue);
+                    paintCard(card, finalValue);
                     for (const cid of conflictsOff) {
                         const other = cardsById.get(cid);
                         if (other) paintCard(other, appState.settings[cid] === true);
                     }
-                    const nextEnabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;
-                    updatePageModalEnabledCount(nextEnabledCount);
                     // Update all matching dock pills if any remain
                     document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
-                    card.disabled = false;
+                    card.removeAttribute('aria-busy');
                 }
                 // After the save settles, outside the try: a toast that fails
                 // must not roll a saved change back.
+                if (!saved) {
+                    saveFailed();
+                    return;
+                }
                 const switchedOff = conflictsOff.filter((cid) => !isConflictOn(cid, appState.settings));
                 if (appState.settings[fid] === true && switchedOff.length) {
                     const names = switchedOff.map((cid) => getFeatureName(getFeatureById(cid)) || cid).join(', ');
@@ -44027,27 +43995,64 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
                 }
             });
 
-            grid.appendChild(card);
-        });
+            return card;
+        };
 
-        modal.appendChild(grid);
+        // Rows sharing a section sit together, in the order they first appear.
+        const groups = [];
+        for (const entry of availableFeatures) {
+            const key = entry.section || '';
+            let group = groups.find((candidate) => candidate.key === key);
+            if (!group) {
+                group = { key, rows: [] };
+                groups.push(group);
+            }
+            group.rows.push(entry);
+        }
+        const showHeadings = groups.length > 1;
+        for (const group of groups) {
+            const section = document.createElement('div');
+            section.className = 'ytkit-pm-section';
+            const [sectionKey, sectionFallback] = PAGE_MODAL_SECTIONS[group.key] || ['', ''];
+            if (showHeadings && sectionFallback) {
+                const heading = document.createElement('h3');
+                heading.className = 'ytkit-pm-section-title';
+                heading.id = `ytkit-pm-section-${group.key}`;
+                heading.textContent = t(sectionKey, sectionFallback);
+                section.setAttribute('role', 'group');
+                section.setAttribute('aria-labelledby', heading.id);
+                section.appendChild(heading);
+            }
+            for (const entry of group.rows) section.appendChild(buildRow(entry));
+            list.appendChild(section);
+        }
 
-        // Footer: link to full settings
+        modal.appendChild(list);
+
+        // Footer: the way out to everything else.
         const footer = document.createElement('div');
         footer.className = 'ytkit-pm-footer';
-        const footerCopy = document.createElement('p');
-        footerCopy.className = 'ytkit-pm-footer-copy';
-        footerCopy.textContent = 'Need more control? Open the full settings workspace for every feature and section.';
         const fullBtn = document.createElement('button');
         fullBtn.type = 'button';
         fullBtn.className = 'ytkit-pm-full-settings';
-        fullBtn.textContent = 'Open Full Settings';
-        fullBtn.setAttribute('aria-label', `Open the full ${BRAND.name} settings workspace`);
+        const fullIcon = document.createElement('span');
+        fullIcon.className = 'ytkit-pm-card-icon';
+        fullIcon.setAttribute('aria-hidden', 'true');
+        fullIcon.appendChild(ICONS.settings());
+        const fullLabel = document.createElement('span');
+        fullLabel.className = 'ytkit-pm-card-label';
+        fullLabel.textContent = t('pageModalAllSettings', 'All settings');
+        const fullChevron = document.createElement('span');
+        fullChevron.className = 'ytkit-pm-chevron';
+        fullChevron.setAttribute('aria-hidden', 'true');
+        fullChevron.appendChild(ICONS.chevronRight());
+        fullBtn.appendChild(fullIcon);
+        fullBtn.appendChild(fullLabel);
+        fullBtn.appendChild(fullChevron);
         fullBtn.addEventListener('click', () => {
             closePageModal();
             setSettingsPanelOpen(true);
         });
-        footer.appendChild(footerCopy);
         footer.appendChild(fullBtn);
         modal.appendChild(footer);
 
@@ -44088,14 +44093,14 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             const pt = getCurrentPage();
             const pageKey = PAGE_MODAL_PAGE_MAP[pt];
             if (!pageKey || !PAGE_MODAL_CONFIG[pageKey]?.length) return;
-            const pageLabel = PAGE_LABELS[pageKey] || 'page';
+            const buttonLabel = t('pageModalTitle', 'Quick controls');
 
             const btn = document.createElement('button');
             btn.id = btnId;
             btn.type = 'button';
             btn.className = `ytkit-trigger-btn ytkit-page-trigger ${isWatch ? 'ytkit-page-trigger--watch' : 'ytkit-page-trigger--masthead'}`;
-            btn.title = `Open ${pageLabel} quick controls`;
-            btn.setAttribute('aria-label', `Open ${pageLabel} quick controls`);
+            btn.title = buttonLabel;
+            btn.setAttribute('aria-label', buttonLabel);
             btn.setAttribute('aria-haspopup', 'dialog');
             btn.setAttribute('aria-expanded', 'false');
             // Sliders icon
@@ -44140,10 +44145,14 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             position: fixed;
             inset: 0;
             z-index: 99990;
-            background: rgba(0,0,0,0.34);
+            background: rgba(0,0,0,0.32);
             opacity: 0;
             transition: opacity 0.16s ease;
             pointer-events: none;
+        }
+
+        html:not([dark]) .ytkit-pm-overlay {
+            background: rgba(15,23,42,0.14);
         }
 
         .ytkit-pm-ov-visible {
@@ -44151,51 +44160,82 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             pointer-events: auto;
         }
 
+        /* Quick controls. Its own tokens, the settings panel's v3 values, since
+           the panel's are scoped to #ytkit-settings-panel and this sits on the
+           page. The light set below swaps them on YouTube's light theme. */
         .ytkit-pm {
-            display: block;
+            --ytkit-pm-bg: #202226;
+            --ytkit-pm-hover: rgba(220,222,228,0.07);
+            --ytkit-pm-press: rgba(220,222,228,0.11);
+            --ytkit-pm-border: #34363c;
+            --ytkit-pm-divider: rgba(220,222,228,0.08);
+            --ytkit-pm-text: #f1f1f3;
+            --ytkit-pm-muted: #b0b3bc;
+            --ytkit-pm-icon: #a5a8af;
+            --ytkit-pm-accent: #ff6259;
+            --ytkit-pm-accent-rgb: 255,98,89;
+            --ytkit-pm-track-off: #30333a;
+            --ytkit-pm-stroke-off: rgba(151,178,208,0.30);
+            --ytkit-pm-thumb-off: #e8edf2;
+            --ytkit-pm-thumb-on: #ffffff;
+            --ytkit-pm-control: #25272c;
+            --ytkit-pm-control-stroke: #41444c;
+            --ytkit-pm-shadow: 0 16px 40px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.30);
+            display: flex;
+            flex-direction: column;
             position: fixed;
-            top: 60px;
-            right: 16px;
+            top: 56px;
+            right: 12px;
             bottom: auto;
             left: auto;
-            width: min(392px, calc(100vw - 24px));
+            box-sizing: border-box;
+            width: min(340px, calc(100vw - 16px));
             height: auto;
             max-width: none;
-            max-height: calc(100vh - 80px);
+            max-height: calc(100vh - 72px);
             margin: 0;
             padding: 0;
-            overflow-y: auto;
-            overscroll-behavior: contain;
+            overflow: hidden;
             z-index: 99991;
-            background: rgba(18,18,18,0.98);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: var(--ytkit-pm-bg);
+            border: 1px solid var(--ytkit-pm-border);
             border-radius: 12px;
-            box-shadow: 0 18px 34px rgba(0,0,0,0.32);
-            font-family: var(--ytkit-font);
-            color: var(--ytkit-text-primary);
+            box-shadow: var(--ytkit-pm-shadow);
+            color-scheme: dark;
+            /* YouTube's root is 10px; anything here without a size of its own
+               would inherit that. */
+            font-family: "Roboto", "Arial", sans-serif;
+            font-size: 14px;
+            line-height: 20px;
+            color: var(--ytkit-pm-text);
             opacity: 0;
             transform: translateY(-4px);
             transition: opacity 0.16s ease, transform 0.16s ease;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.12) transparent;
+        }
+
+        html:not([dark]) .ytkit-pm {
+            --ytkit-pm-bg: #ffffff;
+            --ytkit-pm-hover: rgba(15,23,42,0.05);
+            --ytkit-pm-press: rgba(15,23,42,0.08);
+            --ytkit-pm-border: rgba(15,23,42,0.12);
+            --ytkit-pm-divider: rgba(15,23,42,0.08);
+            --ytkit-pm-text: #17202b;
+            --ytkit-pm-muted: #5f6b79;
+            --ytkit-pm-icon: #5f6b79;
+            --ytkit-pm-accent: #bd2e28;
+            --ytkit-pm-accent-rgb: 189,46,40;
+            --ytkit-pm-track-off: #dde2e9;
+            --ytkit-pm-stroke-off: #7b8594;
+            --ytkit-pm-thumb-off: #5f6b79;
+            --ytkit-pm-control: #ffffff;
+            --ytkit-pm-control-stroke: rgba(15,23,42,0.22);
+            --ytkit-pm-shadow: 0 16px 40px rgba(15,23,42,0.18), 0 2px 6px rgba(15,23,42,0.08);
+            color-scheme: light;
         }
 
         /* .ytkit-pm-overlay is the backdrop people see, painted under the top layer. */
         .ytkit-pm::backdrop {
             background: transparent;
-        }
-
-        .ytkit-pm::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .ytkit-pm::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .ytkit-pm::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.12);
-            border-radius: 10px;
         }
 
         .ytkit-pm-visible {
@@ -44214,359 +44254,329 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .ytkit-pm-overlay,
-            .ytkit-pm {
-                transition: none;
-            }
-        }
-
         .ytkit-pm-header {
             display: flex;
-            align-items: flex-start;
+            flex-shrink: 0;
+            align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            padding: 14px 14px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            gap: 12px;
+            padding: 12px 8px 10px 16px;
+            border-bottom: 1px solid var(--ytkit-pm-divider);
         }
 
         .ytkit-pm-title-wrap {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            gap: 5px;
+            gap: 2px;
             min-width: 0;
-        }
-
-        .ytkit-pm-eyebrow {
-            display: inline-flex;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: #ffb19a;
         }
 
         .ytkit-pm-title {
             margin: 0;
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 22px;
             letter-spacing: 0;
-            color: rgba(255,255,255,0.94);
-            text-wrap: balance;
+            color: var(--ytkit-pm-text);
         }
 
         .ytkit-pm-copy {
             margin: 0;
-            font-size: 11px;
-            line-height: 1.45;
-            color: rgba(255,255,255,0.58);
-        }
-
-        .ytkit-pm-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .ytkit-pm-stat {
-            display: inline-flex;
-            align-items: center;
-            padding: 5px 9px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
-            color: rgba(255,255,255,0.72);
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-variant-numeric: tabular-nums;
+            font-size: 12px;
+            line-height: 16px;
+            color: var(--ytkit-pm-muted);
         }
 
         .ytkit-pm-close {
-            width: 30px;
-            height: 30px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.03);
-            color: rgba(255,255,255,0.58);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            box-sizing: border-box;
+            display: grid;
+            place-items: center;
             flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--ytkit-pm-muted);
+            cursor: pointer;
+            transition: background-color 0.12s ease, color 0.12s ease;
             touch-action: manipulation;
         }
 
         .ytkit-pm-close:hover {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
+            background: var(--ytkit-pm-hover);
+            color: var(--ytkit-pm-text);
+        }
+
+        .ytkit-pm-close:active {
+            background: var(--ytkit-pm-press);
         }
 
         .ytkit-pm-close svg {
-            width: 14px;
-            height: 14px;
+            width: 18px;
+            height: 18px;
         }
 
-        .ytkit-pm-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding: 10px 12px 12px;
+        .ytkit-pm-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 2px 6px 6px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--ytkit-pm-control-stroke) transparent;
         }
 
-        .ytkit-pm-card {
+        .ytkit-pm-section-title {
+            margin: 0;
+            padding: 12px 10px 4px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 16px;
+            letter-spacing: 0;
+            color: var(--ytkit-pm-muted);
+        }
+
+        .ytkit-pm-section:first-child .ytkit-pm-section-title {
+            padding-top: 8px;
+        }
+
+        /* Every row, the All settings one included. A button's own border,
+           background and font are reset here rather than in the shared button
+           lists, so the row owns all of its states. */
+        .ytkit-pm-card,
+        .ytkit-pm-full-settings {
+            /* Holds the row's hidden description, which would otherwise hang
+               off the dialog below a scrolled list. */
+            position: relative;
+            box-sizing: border-box;
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
+            align-items: center;
+            gap: 12px;
             width: 100%;
-            padding: 10px 11px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.06);
-            background:
-                linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.014)),
-                rgba(255,255,255,0.02);
+            min-height: 40px;
+            margin: 0;
+            padding: 8px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            box-shadow: none;
+            color: var(--ytkit-pm-text);
+            font: inherit;
+            text-align: start;
             cursor: pointer;
-            text-align: left;
-            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.12s ease;
             touch-action: manipulation;
         }
 
-        .ytkit-pm-card:hover {
-            background:
-                linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
-                rgba(255,255,255,0.04);
-            border-color: rgba(255,255,255,0.12);
-            transform: translateY(-1px);
+        .ytkit-pm-card:hover,
+        .ytkit-pm-full-settings:hover {
+            background: var(--ytkit-pm-hover);
         }
 
-        .ytkit-pm-card.on {
-            background:
-                linear-gradient(180deg, rgba(var(--ytkit-accent-rgb),0.12), rgba(255,255,255,0.02)),
-                rgba(255,255,255,0.06);
-            border-color: rgba(var(--ytkit-accent-rgb),0.24);
+        .ytkit-pm-card:active,
+        .ytkit-pm-full-settings:active {
+            background: var(--ytkit-pm-press);
         }
 
-        .ytkit-pm-card.on:hover {
-            background:
-                linear-gradient(180deg, rgba(var(--ytkit-accent-rgb),0.15), rgba(255,255,255,0.03)),
-                rgba(255,255,255,0.07);
-            border-color: rgba(var(--ytkit-accent-rgb),0.3);
-        }
-
-        .ytkit-pm-card-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,0.05);
-            color: rgba(255,255,255,0.56);
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-
-        .ytkit-pm-card.on .ytkit-pm-card-icon {
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-        }
-
-        .ytkit-pm-card-icon svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .ytkit-pm-card-text {
-            flex: 1;
-            min-width: 0;
-            display: grid;
-            gap: 4px;
-        }
-
-        .ytkit-pm-card-label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: rgba(255,255,255,0.9);
-            line-height: 1.3;
-        }
-
-        .ytkit-pm-card-desc {
-            display: block;
-            font-size: 10px;
-            color: rgba(255,255,255,0.45);
-            line-height: 1.4;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-        }
-
-        .ytkit-pm-card-state {
-            display: inline-flex;
-            align-items: center;
-            width: fit-content;
-            padding: 4px 8px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
-            color: rgba(255,255,255,0.64);
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .ytkit-pm-card-state.on {
-            background: rgba(var(--ytkit-accent-rgb),0.16);
-            border-color: rgba(var(--ytkit-accent-rgb),0.24);
-            color: rgba(255,255,255,0.92);
-        }
-
-        .ytkit-pm-card-toggle {
-            flex-shrink: 0;
-        }
-
-        /* A div, so it doesn't get the border-box sizing the switch buttons
-           get from the browser, and width: 100% plus padding overflowed. */
+        /* The 32px dropdown takes the padding, so the row stays 40px tall like
+           the switch rows. */
         .ytkit-pm-card--choice {
-            box-sizing: border-box;
-            align-items: center;
+            padding-block: 4px;
             cursor: default;
         }
 
-        .ytkit-pm-card--choice:hover {
-            transform: none;
+        .ytkit-pm-card--choice:active {
+            background: var(--ytkit-pm-hover);
         }
 
         .ytkit-pm-card--choice .ytkit-pm-card-label {
             cursor: pointer;
         }
 
-        .ytkit-pm-select {
-            flex-shrink: 0;
-            min-width: 88px;
-            min-height: 28px;
-            padding: 0 8px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.92);
-            color-scheme: dark;
-            font: inherit;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: border-color 0.15s ease, background 0.15s ease;
-        }
-
-        .ytkit-pm-select:hover {
-            border-color: rgba(255,255,255,0.22);
-            background: rgba(255,255,255,0.09);
-        }
-
-        .ytkit-pm-select:focus-visible {
-            outline: 2px solid rgba(var(--ytkit-accent-rgb),0.7);
-            outline-offset: 2px;
-        }
-
-        .ytkit-pm-select:disabled {
-            opacity: 0.6;
+        .ytkit-pm-card[aria-busy="true"] {
             cursor: progress;
         }
 
-        .ytkit-pm-toggle-track {
-            width: 36px;
+        .ytkit-pm-card[aria-busy="true"] .ytkit-pm-switch,
+        .ytkit-pm-card[aria-busy="true"] .ytkit-pm-select {
+            opacity: 0.6;
+        }
+
+        .ytkit-pm-close:focus-visible,
+        .ytkit-pm-card:focus-visible,
+        .ytkit-pm-full-settings:focus-visible,
+        .ytkit-pm-select:focus-visible {
+            outline: 2px solid rgba(var(--ytkit-pm-accent-rgb),0.9);
+            outline-offset: -2px;
+        }
+
+        .ytkit-pm-card-icon,
+        .ytkit-pm-chevron {
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            width: 20px;
             height: 20px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.12);
-            position: relative;
-            transition: background 0.2s ease;
+            color: var(--ytkit-pm-icon);
         }
 
-        .ytkit-pm-card.on .ytkit-pm-toggle-track {
-            background: rgba(255,107,74,0.78);
+        .ytkit-pm-card-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
-        .ytkit-pm-toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
+        .ytkit-pm-chevron svg {
             width: 16px;
             height: 16px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.62);
-            transition: transform 0.2s ease, background 0.2s ease;
         }
 
-        .ytkit-pm-card.on .ytkit-pm-toggle-thumb {
+        .ytkit-pm-chevron:dir(rtl) svg {
+            transform: scaleX(-1);
+        }
+
+        .ytkit-pm-card-label {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 20px;
+            color: var(--ytkit-pm-text);
+            overflow-wrap: anywhere;
+        }
+
+        /* The settings panel's switch, scaled to a row: square track, square
+           thumb, accent fill when on. */
+        .ytkit-pm-switch {
+            position: relative;
+            flex-shrink: 0;
+            box-sizing: border-box;
+            width: 36px;
+            height: 20px;
+            border-radius: 6px;
+            background: var(--ytkit-pm-track-off);
+            box-shadow: inset 0 0 0 1px var(--ytkit-pm-stroke-off);
+            transition: background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+
+        .ytkit-pm-switch-thumb {
+            position: absolute;
+            top: 3px;
+            inset-inline-start: 3px;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            background: var(--ytkit-pm-thumb-off);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.30);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        .ytkit-pm-card[aria-checked="true"] .ytkit-pm-switch {
+            background: var(--ytkit-pm-accent);
+            box-shadow: none;
+        }
+
+        .ytkit-pm-card[aria-checked="true"] .ytkit-pm-switch-thumb {
+            background: var(--ytkit-pm-thumb-on);
             transform: translateX(16px);
-            background: #fff;
+        }
+
+        .ytkit-pm-card[aria-checked="true"]:dir(rtl) .ytkit-pm-switch-thumb {
+            transform: translateX(-16px);
+        }
+
+        .ytkit-pm-select {
+            flex-shrink: 0;
+            box-sizing: border-box;
+            min-width: 96px;
+            height: 32px;
+            margin: 0;
+            padding: 0 8px;
+            border: 1px solid var(--ytkit-pm-control-stroke);
+            border-radius: 6px;
+            background: var(--ytkit-pm-control);
+            color: var(--ytkit-pm-text);
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color 0.12s ease, opacity 0.15s ease;
+        }
+
+        .ytkit-pm-select:hover {
+            border-color: var(--ytkit-pm-muted);
         }
 
         .ytkit-pm-footer {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 10px 14px 14px;
-            border-top: 1px solid rgba(255,255,255,0.06);
-        }
-
-        .ytkit-pm-footer-copy {
-            margin: 0;
-            font-size: 11px;
-            line-height: 1.45;
-            color: rgba(255,255,255,0.56);
-        }
-
-        .ytkit-pm-full-settings {
-            width: 100%;
-            min-height: 36px;
-            padding: 0 13px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.03);
-            color: rgba(255,255,255,0.78);
-            font-size: 11px;
-            font-weight: 700;
-            font-family: var(--ytkit-font);
-            cursor: pointer;
-            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-            letter-spacing: 0;
-            touch-action: manipulation;
-        }
-
-        .ytkit-pm-full-settings:hover {
-            background: rgba(255,255,255,0.07);
-            border-color: rgba(255,255,255,0.14);
-            color: #fff;
+            flex-shrink: 0;
+            padding: 6px;
+            border-top: 1px solid var(--ytkit-pm-divider);
         }
 
         .ytkit-pm-empty {
-            padding: 14px;
-            border-radius: 12px;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
-                rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.08);
+            padding: 16px 10px 12px;
         }
 
         .ytkit-pm-empty-title {
-            margin: 0 0 6px;
-            font-size: 13px;
-            font-weight: 700;
-            color: rgba(255,255,255,0.92);
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            color: var(--ytkit-pm-text);
         }
 
         .ytkit-pm-empty-copy {
             margin: 0;
-            font-size: 11px;
-            line-height: 1.45;
-            color: rgba(255,255,255,0.58);
+            font-size: 13px;
+            line-height: 18px;
+            color: var(--ytkit-pm-muted);
+        }
+
+        .ytkit-pm-sr {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ytkit-pm-overlay,
+            .ytkit-pm,
+            .ytkit-pm-close,
+            .ytkit-pm-card,
+            .ytkit-pm-full-settings,
+            .ytkit-pm-switch,
+            .ytkit-pm-switch-thumb,
+            .ytkit-pm-select {
+                transition: none;
+            }
+        }
+
+        @media (forced-colors: active) {
+            .ytkit-pm-switch {
+                border: 1px solid CanvasText;
+            }
+
+            .ytkit-pm-switch-thumb {
+                background: CanvasText;
+            }
+
+            .ytkit-pm-card[aria-checked="true"] .ytkit-pm-switch {
+                background: Highlight;
+            }
+
+            .ytkit-pm-card[aria-checked="true"] .ytkit-pm-switch-thumb {
+                background: HighlightText;
+            }
         }
 
         /* The trigger buttons' base look (this one and the gear beside it) is a
@@ -44595,11 +44605,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             background: rgba(15,23,42,0.08) !important;
         }
 
-        .ytkit-page-trigger.active svg {
-            color: #ff9a7c !important;
-            transform: none !important;
-        }
-
+        .ytkit-page-trigger.active svg,
         .ytkit-page-trigger:hover svg {
             transform: none !important;
         }
@@ -45904,116 +45910,6 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             color: rgba(226,255,236,0.92) !important;
         }
 
-        .ytkit-pm {
-            width: min(328px, calc(100vw - 12px));
-            border-radius: 12px;
-        }
-
-        .ytkit-pm-header {
-            padding: 9px 10px 8px;
-            gap: 7px;
-        }
-
-        .ytkit-pm-title-wrap {
-            gap: 4px;
-        }
-
-        .ytkit-pm-eyebrow {
-            font-size: 8px;
-        }
-
-        .ytkit-pm-copy {
-            font-size: 9.5px;
-        }
-
-        .ytkit-pm-stats {
-            gap: 4px;
-        }
-
-        .ytkit-pm-stat {
-            padding: 3px 7px;
-            font-size: 7.5px;
-        }
-
-        .ytkit-pm-title {
-            font-size: 12.5px;
-        }
-
-        .ytkit-pm-close {
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
-        }
-
-        .ytkit-pm-grid {
-            gap: 4px;
-            padding: 6px;
-        }
-
-        .ytkit-pm-card {
-            gap: 7px;
-            padding: 8px 9px;
-            border-radius: 10px;
-        }
-
-        .ytkit-pm-card-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
-        }
-
-        .ytkit-pm-card-label {
-            font-size: 10.5px;
-        }
-
-        .ytkit-pm-card-desc {
-            margin-top: 0;
-            font-size: 8.5px;
-        }
-
-        .ytkit-pm-card-state {
-            padding: 3px 6px;
-            font-size: 7.5px;
-        }
-
-        .ytkit-pm-select {
-            min-width: 76px;
-            min-height: 24px;
-            padding: 0 6px;
-            font-size: 9.5px;
-        }
-
-        .ytkit-pm-footer {
-            gap: 8px;
-            padding: 8px 10px 10px;
-        }
-
-        .ytkit-pm-footer-copy {
-            font-size: 9.5px;
-        }
-
-        .ytkit-pm-full-settings {
-            min-height: 30px;
-            padding: 0 9px;
-            border-radius: 8px;
-            font-size: 9.5px;
-            font-weight: 600;
-        }
-
-        .ytkit-pm-empty {
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .ytkit-pm-empty-title {
-            margin-bottom: 4px;
-            font-size: 11px;
-        }
-
-        .ytkit-pm-empty-copy {
-            font-size: 9.5px;
-        }
-
         #ytkit-settings-panel {
             width: min(1280px, calc(100vw - 16px));
             height: min(860px, calc(100vh - 16px));
@@ -46496,13 +46392,11 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         .ytkit-btn,
         .ytkit-reset-group-btn,
-        .ytkit-pm-full-settings,
         .ytkit-speed-btn,
         .ytkit-watch-action-btn,
         .ytkit-trigger-btn,
         .ytkit-page-trigger,
         .ytkit-close,
-        .ytkit-pm-card,
         .ytkit-nav-btn,
         #ytkit-comment-nav .ytkit-comment-nav-btn,
         .ytkit-vh-tab,
@@ -46522,13 +46416,11 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         .ytkit-btn:focus-visible,
         .ytkit-reset-group-btn:focus-visible,
-        .ytkit-pm-full-settings:focus-visible,
         .ytkit-speed-btn:focus-visible,
         .ytkit-watch-action-btn:focus-visible,
         .ytkit-trigger-btn:focus-visible,
         .ytkit-page-trigger:focus-visible,
         .ytkit-close:focus-visible,
-        .ytkit-pm-card:focus-visible,
         .ytkit-nav-btn:focus-visible,
         #ytkit-comment-nav .ytkit-comment-nav-btn:focus-visible,
         .ytkit-vh-tab:focus-visible,
@@ -46546,13 +46438,11 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         .ytkit-btn:active:not(:disabled),
         .ytkit-reset-group-btn:active:not(:disabled),
-        .ytkit-pm-full-settings:active:not(:disabled),
         .ytkit-speed-btn:active:not(:disabled),
         .ytkit-watch-action-btn:active:not(:disabled),
         .ytkit-trigger-btn:active:not(:disabled),
         .ytkit-page-trigger:active:not(:disabled),
         .ytkit-close:active:not(:disabled),
-        .ytkit-pm-card:active:not(:disabled),
         .ytkit-nav-btn:active:not(:disabled),
         #ytkit-comment-nav .ytkit-comment-nav-btn:active:not(:disabled),
         .ytkit-vh-tab:active:not(:disabled),
@@ -46569,13 +46459,11 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
 
         .ytkit-btn:disabled,
         .ytkit-reset-group-btn:disabled,
-        .ytkit-pm-full-settings:disabled,
         .ytkit-speed-btn:disabled,
         .ytkit-watch-action-btn:disabled,
         .ytkit-trigger-btn:disabled,
         .ytkit-page-trigger:disabled,
         .ytkit-close:disabled,
-        .ytkit-pm-card:disabled,
         .ytkit-nav-btn:disabled,
         #ytkit-comment-nav .ytkit-comment-nav-btn:disabled,
         .ytkit-vh-tab:disabled,
@@ -46593,15 +46481,13 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         }
 
         .ytkit-btn,
-        .ytkit-reset-group-btn,
-        .ytkit-pm-full-settings {
+        .ytkit-reset-group-btn {
             box-shadow: none !important;
             transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease !important;
         }
 
         .ytkit-btn:hover,
-        .ytkit-reset-group-btn:hover,
-        .ytkit-pm-full-settings:hover {
+        .ytkit-reset-group-btn:hover {
             background: rgba(255,255,255,0.08) !important;
             border-color: rgba(255,255,255,0.14) !important;
             box-shadow: none !important;

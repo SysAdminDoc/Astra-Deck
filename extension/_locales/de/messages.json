@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "An {player} übergeben. Wenn sich nichts geöffnet hat, registrieren Sie zuerst den Handler in Ihrem Betriebssystem."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count} aktiv"
+  "pageModalTitle": {
+    "message": "Schnelleinstellungen"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count} aktiv"
+  "pageModalPageWatch": {
+    "message": "Wiedergabeseite"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "{count} Schnellzugriff"
+  "pageModalPageChannel": {
+    "message": "Kanal"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "{count} Schnellzugriffe"
+  "pageModalCloseAria": {
+    "message": "Schnelleinstellungen schließen"
   },
-  "pageModalAppliesLive": {
-    "message": "Wirkt sofort"
+  "pageModalSectionLayout": {
+    "message": "Darstellung"
+  },
+  "pageModalSectionTitles": {
+    "message": "Titel und Vorschaubilder"
+  },
+  "pageModalSectionHide": {
+    "message": "Im Feed ausblenden"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "Dichtes Raster"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "Volle Breite"
+  },
+  "pageModalLabelScheduled": {
+    "message": "Geplante Streams"
+  },
+  "pageModalLabelWatched": {
+    "message": "Angesehene Videos"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "Videos pro Zeile"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "Breite erweitern"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "Maximale Auflösung"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "Auf dem Videos-Tab öffnen"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "Videos nach Länge sortieren"
+  },
+  "pageModalAllSettings": {
+    "message": "Alle Einstellungen"
+  },
+  "pageModalEmptyTitle": {
+    "message": "Hier gibt es keine Schnelleinstellungen"
+  },
+  "pageModalEmptyCopy": {
+    "message": "Alle Funktionen stehen unter „Alle Einstellungen“."
+  },
+  "pageModalSaveFailed": {
+    "message": "Die Änderung konnte nicht gespeichert werden. Es bleibt alles wie vorher."
   },
   "statusSettingsImportUndoFailed": {
     "message": "Der Import konnte nicht rückgängig gemacht werden."

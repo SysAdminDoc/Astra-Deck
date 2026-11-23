@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "已交给 {player}。如果没有打开，请先在系统中注册该协议处理程序。"
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "已开启 {count} 项"
+  "pageModalTitle": {
+    "message": "快捷控制"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "已开启 {count} 项"
+  "pageModalPageWatch": {
+    "message": "播放页"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "{count} 个快捷项"
+  "pageModalPageChannel": {
+    "message": "频道"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "{count} 个快捷项"
+  "pageModalCloseAria": {
+    "message": "关闭快捷控制"
   },
-  "pageModalAppliesLive": {
-    "message": "即时生效"
+  "pageModalSectionLayout": {
+    "message": "布局"
+  },
+  "pageModalSectionTitles": {
+    "message": "标题和缩略图"
+  },
+  "pageModalSectionHide": {
+    "message": "从动态中隐藏"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "紧凑网格"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "全宽"
+  },
+  "pageModalLabelScheduled": {
+    "message": "已预定的直播"
+  },
+  "pageModalLabelWatched": {
+    "message": "已观看的视频"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "每行视频数"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "加宽"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "最高分辨率"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "在“视频”标签页打开"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "按时长排序视频"
+  },
+  "pageModalAllSettings": {
+    "message": "所有设置"
+  },
+  "pageModalEmptyTitle": {
+    "message": "此处没有快捷控制"
+  },
+  "pageModalEmptyCopy": {
+    "message": "所有功能都在“所有设置”中。"
+  },
+  "pageModalSaveFailed": {
+    "message": "无法保存此更改，已恢复原样。"
   },
   "statusSettingsImportUndoFailed": {
     "message": "无法撤销导入。"

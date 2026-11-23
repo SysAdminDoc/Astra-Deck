@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "Envoyé à {player}. Si rien ne s’est ouvert, enregistrez d’abord le gestionnaire dans votre système."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count} activée"
+  "pageModalTitle": {
+    "message": "Réglages rapides"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count} activées"
+  "pageModalPageWatch": {
+    "message": "Page de lecture"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "{count} raccourci"
+  "pageModalPageChannel": {
+    "message": "Chaîne"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "{count} raccourcis"
+  "pageModalCloseAria": {
+    "message": "Fermer les réglages rapides"
   },
-  "pageModalAppliesLive": {
-    "message": "S’applique immédiatement"
+  "pageModalSectionLayout": {
+    "message": "Disposition"
+  },
+  "pageModalSectionTitles": {
+    "message": "Titres et miniatures"
+  },
+  "pageModalSectionHide": {
+    "message": "Masquer du fil"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "Grille dense"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "Pleine largeur"
+  },
+  "pageModalLabelScheduled": {
+    "message": "Directs programmés"
+  },
+  "pageModalLabelWatched": {
+    "message": "Vidéos regardées"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "Vidéos par ligne"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "Élargir"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "Résolution maximale"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "Ouvrir sur l'onglet Vidéos"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "Trier les vidéos par durée"
+  },
+  "pageModalAllSettings": {
+    "message": "Tous les paramètres"
+  },
+  "pageModalEmptyTitle": {
+    "message": "Aucun réglage rapide ici"
+  },
+  "pageModalEmptyCopy": {
+    "message": "Toutes les fonctionnalités sont dans « Tous les paramètres »."
+  },
+  "pageModalSaveFailed": {
+    "message": "Impossible d'enregistrer ce changement. Tout est revenu comme avant."
   },
   "statusSettingsImportUndoFailed": {
     "message": "Impossible d’annuler l’importation."

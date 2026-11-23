@@ -214,7 +214,7 @@ test('a surface inherits the ground of the container it is named under', () => {
     // which makes the prefix a usable stand-in for containment.
     const { needsLane, hasLane } = gate.scan(['extension/ytkit.js']);
     const flagged = (token) => needsLane.has(token) && !hasLane.has(token);
-    for (const token of ['ytkit-pm-card-desc', 'ytkit-pm-card-label', 'ytkit-pm-empty-title']) {
+    for (const token of ['ytkit-pm-section-title', 'ytkit-pm-card-label', 'ytkit-pm-empty-title']) {
         assert.ok(!flagged(token), `${token} sits on an opaque overlay and must not be reported`);
     }
 });

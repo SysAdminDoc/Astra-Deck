@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "Передано в {player}. Если ничего не открылось, сначала зарегистрируйте обработчик в системе."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "Включено: {count}"
+  "pageModalTitle": {
+    "message": "Быстрые настройки"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "Включено: {count}"
+  "pageModalPageWatch": {
+    "message": "Страница просмотра"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "Ярлыков: {count}"
+  "pageModalPageChannel": {
+    "message": "Канал"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "Ярлыков: {count}"
+  "pageModalCloseAria": {
+    "message": "Закрыть быстрые настройки"
   },
-  "pageModalAppliesLive": {
-    "message": "Применяется сразу"
+  "pageModalSectionLayout": {
+    "message": "Макет"
+  },
+  "pageModalSectionTitles": {
+    "message": "Названия и обложки"
+  },
+  "pageModalSectionHide": {
+    "message": "Скрыть из ленты"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "Плотная сетка"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "Во всю ширину"
+  },
+  "pageModalLabelScheduled": {
+    "message": "Запланированные трансляции"
+  },
+  "pageModalLabelWatched": {
+    "message": "Просмотренные видео"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "Видео в ряду"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "Расширить"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "Максимальное качество"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "Открывать на вкладке «Видео»"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "Сортировать видео по длительности"
+  },
+  "pageModalAllSettings": {
+    "message": "Все настройки"
+  },
+  "pageModalEmptyTitle": {
+    "message": "Здесь нет быстрых настроек"
+  },
+  "pageModalEmptyCopy": {
+    "message": "Все функции есть в разделе «Все настройки»."
+  },
+  "pageModalSaveFailed": {
+    "message": "Не удалось сохранить изменение. Всё осталось как было."
   },
   "statusSettingsImportUndoFailed": {
     "message": "Не удалось отменить импорт."

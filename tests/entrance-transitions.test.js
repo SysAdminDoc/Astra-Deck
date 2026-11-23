@@ -99,8 +99,8 @@ test('the page modal and its overlay start from their hidden states', () => {
 test('the page modal keeps its place and its fade as a dialog', () => {
     const modal = ruleBody(ytkit, '.ytkit-pm');
     // A closed dialog is display:none by the browser's rule, which would cut
-    // the fade off the moment close() runs.
-    assert.equal(modal.display, 'block');
+    // the fade off the moment close() runs. Flex lets only the list scroll.
+    assert.equal(modal.display, 'flex');
     // The browser centers a dialog with these and caps it short of our box.
     assert.equal(modal.margin, '0');
     assert.equal(modal.padding, '0');

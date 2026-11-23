@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "Inviato a {player}. Se non si è aperto nulla, registra prima il gestore nel sistema operativo."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count} attiva"
+  "pageModalTitle": {
+    "message": "Controlli rapidi"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count} attive"
+  "pageModalPageWatch": {
+    "message": "Pagina di riproduzione"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "{count} scorciatoia"
+  "pageModalPageChannel": {
+    "message": "Canale"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "{count} scorciatoie"
+  "pageModalCloseAria": {
+    "message": "Chiudi i controlli rapidi"
   },
-  "pageModalAppliesLive": {
-    "message": "Si applica subito"
+  "pageModalSectionLayout": {
+    "message": "Disposizione"
+  },
+  "pageModalSectionTitles": {
+    "message": "Titoli e miniature"
+  },
+  "pageModalSectionHide": {
+    "message": "Nascondi dal feed"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "Griglia compatta"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "Larghezza piena"
+  },
+  "pageModalLabelScheduled": {
+    "message": "Dirette programmate"
+  },
+  "pageModalLabelWatched": {
+    "message": "Video guardati"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "Video per riga"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "Espandi larghezza"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "Risoluzione massima"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "Apri nella scheda Video"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "Ordina i video per durata"
+  },
+  "pageModalAllSettings": {
+    "message": "Tutte le impostazioni"
+  },
+  "pageModalEmptyTitle": {
+    "message": "Nessun controllo rapido qui"
+  },
+  "pageModalEmptyCopy": {
+    "message": "Tutte le funzioni sono in «Tutte le impostazioni»."
+  },
+  "pageModalSaveFailed": {
+    "message": "Impossibile salvare la modifica. È tutto come prima."
   },
   "statusSettingsImportUndoFailed": {
     "message": "Impossibile annullare l’importazione."

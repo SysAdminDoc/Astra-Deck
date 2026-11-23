@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "Enviado ao {player}. Se nada abriu, registre primeiro o manipulador no seu sistema operacional."
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count} ativada"
+  "pageModalTitle": {
+    "message": "Controles rápidos"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count} ativadas"
+  "pageModalPageWatch": {
+    "message": "Página de exibição"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "{count} atalho"
+  "pageModalPageChannel": {
+    "message": "Canal"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "{count} atalhos"
+  "pageModalCloseAria": {
+    "message": "Fechar controles rápidos"
   },
-  "pageModalAppliesLive": {
-    "message": "Aplica na hora"
+  "pageModalSectionLayout": {
+    "message": "Disposição"
+  },
+  "pageModalSectionTitles": {
+    "message": "Títulos e miniaturas"
+  },
+  "pageModalSectionHide": {
+    "message": "Ocultar do feed"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "Grade compacta"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "Largura total"
+  },
+  "pageModalLabelScheduled": {
+    "message": "Transmissões agendadas"
+  },
+  "pageModalLabelWatched": {
+    "message": "Vídeos assistidos"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "Vídeos por linha"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "Expandir largura"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "Resolução máxima"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "Abrir na guia Vídeos"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "Ordenar vídeos por duração"
+  },
+  "pageModalAllSettings": {
+    "message": "Todas as configurações"
+  },
+  "pageModalEmptyTitle": {
+    "message": "Não há controles rápidos aqui"
+  },
+  "pageModalEmptyCopy": {
+    "message": "Todos os recursos estão em \"Todas as configurações\"."
+  },
+  "pageModalSaveFailed": {
+    "message": "Não foi possível salvar a alteração. Tudo voltou ao que era."
   },
   "statusSettingsImportUndoFailed": {
     "message": "Não foi possível desfazer a importação."

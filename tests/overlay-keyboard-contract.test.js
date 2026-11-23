@@ -42,7 +42,7 @@ function openPageMenu({ refuseModal = false } = {}) {
     const holder = {};
     const features = [{ id: 'stickyVideo', name: 'Theater Split', init() {}, destroy() {} }];
     holder.api = loadDeclarations([
-        'tCount', 'clearPendingPageModalRemoval', 'updatePageModalEnabledCount', 'closePageModal', 'openPageModal'
+        'clearPendingPageModalRemoval', 'closePageModal', 'openPageModal'
     ], {
         document: documentRef,
         features,
@@ -72,8 +72,8 @@ function openPageMenu({ refuseModal = false } = {}) {
         BRAND: { name: 'Astra Deck' },
         PAGE_MODAL_PAGE_MAP: { watch: 'watch' },
         PAGE_MODAL_CONFIG: { watch: [{ id: 'stickyVideo', label: 'Theater Split' }] },
-        PAGE_MODAL_META: {},
-        PAGE_LABELS: { watch: 'Watch' },
+        PAGE_MODAL_SECTIONS: {},
+        PAGE_MODAL_PAGE_NAMES: { watch: ['', 'Watch page'] },
         ICONS: new Proxy({}, { get: () => () => fakeNode() }),
         requestAnimationFrame: (fn) => fn(),
         setTimeout: () => 0,

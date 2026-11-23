@@ -9876,20 +9876,65 @@
   "protocolHandoffToastTpl": {
     "message": "{player} に渡しました。何も開かない場合は、先に OS でハンドラーを登録してください。"
   },
-  "pageModalEnabledCountTplOne": {
-    "message": "{count} 件オン"
+  "pageModalTitle": {
+    "message": "クイック設定"
   },
-  "pageModalEnabledCountTplOther": {
-    "message": "{count} 件オン"
+  "pageModalPageWatch": {
+    "message": "再生ページ"
   },
-  "pageModalShortcutCountTplOne": {
-    "message": "ショートカット {count} 件"
+  "pageModalPageChannel": {
+    "message": "チャンネル"
   },
-  "pageModalShortcutCountTplOther": {
-    "message": "ショートカット {count} 件"
+  "pageModalCloseAria": {
+    "message": "クイック設定を閉じる"
   },
-  "pageModalAppliesLive": {
-    "message": "すぐに反映"
+  "pageModalSectionLayout": {
+    "message": "レイアウト"
+  },
+  "pageModalSectionTitles": {
+    "message": "タイトルとサムネイル"
+  },
+  "pageModalSectionHide": {
+    "message": "フィードで非表示"
+  },
+  "pageModalLabelDenseGrid": {
+    "message": "コンパクトなグリッド"
+  },
+  "pageModalLabelFullWidth": {
+    "message": "全幅"
+  },
+  "pageModalLabelScheduled": {
+    "message": "予定されている配信"
+  },
+  "pageModalLabelWatched": {
+    "message": "視聴済みの動画"
+  },
+  "pageModalLabelVideosPerRow": {
+    "message": "1 行あたりの動画数"
+  },
+  "pageModalLabelExpandWidth": {
+    "message": "幅を広げる"
+  },
+  "pageModalLabelMaxResolution": {
+    "message": "最高画質"
+  },
+  "pageModalLabelVideosTab": {
+    "message": "動画タブで開く"
+  },
+  "pageModalLabelSortByLength": {
+    "message": "動画を長さで並べ替え"
+  },
+  "pageModalAllSettings": {
+    "message": "すべての設定"
+  },
+  "pageModalEmptyTitle": {
+    "message": "このページにはクイック設定がありません"
+  },
+  "pageModalEmptyCopy": {
+    "message": "すべての機能は「すべての設定」にあります。"
+  },
+  "pageModalSaveFailed": {
+    "message": "変更を保存できませんでした。元の状態に戻しました。"
   },
   "statusSettingsImportUndoFailed": {
     "message": "読み込みを元に戻せませんでした。"

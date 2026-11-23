@@ -32,12 +32,11 @@ test('no shipped string uses the (s) plural hack', () => {
         'a count string has to be a One/Other pair chosen at the call site');
 });
 
-// English doesn't inflect a participle ("1 Enabled", "3 Enabled"), but French,
-// Spanish, Italian and Portuguese do ("1 activée", "3 activées"). A pair named
-// here may read the same in English, and it has to earn that: at least one
-// shipped locale must tell its halves apart.
+// English doesn't inflect everything a count wraps ("1 already there", "3
+// already there"), but Spanish and Italian do. A pair named here may read the
+// same in English, and it has to earn that: at least one shipped locale must
+// tell its halves apart.
 const ENGLISH_INVARIANT_PAIRS = new Set([
-    'pageModalEnabledCountTpl',
     // BlockTube import counts: "1 already there" / "3 already there", but
     // "ya estaba" / "ya estaban", "non valido" / "non validi".
     'blockTubeImportDuplicateTpl',

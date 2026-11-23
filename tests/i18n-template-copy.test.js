@@ -47,7 +47,6 @@ const MOVED = [
     [YTKIT, 'deArrowChannelChipTpl'], [YTKIT, 'deArrowChannelOverrideToastTpl'],
     [YTKIT, 'transcriptBatchQueuedTpl'], [YTKIT, 'transcriptBatchFetchingTpl'],
     [YTKIT, 'transcriptSearchNoMatchesTpl'], [YTKIT, 'protocolHandoffToastTpl'],
-    [YTKIT, 'pageModalEnabledCountTpl', true], [YTKIT, 'pageModalShortcutCountTpl', true],
     [YTKIT, 'quickLinksInvalidUrlNote'], [YTKIT, 'commentNavNoMatches'], [YTKIT, 'commentNavThreadsReady'],
     [YTKIT, 'commentNavFilterTitleTpl'], [YTKIT, 'chaptersNoneFound'], [YTKIT, 'clipboardWriteFailed'],
     [YTKIT, 'statusSettingsImportUndoFailed'], [YTKIT, 'statusSettingsImportInvalidFormat'],
@@ -114,8 +113,7 @@ test('the keys a 2026-10-09 review found English are translated', () => {
     for (const key of [
         'videoHiderChannelListCount', 'clipboardWriteFailed', 'queueImport', 'quickLinksInvalidUrlNote',
         'commentNavNoMatches', 'commentNavThreadsReady', 'commentNavFilterTitleTpl', 'chaptersNoneFound',
-        'chapterNavLastChapter', 'pageModalEnabledCountTplOne', 'pageModalEnabledCountTplOther',
-        'pageModalShortcutCountTplOne', 'pageModalShortcutCountTplOther', ...NAV_AND_LAUNCHER_KEYS
+        'chapterNavLastChapter', ...NAV_AND_LAUNCHER_KEYS
     ]) {
         const english = catalogues.en[key].message;
         for (const [locale, messages] of Object.entries(catalogues)) {
