@@ -330,8 +330,10 @@ test('Chromium cleanup removes a disposable profile tree', async () => {
 });
 
 test('Chromium cleanup refuses paths outside its named temporary roots', async () => {
+    // The drive root, not the checkout: a release worktree can sit under the
+    // temp folder, where an astra-* name is exactly what cleanup may remove.
     await assert.rejects(
-        () => smoke.removeDirWithRetries(path.join(repoRoot, 'astra-cleanup-bait')),
+        () => smoke.removeDirWithRetries(path.join(path.parse(repoRoot).root, 'astra-cleanup-bait')),
         /Refusing non-disposable cleanup target/
     );
 });
