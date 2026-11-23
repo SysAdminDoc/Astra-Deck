@@ -728,9 +728,10 @@ test('runtime settings guidance does not point users at the retired options page
             /via options page/i,
             `${name} must not tell users to use the retired options page`
         );
+        // The quick controls end in an "All settings" row that opens the panel.
         assert.match(
             source,
-            /Open Full Settings/,
+            /t\('pageModalAllSettings', 'All settings'\)/,
             `${name} should point users at the current settings surface`
         );
     }
@@ -2732,13 +2733,19 @@ test('settings panel feature cards render labels through feature i18n helpers', 
     assert.doesNotMatch(block, /\bf\.description\b/,
         'feature card display paths must not read f.description directly');
 
-    const quickStart = ytkitSource.indexOf('availableFeatures.forEach');
-    assert.ok(quickStart > -1, 'page quick-settings feature loop must exist');
-    const quickBlock = ytkitSource.slice(quickStart, quickStart + 1800);
-    assert.match(quickBlock, /getFeatureName\(feat\)/,
-        'page quick-settings cards must resolve names through getFeatureName');
-    assert.match(quickBlock, /getFeatureDescription\(feat\)/,
-        'page quick-settings cards must resolve descriptions through getFeatureDescription');
+    // The quick controls resolve each row's name when they collect the
+    // features, and its description in the helper that adds the tooltip.
+    const quickStart = ytkitSource.indexOf('function openPageModal()');
+    assert.ok(quickStart > -1, 'the page quick controls must exist');
+    const quickEnd = ytkitSource.indexOf('const buildRow = (', quickStart);
+    assert.ok(quickEnd > quickStart, 'the quick controls row builder must exist');
+    const quickBlock = ytkitSource.slice(quickStart, quickEnd);
+    assert.match(quickBlock, /const availableFeatures = featureList[\s\S]*?getFeatureName\(feature\)/,
+        'page quick-settings rows must resolve names through getFeatureName');
+    assert.match(quickBlock, /const describe = \(row, feat, fid\) => \{\s*const desc = String\(getFeatureDescription\(feat\)/,
+        'page quick-settings rows must resolve descriptions through getFeatureDescription');
+    assert.doesNotMatch(quickBlock, /\bfeat(?:ure)?\.(?:name|description)\b/,
+        'page quick-settings rows must not read the English name or description directly');
 });
 
 // ── Pass 17 L9: DiagnosticLog clear button ──
@@ -4676,7 +4683,7 @@ test('YouTube Takeout watch-history import feeds local analytics with dedupe led
         'Takeout merge must rebuild daily totals from surviving imported entries');
     assert.match(ytkitSource, /StorageManager\.setSync\(STORAGE_KEYS\.watchTime, result\.stats\)/,
         'Takeout import must write only the local watch-time store');
-    assert.match(settingsPanelSource, /id = 'ytkit-import-history'/,
+    assert.match(settingsPanelSource, /createPanelActionButton\(\{\s*id: 'ytkit-import-history'/,
         'settings-panel module must expose the Takeout import action');
     assert.doesNotMatch(ytkitSource, /importYouTubeTakeoutWatchHistory[\s\S]{0,2500}fetch\(/,
         'Takeout import must stay local-only and never fetch remote metadata');
