@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.110.0] (2026-11-23)
+
 ### Changed
 - The settings panel had a design pass. Rows are 64px with a 15px name over a 13px description, so a long category shows about seven settings a screen where it used to show five. The header reads Astra Deck | Settings, and live apply is a status dot now instead of a switch that looked clickable and did nothing. Category chips say "4 on" and "64 items".
 - On light YouTube the panel's quieter text clears 4.5:1 everywhere. The placeholder and version number sat at 3.4:1 and the search match counts at 4.2:1. The footer's secondary buttons sit on white there too.

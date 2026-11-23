@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Feature Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.109.0
+// @version      4.110.0
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -17918,15 +17918,8 @@ function buildSettingsPanel() {
 		liveDot.setAttribute('aria-hidden', 'true');
 		const liveCopy = document.createElement('span');
 		liveCopy.textContent = t('panelLiveApplyBadge', 'Live apply');
-		const liveSwitch = document.createElement('span');
-		liveSwitch.className = 'ytkit-header-live-switch';
-		liveSwitch.setAttribute('aria-hidden', 'true');
-		const liveSwitchThumb = document.createElement('span');
-		liveSwitchThumb.className = 'ytkit-header-live-switch-thumb';
-		liveSwitch.appendChild(liveSwitchThumb);
 		liveBadge.appendChild(liveDot);
 		liveBadge.appendChild(liveCopy);
-		liveBadge.appendChild(liveSwitch);
 		headerActions.appendChild(liveBadge);
 		headerActions.appendChild(closeBtn);
 		header.appendChild(brand);
@@ -18014,7 +18007,7 @@ function buildSettingsPanel() {
 			tabs[nextIndex].focus();
 			tabs[nextIndex].click();
 		});
-		injectStyle(`#ytkit-settings-panel .ytkit-nav-reorder{display:flex;gap:4px;padding:4px 0 6px;justify-content:flex-end}#ytkit-settings-panel .ytkit-nav-reorder-btn{min-width:28px;min-height:28px;padding:0 6px;border-radius:6px;border:1px solid var(--ytkit-premium-border,rgba(255,255,255,0.14));background:var(--ytkit-premium-raised,rgba(255,255,255,0.06));color:var(--ytkit-premium-text,#e8ecf4);font:600 13px/1 Inter,system-ui,sans-serif;cursor:pointer}#ytkit-settings-panel .ytkit-nav-reorder-btn:hover:not(:disabled){background:var(--ytkit-premium-hover,rgba(255,255,255,0.12))}#ytkit-settings-panel .ytkit-nav-reorder-btn:disabled{opacity:0.45;cursor:default}#ytkit-settings-panel .ytkit-search-changed{min-height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--ytkit-premium-border,rgba(255,255,255,0.16));background:var(--ytkit-premium-raised,rgba(255,255,255,0.06));color:var(--ytkit-premium-text,#e8ecf4);font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:.02em;cursor:pointer}#ytkit-settings-panel .ytkit-search-changed.is-active{background:color-mix(in srgb,var(--ytkit-v3-accent,#ff5a4f) 22%,transparent);border-color:var(--ytkit-v3-accent,#ff5a4f);color:var(--ytkit-premium-text,#fff)}html:not([dark]) #ytkit-settings-panel .ytkit-search-changed{border-color:rgba(15,23,42,0.18);background:rgba(15,23,42,0.04);color:#0f172a}html:not([dark]) #ytkit-settings-panel .ytkit-search-changed.is-active{color:#0f172a}#ytkit-settings-panel .ytkit-card-reset{display:none;position:absolute;grid-column:1 / 2;grid-row:1 / 2;justify-self:end;align-self:start;top:8px;inset-inline-end:8px;min-height:22px;padding:0 8px;border-radius:6px;border:1px solid var(--ytkit-premium-border,rgba(255,255,255,0.16));background:var(--ytkit-premium-raised,rgba(255,255,255,0.06));color:var(--ytkit-premium-text,#e8ecf4);font:600 10px/1 Inter,system-ui,sans-serif;cursor:pointer}#ytkit-settings-panel .ytkit-feature-card[data-changed="1"]{position:relative}#ytkit-settings-panel .ytkit-feature-card[data-changed="1"] .ytkit-card-reset{display:inline-flex;align-items:center}#ytkit-settings-panel .ytkit-feature-card[data-changed="1"] > .ytkit-feature-main{padding-inline-end:56px}html:not([dark]) #ytkit-settings-panel .ytkit-card-reset{border-color:rgba(15,23,42,0.18);background:rgba(15,23,42,0.04);color:#0f172a}#ytkit-settings-panel .ytkit-feature-card.ytkit-deep-linked{outline:2px solid var(--ytkit-v3-accent,#ff5a4f);outline-offset:2px}#ytkit-settings-panel .ytkit-nav-reorder-btn:focus-visible{box-shadow:var(--ytkit-premium-focus,0 0 0 2px #0b1421,0 0 0 4px rgba(255,90,79,0.75));outline:none}html:not([dark]) #ytkit-settings-panel .ytkit-nav-reorder-btn{color:var(--ytkit-premium-text,#172335);background:var(--ytkit-premium-raised,#f3f6f9);border-color:var(--ytkit-premium-border,rgba(30,53,78,0.18))}@media (forced-colors:active){#ytkit-settings-panel .ytkit-nav-reorder-btn{background:Canvas;color:CanvasText;border:1px solid CanvasText}}`, 'ytkit-nav-reorder-styles', true);
+		injectStyle(`#ytkit-settings-panel .ytkit-nav-reorder{display:flex;gap:2px;padding:0 0 6px;justify-content:flex-end}#ytkit-settings-panel .ytkit-nav-reorder-btn{min-width:28px;min-height:28px;padding:0 6px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--ytkit-v3-muted,var(--ytkit-premium-text,#e8ecf4));font:600 13px/1 Inter,system-ui,sans-serif;cursor:pointer}#ytkit-settings-panel .ytkit-nav-reorder-btn:hover:not(:disabled){border-color:var(--ytkit-v3-border,var(--ytkit-premium-border,rgba(255,255,255,0.14)));background:var(--ytkit-v3-hover,var(--ytkit-premium-hover,rgba(255,255,255,0.12)));color:var(--ytkit-v3-text,var(--ytkit-premium-text,#e8ecf4))}#ytkit-settings-panel .ytkit-nav-reorder-btn:disabled{opacity:0.4;cursor:default}#ytkit-settings-panel .ytkit-search-changed{min-height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--ytkit-premium-border,rgba(255,255,255,0.16));background:var(--ytkit-premium-raised,rgba(255,255,255,0.06));color:var(--ytkit-premium-text,#e8ecf4);font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:.02em;cursor:pointer}#ytkit-settings-panel .ytkit-search-changed.is-active{background:color-mix(in srgb,var(--ytkit-v3-accent,#ff5a4f) 22%,transparent);border-color:var(--ytkit-v3-accent,#ff5a4f);color:var(--ytkit-premium-text,#fff)}html:not([dark]) #ytkit-settings-panel .ytkit-search-changed{border-color:rgba(15,23,42,0.18);background:rgba(15,23,42,0.04);color:#0f172a}html:not([dark]) #ytkit-settings-panel .ytkit-search-changed.is-active{color:#0f172a}#ytkit-settings-panel .ytkit-card-reset{display:none;position:absolute;grid-column:1 / 2;grid-row:1 / 2;justify-self:end;align-self:start;top:8px;inset-inline-end:8px;min-height:22px;padding:0 8px;border-radius:6px;border:1px solid var(--ytkit-premium-border,rgba(255,255,255,0.16));background:var(--ytkit-premium-raised,rgba(255,255,255,0.06));color:var(--ytkit-premium-text,#e8ecf4);font:600 10px/1 Inter,system-ui,sans-serif;cursor:pointer}#ytkit-settings-panel .ytkit-feature-card[data-changed="1"]{position:relative}#ytkit-settings-panel .ytkit-feature-card[data-changed="1"] .ytkit-card-reset{display:inline-flex;align-items:center}#ytkit-settings-panel .ytkit-feature-card[data-changed="1"] > .ytkit-feature-main{padding-inline-end:56px}html:not([dark]) #ytkit-settings-panel .ytkit-card-reset{border-color:rgba(15,23,42,0.18);background:rgba(15,23,42,0.04);color:#0f172a}#ytkit-settings-panel .ytkit-feature-card.ytkit-deep-linked{outline:2px solid var(--ytkit-v3-accent,#ff5a4f);outline-offset:2px}#ytkit-settings-panel .ytkit-nav-reorder-btn:focus-visible{box-shadow:var(--ytkit-premium-focus,0 0 0 2px #0b1421,0 0 0 4px rgba(255,90,79,0.75));outline:none}html:not([dark]) #ytkit-settings-panel .ytkit-nav-reorder-btn{color:var(--ytkit-premium-text,#172335);background:var(--ytkit-premium-raised,#f3f6f9);border-color:var(--ytkit-premium-border,rgba(30,53,78,0.18))}@media (forced-colors:active){#ytkit-settings-panel .ytkit-nav-reorder-btn{background:Canvas;color:CanvasText;border:1px solid CanvasText}}`, 'ytkit-nav-reorder-styles', true);
 		const reorderBar = document.createElement('div');
 		reorderBar.className = 'ytkit-nav-reorder';
 		reorderBar.setAttribute('role', 'group');
@@ -18178,7 +18171,7 @@ function buildSettingsPanel() {
 				const total = counts.hidden + counts.allowed + counts.channels;
 				if (countSpan) {
 					countSpan.textContent = String(total);
-					countSpan.style.color = '';
+					countSpan.classList.remove('is-match');
 				}
 				if (stateSpan) stateSpan.dataset.tone = total === 0 ? 'empty' : 'partial';
 			};
@@ -19915,11 +19908,11 @@ function buildSettingsPanel() {
 			paneEnabledChip.className = 'ytkit-pane-chip';
 			paneEnabledChip.dataset.stat = 'enabled';
 			paneEnabledChip.dataset.category = catId;
-			paneEnabledChip.textContent = t('settingsCategoryOnTpl', '{count} On')
+			paneEnabledChip.textContent = t('settingsCategoryOnTpl', '{count} on')
 				.replace('{count}', countEnabledToggleFeatures(parentFeatures));
 			const paneTotalChip = document.createElement('span');
 			paneTotalChip.className = 'ytkit-pane-chip';
-			paneTotalChip.textContent = t('settingsCategoryItemsTpl', '{count} Items')
+			paneTotalChip.textContent = t('settingsCategoryItemsTpl', '{count} items')
 				.replace('{count}', parentFeatures.length);
 			paneMeta.appendChild(paneEnabledChip);
 			paneMeta.appendChild(paneTotalChip);
@@ -20458,6 +20451,7 @@ function buildSettingsPanel() {
 		githubLink.rel = 'noopener noreferrer';
 		githubLink.className = 'ytkit-github';
 		githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
+		githubLink.setAttribute('aria-label', githubLink.title);
 		githubLink.appendChild(ICONS.github());
 		const diagnosticsBtn = document.createElement('button');
 		diagnosticsBtn.type = 'button';
@@ -20894,7 +20888,7 @@ function updateAllToggleStates() {
 					'settingsCategoryFractionTpl',
 					'{enabled}/{total}'
 				).replace('{enabled}', enabledCount).replace('{total}', totalCount);
-				countEl.style.color = '';
+				countEl.classList.remove('is-match');
 			}
 			const stateEl = btn.querySelector('.ytkit-nav-state');
 			if (stateEl) {
@@ -20903,7 +20897,7 @@ function updateAllToggleStates() {
 			const paneEnabledChip = pane.querySelector('.ytkit-pane-chip[data-stat="enabled"]');
 			if (paneEnabledChip) paneEnabledChip.textContent = t(
 				'settingsCategoryOnTpl',
-				'{count} On'
+				'{count} on'
 			).replace('{count}', enabledCount);
 		});
 		const sidebarEnabledCount = document.getElementById('ytkit-sidebar-enabled-count');
@@ -21127,12 +21121,12 @@ function attachUIEventListeners() {
 				if (el._originalText !== undefined) el.textContent = el._originalText;
 			});
 			allCards.forEach(card => {
-				card.style.display = '';
+				card.hidden = false;
 				card.classList.remove('ytkit-search-context-card');
 				delete card.dataset.searchMatched;
 			});
 			doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
-				section.style.display = '';
+				section.hidden = false;
 			});
 			allPanes.forEach(pane => pane.classList.remove('ytkit-search-active', 'ytkit-search-empty-pane'));
 			allNavBtns.forEach(btn => btn.classList.remove('ytkit-search-empty-nav'));
@@ -21140,7 +21134,7 @@ function attachUIEventListeners() {
 				let changedCount = 0;
 				allCards.forEach((card) => {
 					const keep = cardDiffersFromDefault(card);
-					card.style.display = keep ? '' : 'none';
+					card.hidden = !keep;
 					if (keep) {
 						changedCount += 1;
 						card.dataset.searchMatched = 'true';
@@ -21152,14 +21146,14 @@ function attachUIEventListeners() {
 				});
 				doc.querySelectorAll('.ytkit-sub-features').forEach((sub) => {
 					const visible = Array.from(sub.querySelectorAll('.ytkit-feature-card'))
-						.some((card) => card.style.display !== 'none');
-					sub.style.display = visible ? '' : 'none';
+						.some((card) => !card.hidden);
+					sub.hidden = !visible;
 					setSubFeatureAvailability(sub, !!appState.settings[sub.dataset.parentId]);
 				});
 				doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
 					const visible = Array.from(section.querySelectorAll('.ytkit-feature-card'))
-						.some((card) => card.style.display !== 'none');
-					section.style.display = visible ? '' : 'none';
+						.some((card) => !card.hidden);
+					section.hidden = !visible;
 				});
 				const searchMetaEl = doc.getElementById('ytkit-search-count');
 				if (searchMetaEl) {
@@ -21172,7 +21166,7 @@ function attachUIEventListeners() {
 			}
 			if (!query) {
 				doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
-					sub.style.display = '';
+					sub.hidden = false;
 					const parentId = sub.dataset.parentId;
 					const enabled = appState.settings[parentId];
 					setSubFeatureAvailability(sub, !!enabled);
@@ -21216,7 +21210,7 @@ function attachUIEventListeners() {
 				const desc = (descEl?._originalText || descEl?.textContent || '').toLowerCase();
 				const haystack = card.dataset.searchText || `${name} ${desc}`;
 				const matches = haystack.includes(query) && (!_changedOnly || cardDiffersFromDefault(card));
-				card.style.display = matches ? '' : 'none';
+				card.hidden = !matches;
 				if (matches) {
 					matchCount++;
 					card.dataset.searchMatched = 'true';
@@ -21226,20 +21220,20 @@ function attachUIEventListeners() {
 			});
 			doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
 				const parentId = sub.dataset.parentId;
-				const visibleChildren = Array.from(sub.querySelectorAll('.ytkit-feature-card')).filter(card => card.style.display !== 'none');
-				sub.style.display = visibleChildren.length > 0 ? '' : 'none';
+				const visibleChildren = Array.from(sub.querySelectorAll('.ytkit-feature-card')).filter(card => !card.hidden);
+				sub.hidden = visibleChildren.length === 0;
 				if (visibleChildren.length > 0 && parentId) {
 					const parentCard = doc.querySelector(`.ytkit-feature-card[data-feature-id="${parentId}"]`);
-					if (parentCard && parentCard.style.display === 'none') {
-						parentCard.style.display = '';
+					if (parentCard && parentCard.hidden) {
+						parentCard.hidden = false;
 						parentCard.classList.add('ytkit-search-context-card');
 					}
 				}
 			});
 			doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
 				const visibleCards = Array.from(section.querySelectorAll('.ytkit-feature-card'))
-					.some((card) => card.style.display !== 'none');
-				section.style.display = visibleCards ? '' : 'none';
+					.some((card) => !card.hidden);
+				section.hidden = !visibleCards;
 			});
 			let visibleSectionCount = 0;
 			allNavBtns.forEach(btn => {
@@ -21252,7 +21246,7 @@ function attachUIEventListeners() {
 						return;
 					}
 					const directMatches = pane.querySelectorAll('.ytkit-feature-card[data-search-matched="true"]').length;
-					const visibleCards = Array.from(pane.querySelectorAll('.ytkit-feature-card')).filter(card => card.style.display !== 'none').length;
+					const visibleCards = Array.from(pane.querySelectorAll('.ytkit-feature-card')).filter(card => !card.hidden).length;
 					const countEl = btn.querySelector('.ytkit-nav-count');
 					pane.classList.toggle('ytkit-search-empty-pane', visibleCards === 0);
 					btn.classList.toggle('ytkit-search-empty-nav', directMatches === 0);
@@ -21261,7 +21255,7 @@ function attachUIEventListeners() {
 						countEl.textContent = directMatches > 0
 							? tCount(directMatches, 'settingsSearchSectionMatchesTpl', '{count} match', '{count} matches')
 							: '0';
-						countEl.style.color = directMatches > 0 ? '#ffb19a' : '';
+						countEl.classList.toggle('is-match', directMatches > 0);
 					}
 				}
 			});
