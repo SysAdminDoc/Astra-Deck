@@ -122,3 +122,92 @@ test('Videos Per Row is a dropdown that saves the number picked', async () => {
     assert.equal(saved.at(-1).videosPerRow, 0, 'Dynamic saves 0, not false');
     assert.equal(documentRef.getElementById('ytkit-pm-enabled-count')?.textContent, '0 Enabled');
 });
+
+test('Subscriptions Quick Controls carry DeArrow and scheduled livestreams', () => {
+    const { PAGE_MODAL_CONFIG } = loadDeclarations(['PAGE_MODAL_CONFIG']);
+    const ids = [...PAGE_MODAL_CONFIG.subs].map(({ id }) => id);
+    for (const id of ['subscriptionsGrid', 'fullWidthSubscriptions', 'hideVideosFromHome', 'deArrow', 'hidePlannedLivestreams', 'removeAllShorts', 'hideWatchedVideos']) {
+        assert.ok(ids.includes(id), `Subscriptions Quick Controls must offer ${id}`);
+    }
+    assert.equal(new Set(ids).size, ids.length, 'no card appears twice');
+});
+
+test('the scheduled-lives card shows them again and DeArrow switches off from the Subscriptions page', async () => {
+    const documentRef = fakeTreeDocument();
+    const { PAGE_MODAL_CONFIG } = loadDeclarations(['PAGE_MODAL_CONFIG']);
+    const calls = [];
+    const features = PAGE_MODAL_CONFIG.subs.map(({ id }) => ({
+        id,
+        name: id,
+        _initialized: false,
+        init() { calls.push(`init:${id}`); },
+        destroy() { calls.push(`destroy:${id}`); }
+    }));
+    const appState = { settings: { deArrow: true, hidePlannedLivestreams: true, removeAllShorts: true } };
+    for (const feature of features) feature._initialized = appState.settings[feature.id] === true;
+    const saved = [];
+    const api = loadUserscriptDeclarations([
+        'tCount', 'CONFLICT_MAP', 'clearPendingPageModalRemoval', 'updatePageModalEnabledCount', 'closePageModal', 'openPageModal'
+    ], {
+        document: documentRef,
+        features,
+        appState,
+        _pageModalOpen: false,
+        _pageModalEl: null,
+        _pageModalOverlay: null,
+        _pageModalLastFocus: null,
+        _pageModalRemovalTimer: null,
+        _pageModalPendingRemoval: [],
+        _pageModalNavCleanup: null,
+        getCurrentPage: () => 'subscriptions',
+        getFeatureById: (id) => features.find((entry) => entry.id === id) || null,
+        getFeatureName: (entry) => entry?.name || '',
+        getFeatureDescription: () => '',
+        getFocusableUiElements: () => [],
+        setSettingsPanelOpen() {},
+        HTMLElement: class {},
+        BRAND: { name: 'Astra Deck' },
+        PAGE_MODAL_PAGE_MAP: { subscriptions: 'subs' },
+        PAGE_MODAL_CONFIG,
+        PAGE_MODAL_META: {},
+        PAGE_LABELS: { subs: 'Subscriptions' },
+        ICONS: new Proxy({}, { get: () => () => fakeNode() }),
+        requestAnimationFrame: (fn) => fn(),
+        setTimeout: () => 0,
+        clearTimeout() {},
+        settingsManager: { save: (next) => { saved.push({ ...next }); return { ok: true }; } },
+        applyExternalSettingsUpdate: ({ nextSettings }) => {
+            appState.settings = { ...nextSettings };
+            for (const entry of features) {
+                const on = appState.settings[entry.id] === true;
+                if (on && !entry._initialized) { entry._initialized = true; entry.init(); }
+                if (!on && entry._initialized) { entry._initialized = false; entry.destroy(); }
+            }
+        },
+        showToast() {},
+        t: (key, fallback) => fallback,
+        DebugManager: { log() {} },
+        __YTKIT_SETTINGS_SCHEMA__: schema
+    });
+    api.openPageModal();
+    const cards = new Map(documentRef.querySelectorAll('.ytkit-pm-card').map((node) => [node.dataset.fid, node]));
+    assert.deepEqual([...cards.keys()], [...PAGE_MODAL_CONFIG.subs].map(({ id }) => id), 'one card per configured control, in order');
+
+    const scheduled = cards.get('hidePlannedLivestreams');
+    assert.equal(scheduled.getAttribute('aria-checked'), 'true', 'scheduled lives start hidden, the default');
+    assert.equal(scheduled.getAttribute('aria-label'), 'Hide Scheduled Lives. Enabled.');
+    await scheduled.listeners.get('click').values().next().value({});
+    assert.equal(saved.at(-1).hidePlannedLivestreams, false, 'turning the card off is saved');
+    assert.equal(scheduled.getAttribute('aria-checked'), 'false');
+    assert.equal(scheduled.querySelector('.ytkit-pm-card-state').textContent, 'Off');
+
+    const deArrow = cards.get('deArrow');
+    assert.equal(deArrow.getAttribute('aria-label'), 'DeArrow Titles & Thumbnails. Enabled.');
+    await deArrow.listeners.get('click').values().next().value({});
+    assert.equal(saved.at(-1).deArrow, false);
+    assert.equal(saved.at(-1).hidePlannedLivestreams, false, 'the earlier flip stays saved');
+    assert.deepEqual(calls, ['destroy:hidePlannedLivestreams', 'destroy:deArrow'],
+        'each card stops only its own feature');
+    assert.equal(documentRef.getElementById('ytkit-pm-enabled-count')?.textContent, '1 Enabled',
+        'the count chip follows: only Hide Shorts is still on');
+});

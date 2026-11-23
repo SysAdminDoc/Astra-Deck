@@ -43552,6 +43552,13 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
             { id: 'subscriptionsGrid',           label: 'Dense Grid' },
             { id: 'fullWidthSubscriptions',      label: 'Full Width' },
             { id: 'hideVideosFromHome',          label: 'Video Hider' },
+            // The master switch, not daSurfaceSubscriptions: a quick card
+            // toggles one feature, and with DeArrow off that surface switch
+            // does nothing, so "on" here would be a lie.
+            { id: 'deArrow',                     label: 'DeArrow Titles & Thumbnails' },
+            { id: 'hidePlannedLivestreams',      label: 'Hide Scheduled Lives' },
+            { id: 'removeAllShorts',             label: 'Hide Shorts' },
+            { id: 'hideWatchedVideos',           label: null },
         ],
         watch: [
             { id: 'stickyVideo',                 label: 'Theater Split' },
@@ -43578,7 +43585,7 @@ html:not([dark]) #ytkit-settings-panel :is(.ytkit-feature-desc, .ytkit-search-cl
         },
         subs: {
             eyebrow: `${BRAND.name} Quick Controls`,
-            description: 'Tune subscriptions for denser scanning, wider layouts, and faster cleanup on busy days.'
+            description: 'Switch DeArrow and the feed\'s layout and filters on or off without leaving the page.'
         },
         watch: {
             eyebrow: `${BRAND.name} Quick Controls`,

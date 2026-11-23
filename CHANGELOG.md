@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+- The Subscriptions Quick Controls (the sliders button next to the gear) have four more switches. DeArrow turns the replaced titles and thumbnails on or off, Hide Scheduled Lives brings back the upcoming streams and premieres it hides by default, and Hide Shorts and Hide Watched Videos are there too.
+
 ### Fixed
 - Videos Per Row in the Home Quick Controls is a dropdown now. It used to act like an on/off switch on a number, so a click threw away the count you'd picked and saved a value the settings import refuses.
 - Shorts Auto-Advance moves on again. When a Short ended it clicked the box around YouTube's next button rather than the button, so nothing happened.
