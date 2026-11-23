@@ -23,6 +23,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocked on: no available account or profile is enrolled in the side-panel experiment, and
   enrollment is YouTube's call. Check again when a signed-in harness profile or Matt's browser
   shows the side rail with a Comments button without forced flags.
+  Retested 2026-11-23: `.auth/Default/Network/Cookies` holds zero cookies.
 
 ## P2 — Needs a signed-in YouTube session (2026-10-31)
 
@@ -37,7 +38,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Watched removes only rows past its threshold, and the Workbench scan lists real titles and progress.
   If the menu text match (`/remove from/i`, English only on the new menu) can be replaced by a structural
   hook visible once signed in, replace it.
-  Blocked on: a signed-in session. Checked 2026-10-31: the harness profile `.auth/` has zero cookies.
+  Blocked on: a signed-in session. Checked 2026-10-31 and again 2026-11-23: the harness profile `.auth/` has zero cookies. Use a test account, not Matt's own: Quick Remove and Remove Watched delete rows from real playlists.
 
 ## P0: Channel promotion needs a human at a screen reader (verified 2026-09-14, again 2026-09-28 and 2026-09-29)
 
@@ -116,6 +117,11 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   `--require-release-current` to the `versions` gate in
   `scripts/run-checks.js` and confirm `npm run check` is green.
 
+  Retested 2026-11-23 in the v4.110.x release gate: `release:readiness` fails on
+  `screen-reader-evidence` alone (`docs/screen-reader-evidence.json` still doesn't
+  exist) with `release-signature` as a warning, so `release:health` stays
+  ineligible and the channels can't be promoted.
+
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
 - [ ] P1 — Publish the release signing key so `SHA256SUMS` carries a verifiable signature
@@ -126,7 +132,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Also update: the README paragraph that currently says "No signing key is published yet" and the closing note in `allowed-signers` that says the same.
   Acceptance: `allowed-signers` names a real key; `npm run release:sign` produces `build/SHA256SUMS.sig`; `npm run release:verify-signature` reports `verified`; `npm run release:readiness` reports `release-signature` as pass; the README paragraph no longer says no key is published.
   Complexity: S
-  Blocker: requires a private key the maintainer must generate and own. No code change can substitute for it.
+  Blocker: requires a private key the maintainer must generate and own. No code change can substitute for it. Retested 2026-11-23: `allowed-signers` still names no key.
 
 ## P2 — Needs a human at a screen reader (2026-08-25)
 
@@ -140,8 +146,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   What is left is the one thing this repository cannot produce: somebody running NVDA against Chrome and Firefox, opening the popup, the settings panel, Theater Split, the Transcript Q&A modal and one provider-degradation path, and writing down what they heard. An observation nobody made is not evidence, and generating a plausible-looking record would defeat the entire point of the item — the record exists precisely because static gates and fake-DOM key presses cannot tell you what a screen reader said.
   To finish: `npm run a11y:evidence:template > docs/screen-reader-evidence.json`, fill in the rows during a real NVDA session on both browsers, then `npm run a11y:evidence` to validate. Staleness is automatic from there — readiness re-fails for any covered surface whose source is touched after the newest record for it.
   JAWS and VoiceOver are already handled: either may be recorded as `not-applicable` with a stated reason. NVDA may not, since it is the minimum target.
-
-## P2 — Needs a live YouTube session (2026-08-21)
+  Retested 2026-11-23: no evidence file yet. NVDA needs an interactive desktop, and every UI check on this machine has to stay off Matt's screen, so it still needs a person running it.
 
 ## P2 — Research-driven, externally gated (2026-08-19)
 
@@ -161,7 +166,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: the Ask entry button and panel and a search AI carousel, if one still exists, are hidden when enabled, through structural selectors read from a signed-in page; the existing `hideAskAi` selectors get re-verified in the same capture; hide-attribution marks whole cards that go, and rows inside a card stay plain CSS like the other AI hides.
   Complexity: S once captured
   Blocker (retested 2026-10-31): needs Matt's signed-in US session. The AI Summary half of this entry didn't need one and is done: `ytd-expandable-metadata-renderer[has-video-summary]` was read off signed-out search pages and is now hidden, with chapter rows left alone, seen live. Signed out, four searches showed no AI carousel and a watch page shows no Ask button, so those selectors can't be read from here. `.auth/` holds zero cookies. `customElements.get` for the Ask button and youchat tags is empty signed out, which says nothing either way because YouTube loads those pieces on demand. YouTube's app code isn't reachable through the page's script list (17 scripts, none naming even the search row's own tag), so it can't answer this either.
-  Unblock by: Matt signing in once on the harness profile, then one capture of a watch page and a search results page with the Ask button present.
+  Unblock by: Matt signing in once on the harness profile, then one capture of a watch page and a search results page with the Ask button present. Retested 2026-11-23: still zero cookies.
 
 ## P2 — Greasy Fork publication (2026-08-11)
 
@@ -180,23 +185,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   account authority; GitHub installation remains usable without it.
   Needs: publish `YTKit.user.js` after a release whose records name its commit,
   then verify the live listing and the auto-update path.
-
-## P2 — Chromium store publication (2026-08-11)
-
-- [ ] P2 — Submit the download-free Chromium artifact to Chrome Web Store and Edge
-  Why: the repository now emits `astra-deck-chromium-store-chrome-v*.zip`,
-  which removes the downloader module, `downloads`/companion permissions,
-  Cobalt access, and loopback origins while retaining the core YouTube
-  workstation features. The build and static store-profile gates pass.
-  Blocker: creating or updating live Chrome Web Store and Edge listings
-  requires the maintainer's store accounts, listing assets, authentication,
-  and review submission authority; Edge additionally requires government-ID
-  verification. Those external credentials and decisions are unavailable to
-  an autonomous coding agent.
-  Needs: submit the `chromium-store` ZIP, complete the CWS/Edge privacy and
-  permission forms using `docs/cws-submission-checklist.md` and
-  `docs/store-permission-rationale.md`, then record the live listing URLs and
-  review outcomes.
 
 ## P2 — Firefox self-distribution signing (2026-08-11)
 
@@ -221,7 +209,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Where: `extension/features/live-chat/index.js` (`CHAT_ELEMENT_SELECTORS.emoji`, `.support`, `scanEngagement`)
   Acceptance: on a signed-in live stream in one non-English language, Emoji Button and Support Buttons hide what they name, and the subscribe tooltip hides through `engagementAnchored`. Drop the English sentence if it does.
   Complexity: S
-  Blocker: 2026-10-31: drove the chat embedded on real live streams signed out in Japanese, German and Arabic. Menu, Popout and Leaderboard are fixed and proven, and every other selector was counted. The signed-out chat has no input panel, and `.auth/` holds zero cookies, so this one needs Matt's sign-in.
+  Blocker: 2026-10-31: drove the chat embedded on real live streams signed out in Japanese, German and Arabic. Menu, Popout and Leaderboard are fixed and proven, and every other selector was counted. The signed-out chat has no input panel, and `.auth/` holds zero cookies, so this one needs Matt's sign-in. Retested 2026-11-23: still zero cookies.
 
 ## P0 — Legal / Distribution Decision (2026-07-14)
 
@@ -244,13 +232,13 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P1 — Trust / Reliability / Distribution
 
-- [ ] P1 — Chrome Web Store submission (store-safe profile)
-  Why: The store-safe build profile exists and strips AI/Cobalt/loopback permissions, but has never been submitted. Every major competitor (Enhancer, ImprovedTube, Tweaks, Unhook) is CWS-published. Side-loading requires developer mode, which most users won't enable.
+- [ ] P1 — Chrome Web Store and Edge submission (store-safe profile)
+  Why: The store-safe build profile exists and strips AI/Cobalt/loopback permissions, but has never been submitted. Every major competitor (Enhancer, ImprovedTube, Tweaks, Unhook) is CWS-published. Side-loading requires developer mode, which most users won't enable. The release already emits `astra-deck-chromium-store-chrome-v*.zip` (no downloader module, no `downloads`/companion permissions, no Cobalt or loopback origins), and the build and static store-profile gates pass. (Merged 2026-11-23 with the duplicate "Chromium store publication" entry from 2026-08-11.)
   Evidence: CWS review process docs; `docs/cws-submission-checklist.md` and `docs/store-permission-rationale.md` already prepared; Enhancer for YouTube and ImprovedTube are CWS precedent for 100-200+ feature YouTube extensions.
-  Touches: Chrome Web Store developer dashboard, `docs/cws-submission-checklist.md`, store listing assets (screenshots, description)
-  Acceptance: Store-safe profile submitted and either approved or rejected with actionable feedback.
+  Touches: Chrome Web Store and Edge developer dashboards, `docs/cws-submission-checklist.md`, store listing assets (screenshots, description)
+  Acceptance: the `chromium-store` ZIP submitted to both stores with the privacy and permission forms filled from those two docs, and the live listing URLs or the review feedback recorded.
   Complexity: M
-  Blocker: Requires manual Chrome Web Store developer dashboard interaction (screenshots, listing copy, human review submission). Cannot be automated.
+  Blocker: the maintainer's store accounts, sign-in and submission authority; Edge also asks for government-ID verification. Also waits on the DeArrow permission item above. Retested 2026-11-23: no store account on this machine.
 
 - [ ] P1 — Firefox AMO submission (store-safe profile)
   Why: Firefox XPI distribution currently requires manual install. AMO listing provides auto-updates, trust signal, and discoverability. Firefox 142+ manifest patch is already automated.
@@ -274,14 +262,15 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   image, so it cannot be set from `gh api` — it needs a maintainer with the
   Settings page open. Everything else in that roadmap item is done.
 
-## P3 — Blocked on External API Stability
+## P3 — Needs a signed-in YouTube session (retargeted 2026-11-23)
 
-- [ ] P3 — Chrome Writer/Rewriter API for comment drafting
-  Why: Chrome's Writer and Rewriter APIs offer on-device text generation and refinement. When stable, they could power comment drafting assistance without BYO keys.
-  Touches: `extension/ytkit.js` (comment composer enhancement), `core/capability-probe.js`, settings schema
-  Acceptance: When Writer API is available, a "Draft" button appears in YouTube's comment composer; responses generated on-device; feature off by default.
+- [ ] P3 — On-device comment drafting
+  Why: on-device text generation could help draft a comment without a BYO key.
+  Retested 2026-11-23: the Writer and Rewriter APIs this was waiting on never reached stable, and Google now marks them deprecated ("don't build new features on them", chrome.dev Writer/Rewriter playground; obetomuniz/web-ai-sdk#322). Build it on the Prompt API (`LanguageModel`, stable since Chrome 148), which Local Summary and Transcript Q&A already probe and use, with the same fallback to the user's own provider.
+  Touches: `extension/ytkit.js` (comment composer), `core/local-ai.js`, `core/capability-probe.js`, settings schema, locales.
+  Acceptance: off by default; a Draft button in YouTube's comment box writes on-device when `LanguageModel` is available and says so when it isn't; nothing is posted for the user.
   Complexity: M
-  Blocker: Chrome Writer/Rewriter APIs are in Developer Trial as of June 2026, not yet stable. Implementing against an unstable API surface creates maintenance burden.
+  Blocker: the comment box only exists for a signed-in viewer, and `commentComposer` is one of the selector surfaces still unproven signed out (see the selector item below). `.auth/` held zero cookies on 2026-11-23.
 
 ## P2 — Browser-Gated
 
@@ -290,11 +279,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Touches: `scripts/capture-watch-mhtml.js` (`history`, `watch-later`, `notifications` profiles), `scripts/selector-evidence-exceptions.json`, those six selector packs.
   Acceptance: A signed-in capture or probe of the home feed, Subscriptions, the comment box and the notifications menu. Each surface re-dated or its dead names moved to fallback, and the exceptions list empty or down to what needs a served ad.
   Complexity: S
-  Blocker: Needs Matt's sign-in. Retested 2026-10-31: `.auth/` holds zero cookies and the capture helper refuses repo-local profiles, so there's no account to drive. Signed out, the Delhi Modern part of this entry is done: every critical `playerChrome` and `playerSettings` selector matches a capture from today, and 23 of the 29 owed surfaces came back through captures and `npm run probe:selector-surfaces`. `feedSponsored` also needs an ad to be served, and none appeared on the signed-out pages visited.
-
-## P2 — Browser-Gated (CSS Adoption)
-
-## P2 — Userscript Structural Drift (Browser-Gated)
+  Blocker: Needs Matt's sign-in. Retested 2026-10-31: `.auth/` holds zero cookies and the capture helper refuses repo-local profiles, so there's no account to drive. Signed out, the Delhi Modern part of this entry is done: every critical `playerChrome` and `playerSettings` selector matches a capture from today, and 23 of the 29 owed surfaces came back through captures and `npm run probe:selector-surfaces`. `feedSponsored` also needs an ad to be served, and none appeared on the signed-out pages visited. Retested 2026-11-23: still zero cookies.
 
 ## P1 — Premise disproven, needs a product decision (2026-09-05)
 
@@ -355,54 +340,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
     loading, and an EPERM from the cleanup `finally` that replaced every real
     error with a temp-path permission message.
 
-## P2 — Needs a human at the machine (2026-09-05)
-
-- [ ] P2 — Prove OS media controls survive the Web Audio graph
-  Why: Astra routes YouTube's `<video>` through a Web Audio graph whenever any of six
-  audio features is on, and has no Media Session code at all, so hardware media keys and
-  the OS media panel are an untested casualty of a feature most users leave enabled.
-  Evidence: `extension/ytkit-main.js:1549` calls `createMediaElementSource(video)` for
-  mono-to-stereo, `volumeBoost`, normalization, auto-gain, high-pass and sync offset;
-  `grep -ri "mediaSession|media key|SMTC"` returns zero hits across `extension/`,
-  `docs/`, `ROADMAP.md` and `Roadmap_Blocked.md`; SponsorBlock issue #2543 (2026-09-01)
-  reports exactly this failure class in a YouTube extension on Firefox.
-  Touches: `extension/ytkit-main.js`, `extension/core/player.js`, a new probe under
-  `scripts/`, `tests/`.
-  Acceptance: a headless probe asserts that `navigator.mediaSession.metadata` and the
-  play/pause/seek action handlers are still populated after the audio graph attaches and
-  after it is torn down; if the graph is found to clear them, the MAIN world restores
-  metadata and handlers from the player state; the manual result of pressing a media key
-  with `volumeBoost` on and off, in Chrome and Firefox, is recorded in
-  `docs/platform-api-adoption.md` with its date either way.
-  Complexity: M
-  Blocker: the headless half of the acceptance cannot substantiate the claim,
-  and the half that can needs a person pressing a key. Determined 2026-09-05.
-
-  - **Media Session is a write-only surface to the page.** `metadata`,
-    `playbackState`, `setActionHandler` and `setPositionState` are all things a
-    page *sets*. There is no API that reports whether the browser is currently
-    publishing a media session to the OS, which is the thing at risk. A probe
-    asserting `navigator.mediaSession.metadata` is populated would only be
-    asserting that something in the page set it, and would pass or fail
-    identically whether or not Windows SMTC had stopped receiving anything.
-  - It would also read null in any fixture, because the code that sets it is
-    YouTube's own player, not Astra. `grep -ri mediaSession extension/` is 0.
-  - So the assertion as written is not a proof of the property. Writing it would
-    produce a green check that means nothing, which is worse than no check.
-  - **What actually settles it:** open a YouTube video, press the hardware
-    play/pause key, then enable `volumeBoost` (which is what attaches
-    `createMediaElementSource`) and press it again. Repeat in Firefox. If the
-    key stops working, or the Windows media flyout stops showing the video, the
-    graph is the cause and the fix is for the MAIN world to set
-    `navigator.mediaSession.metadata` and the play/pause/seek handlers from the
-    player state. Record the result either way, with its date, in
-    `docs/platform-api-adoption.md`.
-  - Recording a NEGATIVE result matters as much as a positive one here: an
-    untested negative is how the next audio change breaks this silently.
-  - Tried 2026-10-31: GSMTC `RequestAsync` through Windows PowerShell 5.1 plus Chromium 156 on a
-    hidden desktop never exposes a session even without the audio graph, so that route says
-    nothing either way. It still needs a person at an interactive desktop pressing the key.
-
 ## P3 — Needs a browser run (2026-10-09)
 
 - [ ] P3 — Surfaces the 2026-09-28 polish pass didn't reach
@@ -419,6 +356,11 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Blocker: headless captures in light and dark.
   Acceptance: each surface captured in light and dark (default, hover, focus,
   disabled, empty, error), with findings fixed or logged.
+  Retested 2026-11-23: headless captures aren't a blocker. This is in progress as
+  uncommitted work in the main checkout (light themes and hover states for AI Summary,
+  the player menu, live chat, Digital Wellbeing and the release note link, with
+  `probe-light-surfaces.js` reading hovered rows in both themes). It gets finished and
+  committed there, not rebuilt beside it.
 
 - [ ] P3 — Open the awesome-userscripts pull request
   Why: users browse awesome-scripts/awesome-userscripts for scripts, and Astra isn't
@@ -438,7 +380,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   (https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js) /
   `📖 Readme` (#userscript-tampermonkey--violentmonkey) / `🐛 Report bug` (issues).
   Acceptance: a pull request following that CONTRIBUTING.md is open.
-Retested 2026-10-31: the manager smoke passes on Tampermonkey 5.5.0 and Violentmonkey 2.47.0 after fixing its stale avatar assertion. Violentmonkey does not enforce SRI. Opening the pull request is an outward GitHub write, so it waits for Matt's word.
+Retested 2026-10-31: the manager smoke passes on Tampermonkey 5.5.0 and Violentmonkey 2.47.0 after fixing its stale avatar assertion. Violentmonkey does not enforce SRI. Opening the pull request is an outward GitHub write, so it waits for Matt's word. Retested 2026-11-23: the manager smoke passed again in the v4.110.0 release gate; still waiting on his word.
 
 - [ ] P3 — Submit Astra Deck to Lissy93/awesome-privacy's Browser Extensions section
   Why: that list (9,942 stars, pushed 2026-10-10) carries SponsorBlock and DeArrow side by
@@ -454,12 +396,3 @@ Retested 2026-10-31: the manager smoke passes on Tampermonkey 5.5.0 and Violentm
   section of their PR template, and say the project is yours. Points worth making: no
   telemetry, settings stay in the browser, and release feeds are signed.
   Acceptance: the owner's pull request is open.
-
-- [ ] P3 — Check the Shorts settings against Shorts Series on desktop web
-  Why: YouTube began rolling Shorts Series out to the web on 2026-09-23. If series
-  shelves or the series player use new renderers, `removeAllShorts`, `redirectShorts`
-  and `shortsAsRegularVideo` may miss them.
-  Evidence: https://www.droid-life.com/2026/09/23/youtube-teases-3-neat-new-features/.
-  Blocker: not seen on desktop web as of 2026-10-05, and a capture needs a live session.
-  Acceptance: once a series surface shows on desktop web, capture it. Each of the three
-  settings either covers it, with a fixture test, or gets the selector it needs.
