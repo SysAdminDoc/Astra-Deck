@@ -14,6 +14,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The reorder arrows at the top of the sidebar stay out of the way until you point at them.
 
 ### Fixed
+- Searching the settings narrows the list again. The search counted its matches and said "13 matching settings", but every setting stayed on screen underneath, so you still had to scroll through all of them.
 - Between about 560 and 1240 pixels wide, switches and dropdowns dropped below their description and left the right half of each row empty.
 - Under 900 pixels wide the category tabs broke their names one letter per line.
 

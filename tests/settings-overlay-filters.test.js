@@ -1014,3 +1014,196 @@ test('the new copy is translatable and carries no dash', () => {
             `${key} carries an em or en dash, which the copy gate forbids`);
     }
 });
+
+// The settings search. It decided correctly which cards matched and then hid
+// none of them: it wrote an inline display:none, and the visual system gives
+// every card `display: grid !important`, which outranks any inline style. The
+// "13 matching settings" banner sat above all ~480 settings. These run the
+// shipped input handler and check the stylesheet half of the contract.
+function searchHarness() {
+    const handlers = new Map();
+    const classes = () => {
+        const set = new Set();
+        return {
+            add: (...names) => names.forEach((name) => set.add(name)),
+            remove: (...names) => names.forEach((name) => set.delete(name)),
+            toggle: (name, force) => {
+                const on = force === undefined ? !set.has(name) : !!force;
+                if (on) set.add(name); else set.delete(name);
+                return on;
+            },
+            contains: (name) => set.has(name)
+        };
+    };
+    const textEl = (text) => ({ textContent: text, appendChild() {} });
+    const makeCard = (featureId, name, desc) => {
+        const nameEl = textEl(name);
+        const descEl = textEl(desc);
+        return {
+            featureId,
+            nameEl,
+            descEl,
+            hidden: false,
+            style: {},
+            dataset: { featureId, searchText: `${name} ${desc} ${featureId}`.toLowerCase() },
+            classList: classes(),
+            querySelector: (selector) => (selector === '.ytkit-feature-name' ? nameEl
+                : selector === '.ytkit-feature-desc' ? descEl : null)
+        };
+    };
+    const cards = [
+        makeCard('removeAllShorts', 'Remove Shorts', 'Hide all Shorts videos from feeds'),
+        makeCard('autoMaxResolution', 'Always Best Quality', 'Force the highest available stream'),
+        makeCard('hideComments', 'Hide Comments', 'Remove the comment section')
+    ];
+    const cardsIn = (list) => ({
+        querySelectorAll: (selector) => (selector === '.ytkit-feature-card[data-search-matched="true"]'
+            ? list.filter((card) => card.dataset.searchMatched === 'true')
+            : selector === '.ytkit-feature-card' ? list : [])
+    });
+    const section = (list) => ({ hidden: false, style: {}, ...cardsIn(list) });
+    const sections = [section([cards[0]]), section([cards[1]]), section([cards[2]])];
+    const pane = (id, list) => ({ id, classList: classes(), setAttribute() {}, querySelector: () => null, ...cardsIn(list) });
+    const panes = [
+        pane('ytkit-pane-Content', [cards[0]]),
+        pane('ytkit-pane-Video-Player', [cards[1]]),
+        pane('ytkit-pane-Comments', [cards[2]])
+    ];
+    const nav = (tab) => {
+        const count = { textContent: '', classList: classes() };
+        return {
+            dataset: { tab },
+            classList: classes(),
+            setAttribute() {},
+            count,
+            querySelector: (selector) => (selector === '.ytkit-nav-count' ? count : null)
+        };
+    };
+    const navs = [nav('Content'), nav('Video-Player'), nav('Comments')];
+    const byId = new Map(panes.map((entry) => [entry.id, entry]));
+    // attachUIEventListeners binds nothing until the panel element exists.
+    for (const id of ['ytkit-settings-panel', 'ytkit-search-count', 'ytkit-search-clear', 'ytkit-search-state',
+        'ytkit-search-state-title', 'ytkit-search-state-copy']) {
+        byId.set(id, { id, hidden: true, textContent: '', classList: classes() });
+    }
+    const doc = {
+        body: { classList: { contains: () => true, toggle() {} } },
+        documentElement: { classList: { toggle() {} }, style: {} },
+        activeElement: null,
+        getElementById: (id) => byId.get(id) || null,
+        querySelector: (selector) => (selector === '.ytkit-content' ? { scrollTop: 40 } : null),
+        querySelectorAll: (selector) => ({
+            '.ytkit-feature-card': cards,
+            '.ytkit-pane': panes,
+            '.ytkit-nav-btn': navs,
+            '.ytkit-feature-section': sections,
+            '.ytkit-feature-name, .ytkit-feature-desc': cards.flatMap((card) => [card.nameEl, card.descEl])
+        }[selector] || []),
+        createTextNode: (text) => ({ text }),
+        createElement: () => ({ className: '', textContent: '' }),
+        addEventListener(type, handler) {
+            if (!handlers.has(type)) handlers.set(type, []);
+            handlers.get(type).push(handler);
+        },
+        removeEventListener() {}
+    };
+    const originalDocument = globalThis.document;
+    const originalFeatures = globalThis.YTKitFeatures;
+    const modulePath = path.join(REPO_ROOT, 'extension', 'features', 'settings-panel', 'index.js');
+    globalThis.document = doc;
+    delete require.cache[require.resolve(modulePath)];
+    globalThis.YTKitFeatures = {};
+    const runtime = require(modulePath).createSettingsPanelRuntime({
+        PANEL_OPEN_CLASS: 'ytkit-panel-open',
+        CONFLICT_MAP: require('../extension/core/settings-schema').SETTING_CONFLICTS,
+        appState: { settings: {} },
+        DebugManager: { log() {} },
+        StorageManager: { get: (_key, fallback) => fallback, set() {}, setSync: async () => ({ ok: true }) },
+        shouldBuildPrimaryUI: () => true,
+        buildSettingsPanel: () => ({ contains: () => true }),
+        createToast() {},
+        injectStyle: () => ({ remove() {} }),
+        isBooleanFeature: () => true,
+        getFeatureById: () => null,
+        getFeatureName: (feature) => feature?.name,
+        getFeatureDescription: () => '',
+        getFocusableUiElements: () => [],
+        liveFeatureList: [],
+        safeInitFeature() {},
+        safeDestroyFeature() {},
+        initFeatureLifecycle() {},
+        destroyFeatureLifecycle() {},
+        settingsManager: { defaults: {}, save: async (next) => ({ ok: true, settings: next }) },
+        showToast() {},
+        t: (_key, fallback) => fallback
+    });
+    globalThis.YTKitFeatures = originalFeatures;
+    runtime.attachUIEventListeners();
+    const searchBox = { value: '', matches: (selector) => selector === '#ytkit-search' };
+    return {
+        cards, sections, navs, byId,
+        async type(value) {
+            searchBox.value = value;
+            const before = byId.get('ytkit-search-count').textContent;
+            for (const handler of handlers.get('input') || []) handler({ type: 'input', target: searchBox });
+            // The handler debounces by 150ms; wait for it to write the count
+            // rather than racing a fixed timer on a throttled test box.
+            for (let waited = 0; waited < 3000; waited += 25) {
+                await new Promise((resolve) => setTimeout(resolve, 25));
+                if (byId.get('ytkit-search-count').textContent !== before) break;
+            }
+        },
+        restore() { globalThis.document = originalDocument; }
+    };
+}
+
+test('the settings search hides what does not match, with the hidden property', async () => {
+    const harness = searchHarness();
+    try {
+        await harness.type('shorts');
+        assert.deepEqual(harness.cards.map((card) => card.hidden), [false, true, true],
+            'only the Shorts card stays visible');
+        assert.deepEqual(harness.sections.map((entry) => entry.hidden), [false, true, true],
+            'a section with no visible card goes too');
+        assert.ok(harness.cards.every((card) => card.style.display === undefined),
+            'no inline display, since it loses to the card rule and its !important');
+        assert.equal(harness.navs[0].count.textContent, '1 match');
+        assert.ok(harness.navs[0].count.classList.contains('is-match'),
+            'a matching category marks its count with a class the theme colours');
+        assert.ok(!harness.navs[1].count.classList.contains('is-match'));
+        assert.equal(harness.byId.get('ytkit-search-state').hidden, false, 'the results banner shows');
+
+        await harness.type('');
+        assert.deepEqual(harness.cards.map((card) => card.hidden), [false, false, false],
+            'clearing the search brings every card back');
+        assert.deepEqual(harness.sections.map((entry) => entry.hidden), [false, false, false]);
+    } finally {
+        harness.restore();
+    }
+});
+
+test('the panel stylesheet lets [hidden] beat the card and section display rules', () => {
+    const css = fs.readFileSync(
+        path.join(REPO_ROOT, 'extension', 'core', 'settings-visual-system.js'), 'utf8');
+    const panelCss = css.slice(
+        css.indexOf('const SETTINGS_VISUAL_SYSTEM_CSS'), css.indexOf('const SURFACE_VISUAL_SYSTEM_CSS'));
+    const hiddenRule = panelCss.lastIndexOf('#ytkit-settings-panel [hidden] {');
+    assert.ok(hiddenRule > 0, 'the panel keeps its [hidden] rule');
+    assert.match(panelCss.slice(hiddenRule, hiddenRule + 80), /display:\s*none !important/);
+    // Same specificity as `#ytkit-settings-panel .ytkit-feature-card`, so it
+    // has to come after every rule of that selector that sets display.
+    for (const selector of ['.ytkit-feature-card', '.ytkit-feature-section']) {
+        const rule = new RegExp(`#ytkit-settings-panel \\${selector}\\s*\\{([^}]*)\\}`, 'g');
+        const displayRules = [...panelCss.matchAll(rule)].filter((match) => /(^|[;\s])display\s*:/.test(match[1]));
+        assert.ok(displayRules.length > 0, `${selector} still has a display rule to check`);
+        for (const match of displayRules) {
+            assert.ok(match.index < hiddenRule, `${selector} display rule at ${match.index} must precede [hidden]`);
+        }
+    }
+    const handlerStart = source.indexOf('function _handleSearch');
+    // The handler re-registers itself near its top; the module-level
+    // assignment after its closing brace marks the end.
+    const handler = source.slice(handlerStart, source.indexOf('\n        }\n        _panelSearchUpdater = _handleSearch;', handlerStart));
+    assert.ok(handler.length > 1000, 'the search handler is where it was');
+    assert.doesNotMatch(handler, /\.style\.display/, 'the search must not hide with inline display');
+});

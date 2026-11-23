@@ -4560,17 +4560,22 @@ function attachUIEventListeners() {
 
             _panelSearchUpdater = _handleSearch;
 
+            // Cards, sections and sub-lists hide with the `hidden` property.
+            // An inline display:none lost to the visual system's
+            // `display: grid !important` on every card, so for a long time the
+            // search counted its matches and hid nothing; the panel's
+            // `[hidden] { display: none !important; }` rule wins that fight.
             // Clear all previous highlights
             doc.querySelectorAll('.ytkit-feature-name, .ytkit-feature-desc').forEach(el => {
                 if (el._originalText !== undefined) el.textContent = el._originalText;
             });
             allCards.forEach(card => {
-                card.style.display = '';
+                card.hidden = false;
                 card.classList.remove('ytkit-search-context-card');
                 delete card.dataset.searchMatched;
             });
             doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
-                section.style.display = '';
+                section.hidden = false;
             });
             allPanes.forEach(pane => pane.classList.remove('ytkit-search-active', 'ytkit-search-empty-pane'));
             allNavBtns.forEach(btn => btn.classList.remove('ytkit-search-empty-nav'));
@@ -4581,7 +4586,7 @@ function attachUIEventListeners() {
                 let changedCount = 0;
                 allCards.forEach((card) => {
                     const keep = cardDiffersFromDefault(card);
-                    card.style.display = keep ? '' : 'none';
+                    card.hidden = !keep;
                     if (keep) {
                         changedCount += 1;
                         card.dataset.searchMatched = 'true';
@@ -4593,14 +4598,14 @@ function attachUIEventListeners() {
                 });
                 doc.querySelectorAll('.ytkit-sub-features').forEach((sub) => {
                     const visible = Array.from(sub.querySelectorAll('.ytkit-feature-card'))
-                        .some((card) => card.style.display !== 'none');
-                    sub.style.display = visible ? '' : 'none';
+                        .some((card) => !card.hidden);
+                    sub.hidden = !visible;
                     setSubFeatureAvailability(sub, !!appState.settings[sub.dataset.parentId]);
                 });
                 doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
                     const visible = Array.from(section.querySelectorAll('.ytkit-feature-card'))
-                        .some((card) => card.style.display !== 'none');
-                    section.style.display = visible ? '' : 'none';
+                        .some((card) => !card.hidden);
+                    section.hidden = !visible;
                 });
                 const searchMetaEl = doc.getElementById('ytkit-search-count');
                 if (searchMetaEl) {
@@ -4615,7 +4620,7 @@ function attachUIEventListeners() {
             if (!query) {
                 // Reset to normal view
                 doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
-                    sub.style.display = '';
+                    sub.hidden = false;
                     const parentId = sub.dataset.parentId;
                     const enabled = appState.settings[parentId];
                     setSubFeatureAvailability(sub, !!enabled);
@@ -4674,7 +4679,7 @@ function attachUIEventListeners() {
                 // the changed-only toggle, or the two disagree about display
                 // and whichever ran last wins.
                 const matches = haystack.includes(query) && (!_changedOnly || cardDiffersFromDefault(card));
-                card.style.display = matches ? '' : 'none';
+                card.hidden = !matches;
                 if (matches) {
                     matchCount++;
                     card.dataset.searchMatched = 'true';
@@ -4685,20 +4690,20 @@ function attachUIEventListeners() {
 
             doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
                 const parentId = sub.dataset.parentId;
-                const visibleChildren = Array.from(sub.querySelectorAll('.ytkit-feature-card')).filter(card => card.style.display !== 'none');
-                sub.style.display = visibleChildren.length > 0 ? '' : 'none';
+                const visibleChildren = Array.from(sub.querySelectorAll('.ytkit-feature-card')).filter(card => !card.hidden);
+                sub.hidden = visibleChildren.length === 0;
                 if (visibleChildren.length > 0 && parentId) {
                     const parentCard = doc.querySelector(`.ytkit-feature-card[data-feature-id="${parentId}"]`);
-                    if (parentCard && parentCard.style.display === 'none') {
-                        parentCard.style.display = '';
+                    if (parentCard && parentCard.hidden) {
+                        parentCard.hidden = false;
                         parentCard.classList.add('ytkit-search-context-card');
                     }
                 }
             });
             doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
                 const visibleCards = Array.from(section.querySelectorAll('.ytkit-feature-card'))
-                    .some((card) => card.style.display !== 'none');
-                section.style.display = visibleCards ? '' : 'none';
+                    .some((card) => !card.hidden);
+                section.hidden = !visibleCards;
             });
 
             // Update nav buttons with match counts
@@ -4715,7 +4720,7 @@ function attachUIEventListeners() {
                         return;
                     }
                     const directMatches = pane.querySelectorAll('.ytkit-feature-card[data-search-matched="true"]').length;
-                    const visibleCards = Array.from(pane.querySelectorAll('.ytkit-feature-card')).filter(card => card.style.display !== 'none').length;
+                    const visibleCards = Array.from(pane.querySelectorAll('.ytkit-feature-card')).filter(card => !card.hidden).length;
                     const countEl = btn.querySelector('.ytkit-nav-count');
                     pane.classList.toggle('ytkit-search-empty-pane', visibleCards === 0);
                     btn.classList.toggle('ytkit-search-empty-nav', directMatches === 0);
