@@ -113,6 +113,9 @@ async function launch(binary) {
 async function capture(binary, scheme, out, { watchUrl = WATCH_URL, metrics = false } = {}) {
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-split-stage-'));
     const settings = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'extension', 'default-settings.json'), 'utf8'));
+    // Theater Split is opt-in since 4.106.0's calmer defaults, so turn on the
+    // feature this script exists to photograph and leave the rest at defaults.
+    settings.stickyVideo = true;
     buildFixture(stageDir, { runtimeSettings: settings });
     const browser = await launch(binary);
     try {

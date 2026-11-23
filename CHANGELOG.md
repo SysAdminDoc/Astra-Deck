@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Tests
+- `npm run capture:theater-split` turns Theater Split on before it takes the README screenshots. The split has been opt-in since 4.106.0, so the script was waiting for a split that never opened.
+- The settings overlay smoke holds setting names to 15px and descriptions to 13px, the sizes 4.110.0's redesign picked. It still asked for the old 16px and 14px.
+
+### Docs
+- The README's settings and Theater Split screenshots show 4.110.1. The settings one was still the 4.99.1 panel.
+
 ## [4.110.1] (2026-11-23)
 
 ### Fixed

@@ -365,8 +365,9 @@ const IN_PAGE_CHECKS = `(() => {
         const featureDescription = panel.querySelector('.ytkit-feature-desc');
         const headerRect = panel.querySelector('.ytkit-header')?.getBoundingClientRect();
         const footerRect = panel.querySelector('.ytkit-footer')?.getBoundingClientRect();
-        if (featureName && parseFloat(getComputedStyle(featureName).fontSize) < 16) failures.push('desktop setting names are undersized');
-        if (featureDescription && parseFloat(getComputedStyle(featureDescription).fontSize) < 14) failures.push('desktop setting descriptions are undersized');
+        // 4.110.0 set the rows on a 15/13 type pair; anything smaller is a regression.
+        if (featureName && parseFloat(getComputedStyle(featureName).fontSize) < 15) failures.push('desktop setting names are undersized');
+        if (featureDescription && parseFloat(getComputedStyle(featureDescription).fontSize) < 13) failures.push('desktop setting descriptions are undersized');
         if (headerRect && headerRect.height > 72) failures.push('desktop settings header is taller than 72px');
         if (footerRect && footerRect.height > 66) failures.push('desktop settings footer is taller than 66px');
     }
