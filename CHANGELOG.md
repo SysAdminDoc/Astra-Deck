@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- The settings search box draws its keyboard focus ring on the field itself again. 4.110.0 moved the ring to the box around the field, which looked the same, but the field reported no focus indicator of its own to anything that checks the focused control.
+
+### Tests
+- `npm run probe:media-session` checks that media keys still reach the video while the audio features' Web Audio graph is attached. Chromium 159 and Firefox 160 both keep the media session through it, so Volume Boost and the other audio features leave your play/pause key working. The details are in docs/platform-api-adoption.md.
+- The download popup's tests check it as the modal dialog it became in 4.108.0, and a cleanup test no longer fails when the checkout sits inside the temp folder.
+- The live zero-ads smoke lets a split comment row sit at the split's own 36px row height, which keeps rows with and without a creator heart lined up. It only passed before when the test comment happened to have a heart. Like and Reply are still held to YouTube's 32px, and a failure now names the row's tallest children and its box.
+- The accessibility smoke's narrow-screen check treats a row that scrolls sideways, like the settings tab strip since 4.110.0, as one control. The row itself still has to fit the screen, while tabs scrolled out of view inside it no longer count as spilling.
+
 ## [4.110.0] (2026-11-23)
 
 ### Changed

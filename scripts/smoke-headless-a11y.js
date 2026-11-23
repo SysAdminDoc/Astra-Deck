@@ -1194,7 +1194,34 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
         // Report the worst offenders so a failure names the element to fix
         // rather than only the surface.
         const wide = [];
+        // A one-line scroller (overflow-x auto or scroll, overflow-y hidden) is
+        // a row of tabs or chips that is meant to scroll sideways. A control
+        // cut at its edge is reached by scrolling the row, and focus scrolls
+        // it into view, so what has to fit the viewport is the row itself.
+        // A two-way scroller doesn't count: a row spilling inside the panel's
+        // main scroll area is still a spill.
+        const rowScroller = (element) => {
+            for (let node = element.parentElement; node && node !== document.documentElement; node = node.parentElement) {
+                const style = getComputedStyle(node);
+                if (style.overflowX !== 'auto' && style.overflowX !== 'scroll') continue;
+                return (style.overflowY === 'hidden' || style.overflowY === 'clip') ? node : null;
+            }
+            return null;
+        };
+        const reported = new Set();
         for (const element of document.querySelectorAll('button, input, select, textarea, a[href], h1, h2, label, .sp-setting-row, .toggle')) {
+            const scroller = rowScroller(element);
+            if (scroller) {
+                if (reported.has(scroller)) continue;
+                reported.add(scroller);
+                const box = scroller.getBoundingClientRect();
+                const rowSpill = Math.round(Math.max(box.right - viewport, -box.left));
+                if (rowSpill > 1) {
+                    wide.push((scroller.id || scroller.className || scroller.tagName) + ' (scrolling row) +' + rowSpill + 'px');
+                    if (wide.length >= 5) break;
+                }
+                continue;
+            }
             const rect = element.getBoundingClientRect();
             if (rect.width === 0 && rect.height === 0) continue;
             // Fully off-screen elements are the visually-hidden idiom (skip

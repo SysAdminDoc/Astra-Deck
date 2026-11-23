@@ -1137,6 +1137,26 @@ async function splitEngagementSnapshot(client) {
             colorScheme: getComputedStyle(document.documentElement).colorScheme,
             toolbarGap: toolbarStyle?.columnGap || toolbarStyle?.gap || '',
             toolbarHeight: toolbar?.getBoundingClientRect().height || 0,
+            toolbarMinHeight: Number.parseFloat(toolbarStyle?.minHeight) || 0,
+            // What sets the row's height when it isn't Like, Reply or a heart.
+            toolbarTallest: toolbar ? Array.from(toolbar.querySelectorAll('*'))
+                .filter(visible)
+                .map((node) => ({
+                    node: node.tagName.toLowerCase() + (node.id ? '#' + node.id : '')
+                        + (typeof node.className === 'string' && node.className.trim()
+                            ? '.' + node.className.trim().split(/\\s+/).slice(0, 2).join('.') : ''),
+                    height: Math.round(node.getBoundingClientRect().height)
+                }))
+                .sort((a, b) => b.height - a.height)
+                .slice(0, 3) : [],
+            toolbarBox: toolbarStyle ? [
+                'height ' + toolbarStyle.height, 'min-height ' + toolbarStyle.minHeight,
+                'padding ' + toolbarStyle.padding, 'border ' + toolbarStyle.borderTopWidth + '/' + toolbarStyle.borderBottomWidth,
+                'display ' + toolbarStyle.display, 'align-items ' + toolbarStyle.alignItems,
+                'margins ' + Array.from(toolbar.children).filter(visible)
+                    .map((child) => { const s = getComputedStyle(child); return child.id + ':' + s.marginTop + '/' + s.marginBottom; })
+                    .join(' ')
+            ].join('; ') : '',
             commentBackground: comment ? getComputedStyle(comment).backgroundColor : '',
             like: describe(like),
             reply: describe(reply),
@@ -1173,10 +1193,14 @@ function splitEngagementFailures(states, theme) {
     if (base.colorScheme !== theme) failures.push(`${theme}: color-scheme is ${base.colorScheme}`);
     // Spacing along the row comes from the count's margins, not a column gap.
     if (base.toolbarGap !== '0px') failures.push(`${theme}: toolbar column gap is ${base.toolbarGap || 'unset'}`);
-    // A creator heart is YouTube's own 36 px box and sets the row's height on the
-    // comments that have one. Like and Reply are held to 31-33 px below either way.
-    if (base.toolbarHeight < 31 || base.toolbarHeight > Math.max(33, base.heart?.height || 0)) {
-        failures.push(`${theme}: toolbar height is ${base.toolbarHeight}px`);
+    // The split holds every comment row at --ytkit-split-control-h (36 px) so a
+    // row with a creator heart, YouTube's own 36 px box, lines up with one
+    // without. Like and Reply are held to 31-33 px inside it either way. The
+    // row may reach its declared floor or the heart, and nothing past that.
+    const rowCeiling = Math.max(33, base.heart?.height || 0, base.toolbarMinHeight || 0);
+    if (base.toolbarHeight < 31 || base.toolbarHeight > rowCeiling) {
+        const tallest = (base.toolbarTallest || []).map((entry) => `${entry.node} ${entry.height}px`).join(', ');
+        failures.push(`${theme}: toolbar height is ${base.toolbarHeight}px${tallest ? ` (tallest: ${tallest})` : ''}${base.toolbarBox ? ` [${base.toolbarBox}]` : ''}`);
     }
     for (const [name, control] of [['Like', base.like], ['Reply', base.reply]]) {
         if (control.height < 31 || control.height > 33) failures.push(`${theme} ${name}: height is ${control.height}px`);
