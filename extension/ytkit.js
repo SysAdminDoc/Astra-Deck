@@ -947,7 +947,7 @@
         };
     }
 
-    const YTKIT_VERSION = '4.110.1';
+    const YTKIT_VERSION = '4.110.2';
 
     // Holds { extensionVersion, asset }. The asset was verified, signature
     // included, by the build that fetched it, and a different build has its
