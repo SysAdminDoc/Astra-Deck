@@ -996,6 +996,12 @@
             // failing with a generic "not installed" message. { port, version }.
             _foreignServer: null,
             _apiMismatch: null,
+            // The downloader answered /pair-extension with
+            // `extension-pairing-closed`: it will pair this copy only while
+            // the user has Allow extension pairing open. Astra Downloader
+            // 2.18.1 and older do that to every unlisted (unpacked) copy;
+            // newer ones only with open pairing turned off.
+            _pairingClosed: false,
             _lastCheck: 0,
             _serverVersion: null,
             _autoStartAttempted: false,
@@ -1188,7 +1194,9 @@
                         DebugManager.log('MediaDL', `Paired extension ${extensionId} with Astra Downloader on port ${port}`);
                         return true;
                     }
+                    this._pairingClosed = data?.code === 'extension-pairing-closed';
                 } catch (error) {
+                    this._pairingClosed = error?.data?.code === 'extension-pairing-closed';
                     DebugManager.log('MediaDL', `Pairing failed on port ${port}: ${error?.data?.code || error?.message || error}`);
                 }
                 return false;
@@ -1196,6 +1204,8 @@
 
             async _checkImpl(force) {
                 const now = Date.now();
+                // Fresh every check: only a refusal during this one counts.
+                this._pairingClosed = false;
                 let nativeToken = await this._requestNativeToken();
                 let userscriptToken = nativeToken.token ? '' : this._savedUserscriptToken();
                 // First non-Astra server found squatting a companion port, if any.
@@ -1447,7 +1457,7 @@
                 return { ok: false };
             },
 
-            resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; this._foreignServer = null; this._apiMismatch = null; },
+            resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; this._pairingClosed = false; this._foreignServer = null; this._apiMismatch = null; },
 
             async copyInstallCommand() {
                 try {
@@ -1607,6 +1617,15 @@
                     if (this._needsUserscriptPairing()) {
                         desc.textContent = t('dlInstallUserscriptPairDesc',
                             'Astra Downloader is running and needs to pair with the userscript once. In Astra Downloader, open Browser extension and choose Pair userscript, then choose Check again here within two minutes. Pairing needs Astra Downloader 2.16.0 or newer, which Download setup below installs.');
+                        prompt.dataset.state = 'error';
+                        return;
+                    }
+                    // Updating the downloader is the wrong advice here: it is
+                    // current enough, it just has not been told to accept this
+                    // copy. Shares the toast's wording.
+                    if (this._pairingClosed) {
+                        const closed = DOWNLOADER_FAILURE_COPY['extension-pairing-closed'];
+                        desc.textContent = `${closed.message} ${closed.advice}`;
                         prompt.dataset.state = 'error';
                         return;
                     }
@@ -1772,6 +1791,9 @@
                         if (this._needsUserscriptPairing()) {
                             setPromptButtonState(recheckBtn, t('dlInstallNotPaired', 'Not paired yet'), 'danger');
                             setPromptNote(t('dlInstallUserscriptNotPairedHint', 'Astra Downloader is running but did not pair. Choose Pair userscript there first, then check again within two minutes.'), 'error');
+                        } else if (this._pairingClosed) {
+                            setPromptButtonState(recheckBtn, t('dlInstallNotPaired', 'Not paired yet'), 'danger');
+                            setPromptNote(DOWNLOADER_FAILURE_COPY['extension-pairing-closed'].advice, 'error');
                         } else {
                             setPromptButtonState(recheckBtn, t('dlInstallNotDetected', 'Not detected yet'), 'danger');
                             setPromptNote(t('dlInstallNotDetectedHint', 'Setup was not detected yet. Make sure the installer finished, then check again.'), 'error');
@@ -2284,11 +2306,18 @@
                 tone: '#f59e0b',
                 duration: 14,
             },
+            // The button is named as Astra Downloader labels it.
+            'extension-pairing-closed': {
+                message: 'Astra Downloader is running but hasn’t paired with this copy of Astra Deck yet.',
+                advice: 'In Astra Downloader, open Browser extension and choose Allow extension pairing, then choose Check again here within two minutes.',
+                tone: '#f59e0b',
+                duration: 14,
+            },
         });
 
         // Failures the repair prompt (setup, start, check again) can fix. Every
         // other code has its own advice and a downloader that is answering.
-        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'userscript-pairing-required', 'client-api-too-old']);
+        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'userscript-pairing-required', 'extension-pairing-closed', 'client-api-too-old']);
 
         function classifyDownloaderFailureResponse(resp = {}) {
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
@@ -2336,13 +2365,17 @@
             // something the reader can act on; the preset advice already says
             // what to do.
             if (status.nativeTokenError) logFailure('native-token', status.nativeTokenError);
-            const mapped = showDownloaderFailure(MediaDLManager._isUserscript()
-                ? { error_code: 'userscript-pairing-required', next_action: 'pair-userscript' }
-                : {
-                    error_code: 'native-channel-required',
-                    error: status.nativeTokenError || '',
-                    next_action: 'repair-native-host',
-                });
+            let failure = {
+                error_code: 'native-channel-required',
+                error: status.nativeTokenError || '',
+                next_action: 'repair-native-host',
+            };
+            if (MediaDLManager._isUserscript()) {
+                failure = { error_code: 'userscript-pairing-required', next_action: 'pair-userscript' };
+            } else if (MediaDLManager._pairingClosed) {
+                failure = { error_code: 'extension-pairing-closed', next_action: 'allow-extension-pairing' };
+            }
+            const mapped = showDownloaderFailure(failure);
             // A toast on its own left the reader with nothing to press. The
             // repair prompt carries Download setup, Start service and Check
             // again, and its description names this exact state.

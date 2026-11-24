@@ -11,6 +11,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The download history panel lists your downloads again. It sent its sign-in token in a form Astra Downloader 2.18.1 and older don't read, so the panel always came back empty. The health pills send the token the same way now.
 - The health pills stop calling a current Astra Downloader "newer than this extension" and stop asking you to update Astra Deck. A newer downloader is fine as long as it still accepts this version, and the pill only warns when the downloader says it needs a newer Astra Deck.
 - When Astra Downloader isn't running, the download button starts it once before deciding it isn't installed. A copy of Astra Deck that hasn't paired with the downloader yet used to say "Install Astra Downloader" even when it was installed and just stopped.
+- When Astra Downloader is running but hasn't been told to accept your copy of Astra Deck, the download button says so and names the button that fixes it (Allow extension pairing, on the downloader's Browser extension page). It used to tell you to update a downloader that was already current. You'll mostly see this with a copy loaded unpacked against Astra Downloader 2.18.1 or older.
 - The download progress card says Finishing while Astra Downloader merges, extracts audio, trims a clip or transcribes, instead of Downloading. It also keeps following a transcription to the end. It used to give up after a few seconds and say it had lost track of the download.
 
 ### Tests

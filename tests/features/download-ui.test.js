@@ -172,6 +172,119 @@ test('foreign downloader detection names the shadowing service in repair copy', 
     }
 });
 
+// Astra Downloader 2.18.1 and older pair an unpacked copy only while the user
+// has Allow extension pairing open, and newer ones do the same with open
+// pairing turned off. The repair prompt answered that 403 with "update it with
+// Download setup", which changes nothing on a downloader that is current.
+test('a downloader with pairing closed is answered with the button that opens it', async () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = new FakeDocument();
+    let pairingOpen = false;
+    let paired = false;
+    const toasts = [];
+    const downloads = [];
+
+    try {
+        const feature = createDownloadUIFeature({
+            requestNativeDownloaderToken: async () => ({ token: null, error: 'Specified native messaging host not found.' }),
+            getExtensionRuntimeId: () => 'abcdefghijklmnopabcdefghijklmnop',
+            showToast: (message) => toasts.push(String(message)),
+            extensionFetchJson: async ({ url, method }) => {
+                const target = new URL(url);
+                if (target.port !== '9751') throw new Error('ECONNREFUSED');
+                if (target.pathname === '/health') {
+                    return {
+                        data: {
+                            service: 'astra-downloader',
+                            api: 3,
+                            minimumClientApi: 1,
+                            token_required: true,
+                            port: 9751,
+                            version: '2.18.1',
+                            nativeChannelRequired: true,
+                            legacyTokenEcho: false,
+                            ...(paired ? { token: 'paired-origin-token' } : {}),
+                        },
+                    };
+                }
+                if (target.pathname === '/pair-extension' && method === 'POST') {
+                    if (!pairingOpen) {
+                        const refusal = new Error('HTTP 403');
+                        refusal.data = { ok: false, paired: false, code: 'extension-pairing-closed' };
+                        throw refusal;
+                    }
+                    paired = true;
+                    return { data: { ok: true, paired: true } };
+                }
+                if (target.pathname === '/download') {
+                    downloads.push(url);
+                    return { response: { status: 202, responseText: '{}' }, data: { error: 'fixture' } };
+                }
+                throw new Error('unexpected ' + url);
+            },
+        });
+        const manager = feature.MediaDLManager;
+
+        await feature.ytKitDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false);
+
+        assert.equal(manager._pairingClosed, true);
+        assert.equal(downloads.length, 0);
+        assert.ok(toasts.some((text) => /hasn.t paired with this copy.*Allow extension pairing/s.test(text)), toasts.join(' | '));
+        assert.ok(!toasts.some((text) => /Download setup|Install Astra Downloader/.test(text)), toasts.join(' | '));
+        const prompt = document.body.querySelector('#ytkit-mediadl-install-prompt');
+        const description = prompt.querySelector('#ytkit-install-prompt-desc');
+        assert.equal(prompt.dataset.mode, 'repair');
+        assert.equal(prompt.dataset.state, 'error');
+        assert.match(description.textContent, /open Browser extension and choose Allow extension pairing/);
+        assert.doesNotMatch(description.textContent, /Download setup/);
+
+        // The user opens pairing in the downloader: the next press pairs,
+        // reads the token from /health and sends the download.
+        pairingOpen = true;
+        await feature.ytKitDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false);
+
+        assert.equal(manager._pairingClosed, false);
+        assert.equal(downloads.length, 1);
+    } finally {
+        if (previousDocument === undefined) delete globalThis.document;
+        else globalThis.document = previousDocument;
+    }
+});
+
+// A refusal for any other reason keeps the update advice: a downloader too old
+// to hand a paired copy its token is the case that advice was written for.
+test('a downloader that withholds its token for another reason keeps the update advice', async () => {
+    const toasts = [];
+    const feature = createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'Specified native messaging host not found.' }),
+        getExtensionRuntimeId: () => 'abcdefghijklmnopabcdefghijklmnop',
+        showToast: (message) => toasts.push(String(message)),
+        extensionFetchJson: async ({ url, method }) => {
+            const target = new URL(url);
+            if (target.port !== '9751') throw new Error('ECONNREFUSED');
+            if (target.pathname === '/health') {
+                return {
+                    data: {
+                        service: 'astra-downloader',
+                        token_required: true,
+                        port: 9751,
+                        version: '2.12.0',
+                        nativeChannelRequired: true,
+                    },
+                };
+            }
+            if (target.pathname === '/pair-extension' && method === 'POST') return { data: { ok: true, paired: true } };
+            throw new Error('unexpected ' + url);
+        },
+    });
+
+    await feature.ytKitDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false);
+
+    assert.equal(feature.MediaDLManager._pairingClosed, false);
+    assert.ok(toasts.some((text) => /private token.*Download setup/s.test(text)), toasts.join(' | '));
+    assert.ok(!toasts.some((text) => /Allow extension pairing/.test(text)), toasts.join(' | '));
+});
+
 test('auto-start honors the full cold-start retry budget', async () => {
     const protocolCalls = [];
     const retryDelays = [];
@@ -223,6 +336,7 @@ test('every documented downloader error code keeps its recovery branch and copy'
         // Names the fix rather than the mechanism: "verify the native host
         // registration" was accurate and useless to the reader who hit it.
         ['native-channel-required', /private token.*Download setup/is],
+        ['extension-pairing-closed', /Allow extension pairing/],
     ]);
 
     for (const [code, pattern] of expected) {
