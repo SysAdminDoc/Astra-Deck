@@ -1075,6 +1075,18 @@
                 return headers;
             },
 
+            // Astra Downloader 2.18.1 and older read the token from
+            // X-Auth-Token only, so /history answered 401 to the bearer form
+            // alone. The bearer form stays for companions that accept it.
+            _companionAuthHeaders(token, extra = {}) {
+                const value = typeof token === 'string' ? token : '';
+                return this._headers({
+                    ...extra,
+                    'X-Auth-Token': value,
+                    Authorization: 'Bearer ' + value
+                });
+            },
+
             async _requestNativeToken(options = {}) {
                 let timeoutId = null;
                 try {
@@ -3445,7 +3457,7 @@
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: MediaDLManager.baseUrl() + '/health',
-                        headers: MediaDLManager._headers({ 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') })
+                        headers: MediaDLManager._companionAuthHeaders(status.token, { 'X-MDL-Client': 'MediaDL' })
                     });
                     return normalizeDownloadHealthSnapshot(data, status);
                 } catch (e) {
@@ -3992,7 +4004,7 @@
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: MediaDLManager.baseUrl() + '/history?' + params.toString(),
-                        headers: MediaDLManager._headers({ 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') })
+                        headers: MediaDLManager._companionAuthHeaders(status.token, { 'X-MDL-Client': 'MediaDL' })
                     });
                     return data && Array.isArray(data.history) ? data : null;
                 } catch (e) {

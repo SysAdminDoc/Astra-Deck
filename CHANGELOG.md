@@ -8,6 +8,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 - Downloads send your YouTube sign-in cookies to Astra Downloader again, so videos that need you to be signed in download instead of failing. The extension was dropping the check that proves it's talking to your own Astra Downloader, and without it the cookies were always held back.
+- The download history panel lists your downloads again. It sent its sign-in token in a form Astra Downloader 2.18.1 and older don't read, so the panel always came back empty. The health pills send the token the same way now.
 
 ### Tests
 - `npm run capture:theater-split` turns Theater Split on before it takes the README screenshots. The split has been opt-in since 4.106.0, so the script was waiting for a split that never opened.

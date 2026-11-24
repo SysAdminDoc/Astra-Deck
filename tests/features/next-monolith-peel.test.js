@@ -841,7 +841,35 @@ test('download history sends bounded filters and preserves page metadata', async
     assert.equal(url.searchParams.get('dateFrom'), '2026-07-01');
     assert.equal(url.searchParams.get('dateTo'), '2026-07-31');
     assert.equal(url.searchParams.get('sort'), 'oldest');
+    // Astra Downloader 2.18.1 and older read the token from X-Auth-Token only;
+    // the bearer form alone got a 401 and an empty history panel.
+    assert.equal(calls[0].headers['X-Auth-Token'], 'history-token');
     assert.equal(calls[0].headers.Authorization, 'Bearer history-token');
+});
+
+test('the download health pills authenticate their /health read with X-Auth-Token', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const result = mod.createDownloadUIFeature({
+        extensionFetchJson: async (details) => {
+            calls.push(details);
+            return { data: { service: 'astra-downloader', api: 3, port: 9751 } };
+        },
+        DebugManager: { log() {} },
+    });
+    result.MediaDLManager.check = async () => ({ ok: true, token: 'health-token', tokenSource: 'native' });
+    result.MediaDLManager.baseUrl = () => 'http://127.0.0.1:9751';
+
+    await result.downloadHealthPanel._fetchHealth();
+
+    assert.equal(calls.length, 1);
+    assert.equal(new URL(calls[0].url).pathname, '/health');
+    // /health computes `authorized` from the token, and companions up to
+    // 2.18.1 only look for it in X-Auth-Token.
+    assert.equal(calls[0].headers['X-Auth-Token'], 'health-token');
 });
 
 test('downloadUI module loads before ytkit.js in content scripts', () => {
