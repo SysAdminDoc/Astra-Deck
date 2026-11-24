@@ -86,6 +86,7 @@
     "smoke:private-window": "node scripts/smoke-private-window.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "smoke:zero-ads:live": "node scripts/smoke-zero-ads-live.js",
+    "smoke:companion:live": "node scripts/smoke-companion-live.js",
     "smoke:main-bridge:live": "node scripts/smoke-main-bridge-live.js",
     "smoke:live-chat": "node scripts/smoke-live-chat-frame.js",
     "smoke:settings-overlay": "node scripts/smoke-settings-overlay.js",

@@ -1346,6 +1346,7 @@ npm run smoke:live-chat                   # Open a current YouTube live-chat fra
 npm run smoke:firefox                     # Prove Firefox DNR, shell collapse, search, and SPA player behavior
 npm run smoke:userscript-managers         # Install and exercise YTKit in real Tampermonkey + Violentmonkey builds
 npm run smoke:private-window              # Use Watch Feed and bookmarks in real private windows and check regular storage and cookies stay untouched
+npm run smoke:companion:live              # Press Download on a short video against the Astra Downloader installed here and follow it to Complete
 npm run release:browser-smokes            # Run Chromium, live-chat, Firefox, and userscript-manager release gates
 npm run smoke:settings-overlay -- --desktop-only # Verify every extension settings destination at desktop sizes
 npm run smoke:settings-userscript         # Verify every userscript settings destination at desktop sizes

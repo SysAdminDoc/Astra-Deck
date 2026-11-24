@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Tests
+- `npm run smoke:companion:live` checks the extension against the Astra Downloader installed on your machine. It loads the refreshed unpacked copy in a hidden Chromium, opens a watch page, presses Download on a 19 second video and follows it to Complete, then checks the native token and the pairing. `--no-download` stops once the popup has read the format list. It's the one smoke that's meant to reach the real downloader, so it leaves a history row behind and deletes the test file.
+
 ## [4.110.2] (2026-11-24)
 
 ### Fixed
