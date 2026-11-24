@@ -47,6 +47,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const chromium = require('./smoke-chromium-optional-hosts');
+const { assertCompanionUnreachable } = require('./companion-fence');
 const firefoxDriver = require('./firefox-webdriver');
 const { createFirefoxStage } = require('./check-firefox-webext');
 
@@ -443,6 +444,10 @@ async function runChrome(opts) {
         const bg = await chromium.connectCdp(bgTarget.webSocketDebuggerUrl);
         clients.push(bg);
         await bg.send('Runtime.enable');
+        // The regular window opens the settings panel, whose Downloads pane
+        // checks the companion; chromiumArgs() maps its ports away, and this
+        // proves it before any YouTube tab exists.
+        await assertCompanionUnreachable(bg);
         const sw = (expression) => chromium.evaluate(bg, expression);
         if (await sw('chrome.extension.isAllowedIncognitoAccess()') !== true) throw new Error('Chrome did not allow the extension in Incognito');
 

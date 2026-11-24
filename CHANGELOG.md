@@ -14,6 +14,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The download progress card says Finishing while Astra Downloader merges, extracts audio, trims a clip or transcribes, instead of Downloading. It also keeps following a transcription to the end. It used to give up after a few seconds and say it had lost track of the download.
 
 ### Tests
+- The live browser smokes can't reach an Astra Downloader installed on the machine running them anymore. Each run loads a fresh copy of the extension, and opening the Downloads settings used to pair that copy with the real downloader, which left one stale browser pairing behind per run. The browsers they launch now can't resolve the downloader's ports. The experience smoke also blocks them over DevTools and won't open a mediadl:// link, and the smokes that open the settings panel stop before loading YouTube if a port still answers.
 - `npm run capture:theater-split` turns Theater Split on before it takes the README screenshots. The split has been opt-in since 4.106.0, so the script was waiting for a split that never opened.
 - The settings overlay smoke holds setting names to 15px and descriptions to 13px, the sizes 4.110.0's redesign picked. It still asked for the old 16px and 14px.
 

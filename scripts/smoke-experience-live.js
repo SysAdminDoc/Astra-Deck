@@ -11,6 +11,9 @@ const {
     chromiumArgs, connectCdp, createChromiumStage, evaluate, killProcessTree,
     removeDirWithRetries, reserveLoopbackPort, sleep, waitForBackgroundTarget, waitForDevTools
 } = require('./smoke-chromium-optional-hosts');
+// The Downloads tab this smoke opens runs the companion check, and every run
+// stages a new extension ID. The fence keeps it off the installed downloader.
+const { companionBlockedUrls, fenceCompanion } = require('./companion-fence');
 const { DEFAULT_FLAGS } = require('../extension/core/classic-watch-layout.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -457,14 +460,15 @@ async function run(client, background) {
         await navigate(WATCH);
         await openSplit();
         const blocked = ['*timedtext*', '*/youtubei/v1/get_transcript*', '*/youtubei/v1/player*', '*youtube.com/watch?*'];
-        await client.send('Network.setBlockedURLs', { urls: blocked });
+        await client.send('Network.setBlockedURLs', { urls: [...blocked, ...companionBlockedUrls()] });
         try {
             await read('window.__astraTranscriptRetryProbe=true;document.querySelector("video").currentTime=7;document.querySelector("video").pause()');
             await settings({ transcriptViewer: true });
             await until("!!document.querySelector('#ytkit-transcript-panel .ytkit-transcript-state__action')", 'retryable transcript failure', 45000);
             assert.equal(await read("document.querySelector('#ytkit-transcript-panel .ytkit-transcript-body').getAttribute('aria-busy')"), 'false');
         } finally {
-            await client.send('Network.setBlockedURLs', { urls: [] });
+            // Lift the caption block only; the companion block stays.
+            await client.send('Network.setBlockedURLs', { urls: companionBlockedUrls() });
         }
         assert.equal(await read(PANEL_HOST), 'below', 'the panel mounts in the split side column');
         const belowKids = await read("[...document.querySelector('#below').children].map(e=>e.tagName+(e.id?'#'+e.id:'')+'@'+Math.round(e.getBoundingClientRect().height))");
@@ -795,6 +799,11 @@ async function main() {
         const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then(r=>r.json());
         client = await connectCdp(targets.find(t=>t.type==='page').webSocketDebuggerUrl);
         await client.send('Network.enable');
+        // Before any YouTube page loads: the launch flag already maps the
+        // companion ports away, this covers --port attach runs too, and it
+        // stops here if the worker can still reach any of them.
+        const fenceNotes = await fenceCompanion({ background, page: client });
+        report.limitations.push(...fenceNotes);
         await client.send('Network.setCookie',{name:'PREF',value:'f6=400',domain:'.youtube.com',path:'/',secure:true});
         await run(client,background);
         report.passed = true;

@@ -32,6 +32,7 @@ const {
     waitForBackgroundTarget,
     waitForDevTools,
 } = require('./smoke-chromium-optional-hosts');
+const { assertCompanionUnreachable } = require('./companion-fence');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'zero-ad-live-smoke');
@@ -2220,6 +2221,9 @@ async function runCandidate(candidate, stageDir, options) {
         const extensionId = extensionIdFromTarget(backgroundTarget);
         backgroundClient = await connectCdp(backgroundTarget.webSocketDebuggerUrl);
         await backgroundClient.send('Runtime.enable');
+        // This smoke opens the settings panel, whose Downloads pane checks the
+        // companion; chromiumArgs() maps its ports away, and this proves it.
+        await assertCompanionUnreachable(backgroundClient);
         const hasDnrApi = await evaluate(
             backgroundClient,
             'typeof chrome?.declarativeNetRequest?.getEnabledRulesets === "function"'

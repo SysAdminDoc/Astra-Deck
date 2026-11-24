@@ -15,6 +15,7 @@ const {
     shouldStageEntry,
     WEB_ACCESSIBLE_RESOURCE_POLICY,
 } = require('../build-extension.js');
+const { companionFenceArgs } = require('./companion-fence');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const EXT_DIR = path.join(REPO_ROOT, 'extension');
@@ -179,6 +180,10 @@ function parseArgs(argv) {
     return opts;
 }
 
+// Every smoke that loads the staged extension launches through here, and each
+// run is a new extension ID that the installed Astra Downloader would pair
+// the moment the settings panel opens. The companion ports never resolve in
+// these browsers; see scripts/companion-fence.js.
 function chromiumArgs(browserProfile, stageDir, opts, devToolsPort) {
     const args = [
         `--user-data-dir=${browserProfile}`,
@@ -188,6 +193,7 @@ function chromiumArgs(browserProfile, stageDir, opts, devToolsPort) {
         '--no-default-browser-check',
         '--disable-background-networking',
         '--enable-logging=stderr',
+        ...companionFenceArgs(),
         'about:blank',
     ];
     if (!opts.headed) {
