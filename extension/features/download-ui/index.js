@@ -35,6 +35,19 @@
     // that answers in 5 ms. That ran straight through the short timeouts here,
     // so the periodic check lost a companion that was running.
     const USERSCRIPT_COMPANION_TIMEOUT_MS = 5000;
+    // The non-terminal /status values Astra Downloader sets (download.py's
+    // DOWNLOAD_PENDING_STATES and DOWNLOAD_RUNNING_STATES). complete, failed,
+    // cancelled and skipped end the poll on their own branches. The panel
+    // used to look for a `processing` state no companion sends, so merging,
+    // extracting and trimming read as Downloading, and `transcribing` was not
+    // on the list at all: eight polls in, the panel gave up on a download
+    // that was still being transcribed.
+    const COMPANION_POSTPROCESS_STATES = new Set(['merging', 'extracting', 'trimming', 'transcribing']);
+    const COMPANION_ACTIVE_STATES = new Set([
+        'pending', 'queued', 'paused', 'needs-auth',
+        'downloading',
+        ...COMPANION_POSTPROCESS_STATES
+    ]);
 
     function getCompanionPortCatalogue() {
         const catalogue = globalThis.YTKitCore?.companionPorts;
@@ -2005,7 +2018,9 @@
                         eta.textContent = data.eta ? t('dlProgressEtaPrefix', 'ETA') + ' ' + data.eta : (p >= 99 ? t('dlProgressWrappingUp', 'Wrapping up') : t('dlProgressInProgress', 'In progress'));
                         setProgressState(
                             'active',
-                            data.status === 'processing' ? t('dlProgressStateFinishing', 'Finishing') : t('dlProgressStateDownloading', 'Downloading'),
+                            COMPANION_POSTPROCESS_STATES.has(data.status)
+                                ? t('dlProgressStateFinishing', 'Finishing')
+                                : t('dlProgressStateDownloading', 'Downloading'),
                             data.eta
                                 ? t('dlProgressActiveEtaTpl', `${p.toFixed(1)}% complete. ${data.eta} remaining.`).replace('{pct}', p.toFixed(1)).replace('{eta}', data.eta)
                                 : t('dlProgressActiveTpl', `${p.toFixed(1)}% complete. Stay on YouTube while Astra Downloader finishes.`).replace('{pct}', p.toFixed(1))
@@ -2077,8 +2092,7 @@
                         }
                         return;
                     }
-                    const knownStatuses = ['pending', 'queued', 'paused', 'needs-auth', 'downloading', 'processing', 'merging', 'extracting', 'trimming', 'retrying'];
-                    if (data.status && !knownStatuses.includes(data.status)) {
+                    if (data.status && !COMPANION_ACTIVE_STATES.has(data.status)) {
                         unknownStatusStrikes += 1;
                         if (unknownStatusStrikes >= 8) {
                             stopPolling();

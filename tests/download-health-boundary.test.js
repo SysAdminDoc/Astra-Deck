@@ -429,6 +429,53 @@ test('a download with no native host launches the companion once before calling 
     assert.ok(toasts.some((text) => /Install Astra Downloader to enable downloads/.test(text)), toasts.join(' | '));
 });
 
+// The statuses Astra Downloader's DownloadManager actually sets
+// (download.py DOWNLOAD_RUNNING_STATES). The panel looked for a `processing`
+// no companion sends and had no entry for `transcribing` at all.
+test('download progress labels every companion stage and keeps polling through a long transcription', async () => {
+    const { fakeTreeDocument } = require('./helpers/monolith');
+    const statuses = [
+        'downloading', 'merging', 'extracting', 'trimming',
+        ...Array(10).fill('transcribing'),
+        'complete',
+    ];
+    const seen = [];
+    let panelState = null;
+    const originalDocument = globalThis.document;
+    const realTimeout = globalThis.setTimeout;
+    globalThis.document = fakeTreeDocument(() => null);
+    try {
+        const feature = createDownloadUIFeature({
+            supportsPopover: () => false,
+            extensionFetchJson: async ({ url }) => {
+                assert.match(url, /\/status\/job1$/);
+                panelState ||= globalThis.document.querySelector('.ytkit-dl-progress__state');
+                if (seen.length) seen[seen.length - 1].label = panelState?.textContent;
+                const status = statuses[seen.length] || 'complete';
+                seen.push({ status, label: null });
+                return { data: { status, progress: 99.9 } };
+            },
+        });
+        // Every re-poll fires at once, so ten transcribing polls take no time.
+        globalThis.setTimeout = (fn) => { queueMicrotask(fn); return 0; };
+        feature.showDownloadProgress('job1', 'tok', false);
+        for (let i = 0; i < 80 && seen.length < statuses.length; i += 1) {
+            await new Promise((resolve) => setImmediate(resolve));
+        }
+    } finally {
+        globalThis.setTimeout = realTimeout;
+        globalThis.document = originalDocument;
+    }
+
+    const labelFor = (status) => [...new Set(seen.filter((entry) => entry.status === status).map((entry) => entry.label))];
+    assert.deepEqual(labelFor('downloading'), ['Downloading']);
+    for (const status of ['merging', 'extracting', 'trimming', 'transcribing']) {
+        assert.deepEqual(labelFor(status), ['Finishing'], `${status} is not Downloading`);
+    }
+    assert.equal(seen.length, statuses.length, 'a transcription that outlasts eight polls is still followed to the end');
+    assert.equal(panelState?.textContent, 'Complete');
+});
+
 test('all normal and recovery auto-start paths use the documented cold-start budget', () => {
     assert.equal(AUTO_START_RETRY_BUDGET, 8);
     const moduleSource = fs.readFileSync(
