@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- Downloads send your YouTube sign-in cookies to Astra Downloader again, so videos that need you to be signed in download instead of failing. The extension was dropping the check that proves it's talking to your own Astra Downloader, and without it the cookies were always held back.
+
 ### Tests
 - `npm run capture:theater-split` turns Theater Split on before it takes the README screenshots. The split has been opt-in since 4.106.0, so the script was waiting for a split that never opened.
 - The settings overlay smoke holds setting names to 15px and descriptions to 13px, the sizes 4.110.0's redesign picked. It still asked for the old 16px and 14px.

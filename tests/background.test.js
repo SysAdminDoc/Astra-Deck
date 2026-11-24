@@ -2543,6 +2543,79 @@ test('a cookie grant issued in one window type does not serve the other', async 
     assert.equal(response.error.code, 'COOKIE_CAPABILITY_CONTEXT_MISMATCH');
 });
 
+// The whole cookie path in one piece: this worker's NATIVE_MSG_GET_TOKEN reply,
+// the content-script relay in ytkit.js that carries it, and the download UI
+// that makes the HTTP endpoint repeat the native host's answer before it reads
+// a cookie. The download UI's own tests hand it a token function, so they never
+// saw the relay rebuild the reply without the challenge and its answer, which
+// withheld the cookies from every download.
+test('the native endpoint proof survives the content-script relay and unlocks the cookie handoff', async () => {
+    const { loadDeclarations } = require('./helpers/monolith');
+    const previousFeatures = globalThis.YTKitFeatures;
+    const { createDownloadUIFeature } = require('../extension/features/download-ui');
+    globalThis.YTKitFeatures = previousFeatures;
+
+    const NATIVE_PROOF = 'c0ffee'.padEnd(64, '0');
+    const challengesSeenByNativeHost = [];
+    const { messageListener } = loadBackground({
+        nativeResponse: (message) => {
+            if (message.challenge) challengesSeenByNativeHost.push(message.challenge);
+            return {
+                ok: true,
+                service: 'astra-downloader',
+                api: 3,
+                token: 'native-download-token',
+                ...(message.challenge ? { challengeProof: NATIVE_PROOF } : {})
+            };
+        },
+        cookiesGetAllImpl: async () => [
+            { domain: '.youtube.com', name: 'LOGIN_INFO', value: 'login-value', path: '/', secure: true, httpOnly: true },
+            { domain: '.youtube.com', name: 'SAPISID', value: 'sapisid-value', path: '/', secure: true }
+        ]
+    });
+    const sender = youtubeSender();
+    const relay = loadDeclarations(['requestNativeDownloaderToken', 'browserCookies'], {
+        hasExtensionContext: () => true,
+        sendRuntimeMessage: (message) => dispatchMessage(messageListener, message, sender)
+    });
+
+    const identityChallenges = [];
+    const downloads = [];
+    const ui = createDownloadUIFeature({
+        cookieHandoff,
+        requestNativeDownloaderToken: relay.requestNativeDownloaderToken,
+        browserCookies: relay.browserCookies,
+        extensionFetchJson: async (details) => {
+            const url = new URL(details.url);
+            if (url.pathname === '/identity') {
+                // The paired companion knows the answer to the challenge the
+                // native host was asked; anything else on the port does not.
+                const challenge = url.searchParams.get('challenge');
+                identityChallenges.push(challenge);
+                return {
+                    response: { status: 200, responseText: '{}' },
+                    data: { challengeProof: challengesSeenByNativeHost.includes(challenge) ? NATIVE_PROOF : null }
+                };
+            }
+            downloads.push(details);
+            return { response: { status: 202, responseText: '{}' }, data: { id: '' } };
+        },
+        storageRead: (_key, fallback) => fallback,
+        storageWrite: async () => {}
+    });
+    ui.MediaDLManager._tokenSource = 'native';
+
+    await ui._mediaDLSendDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false, 'native-download-token');
+
+    assert.equal(challengesSeenByNativeHost.length, 1, 'the cookie purpose sends the native host one challenge');
+    assert.deepEqual(identityChallenges, challengesSeenByNativeHost,
+        'the endpoint is asked about the same challenge the native host answered');
+    assert.equal(downloads.length, 1);
+    const body = JSON.parse(downloads[0].data);
+    assert.deepEqual((body.cookies || []).map((cookie) => cookie.name), ['LOGIN_INFO', 'SAPISID'],
+        'a proven endpoint receives the sign-in cookies');
+});
+
 // ── Filmot title lookups ─────────────────────────────────────────────────
 
 const FILMOT_HOST = 'https://apiv1.filmot.com/*';

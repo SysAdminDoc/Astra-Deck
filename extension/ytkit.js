@@ -1135,6 +1135,12 @@ return response;
                     service: response.service || null,
                     api: Number.isInteger(response.api) ? response.api : null,
                     cookieCapability: response.cookieCapability || null,
+                    // The challenge the background sent the native host and
+                    // the host's answer. The download UI makes the HTTP
+                    // endpoint repeat that answer before any cookie is read,
+                    // so dropping either one here withheld every cookie.
+                    endpointChallenge: typeof response.endpointChallenge === 'string' ? response.endpointChallenge : '',
+                    endpointProof: typeof response.endpointProof === 'string' ? response.endpointProof : '',
                     error: null
                 };
             }
