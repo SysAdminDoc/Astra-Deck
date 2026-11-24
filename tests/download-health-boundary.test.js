@@ -91,13 +91,27 @@ test('versioned downloader health crosses the UI boundary without diagnostics or
     assert.deepEqual(normalized.ffmpegCapabilities, { version: '7.1.1', current: true });
     assert.deepEqual(normalized.poTokenProvider, { ok: true });
     assert.equal(normalizeDownloadHealthSnapshot(fixture, {}).tokenSource, null);
-    // A companion that speaks a newer API is not "not Astra Downloader"; it is
-    // a named mismatch the health strip renders, so the extension stops telling
-    // the user to install a downloader that is already running.
-    assert.deepEqual(
-        normalizeDownloadHealthSnapshot({ ...fixture, api: 3 }, {}),
-        { companionApiTooNew: true, api: 3, minimumClientApi: null },
+    // A newer companion API is compatible. Astra Downloader 2.18 reports API 3
+    // and still accepts API 1 clients; calling that "newer than this
+    // extension" told users with a current downloader to update Astra Deck.
+    const newer = normalizeDownloadHealthSnapshot({ ...fixture, api: 3, minimumClientApi: 1 }, {});
+    assert.equal(newer.clientApiTooOld, undefined);
+    assert.equal(newer.api, 3);
+    assert.equal(newer.ytDlpVersion, '2026.07.04');
+    assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 9 }, {}).api, 9,
+        'a companion that predates minimumClientApi accepts every client');
+    assert.equal(
+        normalizeDownloadHealthSnapshot({ ...fixture, api: 3, minimumClientApi: DOWNLOAD_HEALTH_SCHEMA_VERSION }, {}).api,
+        3,
+        'a minimum this extension meets is compatible',
     );
+    // Only the companion's own minimum makes this extension too old.
+    assert.deepEqual(
+        normalizeDownloadHealthSnapshot({ ...fixture, api: 4, minimumClientApi: DOWNLOAD_HEALTH_SCHEMA_VERSION + 1 }, {}),
+        { clientApiTooOld: true, api: 4, minimumClientApi: DOWNLOAD_HEALTH_SCHEMA_VERSION + 1 },
+    );
+    assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 3, minimumClientApi: 'two' }, {}).api, 3,
+        'an unreadable minimum is treated as the default of 1');
     assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 0 }, {}), null);
     assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 'two' }, {}), null);
     assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, service: 'other', token_required: false }, {}), null);
@@ -185,6 +199,40 @@ test('download health polling and navigation teardown use a deterministic lifecy
         staleNavigationCallback();
         await new Promise((resolve) => setImmediate(resolve));
         assert.equal(fetchCalls, callsBeforeDestroy, 'a queued navigation callback must not resurrect polling after destroy');
+    } finally {
+        if (previousDocument === undefined) delete globalThis.document;
+        else globalThis.document = previousDocument;
+    }
+});
+
+test('the health pills treat a newer companion API as compatible and name only a minimum this extension misses', async () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = { createElement: () => new FakeElement() };
+    const render = async (health) => {
+        const feature = createDownloadUIFeature({
+            requestNativeDownloaderToken: async () => ({ token: 'native-channel-token' }),
+            extensionFetchJson: async () => ({ data: health }),
+        });
+        const panel = feature.downloadHealthPanel;
+        panel._container = new FakeElement();
+        await panel._render();
+        return {
+            pills: panel._container.children.map((pill) => pill.textContent),
+            mismatch: feature.MediaDLManager._apiMismatch,
+        };
+    };
+    try {
+        // Astra Downloader 2.18: API 3, still accepting API 1 clients.
+        const current = await render({ ...fixture, api: 3, minimumClientApi: 1 });
+        assert.equal(current.mismatch, null, 'a newer companion must not arm the update-the-extension prompt');
+        assert.ok(current.pills.includes('yt-dlp: 2026.07.04'), current.pills.join(' | '));
+        assert.ok(!current.pills.some((text) => /newer than this extension/.test(text)), current.pills.join(' | '));
+
+        const strict = await render({ ...fixture, api: 4, minimumClientApi: DOWNLOAD_HEALTH_SCHEMA_VERSION + 1 });
+        assert.deepEqual(strict.pills, ['Downloader: newer than this extension']);
+        assert.equal(strict.mismatch.error_code, 'client-api-too-old');
+        assert.equal(strict.mismatch.minimumClientApi, DOWNLOAD_HEALTH_SCHEMA_VERSION + 1);
+        assert.equal(strict.mismatch.companionApi, 4);
     } finally {
         if (previousDocument === undefined) delete globalThis.document;
         else globalThis.document = previousDocument;

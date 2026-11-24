@@ -501,11 +501,16 @@
         if (raw.service !== 'astra-downloader' && !legacyIdentity) return null;
         const api = raw.api == null ? 1 : Number(raw.api);
         if (!Number.isInteger(api) || api < 1) return null;
-        if (api > DOWNLOAD_HEALTH_SCHEMA_VERSION) {
-            // The other half of the handshake. Returning null here read as
-            // "that is not Astra Downloader" and the user got the install
-            // prompt for a companion that was simply newer than this build.
-            return { companionApiTooNew: true, api, minimumClientApi: null };
+        // A newer companion API is not a mismatch: the companion keeps
+        // answering older clients until its minimumClientApi says otherwise,
+        // and a request it refuses comes back as HTTP 426. Treating API 3 as
+        // "newer than this extension" told users with a current downloader to
+        // update an extension that was working. A companion that predates the
+        // field accepts every client, which is what 1 means.
+        const declaredMinimum = raw.minimumClientApi == null ? 1 : Number(raw.minimumClientApi);
+        const minimumClientApi = Number.isInteger(declaredMinimum) && declaredMinimum >= 1 ? declaredMinimum : 1;
+        if (minimumClientApi > DOWNLOAD_HEALTH_SCHEMA_VERSION) {
+            return { clientApiTooOld: true, api, minimumClientApi };
         }
         const isObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
         const boundedText = (value, maxLength = 64) => typeof value === 'string'
@@ -2171,17 +2176,12 @@
 
         const DOWNLOADER_FAILURE_COPY = Object.freeze({
             // Two independently-versioned products share one port catalogue.
-            // Without these the mismatch surfaced as an unexplained connection
+            // Without this the mismatch surfaced as an unexplained connection
             // failure and the user was told to repair a downloader that was
-            // running fine.
+            // running fine. A newer companion API on its own is not a
+            // mismatch; only the companion's own minimum (or its 426) is.
             'client-api-too-old': {
                 message: 'This Astra Deck is older than the installed Astra Downloader accepts.',
-                advice: 'Update the Astra Deck extension, then retry.',
-                tone: '#f59e0b',
-                duration: 12,
-            },
-            'companion-api-too-new': {
-                message: 'The installed Astra Downloader speaks a newer API than this Astra Deck understands.',
                 advice: 'Update the Astra Deck extension, then retry.',
                 tone: '#f59e0b',
                 duration: 12,
@@ -2274,7 +2274,7 @@
 
         // Failures the repair prompt (setup, start, check again) can fix. Every
         // other code has its own advice and a downloader that is answering.
-        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'userscript-pairing-required', 'client-api-too-old', 'companion-api-too-new']);
+        const DOWNLOADER_REPAIR_CODES = new Set(['native-channel-required', 'userscript-pairing-required', 'client-api-too-old']);
 
         function classifyDownloaderFailureResponse(resp = {}) {
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
@@ -3483,12 +3483,14 @@
                 const data = await this._fetchHealth();
                 if (!this._container?.isConnected) return;
                 this._container.replaceChildren();
-                if (data?.companionApiTooNew) {
+                if (data?.clientApiTooOld) {
+                    // The same state a 426 from /download reports, named
+                    // before the user tries a download.
                     MediaDLManager._apiMismatch = {
-                        error_code: 'companion-api-too-new',
+                        error_code: 'client-api-too-old',
                         next_action: 'update-extension',
                         companionApi: data.api,
-                        minimumClientApi: null,
+                        minimumClientApi: data.minimumClientApi,
                     };
                     this._container.appendChild(this._renderPill(
                         t('dlHealthDownloader', 'Downloader'),
