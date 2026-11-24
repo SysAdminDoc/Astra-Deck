@@ -381,6 +381,54 @@ test('initiating a download auto-starts a stopped companion via mediadl://start'
     assert.equal(result.port, 9751);
 });
 
+// No native host and nothing on any port is also what an unpacked or
+// not-yet-paired copy sees when Astra Downloader is installed but stopped.
+// The download button used to read that as "never installed" and say so
+// without launching it.
+test('a download with no native host launches the companion once before calling it not installed', async () => {
+    let running = false;
+    let paired = false;
+    const protocolCalls = [];
+    const toasts = [];
+    const downloads = [];
+    const feature = createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'Specified native messaging host not found.' }),
+        getExtensionRuntimeId: () => 'abcdefghijklmnopabcdefghijklmnop',
+        openProtocol: (uri) => { protocolCalls.push(uri); if (uri === 'mediadl://start') running = true; },
+        showToast: (message) => toasts.push(String(message)),
+        storageRead: (key, fallback) => (key === 'ytkit_mediadl_prompt_dismissed' ? true : fallback),
+        extensionFetchJson: async ({ url, method }) => {
+            const target = new URL(url);
+            if (!running || target.port !== '9751') throw new Error('ECONNREFUSED');
+            if (target.pathname === '/health') {
+                return { data: { ...fixture, port: 9751, ...(paired ? { token: 'paired-origin-token' } : {}) } };
+            }
+            if (target.pathname === '/pair-extension' && method === 'POST') {
+                paired = true;
+                return { data: { ok: true, paired: true } };
+            }
+            if (target.pathname === '/download') {
+                downloads.push(url);
+                return { response: { status: 202, responseText: '{}' }, data: { error: 'fixture' } };
+            }
+            throw new Error('unexpected ' + url);
+        },
+    });
+
+    await feature.ytKitDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false);
+
+    assert.deepEqual(protocolCalls, ['mediadl://start'], 'the installed companion is started before anything else');
+    assert.equal(downloads.length, 1, 'the download goes to the companion that started');
+    assert.ok(!toasts.some((text) => /Install Astra Downloader/.test(text)), toasts.join(' | '));
+
+    // The launch stays once per page: a second click with the companion gone
+    // again reports it as not installed without another launch or wait.
+    running = false;
+    await feature.ytKitDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false);
+    assert.deepEqual(protocolCalls, ['mediadl://start']);
+    assert.ok(toasts.some((text) => /Install Astra Downloader to enable downloads/.test(text)), toasts.join(' | '));
+});
+
 test('all normal and recovery auto-start paths use the documented cold-start budget', () => {
     assert.equal(AUTO_START_RETRY_BUDGET, 8);
     const moduleSource = fs.readFileSync(

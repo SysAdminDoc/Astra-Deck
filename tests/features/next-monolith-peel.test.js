@@ -557,12 +557,12 @@ test('downloadUI native-channel-required failures name the fix and never auto-st
     assert.ok(diagnostics.some(([kind, detail]) => kind === 'download-failure' && /native-channel-required/.test(detail)));
 });
 
-test('downloadUI shows setup immediately when the native host is missing', async () => {
+test('downloadUI tries one launch, then shows setup, when the native host is missing', async () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',
         'createDownloadUIFeature'
     );
-    const protocolLaunches = [];
+    const launchBudgets = [];
     const promptModes = [];
     let nativeRequests = 0;
     const result = mod.createDownloadUIFeature({
@@ -571,16 +571,23 @@ test('downloadUI shows setup immediately when the native host is missing', async
             return { token: null, error: 'Specified native messaging host not found.' };
         },
         extensionFetchJson: async () => { throw new Error('closed'); },
-        openProtocol: (url) => { protocolLaunches.push(url); },
         showToast() {},
         DebugManager: { log() {} },
     });
     result.MediaDLManager.showInstallPrompt = (mode) => { promptModes.push(mode); };
+    // An unpacked or unpaired copy has no native host either, so the missing
+    // host no longer skips the launch. The real launch and its once-per-page
+    // limit run in download-health-boundary.test.js; this pins what follows a
+    // launch that brought nothing up.
+    result.MediaDLManager.tryAutoStart = async (retries) => {
+        launchBudgets.push(retries);
+        return { ok: false };
+    };
 
     await result.ytKitDownload('https://www.youtube.com/watch?v=abcdefghijk', false);
 
+    assert.deepEqual(launchBudgets, [mod.AUTO_START_RETRY_BUDGET]);
     assert.deepEqual(promptModes, ['install']);
-    assert.deepEqual(protocolLaunches, []);
     assert.equal(nativeRequests, 1);
 });
 

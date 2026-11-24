@@ -2356,14 +2356,15 @@
                 // unpack + Qt init + server bind), which can take ~8–10s — so
                 // give it a generous poll window (8 × 1.5s = 12s) rather than the
                 // default. A warm restart mid-download can afford to be shorter.
-                // Exception: no native messaging host AND nothing answering on
-                // any port means the companion has almost certainly never been
-                // installed — the mediadl:// launch is a silent no-op then, so
-                // don't hold the user under a false "Starting…" toast for 12s.
+                //
+                // No native host and nothing on any port used to skip the
+                // launch as "never installed". An unpacked or not-yet-paired
+                // copy has no native host either, so an installed downloader
+                // was never started and the user was told to install it.
+                // tryAutoStart launches once per page, so a machine without
+                // the downloader waits for this window once, not per click.
                 likelyNeverInstalled = !!MediaDLManager._nativeTokenError && !MediaDLManager._foreignServer;
-                if (!likelyNeverInstalled) {
-                    mdl = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
-                }
+                mdl = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
             }
             if (!mdl.ok) {
                 if (mdl.nativeChannelRequired) {
