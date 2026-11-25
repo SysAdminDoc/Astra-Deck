@@ -12039,7 +12039,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return !!thread.querySelector('ytd-comment-view-model[pinned], ytw-pinned-comment-badge-renderer, ytd-pinned-comment-badge-renderer');
             },
             _restoreThread(thread) {
-                thread.style.display = thread.dataset.ytkitPinnedCommentDisplay || '';
+                const previousDisplay = thread.dataset.ytkitPinnedCommentDisplay || '';
+                if (previousDisplay === 'none') thread.style.setProperty('display', 'none', 'important');
+                else thread.style.display = previousDisplay;
                 thread.removeAttribute('aria-hidden');
                 delete thread.dataset.ytkitPinnedCommentHidden;
                 delete thread.dataset.ytkitPinnedCommentDisplay;
@@ -12061,7 +12063,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                         thread.dataset.ytkitPinnedCommentHidden = '1';
                         thread.setAttribute('aria-hidden', 'true');
-                        thread.style.display = 'none';
+                        // Important, or Theater Split's `display: block !important` shows it.
+                        thread.style.setProperty('display', 'none', 'important');
                     } else if (thread.dataset.ytkitPinnedCommentHidden === '1') {
                         this._restoreThread(thread);
                     }
@@ -25595,14 +25598,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     thread.dataset.ytkitCommentSearchDisplay = thread.style.display || '';
                 }
                 thread.dataset.ytkitCommentSearchHidden = '1';
-                thread.style.display = 'none';
+                // Important, or Theater Split's `display: block !important` shows it.
+                thread.style.setProperty('display', 'none', 'important');
             },
             _restoreSearchHiddenThread(thread) {
                 if (!(thread instanceof HTMLElement) || thread.dataset.ytkitCommentSearchHidden !== '1') return;
-                if (thread.dataset.ytkitPinnedCommentHidden === '1') {
-                    thread.style.display = 'none';
+                const previousDisplay = thread.dataset.ytkitCommentSearchDisplay || '';
+                if (thread.dataset.ytkitPinnedCommentHidden === '1' || previousDisplay === 'none') {
+                    thread.style.setProperty('display', 'none', 'important');
                 } else {
-                    thread.style.display = thread.dataset.ytkitCommentSearchDisplay || '';
+                    thread.style.display = previousDisplay;
                 }
                 delete thread.dataset.ytkitCommentSearchHidden;
                 delete thread.dataset.ytkitCommentSearchDisplay;
@@ -35012,7 +35017,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                         thread.setAttribute(marker, '1');
                     }
-                    thread.style.display = 'none';
+                    // Important, or a restyle's `display: ... !important`
+                    // (Theater Split's pane) shows the thread anyway.
+                    thread.style.setProperty('display', 'none', 'important');
                     return;
                 }
                 if (!thread.hasAttribute(marker)) return;
@@ -35021,7 +35028,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const originalDisplay = thread.getAttribute('data-ytkit-comment-filter-display')
                         ?? thread.getAttribute('data-ytkit-comment-language-display')
                         ?? '';
-                    thread.style.display = originalDisplay;
+                    // A thread another hider (pinned, search) had hidden stays hidden.
+                    if (originalDisplay === 'none') thread.style.setProperty('display', 'none', 'important');
+                    else thread.style.display = originalDisplay;
                     thread.removeAttribute('data-ytkit-comment-filter-display');
                     thread.removeAttribute('data-ytkit-comment-language-display');
                 }

@@ -1216,8 +1216,12 @@ ${PANE} ytd-commentbox :is(#cancel-button, #submit-button) ${BUTTON} {
 ${PANE} ytd-commentbox #submit-button ${BUTTON}:not([disabled]):not([aria-disabled="true"]) { background: var(--ytkit-split-accent-ink) !important; color: var(--ytkit-split-panel) !important; }
 ${PANE} ytd-commentbox :is(#cancel-button, #submit-button) ${BUTTON}:focus-visible { outline: 2px solid var(--ytkit-split-accent) !important; outline-offset: 2px !important; }
 
+/* Display only for threads nothing has hidden: this !important beats
+   YouTube's [hidden] rule, which Collapse Similar Comments relies on.
+   :where() keeps the specificity the rule had before. */
+${PANE} ytd-comment-thread-renderer:where(:not([hidden])),
+${COMMENT}:where(:not([hidden])) { display: block !important; }
 ${PANE} ytd-comment-thread-renderer {
-    display: block !important;
     margin: 0 0 16px !important;
     padding: 0 0 16px !important;
     border: 0 !important;
@@ -1230,7 +1234,6 @@ ${PANE} ytd-comment-thread-renderer:last-child { border-bottom: 0 !important; }
 ${PANE} ytd-comment-thread-renderer ytd-comment-thread-renderer { margin: 0 !important; border-bottom: 0 !important; }
 ${PANE} ytd-comment-thread-renderer div.thread-hitbox { display: none !important; }
 ${COMMENT} {
-    display: block !important;
     margin: 0 !important;
     padding: 0 !important;
     border: 0 !important;

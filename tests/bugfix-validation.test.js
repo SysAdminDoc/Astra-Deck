@@ -186,7 +186,7 @@ test('hidePinnedComments defaults on and targets modern pinned comment markup', 
     assert.ok(block.includes('#pinned-comment-badge:not(:empty)'), 'hidePinnedComments should target populated pinned badge containers');
     assert.ok(block.includes('ytd-pinned-comment-badge-renderer'), 'hidePinnedComments should target the pinned badge renderer');
     assert.ok(block.includes('data-ytkit-pinned-comment-hidden'), 'hidePinnedComments should add a durable hidden-thread marker');
-    assert.ok(block.includes("thread.style.display = 'none'"), 'hidePinnedComments should hide matched threads directly');
+    assert.ok(block.includes("thread.style.setProperty('display', 'none', 'important')"), 'hidePinnedComments should hide matched threads directly');
     assert.ok(block.includes('addScopedMutationRule('),
         'hidePinnedComments should process only newly inserted comment subtrees');
     assert.ok(block.includes('addedElements) => this._hidePinnedThreads(addedElements)'),

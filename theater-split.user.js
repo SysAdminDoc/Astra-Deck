@@ -1164,8 +1164,12 @@
         }
         body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox #submit-button :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):not([disabled]):not([aria-disabled="true"]) { background: var(--ts-accent-ink) !important; color: var(--ts-panel) !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-commentbox :is(#cancel-button, #submit-button) :is(.yt-spec-button-shape-next, .ytSpecButtonShapeNextHost):focus-visible { outline: 2px solid var(--ts-accent) !important; outline-offset: 2px !important; }
+        /* Display only for threads nothing has hidden: this !important beats
+           YouTube's [hidden] rule, which Collapse Similar Comments relies on.
+           :where() keeps the specificity the rule had before. */
+        body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer:where(:not([hidden])),
+        body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer):where(:not([hidden])) { display: block !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer {
-            display: block !important;
             margin: 0 0 16px !important;
             padding: 0 0 16px !important;
             border: 0 !important;
@@ -1178,7 +1182,6 @@
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer ytd-comment-thread-renderer { margin: 0 !important; border-bottom: 0 !important; }
         body.ts-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer div.thread-hitbox { display: none !important; }
         body.ts-active #below.ytkit-split-scroll-surface :is(ytd-comment-view-model, ytd-comment-renderer) {
-            display: block !important;
             margin: 0 !important;
             padding: 0 !important;
             border: 0 !important;
