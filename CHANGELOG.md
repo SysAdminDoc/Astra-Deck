@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.110.3] (2026-11-25)
+
 ### Fixed
 - With Theater Split on, the Comment Filter hides comments that match a keyword again. It marked them hidden, but the split pane's comment styling put them right back on screen, so only blocked authors went away. Comment Search, the comment language allowlist and Hide Pinned Comments had the same problem in the pane and work there now too.
 - Collapse Similar Comments folds its duplicates inside the Theater Split pane as well. The pane used to show them anyway.

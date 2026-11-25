@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit App Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.110.2
+// @version      4.110.3
 // @description  Part of the Astra Deck YTKit userscript; loaded by YTKit.user.js through @require. Runs nothing by itself.
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -801,7 +801,7 @@ __astraDeckRegistry["ytkit.js"] = function (globalThis, self, window, chrome, br
 			text: response.responseText || ''
 		};
 	}
-	const YTKIT_VERSION = '4.110.2';
+	const YTKIT_VERSION = '4.110.3';
 	const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
 	const SELECTOR_ASSET_SCHEDULE_KEY = 'ytkit-selector-asset-schedule';
 	const SELECTOR_AUTO_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -7287,7 +7287,9 @@ const STORAGE_KEYS = Object.freeze({
 				return !!thread.querySelector('ytd-comment-view-model[pinned], ytw-pinned-comment-badge-renderer, ytd-pinned-comment-badge-renderer');
 			},
 			_restoreThread(thread) {
-				thread.style.display = thread.dataset.ytkitPinnedCommentDisplay || '';
+				const previousDisplay = thread.dataset.ytkitPinnedCommentDisplay || '';
+				if (previousDisplay === 'none') thread.style.setProperty('display', 'none', 'important');
+				else thread.style.display = previousDisplay;
 				thread.removeAttribute('aria-hidden');
 				delete thread.dataset.ytkitPinnedCommentHidden;
 				delete thread.dataset.ytkitPinnedCommentDisplay;
@@ -7309,7 +7311,7 @@ const STORAGE_KEYS = Object.freeze({
 						}
 						thread.dataset.ytkitPinnedCommentHidden = '1';
 						thread.setAttribute('aria-hidden', 'true');
-						thread.style.display = 'none';
+						thread.style.setProperty('display', 'none', 'important');
 					} else if (thread.dataset.ytkitPinnedCommentHidden === '1') {
 						this._restoreThread(thread);
 					}
@@ -17935,14 +17937,15 @@ const STORAGE_KEYS = Object.freeze({
 					thread.dataset.ytkitCommentSearchDisplay = thread.style.display || '';
 				}
 				thread.dataset.ytkitCommentSearchHidden = '1';
-				thread.style.display = 'none';
+				thread.style.setProperty('display', 'none', 'important');
 			},
 			_restoreSearchHiddenThread(thread) {
 				if (!(thread instanceof HTMLElement) || thread.dataset.ytkitCommentSearchHidden !== '1') return;
-				if (thread.dataset.ytkitPinnedCommentHidden === '1') {
-					thread.style.display = 'none';
+				const previousDisplay = thread.dataset.ytkitCommentSearchDisplay || '';
+				if (thread.dataset.ytkitPinnedCommentHidden === '1' || previousDisplay === 'none') {
+					thread.style.setProperty('display', 'none', 'important');
 				} else {
-					thread.style.display = thread.dataset.ytkitCommentSearchDisplay || '';
+					thread.style.display = previousDisplay;
 				}
 				delete thread.dataset.ytkitCommentSearchHidden;
 				delete thread.dataset.ytkitCommentSearchDisplay;
@@ -25651,7 +25654,7 @@ const STORAGE_KEYS = Object.freeze({
 						}
 						thread.setAttribute(marker, '1');
 					}
-					thread.style.display = 'none';
+					thread.style.setProperty('display', 'none', 'important');
 					return;
 				}
 				if (!thread.hasAttribute(marker)) return;
@@ -25660,7 +25663,8 @@ const STORAGE_KEYS = Object.freeze({
 					const originalDisplay = thread.getAttribute('data-ytkit-comment-filter-display')
 						?? thread.getAttribute('data-ytkit-comment-language-display')
 						?? '';
-					thread.style.display = originalDisplay;
+					if (originalDisplay === 'none') thread.style.setProperty('display', 'none', 'important');
+					else thread.style.display = originalDisplay;
 					thread.removeAttribute('data-ytkit-comment-filter-display');
 					thread.removeAttribute('data-ytkit-comment-language-display');
 				}
