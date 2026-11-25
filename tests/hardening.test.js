@@ -4217,7 +4217,7 @@ test('downloadHistoryPanel pages, filters, exports, and shows an offline state',
         'filtered export must produce a local CSV file');
     assert.match(block, /'X-MDL-Client': 'MediaDL'/,
         'must send the MediaDL client header');
-    assert.match(block, /'Bearer ' \+ \(status\.token \|\| ''\)/,
+    assert.match(block, /_companionAuthHeaders\(status\.token,/,
         'must forward the local downloader token');
     assert.match(block, /Astra Downloader unreachable\./,
         'must render an explicit offline state, not a blank panel');
